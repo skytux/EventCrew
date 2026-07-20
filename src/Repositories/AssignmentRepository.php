@@ -329,6 +329,14 @@ final class AssignmentRepository
         // Tasks with no times recorded cannot be proven to overlap, so they
         // are treated as not overlapping rather than blocking a legitimate
         // second signup on the same day.
+        //
+        // There is deliberately no task_date equality here any more. While
+        // starts_at and ends_at were bare times, comparing them was only
+        // meaningful within one day, so the date had to match; now that they
+        // are absolute datetimes the comparison stands on its own - and
+        // requiring equal dates would have missed the case this exists to
+        // catch, someone signed up for a Saturday task ending 01:00 Sunday
+        // and a Sunday task starting 00:30.
         $count = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT(*)
@@ -337,7 +345,6 @@ final class AssignmentRepository
                 INNER JOIN {$this->tasksTable()} target ON target.id = %d
                 WHERE a.person_id = %d
                   AND a.task_id <> target.id
-                  AND s.task_date = target.task_date
                   AND a.status IN ({$statusPlaceholders})
                   AND s.starts_at IS NOT NULL AND s.ends_at IS NOT NULL
                   AND target.starts_at IS NOT NULL AND target.ends_at IS NOT NULL

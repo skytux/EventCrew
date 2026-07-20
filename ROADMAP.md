@@ -38,10 +38,17 @@ Do not re-open these without new information.
 management in wp-admin, roles in Settings, and the vocabulary refactor below.
 58 tests, phpcs clean.
 
-**Not yet verified against a real install.** The suite fakes `$wpdb`, so it
-covers decision logic and query shape but never SQL semantics. `dbDelta` has
-not run, no admin screen has rendered, and the conditional insert that guards
-capacity has not been proven to actually prevent overbooking.
+**Verified on a real install.** 103 checks passed on WordPress 7.0.2 /
+MariaDB 11.4 / PHP 8.3. The conditional insert parses and enforces capacity;
+every repository statement runs clean; teardown returned the row counts to
+baseline. One failure — the host created the tables as MyISAM — and one skip,
+the concurrency phase, for want of WP-CLI.
+
+**v0.3 then grew.** What the verification unblocked was a round of schema and
+admin work that all had to land *before* real data existed: InnoDB, datetimes,
+role archiving, event linking, templates. The Telegram bot moved to v0.4 as a
+result. That is the ordering principle this project keeps rediscovering, and
+it keeps being right.
 
 ---
 
@@ -143,21 +150,208 @@ be designing for a user who does not exist.
 | Release | Contents |
 |---|---|
 | v0.1 | ✅ Schema, migrations, wp-admin CRUD, roles |
-| v0.2 | ✅ Vocabulary refactor (above) |
-| **v0.3** | **First verification on a real install, then the Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave** |
-| v0.4 | Roster and attendance marking, in wp-admin and organizer DMs |
-| v0.5 | Reputation, credits, redemption, door list |
-| v0.6 | Public signup page, magic-link self-service |
-| v0.7 | 24h reminders and the 48h open-task call, cron + loopback-free fallback |
+| v0.2 | ✅ Vocabulary refactor |
+| v0.3 | ✅ Verified on a real install; InnoDB, task datetimes, role archiving, EventMesh event picker, role templates |
+| v0.3.1 | ✅ EventMesh fires `eventmesh/event_synced`; EventCrew optionally auto-creates a new event's tasks. (EventMesh: Holvi timezone fix.) |
+| **v0.4** | **The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave — plus the concurrency test v0.3 could not run, and the multi-event board below** |
+| v0.5 | Roster and attendance marking, in wp-admin and organizer DMs |
+| v0.6 | Reputation, credits, redemption, door list |
+| v0.7 | Public signup page, magic-link self-service |
+| v0.8 | 24h reminders and the 48h open-task call, cron + loopback-free fallback |
 | v1.0 | Translation pass, README, packaging script, CI |
+
+## Done: v0.3 — verification, then the schema it exposed
+
+### What the install told us
+
+The kit found one real defect and confirmed the thing most likely to be
+broken. `AssignmentRepository::join()` wraps its occupancy subquery in a
+derived table to get around MySQL's refusal to read the insert target
+directly; a faked `$wpdb` cannot tell you whether that parses, and if it did
+not, every join would have silently returned `full`. It parses, and capacity
+holds.
+
+The defect: **every table came up MyISAM.** dbDelta never states an engine, so
+it inherits the host's `default_storage_engine`, and every column and index
+matched the declaration in the process — nothing short of asking the engine
+directly would have caught it.
+
+Worth being precise about why that mattered, because the obvious reason is
+wrong. MyISAM does **not** endanger the capacity guard: its table-level write
+lock serialises the conditional insert at least as firmly as InnoDB's row
+locking. It matters because MyISAM has no crash recovery — an unclean shutdown
+corrupts the table holding the signup and attendance history — and no
+transactions, which puts v0.5's "spend a credit, write the redemption"
+permanently out of reach. So `ENGINE=InnoDB` is now declared in every
+`CREATE TABLE`, and `Schema::ensureInnoDb()` converts what already exists,
+because dbDelta compares columns and keys but never the engine.
+
+### Then: the schema changes that had to precede real data
+
+| Change | Why now rather than later |
+|---|---|
+| `starts_at`/`ends_at` `time` → `datetime` | A bare time cannot express a task running past midnight, which every clean-up after an evening event does. Widening an empty column is free; widening one holding a season of tasks is not. |
+| `task_date` stays a `date` | It is the day a task is *filed under*, not the day it starts. A 01:00 Sunday clean-up belongs on Saturday's board, reminder and open-task call. Deriving the day from `starts_at` would have put it on the wrong one. |
+| Roles archived, never deleted | A task stores a role slug. Deleting the role leaves the roster reading `decorate` instead of `🎈 Decorate`, and strips the meaning from credits earned under it. |
+
+The overlap query got **more** correct as a side effect: it no longer requires
+two tasks to share a `task_date`. While the columns held bare times that
+equality was load-bearing, because comparing times across days is meaningless.
+Now it was actively wrong — it would have missed a Saturday task ending 01:00
+Sunday clashing with a Sunday task starting 00:30, which is the exact case the
+check exists for.
+
+### Event linking and templates
+
+The old form asked for a raw post ID in a number field. It now leads with an
+event picker — `eventmesh_event` posts, resolved through the same
+manual-overrides-scraped rule EventMesh applies internally — and choosing one
+fills in the date and both times. "Other" reveals a free-text name.
+
+`Support\EventSource` is the whole of the soft link and names no EventMesh
+class, so a standalone install simply gets no picker and the typed name. It
+does duplicate EventMesh's `EventMeta::resolve()` rule, deliberately: those
+meta keys are registered post meta and a stable contract, and the settled
+decision is a soft link only. It converts DATE_ATOM to the site's timezone
+rather than truncating the string, which would displace every event by its
+offset.
+
+Roles carry an optional **anchor plus two offsets in minutes**: decorate
+`-120`→`0` from the start, clean `0`→`+60` from the end. That third case is
+why the anchor exists — it is the task that crosses midnight. "Create an
+event's tasks" then builds a whole evening in one click, skipping roles that
+already have a task for that event so it is safe to re-run after adding one.
+Roles with no offsets produce untimed tasks, which is what the organizer used
+to get by leaving the time fields blank.
+
+`Support\TaskTemplate` holds all of that as a pure function — no database, no
+options, no clock — because every interesting scheduling decision lives there
+and none of it should need a MySQL to test.
+
+### Still owed from v0.3
+
+The concurrency phase never ran: the host has no WP-CLI, and there is no way
+to get two PHP processes into the conditional insert at once without one. It
+moves to v0.4, where the bot's HTTP endpoint gives another way in — `curl_multi`
+against a real join URL, which is closer to the actual failure anyway.
+
+---
+
+## Done: v0.3.1 — EventMesh fires, EventCrew listens
+
+The manual "Create an event's tasks" button was the only way to turn a synced
+event into tasks. v0.3.1 makes it automatic, without breaking the settled rule
+that the link is one-directional — **EventCrew may know about EventMesh;
+EventMesh must never know about EventCrew.**
+
+**EventMesh's side is a single line:** `EventSynchronizer::sync()` fires
+`do_action('eventmesh/event_synced', $postId, $isNew)` after an event is fully
+written. It names no EventCrew anything. `$isNew` is the create-vs-re-sync
+signal EventMesh already computed for its own counters; exposing it as the
+hook's second argument is what lets a listener act on genuinely new events
+without re-deriving that from post-meta timestamps.
+
+**EventCrew's side listens and stays quiet by default.**
+`Support\EventMeshSyncListener` registers on the hook unconditionally —
+`add_action` on a hook nobody fires is inert, so no `post_type_exists()` guard
+is needed at registration, and it boots outside admin because a WP-Cron sync
+never touches wp-admin. That last point is the whole feature: **a new event's
+tasks appear with nobody logged in.** It acts only when `$isNew` is true *and*
+the opt-in `eventcrew_auto_create_tasks` option is set — off by default, per
+the "Settings lists only controls the shipped code reads" rule, so installing
+both plugins together never floods an unreviewed role list into tasks.
+
+Re-sync is deliberately ignored even when it changes the event's time: once
+created, the tasks belong to the organizer, and a later correction must not
+stomp signups or hand-edits. An event synced before the toggle was on is
+handled by the existing manual button — no separate backfill path, and the
+reason no per-event re-trigger button was added to EventMesh.
+
+**The shared logic was extracted, not duplicated.** `TasksPage::applyTemplate()`
+and the listener both go through `Support\TaskTemplateApplier::apply()` — the
+skip-already-scheduled-roles rule lives in exactly one place, which is what
+keeps "apply twice is safe" true from both entry points.
+
+### The EventMesh half: Holvi timezone fix
+
+Landed in the same pass, in the EventMesh repo. Every Holvi-imported event had
+been 2–3 hours late since the connector shipped: a scraped "18:00" with no
+timezone was read under PHP's process zone, which WordPress pins to UTC, so a
+Helsinki 6pm became 18:00 UTC = 21:00 local in summer. `Support\LocalTime` now
+routes every scraped-date construction through the **site's** timezone, which
+is what a source with no zone of its own always means. Real Holvi data carries
+no offset anywhere, so there is no "does it state a zone" branch to get wrong —
+it simply assumes local. The fix was invisible to the test suite until
+`wp_timezone()` got stubbed, because unstubbed it fell back to UTC and hid the
+very bug it introduces.
+
+## Open question for v0.4: multiple events open at once
+
+Recorded so the bot design does not rediscover it. The question was **not** a
+batch "join Decorate across all three events" action — it was how the bot's
+board presents several events being open for signup simultaneously.
+
+Structurally this needs nothing new. `eventcrew_assignments` is unique on
+`(task_id, person_id)` only — never on the event — so a person can already
+hold slots across distinct tasks in distinct events, and
+`AssignmentRepository::hasOverlapping()` exists precisely to permit that in
+general and refuse it only on a genuine time clash between two tasks,
+whichever events they belong to. No schema or repository work is implied.
+
+What v0.4 owes is a **board-layout** decision: when more than one event is
+open, group the Telegram board's task listing by event, most likely reusing
+`EventSource::upcoming()` (already returns every linkable event) and
+`TaskRepository::forDate()` per event.
+
+---
+
+## Superseded: v0.3's first half — the verification kit
+
+The bot is not being written until the schema has been proven on a real MySQL,
+for the same reason the v0.2 rename landed before any install: a schema defect
+found now costs a `DB_VERSION` bump, and the same defect found after the bot
+is built costs a data migration on rows people care about.
+
+Two files, neither of which ships in the released plugin:
+
+- **`tools/VERIFY.md`** — the procedure. Install, run the script, click every
+  admin screen, deactivate and reactivate.
+- **`tools/build-zip.php`** — produces `dist/eventcrew-<version>.zip` for
+  **Upload Plugin**. Names what ships explicitly rather than deriving it by
+  exclusion, so a new top-level directory has to be considered before it can
+  reach a web server, and cross-checks the plugin header's `Version` against
+  `EVENTCREW_VERSION` — a mismatch only surfaces after release otherwise.
+- **`tools/verify-install.php`** — runs under `wp eval-file`, or in a browser
+  as an administrator when the host has no WP-CLI. Six phases: migration ran;
+  every declared column and index exists; host assumptions hold (InnoDB,
+  varchar(191)); every repository statement executes without a MySQL error;
+  six simultaneous joins at a capacity-2 task leave exactly two rows; teardown
+  returns the row counts to baseline.
+
+Two details worth keeping:
+
+Phase 2 reads its expectations out of `Schema::statements()` by reflection
+rather than restating them, so the check cannot quietly drift from the schema
+it is checking — the failure mode a hand-maintained expectation list always
+eventually has.
+
+Phase 5 is the only place genuine concurrency gets tested, and it needs WP-CLI:
+without a shell there is no way to get a second PHP process into the
+conditional insert at the same instant, because the bot's HTTP endpoint — the
+other route in — does not exist yet. The browser fallback skips it and says so.
+
+**Owed back:** the script's output and the checklist results. A phase 2 or 4
+failure is a schema bug to fix before the bot; a checklist failure is an admin
+bug and cheaper.
 
 ## Verification owed before v1.0
 
 Carried forward from the planning document, because none of it is covered by
 unit tests:
 
-1. **Real install** — activate, confirm `dbDelta` created every table, add a
-   task and a person through the UI without a fatal.
+1. ~~**Real install**~~ — ✅ done. 103 checks passed; the one failure (MyISAM)
+   is fixed in v0.3. Re-run `tools/VERIFY.md` after upgrading, since the
+   migration now converts engines and widens two columns.
 2. **Webhook reachability** (after the bot lands) — `getWebhookInfo` shows
    `pending_update_count` 0 and no `last_error_message`. HTTPS with a valid
    certificate is a hard prerequisite; Telegram refuses self-signed and plain
@@ -165,6 +359,8 @@ unit tests:
 3. **Concurrent capacity, scripted** — fire N simultaneous joins at a task
    with capacity 2, assert exactly 2 assignments exist. This is the failure the
    group surface makes likely and that manual testing will not reproduce.
+   *Still owed — the host has no WP-CLI, so phase 5 skipped. Moves to v0.4,
+   driven over the bot's join endpoint instead.*
 4. **Notification cron** — trigger twice, assert one message per recipient per
    kind across both runs; fill every task and confirm the open-task call sends
    nothing.
@@ -179,4 +375,21 @@ unit tests:
 The `php` on PATH loads no `php.ini`, and Composer is not installed globally.
 Build a minimal ini enabling `openssl`, `curl`, `mbstring`, `fileinfo` with
 `extension_dir` pointed at the PHP install's `ext/`, fetch `composer.phar`, and
-run everything as `php -c <ini> <command>`. Keep that ini outside the repo.
+run everything as `php -c <ini> <command>`. Keep that ini outside the repo —
+which means rebuilding it each session, a few seconds' work:
+
+```ini
+extension_dir = "<php-install>\ext"
+extension=openssl
+extension=curl
+extension=mbstring
+extension=fileinfo
+```
+
+PHP 8.3 lives under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\PHP.PHP.8.3_*`.
+Then `php -c <ini> vendor/phpunit/phpunit/phpunit` and
+`php -c <ini> vendor/squizlabs/php_codesniffer/bin/phpcs`.
+
+There is no local WordPress, MySQL, Docker or WP-CLI on this machine, which is
+why install verification is a script handed over to be run on the real host
+rather than something reproducible here.

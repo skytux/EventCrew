@@ -9,6 +9,11 @@ use EventCrew\Support\Roles;
 /**
  * One slot of work on one date - a role, a capacity, and optionally the
  * event it belongs to.
+ *
+ * taskDate is the day the task is filed under; startsAt and endsAt are full
+ * datetimes and may fall on the following day. A clean-up at 01:00 on Sunday
+ * after a Saturday event has a Saturday taskDate, because that is the board
+ * and the reminder it belongs to.
  */
 final class Task
 {
@@ -72,19 +77,66 @@ final class Task
         return '' !== $this->eventLabel ? $this->eventLabel : $this->taskDate;
     }
 
+    /**
+     * The times as an organizer reads them, with a marker on any part that
+     * lands on a day other than the one the task is filed under.
+     *
+     * Without that marker "22:00–01:00" is ambiguous about which 01:00 is
+     * meant, and the cleaning task - the one that always crosses midnight -
+     * is precisely the one this has to get right.
+     */
     public function timeRange(): string
     {
         if (null === $this->startsAt) {
             return '';
         }
 
-        $start = substr($this->startsAt, 0, 5);
+        $start = $this->clockTime($this->startsAt);
 
         if (null === $this->endsAt) {
             return $start;
         }
 
-        return $start . '–' . substr($this->endsAt, 0, 5);
+        return $start . '–' . $this->clockTime($this->endsAt);
+    }
+
+    /**
+     * HH:MM, suffixed with the day offset from taskDate when they differ:
+     * "01:00 (+1)" for the small hours of the next morning.
+     */
+    private function clockTime(string $dateTime): string
+    {
+        $clock = substr($dateTime, 11, 5);
+
+        // A value still stored as a bare time, which is what rows written
+        // before the datetime widening look like.
+        if ('' === $clock) {
+            return substr($dateTime, 0, 5);
+        }
+
+        $dayOffset = $this->dayOffset(substr($dateTime, 0, 10));
+
+        if (0 === $dayOffset) {
+            return $clock;
+        }
+
+        return sprintf('%s (%+d)', $clock, $dayOffset);
+    }
+
+    private function dayOffset(string $date): int
+    {
+        if ('' === $this->taskDate || $date === $this->taskDate) {
+            return 0;
+        }
+
+        $from = strtotime($this->taskDate . ' 00:00:00');
+        $to = strtotime($date . ' 00:00:00');
+
+        if (false === $from || false === $to) {
+            return 0;
+        }
+
+        return (int) round(($to - $from) / 86400);
     }
 
     public function isPast(): bool
