@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '1';
+    public const DB_VERSION = '2';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -74,7 +74,52 @@ final class Schema
             dbDelta($statement);
         }
 
+        self::ensureInnoDb();
+
         update_option(self::VERSION_OPTION, self::DB_VERSION);
+    }
+
+    /**
+     * Converts any table the host created as MyISAM.
+     *
+     * dbDelta compares columns and keys but never the storage engine, so a
+     * host whose default_storage_engine is MyISAM produces tables that match
+     * the declaration in every respect this plugin can otherwise see. The
+     * first real install was exactly that.
+     *
+     * MyISAM would not break the capacity guard - its table-level write lock
+     * serialises the conditional insert if anything more firmly than InnoDB's
+     * row locking - but it has no crash recovery and no transactions. That
+     * costs signup history on an unclean shutdown, and it puts an atomic
+     * "spend a credit, write the redemption" permanently out of reach.
+     *
+     * Running this while the tables are empty is instantaneous. Running it
+     * after a season of signups is a locking ALTER on a shared host, which is
+     * why it happens now.
+     */
+    private static function ensureInnoDb(): void
+    {
+        global $wpdb;
+
+        foreach (self::tableNames() as $name) {
+            $table = self::table($name);
+
+            $engine = (string) $wpdb->get_var(
+                $wpdb->prepare(
+                    'SELECT ENGINE FROM information_schema.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+                    $table
+                )
+            );
+
+            if ('' === $engine || 0 === strcasecmp('InnoDB', $engine)) {
+                continue;
+            }
+
+            // Table name comes from a constant joined to $wpdb->prefix, and
+            // ALTER takes no placeholders.
+            $wpdb->query("ALTER TABLE {$table} ENGINE=InnoDB"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        }
     }
 
     /**
@@ -148,18 +193,27 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY email (email),
                 UNIQUE KEY telegram_user_id (telegram_user_id)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
 
             // event_post_id points at an eventmesh_event post when EventMesh
             // is installed; event_label carries a hand-typed name when it is
             // not, so EventCrew stands alone.
+            //
+            // task_date is the day the task is filed under, which is not the
+            // same thing as the day it starts: a clean-up running 01:00 on
+            // Sunday after a Saturday event belongs to Saturday's board, its
+            // reminder and its open-task call. starts_at and ends_at are
+            // absolute instants and carry the real crossing of midnight, which
+            // is why they are datetimes rather than the times they used to be.
+            // Both stay nullable - a task created from a role template has no
+            // times until someone decides them.
             "CREATE TABLE {$tasks} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
                 event_label varchar(191) NOT NULL DEFAULT '',
                 task_date date NOT NULL,
-                starts_at time DEFAULT NULL,
-                ends_at time DEFAULT NULL,
+                starts_at datetime DEFAULT NULL,
+                ends_at datetime DEFAULT NULL,
                 role_slug varchar(32) NOT NULL,
                 capacity smallint(5) unsigned NOT NULL DEFAULT 1,
                 notes text NOT NULL,
@@ -167,7 +221,7 @@ final class Schema
                 PRIMARY KEY  (id),
                 KEY task_date (task_date),
                 KEY event_post_id (event_post_id)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
 
             // The unique key on (task_id, person_id) is load-bearing: it
             // is what stops a duplicate join when the same person taps the
@@ -185,7 +239,7 @@ final class Schema
                 UNIQUE KEY task_person (task_id,person_id),
                 KEY person_id (person_id),
                 KEY status (status)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
 
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -196,7 +250,7 @@ final class Schema
                 note varchar(191) NOT NULL DEFAULT '',
                 PRIMARY KEY  (id),
                 KEY person_id (person_id)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
 
             // Only the hash is stored, never the token itself, so a database
             // leak cannot be replayed as a login.
@@ -211,7 +265,7 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY token_hash (token_hash),
                 KEY person_id (person_id)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
 
             // Send-once ledger shared by both notification kinds. The unique
             // key is the actual guard against a double-send when a cron tick
@@ -226,7 +280,7 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY kind_person_date (kind,person_id,task_date),
                 KEY task_date (task_date)
-            ) {$charsetCollate};",
+            ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }
 }

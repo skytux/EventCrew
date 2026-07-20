@@ -45,6 +45,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_apply_template',
+            [$this->container->get(TasksPage::class), 'applyTemplate']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );

@@ -105,6 +105,36 @@ final class SchemaTest extends TestCase
         self::assertStringContainsString('email_verified_at datetime DEFAULT NULL', $sql);
     }
 
+    /**
+     * The first real install came up MyISAM, because dbDelta never states an
+     * engine and the host's default was not InnoDB. Declaring it explicitly
+     * is what stops that happening on the next install; ensureInnoDb() repairs
+     * the ones already made.
+     *
+     * Without InnoDB there is no crash recovery for signup history and no
+     * transaction to make v0.5's "spend a credit, write the redemption" atomic.
+     */
+    public function testEveryTableDeclaresInnoDb(): void
+    {
+        foreach ($this->statements() as $sql) {
+            self::assertStringContainsString('ENGINE=InnoDB', $sql);
+        }
+    }
+
+    /**
+     * Bare times could not express a task that runs past midnight, which is
+     * every clean-up after an evening event. task_date deliberately stays a
+     * DATE: it is the day the task is filed under, not the day it starts.
+     */
+    public function testTaskTimesAreDatetimesWhileTheTaskDateStaysADate(): void
+    {
+        $sql = $this->statementFor(Schema::TASKS);
+
+        self::assertStringContainsString('task_date date NOT NULL', $sql);
+        self::assertStringContainsString('starts_at datetime DEFAULT NULL', $sql);
+        self::assertStringContainsString('ends_at datetime DEFAULT NULL', $sql);
+    }
+
     public function testSkipsMigrationWhenTheStoredVersionIsCurrent(): void
     {
         Functions\expect('get_option')

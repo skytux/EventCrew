@@ -13,7 +13,9 @@ use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
+use EventCrew\Support\TaskTemplateApplier;
 use Throwable;
 
 final class Kernel
@@ -34,6 +36,12 @@ final class Kernel
 
         $admin = $this->container->get(Admin::class);
         $admin->boot();
+
+        // Registered unconditionally - not gated to admin - because a sync
+        // triggered by WP-Cron never touches wp-admin, and that's exactly
+        // the case this exists to handle: a new event's tasks appearing
+        // with nobody watching.
+        $this->container->get(EventMeshSyncListener::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -112,12 +120,27 @@ final class Kernel
         );
 
         $this->container->singleton(
+            TaskTemplateApplier::class,
+            fn (Container $container) => new TaskTemplateApplier(
+                $container->get(TaskRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            EventMeshSyncListener::class,
+            fn (Container $container) => new EventMeshSyncListener(
+                $container->get(TaskTemplateApplier::class)
+            )
+        );
+
+        $this->container->singleton(
             TasksPage::class,
             fn (Container $container) => new TasksPage(
                 $container->get(View::class),
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(PersonRepository::class)
+                $container->get(PersonRepository::class),
+                $container->get(TaskTemplateApplier::class)
             )
         );
 

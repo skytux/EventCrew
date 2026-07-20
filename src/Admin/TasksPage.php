@@ -7,18 +7,28 @@ namespace EventCrew\Admin;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\EventSource;
 use EventCrew\Support\Roles;
+use EventCrew\Support\TaskTemplateApplier;
 
+/**
+ * @phpstan-import-type Role from Roles
+ */
 final class TasksPage
 {
     public const PAGE_SLUG = 'eventcrew';
     private const NONCE_ACTION = 'eventcrew_task';
+    private const TEMPLATE_NONCE_ACTION = 'eventcrew_apply_template';
+
+    /** The event picker's "not one of these" option. */
+    public const EVENT_OTHER = 'other';
 
     public function __construct(
         private readonly View $view,
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
-        private readonly PersonRepository $people
+        private readonly PersonRepository $people,
+        private readonly TaskTemplateApplier $templateApplier
     ) {
     }
 
@@ -35,15 +45,24 @@ final class TasksPage
         $table = new TasksListTable($this->tasks);
         $table->prepare_items();
 
+        $editing = $this->taskBeingEdited();
+
         $this->view->render(
             'tasks',
             [
                 'table' => $table,
-                'editing' => $this->taskBeingEdited(),
-                'roles' => Roles::all(),
+                'editing' => $editing,
+                // The form lists active roles to pick from, but an edited task
+                // may sit on an archived one - that role is appended so
+                // reopening an old task does not silently move it elsewhere.
+                'roles' => $this->rolesForForm($editing),
+                'events' => EventSource::upcoming(),
+                'events_available' => EventSource::isAvailable(),
                 'roster' => $this->rosterForEditedTask(),
                 'nonce_action' => self::NONCE_ACTION,
+                'template_nonce_action' => self::TEMPLATE_NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
+                'event_other' => self::EVENT_OTHER,
             ]
         );
     }
@@ -59,11 +78,13 @@ final class TasksPage
         $taskDate = isset($_POST['task_date']) ? sanitize_text_field(wp_unslash($_POST['task_date'])) : '';
         $startsAt = isset($_POST['starts_at']) ? sanitize_text_field(wp_unslash($_POST['starts_at'])) : '';
         $endsAt = isset($_POST['ends_at']) ? sanitize_text_field(wp_unslash($_POST['ends_at'])) : '';
+        $eventChoice = isset($_POST['event_choice']) ? sanitize_text_field(wp_unslash($_POST['event_choice'])) : '';
         $eventLabel = isset($_POST['event_label']) ? sanitize_text_field(wp_unslash($_POST['event_label'])) : '';
-        $eventPostId = isset($_POST['event_post_id']) ? (int) $_POST['event_post_id'] : 0;
         $capacity = isset($_POST['capacity']) ? (int) $_POST['capacity'] : 1;
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $eventPostId = $this->eventPostIdFrom($eventChoice);
 
         if (! $this->isValidDate($taskDate)) {
             Admin::redirectTo(
@@ -81,13 +102,26 @@ final class TasksPage
             );
         }
 
+        $start = $this->normalizeDateTime($startsAt, $taskDate);
+        $end = $this->normalizeDateTime($endsAt, $taskDate);
+
+        // A task ending before it starts is almost always a crossing of
+        // midnight typed without changing the date, so it is corrected rather
+        // than rejected - refusing it would just teach the organizer to type
+        // the date twice.
+        if (null !== $start && null !== $end && $end < $start) {
+            $end = $this->nextDay($end);
+        }
+
         $data = [
             'role_slug' => $roleSlug,
             'task_date' => $taskDate,
-            'starts_at' => $this->normalizeTime($startsAt),
-            'ends_at' => $this->normalizeTime($endsAt),
-            'event_label' => $eventLabel,
-            'event_post_id' => $eventPostId > 0 ? $eventPostId : null,
+            'starts_at' => $start,
+            'ends_at' => $end,
+            // A linked event supplies the name; the typed label is only kept
+            // when there is no link, so the two can never disagree on screen.
+            'event_label' => null === $eventPostId ? $eventLabel : '',
+            'event_post_id' => $eventPostId,
             'capacity' => max(1, $capacity),
             'notes' => $notes,
         ];
@@ -101,6 +135,68 @@ final class TasksPage
         $this->tasks->create($data);
 
         Admin::redirectTo(self::PAGE_SLUG, __('Task added.', 'eventcrew'));
+    }
+
+    /**
+     * Creates every task an event needs in one go, from the active roles and
+     * their offsets.
+     *
+     * Roles already scheduled for that event are skipped rather than
+     * duplicated, so this is safe to run twice - including after a new role
+     * has been added, which is the obvious second use for it.
+     */
+    public function applyTemplate(): void
+    {
+        Admin::assertCanSave(self::TEMPLATE_NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $eventPostId = isset($_POST['template_event']) ? (int) $_POST['template_event'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $result = $this->templateApplier->apply($eventPostId);
+
+        if (null === $result) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if (0 === $result['created']) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Every active role already has a task for that event.', 'eventcrew')
+            );
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, $this->templateNotice($result['created'], $result['untimed']));
+    }
+
+    private function templateNotice(int $created, int $untimed): string
+    {
+        if (0 === $untimed) {
+            return sprintf(
+                /* translators: %d: number of tasks created */
+                _n('%d task created.', '%d tasks created.', $created, 'eventcrew'),
+                $created
+            );
+        }
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
+        return sprintf(
+            /* translators: 1: number of tasks created, 2: how many of them have no times */
+            _n(
+                '%1$d task created, %2$d without times - the role has no offsets, or the event has no end recorded.',
+                '%1$d tasks created, %2$d without times - those roles have no offsets, or the event has no end recorded.',
+                $created,
+                'eventcrew'
+            ),
+            $created,
+            $untimed
+        );
+        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 
     public function delete(): void
@@ -120,6 +216,49 @@ final class TasksPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Task deleted.', 'eventcrew'));
+    }
+
+    /**
+     * The event picker submits either a post id or the "other" sentinel. Only
+     * a value that resolves to a real event post becomes a link, so a stale
+     * option in a form left open overnight cannot point a task at a deleted
+     * post.
+     */
+    private function eventPostIdFrom(string $choice): ?int
+    {
+        if (self::EVENT_OTHER === $choice || '' === $choice) {
+            return null;
+        }
+
+        $postId = (int) $choice;
+
+        return null === EventSource::describe($postId) ? null : $postId;
+    }
+
+    /**
+     * @return array<int, Role>
+     */
+    private function rolesForForm(?object $editing): array
+    {
+        $roles = Roles::active();
+
+        if (! $editing instanceof \EventCrew\Models\Task) {
+            return $roles;
+        }
+
+        foreach ($roles as $role) {
+            if ($role['slug'] === $editing->roleSlug) {
+                return $roles;
+            }
+        }
+
+        $archived = Roles::find($editing->roleSlug);
+
+        if (null !== $archived) {
+            $roles[] = $archived;
+        }
+
+        return $roles;
     }
 
     /**
@@ -181,19 +320,51 @@ final class TasksPage
     }
 
     /**
-     * An empty time field is a legitimate "not decided yet", stored as NULL
-     * rather than 00:00, which would read as midnight on the roster.
+     * Reads what <input type="datetime-local"> submits (Y-m-d\TH:i), and also
+     * a bare H:i, which is what the field degrades to on a browser without
+     * datetime-local support. A bare time is dated to the task's own day.
+     *
+     * An empty field is a legitimate "not decided yet", stored as NULL rather
+     * than midnight, which would read as a real 00:00 start on the roster.
      */
-    private function normalizeTime(string $time): ?string
+    private function normalizeDateTime(string $value, string $taskDate): ?string
     {
-        if (1 !== preg_match('/^(\d{2}):(\d{2})$/', $time, $matches)) {
+        $value = trim($value);
+
+        if ('' === $value) {
             return null;
         }
 
-        if ((int) $matches[1] > 23 || (int) $matches[2] > 59) {
+        if (1 === preg_match('/^(\d{2}):(\d{2})$/', $value, $timeOnly)) {
+            if ((int) $timeOnly[1] > 23 || (int) $timeOnly[2] > 59) {
+                return null;
+            }
+
+            return $taskDate . ' ' . $value . ':00';
+        }
+
+        if (1 !== preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::\d{2})?$/', $value, $matches)) {
             return null;
         }
 
-        return $time . ':00';
+        if (! $this->isValidDate($matches[1]) || (int) $matches[2] > 23 || (int) $matches[3] > 59) {
+            return null;
+        }
+
+        return sprintf('%s %s:%s:00', $matches[1], $matches[2], $matches[3]);
+    }
+
+    private function nextDay(string $dateTime): string
+    {
+        $timestamp = strtotime($dateTime);
+
+        if (false === $timestamp) {
+            return $dateTime;
+        }
+
+        // Paired with strtotime under WordPress's UTC default timezone, so
+        // the naive string moves by exactly one day and is not reread in
+        // another zone. See TaskTemplate::offsetFrom().
+        return gmdate('Y-m-d H:i:s', $timestamp + 86400);
     }
 }
