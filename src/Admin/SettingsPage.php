@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
-use EventCrew\Repositories\VolunteerRepository;
-use EventCrew\Support\TaskTypes;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Roles;
 
 /**
  * Settings carries only what the shipped features actually read. Options for
@@ -20,7 +20,7 @@ final class SettingsPage
 
     public function __construct(
         private readonly View $view,
-        private readonly VolunteerRepository $volunteers
+        private readonly PersonRepository $people
     ) {
     }
 
@@ -29,8 +29,8 @@ final class SettingsPage
         $this->view->render(
             'settings',
             [
-                'task_types' => TaskTypes::all(),
-                'opt_in_stats' => $this->volunteers->optInStats(),
+                'roles' => Roles::all(),
+                'opt_in_stats' => $this->people->optInStats(),
                 'nonce_action' => self::NONCE_ACTION,
             ]
         );
@@ -40,7 +40,7 @@ final class SettingsPage
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
-        TaskTypes::save($this->submittedTaskTypes());
+        Roles::save($this->submittedRoles());
 
         Admin::redirectTo(
             self::PAGE_SLUG,
@@ -51,30 +51,30 @@ final class SettingsPage
     /**
      * The form posts parallel arrays rather than one array of rows, because a
      * repeatable fieldset is far simpler to render that way. Reassembling them
-     * here keeps that detail out of TaskTypes, which should not know how the
+     * here keeps that detail out of Roles, which should not know how the
      * form is laid out.
      *
      * @return array<int, array<string, mixed>>
      */
-    private function submittedTaskTypes(): array
+    private function submittedRoles(): array
     {
         // Nonce and capability were both verified in assertCanSave() above;
         // phpcs cannot follow that across the method boundary.
         // phpcs:disable WordPress.Security.NonceVerification.Missing
-        $slugs = isset($_POST['task_slug']) && is_array($_POST['task_slug'])
-            ? array_map('sanitize_key', wp_unslash($_POST['task_slug']))
+        $slugs = isset($_POST['role_slug']) && is_array($_POST['role_slug'])
+            ? array_map('sanitize_key', wp_unslash($_POST['role_slug']))
             : [];
 
-        $labels = isset($_POST['task_label']) && is_array($_POST['task_label'])
-            ? array_map('sanitize_text_field', wp_unslash($_POST['task_label']))
+        $labels = isset($_POST['role_label']) && is_array($_POST['role_label'])
+            ? array_map('sanitize_text_field', wp_unslash($_POST['role_label']))
             : [];
 
-        $emojis = isset($_POST['task_emoji']) && is_array($_POST['task_emoji'])
-            ? array_map('sanitize_text_field', wp_unslash($_POST['task_emoji']))
+        $emojis = isset($_POST['role_emoji']) && is_array($_POST['role_emoji'])
+            ? array_map('sanitize_text_field', wp_unslash($_POST['role_emoji']))
             : [];
 
-        $capacities = isset($_POST['task_capacity']) && is_array($_POST['task_capacity'])
-            ? array_map('intval', wp_unslash($_POST['task_capacity']))
+        $capacities = isset($_POST['role_capacity']) && is_array($_POST['role_capacity'])
+            ? array_map('intval', wp_unslash($_POST['role_capacity']))
             : [];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 

@@ -35,23 +35,23 @@ final class Admin
         );
 
         add_action(
-            'admin_post_eventcrew_save_shift',
-            [$this->container->get(ShiftsPage::class), 'save']
+            'admin_post_eventcrew_save_task',
+            [$this->container->get(TasksPage::class), 'save']
         );
 
         add_action(
-            'admin_post_eventcrew_delete_shift',
-            [$this->container->get(ShiftsPage::class), 'delete']
+            'admin_post_eventcrew_delete_task',
+            [$this->container->get(TasksPage::class), 'delete']
         );
 
         add_action(
-            'admin_post_eventcrew_save_volunteer',
-            [$this->container->get(VolunteersPage::class), 'save']
+            'admin_post_eventcrew_save_person',
+            [$this->container->get(PeoplePage::class), 'save']
         );
 
         add_action(
-            'admin_post_eventcrew_delete_volunteer',
-            [$this->container->get(VolunteersPage::class), 'delete']
+            'admin_post_eventcrew_delete_person',
+            [$this->container->get(PeoplePage::class), 'delete']
         );
     }
 
@@ -62,27 +62,27 @@ final class Admin
             __('EventCrew', 'eventcrew'),
             self::CAPABILITY,
             self::MENU_SLUG,
-            [$this->container->get(ShiftsPage::class), 'render'],
+            [$this->container->get(TasksPage::class), 'render'],
             'dashicons-groups',
             26
         );
 
         add_submenu_page(
             self::MENU_SLUG,
-            __('Shifts', 'eventcrew'),
-            __('Shifts', 'eventcrew'),
+            __('Tasks', 'eventcrew'),
+            __('Tasks', 'eventcrew'),
             self::CAPABILITY,
             self::MENU_SLUG,
-            [$this->container->get(ShiftsPage::class), 'render']
+            [$this->container->get(TasksPage::class), 'render']
         );
 
         add_submenu_page(
             self::MENU_SLUG,
-            __('Volunteers', 'eventcrew'),
-            __('Volunteers', 'eventcrew'),
+            __('People', 'eventcrew'),
+            __('People', 'eventcrew'),
             self::CAPABILITY,
-            'eventcrew-volunteers',
-            [$this->container->get(VolunteersPage::class), 'render']
+            'eventcrew-people',
+            [$this->container->get(PeoplePage::class), 'render']
         );
 
         add_submenu_page(

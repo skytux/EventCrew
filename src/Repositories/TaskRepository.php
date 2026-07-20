@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
-use EventCrew\Models\Shift;
+use EventCrew\Models\Task;
 use EventCrew\Support\AssignmentStatus;
 
 /**
- * All reads and writes of the shifts table, plus the occupancy counts that
+ * All reads and writes of the tasks table, plus the occupancy counts that
  * every board and roster needs alongside them.
  */
-final class ShiftRepository
+final class TaskRepository
 {
     private function table(): string
     {
-        return Schema::table(Schema::SHIFTS);
+        return Schema::table(Schema::TASKS);
     }
 
     private function assignmentsTable(): string
@@ -24,7 +24,7 @@ final class ShiftRepository
         return Schema::table(Schema::ASSIGNMENTS);
     }
 
-    public function find(int $id): ?Shift
+    public function find(int $id): ?Task
     {
         global $wpdb;
 
@@ -33,7 +33,7 @@ final class ShiftRepository
             ARRAY_A
         );
 
-        return is_array($row) ? Shift::fromRow($row) : null;
+        return is_array($row) ? Task::fromRow($row) : null;
     }
 
     /**
@@ -48,10 +48,10 @@ final class ShiftRepository
             [
                 'event_post_id' => $data['event_post_id'] ?? null,
                 'event_label' => (string) ($data['event_label'] ?? ''),
-                'shift_date' => (string) ($data['shift_date'] ?? ''),
+                'task_date' => (string) ($data['task_date'] ?? ''),
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
-                'task_slug' => (string) ($data['task_slug'] ?? ''),
+                'role_slug' => (string) ($data['role_slug'] ?? ''),
                 'capacity' => max(1, (int) ($data['capacity'] ?? 1)),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => current_time('mysql'),
@@ -72,7 +72,7 @@ final class ShiftRepository
     }
 
     /**
-     * Deleting a shift takes its assignments with it. There is no foreign key
+     * Deleting a task takes its assignments with it. There is no foreign key
      * to cascade, since WordPress installs cannot be relied on to have InnoDB
      * everywhere, so the cleanup is explicit.
      */
@@ -80,12 +80,12 @@ final class ShiftRepository
     {
         global $wpdb;
 
-        $wpdb->delete($this->assignmentsTable(), ['shift_id' => $id]);
+        $wpdb->delete($this->assignmentsTable(), ['task_id' => $id]);
         $wpdb->delete($this->table(), ['id' => $id]);
     }
 
     /**
-     * @return array<int, Shift>
+     * @return array<int, Task>
      */
     public function forDate(string $date): array
     {
@@ -93,7 +93,7 @@ final class ShiftRepository
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE shift_date = %s ORDER BY starts_at ASC, id ASC",
+                "SELECT * FROM {$this->table()} WHERE task_date = %s ORDER BY starts_at ASC, id ASC",
                 $date
             ),
             ARRAY_A
@@ -103,7 +103,7 @@ final class ShiftRepository
     }
 
     /**
-     * @return array<int, Shift>
+     * @return array<int, Task>
      */
     public function upcoming(int $limit = 100): array
     {
@@ -112,8 +112,8 @@ final class ShiftRepository
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()}
-                WHERE shift_date >= %s
-                ORDER BY shift_date ASC, starts_at ASC, id ASC
+                WHERE task_date >= %s
+                ORDER BY task_date ASC, starts_at ASC, id ASC
                 LIMIT %d",
                 current_time('Y-m-d'),
                 $limit
@@ -125,7 +125,7 @@ final class ShiftRepository
     }
 
     /**
-     * Distinct future dates that have at least one shift, for the roster date
+     * Distinct future dates that have at least one task, for the roster date
      * picker and the Telegram board.
      *
      * @return array<int, string>
@@ -136,9 +136,9 @@ final class ShiftRepository
 
         $rows = $wpdb->get_col(
             $wpdb->prepare(
-                "SELECT DISTINCT shift_date FROM {$this->table()}
-                WHERE shift_date >= %s
-                ORDER BY shift_date ASC
+                "SELECT DISTINCT task_date FROM {$this->table()}
+                WHERE task_date >= %s
+                ORDER BY task_date ASC
                 LIMIT %d",
                 current_time('Y-m-d'),
                 $limit
@@ -150,7 +150,7 @@ final class ShiftRepository
 
     /**
      * @param array{orderby?: string, order?: string, per_page?: int, page?: int, upcoming_only?: bool} $args
-     * @return array<int, Shift>
+     * @return array<int, Task>
      */
     public function all(array $args = []): array
     {
@@ -160,11 +160,11 @@ final class ShiftRepository
         $where = '1=1';
 
         if (! empty($args['upcoming_only'])) {
-            $where .= ' AND shift_date >= %s';
+            $where .= ' AND task_date >= %s';
             $params[] = current_time('Y-m-d');
         }
 
-        $orderBy = $this->safeOrderBy((string) ($args['orderby'] ?? 'shift_date'));
+        $orderBy = $this->safeOrderBy((string) ($args['orderby'] ?? 'task_date'));
         $order = 'ASC' === strtoupper((string) ($args['order'] ?? 'DESC')) ? 'ASC' : 'DESC';
 
         $perPage = max(1, (int) ($args['per_page'] ?? 50));
@@ -196,50 +196,50 @@ final class ShiftRepository
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE shift_date >= %s",
+                "SELECT COUNT(*) FROM {$this->table()} WHERE task_date >= %s",
                 current_time('Y-m-d')
             )
         );
     }
 
     /**
-     * How many slots of each of the given shifts are currently taken, keyed by
-     * shift id. Only statuses that still occupy a slot are counted, so a
+     * How many slots of each of the given tasks are currently taken, keyed by
+     * task id. Only statuses that still occupy a slot are counted, so a
      * no-show frees their place for someone else.
      *
-     * @param array<int, int> $shiftIds
+     * @param array<int, int> $taskIds
      * @return array<int, int>
      */
-    public function occupancyFor(array $shiftIds): array
+    public function occupancyFor(array $taskIds): array
     {
         global $wpdb;
 
-        $shiftIds = array_values(array_unique(array_map('intval', $shiftIds)));
+        $taskIds = array_values(array_unique(array_map('intval', $taskIds)));
 
-        if ([] === $shiftIds) {
+        if ([] === $taskIds) {
             return [];
         }
 
-        $idPlaceholders = implode(',', array_fill(0, count($shiftIds), '%d'));
+        $idPlaceholders = implode(',', array_fill(0, count($taskIds), '%d'));
         $statuses = AssignmentStatus::occupying();
         $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT shift_id, COUNT(*) AS taken
+                "SELECT task_id, COUNT(*) AS taken
                 FROM {$this->assignmentsTable()}
-                WHERE shift_id IN ({$idPlaceholders})
+                WHERE task_id IN ({$idPlaceholders})
                   AND status IN ({$statusPlaceholders})
-                GROUP BY shift_id",
-                ...array_merge($shiftIds, $statuses)
+                GROUP BY task_id",
+                ...array_merge($taskIds, $statuses)
             ),
             ARRAY_A
         );
 
-        $counts = array_fill_keys($shiftIds, 0);
+        $counts = array_fill_keys($taskIds, 0);
 
         foreach (is_array($rows) ? $rows : [] as $row) {
-            $counts[(int) $row['shift_id']] = (int) $row['taken'];
+            $counts[(int) $row['task_id']] = (int) $row['taken'];
         }
 
         return $counts;
@@ -247,24 +247,24 @@ final class ShiftRepository
 
     /**
      * Whether a date still has unfilled slots anywhere. Drives the 48h
-     * open-shift call, which must send nothing at all when everything is
+     * open-task call, which must send nothing at all when everything is
      * already staffed.
      */
     public function hasOpenSlotsOn(string $date): bool
     {
-        $shifts = $this->forDate($date);
+        $tasks = $this->forDate($date);
 
-        if ([] === $shifts) {
+        if ([] === $tasks) {
             return false;
         }
 
         $occupancy = $this->occupancyFor(array_map(
-            static fn (Shift $shift): int => $shift->id,
-            $shifts
+            static fn (Task $task): int => $task->id,
+            $tasks
         ));
 
-        foreach ($shifts as $shift) {
-            if (($occupancy[$shift->id] ?? 0) < $shift->capacity) {
+        foreach ($tasks as $task) {
+            if (($occupancy[$task->id] ?? 0) < $task->capacity) {
                 return true;
             }
         }
@@ -274,20 +274,20 @@ final class ShiftRepository
 
     /**
      * @param mixed $rows
-     * @return array<int, Shift>
+     * @return array<int, Task>
      */
     private function hydrate(mixed $rows): array
     {
         return array_map(
-            static fn (array $row): Shift => Shift::fromRow($row),
+            static fn (array $row): Task => Task::fromRow($row),
             is_array($rows) ? $rows : []
         );
     }
 
     private function safeOrderBy(string $column): string
     {
-        $allowed = ['id', 'shift_date', 'task_slug', 'capacity'];
+        $allowed = ['id', 'task_date', 'role_slug', 'capacity'];
 
-        return in_array($column, $allowed, true) ? $column : 'shift_date';
+        return in_array($column, $allowed, true) ? $column : 'task_date';
     }
 }

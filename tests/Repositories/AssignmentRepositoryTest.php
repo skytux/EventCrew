@@ -9,7 +9,7 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Tests\TestCase;
 
 /**
- * Covers the branch logic of joining a shift.
+ * Covers the branch logic of joining a task.
  *
  * The concurrency guarantee itself lives in the database - one statement that
  * counts and inserts together - so what can be verified without MySQL is that
@@ -18,21 +18,21 @@ use EventCrew\Tests\TestCase;
  */
 final class AssignmentRepositoryTest extends TestCase
 {
-    public function testReportsAnUnknownShiftWithoutAttemptingAWrite(): void
+    public function testReportsAnUnknownTaskWithoutAttemptingAWrite(): void
     {
         $this->wpdb->nextVars = [null];
 
         $result = (new AssignmentRepository())->join(999, 1);
 
-        self::assertSame(AssignmentRepository::JOIN_UNKNOWN_SHIFT, $result);
+        self::assertSame(AssignmentRepository::JOIN_UNKNOWN_TASK, $result);
         self::assertSame([], $this->wpdb->inserts);
     }
 
-    public function testReportsADuplicateWhenTheVolunteerAlreadyHoldsASlot(): void
+    public function testReportsADuplicateWhenThePersonAlreadyHoldsASlot(): void
     {
         $this->wpdb->nextVars = [2];
         $this->wpdb->nextRows = [
-            ['id' => 5, 'shift_id' => 3, 'volunteer_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 5, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
         ];
 
         $result = (new AssignmentRepository())->join(3, 1);
@@ -53,8 +53,8 @@ final class AssignmentRepositoryTest extends TestCase
 
     /**
      * Zero affected rows means the capacity condition evaluated false at write
-     * time - somebody else took the last slot in between. The volunteer must
-     * be told the shift is full, not that something went wrong.
+     * time - somebody else took the last slot in between. The person must
+     * be told the task is full, not that something went wrong.
      */
     public function testReportsFullWhenTheConditionalInsertWroteNothing(): void
     {
@@ -69,15 +69,15 @@ final class AssignmentRepositoryTest extends TestCase
 
     /**
      * A failed write on this statement is realistically the unique key firing,
-     * which means the same volunteer's second tap arrived while the first was
-     * still in flight. Re-reading the row distinguishes that from a full shift.
+     * which means the same person's second tap arrived while the first was
+     * still in flight. Re-reading the row distinguishes that from a full task.
      */
     public function testTreatsAFailedInsertWithAnExistingRowAsADuplicate(): void
     {
         $this->wpdb->nextVars = [2];
         $this->wpdb->nextRows = [
             null,
-            ['id' => 9, 'shift_id' => 3, 'volunteer_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
         ];
         $this->wpdb->nextQueryResults = [false];
 
@@ -89,7 +89,7 @@ final class AssignmentRepositoryTest extends TestCase
     /**
      * The whole point of the single statement: the capacity comparison has to
      * be inside the INSERT, not read beforehand in PHP. If this ever becomes a
-     * plain INSERT, two simultaneous joins can overbook a shift.
+     * plain INSERT, two simultaneous joins can overbook a task.
      */
     public function testCountsCapacityInsideTheInsertStatement(): void
     {
@@ -107,7 +107,7 @@ final class AssignmentRepositoryTest extends TestCase
     }
 
     /**
-     * Statuses that have freed their slot must not be counted, or a shift
+     * Statuses that have freed their slot must not be counted, or a task
      * someone dropped out of stays permanently full.
      */
     public function testCountsOnlyOccupyingStatusesTowardCapacity(): void
@@ -125,13 +125,13 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertStringNotContainsString(AssignmentStatus::LATE_CANCEL, $sql);
     }
 
-    public function testLeavingDeletesTheVolunteersRowForThatShift(): void
+    public function testLeavingDeletesThePeopleRowForThatTask(): void
     {
         (new AssignmentRepository())->leave(3, 1);
 
         self::assertCount(1, $this->wpdb->deletes);
         self::assertSame(
-            ['shift_id' => 3, 'volunteer_id' => 1],
+            ['task_id' => 3, 'person_id' => 1],
             $this->wpdb->deletes[0]['where']
         );
     }

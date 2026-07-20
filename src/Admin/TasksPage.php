@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Repositories\AssignmentRepository;
-use EventCrew\Repositories\ShiftRepository;
-use EventCrew\Repositories\VolunteerRepository;
-use EventCrew\Support\TaskTypes;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Roles;
 
-final class ShiftsPage
+final class TasksPage
 {
     public const PAGE_SLUG = 'eventcrew';
-    private const NONCE_ACTION = 'eventcrew_shift';
+    private const NONCE_ACTION = 'eventcrew_task';
 
     public function __construct(
         private readonly View $view,
-        private readonly ShiftRepository $shifts,
+        private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
-        private readonly VolunteerRepository $volunteers
+        private readonly PersonRepository $people
     ) {
     }
 
@@ -32,16 +32,16 @@ final class ShiftsPage
             require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
         }
 
-        $table = new ShiftsListTable($this->shifts);
+        $table = new TasksListTable($this->tasks);
         $table->prepare_items();
 
         $this->view->render(
-            'shifts',
+            'tasks',
             [
                 'table' => $table,
-                'editing' => $this->shiftBeingEdited(),
-                'task_types' => TaskTypes::all(),
-                'roster' => $this->rosterForEditedShift(),
+                'editing' => $this->taskBeingEdited(),
+                'roles' => Roles::all(),
+                'roster' => $this->rosterForEditedTask(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
             ]
@@ -53,10 +53,10 @@ final class ShiftsPage
         Admin::assertCanSave(self::NONCE_ACTION);
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing
-        $id = isset($_POST['shift_id']) ? (int) $_POST['shift_id'] : 0;
+        $id = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
 
-        $taskSlug = isset($_POST['task_slug']) ? sanitize_key(wp_unslash($_POST['task_slug'])) : '';
-        $shiftDate = isset($_POST['shift_date']) ? sanitize_text_field(wp_unslash($_POST['shift_date'])) : '';
+        $roleSlug = isset($_POST['role_slug']) ? sanitize_key(wp_unslash($_POST['role_slug'])) : '';
+        $taskDate = isset($_POST['task_date']) ? sanitize_text_field(wp_unslash($_POST['task_date'])) : '';
         $startsAt = isset($_POST['starts_at']) ? sanitize_text_field(wp_unslash($_POST['starts_at'])) : '';
         $endsAt = isset($_POST['ends_at']) ? sanitize_text_field(wp_unslash($_POST['ends_at'])) : '';
         $eventLabel = isset($_POST['event_label']) ? sanitize_text_field(wp_unslash($_POST['event_label'])) : '';
@@ -65,7 +65,7 @@ final class ShiftsPage
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        if (! $this->isValidDate($shiftDate)) {
+        if (! $this->isValidDate($taskDate)) {
             Admin::redirectTo(
                 self::PAGE_SLUG,
                 __('That date could not be read. Use the date picker and try again.', 'eventcrew'),
@@ -73,17 +73,17 @@ final class ShiftsPage
             );
         }
 
-        if (! TaskTypes::exists($taskSlug)) {
+        if (! Roles::exists($roleSlug)) {
             Admin::redirectTo(
                 self::PAGE_SLUG,
-                __('Pick a task group that still exists in Settings.', 'eventcrew'),
+                __('Pick a role that still exists in Settings.', 'eventcrew'),
                 'error'
             );
         }
 
         $data = [
-            'task_slug' => $taskSlug,
-            'shift_date' => $shiftDate,
+            'role_slug' => $roleSlug,
+            'task_date' => $taskDate,
             'starts_at' => $this->normalizeTime($startsAt),
             'ends_at' => $this->normalizeTime($endsAt),
             'event_label' => $eventLabel,
@@ -93,14 +93,14 @@ final class ShiftsPage
         ];
 
         if ($id > 0) {
-            $this->shifts->update($id, $data);
+            $this->tasks->update($id, $data);
 
-            Admin::redirectTo(self::PAGE_SLUG, __('Shift updated.', 'eventcrew'));
+            Admin::redirectTo(self::PAGE_SLUG, __('Task updated.', 'eventcrew'));
         }
 
-        $this->shifts->create($data);
+        $this->tasks->create($data);
 
-        Admin::redirectTo(self::PAGE_SLUG, __('Shift added.', 'eventcrew'));
+        Admin::redirectTo(self::PAGE_SLUG, __('Task added.', 'eventcrew'));
     }
 
     public function delete(): void
@@ -110,53 +110,53 @@ final class ShiftsPage
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        $id = isset($_GET['shift']) ? (int) $_GET['shift'] : 0;
+        $id = isset($_GET['task']) ? (int) $_GET['task'] : 0;
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        check_admin_referer('eventcrew_delete_shift_' . $id);
+        check_admin_referer('eventcrew_delete_task_' . $id);
 
         if ($id > 0) {
-            $this->shifts->delete($id);
+            $this->tasks->delete($id);
         }
 
-        Admin::redirectTo(self::PAGE_SLUG, __('Shift deleted.', 'eventcrew'));
+        Admin::redirectTo(self::PAGE_SLUG, __('Task deleted.', 'eventcrew'));
     }
 
     /**
-     * @return \EventCrew\Models\Shift|null
+     * @return \EventCrew\Models\Task|null
      */
-    private function shiftBeingEdited(): ?object
+    private function taskBeingEdited(): ?object
     {
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        $id = isset($_GET['shift']) ? (int) $_GET['shift'] : 0;
+        $id = isset($_GET['task']) ? (int) $_GET['task'] : 0;
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        return $id > 0 ? $this->shifts->find($id) : null;
+        return $id > 0 ? $this->tasks->find($id) : null;
     }
 
     /**
-     * Who is signed up for the shift currently open in the editor, so the
+     * Who is signed up for the task currently open in the editor, so the
      * organizer can see the consequences of changing or deleting it.
      *
      * @return array<int, array{name: string, status: string}>
      */
-    private function rosterForEditedShift(): array
+    private function rosterForEditedTask(): array
     {
-        $shift = $this->shiftBeingEdited();
+        $task = $this->taskBeingEdited();
 
-        if (null === $shift) {
+        if (null === $task) {
             return [];
         }
 
         $roster = [];
 
-        foreach ($this->assignments->forShift($shift->id) as $assignment) {
-            $volunteer = $this->volunteers->find($assignment->volunteerId);
+        foreach ($this->assignments->forTask($task->id) as $assignment) {
+            $person = $this->people->find($assignment->personId);
 
             $roster[] = [
-                'name' => null === $volunteer
-                    ? __('(deleted volunteer)', 'eventcrew')
-                    : $volunteer->name(),
+                'name' => null === $person
+                    ? __('(deleted person)', 'eventcrew')
+                    : $person->name(),
                 'status' => $assignment->statusLabel(),
             ];
         }

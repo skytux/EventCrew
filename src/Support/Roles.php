@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * The job groups a shift can belong to.
+ * The kinds of job a task can be - the role someone signs up to fill.
  *
  * Ships opinionated - Decorate, Welcome, Clean, with Decorate capped at two
  * people - because that is the actual shape of a dance event, and a fresh
  * install should be usable without visiting Settings first. The list is
- * editable, but nothing else in the plugin branches on which types exist.
+ * editable, but nothing else in the plugin branches on which roles exist.
  */
-final class TaskTypes
+final class Roles
 {
-    public const OPTION_NAME = 'eventcrew_task_types';
+    public const OPTION_NAME = 'eventcrew_roles';
 
     /**
      * @return array<int, array{slug: string, label: string, emoji: string, capacity: int}>
@@ -54,43 +54,43 @@ final class TaskTypes
             return self::defaults();
         }
 
-        $types = [];
+        $roles = [];
 
-        foreach ($stored as $type) {
-            if (! is_array($type)) {
+        foreach ($stored as $role) {
+            if (! is_array($role)) {
                 continue;
             }
 
-            $slug = sanitize_key((string) ($type['slug'] ?? ''));
+            $slug = sanitize_key((string) ($role['slug'] ?? ''));
 
             if ('' === $slug) {
                 continue;
             }
 
-            $capacity = (int) ($type['capacity'] ?? 1);
+            $capacity = (int) ($role['capacity'] ?? 1);
 
-            $types[] = [
+            $roles[] = [
                 'slug' => $slug,
-                'label' => (string) ($type['label'] ?? $slug),
-                'emoji' => (string) ($type['emoji'] ?? ''),
+                'label' => (string) ($role['label'] ?? $slug),
+                'emoji' => (string) ($role['emoji'] ?? ''),
                 'capacity' => max(1, $capacity),
             ];
         }
 
-        return [] === $types ? self::defaults() : $types;
+        return [] === $roles ? self::defaults() : $roles;
     }
 
     /**
-     * @param array<int, array<string, mixed>> $types
+     * @param array<int, array<string, mixed>> $roles
      */
-    public static function save(array $types): void
+    public static function save(array $roles): void
     {
         $clean = [];
         $seen = [];
 
-        foreach ($types as $type) {
-            $slug = sanitize_key((string) ($type['slug'] ?? ''));
-            $label = trim((string) ($type['label'] ?? ''));
+        foreach ($roles as $role) {
+            $slug = sanitize_key((string) ($role['slug'] ?? ''));
+            $label = trim((string) ($role['label'] ?? ''));
 
             // A row with neither a slug nor a label is an empty "add another"
             // line the organizer left untouched, not an error worth reporting.
@@ -111,8 +111,8 @@ final class TaskTypes
             $clean[] = [
                 'slug' => $slug,
                 'label' => '' === $label ? $slug : $label,
-                'emoji' => trim((string) ($type['emoji'] ?? '')),
-                'capacity' => max(1, (int) ($type['capacity'] ?? 1)),
+                'emoji' => trim((string) ($role['emoji'] ?? '')),
+                'capacity' => max(1, (int) ($role['capacity'] ?? 1)),
             ];
         }
 
@@ -124,9 +124,9 @@ final class TaskTypes
      */
     public static function find(string $slug): ?array
     {
-        foreach (self::all() as $type) {
-            if ($type['slug'] === $slug) {
-                return $type;
+        foreach (self::all() as $role) {
+            if ($role['slug'] === $slug) {
+                return $role;
             }
         }
 
@@ -143,15 +143,15 @@ final class TaskTypes
      */
     public static function display(string $slug): string
     {
-        $type = self::find($slug);
+        $role = self::find($slug);
 
-        if (null === $type) {
+        if (null === $role) {
             return $slug;
         }
 
-        return '' === $type['emoji']
-            ? $type['label']
-            : $type['emoji'] . ' ' . $type['label'];
+        return '' === $role['emoji']
+            ? $role['label']
+            : $role['emoji'] . ' ' . $role['label'];
     }
 
     public static function defaultCapacity(string $slug): int

@@ -19,7 +19,7 @@ final class SchemaTest extends TestCase
 {
     public function testPrefixesEveryTableWithTheSiteTablePrefix(): void
     {
-        self::assertSame('wp_eventcrew_volunteers', Schema::table(Schema::VOLUNTEERS));
+        self::assertSame('wp_eventcrew_people', Schema::table(Schema::PEOPLE));
         self::assertSame('wp_eventcrew_assignments', Schema::table(Schema::ASSIGNMENTS));
     }
 
@@ -43,13 +43,13 @@ final class SchemaTest extends TestCase
     }
 
     /**
-     * This index is what actually stops the same volunteer holding two slots
-     * in one shift when they double-tap the group button.
+     * This index is what actually stops the same person holding two slots
+     * in one task when they double-tap the group button.
      */
-    public function testAssignmentsAreUniquePerShiftAndVolunteer(): void
+    public function testAssignmentsAreUniquePerTaskAndPerson(): void
     {
         self::assertStringContainsString(
-            'UNIQUE KEY shift_volunteer (shift_id,volunteer_id)',
+            'UNIQUE KEY task_person (task_id,person_id)',
             $this->statementFor(Schema::ASSIGNMENTS)
         );
     }
@@ -58,17 +58,17 @@ final class SchemaTest extends TestCase
      * The send-once guard for both notification kinds. Without it a cron tick
      * that dies mid-batch re-mails everyone it already reached.
      */
-    public function testNotificationsAreUniquePerKindVolunteerAndDate(): void
+    public function testNotificationsAreUniquePerKindPersonAndDate(): void
     {
         self::assertStringContainsString(
-            'UNIQUE KEY kind_volunteer_date (kind,volunteer_id,shift_date)',
+            'UNIQUE KEY kind_person_date (kind,person_id,task_date)',
             $this->statementFor(Schema::NOTIFICATIONS)
         );
     }
 
-    public function testVolunteerEmailAndTelegramIdAreUnique(): void
+    public function testPersonEmailAndTelegramIdAreUnique(): void
     {
-        $sql = $this->statementFor(Schema::VOLUNTEERS);
+        $sql = $this->statementFor(Schema::PEOPLE);
 
         self::assertStringContainsString('UNIQUE KEY email (email)', $sql);
         self::assertStringContainsString('UNIQUE KEY telegram_user_id (telegram_user_id)', $sql);
@@ -93,13 +93,13 @@ final class SchemaTest extends TestCase
         // which shared hosts still run; 191 is the largest safe width.
         self::assertStringContainsString(
             'email varchar(191) NOT NULL',
-            $this->statementFor(Schema::VOLUNTEERS)
+            $this->statementFor(Schema::PEOPLE)
         );
     }
 
     public function testConsentColumnsDefaultToNoConsent(): void
     {
-        $sql = $this->statementFor(Schema::VOLUNTEERS);
+        $sql = $this->statementFor(Schema::PEOPLE);
 
         self::assertStringContainsString('email_opt_in_at datetime DEFAULT NULL', $sql);
         self::assertStringContainsString('email_verified_at datetime DEFAULT NULL', $sql);

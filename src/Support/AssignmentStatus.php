@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * The lifecycle of a volunteer's commitment to one shift.
+ * The lifecycle of a person's commitment to one task.
  *
  * These strings are persisted in the assignments table and fed straight into
  * the reputation weighting, so renaming one is a data migration, not a
@@ -16,10 +16,10 @@ final class AssignmentStatus
     /** Signed up, event hasn't happened yet. The starting state. */
     public const SIGNED_UP = 'signed_up';
 
-    /** Turned up on the day, shift not yet closed out. */
+    /** Turned up on the day, task not yet closed out. */
     public const ARRIVED = 'arrived';
 
-    /** Did the shift. The only status that earns credit toward a reward. */
+    /** Did the task. The only status that earns credit toward a reward. */
     public const COMPLETED = 'completed';
 
     /** Couldn't make it but found someone to take the slot. Nearly as good. */
@@ -56,7 +56,7 @@ final class AssignmentStatus
     }
 
     /**
-     * Statuses that still occupy a slot in the shift. A late cancel or no-show
+     * Statuses that still occupy a slot in the task. A late cancel or no-show
      * has freed the slot in practice even though the row stays for the
      * reputation history, so capacity counting must not include them.
      *

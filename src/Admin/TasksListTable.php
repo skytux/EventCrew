@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
-use EventCrew\Models\Shift;
-use EventCrew\Repositories\ShiftRepository;
+use EventCrew\Models\Task;
+use EventCrew\Repositories\TaskRepository;
 use WP_List_Table;
 
 /**
- * The shifts table on the Shifts screen.
+ * The tasks table on the Tasks screen.
  *
  * Extends a core class that only exists inside wp-admin, so the file that
  * instantiates this must require class-wp-list-table.php first - see
- * ShiftsPage::render(). Autoloading this class outside admin would fatal on
+ * TasksPage::render(). Autoloading this class outside admin would fatal on
  * the missing parent.
  */
-final class ShiftsListTable extends WP_List_Table
+final class TasksListTable extends WP_List_Table
 {
     private const PER_PAGE = 20;
 
     /**
-     * Slots taken per shift id, fetched once for the whole page rather than
+     * Slots taken per task id, fetched once for the whole page rather than
      * per row.
      *
      * @var array<int, int>
@@ -29,11 +29,11 @@ final class ShiftsListTable extends WP_List_Table
     private array $occupancy = [];
 
     public function __construct(
-        private readonly ShiftRepository $shifts
+        private readonly TaskRepository $tasks
     ) {
         parent::__construct([
-            'singular' => 'shift',
-            'plural' => 'shifts',
+            'singular' => 'task',
+            'plural' => 'tasks',
             'ajax' => false,
         ]);
     }
@@ -44,9 +44,9 @@ final class ShiftsListTable extends WP_List_Table
     public function get_columns(): array
     {
         return [
-            'shift_date' => __('Date', 'eventcrew'),
+            'task_date' => __('Date', 'eventcrew'),
             'event' => __('Event', 'eventcrew'),
-            'task_slug' => __('Task', 'eventcrew'),
+            'role_slug' => __('Role', 'eventcrew'),
             'time' => __('Time', 'eventcrew'),
             'filled' => __('Filled', 'eventcrew'),
         ];
@@ -58,8 +58,8 @@ final class ShiftsListTable extends WP_List_Table
     protected function get_sortable_columns(): array
     {
         return [
-            'shift_date' => ['shift_date', true],
-            'task_slug' => ['task_slug', false],
+            'task_date' => ['task_date', true],
+            'role_slug' => ['role_slug', false],
         ];
     }
 
@@ -71,22 +71,22 @@ final class ShiftsListTable extends WP_List_Table
         // form, so there is no nonce to check; both are whitelisted against
         // known columns inside the repository before reaching SQL.
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        $orderBy = isset($_GET['orderby']) ? sanitize_key(wp_unslash($_GET['orderby'])) : 'shift_date';
+        $orderBy = isset($_GET['orderby']) ? sanitize_key(wp_unslash($_GET['orderby'])) : 'task_date';
         $order = isset($_GET['order']) ? sanitize_key(wp_unslash($_GET['order'])) : 'desc';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        $this->items = $this->shifts->all([
+        $this->items = $this->tasks->all([
             'orderby' => $orderBy,
             'order' => $order,
             'per_page' => self::PER_PAGE,
             'page' => $page,
         ]);
 
-        $this->occupancy = $this->shifts->occupancyFor(
-            array_map(static fn (Shift $shift): int => $shift->id, $this->items)
+        $this->occupancy = $this->tasks->occupancyFor(
+            array_map(static fn (Task $task): int => $task->id, $this->items)
         );
 
-        $total = $this->shifts->count();
+        $total = $this->tasks->count();
 
         $this->set_pagination_args([
             'total_items' => $total,
@@ -99,25 +99,25 @@ final class ShiftsListTable extends WP_List_Table
 
     public function no_items(): void
     {
-        esc_html_e('No shifts yet. Add one to get started.', 'eventcrew');
+        esc_html_e('No tasks yet. Add one to get started.', 'eventcrew');
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      */
-    public function column_shift_date($item): string
+    public function column_task_date($item): string
     {
         $editUrl = add_query_arg(
-            ['page' => ShiftsPage::PAGE_SLUG, 'shift' => $item->id],
+            ['page' => TasksPage::PAGE_SLUG, 'task' => $item->id],
             admin_url('admin.php')
         );
 
         $deleteUrl = wp_nonce_url(
             add_query_arg(
-                ['action' => 'eventcrew_delete_shift', 'shift' => $item->id],
+                ['action' => 'eventcrew_delete_task', 'task' => $item->id],
                 admin_url('admin-post.php')
             ),
-            'eventcrew_delete_shift_' . $item->id
+            'eventcrew_delete_task_' . $item->id
         );
 
         $actions = [
@@ -130,7 +130,7 @@ final class ShiftsListTable extends WP_List_Table
                 '<a href="%s" onclick="return confirm(%s)" class="submitdelete">%s</a>',
                 esc_url($deleteUrl),
                 esc_attr(wp_json_encode(
-                    __('Delete this shift and everyone signed up for it?', 'eventcrew')
+                    __('Delete this task and everyone signed up for it?', 'eventcrew')
                 )),
                 esc_html__('Delete', 'eventcrew')
             ),
@@ -139,13 +139,13 @@ final class ShiftsListTable extends WP_List_Table
         return sprintf(
             '<strong><a href="%s">%s</a></strong>%s',
             esc_url($editUrl),
-            esc_html($item->shiftDate),
+            esc_html($item->taskDate),
             $this->row_actions($actions)
         );
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      */
     public function column_event($item): string
     {
@@ -153,15 +153,15 @@ final class ShiftsListTable extends WP_List_Table
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      */
-    public function column_task_slug($item): string
+    public function column_role_slug($item): string
     {
-        return esc_html($item->taskDisplay());
+        return esc_html($item->roleDisplay());
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      */
     public function column_time($item): string
     {
@@ -171,7 +171,7 @@ final class ShiftsListTable extends WP_List_Table
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      */
     public function column_filled($item): string
     {
@@ -187,7 +187,7 @@ final class ShiftsListTable extends WP_List_Table
     }
 
     /**
-     * @param Shift $item
+     * @param Task $item
      * @param string $column_name
      */
     public function column_default($item, $column_name): string

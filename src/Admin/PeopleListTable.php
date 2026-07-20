@@ -4,30 +4,30 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
-use EventCrew\Models\Volunteer;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
-use EventCrew\Repositories\VolunteerRepository;
+use EventCrew\Repositories\PersonRepository;
 use WP_List_Table;
 
 /**
- * The volunteers table on the Volunteers screen.
+ * The people table on the People screen.
  *
- * As with ShiftsListTable, the core parent only exists inside wp-admin and
+ * As with TasksListTable, the core parent only exists inside wp-admin and
  * must be required before this class is touched.
  */
-final class VolunteersListTable extends WP_List_Table
+final class PeopleListTable extends WP_List_Table
 {
     private const PER_PAGE = 20;
 
     private string $search = '';
 
     public function __construct(
-        private readonly VolunteerRepository $volunteers,
+        private readonly PersonRepository $people,
         private readonly AssignmentRepository $assignments
     ) {
         parent::__construct([
-            'singular' => 'volunteer',
-            'plural' => 'volunteers',
+            'singular' => 'person',
+            'plural' => 'people',
             'ajax' => false,
         ]);
     }
@@ -41,8 +41,8 @@ final class VolunteersListTable extends WP_List_Table
             'display_name' => __('Name', 'eventcrew'),
             'email' => __('Email', 'eventcrew'),
             'telegram' => __('Telegram', 'eventcrew'),
-            'opt_in' => __('Open-shift email', 'eventcrew'),
-            'completed' => __('Completed shifts', 'eventcrew'),
+            'opt_in' => __('Open-task email', 'eventcrew'),
+            'completed' => __('Completed tasks', 'eventcrew'),
         ];
     }
 
@@ -70,7 +70,7 @@ final class VolunteersListTable extends WP_List_Table
         $order = isset($_GET['order']) ? sanitize_key(wp_unslash($_GET['order'])) : 'asc';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        $this->items = $this->volunteers->all([
+        $this->items = $this->people->all([
             'search' => $this->search,
             'orderby' => $orderBy,
             'order' => $order,
@@ -78,7 +78,7 @@ final class VolunteersListTable extends WP_List_Table
             'page' => $page,
         ]);
 
-        $total = $this->volunteers->count($this->search);
+        $total = $this->people->count($this->search);
 
         $this->set_pagination_args([
             'total_items' => $total,
@@ -91,25 +91,25 @@ final class VolunteersListTable extends WP_List_Table
 
     public function no_items(): void
     {
-        esc_html_e('No volunteers yet.', 'eventcrew');
+        esc_html_e('No people yet.', 'eventcrew');
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      */
     public function column_display_name($item): string
     {
         $editUrl = add_query_arg(
-            ['page' => VolunteersPage::PAGE_SLUG, 'volunteer' => $item->id],
+            ['page' => PeoplePage::PAGE_SLUG, 'person' => $item->id],
             admin_url('admin.php')
         );
 
         $deleteUrl = wp_nonce_url(
             add_query_arg(
-                ['action' => 'eventcrew_delete_volunteer', 'volunteer' => $item->id],
+                ['action' => 'eventcrew_delete_person', 'person' => $item->id],
                 admin_url('admin-post.php')
             ),
-            'eventcrew_delete_volunteer_' . $item->id
+            'eventcrew_delete_person_' . $item->id
         );
 
         $actions = [
@@ -122,7 +122,7 @@ final class VolunteersListTable extends WP_List_Table
                 '<a href="%s" onclick="return confirm(%s)" class="submitdelete">%s</a>',
                 esc_url($deleteUrl),
                 esc_attr(wp_json_encode(
-                    __('Delete this volunteer and their whole shift history?', 'eventcrew')
+                    __('Delete this person and their whole task history?', 'eventcrew')
                 )),
                 esc_html__('Delete', 'eventcrew')
             ),
@@ -143,7 +143,7 @@ final class VolunteersListTable extends WP_List_Table
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      */
     public function column_email($item): string
     {
@@ -159,7 +159,7 @@ final class VolunteersListTable extends WP_List_Table
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      */
     public function column_telegram($item): string
     {
@@ -169,11 +169,11 @@ final class VolunteersListTable extends WP_List_Table
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      */
     public function column_opt_in($item): string
     {
-        if (! $item->acceptsOpenShiftEmail()) {
+        if (! $item->acceptsOpenTaskEmail()) {
             return '&mdash;';
         }
 
@@ -185,7 +185,7 @@ final class VolunteersListTable extends WP_List_Table
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      */
     public function column_completed($item): string
     {
@@ -193,7 +193,7 @@ final class VolunteersListTable extends WP_List_Table
     }
 
     /**
-     * @param Volunteer $item
+     * @param Person $item
      * @param string $column_name
      */
     public function column_default($item, $column_name): string
