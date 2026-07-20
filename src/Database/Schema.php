@@ -21,8 +21,8 @@ final class Schema
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
-    public const VOLUNTEERS = 'eventcrew_volunteers';
-    public const SHIFTS = 'eventcrew_shifts';
+    public const PEOPLE = 'eventcrew_people';
+    public const TASKS = 'eventcrew_tasks';
     public const ASSIGNMENTS = 'eventcrew_assignments';
     public const REDEMPTIONS = 'eventcrew_redemptions';
     public const AUTH_TOKENS = 'eventcrew_auth_tokens';
@@ -34,8 +34,8 @@ final class Schema
     public static function tableNames(): array
     {
         return [
-            self::VOLUNTEERS,
-            self::SHIFTS,
+            self::PEOPLE,
+            self::TASKS,
             self::ASSIGNMENTS,
             self::REDEMPTIONS,
             self::AUTH_TOKENS,
@@ -119,8 +119,8 @@ final class Schema
      */
     private static function statements(string $charsetCollate): array
     {
-        $volunteers = self::table(self::VOLUNTEERS);
-        $shifts = self::table(self::SHIFTS);
+        $people = self::table(self::PEOPLE);
+        $tasks = self::table(self::TASKS);
         $assignments = self::table(self::ASSIGNMENTS);
         $redemptions = self::table(self::REDEMPTIONS);
         $authTokens = self::table(self::AUTH_TOKENS);
@@ -131,8 +131,8 @@ final class Schema
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
             // permits any number of NULLs in - exactly what we want, since
-            // most volunteers have no Telegram link until they use the bot.
-            "CREATE TABLE {$volunteers} (
+            // most people have no Telegram link until they use the bot.
+            "CREATE TABLE {$people} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 email varchar(191) NOT NULL,
                 email_verified_at datetime DEFAULT NULL,
@@ -153,56 +153,56 @@ final class Schema
             // event_post_id points at an eventmesh_event post when EventMesh
             // is installed; event_label carries a hand-typed name when it is
             // not, so EventCrew stands alone.
-            "CREATE TABLE {$shifts} (
+            "CREATE TABLE {$tasks} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
                 event_label varchar(191) NOT NULL DEFAULT '',
-                shift_date date NOT NULL,
+                task_date date NOT NULL,
                 starts_at time DEFAULT NULL,
                 ends_at time DEFAULT NULL,
-                task_slug varchar(32) NOT NULL,
+                role_slug varchar(32) NOT NULL,
                 capacity smallint(5) unsigned NOT NULL DEFAULT 1,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
-                KEY shift_date (shift_date),
+                KEY task_date (task_date),
                 KEY event_post_id (event_post_id)
             ) {$charsetCollate};",
 
-            // The unique key on (shift_id, volunteer_id) is load-bearing: it
-            // is what stops a duplicate join when the same volunteer taps the
+            // The unique key on (task_id, person_id) is load-bearing: it
+            // is what stops a duplicate join when the same person taps the
             // group button twice before the first request has committed.
             "CREATE TABLE {$assignments} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                shift_id bigint(20) unsigned NOT NULL,
-                volunteer_id bigint(20) unsigned NOT NULL,
+                task_id bigint(20) unsigned NOT NULL,
+                person_id bigint(20) unsigned NOT NULL,
                 status varchar(20) NOT NULL DEFAULT 'signed_up',
                 signed_up_at datetime NOT NULL,
                 status_changed_at datetime DEFAULT NULL,
                 changed_by bigint(20) unsigned DEFAULT NULL,
                 reminded_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
-                UNIQUE KEY shift_volunteer (shift_id,volunteer_id),
-                KEY volunteer_id (volunteer_id),
+                UNIQUE KEY task_person (task_id,person_id),
+                KEY person_id (person_id),
                 KEY status (status)
             ) {$charsetCollate};",
 
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                volunteer_id bigint(20) unsigned NOT NULL,
+                person_id bigint(20) unsigned NOT NULL,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
                 event_label varchar(191) NOT NULL DEFAULT '',
                 redeemed_at datetime NOT NULL,
                 note varchar(191) NOT NULL DEFAULT '',
                 PRIMARY KEY  (id),
-                KEY volunteer_id (volunteer_id)
+                KEY person_id (person_id)
             ) {$charsetCollate};",
 
             // Only the hash is stored, never the token itself, so a database
             // leak cannot be replayed as a login.
             "CREATE TABLE {$authTokens} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                volunteer_id bigint(20) unsigned NOT NULL,
+                person_id bigint(20) unsigned NOT NULL,
                 token_hash varchar(64) NOT NULL,
                 purpose varchar(20) NOT NULL,
                 expires_at datetime NOT NULL,
@@ -210,7 +210,7 @@ final class Schema
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 UNIQUE KEY token_hash (token_hash),
-                KEY volunteer_id (volunteer_id)
+                KEY person_id (person_id)
             ) {$charsetCollate};",
 
             // Send-once ledger shared by both notification kinds. The unique
@@ -219,13 +219,13 @@ final class Schema
             "CREATE TABLE {$notifications} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 kind varchar(20) NOT NULL,
-                volunteer_id bigint(20) unsigned NOT NULL,
-                shift_date date NOT NULL,
+                person_id bigint(20) unsigned NOT NULL,
+                task_date date NOT NULL,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
                 sent_at datetime NOT NULL,
                 PRIMARY KEY  (id),
-                UNIQUE KEY kind_volunteer_date (kind,volunteer_id,shift_date),
-                KEY shift_date (shift_date)
+                UNIQUE KEY kind_person_date (kind,person_id,task_date),
+                KEY task_date (task_date)
             ) {$charsetCollate};",
         ];
     }

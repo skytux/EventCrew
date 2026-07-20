@@ -1,11 +1,11 @@
 <?php
 /**
- * Shifts admin view.
+ * Tasks admin view.
  *
- * @var \EventCrew\Admin\ShiftsListTable $table Prepared list table of shifts.
- * @var \EventCrew\Models\Shift|null $editing Shift open in the editor, if any.
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int}> $task_types
- * @var array<int, array{name: string, status: string}> $roster Signed-up volunteers for the edited shift.
+ * @var \EventCrew\Admin\TasksListTable $table Prepared list table of tasks.
+ * @var \EventCrew\Models\Task|null $editing Task open in the editor, if any.
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int}> $roles
+ * @var array<int, array{name: string, status: string}> $roster Signed-up people for the edited task.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
  */
@@ -16,10 +16,10 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-$eventcrew_is_edit = $editing instanceof \EventCrew\Models\Shift;
+$eventcrew_is_edit = $editing instanceof \EventCrew\Models\Task;
 ?>
 <div class="wrap">
-    <h1><?php esc_html_e('Shifts', 'eventcrew'); ?></h1>
+    <h1><?php esc_html_e('Tasks', 'eventcrew'); ?></h1>
 
     <div id="col-container" class="wp-clearfix">
         <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">
@@ -27,37 +27,37 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Shift;
                 <h2>
                     <?php
                     echo $eventcrew_is_edit
-                        ? esc_html__('Edit shift', 'eventcrew')
-                        : esc_html__('Add a shift', 'eventcrew');
+                        ? esc_html__('Edit task', 'eventcrew')
+                        : esc_html__('Add a task', 'eventcrew');
                     ?>
                 </h2>
 
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <input type="hidden" name="action" value="eventcrew_save_shift">
+                    <input type="hidden" name="action" value="eventcrew_save_task">
                     <?php wp_nonce_field($nonce_action); ?>
                     <?php if ($eventcrew_is_edit) : ?>
-                        <input type="hidden" name="shift_id" value="<?php echo esc_attr((string) $editing->id); ?>">
+                        <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $editing->id); ?>">
                     <?php endif; ?>
 
                     <div class="form-field form-required">
-                        <label for="eventcrew-shift-date"><?php esc_html_e('Date', 'eventcrew'); ?></label>
+                        <label for="eventcrew-task-date"><?php esc_html_e('Date', 'eventcrew'); ?></label>
                         <input
-                            name="shift_date"
-                            id="eventcrew-shift-date"
+                            name="task_date"
+                            id="eventcrew-task-date"
                             type="date"
                             required
-                            value="<?php echo esc_attr($eventcrew_is_edit ? $editing->shiftDate : ''); ?>">
+                            value="<?php echo esc_attr($eventcrew_is_edit ? $editing->taskDate : ''); ?>">
                     </div>
 
                     <div class="form-field form-required">
-                        <label for="eventcrew-task-slug"><?php esc_html_e('Task', 'eventcrew'); ?></label>
-                        <select name="task_slug" id="eventcrew-task-slug" required>
-                            <?php foreach ($task_types as $eventcrew_type) : ?>
+                        <label for="eventcrew-role-slug"><?php esc_html_e('Role', 'eventcrew'); ?></label>
+                        <select name="role_slug" id="eventcrew-role-slug" required>
+                            <?php foreach ($roles as $eventcrew_role) : ?>
                                 <option
-                                    value="<?php echo esc_attr($eventcrew_type['slug']); ?>"
-                                    data-capacity="<?php echo esc_attr((string) $eventcrew_type['capacity']); ?>"
-                                    <?php selected($eventcrew_is_edit ? $editing->taskSlug : '', $eventcrew_type['slug']); ?>>
-                                    <?php echo esc_html($eventcrew_type['label']); ?>
+                                    value="<?php echo esc_attr($eventcrew_role['slug']); ?>"
+                                    data-capacity="<?php echo esc_attr((string) $eventcrew_role['capacity']); ?>"
+                                    <?php selected($eventcrew_is_edit ? $editing->roleSlug : '', $eventcrew_role['slug']); ?>>
+                                    <?php echo esc_html($eventcrew_role['label']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -72,7 +72,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Shift;
                             min="1"
                             step="1"
                             value="<?php echo esc_attr((string) ($eventcrew_is_edit ? $editing->capacity : 2)); ?>">
-                        <p><?php esc_html_e('Defaults come from the task group in Settings.', 'eventcrew'); ?></p>
+                        <p><?php esc_html_e('Defaults come from the role in Settings.', 'eventcrew'); ?></p>
                     </div>
 
                     <div class="form-field">
@@ -91,7 +91,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Shift;
                             id="eventcrew-ends-at"
                             type="time"
                             value="<?php echo esc_attr($eventcrew_is_edit ? substr((string) $editing->endsAt, 0, 5) : ''); ?>">
-                        <p><?php esc_html_e('Leave both blank if times are not decided. Overlapping shifts can only be detected when times are set.', 'eventcrew'); ?></p>
+                        <p><?php esc_html_e('Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set.', 'eventcrew'); ?></p>
                     </div>
 
                     <div class="form-field">
@@ -126,8 +126,8 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Shift;
                         <button type="submit" class="button button-primary">
                             <?php
                             echo $eventcrew_is_edit
-                                ? esc_html__('Update shift', 'eventcrew')
-                                : esc_html__('Add shift', 'eventcrew');
+                                ? esc_html__('Update task', 'eventcrew')
+                                : esc_html__('Add task', 'eventcrew');
                             ?>
                         </button>
                         <?php if ($eventcrew_is_edit) : ?>

@@ -6,13 +6,13 @@ namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
 use EventCrew\Admin\SettingsPage;
-use EventCrew\Admin\ShiftsPage;
+use EventCrew\Admin\TasksPage;
 use EventCrew\Admin\View;
-use EventCrew\Admin\VolunteersPage;
+use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
-use EventCrew\Repositories\ShiftRepository;
-use EventCrew\Repositories\VolunteerRepository;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Logger;
 use Throwable;
 
@@ -89,13 +89,13 @@ final class Kernel
         );
 
         $this->container->singleton(
-            VolunteerRepository::class,
-            fn () => new VolunteerRepository()
+            PersonRepository::class,
+            fn () => new PersonRepository()
         );
 
         $this->container->singleton(
-            ShiftRepository::class,
-            fn () => new ShiftRepository()
+            TaskRepository::class,
+            fn () => new TaskRepository()
         );
 
         $this->container->singleton(
@@ -107,25 +107,25 @@ final class Kernel
             SettingsPage::class,
             fn (Container $container) => new SettingsPage(
                 $container->get(View::class),
-                $container->get(VolunteerRepository::class)
+                $container->get(PersonRepository::class)
             )
         );
 
         $this->container->singleton(
-            ShiftsPage::class,
-            fn (Container $container) => new ShiftsPage(
+            TasksPage::class,
+            fn (Container $container) => new TasksPage(
                 $container->get(View::class),
-                $container->get(ShiftRepository::class),
+                $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(VolunteerRepository::class)
+                $container->get(PersonRepository::class)
             )
         );
 
         $this->container->singleton(
-            VolunteersPage::class,
-            fn (Container $container) => new VolunteersPage(
+            PeoplePage::class,
+            fn (Container $container) => new PeoplePage(
                 $container->get(View::class),
-                $container->get(VolunteerRepository::class),
+                $container->get(PersonRepository::class),
                 $container->get(AssignmentRepository::class)
             )
         );

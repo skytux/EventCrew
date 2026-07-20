@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
-use EventCrew\Models\Volunteer;
+use EventCrew\Models\Person;
 
 /**
- * All reads and writes of the volunteers table.
+ * All reads and writes of the people table.
  *
  * Every lookup is by verified email or Telegram id, because those are the two
- * identities a volunteer can arrive with - the bot knows only the latter, the
+ * identities a person can arrive with - the bot knows only the latter, the
  * web form only the former, and both must land on the same row.
  */
-final class VolunteerRepository
+final class PersonRepository
 {
     private function table(): string
     {
-        return Schema::table(Schema::VOLUNTEERS);
+        return Schema::table(Schema::PEOPLE);
     }
 
-    public function find(int $id): ?Volunteer
+    public function find(int $id): ?Person
     {
         global $wpdb;
 
@@ -30,7 +30,7 @@ final class VolunteerRepository
             ARRAY_A
         );
 
-        return is_array($row) ? Volunteer::fromRow($row) : null;
+        return is_array($row) ? Person::fromRow($row) : null;
     }
 
     /**
@@ -38,7 +38,7 @@ final class VolunteerRepository
      * practice, and two rows differing only in case would split one person's
      * history - and therefore their earned credits - across two records.
      */
-    public function findByEmail(string $email): ?Volunteer
+    public function findByEmail(string $email): ?Person
     {
         global $wpdb;
 
@@ -50,10 +50,10 @@ final class VolunteerRepository
             ARRAY_A
         );
 
-        return is_array($row) ? Volunteer::fromRow($row) : null;
+        return is_array($row) ? Person::fromRow($row) : null;
     }
 
-    public function findByTelegramUserId(int $telegramUserId): ?Volunteer
+    public function findByTelegramUserId(int $telegramUserId): ?Person
     {
         global $wpdb;
 
@@ -65,7 +65,7 @@ final class VolunteerRepository
             ARRAY_A
         );
 
-        return is_array($row) ? Volunteer::fromRow($row) : null;
+        return is_array($row) ? Person::fromRow($row) : null;
     }
 
     /**
@@ -121,7 +121,7 @@ final class VolunteerRepository
     }
 
     /**
-     * Records affirmative consent to the open-shift mail, together with where
+     * Records affirmative consent to the open-task mail, together with where
      * it was given. The source is kept because under GDPR the burden of
      * showing consent was given falls on us, and "the column was set" is a
      * weaker answer than "set on this date, from the bot".
@@ -149,7 +149,7 @@ final class VolunteerRepository
 
     /**
      * @param array{search?: string, orderby?: string, order?: string, per_page?: int, page?: int} $args
-     * @return array<int, Volunteer>
+     * @return array<int, Person>
      */
     public function all(array $args = []): array
     {
@@ -184,7 +184,7 @@ final class VolunteerRepository
         $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
 
         return array_map(
-            static fn (array $row): Volunteer => Volunteer::fromRow($row),
+            static fn (array $row): Person => Person::fromRow($row),
             is_array($rows) ? $rows : []
         );
     }
@@ -211,7 +211,7 @@ final class VolunteerRepository
     }
 
     /**
-     * How many verified volunteers have opted in to the open-shift mail.
+     * How many verified people have opted in to the open-task mail.
      * Surfaced on the dashboard so the organizer can tell whether that channel
      * is worth anything yet, rather than discovering it reaches nobody on the
      * night it matters.

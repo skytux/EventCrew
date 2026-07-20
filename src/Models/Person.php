@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace EventCrew\Models;
 
 /**
- * One person who volunteers. Never a WordPress user - WP accounts belong to
- * organizers only, and a volunteer's identity here is their verified email.
+ * One person who people. Never a WordPress user - WP accounts belong to
+ * organizers only, and a person's identity here is their verified email.
  */
-final class Volunteer
+final class Person
 {
     public function __construct(
         public readonly int $id,
@@ -58,17 +58,17 @@ final class Volunteer
     }
 
     /**
-     * Whether this volunteer may be sent the 48h open-shift call. Deliberately
+     * Whether this person may be sent the 48h open-task call. Deliberately
      * phrased as a positive check against a timestamp being present: opt-in is
      * an affirmative act, and the absence of any record means no.
      */
-    public function acceptsOpenShiftEmail(): bool
+    public function acceptsOpenTaskEmail(): bool
     {
         return null !== $this->emailOptInAt && $this->isEmailVerified();
     }
 
     /**
-     * Falls back to the local part of the email so a volunteer who never gave
+     * Falls back to the local part of the email so a person who never gave
      * a name still shows as something human on the roster.
      */
     public function name(): string

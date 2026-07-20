@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Models;
 
-use EventCrew\Models\Volunteer;
+use EventCrew\Models\Person;
 use EventCrew\Tests\TestCase;
 
-final class VolunteerTest extends TestCase
+final class PersonTest extends TestCase
 {
     public function testHydratesFromADatabaseRow(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => '7',
             'email' => 'ana@example.test',
             'display_name' => 'Ana',
@@ -26,20 +26,20 @@ final class VolunteerTest extends TestCase
             'updated_at' => '2026-07-01 10:05:00',
         ]);
 
-        self::assertSame(7, $volunteer->id);
-        self::assertSame('ana@example.test', $volunteer->email);
-        self::assertSame(123456, $volunteer->telegramUserId);
-        self::assertTrue($volunteer->isOrganizer);
-        self::assertTrue($volunteer->isEmailVerified());
-        self::assertTrue($volunteer->hasTelegram());
+        self::assertSame(7, $person->id);
+        self::assertSame('ana@example.test', $person->email);
+        self::assertSame(123456, $person->telegramUserId);
+        self::assertTrue($person->isOrganizer);
+        self::assertTrue($person->isEmailVerified());
+        self::assertTrue($person->hasTelegram());
     }
 
     public function testTreatsEmptyTimestampColumnsAsNull(): void
     {
         // MySQL hands back '' rather than null for some drivers and column
         // types, and a '' timestamp read as "present" would wrongly mark an
-        // unverified volunteer as verified.
-        $volunteer = Volunteer::fromRow([
+        // unverified person as verified.
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => '',
@@ -47,78 +47,78 @@ final class VolunteerTest extends TestCase
             'email_opt_in_at' => '',
         ]);
 
-        self::assertNull($volunteer->emailVerifiedAt);
-        self::assertNull($volunteer->telegramUserId);
-        self::assertNull($volunteer->emailOptInAt);
-        self::assertFalse($volunteer->isEmailVerified());
-        self::assertFalse($volunteer->hasTelegram());
+        self::assertNull($person->emailVerifiedAt);
+        self::assertNull($person->telegramUserId);
+        self::assertNull($person->emailOptInAt);
+        self::assertFalse($person->isEmailVerified());
+        self::assertFalse($person->hasTelegram());
     }
 
     /**
-     * The open-shift email is opt-in, so the absence of a consent record must
+     * The open-task email is opt-in, so the absence of a consent record must
      * read as "no". This test exists to fail loudly if that condition is ever
      * inverted or loosened, because the failure mode is mailing people who
      * never agreed to it.
      */
-    public function testDoesNotAcceptOpenShiftEmailWithoutAnOptInRecord(): void
+    public function testDoesNotAcceptOpenTaskEmailWithoutAnOptInRecord(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => '2026-07-01 10:00:00',
             'email_opt_in_at' => null,
         ]);
 
-        self::assertFalse($volunteer->acceptsOpenShiftEmail());
+        self::assertFalse($person->acceptsOpenTaskEmail());
     }
 
     /**
      * Opting in through an address nobody has proved they control would let
      * one person sign another up for mail, so verification is required too.
      */
-    public function testDoesNotAcceptOpenShiftEmailWhileTheAddressIsUnverified(): void
+    public function testDoesNotAcceptOpenTaskEmailWhileTheAddressIsUnverified(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => null,
             'email_opt_in_at' => '2026-07-01 10:05:00',
         ]);
 
-        self::assertFalse($volunteer->acceptsOpenShiftEmail());
+        self::assertFalse($person->acceptsOpenTaskEmail());
     }
 
-    public function testAcceptsOpenShiftEmailOnlyWhenVerifiedAndOptedIn(): void
+    public function testAcceptsOpenTaskEmailOnlyWhenVerifiedAndOptedIn(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => '2026-07-01 10:00:00',
             'email_opt_in_at' => '2026-07-01 10:05:00',
         ]);
 
-        self::assertTrue($volunteer->acceptsOpenShiftEmail());
+        self::assertTrue($person->acceptsOpenTaskEmail());
     }
 
     public function testFallsBackToTheEmailLocalPartWhenNoNameWasGiven(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'pat.lee@example.test',
             'display_name' => '',
         ]);
 
-        self::assertSame('pat.lee', $volunteer->name());
+        self::assertSame('pat.lee', $person->name());
     }
 
     public function testPrefersTheDisplayNameWhenPresent(): void
     {
-        $volunteer = Volunteer::fromRow([
+        $person = Person::fromRow([
             'id' => 1,
             'email' => 'pat.lee@example.test',
             'display_name' => 'Pat',
         ]);
 
-        self::assertSame('Pat', $volunteer->name());
+        self::assertSame('Pat', $person->name());
     }
 }

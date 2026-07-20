@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace EventCrew\Models;
 
-use EventCrew\Support\TaskTypes;
+use EventCrew\Support\Roles;
 
 /**
- * One slot of work on one date - a task group, a capacity, and optionally the
+ * One slot of work on one date - a role, a capacity, and optionally the
  * event it belongs to.
  */
-final class Shift
+final class Task
 {
     public function __construct(
         public readonly int $id,
-        public readonly string $shiftDate,
-        public readonly string $taskSlug,
+        public readonly string $taskDate,
+        public readonly string $roleSlug,
         public readonly int $capacity,
         public readonly ?int $eventPostId = null,
         public readonly string $eventLabel = '',
@@ -33,8 +33,8 @@ final class Shift
     {
         return new self(
             (int) ($row['id'] ?? 0),
-            (string) ($row['shift_date'] ?? ''),
-            (string) ($row['task_slug'] ?? ''),
+            (string) ($row['task_date'] ?? ''),
+            (string) ($row['role_slug'] ?? ''),
             (int) ($row['capacity'] ?? 1),
             self::nullableInt($row['event_post_id'] ?? null),
             (string) ($row['event_label'] ?? ''),
@@ -45,14 +45,14 @@ final class Shift
         );
     }
 
-    public function taskLabel(): string
+    public function roleLabel(): string
     {
-        return TaskTypes::label($this->taskSlug);
+        return Roles::label($this->roleSlug);
     }
 
-    public function taskDisplay(): string
+    public function roleDisplay(): string
     {
-        return TaskTypes::display($this->taskSlug);
+        return Roles::display($this->roleSlug);
     }
 
     /**
@@ -69,7 +69,7 @@ final class Shift
             }
         }
 
-        return '' !== $this->eventLabel ? $this->eventLabel : $this->shiftDate;
+        return '' !== $this->eventLabel ? $this->eventLabel : $this->taskDate;
     }
 
     public function timeRange(): string
@@ -89,7 +89,7 @@ final class Shift
 
     public function isPast(): bool
     {
-        return $this->shiftDate < current_time('Y-m-d');
+        return $this->taskDate < current_time('Y-m-d');
     }
 
     private static function nullableString(mixed $value): ?string

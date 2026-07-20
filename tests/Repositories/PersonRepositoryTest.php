@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Repositories;
 
-use EventCrew\Repositories\VolunteerRepository;
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Tests\TestCase;
 
-final class VolunteerRepositoryTest extends TestCase
+final class PersonRepositoryTest extends TestCase
 {
     /**
      * Email is the identity that merges a Telegram signup with a web signup,
@@ -18,21 +18,21 @@ final class VolunteerRepositoryTest extends TestCase
     {
         $this->wpdb->nextRows = [null];
 
-        (new VolunteerRepository())->findByEmail('  Ana@Example.TEST ');
+        (new PersonRepository())->findByEmail('  Ana@Example.TEST ');
 
         self::assertStringContainsString("'ana@example.test'", $this->wpdb->lastQuery());
     }
 
     public function testLowercasesTheEmailOnCreate(): void
     {
-        (new VolunteerRepository())->create(['email' => 'Ana@Example.TEST']);
+        (new PersonRepository())->create(['email' => 'Ana@Example.TEST']);
 
         self::assertSame('ana@example.test', $this->wpdb->inserts[0]['data']['email']);
     }
 
     public function testLowercasesTheEmailOnUpdate(): void
     {
-        (new VolunteerRepository())->update(4, ['email' => 'NEW@Example.TEST']);
+        (new PersonRepository())->update(4, ['email' => 'NEW@Example.TEST']);
 
         self::assertSame('new@example.test', $this->wpdb->updates[0]['data']['email']);
     }
@@ -43,7 +43,7 @@ final class VolunteerRepositoryTest extends TestCase
      */
     public function testCreatesWithoutVerificationOrConsentByDefault(): void
     {
-        (new VolunteerRepository())->create(['email' => 'sam@example.test']);
+        (new PersonRepository())->create(['email' => 'sam@example.test']);
 
         $data = $this->wpdb->inserts[0]['data'];
 
@@ -54,7 +54,7 @@ final class VolunteerRepositoryTest extends TestCase
 
     public function testRecordsWhereConsentWasGivenAlongsideWhen(): void
     {
-        (new VolunteerRepository())->recordEmailOptIn(4, 'telegram');
+        (new PersonRepository())->recordEmailOptIn(4, 'telegram');
 
         $data = $this->wpdb->updates[0]['data'];
 
@@ -68,7 +68,7 @@ final class VolunteerRepositoryTest extends TestCase
      */
     public function testWithdrawingConsentClearsTheTimestamp(): void
     {
-        (new VolunteerRepository())->withdrawEmailOptIn(4);
+        (new PersonRepository())->withdrawEmailOptIn(4);
 
         $data = $this->wpdb->updates[0]['data'];
 
@@ -78,7 +78,7 @@ final class VolunteerRepositoryTest extends TestCase
 
     public function testTouchesTheUpdatedTimestampOnEveryWrite(): void
     {
-        (new VolunteerRepository())->update(4, ['display_name' => 'Ana']);
+        (new PersonRepository())->update(4, ['display_name' => 'Ana']);
 
         self::assertNotEmpty($this->wpdb->updates[0]['data']['updated_at']);
     }
@@ -87,7 +87,7 @@ final class VolunteerRepositoryTest extends TestCase
     {
         $this->wpdb->nextResults = [[]];
 
-        (new VolunteerRepository())->all(['orderby' => 'id; DROP TABLE wp_users']);
+        (new PersonRepository())->all(['orderby' => 'id; DROP TABLE wp_users']);
 
         self::assertStringContainsString('ORDER BY display_name', $this->wpdb->lastQuery());
     }

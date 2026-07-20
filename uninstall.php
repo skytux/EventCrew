@@ -3,7 +3,7 @@
 /**
  * Runs when the plugin is deleted from the Plugins screen.
  *
- * Volunteer records, shift history and earned credits are the kind of data
+ * Person records, task history and earned credits are the kind of data
  * that is painful to lose and impossible to reconstruct, so deletion is
  * opt-in: without the setting, uninstalling leaves every table in place and a
  * reinstall picks up exactly where it left off.
@@ -29,7 +29,7 @@ EventCrew\Support\Autoloader::register();
 
 EventCrew\Database\Schema::dropAll();
 
-delete_option('eventcrew_task_types');
+delete_option('eventcrew_roles');
 delete_option('eventcrew_recent_logs');
 delete_option('eventcrew_delete_data_on_uninstall');
 delete_transient('eventcrew_admin_notice');

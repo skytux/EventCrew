@@ -20,50 +20,50 @@ final class AssignmentRepository
     /** The join succeeded and a row now exists. */
     public const JOIN_OK = 'joined';
 
-    /** This volunteer already holds a slot in this shift. */
+    /** This person already holds a slot in this task. */
     public const JOIN_DUPLICATE = 'already_joined';
 
     /** Every slot was taken by the time the write ran. */
     public const JOIN_FULL = 'full';
 
-    /** No shift with that id. */
-    public const JOIN_UNKNOWN_SHIFT = 'unknown_shift';
+    /** No task with that id. */
+    public const JOIN_UNKNOWN_TASK = 'unknown_task';
 
     private function table(): string
     {
         return Schema::table(Schema::ASSIGNMENTS);
     }
 
-    private function shiftsTable(): string
+    private function tasksTable(): string
     {
-        return Schema::table(Schema::SHIFTS);
+        return Schema::table(Schema::TASKS);
     }
 
     /**
      * Claims a slot, or explains why it couldn't.
      *
      * The capacity check and the insert are deliberately one statement. Two
-     * volunteers tapping the same [Join] button in a Telegram group land in
+     * people tapping the same [Join] button in a Telegram group land in
      * two PHP processes within milliseconds of each other, so a read-then-write
-     * would let both see "1 of 2 taken" and both write - overbooking the shift.
+     * would let both see "1 of 2 taken" and both write - overbooking the task.
      * Here the database evaluates the count at write time, and the loser simply
      * inserts zero rows.
      *
-     * The unique key on (shift_id, volunteer_id) covers the other race: the
-     * same volunteer double-tapping. That one surfaces as an insert failure
+     * The unique key on (task_id, person_id) covers the other race: the
+     * same person double-tapping. That one surfaces as an insert failure
      * rather than a duplicate row.
      *
      * @return self::JOIN_*
      */
-    public function join(int $shiftId, int $volunteerId): string
+    public function join(int $taskId, int $personId): string
     {
         global $wpdb;
 
-        if (null === $this->shiftCapacity($shiftId)) {
-            return self::JOIN_UNKNOWN_SHIFT;
+        if (null === $this->taskCapacity($taskId)) {
+            return self::JOIN_UNKNOWN_TASK;
         }
 
-        if ($this->findFor($shiftId, $volunteerId) instanceof Assignment) {
+        if ($this->findFor($taskId, $personId) instanceof Assignment) {
             return self::JOIN_DUPLICATE;
         }
 
@@ -74,20 +74,20 @@ final class AssignmentRepository
         // into. MySQL rejects that when the subquery is uncorrelated and
         // directly names the target, so it is wrapped in a derived table -
         // which also forces materialisation, giving a stable count.
-        $sql = "INSERT INTO {$this->table()} (shift_id, volunteer_id, status, signed_up_at)
+        $sql = "INSERT INTO {$this->table()} (task_id, person_id, status, signed_up_at)
             SELECT %d, %d, %s, %s
             FROM (SELECT 1) AS placeholder
             WHERE (
                 SELECT COUNT(*)
-                FROM (SELECT shift_id, status FROM {$this->table()}) AS existing
-                WHERE existing.shift_id = %d
+                FROM (SELECT task_id, status FROM {$this->table()}) AS existing
+                WHERE existing.task_id = %d
                   AND existing.status IN ({$statusPlaceholders})
-            ) < COALESCE((SELECT capacity FROM {$this->shiftsTable()} WHERE id = %d), 0)";
+            ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)";
 
         $params = array_merge(
-            [$shiftId, $volunteerId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $shiftId],
+            [$taskId, $personId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $taskId],
             $statuses,
-            [$shiftId]
+            [$taskId]
         );
 
         // The statement is assembled above from table-name constants and
@@ -105,7 +105,7 @@ final class AssignmentRepository
         // itself errored, and the only error this statement can realistically
         // hit is the unique key - i.e. a double-tap that beat us here.
         if (false === $inserted) {
-            return $this->findFor($shiftId, $volunteerId) instanceof Assignment
+            return $this->findFor($taskId, $personId) instanceof Assignment
                 ? self::JOIN_DUPLICATE
                 : self::JOIN_FULL;
         }
@@ -114,20 +114,20 @@ final class AssignmentRepository
     }
 
     /**
-     * Capacity of a shift, or null when no such shift exists.
+     * Capacity of a task, or null when no such task exists.
      *
-     * Read separately from the conditional insert purely so a missing shift
+     * Read separately from the conditional insert purely so a missing task
      * can be reported as its own outcome - the insert itself would just write
-     * nothing, which is indistinguishable from a full shift.
+     * nothing, which is indistinguishable from a full task.
      */
-    private function shiftCapacity(int $shiftId): ?int
+    private function taskCapacity(int $taskId): ?int
     {
         global $wpdb;
 
         $capacity = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT capacity FROM {$this->shiftsTable()} WHERE id = %d",
-                $shiftId
+                "SELECT capacity FROM {$this->tasksTable()} WHERE id = %d",
+                $taskId
             )
         );
 
@@ -136,16 +136,16 @@ final class AssignmentRepository
 
     /**
      * Gives up a slot. The row is deleted rather than marked cancelled when
-     * the shift is still far enough out that nobody was let down; the caller
+     * the task is still far enough out that nobody was let down; the caller
      * decides which of those it is, since only it knows the notice period.
      */
-    public function leave(int $shiftId, int $volunteerId): bool
+    public function leave(int $taskId, int $personId): bool
     {
         global $wpdb;
 
         return 1 === $wpdb->delete(
             $this->table(),
-            ['shift_id' => $shiftId, 'volunteer_id' => $volunteerId]
+            ['task_id' => $taskId, 'person_id' => $personId]
         );
     }
 
@@ -161,15 +161,15 @@ final class AssignmentRepository
         return is_array($row) ? Assignment::fromRow($row) : null;
     }
 
-    public function findFor(int $shiftId, int $volunteerId): ?Assignment
+    public function findFor(int $taskId, int $personId): ?Assignment
     {
         global $wpdb;
 
         $row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE shift_id = %d AND volunteer_id = %d",
-                $shiftId,
-                $volunteerId
+                "SELECT * FROM {$this->table()} WHERE task_id = %d AND person_id = %d",
+                $taskId,
+                $personId
             ),
             ARRAY_A
         );
@@ -206,14 +206,14 @@ final class AssignmentRepository
     /**
      * @return array<int, Assignment>
      */
-    public function forShift(int $shiftId): array
+    public function forTask(int $taskId): array
     {
         global $wpdb;
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE shift_id = %d ORDER BY signed_up_at ASC, id ASC",
-                $shiftId
+                "SELECT * FROM {$this->table()} WHERE task_id = %d ORDER BY signed_up_at ASC, id ASC",
+                $taskId
             ),
             ARRAY_A
         );
@@ -224,14 +224,14 @@ final class AssignmentRepository
     /**
      * @return array<int, Assignment>
      */
-    public function forVolunteer(int $volunteerId): array
+    public function forPerson(int $personId): array
     {
         global $wpdb;
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE volunteer_id = %d ORDER BY id DESC",
-                $volunteerId
+                "SELECT * FROM {$this->table()} WHERE person_id = %d ORDER BY id DESC",
+                $personId
             ),
             ARRAY_A
         );
@@ -240,24 +240,24 @@ final class AssignmentRepository
     }
 
     /**
-     * A volunteer's assignments with each one's shift date attached, which is
+     * A person's assignments with each one's task date attached, which is
      * what the reputation weighting needs to know how long ago something
      * happened without a second query per row.
      *
-     * @return array<int, array{assignment: Assignment, shift_date: string}>
+     * @return array<int, array{assignment: Assignment, task_date: string}>
      */
-    public function historyFor(int $volunteerId): array
+    public function historyFor(int $personId): array
     {
         global $wpdb;
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT a.*, s.shift_date
+                "SELECT a.*, s.task_date
                 FROM {$this->table()} a
-                INNER JOIN {$this->shiftsTable()} s ON s.id = a.shift_id
-                WHERE a.volunteer_id = %d
-                ORDER BY s.shift_date DESC",
-                $volunteerId
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE a.person_id = %d
+                ORDER BY s.task_date DESC",
+                $personId
             ),
             ARRAY_A
         );
@@ -267,7 +267,7 @@ final class AssignmentRepository
         foreach (is_array($rows) ? $rows : [] as $row) {
             $history[] = [
                 'assignment' => Assignment::fromRow($row),
-                'shift_date' => (string) ($row['shift_date'] ?? ''),
+                'task_date' => (string) ($row['task_date'] ?? ''),
             ];
         }
 
@@ -275,13 +275,13 @@ final class AssignmentRepository
     }
 
     /**
-     * Volunteer ids already holding a slot on a given date. The 48h open-shift
+     * Person ids already holding a slot on a given date. The 48h open-task
      * call excludes these people - nagging someone who has already signed up is
      * the fastest way to lose their consent.
      *
      * @return array<int, int>
      */
-    public function volunteerIdsAssignedOn(string $date): array
+    public function personIdsAssignedOn(string $date): array
     {
         global $wpdb;
 
@@ -290,10 +290,10 @@ final class AssignmentRepository
 
         $ids = $wpdb->get_col(
             $wpdb->prepare(
-                "SELECT DISTINCT a.volunteer_id
+                "SELECT DISTINCT a.person_id
                 FROM {$this->table()} a
-                INNER JOIN {$this->shiftsTable()} s ON s.id = a.shift_id
-                WHERE s.shift_date = %s AND a.status IN ({$statusPlaceholders})",
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE s.task_date = %s AND a.status IN ({$statusPlaceholders})",
                 $date,
                 ...$statuses
             )
@@ -302,49 +302,49 @@ final class AssignmentRepository
         return array_map('intval', is_array($ids) ? $ids : []);
     }
 
-    public function countCompletedFor(int $volunteerId): int
+    public function countCompletedFor(int $personId): int
     {
         global $wpdb;
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE volunteer_id = %d AND status = %s",
-                $volunteerId,
+                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND status = %s",
+                $personId,
                 AssignmentStatus::COMPLETED
             )
         );
     }
 
     /**
-     * Whether a volunteer already holds a slot in any shift overlapping the
+     * Whether a person already holds a slot in any task overlapping the
      * given one, used to stop someone signing up for two jobs at once.
      */
-    public function hasOverlapping(int $volunteerId, int $shiftId): bool
+    public function hasOverlapping(int $personId, int $taskId): bool
     {
         global $wpdb;
 
         $statuses = AssignmentStatus::occupying();
         $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
 
-        // Shifts with no times recorded cannot be proven to overlap, so they
+        // Tasks with no times recorded cannot be proven to overlap, so they
         // are treated as not overlapping rather than blocking a legitimate
         // second signup on the same day.
         $count = (int) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT COUNT(*)
                 FROM {$this->table()} a
-                INNER JOIN {$this->shiftsTable()} s ON s.id = a.shift_id
-                INNER JOIN {$this->shiftsTable()} target ON target.id = %d
-                WHERE a.volunteer_id = %d
-                  AND a.shift_id <> target.id
-                  AND s.shift_date = target.shift_date
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                INNER JOIN {$this->tasksTable()} target ON target.id = %d
+                WHERE a.person_id = %d
+                  AND a.task_id <> target.id
+                  AND s.task_date = target.task_date
                   AND a.status IN ({$statusPlaceholders})
                   AND s.starts_at IS NOT NULL AND s.ends_at IS NOT NULL
                   AND target.starts_at IS NOT NULL AND target.ends_at IS NOT NULL
                   AND s.starts_at < target.ends_at
                   AND target.starts_at < s.ends_at",
-                $shiftId,
-                $volunteerId,
+                $taskId,
+                $personId,
                 ...$statuses
             )
         );
@@ -352,11 +352,11 @@ final class AssignmentRepository
         return $count > 0;
     }
 
-    public function deleteForVolunteer(int $volunteerId): void
+    public function deleteForPerson(int $personId): void
     {
         global $wpdb;
 
-        $wpdb->delete($this->table(), ['volunteer_id' => $volunteerId]);
+        $wpdb->delete($this->table(), ['person_id' => $personId]);
     }
 
     /**
