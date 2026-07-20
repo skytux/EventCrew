@@ -23,13 +23,17 @@ Under construction, one usable release at a time.
 
 | Release | Contents | State |
 |---|---|---|
-| v0.1 | Schema and migrations, shift and volunteer management in wp-admin, task groups | **done** |
-| v0.2 | Telegram group bot: shift board, deep-link onboarding, email verification, join/leave | planned |
-| v0.3 | Roster and attendance marking | planned |
-| v0.4 | Reputation, credits, redemption, door list | planned |
-| v0.5 | Public signup page with magic-link self-service | planned |
-| v0.6 | 24h shift reminders and the 48h open-shift call | planned |
+| v0.1 | Schema and migrations, task and person management in wp-admin, task groups | **done** |
+| v0.2 | Vocabulary refactor, then first verification on a real install | next |
+| v0.3 | Telegram group bot: board, deep-link onboarding, email verification, join/leave | planned |
+| v0.4 | Roster and attendance marking | planned |
+| v0.5 | Reputation, credits, redemption, door list | planned |
+| v0.6 | Public signup page with magic-link self-service | planned |
+| v0.7 | 24h reminders and the 48h open-task call | planned |
 | v1.0 | Translation pass, packaging, CI | planned |
+
+See [ROADMAP.md](ROADMAP.md) for the settled decisions, the v0.2 rename mapping,
+and the end-to-end verification still owed.
 
 Settings only ever lists controls the shipped code actually reads, so options
 for reminders, reputation thresholds and bot credentials appear alongside the
