@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<ruleset name="EventCrew">
+    <description>Coding standard for the EventCrew plugin.</description>
+
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+    <arg value="ps"/>
+
+    <file>src</file>
+
+    <!--
+        The codebase follows PSR-12 (camelCase, strict_types, short array
+        syntax) rather than classic WordPress style, so only the
+        security-relevant WPCS sniffs are pulled in on top of that -
+        escaping, nonce verification, and i18n - rather than the full
+        WordPress-Extra ruleset, which would fight the project's actual style.
+    -->
+    <rule ref="PSR12"/>
+
+    <!--
+        WP_List_Table's contract is snake_case: core looks up column_{slug}(),
+        prepare_items(), get_columns() and no_items() by those exact names, so
+        PSR-1's camelCase rule cannot be honoured without the parent class
+        failing to find the overrides. The exemption is scoped to the two
+        subclasses rather than relaxed globally.
+    -->
+    <rule ref="PSR1.Methods.CamelCapsMethodName">
+        <exclude-pattern>src/Admin/*ListTable\.php</exclude-pattern>
+    </rule>
+
+    <rule ref="WordPress.Security.EscapeOutput">
+        <!-- Flags variables interpolated into exception messages as unescaped
+             output, but exception messages are never rendered as HTML. -->
+        <exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
+    </rule>
+    <rule ref="WordPress.Security.NonceVerification"/>
+    <rule ref="WordPress.WP.I18n"/>
+
+    <!--
+        Every table name in this plugin is built from $wpdb->prefix plus a
+        hard-coded constant, and column lists are likewise literals - neither
+        can carry user input, but the sniff cannot see that through the
+        Schema::table() indirection and flags every query in the repositories.
+    -->
+    <rule ref="WordPress.DB.PreparedSQL">
+        <exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared"/>
+    </rule>
+
+    <config name="testVersion" value="8.2-"/>
+    <config name="ignore_warnings_on_exit" value="1"/>
+</ruleset>
