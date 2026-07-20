@@ -1,0 +1,132 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Tests\Support;
+
+use Brain\Monkey\Functions;
+use EventCrew\Support\TaskTypes;
+use EventCrew\Tests\TestCase;
+
+final class TaskTypesTest extends TestCase
+{
+    public function testShipsWithTheThreeDanceEventGroups(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        $slugs = array_column(TaskTypes::all(), 'slug');
+
+        self::assertSame(['decorate', 'welcome', 'clean'], $slugs);
+    }
+
+    public function testDecorateDefaultsToTwoPeople(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        self::assertSame(2, TaskTypes::defaultCapacity('decorate'));
+    }
+
+    /**
+     * A stored option that has been emptied or corrupted must not leave the
+     * plugin with no task groups at all, since a shift cannot then be created.
+     */
+    public function testFallsBackToDefaultsWhenTheStoredOptionIsUnusable(): void
+    {
+        Functions\when('get_option')->justReturn([]);
+        self::assertCount(3, TaskTypes::all());
+
+        Functions\when('get_option')->justReturn('not an array');
+        self::assertCount(3, TaskTypes::all());
+    }
+
+    public function testDropsRowsTheOrganizerLeftCompletelyBlank(): void
+    {
+        $saved = $this->captureSavedTypes([
+            ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈', 'capacity' => 2],
+            ['slug' => '', 'label' => '', 'emoji' => '', 'capacity' => 1],
+        ]);
+
+        self::assertCount(1, $saved);
+        self::assertSame('decorate', $saved[0]['slug']);
+    }
+
+    public function testDerivesASlugFromTheLabelWhenOnlyALabelWasTyped(): void
+    {
+        $saved = $this->captureSavedTypes([
+            ['slug' => '', 'label' => 'Bar', 'emoji' => '🍹', 'capacity' => 2],
+        ]);
+
+        self::assertSame('bar', $saved[0]['slug']);
+        self::assertSame('Bar', $saved[0]['label']);
+    }
+
+    public function testKeepsOnlyTheFirstOfTwoRowsSharingASlug(): void
+    {
+        $saved = $this->captureSavedTypes([
+            ['slug' => 'clean', 'label' => 'Clean', 'emoji' => '🧹', 'capacity' => 3],
+            ['slug' => 'clean', 'label' => 'Cleaning', 'emoji' => '🧽', 'capacity' => 9],
+        ]);
+
+        self::assertCount(1, $saved);
+        self::assertSame('Clean', $saved[0]['label']);
+    }
+
+    public function testNeverStoresACapacityBelowOne(): void
+    {
+        $saved = $this->captureSavedTypes([
+            ['slug' => 'welcome', 'label' => 'Welcome', 'emoji' => '', 'capacity' => 0],
+        ]);
+
+        self::assertSame(1, $saved[0]['capacity']);
+    }
+
+    /**
+     * Wiping every group would leave the organizer unable to create a shift,
+     * with no obvious way back, so an empty save restores the defaults.
+     */
+    public function testRestoresDefaultsWhenEveryRowWasCleared(): void
+    {
+        $saved = $this->captureSavedTypes([
+            ['slug' => '', 'label' => '', 'emoji' => '', 'capacity' => 1],
+        ]);
+
+        self::assertCount(3, $saved);
+    }
+
+    public function testDisplayCombinesEmojiAndLabel(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        self::assertSame('🎈 Decorate', TaskTypes::display('decorate'));
+    }
+
+    public function testDisplayFallsBackToTheSlugForAnUnknownGroup(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        self::assertSame('karaoke', TaskTypes::display('karaoke'));
+        self::assertFalse(TaskTypes::exists('karaoke'));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $input
+     * @return array<int, array{slug: string, label: string, emoji: string, capacity: int}>
+     */
+    private function captureSavedTypes(array $input): array
+    {
+        $captured = [];
+
+        Functions\when('get_option')->justReturn(null);
+        Functions\when('update_option')->alias(
+            static function (string $name, mixed $value) use (&$captured): bool {
+                $captured = $value;
+
+                return true;
+            }
+        );
+
+        TaskTypes::save($input);
+
+        return $captured;
+    }
+}
