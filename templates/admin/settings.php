@@ -3,10 +3,12 @@
  * Settings admin view.
  *
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}> $roles
- * @var array{opted_in: int, verified: int} $opt_in_stats Consent counts for the open-task email.
+ * @var int $active_recipients How many active accounts the open-task email would reach.
+ * @var string $send_nonce_action Nonce action for the "send now" form.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
+ * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
@@ -31,7 +33,8 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('The timing columns are what "Create an event\'s tasks" uses. Offsets are in minutes from the chosen anchor, negative for before it: decorating might run -120 to 0 from the start, cleaning 0 to 60 from the end. Leave both blank for a role whose timing varies - its tasks are created without times for you to fill in.', 'eventcrew'); ?>
         </p>
 
-        <table class="widefat striped" style="max-width:1100px;margin:1em 0">
+        <div style="overflow-x:auto;margin:1em 0">
+        <table class="widefat striped" style="width:100%">
             <thead>
                 <tr>
                     <th style="width:5em"><?php esc_html_e('Emoji', 'eventcrew'); ?></th>
@@ -141,6 +144,7 @@ if (! defined('ABSPATH')) {
                 <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
 
         <p class="description">
             <?php esc_html_e('Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was.', 'eventcrew'); ?>
@@ -166,6 +170,28 @@ if (! defined('ABSPATH')) {
                 <?php esc_html_e('EventMesh is not active, so there is nothing to sync tasks from.', 'eventcrew'); ?>
             </p>
         <?php endif; ?>
+
+        <h2><?php esc_html_e('Cancellations', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-notice-hours"><?php esc_html_e('Late-cancel window (hours)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-notice-hours"
+                        name="notice_hours"
+                        value="<?php echo esc_attr((string) $notice_hours); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
 
         <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
         <p class="description">
@@ -330,14 +356,18 @@ if (! defined('ABSPATH')) {
     <p>
         <?php
         printf(
-            /* translators: 1: number of people opted in, 2: number with a verified email */
-            esc_html__('%1$d of %2$d people with a verified address have opted in to hearing about open tasks.', 'eventcrew'),
-            (int) $opt_in_stats['opted_in'],
-            (int) $opt_in_stats['verified']
+            /* translators: %d: number of active accounts */
+            esc_html__('%d active account(s) would receive the open-task email.', 'eventcrew'),
+            (int) $active_recipients
         );
         ?>
     </p>
     <p class="description">
-        <?php esc_html_e('Consent is only ever given by the person, through the bot or the signup page - it cannot be set here. Sending arrives in a later release; until then this number is worth watching, because the first send reaches only the people counted above.', 'eventcrew'); ?>
+        <?php esc_html_e('Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email).', 'eventcrew'); ?>
     </p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="eventcrew_send_open_task">
+        <?php wp_nonce_field($send_nonce_action); ?>
+        <?php submit_button(__('Send open-task email now', 'eventcrew'), 'secondary'); ?>
+    </form>
 </div>

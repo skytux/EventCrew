@@ -55,26 +55,10 @@ final class PersonTest extends TestCase
     }
 
     /**
-     * The open-task email is opt-in, so the absence of a consent record must
-     * read as "no". This test exists to fail loudly if that condition is ever
-     * inverted or loosened, because the failure mode is mailing people who
-     * never agreed to it.
-     */
-    public function testDoesNotAcceptOpenTaskEmailWithoutAnOptInRecord(): void
-    {
-        $person = Person::fromRow([
-            'id' => 1,
-            'email' => 'sam@example.test',
-            'email_verified_at' => '2026-07-01 10:00:00',
-            'email_opt_in_at' => null,
-        ]);
-
-        self::assertFalse($person->acceptsOpenTaskEmail());
-    }
-
-    /**
-     * Opting in through an address nobody has proved they control would let
-     * one person sign another up for mail, so verification is required too.
+     * The open-task email is transactional now: a verified, switched-on account
+     * receives it, no separate opt-in required. This still never mails an
+     * unverified address (that inbox isn't proven theirs) - the test that would
+     * fail loudly if that guard were ever dropped.
      */
     public function testDoesNotAcceptOpenTaskEmailWhileTheAddressIsUnverified(): void
     {
@@ -82,22 +66,33 @@ final class PersonTest extends TestCase
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => null,
-            'email_opt_in_at' => '2026-07-01 10:05:00',
         ]);
 
         self::assertFalse($person->acceptsOpenTaskEmail());
     }
 
-    public function testAcceptsOpenTaskEmailOnlyWhenVerifiedAndOptedIn(): void
+    public function testAcceptsOpenTaskEmailWhenVerifiedAndNotDisabled(): void
     {
         $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
             'email_verified_at' => '2026-07-01 10:00:00',
-            'email_opt_in_at' => '2026-07-01 10:05:00',
         ]);
 
         self::assertTrue($person->acceptsOpenTaskEmail());
+    }
+
+    public function testADisabledAccountReceivesNoOpenTaskEmail(): void
+    {
+        $person = Person::fromRow([
+            'id' => 1,
+            'email' => 'sam@example.test',
+            'email_verified_at' => '2026-07-01 10:00:00',
+            'disabled_at' => '2026-07-10 09:00:00',
+        ]);
+
+        self::assertTrue($person->isDisabled());
+        self::assertFalse($person->acceptsOpenTaskEmail());
     }
 
     public function testFallsBackToTheEmailLocalPartWhenNoNameWasGiven(): void

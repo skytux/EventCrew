@@ -13,18 +13,24 @@ use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
+use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
@@ -61,6 +67,8 @@ final class Kernel
         // to refresh the board. All three no-op until the bot is configured.
         $this->container->get(WebhookController::class)->boot();
         $this->container->get(VerificationController::class)->boot();
+        $this->container->get(TicketController::class)->boot();
+        $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
@@ -162,13 +170,37 @@ final class Kernel
         );
 
         $this->container->singleton(
+            Mailer::class,
+            fn (Container $container) => new Mailer(
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            NotificationsRepository::class,
+            fn () => new NotificationsRepository()
+        );
+
+        $this->container->singleton(
+            OpenTaskCall::class,
+            fn (Container $container) => new OpenTaskCall(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NotificationsRepository::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
             BoardService::class,
             fn (Container $container) => new BoardService(
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(Mailer::class)
             )
         );
 
@@ -192,11 +224,23 @@ final class Kernel
         );
 
         $this->container->singleton(
+            ReplacementService::class,
+            fn (Container $container) => new ReplacementService(
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(BoardService::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
                 $container->get(BoardService::class),
-                $container->get(RosterService::class)
+                $container->get(RosterService::class),
+                $container->get(ReplacementService::class)
             )
         );
 
@@ -217,6 +261,23 @@ final class Kernel
         );
 
         $this->container->singleton(
+            TicketController::class,
+            fn (Container $container) => new TicketController(
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            ManageController::class,
+            fn (Container $container) => new ManageController(
+                $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class)
+            )
+        );
+
+        $this->container->singleton(
             BoardRefreshListener::class,
             fn (Container $container) => new BoardRefreshListener(
                 $container->get(BoardService::class)
@@ -228,7 +289,8 @@ final class Kernel
             fn (Container $container) => new SettingsPage(
                 $container->get(View::class),
                 $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(OpenTaskCall::class)
             )
         );
 

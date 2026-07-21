@@ -52,27 +52,23 @@ final class RosterService
     }
 
     /**
-     * The most recent day that has tasks (attendance is looked at after the
-     * event), falling back to the earliest upcoming one. Same rule the wp-admin
-     * roster defaults to.
+     * The nearest upcoming day that has tasks, falling back to the most recent
+     * past one. Same rule the wp-admin roster defaults to.
      */
     private function defaultDate(): string
     {
-        $dates = $this->tasks->datesWithTasks();
+        $dates = $this->tasks->datesWithTasks(); // most recent first
 
         if ([] === $dates) {
             return '';
         }
 
         $today = current_time('Y-m-d');
+        $upcoming = array_values(array_filter($dates, static fn (string $d): bool => $d >= $today));
 
-        foreach ($dates as $date) {
-            if ($date <= $today) {
-                return $date;
-            }
-        }
-
-        return (string) end($dates);
+        // end() of the upcoming subset is the nearest future date; with none,
+        // the most recent past date is the head of the descending list.
+        return [] !== $upcoming ? (string) end($upcoming) : $dates[0];
     }
 
     /**

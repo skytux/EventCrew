@@ -1,5 +1,15 @@
 # EventCrew install verification
 
+> **v0.6 note.** `DB_VERSION` is now **3** — the migration adds `people.disabled_at`;
+> re-run this after upgrading and confirm Phase 2 sees the new column. v0.6 also
+> adds paths that are **mailer-dependent** and only provable on a host that can
+> send: sign up via the bot → a confirmation email with a **ticket** link arrives
+> and the ticket page shows VALID; cancel → a cancellation email and the ticket
+> flips to DISABLED; the email footer's manage link disables the account (as does
+> `/stop`), and delete removes the person; Settings → "Send open-task email now"
+> reaches active, not-already-signed-up accounts once, and a second click sends
+> nothing (the send-once ledger).
+
 > **v0.4 note.** The Telegram bot has landed, so two long-owed checks are now
 > runnable. Item 2 (webhook reachability) is read straight off the Settings →
 > EventCrew page once the webhook is installed — the status table there shows

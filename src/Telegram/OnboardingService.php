@@ -43,13 +43,28 @@ final class OnboardingService
     {
         $existing = $this->people->findByTelegramUserId($telegramUserId);
 
-        if (null !== $existing && $existing->isEmailVerified()) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('You are already set up. Tap a task on the board to sign up.', 'eventcrew')
-            );
+        if (null !== $existing) {
+            // /start doubles as "turn my account back on" for anyone who used
+            // /stop, so a disabled person is welcomed back rather than sent
+            // through onboarding again.
+            if ($existing->isDisabled()) {
+                $this->people->enable($existing->id);
+                $this->telegram->sendMessage(
+                    $chatId,
+                    __('Welcome back — your account is on again. Tap a task on the board to sign up.', 'eventcrew')
+                );
 
-            return;
+                return;
+            }
+
+            if ($existing->isEmailVerified()) {
+                $this->telegram->sendMessage(
+                    $chatId,
+                    __('You are already set up. Tap a task on the board to sign up.', 'eventcrew')
+                );
+
+                return;
+            }
         }
 
         set_transient(
@@ -68,6 +83,31 @@ final class OnboardingService
     public function isAwaitingEmail(int $telegramUserId): bool
     {
         return false !== get_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
+    }
+
+    /**
+     * Handles /stop: switches the account off (no email, off the boards) while
+     * keeping the row, so /start can turn it back on later.
+     */
+    public function stop(int $telegramUserId, int $chatId): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('There is no account here to switch off.', 'eventcrew')
+            );
+
+            return;
+        }
+
+        $this->people->disable($person->id);
+        $this->telegram->sendMessage(
+            $chatId,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Your account is off: no more emails, and you’re off the boards. Send /start any time to turn it back on.', 'eventcrew')
+        );
     }
 
     /**

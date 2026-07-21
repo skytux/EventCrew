@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 
 /**
  * The board itself: the single group message that lists open tasks, and the
@@ -28,12 +31,16 @@ final class BoardService
     /** Cached from getMe, for the "set me up" deep-link button. */
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
+    /** Hours before a task's start inside which a cancel counts as late. */
+    public const NOTICE_HOURS_OPTION = 'eventcrew_notice_hours';
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly Mailer $mailer
     ) {
     }
 
@@ -45,6 +52,23 @@ final class BoardService
     public function setBoardChat(int $chatId): void
     {
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
+    }
+
+    /**
+     * Posts a one-off message into the board's group - used to announce a
+     * replacement to everyone. Inert until the bot and board chat are set.
+     */
+    public function announce(string $text): void
+    {
+        if (! $this->telegram->isConfigured()) {
+            return;
+        }
+
+        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+
+        if (0 !== $chatId) {
+            $this->telegram->sendMessage($chatId, $text);
+        }
     }
 
     /**
@@ -200,9 +224,9 @@ final class BoardService
         // leave if already. 'j' and 'l' stay understood so a board posted
         // before this change keeps working until its next refresh.
         $changed = match ($action) {
-            'j' => $this->handleJoin($callbackId, $taskId, $person->id),
-            'l' => $this->handleLeave($callbackId, $taskId, $person->id),
-            default => $this->handleToggle($callbackId, $taskId, $person->id),
+            'j' => $this->handleJoin($callbackId, $taskId, $person),
+            'l' => $this->handleLeave($callbackId, $taskId, $person),
+            default => $this->handleToggle($callbackId, $taskId, $person),
         };
 
         if ($changed) {
@@ -211,25 +235,28 @@ final class BoardService
     }
 
     /**
-     * One button, both directions: already signed up means the tap is a leave,
-     * otherwise it is a join. This is how a shared group board offers a
-     * personal "leave" it cannot show or hide per person - the button looks the
-     * same to everyone, but does the right thing for whoever taps it.
+     * One button, both directions: an occupying slot means the tap is a cancel,
+     * otherwise it is a join (which reactivates a previously cancelled row if
+     * there is one). This is how a shared group board offers a personal "leave"
+     * it cannot show or hide per person - the button looks the same to everyone,
+     * but does the right thing for whoever taps it.
      */
-    private function handleToggle(string $callbackId, int $taskId, int $personId): bool
+    private function handleToggle(string $callbackId, int $taskId, Person $person): bool
     {
-        if (null !== $this->assignments->findFor($taskId, $personId)) {
-            return $this->handleLeave($callbackId, $taskId, $personId);
+        $existing = $this->assignments->findFor($taskId, $person->id);
+
+        if (null !== $existing && $existing->isOccupying()) {
+            return $this->handleLeave($callbackId, $taskId, $person);
         }
 
-        return $this->handleJoin($callbackId, $taskId, $personId);
+        return $this->handleJoin($callbackId, $taskId, $person);
     }
 
-    private function handleJoin(string $callbackId, int $taskId, int $personId): bool
+    private function handleJoin(string $callbackId, int $taskId, Person $person): bool
     {
         // Holding a slot across events is fine; a genuine time clash between
         // two of them is not, and that is exactly what hasOverlapping refuses.
-        if ($this->assignments->hasOverlapping($personId, $taskId)) {
+        if ($this->assignments->hasOverlapping($person->id, $taskId)) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
                 __('That clashes with another slot you already hold.', 'eventcrew'),
@@ -239,10 +266,12 @@ final class BoardService
             return false;
         }
 
-        $outcome = $this->assignments->join($taskId, $personId);
+        $outcome = $this->assignments->join($taskId, $person->id);
+        $joined = in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true);
 
         $message = match ($outcome) {
-            AssignmentRepository::JOIN_OK => __('You’re in! See you there.', 'eventcrew'),
+            AssignmentRepository::JOIN_OK,
+            AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),
             AssignmentRepository::JOIN_FULL => __('That slot just filled up.', 'eventcrew'),
             default => __('That task is no longer available.', 'eventcrew'),
@@ -250,21 +279,120 @@ final class BoardService
 
         $this->telegram->answerCallbackQuery($callbackId, $message, true);
 
-        return AssignmentRepository::JOIN_OK === $outcome;
+        if ($joined) {
+            $this->sendSignupEmail($person, $taskId);
+        }
+
+        return $joined;
     }
 
-    private function handleLeave(string $callbackId, int $taskId, int $personId): bool
+    private function handleLeave(string $callbackId, int $taskId, Person $person): bool
     {
-        $left = $this->assignments->leave($taskId, $personId);
+        // Cancel, don't delete: the row stays for the reputation history, and
+        // is classified late_cancel/cancelled by how much notice this gives.
+        $status = $this->assignments->cancel($taskId, $person->id, $this->noticeHours());
 
-        $this->telegram->answerCallbackQuery(
-            $callbackId,
-            $left
-                ? __('You’re out. Thanks for letting us know.', 'eventcrew')
-                : __('You weren’t signed up for that one.', 'eventcrew')
+        $message = match ($status) {
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            AssignmentStatus::LATE_CANCEL => __('You’re out. This close to the event it counts as a late cancellation.', 'eventcrew'),
+            AssignmentStatus::CANCELLED => __('You’re out. Thanks for the notice.', 'eventcrew'),
+            default => __('You weren’t signed up for that one.', 'eventcrew'),
+        };
+
+        $this->telegram->answerCallbackQuery($callbackId, $message);
+
+        if ('' !== $status) {
+            $this->sendCancelEmail($person, $taskId, $status);
+        }
+
+        return '' !== $status;
+    }
+
+    private function sendSignupEmail(Person $person, int $taskId): void
+    {
+        // A person who switched their account off asked for no email; the
+        // confirmation is honoured over the convenience.
+        if ($person->isDisabled()) {
+            return;
+        }
+
+        $task = $this->tasks->find($taskId);
+        $assignment = $this->assignments->findFor($taskId, $person->id);
+
+        if (null === $task || null === $assignment) {
+            return;
+        }
+
+        $this->mailer->toPerson(
+            $person->id,
+            $person->email,
+            sprintf(
+                /* translators: 1: role, 2: event */
+                __('You’re signed up: %1$s for %2$s', 'eventcrew'),
+                $task->roleLabel(),
+                $task->eventName()
+            ),
+            sprintf(
+                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link */
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\nCan't make it? Open the bot and tap the task to drop out, or /replace to hand it to someone.", 'eventcrew'),
+                $person->name(),
+                $task->roleLabel(),
+                $task->eventName(),
+                $this->whenText($task),
+                $this->mailer->ticketUrl($assignment->id)
+            )
         );
+    }
 
-        return $left;
+    private function sendCancelEmail(Person $person, int $taskId, string $status): void
+    {
+        if ($person->isDisabled()) {
+            return;
+        }
+
+        $task = $this->tasks->find($taskId);
+
+        if (null === $task) {
+            return;
+        }
+
+        $note = AssignmentStatus::LATE_CANCEL === $status
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time.", 'eventcrew')
+            : __('Thanks for the notice.', 'eventcrew');
+
+        $this->mailer->toPerson(
+            $person->id,
+            $person->email,
+            sprintf(
+                /* translators: 1: role, 2: event */
+                __('Cancelled: %1$s for %2$s', 'eventcrew'),
+                $task->roleLabel(),
+                $task->eventName()
+            ),
+            sprintf(
+                /* translators: 1: name, 2: role, 3: event, 4: standing note */
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __("Hi %1\$s,\n\nYou've dropped out of %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s", 'eventcrew'),
+                $person->name(),
+                $task->roleLabel(),
+                $task->eventName(),
+                $note
+            )
+        );
+    }
+
+    private function whenText(Task $task): string
+    {
+        $time = $task->timeRange();
+
+        return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
+    }
+
+    private function noticeHours(): int
+    {
+        return max(0, (int) get_option(self::NOTICE_HOURS_OPTION, 48));
     }
 
     /**

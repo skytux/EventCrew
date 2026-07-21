@@ -32,13 +32,22 @@ final class RosterPage
 
     public function render(): void
     {
-        $dates = $this->tasks->datesWithTasks();
-        $selected = $this->selectedDate($dates);
+        $dates = $this->tasks->datesWithTasks(); // most recent first
+        $today = current_time('Y-m-d');
+
+        // Upcoming nearest-first, past most-recent-first - and the roster
+        // defaults to the nearest upcoming date, since that's the crew you're
+        // about to run; past dates sit below a separator for marking after.
+        $upcoming = array_reverse(array_values(array_filter($dates, static fn (string $d): bool => $d >= $today)));
+        $past = array_values(array_filter($dates, static fn (string $d): bool => $d < $today));
+
+        $selected = $this->selectedDate($upcoming, $past);
 
         $this->view->render(
             'roster',
             [
-                'dates' => $dates,
+                'upcoming_dates' => $upcoming,
+                'past_dates' => $past,
                 'selected_date' => $selected,
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'statuses' => $this->statusChoices(),
@@ -124,9 +133,14 @@ final class RosterPage
     }
 
     /**
-     * @param array<int, string> $dates
+     * The requested date when it's a real date with tasks, otherwise the
+     * default: the nearest upcoming date, or the most recent past one when
+     * nothing is upcoming.
+     *
+     * @param array<int, string> $upcoming Nearest-first.
+     * @param array<int, string> $past     Most-recent-first.
      */
-    private function selectedDate(array $dates): string
+    private function selectedDate(array $upcoming, array $past): string
     {
         // phpcs:disable WordPress.Security.NonceVerification.Recommended
         $requested = isset($_GET['roster_date'])
@@ -134,35 +148,11 @@ final class RosterPage
             : '';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        if ($this->isValidDate($requested)) {
+        if (in_array($requested, $upcoming, true) || in_array($requested, $past, true)) {
             return $requested;
         }
 
-        return $this->defaultDate($dates);
-    }
-
-    /**
-     * Attendance is marked after the fact, so the day the organizer wants is
-     * almost always the most recent one that has already happened. Falls back
-     * to the earliest upcoming date when nothing has yet.
-     *
-     * @param array<int, string> $dates Most-recent-first.
-     */
-    private function defaultDate(array $dates): string
-    {
-        if ([] === $dates) {
-            return '';
-        }
-
-        $today = current_time('Y-m-d');
-
-        foreach ($dates as $date) {
-            if ($date <= $today) {
-                return $date;
-            }
-        }
-
-        return (string) end($dates);
+        return $upcoming[0] ?? ($past[0] ?? '');
     }
 
     /**

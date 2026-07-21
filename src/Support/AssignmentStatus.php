@@ -56,9 +56,14 @@ final class AssignmentStatus
     }
 
     /**
-     * Statuses that still occupy a slot in the task. A late cancel or no-show
-     * has freed the slot in practice even though the row stays for the
-     * reputation history, so capacity counting must not include them.
+     * Statuses that still occupy a slot in the task. Everything else has freed
+     * the slot in practice even though the row stays for the reputation
+     * history, so capacity counting must not include them:
+     *
+     * - `late_cancel` / `cancelled` / `no_show` — the person is not coming.
+     * - `replaced` — the person found someone to take their place, and that
+     *   replacement signs up as their own assignment; counting both would
+     *   double-book the slot and stop the replacement from joining.
      *
      * @return array<int, string>
      */
@@ -68,7 +73,6 @@ final class AssignmentStatus
             self::SIGNED_UP,
             self::ARRIVED,
             self::COMPLETED,
-            self::REPLACED,
         ];
     }
 

@@ -21,11 +21,13 @@ final class AssignmentStatusTest extends TestCase
         self::assertContains(AssignmentStatus::SIGNED_UP, $occupying);
         self::assertContains(AssignmentStatus::ARRIVED, $occupying);
         self::assertContains(AssignmentStatus::COMPLETED, $occupying);
-        self::assertContains(AssignmentStatus::REPLACED, $occupying);
 
         self::assertNotContains(AssignmentStatus::NO_SHOW, $occupying);
         self::assertNotContains(AssignmentStatus::LATE_CANCEL, $occupying);
         self::assertNotContains(AssignmentStatus::CANCELLED, $occupying);
+        // A replaced person freed the slot for their replacement, so their
+        // row must not keep counting against capacity.
+        self::assertNotContains(AssignmentStatus::REPLACED, $occupying);
     }
 
     public function testEveryOccupyingStatusIsAKnownStatus(): void

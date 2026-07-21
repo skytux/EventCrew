@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
@@ -23,7 +24,8 @@ final class BoardRefreshListenerTest extends TelegramTestCase
                 new AssignmentRepository(),
                 new PersonRepository(),
                 $this->client(),
-                new Logger()
+                new Logger(),
+                new Mailer(new Logger())
             )
         );
     }

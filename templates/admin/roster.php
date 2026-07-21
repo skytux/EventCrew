@@ -2,7 +2,8 @@
 /**
  * Roster / attendance admin view.
  *
- * @var array<int, string> $dates Dates that have tasks, most recent first.
+ * @var array<int, string> $upcoming_dates Dates with tasks, today onward, nearest first.
+ * @var array<int, string> $past_dates Dates with tasks before today, most recent first.
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool}>}> $roster
  * @var array<string, string> $statuses Status slug => label, for the pickers.
@@ -28,18 +29,31 @@ $eventcrew_date_label = static function (string $date): string {
 <div class="wrap">
     <h1><?php esc_html_e('Roster', 'eventcrew'); ?></h1>
 
-    <?php if ([] === $dates) : ?>
+    <?php if ([] === $upcoming_dates && [] === $past_dates) : ?>
         <p><?php esc_html_e('No tasks have been created yet, so there is nothing to take a roster for.', 'eventcrew'); ?></p>
     <?php else : ?>
         <form method="get" style="margin:1em 0">
             <input type="hidden" name="page" value="<?php echo esc_attr($page_slug); ?>">
             <label for="eventcrew-roster-date"><?php esc_html_e('Date', 'eventcrew'); ?></label>
             <select name="roster_date" id="eventcrew-roster-date" onchange="this.form.submit()">
-                <?php foreach ($dates as $eventcrew_date) : ?>
-                    <option value="<?php echo esc_attr($eventcrew_date); ?>" <?php selected($eventcrew_date, $selected_date); ?>>
-                        <?php echo esc_html($eventcrew_date_label($eventcrew_date)); ?>
-                    </option>
-                <?php endforeach; ?>
+                <?php if ([] !== $upcoming_dates) : ?>
+                    <optgroup label="<?php esc_attr_e('Upcoming', 'eventcrew'); ?>">
+                        <?php foreach ($upcoming_dates as $eventcrew_date) : ?>
+                            <option value="<?php echo esc_attr($eventcrew_date); ?>" <?php selected($eventcrew_date, $selected_date); ?>>
+                                <?php echo esc_html($eventcrew_date_label($eventcrew_date)); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                <?php endif; ?>
+                <?php if ([] !== $past_dates) : ?>
+                    <optgroup label="<?php esc_attr_e('Past', 'eventcrew'); ?>">
+                        <?php foreach ($past_dates as $eventcrew_date) : ?>
+                            <option value="<?php echo esc_attr($eventcrew_date); ?>" <?php selected($eventcrew_date, $selected_date); ?>>
+                                <?php echo esc_html($eventcrew_date_label($eventcrew_date)); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                <?php endif; ?>
             </select>
             <noscript><button type="submit" class="button"><?php esc_html_e('Show', 'eventcrew'); ?></button></noscript>
         </form>

@@ -14,10 +14,14 @@ namespace EventCrew\Telegram;
  */
 final class UpdateRouter
 {
+    /** Highest Telegram update_id already processed, for idempotency. */
+    public const LAST_UPDATE_OPTION = 'eventcrew_telegram_last_update_id';
+
     public function __construct(
         private readonly OnboardingService $onboarding,
         private readonly BoardService $board,
-        private readonly RosterService $roster
+        private readonly RosterService $roster,
+        private readonly ReplacementService $replacement
     ) {
     }
 
@@ -26,8 +30,22 @@ final class UpdateRouter
      */
     public function dispatch(array $update): void
     {
+        // Telegram redelivers any update it didn't get a 200 for, so a timeout
+        // mid-processing would otherwise run the same action twice. The
+        // conditional join is already safe against that, but a cancel is not -
+        // so drop anything at or below the highest update_id already handled.
+        if (! $this->isFreshUpdate($update)) {
+            return;
+        }
+
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
-            $this->board->onJoinLeave($update['callback_query']);
+            $callbackQuery = $update['callback_query'];
+
+            if (str_starts_with((string) ($callbackQuery['data'] ?? ''), 'rep:')) {
+                $this->replacement->onSelect($callbackQuery);
+            } else {
+                $this->board->onJoinLeave($callbackQuery);
+            }
 
             return;
         }
@@ -66,6 +84,18 @@ final class UpdateRouter
             return;
         }
 
+        if ($isPrivate && $this->isCommand($text, 'stop')) {
+            $this->onboarding->stop($fromId, $chatId);
+
+            return;
+        }
+
+        if ($isPrivate && $this->isCommand($text, 'replace')) {
+            $this->replacement->start($fromId, $chatId);
+
+            return;
+        }
+
         if (! $isPrivate && $this->isCommand($text, 'board')) {
             $this->board->setBoardChat($chatId);
             $this->board->refresh();
@@ -73,11 +103,39 @@ final class UpdateRouter
             return;
         }
 
-        // A plain private message is only meaningful as the answer to the
-        // "what's your email?" the bot just asked; otherwise it is ignored.
-        if ($isPrivate && 0 !== $fromId && $this->onboarding->isAwaitingEmail($fromId)) {
-            $this->onboarding->captureEmail($fromId, $chatId, $text);
+        // A plain private message is only meaningful as the answer to a question
+        // the bot just asked - the replacement's name, or the onboarding email.
+        if ($isPrivate && 0 !== $fromId) {
+            if ($this->replacement->isAwaitingName($fromId)) {
+                $this->replacement->captureName($fromId, $chatId, $text);
+            } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
+                $this->onboarding->captureEmail($fromId, $chatId, $text);
+            }
         }
+    }
+
+    /**
+     * True the first time an update_id is seen, recording it as the high-water
+     * mark. An update with no id (which shouldn't happen) is let through rather
+     * than blocked.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function isFreshUpdate(array $update): bool
+    {
+        $id = (int) ($update['update_id'] ?? 0);
+
+        if (0 === $id) {
+            return true;
+        }
+
+        if ($id <= (int) get_option(self::LAST_UPDATE_OPTION, 0)) {
+            return false;
+        }
+
+        update_option(self::LAST_UPDATE_OPTION, $id);
+
+        return true;
     }
 
     /**

@@ -20,6 +20,7 @@ final class Person
         public readonly bool $isOrganizer = false,
         public readonly ?string $emailOptInAt = null,
         public readonly string $emailOptInSource = '',
+        public readonly ?string $disabledAt = null,
         public readonly string $notes = '',
         public readonly string $createdAt = '',
         public readonly string $updatedAt = ''
@@ -41,6 +42,7 @@ final class Person
             1 === (int) ($row['is_organizer'] ?? 0),
             self::nullableString($row['email_opt_in_at'] ?? null),
             (string) ($row['email_opt_in_source'] ?? ''),
+            self::nullableString($row['disabled_at'] ?? null),
             (string) ($row['notes'] ?? ''),
             (string) ($row['created_at'] ?? ''),
             (string) ($row['updated_at'] ?? '')
@@ -58,13 +60,24 @@ final class Person
     }
 
     /**
-     * Whether this person may be sent the 48h open-task call. Deliberately
-     * phrased as a positive check against a timestamp being present: opt-in is
-     * an affirmative act, and the absence of any record means no.
+     * Whether the account is switched off. A disabled person receives no email
+     * and is left off the boards and rosters until they turn it back on.
+     */
+    public function isDisabled(): bool
+    {
+        return null !== $this->disabledAt;
+    }
+
+    /**
+     * Whether this person may be sent the open-task email. The model is
+     * transactional now, not opt-in: an active account with a verified address
+     * gets it, and disabling the account (self-service, one tap in every mail)
+     * is the off switch. We still never mail an unverified address, since that
+     * is someone else's inbox until they prove it is theirs.
      */
     public function acceptsOpenTaskEmail(): bool
     {
-        return null !== $this->emailOptInAt && $this->isEmailVerified();
+        return $this->isEmailVerified() && ! $this->isDisabled();
     }
 
     /**

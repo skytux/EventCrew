@@ -10,9 +10,11 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\UpdateRouter;
 
@@ -64,12 +66,27 @@ final class UpdateRouterTest extends TelegramTestCase
                 new AssignmentRepository(),
                 new PersonRepository(),
                 $this->client(),
-                new Logger()
+                new Logger(),
+                new Mailer(new Logger())
             ),
             new RosterService(
                 new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
                 new TaskRepository(),
                 new PersonRepository(),
+                $this->client()
+            ),
+            new ReplacementService(
+                new AssignmentRepository(),
+                new TaskRepository(),
+                new PersonRepository(),
+                new BoardService(
+                    new TaskRepository(),
+                    new AssignmentRepository(),
+                    new PersonRepository(),
+                    $this->client(),
+                    new Logger(),
+                    new Mailer(new Logger())
+                ),
                 $this->client()
             )
         );
@@ -170,6 +187,23 @@ final class UpdateRouterTest extends TelegramTestCase
         ]);
 
         self::assertSame(-1002000, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
+    public function testDropsAnAlreadyProcessedUpdateId(): void
+    {
+        $update = [
+            'update_id' => 100,
+            'message' => ['text' => '/start', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+        ];
+
+        $this->router()->dispatch($update);
+        self::assertArrayHasKey('eventcrew_tg_await_email_555', $this->transients);
+
+        // Clear the side effect, then redeliver the same update_id.
+        unset($this->transients['eventcrew_tg_await_email_555']);
+        $this->router()->dispatch($update);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
     }
 
     public function testUnrecognisedUpdateDoesNothing(): void
