@@ -10,8 +10,10 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\UpdateRouter;
 
 /**
@@ -63,6 +65,12 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger()
+            ),
+            new RosterService(
+                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
+                new TaskRepository(),
+                new PersonRepository(),
+                $this->client()
             )
         );
     }
@@ -104,6 +112,20 @@ final class UpdateRouterTest extends TelegramTestCase
         ]);
 
         self::assertSame(999, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
+    public function testRosterCommandReachesRosterService(): void
+    {
+        // Unlinked sender -> the roster service refuses, which is proof it ran.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/roster',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame('Only organizers can see the roster.', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testPrivateEmailWhileAwaitingIsCaptured(): void

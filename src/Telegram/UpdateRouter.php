@@ -16,7 +16,8 @@ final class UpdateRouter
 {
     public function __construct(
         private readonly OnboardingService $onboarding,
-        private readonly BoardService $board
+        private readonly BoardService $board,
+        private readonly RosterService $roster
     ) {
     }
 
@@ -53,6 +54,14 @@ final class UpdateRouter
         if ($isPrivate && $this->isCommand($text, 'start')) {
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
             $this->onboarding->start($fromId, $chatId, $this->displayName($from));
+
+            return;
+        }
+
+        // /roster works from either the group or a private chat; the service
+        // itself refuses anyone who is not a linked organizer.
+        if ($this->isCommand($text, 'roster')) {
+            $this->roster->onRosterCommand($fromId, $chatId);
 
             return;
         }

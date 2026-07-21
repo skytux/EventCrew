@@ -154,7 +154,7 @@ be designing for a user who does not exist.
 | v0.3 | ✅ Verified on a real install; InnoDB, task datetimes, role archiving, EventMesh event picker, role templates |
 | v0.3.1 | ✅ EventMesh fires `eventmesh/event_synced`; EventCrew optionally auto-creates a new event's tasks. (EventMesh: Holvi timezone fix.) |
 | v0.4 | ✅ The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave, multi-event board. Concurrency now scriptable over the webhook. |
-| v0.5 | Roster and attendance marking, in wp-admin and organizer DMs |
+| v0.5 | ✅ Roster and attendance marking in wp-admin, plus a read-only `/roster` for organizers over the bot |
 | v0.6 | Reputation, credits, redemption, door list |
 | v0.7 | Public signup page, magic-link self-service |
 | v0.8 | 24h reminders and the 48h open-task call, cron + loopback-free fallback |
@@ -339,6 +339,41 @@ when more than one is open, reusing `TaskRepository::upcoming()` +
 Settings page now — allowed under "Settings lists only controls the shipped code
 reads" precisely because v0.4 is the release whose code reads them. The webhook
 status table there is verification item 2, read live from `getWebhookInfo`.
+
+### Host workarounds (added during the v0.4 install)
+
+The live host is InfinityFree free tier, which blocks two things a webhook bot
+needs. Both are opt-in Settings toggles that no-op on a normal host:
+
+- **DNS bypass** — the host can't resolve `api.telegram.org`. `Telegram\DohResolver`
+  looks the address up over Cloudflare DoH (reached by literal IP, so it needs
+  no DNS itself) and `TelegramClient` pins it per-request with `CURLOPT_RESOLVE`.
+- **REST workaround** — the host serves a JavaScript anti-bot challenge on
+  `/wp-json`, which Telegram can't run. The webhook can instead be installed on
+  `admin-ajax.php` (`WebhookController`'s fallback door: raw body, secret in the
+  URL), which the host leaves open. Settings shows the exact test request.
+
+---
+
+## Done: v0.5 — roster & attendance
+
+The bot lets people sign up; v0.5 records **who actually turned up**. The status
+lifecycle (`AssignmentStatus`, `signed_up → arrived / completed / no_show / …`)
+and the write path (`AssignmentRepository::setStatus`) already existed, so this
+was a page and a read-model, **no schema change** — `DB_VERSION` stays 2.
+
+**One read-model, two surfaces.** `Support\RosterAssembler::forDate()` composes
+each day's tasks with their people (name, status, whether they still occupy the
+slot). The wp-admin **Roster** page renders it with a date picker — defaulting to
+the most recent day with tasks, because attendance is marked *after* the event
+(`TaskRepository::datesWithTasks()`, past-inclusive, unlike `upcomingDates()`) —
+a per-person status dropdown, and per-task "mark all arrived / completed"
+shortcuts, each recording the organizer as `changed_by`.
+
+**The bot reads, wp-admin writes.** `/roster` (registered in `setMyCommands`)
+returns the same roster read-only, gated to a linked organizer
+(`Person::isOrganizer`), so the crew's attendance can't be pulled out of the
+group by an ordinary member. Marking stays in wp-admin.
 
 ---
 
