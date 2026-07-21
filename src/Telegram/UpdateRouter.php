@@ -104,10 +104,12 @@ final class UpdateRouter
         }
 
         // A plain private message is only meaningful as the answer to a question
-        // the bot just asked - the replacement's name, or the onboarding email.
+        // the bot just asked - who the cover is standing in for, or the
+        // onboarding email.
         if ($isPrivate && 0 !== $fromId) {
-            if ($this->replacement->isAwaitingName($fromId)) {
-                $this->replacement->captureName($fromId, $chatId, $text);
+            if ($this->replacement->isAwaitingTarget($fromId)) {
+                $entities = is_array($message['entities'] ?? null) ? $message['entities'] : [];
+                $this->replacement->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }

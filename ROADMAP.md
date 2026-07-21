@@ -434,12 +434,15 @@ key. This surfaced a latent bug: `AssignmentStatus::occupying()` counted
 `replaced`, so a replaced slot never reopened — now excluded, which corrects the
 counter everywhere it's read.
 
-**The replacement flow.** `/replace` lists a person's upcoming slots, takes the
-replacement's name, announces it in the group, and frees the slot (a neutral
-cancel) so the replacement can sign up; the organizer marks the original
-`replaced` (0.8) on the Roster. And `update_id` idempotency (the original
-specified it, we'd never built it) now drops a redelivered update before it can
-double-process a cancel.
+**The replacement flow — cover-initiated, no admin.** The person *stepping in*
+runs `/replace`, names who they're covering (a Telegram text-mention resolves
+exactly, otherwise a name search), and the bot lists *that* person's upcoming
+tasks. Picking one swaps them in a single step: the original is marked
+`replaced` (0.8 — their credit for arranging cover, and it frees the slot) and
+the cover is signed up in their place; both are told and the group is told. No
+organizer step. And `update_id` idempotency (the original specified it, we'd
+never built it) now drops a redelivered update before it can double-process a
+cancel.
 
 **Accounts are transactional, with a real off switch.** `people.disabled_at`;
 `acceptsOpenTaskEmail()` is verified-and-not-disabled; `/stop` switches off,

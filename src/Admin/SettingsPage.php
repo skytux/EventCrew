@@ -215,7 +215,7 @@ final class SettingsPage
         $this->telegram->setMyCommands([
             ['command' => 'start', 'description' => __('Set yourself up to sign up for tasks', 'eventcrew')],
             ['command' => 'board', 'description' => __('Show the board of open tasks', 'eventcrew')],
-            ['command' => 'replace', 'description' => __('Hand a task over to a replacement', 'eventcrew')],
+            ['command' => 'replace', 'description' => __('Cover someone else’s task', 'eventcrew')],
             ['command' => 'stop', 'description' => __('Switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('Show the attendance roster (organizers)', 'eventcrew')],
         ]);
