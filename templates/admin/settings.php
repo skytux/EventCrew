@@ -7,6 +7,7 @@
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
 declare(strict_types=1);
@@ -166,8 +167,164 @@ if (! defined('ABSPATH')) {
             </p>
         <?php endif; ?>
 
+        <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group.', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-telegram-token"><?php esc_html_e('Bot token', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-telegram-token"
+                        name="telegram_bot_token"
+                        value="<?php echo esc_attr($telegram['token']); ?>"
+                        class="regular-text"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description">
+                        <?php esc_html_e('Kept private on your server. Clearing it disconnects the bot.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('DNS workaround', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="telegram_dns_bypass"
+                            value="1"
+                            <?php checked($telegram['dns_bypass']); ?>>
+                        <?php esc_html_e('Resolve Telegram’s address via Cloudflare (1.1.1.1)', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Only enable this if installing the webhook fails with “Could not resolve host: api.telegram.org”. It looks the address up over HTTPS instead of the server’s own DNS, which some shared hosts block. Leave off on a normal host.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('REST workaround', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="telegram_use_fallback"
+                            value="1"
+                            <?php checked($telegram['use_fallback']); ?>>
+                        <?php esc_html_e('Receive updates through admin-ajax.php instead of the REST API', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Re-install the webhook after changing it. Leave off on a normal host.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <?php if ('' !== $telegram['test_url']) : ?>
+            <details style="margin:1em 0">
+                <summary><?php esc_html_e('Test the endpoint by hand', 'eventcrew'); ?></summary>
+                <p class="description">
+                    <?php esc_html_e('Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot.', 'eventcrew'); ?>
+                </p>
+                <p>
+                    <strong><?php esc_html_e('Telegram is posting to:', 'eventcrew'); ?></strong><br>
+                    <code style="word-break:break-all"><?php echo esc_html($telegram['test_url']); ?></code>
+                </p>
+                <?php if (! $telegram['use_fallback']) : ?>
+                    <p>
+                        <strong><?php esc_html_e('With header:', 'eventcrew'); ?></strong><br>
+                        <code>X-Telegram-Bot-Api-Secret-Token: <?php echo esc_html($telegram['secret']); ?></code>
+                    </p>
+                <?php endif; ?>
+                <p>
+                    <strong><?php esc_html_e('And this JSON body (Content-Type: application/json):', 'eventcrew'); ?></strong><br>
+                    <code style="word-break:break-all">{"update_id":1,"message":{"message_id":1,"date":0,"chat":{"id":1,"type":"private"},"from":{"id":1},"text":"/start"}}</code>
+                </p>
+            </details>
+        <?php endif; ?>
+
         <?php submit_button(__('Save settings', 'eventcrew')); ?>
     </form>
+
+    <h2><?php esc_html_e('Webhook', 'eventcrew'); ?></h2>
+    <?php if (! $telegram['configured']) : ?>
+        <p class="description">
+            <?php esc_html_e('Add a bot token above and save before installing the webhook.', 'eventcrew'); ?>
+        </p>
+    <?php else : ?>
+        <p class="description">
+            <?php
+            printf(
+                /* translators: %s: the webhook URL Telegram will post updates to */
+                esc_html__('Telegram will post updates to %s. This needs HTTPS with a valid certificate - Telegram refuses plain HTTP and self-signed certificates.', 'eventcrew'),
+                '<code>' . esc_html($telegram['webhook_url']) . '</code>'
+            );
+            ?>
+        </p>
+
+        <?php
+        $eventcrew_info = $telegram['webhook_info'];
+        if (is_array($eventcrew_info)) :
+            $eventcrew_pending = (int) ($eventcrew_info['pending_update_count'] ?? 0);
+            $eventcrew_last_error = (string) ($eventcrew_info['last_error_message'] ?? '');
+            $eventcrew_active = '' !== (string) ($eventcrew_info['url'] ?? '');
+            ?>
+            <table class="widefat striped" style="max-width:640px;margin:1em 0">
+                <tbody>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Status', 'eventcrew'); ?></th>
+                        <td>
+                            <?php
+                            echo $eventcrew_active
+                                ? esc_html__('Installed', 'eventcrew')
+                                : esc_html__('Not installed', 'eventcrew');
+                            ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Pending updates', 'eventcrew'); ?></th>
+                        <td><?php echo esc_html((string) $eventcrew_pending); ?></td>
+                    </tr>
+                    <?php if ('' !== $eventcrew_last_error) : ?>
+                        <tr>
+                            <th scope="row"><?php esc_html_e('Last error', 'eventcrew'); ?></th>
+                            <td><?php echo esc_html($eventcrew_last_error); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                    <?php if ('' !== $telegram['bot_username']) : ?>
+                        <tr>
+                            <th scope="row"><?php esc_html_e('Bot', 'eventcrew'); ?></th>
+                            <td>@<?php echo esc_html($telegram['bot_username']); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Board group', 'eventcrew'); ?></th>
+                        <td>
+                            <?php
+                            echo 0 !== $telegram['board_chat_id']
+                                ? esc_html((string) $telegram['board_chat_id'])
+                                : esc_html__('Not set yet - run /board in the group once.', 'eventcrew');
+                            ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        <?php else : ?>
+            <p class="description">
+                <?php esc_html_e('Could not read the webhook status from Telegram. Check the token.', 'eventcrew'); ?>
+            </p>
+        <?php endif; ?>
+
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="eventcrew_telegram_setup">
+            <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+            <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary'); ?>
+        </form>
+    <?php endif; ?>
 
     <h2><?php esc_html_e('Open-task email', 'eventcrew'); ?></h2>
     <p>

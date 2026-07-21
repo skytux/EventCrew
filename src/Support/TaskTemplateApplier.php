@@ -67,6 +67,14 @@ final class TaskTemplateApplier
             }
         }
 
+        // A new batch of tasks makes the Telegram board out of date. The hook
+        // covers both callers (the manual button and the EventMesh listener)
+        // in one place; when the bot is not configured the listener no-ops.
+        // See Telegram\BoardRefreshListener::HOOK.
+        if ($created > 0) {
+            do_action('eventcrew/board_stale');
+        }
+
         return ['created' => $created, 'untimed' => $untimed];
     }
 }

@@ -129,10 +129,16 @@ final class TasksPage
         if ($id > 0) {
             $this->tasks->update($id, $data);
 
+            // A hand-edit - a changed time or capacity - can change what the
+            // board should show; the listener refreshes it if the bot is on.
+            do_action('eventcrew/board_stale');
+
             Admin::redirectTo(self::PAGE_SLUG, __('Task updated.', 'eventcrew'));
         }
 
         $this->tasks->create($data);
+
+        do_action('eventcrew/board_stale');
 
         Admin::redirectTo(self::PAGE_SLUG, __('Task added.', 'eventcrew'));
     }
@@ -213,6 +219,8 @@ final class TasksPage
 
         if ($id > 0) {
             $this->tasks->delete($id);
+
+            do_action('eventcrew/board_stale');
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Task deleted.', 'eventcrew'));

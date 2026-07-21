@@ -11,11 +11,20 @@ use EventCrew\Admin\View;
 use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Telegram\BoardRefreshListener;
+use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\UpdateRouter;
+use EventCrew\Telegram\VerificationController;
+use EventCrew\Telegram\WebhookController;
 use Throwable;
 
 final class Kernel
@@ -42,6 +51,14 @@ final class Kernel
         // the case this exists to handle: a new event's tasks appearing
         // with nobody watching.
         $this->container->get(EventMeshSyncListener::class)->boot();
+
+        // The bot's endpoints and board refresh live on the front/cron path
+        // for the same reason: Telegram posts updates to a REST route with
+        // nobody logged in, and a cron-driven task creation must still be able
+        // to refresh the board. All three no-op until the bot is configured.
+        $this->container->get(WebhookController::class)->boot();
+        $this->container->get(VerificationController::class)->boot();
+        $this->container->get(BoardRefreshListener::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -112,10 +129,83 @@ final class Kernel
         );
 
         $this->container->singleton(
+            AuthTokenRepository::class,
+            fn () => new AuthTokenRepository()
+        );
+
+        $this->container->singleton(
+            DohResolver::class,
+            fn (Container $container) => new DohResolver(
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            TelegramClient::class,
+            fn (Container $container) => new TelegramClient(
+                $container->get(Logger::class),
+                $container->get(DohResolver::class)
+            )
+        );
+
+        $this->container->singleton(
+            OnboardingService::class,
+            fn (Container $container) => new OnboardingService(
+                $container->get(PersonRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            BoardService::class,
+            fn (Container $container) => new BoardService(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            UpdateRouter::class,
+            fn (Container $container) => new UpdateRouter(
+                $container->get(OnboardingService::class),
+                $container->get(BoardService::class)
+            )
+        );
+
+        $this->container->singleton(
+            WebhookController::class,
+            fn (Container $container) => new WebhookController(
+                $container->get(UpdateRouter::class)
+            )
+        );
+
+        $this->container->singleton(
+            VerificationController::class,
+            fn (Container $container) => new VerificationController(
+                $container->get(AuthTokenRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            BoardRefreshListener::class,
+            fn (Container $container) => new BoardRefreshListener(
+                $container->get(BoardService::class)
+            )
+        );
+
+        $this->container->singleton(
             SettingsPage::class,
             fn (Container $container) => new SettingsPage(
                 $container->get(View::class),
-                $container->get(PersonRepository::class)
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
             )
         );
 

@@ -41,6 +41,67 @@ if (! defined('DAY_IN_SECONDS')) {
 }
 
 /**
+ * Minimal stand-ins for the two REST classes the webhook and verification
+ * endpoints are typed against. WordPress is not loaded here, so the real ones
+ * are absent; these cover only the handful of methods the controllers call.
+ */
+if (! class_exists('WP_REST_Request')) {
+    class WP_REST_Request
+    {
+        /** @var array<string, string> */
+        public array $headers = [];
+
+        /** @var array<string, mixed>|null */
+        public ?array $body_params = null;
+
+        /** @var array<string, mixed> */
+        public array $params = [];
+
+        public function set_header(string $name, string $value): void
+        {
+            $this->headers[$this->key($name)] = $value;
+        }
+
+        public function get_header(string $name): string
+        {
+            return $this->headers[$this->key($name)] ?? '';
+        }
+
+        /**
+         * @return array<string, mixed>|null
+         */
+        public function get_json_params(): ?array
+        {
+            return $this->body_params;
+        }
+
+        public function get_param(string $key): mixed
+        {
+            return $this->params[$key] ?? null;
+        }
+
+        private function key(string $name): string
+        {
+            return strtolower(str_replace('-', '_', $name));
+        }
+    }
+}
+
+if (! class_exists('WP_REST_Response')) {
+    class WP_REST_Response
+    {
+        public function __construct(public mixed $data = null, public int $status = 200)
+        {
+        }
+
+        public function get_status(): int
+        {
+            return $this->status;
+        }
+    }
+}
+
+/**
  * Programmable stand-in for $wpdb.
  *
  * Records every statement it is handed and returns queued results, so the

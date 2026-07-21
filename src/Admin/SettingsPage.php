@@ -8,21 +8,27 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\WebhookController;
 
 /**
  * Settings carries only what the shipped features actually read. Options for
  * behaviour that does not exist yet - reminder lead times, reputation
- * thresholds, bot credentials - arrive with the release that uses them, so the
- * page never lists a control that does nothing.
+ * thresholds - arrive with the release that uses them, so the page never lists
+ * a control that does nothing. The Telegram bot credentials appear here now
+ * only because v0.4 is the release whose code reads them.
  */
 final class SettingsPage
 {
     public const PAGE_SLUG = 'eventcrew-settings';
     private const NONCE_ACTION = 'eventcrew_settings';
+    private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
 
     public function __construct(
         private readonly View $view,
-        private readonly PersonRepository $people
+        private readonly PersonRepository $people,
+        private readonly TelegramClient $telegram
     ) {
     }
 
@@ -36,8 +42,49 @@ final class SettingsPage
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
+                'telegram' => $this->telegramView(),
             ]
         );
+    }
+
+    /**
+     * The Telegram fieldset's state. The live webhook status is fetched only
+     * when a token exists, so an un-configured install never makes an outbound
+     * call just to render the page. The template documents the full shape.
+     *
+     * @return array<string, mixed>
+     */
+    private function telegramView(): array
+    {
+        $configured = $this->telegram->isConfigured();
+        $board = get_option(BoardService::BOARD_OPTION, []);
+
+        $useFallback = (bool) get_option(WebhookController::USE_FALLBACK_OPTION, false);
+        $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
+
+        // The exact URL Telegram is pointed at, secret and all, so it can be
+        // tested by hand. Shown only to an administrator, on their own settings
+        // screen - the same person who could read it from the database anyway.
+        $testUrl = '' === $secret ? '' : WebhookController::webhookUrl($secret);
+
+        // The informational URL (no secret) for the status line.
+        $displayUrl = $useFallback
+            ? admin_url('admin-ajax.php') . '?action=' . WebhookController::FALLBACK_ACTION
+            : rest_url(WebhookController::ROUTE_NAMESPACE . WebhookController::ROUTE);
+
+        return [
+            'token' => (string) get_option(TelegramClient::TOKEN_OPTION, ''),
+            'configured' => $configured,
+            'dns_bypass' => (bool) get_option(TelegramClient::DNS_BYPASS_OPTION, false),
+            'use_fallback' => $useFallback,
+            'webhook_url' => $displayUrl,
+            'test_url' => $testUrl,
+            'secret' => $secret,
+            'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
+            'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
+            'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
+            'setup_nonce_action' => self::SETUP_NONCE_ACTION,
+        ];
     }
 
     public function save(): void
@@ -49,12 +96,101 @@ final class SettingsPage
         // Checkbox: absent means unticked, same reasoning as the role
         // archive checkboxes above - an absent field is a real "off", not
         // "leave unchanged".
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
         update_option(EventMeshSyncListener::OPTION_NAME, isset($_POST['auto_create_tasks']));
+
+        $token = isset($_POST['telegram_bot_token'])
+            ? sanitize_text_field(wp_unslash($_POST['telegram_bot_token']))
+            : '';
+        update_option(TelegramClient::TOKEN_OPTION, $token);
+
+        update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
+        update_option(WebhookController::USE_FALLBACK_OPTION, isset($_POST['telegram_use_fallback']));
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Settings saved.', 'eventcrew')
+        );
+    }
+
+    /**
+     * Points Telegram at this site's webhook, generating the shared secret on
+     * first run and caching the bot's username for the board's deep-link
+     * button. HTTPS with a valid certificate is Telegram's own hard
+     * requirement here - it refuses plain HTTP and self-signed certs outright.
+     */
+    public function setupWebhook(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        if (! $this->telegram->isConfigured()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Add a bot token and save before installing the webhook.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        // The secret is generated first because the admin-post door carries it
+        // in its URL, so the URL cannot be built until it exists.
+        $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
+
+        if ('' === $secret) {
+            $secret = bin2hex(random_bytes(32));
+            update_option(WebhookController::SECRET_OPTION, $secret);
+        }
+
+        $url = WebhookController::webhookUrl($secret);
+
+        // Telegram rejects any non-HTTPS webhook outright, and the usual cause
+        // is WordPress's own address being http:// behind a TLS-terminating
+        // proxy - so this is caught before the call and names the real fix,
+        // rather than surfacing as Telegram's opaque "HTTPS url must be
+        // provided".
+        if (! str_starts_with($url, 'https://')) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the non-HTTPS URL WordPress generated */
+                    __('WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy\'s forwarded-protocol header - and try again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    $url
+                ),
+                'error'
+            );
+        }
+
+        $installed = $this->telegram->setWebhook($url, $secret);
+
+        if (null === $installed) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the error Telegram returned */
+                    __('Telegram refused the webhook: %s', 'eventcrew'),
+                    $this->telegram->lastError()
+                ),
+                'error'
+            );
+        }
+
+        $me = $this->telegram->getMe();
+
+        if (is_array($me) && isset($me['username'])) {
+            update_option(BoardService::USERNAME_OPTION, (string) $me['username']);
+        }
+
+        // So /board shows in the command menu and reaches the bot reliably even
+        // under group privacy mode.
+        $this->telegram->setMyCommands([
+            ['command' => 'start', 'description' => __('Set yourself up to sign up for tasks', 'eventcrew')],
+            ['command' => 'board', 'description' => __('Show the board of open tasks', 'eventcrew')],
+        ]);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Webhook installed. Add the bot to your group and the board will appear there on its own.', 'eventcrew')
         );
     }
 
