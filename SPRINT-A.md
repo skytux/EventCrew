@@ -1,5 +1,10 @@
 # Sprint A — Roster & attendance (v0.5)
 
+> **Status: delivered.** Shipped in v0.5 — the wp-admin Roster page (date picker,
+> per-person status, "mark all arrived/completed") and the organizer-gated
+> read-only `/roster` over the bot, both on the shared `Support\RosterAssembler`.
+> No schema change. See ROADMAP "Done: v0.5".
+
 ## Why now
 
 v0.4 shipped the bot: people can claim tasks from the Telegram group. The next

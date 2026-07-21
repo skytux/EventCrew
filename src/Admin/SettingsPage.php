@@ -185,6 +185,7 @@ final class SettingsPage
         $this->telegram->setMyCommands([
             ['command' => 'start', 'description' => __('Set yourself up to sign up for tasks', 'eventcrew')],
             ['command' => 'board', 'description' => __('Show the board of open tasks', 'eventcrew')],
+            ['command' => 'roster', 'description' => __('Show the attendance roster (organizers)', 'eventcrew')],
         ]);
 
         Admin::redirectTo(

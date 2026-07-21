@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
 use EventCrew\Admin\View;
@@ -16,11 +17,13 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
+use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
@@ -170,10 +173,30 @@ final class Kernel
         );
 
         $this->container->singleton(
+            RosterAssembler::class,
+            fn (Container $container) => new RosterAssembler(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            RosterService::class,
+            fn (Container $container) => new RosterService(
+                $container->get(RosterAssembler::class),
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
-                $container->get(BoardService::class)
+                $container->get(BoardService::class),
+                $container->get(RosterService::class)
             )
         );
 
@@ -240,6 +263,16 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(PersonRepository::class),
                 $container->get(AssignmentRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            RosterPage::class,
+            fn (Container $container) => new RosterPage(
+                $container->get(View::class),
+                $container->get(RosterAssembler::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class)
             )
         );
 

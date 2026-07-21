@@ -9,8 +9,10 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\UpdateRouter;
 use Brain\Monkey\Functions;
 use EventCrew\Telegram\WebhookController;
@@ -28,6 +30,12 @@ final class WebhookControllerTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger()
+            ),
+            new RosterService(
+                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
+                new TaskRepository(),
+                new PersonRepository(),
+                $this->client()
             )
         );
 

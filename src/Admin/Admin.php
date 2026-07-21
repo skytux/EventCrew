@@ -55,6 +55,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_mark_attendance',
+            [$this->container->get(RosterPage::class), 'markAttendance']
+        );
+
+        add_action(
+            'admin_post_eventcrew_mark_all',
+            [$this->container->get(RosterPage::class), 'markAllForTask']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );
@@ -84,6 +94,15 @@ final class Admin
             self::CAPABILITY,
             self::MENU_SLUG,
             [$this->container->get(TasksPage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Roster', 'eventcrew'),
+            __('Roster', 'eventcrew'),
+            self::CAPABILITY,
+            RosterPage::PAGE_SLUG,
+            [$this->container->get(RosterPage::class), 'render']
         );
 
         add_submenu_page(
@@ -151,14 +170,23 @@ final class Admin
         check_admin_referer($nonceAction);
     }
 
-    public static function redirectTo(string $page, string $message = '', string $type = 'success'): never
-    {
+    /**
+     * @param array<string, string> $args Extra query args to carry back, e.g.
+     *        the roster's selected date, so a POST handler returns to the same
+     *        view it was submitted from.
+     */
+    public static function redirectTo(
+        string $page,
+        string $message = '',
+        string $type = 'success',
+        array $args = []
+    ): never {
         if ('' !== $message) {
             self::notice($type, $message);
         }
 
         wp_safe_redirect(
-            add_query_arg(['page' => $page], admin_url('admin.php'))
+            add_query_arg(['page' => $page] + $args, admin_url('admin.php'))
         );
 
         exit;

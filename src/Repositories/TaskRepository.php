@@ -149,6 +149,30 @@ final class TaskRepository
     }
 
     /**
+     * Distinct dates that have at least one task, most recent first and
+     * including past ones - which the upcoming list deliberately omits. This
+     * feeds the roster's date picker: attendance is marked after an event, so
+     * the day you need is almost always one that has already happened.
+     *
+     * @return array<int, string>
+     */
+    public function datesWithTasks(int $limit = 30): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT DISTINCT task_date FROM {$this->table()}
+                ORDER BY task_date DESC
+                LIMIT %d",
+                $limit
+            )
+        );
+
+        return array_map('strval', is_array($rows) ? $rows : []);
+    }
+
+    /**
      * @param array{orderby?: string, order?: string, per_page?: int, page?: int, upcoming_only?: bool} $args
      * @return array<int, Task>
      */
