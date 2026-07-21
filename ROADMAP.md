@@ -28,7 +28,7 @@ Do not re-open these without new information.
 | Sibling plugin, not an EventMesh module | The two share conventions, not machinery. Soft link only: a task may reference an `eventmesh_event` post, falling back to its own label. EventCrew must run standalone. |
 | Custom tables, no CPTs | A join record makes an unusable CPT list table. All assignment access goes through a repository so this stays reversible. |
 | People are never WordPress users | WP accounts are for organizers. Identity is a verified email; the Telegram id is an optional link on the row. |
-| Email is opt-in, not opt-out | `email_opt_in_at` NULL by default; timestamp and source stored together as the consent record. An organizer cannot consent on someone's behalf. |
+| Email is transactional, off by disabling the account (revised v0.6) | Superseded the original opt-in rule. An active, verified account receives the open-task email and personal summaries; the off switch is disabling the account (`/stop` in the bot, or the one-click link in every mail). Verified-only still holds, so we never mail an address nobody proved they control. The `email_opt_in_*` columns are now vestigial. |
 | The bot lives in the existing Telegram group | A bot cannot DM a user who hasn't started it, so the group carries the board and anything personal goes to private chat or a callback alert. |
 | Settings lists only controls the shipped code reads | Options arrive with the release that uses them, rather than accumulating dead switches. |
 
@@ -155,10 +155,11 @@ be designing for a user who does not exist.
 | v0.3.1 | ✅ EventMesh fires `eventmesh/event_synced`; EventCrew optionally auto-creates a new event's tasks. (EventMesh: Holvi timezone fix.) |
 | v0.4 | ✅ The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave, multi-event board. Concurrency now scriptable over the webhook. |
 | v0.5 | ✅ Roster and attendance marking in wp-admin, plus a read-only `/roster` for organizers over the bot |
-| v0.6 | Reputation, credits, redemption, door list |
-| v0.7 | Public signup page, magic-link self-service |
-| v0.8 | 24h reminders and the 48h open-task call, cron + loopback-free fallback |
-| v1.0 | Translation pass, README, packaging script, CI |
+| v0.6 | ✅ Engagement: cancellation classified by notice, replacement flow, account disable/delete, door tickets, and transactional email (signup/cancel confirmations + the manual open-task send). Reputation *scoring* pulled out to v0.7. |
+| v0.7 | Reputation calculator + one threshold; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits |
+| v0.8 | 24h reminders and the 48h open-task call automated, cron + loopback-free fallback (`CronFallbackTrigger`), batching |
+| v0.9 | Public signup page, magic-link self-service |
+| v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
@@ -415,6 +416,53 @@ other route in — does not exist yet. The browser fallback skips it and says so
 **Owed back:** the script's output and the checklist results. A phase 2 or 4
 failure is a schema bug to fix before the bot; a checklist failure is an admin
 bug and cheaper.
+
+## Done: v0.6 — engagement: cancellation integrity, account control, tickets & transactional email
+
+Reconciled against the original planning document after features had been
+slipping across iterations; the pieces here are ones it always specified. One
+schema change: `people.disabled_at` → **`DB_VERSION` 3**.
+
+**Cancellation is now recorded, not deleted.** Leaving via the bot sets a status
+instead of removing the row, classified by notice against a configurable
+`eventcrew_notice_hours` (default 48): inside the window it is a `late_cancel`
+(0.4 in the reputation weights the calculator will use), earlier a neutral
+`cancelled`. `status_changed_at` stamps the *when*. Keeping the row forced a
+**re-join reactivation** — `AssignmentRepository::join()` reactivates a freed row
+under the same capacity guard (`JOIN_REJOINED`) rather than hitting the unique
+key. This surfaced a latent bug: `AssignmentStatus::occupying()` counted
+`replaced`, so a replaced slot never reopened — now excluded, which corrects the
+counter everywhere it's read.
+
+**The replacement flow.** `/replace` lists a person's upcoming slots, takes the
+replacement's name, announces it in the group, and frees the slot (a neutral
+cancel) so the replacement can sign up; the organizer marks the original
+`replaced` (0.8) on the Roster. And `update_id` idempotency (the original
+specified it, we'd never built it) now drops a redelivered update before it can
+double-process a cancel.
+
+**Accounts are transactional, with a real off switch.** `people.disabled_at`;
+`acceptsOpenTaskEmail()` is verified-and-not-disabled; `/stop` switches off,
+`/start` back on; and a signed **manage** page (POST buttons, never a
+prefetchable GET) offers *disable* and a full GDPR *delete*. This revised the
+settled opt-in decision above.
+
+**Tickets and transactional mail.** `Support\SignedLink` (stateless HMAC, no
+storage) powers a public **ticket** page that reads an assignment's live status
+(VALID / DISABLED) and the manage link. `Support\Mailer` sends signup
+confirmations (with the ticket) and cancellation notices (with standing
+guidance), each footered with the manage link. The **open-task email**
+(`Support\OpenTaskCall`) mails active, not-already-signed-up accounts the open
+tasks plus their own last-3 and total, deduped through the `notifications`
+ledger — triggered by a manual "Send now" button; the automated 48h cron stays
+v0.8.
+
+**Deferred, and tracked so it isn't lost again:** reputation *scoring*
+(calculator + weights + threshold), credits/redemption/door-list-∪-credits, the
+cron notification automation + `CronFallbackTrigger`, the public web signup page,
+and the Diagnostics page. Every email path is **mailer-dependent**, so its real
+verification waits on a host that can actually send (the InfinityFree free tier
+is the open question).
 
 ## Verification owed before v1.0
 

@@ -9,18 +9,33 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
 final class BoardServiceTest extends TelegramTestCase
 {
+    /** @var array<int, array{to: string, body: string}> */
+    private array $mails = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->mails = [];
+
         // eventName() reaches for the linked post's title; empty makes it fall
         // back to the typed label, which keeps these tests free of posts.
         Functions\when('get_the_title')->justReturn('');
+        Functions\when('rest_url')->alias(static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
+            $this->mails[] = ['to' => $to, 'body' => $body];
+
+            return true;
+        });
     }
 
     private function board(): BoardService
@@ -30,7 +45,8 @@ final class BoardServiceTest extends TelegramTestCase
             new AssignmentRepository(),
             new PersonRepository(),
             $this->client(),
-            new Logger()
+            new Logger(),
+            new Mailer(new Logger())
         );
     }
 
@@ -182,15 +198,60 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
-    public function testLeaveReleasesTheSlotAndRefreshes(): void
+    public function testLeaveCancelsTheSlotWithoutDeletingAndRefreshes(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
+        // cancel(): findFor -> an occupying row, then the task's start time.
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
 
         $this->board()->onJoinLeave($this->callbackQuery('l:5'));
 
-        self::assertCount(1, $this->wpdb->deletes);
+        // The row is updated (status), never deleted.
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertNotSame([], $this->wpdb->updates);
         self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testSignupSendsAConfirmationEmailWithATicketLink(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 0; // hasOverlapping
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        // join(): findFor -> null, then the conditional insert
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+        // sendSignupEmail: tasks->find, then findFor for the ticket id
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertCount(1, $this->mails);
+        self::assertSame('sam@example.com', $this->mails[0]['to']);
+        self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
+    }
+
+    public function testADisabledPersonSigningUpGetsNoEmail(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'disabled_at' => '2026-07-10 09:00:00',
+        ];
+        $this->wpdb->nextVars[] = 0; // hasOverlapping
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextRows[] = null; // join findFor
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertSame([], $this->mails);
     }
 
     public function testToggleJoinsWhenNotYetSignedUp(): void
@@ -207,16 +268,41 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
-    public function testToggleLeavesWhenAlreadySignedUp(): void
+    public function testToggleCancelsWhenAlreadySignedUp(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        // findFor (toggle) -> an existing assignment, so the tap is a leave.
+        // findFor (toggle occupancy check) -> an occupying row, so it's a cancel.
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        // cancel() re-reads findFor, then the task's start time.
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
 
         $this->board()->onJoinLeave($this->callbackQuery('t:5'));
 
-        self::assertCount(1, $this->wpdb->deletes);
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertNotSame([], $this->wpdb->updates);
+        self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testToggleReactivatesAFreedRow(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        // Toggle occupancy check -> a cancelled (non-occupying) row, so it's a
+        // join; join() then reactivates it.
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
+        $this->wpdb->nextVars[] = 0; // hasOverlapping
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        // join(): findFor -> the same cancelled row, then the guarded UPDATE.
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->board()->onJoinLeave($this->callbackQuery('t:5'));
+
+        // Reactivated via a guarded UPDATE statement, never a fresh INSERT.
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringContainsString('UPDATE', implode("\n", $this->wpdb->queries));
         self::assertContains('editMessageText', $this->calledMethods());
     }
 

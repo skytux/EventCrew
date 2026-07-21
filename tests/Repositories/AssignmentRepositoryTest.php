@@ -125,6 +125,72 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertStringNotContainsString(AssignmentStatus::LATE_CANCEL, $sql);
     }
 
+    /**
+     * A person who cancelled and taps again re-takes the slot: the unique key
+     * blocks a second INSERT, so a freed row is reactivated with the same
+     * capacity guard instead.
+     */
+    public function testReactivatesAFreedRowUnderTheCapacityGuard(): void
+    {
+        $this->wpdb->nextVars = [2]; // taskCapacity
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::CANCELLED],
+        ];
+        $this->wpdb->nextQueryResults = [1]; // the guarded UPDATE affected the row
+
+        $result = (new AssignmentRepository())->join(3, 1);
+
+        self::assertSame(AssignmentRepository::JOIN_REJOINED, $result);
+        self::assertStringContainsString('UPDATE', $this->wpdb->lastQuery());
+        self::assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
+    }
+
+    public function testReactivationRefusesWhenTheTaskIsNowFull(): void
+    {
+        $this->wpdb->nextVars = [2];
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::CANCELLED],
+        ];
+        $this->wpdb->nextQueryResults = [0]; // capacity condition was false
+
+        self::assertSame(AssignmentRepository::JOIN_FULL, (new AssignmentRepository())->join(3, 1));
+    }
+
+    public function testCancelRecordsALateCancelInsideTheNoticeWindow(): void
+    {
+        // current_time('mysql') is 2026-07-20 12:00; start ~22h away, within 48.
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
+            ['starts_at' => '2026-07-21 10:00:00', 'task_date' => '2026-07-21'],
+        ];
+
+        $status = (new AssignmentRepository())->cancel(3, 1, 48);
+
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $status);
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $this->wpdb->updates[0]['data']['status']);
+    }
+
+    public function testCancelRecordsAPlainCancelWithEnoughNotice(): void
+    {
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
+            ['starts_at' => '2026-07-30 10:00:00', 'task_date' => '2026-07-30'],
+        ];
+
+        self::assertSame(AssignmentStatus::CANCELLED, (new AssignmentRepository())->cancel(3, 1, 48));
+    }
+
+    public function testCancelDoesNothingWhenThereIsNoLiveSlot(): void
+    {
+        // The only row is already freed, so there is nothing to cancel.
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::CANCELLED],
+        ];
+
+        self::assertSame('', (new AssignmentRepository())->cancel(3, 1, 48));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testLeavingDeletesThePeopleRowForThatTask(): void
     {
         (new AssignmentRepository())->leave(3, 1);

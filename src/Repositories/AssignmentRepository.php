@@ -20,6 +20,9 @@ final class AssignmentRepository
     /** The join succeeded and a row now exists. */
     public const JOIN_OK = 'joined';
 
+    /** A previously freed row (a past cancellation) was reactivated. */
+    public const JOIN_REJOINED = 'rejoined';
+
     /** This person already holds a slot in this task. */
     public const JOIN_DUPLICATE = 'already_joined';
 
@@ -63,8 +66,15 @@ final class AssignmentRepository
             return self::JOIN_UNKNOWN_TASK;
         }
 
-        if ($this->findFor($taskId, $personId) instanceof Assignment) {
-            return self::JOIN_DUPLICATE;
+        $existing = $this->findFor($taskId, $personId);
+
+        if ($existing instanceof Assignment) {
+            // An occupying row is a genuine duplicate; a freed one (a prior
+            // cancellation) is reactivated, since the unique key means we
+            // cannot insert a second row for this person and task.
+            return $existing->isOccupying()
+                ? self::JOIN_DUPLICATE
+                : $this->reactivate($existing->id, $taskId);
         }
 
         $statuses = AssignmentStatus::occupying();
@@ -114,6 +124,47 @@ final class AssignmentRepository
     }
 
     /**
+     * Brings a freed row (a past cancellation) back to signed_up under the same
+     * capacity guard the insert uses, so re-joining after a cancel cannot
+     * overbook. The occupancy subquery is wrapped in a derived table for the
+     * same reason as in join() - MySQL forbids naming the UPDATE target in an
+     * uncorrelated subquery directly.
+     *
+     * @return self::JOIN_REJOINED|self::JOIN_FULL
+     */
+    private function reactivate(int $assignmentId, int $taskId): string
+    {
+        global $wpdb;
+
+        $statuses = AssignmentStatus::occupying();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+        $now = current_time('mysql');
+
+        $sql = "UPDATE {$this->table()} AS target
+            SET target.status = %s, target.signed_up_at = %s, target.status_changed_at = %s
+            WHERE target.id = %d
+              AND (
+                SELECT COUNT(*)
+                FROM (SELECT task_id, status FROM {$this->table()}) AS existing
+                WHERE existing.task_id = %d
+                  AND existing.status IN ({$statusPlaceholders})
+              ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)";
+
+        $params = array_merge(
+            [AssignmentStatus::SIGNED_UP, $now, $now, $assignmentId, $taskId],
+            $statuses,
+            [$taskId]
+        );
+
+        // Assembled from table-name constants and generated placeholders, then
+        // bound through prepare(); the sniff cannot follow a query in a variable.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        return 1 === $wpdb->query($wpdb->prepare($sql, ...$params))
+            ? self::JOIN_REJOINED
+            : self::JOIN_FULL;
+    }
+
+    /**
      * Capacity of a task, or null when no such task exists.
      *
      * Read separately from the conditional insert purely so a missing task
@@ -135,9 +186,73 @@ final class AssignmentRepository
     }
 
     /**
-     * Gives up a slot. The row is deleted rather than marked cancelled when
-     * the task is still far enough out that nobody was let down; the caller
-     * decides which of those it is, since only it knows the notice period.
+     * Cancels a person's slot, keeping the row for the reputation history
+     * rather than deleting it. Which cancellation it is depends on how much
+     * notice was given: inside `$noticeHours` of the task's start it is a
+     * `late_cancel` (a replacement is now hard to find); earlier than that it
+     * is a plain `cancelled` with no penalty. `setStatus()` stamps
+     * `status_changed_at`, which is the "when" a later reputation score needs.
+     *
+     * @return string The status recorded, or '' when there was no live slot to
+     *                cancel.
+     */
+    public function cancel(int $taskId, int $personId, int $noticeHours): string
+    {
+        $assignment = $this->findFor($taskId, $personId);
+
+        if (! $assignment instanceof Assignment || ! $assignment->isOccupying()) {
+            return '';
+        }
+
+        $status = $this->cancellationStatus($taskId, $noticeHours);
+        $this->setStatus($assignment->id, $status);
+
+        return $status;
+    }
+
+    /**
+     * `late_cancel` when now is within the notice window of the task's start,
+     * else `cancelled`. An untimed task, or one whose start cannot be read,
+     * defaults to the no-penalty `cancelled`.
+     */
+    private function cancellationStatus(int $taskId, int $noticeHours): string
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT starts_at, task_date FROM {$this->tasksTable()} WHERE id = %d",
+                $taskId
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($row)) {
+            return AssignmentStatus::CANCELLED;
+        }
+
+        $when = (string) ($row['starts_at'] ?? '');
+
+        if ('' === $when) {
+            $when = (string) ($row['task_date'] ?? '') . ' 00:00:00';
+        }
+
+        $start = strtotime($when);
+        $now = strtotime((string) current_time('mysql'));
+
+        if (false === $start || false === $now) {
+            return AssignmentStatus::CANCELLED;
+        }
+
+        return ($start - $now) < $noticeHours * HOUR_IN_SECONDS
+            ? AssignmentStatus::LATE_CANCEL
+            : AssignmentStatus::CANCELLED;
+    }
+
+    /**
+     * Hard-deletes a slot. Retained for the rare case a row must truly vanish
+     * (e.g. a mistake), but the bot cancels rather than deletes so the history
+     * survives - see cancel().
      */
     public function leave(int $taskId, int $personId): bool
     {

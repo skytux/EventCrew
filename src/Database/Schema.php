@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '2';
+    public const DB_VERSION = '3';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -187,6 +187,7 @@ final class Schema
                 is_organizer tinyint(1) NOT NULL DEFAULT 0,
                 email_opt_in_at datetime DEFAULT NULL,
                 email_opt_in_source varchar(20) NOT NULL DEFAULT '',
+                disabled_at datetime DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

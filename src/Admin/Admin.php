@@ -40,6 +40,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_send_open_task',
+            [$this->container->get(SettingsPage::class), 'sendOpenTaskEmail']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_task',
             [$this->container->get(TasksPage::class), 'save']
         );

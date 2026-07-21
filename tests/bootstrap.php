@@ -57,6 +57,13 @@ if (! class_exists('WP_REST_Request')) {
         /** @var array<string, mixed> */
         public array $params = [];
 
+        public string $method = 'GET';
+
+        public function get_method(): string
+        {
+            return $this->method;
+        }
+
         public function set_header(string $name, string $value): void
         {
             $this->headers[$this->key($name)] = $value;
