@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 
 /**
- * "I found someone to cover" - the graceful way off a task.
+ * "I'll cover for someone" - the person stepping in drives it, and it completes
+ * itself with no organizer in the loop.
  *
- * A plain cancel close to the event counts against reputation because a
- * replacement is hard to find; doing that finding yourself is exactly the
- * behaviour to reward, not penalise. So `/replace` frees the slot as a neutral
- * `cancelled` (no late penalty), names the replacement in the group so the crew
- * knows who is coming, and leaves the organizer to confirm it as `replaced`
- * (which credits the person) once the cover actually shows up.
+ * The cover runs /replace, names the person they are covering, and the bot
+ * lists that person's upcoming tasks. Picking one swaps the two in a single
+ * step: the original is marked `replaced` (which frees the slot and earns them
+ * the reputation credit for arranging cover), and the cover is signed up in
+ * their place. Both are told, and the group is told.
  */
 final class ReplacementService
 {
-    private const AWAIT_PREFIX = 'eventcrew_tg_await_replacement_';
+    private const AWAIT_PREFIX = 'eventcrew_tg_await_replace_target_';
 
     public function __construct(
         private readonly AssignmentRepository $assignments,
@@ -33,139 +34,227 @@ final class ReplacementService
     }
 
     /**
-     * Handles /replace in a private chat: lists the person's upcoming slots to
-     * pick which one they have found cover for.
+     * /replace in a private chat: asks who the cover is standing in for.
      */
     public function start(int $telegramUserId, int $chatId): void
     {
-        $person = $this->people->findByTelegramUserId($telegramUserId);
+        $cover = $this->people->findByTelegramUserId($telegramUserId);
 
-        if (null === $person || ! $person->isEmailVerified()) {
+        if (null === $cover || ! $cover->isEmailVerified()) {
             $this->telegram->sendMessage(
                 $chatId,
-                __('Set yourself up first before handing a task over.', 'eventcrew')
+                __('Set yourself up first, then you can cover someone’s task.', 'eventcrew')
             );
 
             return;
         }
 
-        $slots = $this->upcomingSlots($person->id);
+        set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
+        $this->telegram->sendMessage(
+            $chatId,
+            __('Whose task are you covering? Send their name, or @mention them.', 'eventcrew')
+        );
+    }
 
-        if ([] === $slots) {
+    public function isAwaitingTarget(int $telegramUserId): bool
+    {
+        return false !== get_transient(self::AWAIT_PREFIX . $telegramUserId);
+    }
+
+    /**
+     * The reply naming the person being covered. Resolves them - by a Telegram
+     * text-mention if there is one, otherwise by name - and lists their
+     * upcoming tasks to pick from.
+     *
+     * @param array<int, array<string, mixed>> $entities Telegram message entities.
+     */
+    public function captureTarget(int $telegramUserId, int $chatId, string $text, array $entities): void
+    {
+        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+
+        $buttons = [];
+
+        foreach ($this->resolveTargets($text, $entities) as $person) {
+            foreach ($this->upcomingSlots($person->id) as $entry) {
+                $task = $entry['task'];
+                $buttons[] = [[
+                    'text' => sprintf('%s — %s (%s)', $person->name(), $task->roleLabel(), $task->eventName()),
+                    'callback_data' => 'rep:' . $entry['assignmentId'],
+                ]];
+            }
+        }
+
+        if ([] === $buttons) {
             $this->telegram->sendMessage(
                 $chatId,
-                __('You have no upcoming tasks to hand over.', 'eventcrew')
+                __('I couldn’t find anyone by that name with an upcoming task to cover.', 'eventcrew')
             );
 
             return;
-        }
-
-        $keyboard = [];
-
-        foreach ($slots as $task) {
-            $keyboard[] = [[
-                'text' => sprintf('%s — %s', $task->roleLabel(), $task->eventName()),
-                'callback_data' => 'rep:' . $task->id,
-            ]];
         }
 
         $this->telegram->sendMessage(
             $chatId,
-            __('Which task did you find a replacement for?', 'eventcrew'),
-            ['inline_keyboard' => $keyboard]
+            __('Which of their tasks are you covering?', 'eventcrew'),
+            ['inline_keyboard' => $buttons]
         );
     }
 
     /**
-     * A task was picked (callback rep:<taskId>): remember it and ask for the
-     * replacement's name.
+     * A task was picked (callback rep:<assignmentId>): swap the two.
      *
      * @param array<string, mixed> $callbackQuery
      */
     public function onSelect(array $callbackQuery): void
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
-        $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? $telegramUserId);
-        $taskId = (int) preg_replace('/\D/', '', (string) ($callbackQuery['data'] ?? ''));
+        $coverTelegramId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $assignmentId = (int) preg_replace('/\D/', '', (string) ($callbackQuery['data'] ?? ''));
 
-        $person = $this->people->findByTelegramUserId($telegramUserId);
-        $assignment = null === $person ? null : $this->assignments->findFor($taskId, $person->id);
+        $original = $this->assignments->find($assignmentId);
+        $cover = $this->people->findByTelegramUserId($coverTelegramId);
 
-        if (null === $assignment || ! $assignment->isOccupying()) {
+        if (null === $cover || ! $cover->isEmailVerified()) {
+            $this->telegram->answerCallbackQuery($callbackId, __('Set yourself up first.', 'eventcrew'), true);
+
+            return;
+        }
+
+        $task = null === $original ? null : $this->tasks->find($original->taskId);
+
+        if (null === $original || null === $task || ! $original->isOccupying() || $task->isPast()) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('You are not signed up for that task.', 'eventcrew'),
+                __('That task is no longer available.', 'eventcrew'),
                 true
             );
 
             return;
         }
 
-        set_transient(self::AWAIT_PREFIX . $telegramUserId, $taskId, 15 * MINUTE_IN_SECONDS);
-        $this->telegram->answerCallbackQuery($callbackId);
-        $this->telegram->sendMessage(
-            $chatId,
-            __('Who is taking your place? Reply with their name.', 'eventcrew')
-        );
-    }
+        $refusal = $this->refusalFor($cover, $original->personId, $task->id);
 
-    public function isAwaitingName(int $telegramUserId): bool
-    {
-        return false !== get_transient(self::AWAIT_PREFIX . $telegramUserId);
-    }
+        if (null !== $refusal) {
+            $this->telegram->answerCallbackQuery($callbackId, $refusal, true);
 
-    /**
-     * The reply after a task was picked: the replacement's name. Frees the slot
-     * (neutral cancel), announces the cover in the group, and confirms.
-     */
-    public function captureName(int $telegramUserId, int $chatId, string $text): void
-    {
-        $taskId = (int) get_transient(self::AWAIT_PREFIX . $telegramUserId);
-
-        if ($taskId <= 0) {
             return;
         }
 
-        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+        $this->swap($callbackId, $original->id, $original->personId, $task->id, $cover);
+    }
 
-        $name = sanitize_text_field($text);
-        $person = $this->people->findByTelegramUserId($telegramUserId);
+    private function refusalFor(Person $cover, int $originalPersonId, int $taskId): ?string
+    {
+        if ($cover->id === $originalPersonId) {
+            return __('That’s your own task.', 'eventcrew');
+        }
+
+        $existing = $this->assignments->findFor($taskId, $cover->id);
+
+        if (null !== $existing && $existing->isOccupying()) {
+            return __('You’re already signed up for that one.', 'eventcrew');
+        }
+
+        if ($this->assignments->hasOverlapping($cover->id, $taskId)) {
+            return __('That clashes with another slot you already hold.', 'eventcrew');
+        }
+
+        return null;
+    }
+
+    private function swap(
+        string $callbackId,
+        int $originalAssignmentId,
+        int $originalPersonId,
+        int $taskId,
+        Person $cover
+    ): void {
+        // Free the original's slot as `replaced` (their credit for arranging
+        // cover), then sign the cover up. If the freed slot is lost to a race
+        // before the cover can take it, put the original back and say so.
+        $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::REPLACED, $cover->id);
+        $outcome = $this->assignments->join($taskId, $cover->id);
+
+        if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
+            $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::SIGNED_UP, $cover->id);
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That slot filled up before I could swap it.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
         $task = $this->tasks->find($taskId);
+        $original = $this->people->find($originalPersonId);
+        $originalName = null === $original ? __('someone', 'eventcrew') : $original->name();
+        $role = null === $task ? '' : $task->roleLabel();
+        $event = null === $task ? '' : $task->eventName();
 
-        if ('' === $name || null === $person || null === $task) {
-            return;
-        }
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            sprintf(
+                /* translators: 1: person being covered, 2: role */
+                __('Done — you’re covering %1$s’s %2$s.', 'eventcrew'),
+                $originalName,
+                $role
+            ),
+            true
+        );
 
-        $assignment = $this->assignments->findFor($taskId, $person->id);
-
-        if (null !== $assignment && $assignment->isOccupying()) {
-            // Neutral cancel: no late penalty, because cover was found. The
-            // organizer upgrades it to `replaced` on the roster once confirmed.
-            $this->assignments->setStatus($assignment->id, AssignmentStatus::CANCELLED);
+        if (null !== $original && null !== $original->telegramChatId) {
+            $this->telegram->sendMessage(
+                $original->telegramChatId,
+                sprintf(
+                    /* translators: 1: cover's name, 2: role, 3: event */
+                    __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
+                    $cover->name(),
+                    $role,
+                    $event
+                )
+            );
         }
 
         $this->board->announce(sprintf(
-            /* translators: 1: replacement's name, 2: person handing over, 3: role, 4: event */
-            __('%1$s is replacing %2$s for %3$s (%4$s).', 'eventcrew'),
-            $name,
-            $person->name(),
-            $task->roleLabel(),
-            $task->eventName()
+            /* translators: 1: cover's name, 2: person being covered, 3: role, 4: event */
+            __('%1$s is covering for %2$s: %3$s at %4$s.', 'eventcrew'),
+            $cover->name(),
+            $originalName,
+            $role,
+            $event
         ));
-
-        $this->telegram->sendMessage(
-            $chatId,
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('Thanks — I’ve let the group know and freed your slot. An organizer will confirm the cover.', 'eventcrew')
-        );
+        $this->board->refresh();
     }
 
     /**
-     * The person's occupying assignments whose task is still upcoming - the
-     * only ones it makes sense to hand over.
+     * The people the named text points at: an exact match from a Telegram
+     * text-mention if present, else a name search.
      *
-     * @return array<int, \EventCrew\Models\Task>
+     * @param array<int, array<string, mixed>> $entities
+     * @return array<int, Person>
+     */
+    private function resolveTargets(string $text, array $entities): array
+    {
+        foreach ($entities as $entity) {
+            if ('text_mention' === ($entity['type'] ?? '') && isset($entity['user']['id'])) {
+                $person = $this->people->findByTelegramUserId((int) $entity['user']['id']);
+
+                if (null !== $person) {
+                    return [$person];
+                }
+            }
+        }
+
+        $name = ltrim(trim($text), '@');
+
+        return '' === $name ? [] : $this->people->all(['search' => $name, 'per_page' => 10]);
+    }
+
+    /**
+     * A person's occupying assignments whose task is still upcoming.
+     *
+     * @return array<int, array{assignmentId: int, task: \EventCrew\Models\Task}>
      */
     private function upcomingSlots(int $personId): array
     {
@@ -179,7 +268,7 @@ final class ReplacementService
             $task = $this->tasks->find($assignment->taskId);
 
             if (null !== $task && ! $task->isPast()) {
-                $slots[] = $task;
+                $slots[] = ['assignmentId' => $assignment->id, 'task' => $task];
             }
         }
 

@@ -11,8 +11,10 @@
   the capacity guard (`JOIN_REJOINED`). `occupying()` no longer counts
   `replaced`, so replaced/cancelled slots reopen — the counter is correct
   everywhere. `update_id` idempotency drops redelivered updates.
-- **Replacement flow.** `/replace` → pick a slot → name the cover → announced in
-  the group, slot freed; organizer marks `replaced` on the Roster.
+- **Replacement flow (cover-initiated, automatic).** The person stepping in runs
+  `/replace`, names who they're covering (text-mention or name search), picks
+  from that person's upcoming tasks; the bot swaps them — original → `replaced`
+  (0.8), cover → signed up — tells both and the group. No admin step.
 - **Account model.** `disabled_at`; transactional `acceptsOpenTaskEmail`
   (verified & not disabled); `/stop` + `/start`; signed **manage** page with
   disable and full GDPR delete (POST-only actions).
