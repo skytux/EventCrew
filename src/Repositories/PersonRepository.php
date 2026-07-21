@@ -148,6 +148,21 @@ final class PersonRepository
     }
 
     /**
+     * Attaches a Telegram identity to an existing person. Its own method so
+     * the bot's onboarding never has to name the columns, and so the intent -
+     * "this row is now reachable in Telegram" - reads at the call site. The
+     * unique index on telegram_user_id is what stops two people claiming the
+     * same account; the caller checks for that before reaching here.
+     */
+    public function linkTelegram(int $id, int $telegramUserId, ?int $telegramChatId): void
+    {
+        $this->update($id, [
+            'telegram_user_id' => $telegramUserId,
+            'telegram_chat_id' => $telegramChatId,
+        ]);
+    }
+
+    /**
      * @param array{search?: string, orderby?: string, order?: string, per_page?: int, page?: int} $args
      * @return array<int, Person>
      */

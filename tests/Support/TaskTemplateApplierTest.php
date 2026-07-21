@@ -129,4 +129,50 @@ final class TaskTemplateApplierTest extends TestCase
         self::assertNotNull($result);
         self::assertSame(3, $result['created']);
     }
+
+    /**
+     * Creating tasks marks the Telegram board stale so the listener can refresh
+     * it. Both callers - the manual button and the sync listener - go through
+     * apply(), so firing it here is what covers them both.
+     */
+    public function testFiresBoardStaleWhenTasksAreCreated(): void
+    {
+        $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
+        $this->wpdb->nextResults[] = [];
+
+        $fired = [];
+        Functions\when('do_action')->alias(
+            static function (string $hook) use (&$fired): void {
+                $fired[] = $hook;
+            }
+        );
+
+        $this->applier()->apply(12);
+
+        self::assertContains('eventcrew/board_stale', $fired);
+    }
+
+    public function testDoesNotFireBoardStaleWhenNothingWasCreated(): void
+    {
+        $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
+
+        // All three shipped roles already have a task for this event.
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_post_id' => 12, 'role_slug' => 'decorate', 'task_date' => '2026-08-01'],
+            ['id' => 2, 'event_post_id' => 12, 'role_slug' => 'welcome', 'task_date' => '2026-08-01'],
+            ['id' => 3, 'event_post_id' => 12, 'role_slug' => 'clean', 'task_date' => '2026-08-01'],
+        ];
+
+        $fired = [];
+        Functions\when('do_action')->alias(
+            static function (string $hook) use (&$fired): void {
+                $fired[] = $hook;
+            }
+        );
+
+        $result = $this->applier()->apply(12);
+
+        self::assertSame(0, $result['created']);
+        self::assertNotContains('eventcrew/board_stale', $fired);
+    }
 }

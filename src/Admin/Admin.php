@@ -35,6 +35,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_telegram_setup',
+            [$this->container->get(SettingsPage::class), 'setupWebhook']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_task',
             [$this->container->get(TasksPage::class), 'save']
         );

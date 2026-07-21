@@ -54,5 +54,9 @@ abstract class TestCase extends PHPUnitTestCase
                 ? '2026-07-20 12:00:00'
                 : gmdate($format, strtotime('2026-07-20 12:00:00'))
         );
+        // Harmless by default: several repositories and services fire actions
+        // (e.g. eventcrew/board_stale) that most tests do not care about. A
+        // test that does care re-stubs this with a capturing alias.
+        Functions\when('do_action')->justReturn(null);
     }
 }

@@ -153,7 +153,7 @@ be designing for a user who does not exist.
 | v0.2 | ✅ Vocabulary refactor |
 | v0.3 | ✅ Verified on a real install; InnoDB, task datetimes, role archiving, EventMesh event picker, role templates |
 | v0.3.1 | ✅ EventMesh fires `eventmesh/event_synced`; EventCrew optionally auto-creates a new event's tasks. (EventMesh: Holvi timezone fix.) |
-| **v0.4** | **The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave — plus the concurrency test v0.3 could not run, and the multi-event board below** |
+| v0.4 | ✅ The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave, multi-event board. Concurrency now scriptable over the webhook. |
 | v0.5 | Roster and attendance marking, in wp-admin and organizer DMs |
 | v0.6 | Reputation, credits, redemption, door list |
 | v0.7 | Public signup page, magic-link self-service |
@@ -228,12 +228,14 @@ to get by leaving the time fields blank.
 options, no clock — because every interesting scheduling decision lives there
 and none of it should need a MySQL to test.
 
-### Still owed from v0.3
+### Still owed from v0.3 — settled in v0.4
 
 The concurrency phase never ran: the host has no WP-CLI, and there is no way
-to get two PHP processes into the conditional insert at once without one. It
-moves to v0.4, where the bot's HTTP endpoint gives another way in — `curl_multi`
-against a real join URL, which is closer to the actual failure anyway.
+to get two PHP processes into the conditional insert at once without one. v0.4
+delivers the other way in — `tools/concurrency-check.php` fires six
+`callback_query` joins at the live webhook with `curl_multi`, needing no shell,
+only the installed bot. It stays a host-run script (there is still no local WP
+here), but it now exists and is packaged.
 
 ---
 
@@ -285,23 +287,58 @@ it simply assumes local. The fix was invisible to the test suite until
 `wp_timezone()` got stubbed, because unstubbed it fell back to UTC and hid the
 very bug it introduces.
 
-## Open question for v0.4: multiple events open at once
+## Done: v0.4 — the Telegram group bot
 
-Recorded so the bot design does not rediscover it. The question was **not** a
-batch "join Decorate across all three events" action — it was how the bot's
-board presents several events being open for signup simultaneously.
+The whole back office finally gets its front: a bot in the existing group where
+people claim jobs. It ships as a new `EventCrew\Telegram` namespace and needed
+**no schema change** — v0.1 already provisioned `telegram_user_id` /
+`telegram_chat_id` / `email_verified_at`, the hashed `auth_tokens` table, and
+the atomic `join()`. `DB_VERSION` stays 2.
 
-Structurally this needs nothing new. `eventcrew_assignments` is unique on
-`(task_id, person_id)` only — never on the event — so a person can already
-hold slots across distinct tasks in distinct events, and
-`AssignmentRepository::hasOverlapping()` exists precisely to permit that in
-general and refuse it only on a genuine time clash between two tasks,
-whichever events they belong to. No schema or repository work is implied.
+**The webhook is the only inbound seam.** Telegram posts every update to a REST
+route (`eventcrew/v1/telegram/webhook`), authenticated by the secret token it
+echoes in a header — matched in constant time, because Telegram cannot send a
+WordPress nonce. With no secret stored the route refuses everything; there is no
+unprotected state. `WebhookController`, the verification endpoint and the
+board-refresh listener all boot on the front/cron path, for the same reason
+`EventMeshSyncListener` does: an update, or a cron-driven task creation, never
+touches wp-admin. All three no-op until the bot is configured.
 
-What v0.4 owes is a **board-layout** decision: when more than one event is
-open, group the Telegram board's task listing by event, most likely reusing
-`EventSource::upcoming()` (already returns every linkable event) and
-`TaskRepository::forDate()` per event.
+**Identity is still a verified email.** `people.email` is `NOT NULL`, so
+onboarding has to collect one: `/start` in the bot's private chat asks for it,
+the next message is taken as the answer (held in a short transient), a person is
+created or linked, and `AuthTokenRepository` issues a single-use, hashed
+magic-link token that `wp_mail` sends. Confirming the link (a public GET, works
+signed-out) sets `email_verified_at`. Holding a slot is gated on that — a Join
+tap from an unverified account is refused with a nudge to the deep-link button,
+so the settled "identity is a verified email" rule holds at the one place it
+matters. The Telegram id is unique, so a second email can never steal an account
+already linked to someone else.
+
+**Join/leave reuse the existing atomic path untouched.** `BoardService` maps a
+button tap to `AssignmentRepository::join()` / `leave()` and turns the outcome
+into a private callback alert; the capacity race stays the database's to win.
+`hasOverlapping()` is checked before a join, so one person across several events
+is fine and only a genuine time clash is refused.
+
+**The board auto-posts on task creation.** Both task-creating paths already
+funnel through `TaskTemplateApplier::apply()`, which now fires
+`eventcrew/board_stale`; hand-edits and deletes fire it too. `BoardRefreshListener`
+reposts or edits the one shared board message in place. Because the listener
+runs on the cron path, an EventMesh sync that creates tasks refreshes the board
+with nobody logged in — the same "with nobody watching" property v0.3.1 has.
+
+**Multi-event board — resolved, not owed.** The old open question (how the board
+shows several events open at once) needed no schema or repository work, exactly
+as predicted: `eventcrew_assignments` is unique on `(task_id, person_id)` only.
+`BoardService::render()` groups tasks by event and shows an event heading only
+when more than one is open, reusing `TaskRepository::upcoming()` +
+`occupancyFor()`.
+
+**Bot credentials in Settings.** The token and webhook controls appear on the
+Settings page now — allowed under "Settings lists only controls the shipped code
+reads" precisely because v0.4 is the release whose code reads them. The webhook
+status table there is verification item 2, read live from `getWebhookInfo`.
 
 ---
 
@@ -352,15 +389,17 @@ unit tests:
 1. ~~**Real install**~~ — ✅ done. 103 checks passed; the one failure (MyISAM)
    is fixed in v0.3. Re-run `tools/VERIFY.md` after upgrading, since the
    migration now converts engines and widens two columns.
-2. **Webhook reachability** (after the bot lands) — `getWebhookInfo` shows
+2. **Webhook reachability** — now runnable (bot shipped in v0.4). Read live off
+   Settings → EventCrew after installing the webhook: `getWebhookInfo` shows
    `pending_update_count` 0 and no `last_error_message`. HTTPS with a valid
    certificate is a hard prerequisite; Telegram refuses self-signed and plain
-   HTTP.
-3. **Concurrent capacity, scripted** — fire N simultaneous joins at a task
-   with capacity 2, assert exactly 2 assignments exist. This is the failure the
-   group surface makes likely and that manual testing will not reproduce.
-   *Still owed — the host has no WP-CLI, so phase 5 skipped. Moves to v0.4,
-   driven over the bot's join endpoint instead.*
+   HTTP. *Owed to actually run on the real host.*
+3. **Concurrent capacity, scripted** — now runnable via
+   `tools/concurrency-check.php`: it fires six simultaneous joins at a capacity-2
+   task over the live webhook (`curl_multi`, no shell needed) and asserts exactly
+   two claimed a slot. This is the failure the group surface makes likely and
+   that manual testing will not reproduce. *Owed to actually run on the real
+   host — the script exists and is packaged.*
 4. **Notification cron** — trigger twice, assert one message per recipient per
    kind across both runs; fill every task and confirm the open-task call sends
    nothing.
@@ -373,10 +412,11 @@ unit tests:
 ## Local dev environment
 
 The `php` on PATH loads no `php.ini`, and Composer is not installed globally.
-Build a minimal ini enabling `openssl`, `curl`, `mbstring`, `fileinfo` with
-`extension_dir` pointed at the PHP install's `ext/`, fetch `composer.phar`, and
-run everything as `php -c <ini> <command>`. Keep that ini outside the repo —
-which means rebuilding it each session, a few seconds' work:
+Build a minimal ini enabling `openssl`, `curl`, `mbstring`, `fileinfo` (and
+`zip`, which `tools/build-zip.php` needs) with `extension_dir` pointed at the
+PHP install's `ext/`, fetch `composer.phar`, and run everything as
+`php -c <ini> <command>`. Keep that ini outside the repo — which means
+rebuilding it each session, a few seconds' work:
 
 ```ini
 extension_dir = "<php-install>\ext"
@@ -384,6 +424,7 @@ extension=openssl
 extension=curl
 extension=mbstring
 extension=fileinfo
+extension=zip
 ```
 
 PHP 8.3 lives under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\PHP.PHP.8.3_*`.

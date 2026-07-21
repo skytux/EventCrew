@@ -50,6 +50,7 @@ $include = [
     'templates',
     'tools/VERIFY.md',
     'tools/verify-install.php',
+    'tools/concurrency-check.php',
 ];
 
 /** Never ships, at any point, whatever else changes above. */

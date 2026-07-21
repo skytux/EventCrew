@@ -1,5 +1,14 @@
 # EventCrew install verification
 
+> **v0.4 note.** The Telegram bot has landed, so two long-owed checks are now
+> runnable. Item 2 (webhook reachability) is read straight off the Settings →
+> EventCrew page once the webhook is installed — the status table there shows
+> `Installed`, a pending-update count, and any last error Telegram reports.
+> Item 3 (concurrency) now has its own script, `tools/concurrency-check.php`,
+> which drives the join over the real webhook — see "4. Concurrency" below.
+> No schema change shipped in v0.4, so `DB_VERSION` is still 2 and this file's
+> Phases 1–3 pass unchanged from v0.3.
+
 > **v0.3 upgrade note.** The first run found every table created as MyISAM and
 > passed everything else. v0.3 fixes that and widens `tasks.starts_at` /
 > `tasks.ends_at` from `time` to `datetime`, so `DB_VERSION` is now 2 and the
@@ -8,12 +17,14 @@
 > two widened columns, and a task crossing midnight clashing with one the
 > next morning.
 >
-> Phase 5 skipped last time for want of WP-CLI. If you can get `wp` onto the
-> host it is worth running; otherwise it stays owed until the bot lands and
-> the join endpoint can be hit concurrently over HTTP.
+> Phase 5 of `verify-install.php` still needs WP-CLI to run two PHP processes
+> into the conditional insert at once. `tools/concurrency-check.php` (below) is
+> the other way in — it hits the live webhook with `curl_multi`, which needs no
+> shell, only the installed bot.
 
-Everything below is verification item 1 and item 3 from `ROADMAP.md`. Items 2,
-4 and 5 depend on code that does not exist yet and stay owed.
+Everything below is verification items 1, 2 and 3 from `ROADMAP.md`. Items 4 and
+5 (the notification cron and a real bulk-mail delivery) depend on code that does
+not exist yet and stay owed.
 
 Do this on **staging if you have one**. If you only have the live site, the
 script is still safe — it tags every row it writes and deletes them in its
@@ -75,6 +86,40 @@ either works or every join returns `full`.
 
 Phase 5 is verification item 3. It is the failure the Telegram group surface
 makes likely and that clicking around will never reproduce.
+
+## Bot: webhook reachability and concurrency (items 2 and 3)
+
+These need the bot configured: **Settings → EventCrew**, paste the BotFather
+token, save, then **Install / refresh webhook**. Telegram requires HTTPS with a
+valid certificate and refuses self-signed or plain HTTP, so this only works on a
+properly-served host.
+
+**Item 2 — webhook reachability.** After installing, the Webhook table on that
+same page reads the status live from Telegram's `getWebhookInfo`:
+
+- [ ] Status shows **Installed**
+- [ ] **Pending updates** is 0
+- [ ] No **Last error** row appears
+
+Send the bot `/start` in a private chat, give it an email, and confirm the link
+that arrives (item 5's transactional cousin — the verification mail, not the
+bulk open-task mail). Then run `/board` in the group and confirm the board posts
+with a Join button per open task.
+
+**Item 3 — concurrency, scripted.** With the webhook installed:
+
+```
+wp eval-file wp-content/plugins/eventcrew/tools/concurrency-check.php
+```
+
+Or, without WP-CLI, copy `concurrency-check.php` to the WordPress root, open it
+in a browser while signed in as an administrator, **then delete it**. Unlike
+`verify-install.php`'s phase 5, this one needs no shell: it fires six
+`callback_query` joins at the live webhook at once with `curl_multi`, against a
+capacity-2 task it seeds with six verified test people, and asserts exactly two
+claimed a slot. It deletes everything it created and prints `PASS` or `FAIL`.
+
+- [ ] `concurrency-check.php` prints **PASS** (2 of 6 claimed the capacity-2 task)
 
 ## 3. Click through the admin screens
 
