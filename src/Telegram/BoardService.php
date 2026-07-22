@@ -10,8 +10,8 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
-use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 
 /**
@@ -45,7 +45,7 @@ final class BoardService
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
         private readonly Logger $logger,
-        private readonly Mailer $mailer,
+        private readonly ClaimNotifier $notifier,
         private readonly SignupService $signup
     ) {
     }
@@ -280,7 +280,7 @@ final class BoardService
         $this->telegram->answerCallbackQuery($callbackId, $message, true);
 
         if ($joined) {
-            $this->sendSignupEmail($person, $taskId);
+            $this->notifier->confirmSignup($person, $taskId);
         }
 
         return $joined;
@@ -302,92 +302,10 @@ final class BoardService
         $this->telegram->answerCallbackQuery($callbackId, $message);
 
         if ('' !== $status) {
-            $this->sendCancelEmail($person, $taskId, $status);
+            $this->notifier->confirmCancellation($person, $taskId, $status);
         }
 
         return '' !== $status;
-    }
-
-    private function sendSignupEmail(Person $person, int $taskId): void
-    {
-        // A person who switched their account off asked for no email; the
-        // confirmation is honoured over the convenience.
-        if ($person->isDisabled()) {
-            return;
-        }
-
-        $task = $this->tasks->find($taskId);
-        $assignment = $this->assignments->findFor($taskId, $person->id);
-
-        if (null === $task || null === $assignment) {
-            return;
-        }
-
-        $this->mailer->toPerson(
-            $person->id,
-            $person->email,
-            sprintf(
-                /* translators: 1: role, 2: event */
-                __('You’re signed up: %1$s for %2$s', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\nCan't make it? Open the bot and tap the task to drop out, or /replace to hand it to someone.", 'eventcrew'),
-                $person->name(),
-                $task->roleLabel(),
-                $task->eventName(),
-                $this->whenText($task),
-                $this->mailer->ticketUrl($assignment->id)
-            )
-        );
-    }
-
-    private function sendCancelEmail(Person $person, int $taskId, string $status): void
-    {
-        if ($person->isDisabled()) {
-            return;
-        }
-
-        $task = $this->tasks->find($taskId);
-
-        if (null === $task) {
-            return;
-        }
-
-        $note = AssignmentStatus::LATE_CANCEL === $status
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time.", 'eventcrew')
-            : __('Thanks for the notice.', 'eventcrew');
-
-        $this->mailer->toPerson(
-            $person->id,
-            $person->email,
-            sprintf(
-                /* translators: 1: role, 2: event */
-                __('Cancelled: %1$s for %2$s', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: standing note */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou've dropped out of %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s", 'eventcrew'),
-                $person->name(),
-                $task->roleLabel(),
-                $task->eventName(),
-                $note
-            )
-        );
-    }
-
-    private function whenText(Task $task): string
-    {
-        $time = $task->timeRange();
-
-        return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
     }
 
     /**

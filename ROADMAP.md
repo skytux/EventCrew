@@ -166,6 +166,7 @@ be designing for a user who does not exist.
 | v1.0.3 | ✅ Settings webhook table shows the last-error age ("X ago") and notes that Telegram never clears it on success, so a stale error reads as stale |
 | v1.0.4 | ✅ Webhook refresh now deleteWebhook→setWebhook, since setWebhook to the same URL never clears Telegram's sticky last_error_message |
 | v1.0.5 | ✅ Signup page: background-agnostic styling (works on dark themes) and an optional "Open in Telegram" group link (new Settings → Group link) |
+| v1.0.6 | ✅ Fix: web claim/drop sent no confirmation email (only the bot did). Extracted the signup/cancel emails into a shared `ClaimNotifier` both channels call |
 
 ## Done: v0.3 — verification, then the schema it exposed
 

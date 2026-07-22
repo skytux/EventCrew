@@ -18,6 +18,7 @@ use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\HealthReport;
@@ -225,6 +226,15 @@ final class Kernel
         );
 
         $this->container->singleton(
+            ClaimNotifier::class,
+            fn (Container $container) => new ClaimNotifier(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
             NotificationsRepository::class,
             fn () => new NotificationsRepository()
         );
@@ -275,7 +285,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(SignupService::class),
                 $container->get(StandingCalculator::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(ClaimNotifier::class)
             )
         );
 
@@ -292,7 +303,7 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(Logger::class),
-                $container->get(Mailer::class),
+                $container->get(ClaimNotifier::class),
                 $container->get(SignupService::class)
             )
         );

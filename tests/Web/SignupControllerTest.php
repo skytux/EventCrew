@@ -10,6 +10,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -69,7 +70,8 @@ final class SignupControllerTest extends TestCase
             $assignments,
             new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository())),
             new StandingCalculator($assignments, new RedemptionRepository()),
-            new Mailer(new Logger())
+            new Mailer(new Logger()),
+            new ClaimNotifier(new TaskRepository(), $assignments, new Mailer(new Logger()))
         );
     }
 
