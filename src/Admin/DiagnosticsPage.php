@@ -28,6 +28,8 @@ final class DiagnosticsPage
             'diagnostics',
             [
                 'checks' => $this->health->checks(),
+                'recent_logs' => $this->health->recentActivity(),
+                'last_update_id' => $this->health->lastUpdateId(),
                 'plugin_version' => defined('EVENTCREW_VERSION') ? EVENTCREW_VERSION : '',
                 'php_version' => PHP_VERSION,
                 'wp_version' => get_bloginfo('version'),

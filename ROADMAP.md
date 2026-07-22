@@ -644,6 +644,31 @@ verification kit (`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) ha
 come out of the shipped zip as of v1.0. It stays in the repo for re-running
 against a future host; `build-zip.php` documents how to re-add it.
 
+### Post-1.0 polish — reconciling against the original spec
+
+A pass back over the planning document (`imperative-foraging-galaxy.md`) after
+v1.0 turned up three items it named that had quietly not landed. Two were closed;
+the rest are decisions, tracked below rather than lost.
+
+- **Diagnostics now shows recent activity.** The ring-buffer `Logger` existed and
+  was written to everywhere (Telegram, mail, DoH, boot), but the Diagnostics page
+  never read it back — exactly the "recent log entries / last update received" the
+  spec put there. `HealthReport::recentActivity()` (newest first) and
+  `lastUpdateId()` feed a new panel on the page, so the actual last error is
+  visible instead of guessed. Still no outbound calls: both read options only.
+- **Bot token can come from `wp-config.php`.** `EVENTCREW_TELEGRAM_TOKEN` is now
+  read before the option (`TelegramClient::token()`), so the secret can stay out
+  of the database and its backups; a Settings hint points at it. The option
+  remains the fallback the Settings field writes.
+- **Still decisions, not bugs (deliberately not changed):** the open-task email
+  no longer carries its own GDPR opt-in (superseded in v0.6 — worth a conscious
+  ruling on whether "verified + not-disabled" is consent enough for the *bulk*
+  call); bot onboarding uses a magic link rather than the spec's 6-digit code
+  (reintroduces the inbox round-trip the code avoided); no 429/`retry_after`
+  backoff on group board edits (the join still commits — only the cosmetic edit
+  can stall under a tap burst); and Diagnostics still doesn't distinguish plain
+  `wp_mail` from authenticated SMTP.
+
 ## Verification — all green on the real host (InfinityFree)
 
 Carried forward from the planning document, because none of it is covered by unit
