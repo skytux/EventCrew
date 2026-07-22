@@ -83,7 +83,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
  * legible and they sit calmly on a light or dark theme alike.
  */
 .eventcrew-signup .eventcrew-btn-go,
-.eventcrew-signup .eventcrew-btn-stop {
+.eventcrew-signup .eventcrew-btn-stop,
+.eventcrew-signup .eventcrew-btn-full {
     color: #fff; border: 0; border-radius: 5px; cursor: pointer;
     padding: .28em .8em; font: inherit; font-size: .9em; font-weight: 600; line-height: 1.5;
 }
@@ -92,12 +93,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 .eventcrew-signup .eventcrew-btn-go:hover { background: #164a1a; color: #fff; }
 .eventcrew-signup .eventcrew-btn-stop { background: #8e1616; }
 .eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
+.eventcrew-signup .eventcrew-btn-full { background: #6b7280; opacity: .8; cursor: not-allowed; }
 </style>
 <div class="eventcrew-signup">
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
     <?php if (null === $eventcrew_person) : ?>
-        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
+        <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
             <label for="eventcrew-email"><?php esc_html_e('Your email to sign up:', 'eventcrew'); ?></label>
@@ -156,6 +158,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     var board = document.getElementById('eventcrew-board');
     var toast = document.getElementById('eventcrew-toast');
 
+    // Pin the toast to the viewport, not the widget: a transformed ancestor
+    // (which many themes have) would otherwise capture position:fixed and leave
+    // it stuck inside the content column.
+    if (toast) {
+        document.body.appendChild(toast);
+    }
+
     var toastTimer = null;
     function showToast(text) {
         if (!toast) { return; }
@@ -204,8 +213,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         }).then(function (res) {
             if (res && typeof res.board === 'string') {
                 board.innerHTML = res.board;
-                showToast(res.notice || '');
-            } else if (button) {
+            }
+            if (res && res.notice) {
+                showToast(res.notice);
+            }
+            if (button) {
                 button.disabled = false;
             }
         }).catch(function () {

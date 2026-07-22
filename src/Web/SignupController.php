@@ -231,7 +231,7 @@ final class SignupController
 
         if (self::LOGIN_ACTION === $action) {
             $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
-            $this->redirect($redirect, $this->loginByEmail($email));
+            $this->finish($redirect, $this->loginByEmail($email), $isAjax);
         }
 
         if (self::LOGOUT_ACTION === $action) {
