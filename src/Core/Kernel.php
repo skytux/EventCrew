@@ -14,19 +14,23 @@ use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\NotificationsRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\DoorList;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\TelegramClient;
@@ -145,6 +149,19 @@ final class Kernel
         );
 
         $this->container->singleton(
+            RedemptionRepository::class,
+            fn () => new RedemptionRepository()
+        );
+
+        $this->container->singleton(
+            StandingCalculator::class,
+            fn (Container $container) => new StandingCalculator(
+                $container->get(AssignmentRepository::class),
+                $container->get(RedemptionRepository::class)
+            )
+        );
+
+        $this->container->singleton(
             DohResolver::class,
             fn (Container $container) => new DohResolver(
                 $container->get(Logger::class)
@@ -200,7 +217,19 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(Logger::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(StandingCalculator::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorList::class,
+            fn (Container $container) => new DoorList(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -235,12 +264,24 @@ final class Kernel
         );
 
         $this->container->singleton(
+            ProfileService::class,
+            fn (Container $container) => new ProfileService(
+                $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
                 $container->get(BoardService::class),
                 $container->get(RosterService::class),
-                $container->get(ReplacementService::class)
+                $container->get(ReplacementService::class),
+                $container->get(ProfileService::class)
             )
         );
 
@@ -273,7 +314,8 @@ final class Kernel
             ManageController::class,
             fn (Container $container) => new ManageController(
                 $container->get(PersonRepository::class),
-                $container->get(AssignmentRepository::class)
+                $container->get(AssignmentRepository::class),
+                $container->get(RedemptionRepository::class)
             )
         );
 
@@ -324,7 +366,9 @@ final class Kernel
             fn (Container $container) => new PeoplePage(
                 $container->get(View::class),
                 $container->get(PersonRepository::class),
-                $container->get(AssignmentRepository::class)
+                $container->get(AssignmentRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -334,7 +378,10 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(RosterAssembler::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(TaskRepository::class)
+                $container->get(TaskRepository::class),
+                $container->get(DoorList::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(StandingCalculator::class)
             )
         );
 

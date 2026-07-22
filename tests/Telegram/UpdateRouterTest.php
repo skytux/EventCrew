@@ -14,6 +14,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\UpdateRouter;
@@ -67,7 +68,8 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new Mailer(new Logger())
+                new Mailer(new Logger()),
+                $this->standing()
             ),
             new RosterService(
                 new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
@@ -85,8 +87,16 @@ final class UpdateRouterTest extends TelegramTestCase
                     new PersonRepository(),
                     $this->client(),
                     new Logger(),
-                    new Mailer(new Logger())
+                    new Mailer(new Logger()),
+                    $this->standing()
                 ),
+                $this->client()
+            ),
+            new ProfileService(
+                new PersonRepository(),
+                new AssignmentRepository(),
+                new TaskRepository(),
+                $this->standing(),
                 $this->client()
             )
         );

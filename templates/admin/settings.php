@@ -9,6 +9,8 @@
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
+ * @var float $reputation_threshold Score at or above which a rated member is in good standing.
+ * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
@@ -188,6 +190,41 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Reputation', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-reputation-threshold"><?php esc_html_e('Good-standing threshold', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-reputation-threshold"
+                        name="reputation_threshold"
+                        value="<?php echo esc_attr(rtrim(rtrim(sprintf('%.2f', $reputation_threshold), '0'), '.')); ?>"
+                        min="0.05"
+                        max="1"
+                        step="0.05"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three completed tasks are unrated. Default 0.6.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Sign-up gate', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="reputation_gate" value="1" <?php checked($reputation_gate); ?>>
+                        <?php esc_html_e('Stop at-risk members from signing up for new tasks', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\DoorList;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\StandingCalculator;
 
 /**
  * Attendance: who turned up for a given day's tasks, and marking how it went.
@@ -26,7 +29,10 @@ final class RosterPage
         private readonly View $view,
         private readonly RosterAssembler $assembler,
         private readonly AssignmentRepository $assignments,
-        private readonly TaskRepository $tasks
+        private readonly TaskRepository $tasks,
+        private readonly DoorList $doorList,
+        private readonly RedemptionRepository $redemptions,
+        private readonly StandingCalculator $standing
     ) {
     }
 
@@ -43,6 +49,10 @@ final class RosterPage
 
         $selected = $this->selectedDate($upcoming, $past);
 
+        $door = '' === $selected
+            ? ['entrants' => [], 'candidates' => []]
+            : $this->doorList->forDate($selected);
+
         $this->view->render(
             'roster',
             [
@@ -50,11 +60,94 @@ final class RosterPage
                 'past_dates' => $past,
                 'selected_date' => $selected,
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
+                'door' => $door,
                 'statuses' => $this->statusChoices(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
             ]
         );
+    }
+
+    /**
+     * Records a credit spent for free entry on the roster's date. The balance
+     * is re-checked here, not trusted from the rendered pick-list, so a stale
+     * page or a double submit cannot spend a credit that is not there.
+     */
+    public function redeemCredit(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($personId <= 0 || ! $this->isValidDate($date)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That credit could not be redeemed.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
+        if ($this->standing->for($personId)->creditBalance < 1) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('They have no credit left to redeem.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
+        [$eventPostId, $eventLabel] = $this->eventContext($date);
+        $this->redemptions->record($personId, $date, $eventPostId, $eventLabel);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Credit redeemed — they’re on the door list.', 'eventcrew'),
+            'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * Undoes a redemption - a mistake at a busy door - handing the credit back.
+     */
+    public function removeRedemption(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $redemptionId = isset($_POST['redemption_id']) ? (int) $_POST['redemption_id'] : 0;
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($redemptionId > 0) {
+            $this->redemptions->delete($redemptionId);
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Credit handed back.', 'eventcrew'),
+            'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * The event a redemption on $date is recorded against: the first task's
+     * event that day, so the record carries which event the credit bought.
+     *
+     * @return array{0: ?int, 1: string}
+     */
+    private function eventContext(string $date): array
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            return [$task->eventPostId, $task->eventName()];
+        }
+
+        return [null, ''];
     }
 
     public function markAttendance(): void

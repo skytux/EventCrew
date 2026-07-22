@@ -21,7 +21,8 @@ final class UpdateRouter
         private readonly OnboardingService $onboarding,
         private readonly BoardService $board,
         private readonly RosterService $roster,
-        private readonly ReplacementService $replacement
+        private readonly ReplacementService $replacement,
+        private readonly ProfileService $profile
     ) {
     }
 
@@ -92,6 +93,12 @@ final class UpdateRouter
 
         if ($isPrivate && $this->isCommand($text, 'replace')) {
             $this->replacement->start($fromId, $chatId);
+
+            return;
+        }
+
+        if ($isPrivate && $this->isCommand($text, 'me')) {
+            $this->profile->onMe($fromId, $chatId);
 
             return;
         }

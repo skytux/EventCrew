@@ -156,7 +156,7 @@ be designing for a user who does not exist.
 | v0.4 | ✅ The Telegram group bot: board, deep-link onboarding, email verification, atomic join/leave, multi-event board. Concurrency now scriptable over the webhook. |
 | v0.5 | ✅ Roster and attendance marking in wp-admin, plus a read-only `/roster` for organizers over the bot |
 | v0.6 | ✅ Engagement: cancellation classified by notice, replacement flow, account disable/delete, door tickets, and transactional email (signup/cancel confirmations + the manual open-task send). Reputation *scoring* pulled out to v0.7. |
-| v0.7 | Reputation calculator + one threshold; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits |
+| v0.7 | ✅ Reputation calculator + one threshold + join gate; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits; `/me` |
 | v0.8 | 24h reminders and the 48h open-task call automated, cron + loopback-free fallback (`CronFallbackTrigger`), batching |
 | v0.9 | Public signup page, magic-link self-service |
 | v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
@@ -466,6 +466,51 @@ cron notification automation + `CronFallbackTrigger`, the public web signup page
 and the Diagnostics page. Every email path is **mailer-dependent**, so its real
 verification waits on a host that can actually send (the InfinityFree free tier
 is the open question).
+
+## Done: v0.7 — reputation, credits & the door list
+
+The inputs v0.6 captured become the reward model the plugin always promised.
+One schema change: `redemptions.redeemed_for` → **`DB_VERSION` 4** (the
+`redemptions` table itself was pre-provisioned in v0.6; it just lacked the event
+date the door list keys on).
+
+**Reputation is a recency-weighted read of history, never a stored score.**
+`Support\Reputation` (pure) weights terminal outcomes — `completed 1.0 /
+replaced 0.8 / late_cancel 0.4 / no_show 0.0` — and halves an outcome's pull
+every 180 days, so a rocky start fades as someone becomes reliable and a good
+record does not excuse a fresh run of no-shows. Fewer than three completed tasks
+is **unrated**; above that, one threshold (`eventcrew_reputation_threshold`,
+default 0.6) splits good standing from at-risk. `Support\Credits` (pure) is
+`floor(completed/2) − redeemed`, clamped at zero. `Support\StandingCalculator`
+composes both from storage so the People list, the door list, the join gate and
+`/me` can never disagree about where someone stands.
+
+**The join gate.** An at-risk member who taps Join in the bot is asked to talk
+to the organizer instead — behind `eventcrew_reputation_gate` (default on), which
+the organizer can switch off. New and good-standing members are never touched,
+and the gate reads no history at all when it is off.
+
+**The door list — workers ∪ credits.** The Roster page, which is the door list
+by the settled decision, now shows for the picked date everyone who gets in free:
+those working it, plus those spending a credit, each with a standing badge. The
+organizer redeems a credit for anyone who has one (`Support\DoorList` finds the
+candidates, the balance is re-checked at write time so a stale page can't
+overspend), and a Remove link hands a credit back for a door mistake. Redemptions
+are stamped with the event date they buy entry to, not when the button was
+pressed.
+
+**Self-service `/me`.** A verified member DMs `/me` and gets their standing,
+credit balance and last three tasks — read-only, the one window into what the
+organizer sees on the People list. **GDPR:** deleting a person now clears their
+redemptions too, in both the self-service manage page and the organizer's People
+screen.
+
+**Deferred, still tracked:** the 24h reminder and 48h open-task cron automation
+plus `CronFallbackTrigger` and batching (v0.8), the public web signup page
+(v0.9), and the Diagnostics page, translation pass, README and packaging CI
+(v1.0). This sprint is **mailer-independent** — the standing, credits and door
+paths are wp-admin and bot callbacks — so unlike v0.6 it can be verified in full
+on the real host without a working mailer.
 
 ## Verification owed before v1.0
 

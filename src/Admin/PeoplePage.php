@@ -6,6 +6,8 @@ namespace EventCrew\Admin;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Support\StandingCalculator;
 
 final class PeoplePage
 {
@@ -15,7 +17,9 @@ final class PeoplePage
     public function __construct(
         private readonly View $view,
         private readonly PersonRepository $people,
-        private readonly AssignmentRepository $assignments
+        private readonly AssignmentRepository $assignments,
+        private readonly RedemptionRepository $redemptions,
+        private readonly StandingCalculator $standing
     ) {
     }
 
@@ -25,7 +29,7 @@ final class PeoplePage
             require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
         }
 
-        $table = new PeopleListTable($this->people, $this->assignments);
+        $table = new PeopleListTable($this->people, $this->assignments, $this->standing);
         $table->prepare_items();
 
         $this->view->render(
@@ -107,6 +111,7 @@ final class PeoplePage
 
         if ($id > 0) {
             $this->assignments->deleteForPerson($id);
+            $this->redemptions->deleteForPerson($id);
             $this->people->delete($id);
         }
 

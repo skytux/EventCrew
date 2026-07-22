@@ -46,7 +46,8 @@ final class BoardServiceTest extends TelegramTestCase
             new PersonRepository(),
             $this->client(),
             new Logger(),
-            new Mailer(new Logger())
+            new Mailer(new Logger()),
+            $this->standing()
         );
     }
 
@@ -195,6 +196,74 @@ final class BoardServiceTest extends TelegramTestCase
 
         self::assertContains('answerCallbackQuery', $this->calledMethods());
         // A successful change edits the existing board message in place.
+        self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    /**
+     * @param int $completed number of recent completed tasks
+     * @param int $noShows number of recent no-shows
+     */
+    private function queueStandingHistory(int $completed, int $noShows): void
+    {
+        $rows = [];
+        $id = 1;
+
+        for ($i = 0; $i < $completed; $i++, $id++) {
+            $rows[] = ['id' => $id, 'task_id' => $id, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-20'];
+        }
+
+        for ($i = 0; $i < $noShows; $i++, $id++) {
+            $rows[] = ['id' => $id, 'task_id' => $id, 'person_id' => 7, 'status' => 'no_show', 'task_date' => '2026-07-20'];
+        }
+
+        $this->wpdb->nextResults[] = $rows; // historyFor()
+        $this->wpdb->nextVars[] = 0;        // countFor() redemptions
+    }
+
+    public function testTheGateBlocksAnAtRiskMemberFromSigningUp(): void
+    {
+        $this->options[BoardService::GATE_OPTION] = '1';
+        $this->verifiedPerson(555);
+        // Three completions and three no-shows: rated, and a 0.5 score sits
+        // under the 0.6 threshold.
+        $this->queueStandingHistory(3, 3);
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringNotContainsString('INSERT INTO', implode("\n", $this->wpdb->queries));
+        self::assertTrue((bool) $this->lastCallTo('answerCallbackQuery')['show_alert']);
+    }
+
+    public function testTheGateLetsAGoodStandingMemberJoin(): void
+    {
+        $this->options[BoardService::GATE_OPTION] = '1';
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->queueStandingHistory(4, 0); // rated, perfect score
+        $this->wpdb->nextVars[] = 0;        // hasOverlapping
+        $this->wpdb->nextVars[] = 2;        // taskCapacity
+        $this->wpdb->nextRows[] = null;     // join findFor
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testWithTheGateOffAnAtRiskMemberCanStillJoin(): void
+    {
+        // Gate off (the base default): the standing history is never read, so
+        // only the ordinary join queue is consumed.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 0;         // hasOverlapping
+        $this->wpdb->nextVars[] = 2;         // taskCapacity
+        $this->wpdb->nextRows[] = null;      // join findFor
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
