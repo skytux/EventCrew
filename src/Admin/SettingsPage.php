@@ -238,6 +238,12 @@ final class SettingsPage
             );
         }
 
+        // Telegram keeps last_error_message even across a setWebhook to the same
+        // URL, so a plain refresh never clears a stale error. Deleting the
+        // webhook first resets that state; the setWebhook below re-installs it
+        // clean. Pending updates are preserved (deleteWebhook drops none).
+        $this->telegram->deleteWebhook();
+
         $installed = $this->telegram->setWebhook($url, $secret);
 
         if (null === $installed) {

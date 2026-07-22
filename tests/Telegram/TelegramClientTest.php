@@ -129,6 +129,13 @@ final class TelegramClientTest extends TelegramTestCase
         self::assertSame(['message', 'callback_query', 'my_chat_member'], $body['allowed_updates']);
     }
 
+    public function testDeleteWebhookCallsTheMethod(): void
+    {
+        $this->client()->deleteWebhook();
+
+        self::assertContains('deleteWebhook', $this->calledMethods());
+    }
+
     public function testSetMyCommandsSendsTheCommandList(): void
     {
         $this->client()->setMyCommands([
