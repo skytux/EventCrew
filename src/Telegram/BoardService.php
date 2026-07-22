@@ -32,6 +32,13 @@ final class BoardService
     /** Cached from getMe, for the "set me up" deep-link button. */
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
+    /**
+     * The public t.me link to the group (a @username or a +invite hash), set by
+     * the organizer. A chat id cannot be turned into a joinable link, so this is
+     * the only way the web page can offer an "Open in Telegram" jump to the group.
+     */
+    public const GROUP_LINK_OPTION = 'eventcrew_telegram_group_link';
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,

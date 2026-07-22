@@ -58,9 +58,28 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
     );
 };
 ?>
+<style>
+/*
+ * Background-agnostic on purpose: the widget inherits the theme's text colour,
+ * dims secondary text with opacity rather than a fixed grey, and tints the
+ * notice with a translucent overlay - so it reads on a light or a dark theme
+ * without knowing which it is on.
+ */
+.eventcrew-signup .eventcrew-muted { opacity: .7; }
+.eventcrew-signup .eventcrew-notice {
+    padding: .6em 1em; margin: 1em 0; border-radius: 4px;
+    background: rgba(91, 141, 239, .14); border-left: 4px solid #5b8def; color: inherit;
+}
+.eventcrew-signup .eventcrew-tglink {
+    display: inline-flex; align-items: center; gap: .4em;
+    padding: .5em .9em; margin: .5em 0; border-radius: 6px;
+    background: #229ED9; color: #fff; text-decoration: none; font-weight: 600;
+}
+.eventcrew-signup .eventcrew-tglink:hover { filter: brightness(1.08); color: #fff; }
+</style>
 <div class="eventcrew-signup">
     <?php if (isset($eventcrew_notices[$eventcrew_notice_code])) : ?>
-        <p class="eventcrew-notice" style="padding:.6em 1em;background:#eef;border-left:4px solid #46c"><?php
+        <p class="eventcrew-notice"><?php
             echo esc_html($eventcrew_notices[$eventcrew_notice_code]);
         ?></p>
     <?php endif; ?>
@@ -83,7 +102,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
             );
             if (null !== $eventcrew_standing) {
                 printf(
-                    ' <span style="color:#555">%s · %s</span>',
+                    ' <span class="eventcrew-muted">%s · %s</span>',
                     esc_html($eventcrew_standing->levelLabel()),
                     esc_html(sprintf(
                         /* translators: %d: number of free-entry credits */
@@ -98,6 +117,14 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                 <button type="submit" class="button-link"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>
+        </p>
+    <?php endif; ?>
+
+    <?php if ('' !== (string) $view['telegram_group_link']) : ?>
+        <p>
+            <a class="eventcrew-tglink" href="<?php echo esc_url((string) $view['telegram_group_link']); ?>" target="_blank" rel="noopener">
+                <?php esc_html_e('Open our group in Telegram', 'eventcrew'); ?> →
+            </a>
         </p>
     <?php endif; ?>
 
@@ -119,10 +146,10 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                         <?php echo esc_html($eventcrew_task->roleDisplay()); ?>
                         <?php echo '' === $eventcrew_time ? '' : ' · ' . esc_html($eventcrew_time); ?>
                         <?php echo esc_html($eventcrew_task->taskDate); ?>
-                        <span style="color:#777">(<?php echo esc_html(sprintf('%d/%d', $eventcrew_row['taken'], $eventcrew_task->capacity)); ?>)</span>
+                        <span class="eventcrew-muted">(<?php echo esc_html(sprintf('%d/%d', $eventcrew_row['taken'], $eventcrew_task->capacity)); ?>)</span>
                     </span>
                     <?php if (null === $eventcrew_person) : ?>
-                        <span style="color:#777"><?php esc_html_e('sign in to claim', 'eventcrew'); ?></span>
+                        <span class="eventcrew-muted"><?php esc_html_e('sign in to claim', 'eventcrew'); ?></span>
                     <?php elseif ($eventcrew_row['mine']) : ?>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                             <?php
@@ -133,7 +160,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             <button type="submit"><?php esc_html_e('Drop', 'eventcrew'); ?></button>
                         </form>
                     <?php elseif ($eventcrew_full) : ?>
-                        <span style="color:#777"><?php esc_html_e('full', 'eventcrew'); ?></span>
+                        <span class="eventcrew-muted"><?php esc_html_e('full', 'eventcrew'); ?></span>
                     <?php else : ?>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                             <?php
