@@ -92,6 +92,20 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
     background: none; border: 0; padding: 0; font: inherit;
     color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
 }
+
+/*
+ * Sign up reads go, Cancel reads stop. Deep, dark shades so white text stays
+ * legible and they sit calmly on a light or dark theme alike.
+ */
+.eventcrew-signup .eventcrew-btn-go,
+.eventcrew-signup .eventcrew-btn-stop {
+    color: #fff; border: 0; border-radius: 6px;
+    padding: .45em 1em; font: inherit; font-weight: 600; cursor: pointer;
+}
+.eventcrew-signup .eventcrew-btn-go { background: #1b5e20; }
+.eventcrew-signup .eventcrew-btn-go:hover { background: #164a1a; color: #fff; }
+.eventcrew-signup .eventcrew-btn-stop { background: #8e1616; }
+.eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
 </style>
 <div class="eventcrew-signup">
     <?php if (isset($eventcrew_notices[$eventcrew_notice_code])) : ?>
@@ -173,7 +187,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['drop_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
+                            <button type="submit" class="wp-element-button eventcrew-btn-stop"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
                         </form>
                     <?php elseif ($eventcrew_full) : ?>
                         <span class="eventcrew-muted"><?php esc_html_e('full', 'eventcrew'); ?></span>
@@ -184,7 +198,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['claim_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
+                            <button type="submit" class="wp-element-button eventcrew-btn-go"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
                 </li>
