@@ -38,8 +38,8 @@ $eventcrew_notices = [
     'signed_in' => __('You’re signed in.', 'eventcrew'),
     'bad_link' => __('That sign-in link is invalid or has expired.', 'eventcrew'),
     'signed_out' => __('You’re signed out.', 'eventcrew'),
-    'claimed' => __('You’re in — thanks!', 'eventcrew'),
-    'dropped' => __('You’ve dropped that task.', 'eventcrew'),
+    'claimed' => __('You’re signed up — thanks!', 'eventcrew'),
+    'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
     'already' => __('You were already signed up for that.', 'eventcrew'),
     'full' => __('That slot just filled up.', 'eventcrew'),
     'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
@@ -149,7 +149,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                         <span class="eventcrew-muted">(<?php echo esc_html(sprintf('%d/%d', $eventcrew_row['taken'], $eventcrew_task->capacity)); ?>)</span>
                     </span>
                     <?php if (null === $eventcrew_person) : ?>
-                        <span class="eventcrew-muted"><?php esc_html_e('sign in to claim', 'eventcrew'); ?></span>
+                        <span class="eventcrew-muted"><?php esc_html_e('sign in first', 'eventcrew'); ?></span>
                     <?php elseif ($eventcrew_row['mine']) : ?>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                             <?php
@@ -157,7 +157,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['drop_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit"><?php esc_html_e('Drop', 'eventcrew'); ?></button>
+                            <button type="submit"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
                         </form>
                     <?php elseif ($eventcrew_full) : ?>
                         <span class="eventcrew-muted"><?php esc_html_e('full', 'eventcrew'); ?></span>
@@ -168,7 +168,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['claim_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit"><?php esc_html_e('Claim', 'eventcrew'); ?></button>
+                            <button type="submit"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
                 </li>

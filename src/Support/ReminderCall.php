@@ -106,7 +106,7 @@ final class ReminderCall
             sprintf(
                 /* translators: 1: name, 2: role, 3: event, 4: date/time */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to drop out, or /replace to hand it to someone.", 'eventcrew'),
+                __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to cancel, or /replace to hand it to someone.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
