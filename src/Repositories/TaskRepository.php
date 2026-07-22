@@ -125,6 +125,33 @@ final class TaskRepository
     }
 
     /**
+     * Timed tasks whose start falls in [$from, $to], for the task reminder.
+     * Untimed tasks (no starts_at) cannot be reminded to the minute and are
+     * left out - they have no start for a "24h before" to hang off.
+     *
+     * @return array<int, Task>
+     */
+    public function startingBetween(string $from, string $to): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()}
+                WHERE starts_at IS NOT NULL
+                  AND starts_at >= %s
+                  AND starts_at <= %s
+                ORDER BY starts_at ASC, id ASC",
+                $from,
+                $to
+            ),
+            ARRAY_A
+        );
+
+        return $this->hydrate($rows);
+    }
+
+    /**
      * Distinct future dates that have at least one task, for the roster date
      * picker and the Telegram board.
      *

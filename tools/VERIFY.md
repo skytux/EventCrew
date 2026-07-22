@@ -1,5 +1,16 @@
 # EventCrew install verification
 
+> **v0.8 note.** No schema change (`DB_VERSION` stays 4). The scheduled sends are
+> now live and checkable end to end (mail is confirmed working): trigger
+> `wp-cron.php` (or wait for the external webcron) → each person signed up for a
+> task starting within 24h gets one Telegram DM **and** one email, and a second
+> trigger sends neither again (`reminded_at` guard); a date whose event is within
+> 48h with open slots sends the open-task email once per eligible person (ledger).
+> Settings → EventCrew → Notifications shows the next/last run. On a host where
+> WP-Cron never fires (last run stuck at "never"), tick "run due sends on ordinary
+> page loads" → the next visit, or a bot board tap, runs what is due.
+> Deactivating clears the `eventcrew_run_notifications` event.
+
 > **v0.7 note.** `DB_VERSION` is now **4** — the migration adds
 > `redemptions.redeemed_for` (the `redemptions` table already existed); re-run
 > this after upgrading and confirm Phase 2 sees the new column. Unlike v0.6,

@@ -30,4 +30,16 @@ final class TaskRepositoryTest extends TestCase
         // No >= today filter: unlike upcomingDates(), past dates are included.
         self::assertStringNotContainsString('task_date >=', $query);
     }
+
+    public function testStartingBetweenBoundsByStartTimeAndSkipsUntimedTasks(): void
+    {
+        $this->wpdb->nextResults[] = [];
+
+        (new TaskRepository())->startingBetween('2026-07-20 12:00:00', '2026-07-21 12:00:00');
+
+        $query = $this->wpdb->lastQuery();
+        self::assertStringContainsString('starts_at IS NOT NULL', $query);
+        self::assertStringContainsString("starts_at >= '2026-07-20 12:00:00'", $query);
+        self::assertStringContainsString("starts_at <= '2026-07-21 12:00:00'", $query);
+    }
 }

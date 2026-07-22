@@ -17,12 +17,15 @@ use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\Scheduler;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -74,6 +77,13 @@ final class Kernel
         $this->container->get(TicketController::class)->boot();
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
+
+        // The notifications heartbeat: the hourly cron event self-schedules and
+        // registers its run action here (front/cron path, since WP-Cron fires
+        // with nobody logged in), and the opt-in fallback hooks an ordinary
+        // request when a host's WP-Cron never fires.
+        $this->container->get(Scheduler::class)->boot();
+        $this->container->get(CronFallbackTrigger::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -206,6 +216,32 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(NotificationsRepository::class),
                 $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
+            ReminderCall::class,
+            fn (Container $container) => new ReminderCall(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
+            Scheduler::class,
+            fn (Container $container) => new Scheduler(
+                $container->get(ReminderCall::class),
+                $container->get(OpenTaskCall::class)
+            )
+        );
+
+        $this->container->singleton(
+            CronFallbackTrigger::class,
+            fn (Container $container) => new CronFallbackTrigger(
+                $container->get(Scheduler::class)
             )
         );
 

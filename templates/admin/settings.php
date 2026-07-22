@@ -11,6 +11,9 @@
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
+ * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
+ * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
+ * @var int $cron_last_run Timestamp of the last completed run, or 0.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
@@ -225,6 +228,44 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Notifications', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Task reminders (24h before) and the open-task email (48h before) are sent by an hourly background job.', 'eventcrew'); ?>
+        </p>
+        <?php
+        $eventcrew_when = static function (int $timestamp): string {
+            if (0 === $timestamp) {
+                return __('never', 'eventcrew');
+            }
+
+            return (string) wp_date('D j M Y, H:i', $timestamp);
+        };
+        ?>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Background job', 'eventcrew'); ?></th>
+                <td>
+                    <p style="margin-top:0">
+                        <?php
+                        printf(
+                            /* translators: 1: next run time, 2: last run time */
+                            esc_html__('Next run: %1$s. Last run: %2$s.', 'eventcrew'),
+                            esc_html(false === $cron_next_run ? __('not scheduled', 'eventcrew') : $eventcrew_when((int) $cron_next_run)),
+                            esc_html($eventcrew_when($cron_last_run))
+                        );
+                        ?>
+                    </p>
+                    <label>
+                        <input type="checkbox" name="cron_fallback" value="1" <?php checked($cron_fallback); ?>>
+                        <?php esc_html_e('Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('WP-Cron relies on a loopback request some shared hosts block. If "Last run" stays at "never" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
