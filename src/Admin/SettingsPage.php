@@ -17,6 +17,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\PwaController;
 
 /**
  * Settings carries only what the shipped features actually read. Options for
@@ -61,6 +62,9 @@ final class SettingsPage
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
+                'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
+                'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
+                'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
                 'telegram' => $this->telegramView(),
             ]
         );
@@ -142,6 +146,21 @@ final class SettingsPage
         update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
+
+        $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
+        update_option(PwaController::PAGE_OPTION, $appPageId);
+        update_option(
+            PwaController::NAME_OPTION,
+            isset($_POST['app_name']) ? sanitize_text_field(wp_unslash($_POST['app_name'])) : ''
+        );
+
+        $appColor = isset($_POST['app_theme_color'])
+            ? sanitize_hex_color(wp_unslash($_POST['app_theme_color']))
+            : '';
+        update_option(
+            PwaController::COLOR_OPTION,
+            '' === (string) $appColor ? PwaController::DEFAULT_COLOR : $appColor
+        );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         Admin::redirectTo(

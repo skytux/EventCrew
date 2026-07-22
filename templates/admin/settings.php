@@ -14,6 +14,9 @@
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
  * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
+ * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
+ * @var string $app_name The installed app's name (blank falls back to the site name).
+ * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
@@ -281,6 +284,57 @@ if (! defined('ABSPATH')) {
             );
             ?>
         </p>
+
+        <h2><?php esc_html_e('Mobile app', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android).', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-page"><?php esc_html_e('Signup page', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    wp_dropdown_pages([
+                        'name' => 'app_page_id',
+                        'id' => 'eventcrew-app-page',
+                        'selected' => $app_page_id,
+                        'show_option_none' => __('— None (app disabled) —', 'eventcrew'),
+                        'option_none_value' => '0',
+                    ]);
+                    ?>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-name"><?php esc_html_e('App name', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-app-name"
+                        name="app_name"
+                        value="<?php echo esc_attr($app_name); ?>"
+                        class="regular-text"
+                        placeholder="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                    <p class="description"><?php esc_html_e('Shown under the home-screen icon. Blank uses the site name.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-color"><?php esc_html_e('Theme colour', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="color"
+                        id="eventcrew-app-color"
+                        name="app_theme_color"
+                        value="<?php echo esc_attr($app_theme_color); ?>">
+                    <p class="description"><?php esc_html_e('The app’s accent colour, and the fallback icon’s background.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
 
         <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
         <p class="description">
