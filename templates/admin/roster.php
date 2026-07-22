@@ -6,6 +6,7 @@
  * @var array<int, string> $past_dates Dates with tasks before today, most recent first.
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool}>}> $roster
+ * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<string, string> $statuses Status slug => label, for the pickers.
  * @var string $nonce_action Nonce action for the marking forms.
  * @var string $page_slug Admin page slug, for form targets.
@@ -24,6 +25,23 @@ $eventcrew_date_label = static function (string $date): string {
     $timestamp = strtotime($date . ' 12:00:00');
 
     return false === $timestamp ? $date : (string) wp_date('D j M Y', $timestamp);
+};
+
+/**
+ * A coloured standing badge for the door list.
+ */
+$eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standing): string {
+    $color = match ($standing->level) {
+        \EventCrew\Support\Standing::GOOD => '#1a7f37',
+        \EventCrew\Support\Standing::AT_RISK => '#b32d2e',
+        default => '#646970',
+    };
+
+    return sprintf(
+        '<span style="color:%s;font-weight:600">%s</span>',
+        esc_attr($color),
+        esc_html($standing->levelLabel())
+    );
 };
 ?>
 <div class="wrap">
@@ -57,6 +75,68 @@ $eventcrew_date_label = static function (string $date): string {
             </select>
             <noscript><button type="submit" class="button"><?php esc_html_e('Show', 'eventcrew'); ?></button></noscript>
         </form>
+
+        <?php if ('' !== $selected_date) : ?>
+            <h2><?php esc_html_e('Door list', 'eventcrew'); ?></h2>
+            <p class="description">
+                <?php esc_html_e('Everyone who gets in free that night — working the event, or spending a credit.', 'eventcrew'); ?>
+            </p>
+            <table class="widefat striped" style="max-width:640px;margin-bottom:.5em">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Free entry', 'eventcrew'); ?></th>
+                        <th style="width:9em"><?php esc_html_e('Standing', 'eventcrew'); ?></th>
+                        <th style="width:6em"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ([] === $door['entrants']) : ?>
+                        <tr><td colspan="4"><?php esc_html_e('Nobody on the door list yet.', 'eventcrew'); ?></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($door['entrants'] as $eventcrew_entrant) : ?>
+                        <tr>
+                            <td><?php echo esc_html($eventcrew_entrant['name']); ?></td>
+                            <td><?php echo esc_html($eventcrew_entrant['detail']); ?></td>
+                            <td><?php echo $eventcrew_standing_badge($eventcrew_entrant['standing']); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- badge builds its own escaped markup. ?></td>
+                            <td>
+                                <?php if (null !== $eventcrew_entrant['redemption_id']) : ?>
+                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                        <input type="hidden" name="action" value="eventcrew_remove_redemption">
+                                        <?php wp_nonce_field($nonce_action); ?>
+                                        <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_entrant['redemption_id']); ?>">
+                                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                                        <button type="submit" class="button-link delete"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <?php if ([] !== $door['candidates']) : ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-bottom:2em;display:flex;gap:.4em;align-items:center">
+                    <input type="hidden" name="action" value="eventcrew_redeem_credit">
+                    <?php wp_nonce_field($nonce_action); ?>
+                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                    <label for="eventcrew-redeem"><?php esc_html_e('Redeem a credit for', 'eventcrew'); ?></label>
+                    <select name="person_id" id="eventcrew-redeem">
+                        <?php foreach ($door['candidates'] as $eventcrew_candidate) : ?>
+                            <option value="<?php echo esc_attr((string) $eventcrew_candidate['person_id']); ?>">
+                                <?php echo esc_html(sprintf(
+                                    /* translators: 1: person name, 2: credit balance */
+                                    __('%1$s (%2$d credits)', 'eventcrew'),
+                                    $eventcrew_candidate['name'],
+                                    $eventcrew_candidate['credit_balance']
+                                )); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="button"><?php esc_html_e('Redeem', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <?php if ([] === $roster) : ?>
             <p><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>

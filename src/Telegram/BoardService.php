@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\StandingCalculator;
 
 /**
  * The board itself: the single group message that lists open tasks, and the
@@ -34,13 +35,17 @@ final class BoardService
     /** Hours before a task's start inside which a cancel counts as late. */
     public const NOTICE_HOURS_OPTION = 'eventcrew_notice_hours';
 
+    /** Whether at-risk members are stopped from signing up. Default on. */
+    public const GATE_OPTION = 'eventcrew_reputation_gate';
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
         private readonly Logger $logger,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly StandingCalculator $standing
     ) {
     }
 
@@ -254,6 +259,21 @@ final class BoardService
 
     private function handleJoin(string $callbackId, int $taskId, Person $person): bool
     {
+        // A member whose recent attendance has put them at risk is held back
+        // from claiming more slots until they sort it out with the organizer -
+        // a soft gate the organizer can switch off entirely. New and
+        // good-standing members are never touched.
+        if ($this->gateBlocks($person)) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
+                true
+            );
+
+            return false;
+        }
+
         // Holding a slot across events is fine; a genuine time clash between
         // two of them is not, and that is exactly what hasOverlapping refuses.
         if ($this->assignments->hasOverlapping($person->id, $taskId)) {
@@ -393,6 +413,20 @@ final class BoardService
     private function noticeHours(): int
     {
         return max(0, (int) get_option(self::NOTICE_HOURS_OPTION, 48));
+    }
+
+    /**
+     * Whether this join should be refused on standing. Only ever true for a
+     * rated, at-risk member while the gate is on - the check is skipped
+     * entirely when it is off, so no history is read on a normal join.
+     */
+    private function gateBlocks(Person $person): bool
+    {
+        if (! (bool) get_option(self::GATE_OPTION, true)) {
+            return false;
+        }
+
+        return $this->standing->for($person->id)->isAtRisk();
     }
 
     /**

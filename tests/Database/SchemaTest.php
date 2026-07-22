@@ -135,6 +135,19 @@ final class SchemaTest extends TestCase
         self::assertStringContainsString('ends_at datetime DEFAULT NULL', $sql);
     }
 
+    /**
+     * The door list finds a night's credit-redeemers by the event date the
+     * credit buys entry to, which is why the column exists and is indexed -
+     * without it a redemption could only be matched by when it was recorded.
+     */
+    public function testRedemptionsCarryTheDateTheCreditBuysEntryTo(): void
+    {
+        $sql = $this->statementFor(Schema::REDEMPTIONS);
+
+        self::assertStringContainsString('redeemed_for date DEFAULT NULL', $sql);
+        self::assertStringContainsString('KEY redeemed_for (redeemed_for)', $sql);
+    }
+
     public function testSkipsMigrationWhenTheStoredVersionIsCurrent(): void
     {
         Functions\expect('get_option')

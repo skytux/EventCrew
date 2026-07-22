@@ -51,7 +51,8 @@ final class ReplacementServiceTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new Mailer(new Logger())
+                new Mailer(new Logger()),
+                $this->standing()
             ),
             $this->client()
         );

@@ -8,17 +8,20 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\Reputation;
 use EventCrew\Support\Roles;
+use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\WebhookController;
 
 /**
  * Settings carries only what the shipped features actually read. Options for
- * behaviour that does not exist yet - reminder lead times, reputation
- * thresholds - arrive with the release that uses them, so the page never lists
- * a control that does nothing. The Telegram bot credentials appear here now
- * only because v0.4 is the release whose code reads them.
+ * behaviour that does not exist yet - reminder lead times, cron windows -
+ * arrive with the release that uses them, so the page never lists a control
+ * that does nothing. The Telegram bot credentials appear here now only because
+ * v0.4 is the release whose code reads them; the reputation controls, because
+ * v0.7's join gate and standing calculator read them.
  */
 final class SettingsPage
 {
@@ -47,6 +50,11 @@ final class SettingsPage
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
                 'notice_hours' => max(0, (int) get_option(BoardService::NOTICE_HOURS_OPTION, 48)),
+                'reputation_threshold' => (float) get_option(
+                    StandingCalculator::THRESHOLD_OPTION,
+                    Reputation::DEFAULT_THRESHOLD
+                ),
+                'reputation_gate' => (bool) get_option(BoardService::GATE_OPTION, true),
                 'telegram' => $this->telegramView(),
             ]
         );
@@ -114,6 +122,19 @@ final class SettingsPage
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(BoardService::NOTICE_HOURS_OPTION, $noticeHours);
+
+        // A threshold outside (0,1] would make the join gate never or always
+        // fire; fall back to the default rather than store nonsense.
+        $threshold = isset($_POST['reputation_threshold'])
+            ? (float) $_POST['reputation_threshold']
+            : Reputation::DEFAULT_THRESHOLD;
+
+        if ($threshold <= 0.0 || $threshold > 1.0) {
+            $threshold = Reputation::DEFAULT_THRESHOLD;
+        }
+
+        update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
+        update_option(BoardService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         Admin::redirectTo(
@@ -216,6 +237,7 @@ final class SettingsPage
             ['command' => 'start', 'description' => __('Set yourself up to sign up for tasks', 'eventcrew')],
             ['command' => 'board', 'description' => __('Show the board of open tasks', 'eventcrew')],
             ['command' => 'replace', 'description' => __('Cover someone else’s task', 'eventcrew')],
+            ['command' => 'me', 'description' => __('Your standing, credits and recent tasks', 'eventcrew')],
             ['command' => 'stop', 'description' => __('Switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('Show the attendance roster (organizers)', 'eventcrew')],
         ]);

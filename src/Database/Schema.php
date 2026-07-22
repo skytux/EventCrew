@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '3';
+    public const DB_VERSION = '4';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -242,15 +242,23 @@ final class Schema
                 KEY status (status)
             ) ENGINE=InnoDB {$charsetCollate};",
 
+            // redeemed_for is the event date the credit buys entry to, which is
+            // how the door list finds tonight's credit-redeemers. It is the day
+            // the task is filed under, not redeemed_at (when the organizer
+            // pressed the button), so a credit booked earlier still lands on the
+            // right night. event_post_id/event_label carry the event's identity
+            // for the record; the date is what the door reads.
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 person_id bigint(20) unsigned NOT NULL,
+                redeemed_for date DEFAULT NULL,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
                 event_label varchar(191) NOT NULL DEFAULT '',
                 redeemed_at datetime NOT NULL,
                 note varchar(191) NOT NULL DEFAULT '',
                 PRIMARY KEY  (id),
-                KEY person_id (person_id)
+                KEY person_id (person_id),
+                KEY redeemed_for (redeemed_for)
             ) ENGINE=InnoDB {$charsetCollate};",
 
             // Only the hash is stored, never the token itself, so a database

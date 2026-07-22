@@ -25,7 +25,8 @@ final class BoardRefreshListenerTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new Mailer(new Logger())
+                new Mailer(new Logger()),
+                $this->standing()
             )
         );
     }

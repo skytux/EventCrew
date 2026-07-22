@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\StandingCalculator;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -35,7 +39,14 @@ abstract class TelegramTestCase extends TestCase
         parent::setUp();
 
         $this->telegramCalls = [];
-        $this->options = [TelegramClient::TOKEN_OPTION => 'BOT:TOKEN'];
+        // The reputation join gate ships on, but it reads a person's history the
+        // moment a join is attempted, which would consume queued rows the
+        // ungated join tests line up. Default it off here; the tests that
+        // exercise the gate turn it back on explicitly.
+        $this->options = [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            BoardService::GATE_OPTION => '0',
+        ];
         $this->telegramResults = [];
 
         Functions\when('get_option')->alias(
@@ -71,6 +82,15 @@ abstract class TelegramTestCase extends TestCase
     protected function client(): TelegramClient
     {
         return new TelegramClient(new Logger(), new DohResolver(new Logger()));
+    }
+
+    /**
+     * A real StandingCalculator over the fake wpdb, for the services that
+     * compose one (the board's join gate, /me, and so on).
+     */
+    protected function standing(): StandingCalculator
+    {
+        return new StandingCalculator(new AssignmentRepository(), new RedemptionRepository());
     }
 
     /**

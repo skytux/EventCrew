@@ -70,6 +70,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_redeem_credit',
+            [$this->container->get(RosterPage::class), 'redeemCredit']
+        );
+
+        add_action(
+            'admin_post_eventcrew_remove_redemption',
+            [$this->container->get(RosterPage::class), 'removeRedemption']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );

@@ -1,5 +1,17 @@
 # EventCrew install verification
 
+> **v0.7 note.** `DB_VERSION` is now **4** — the migration adds
+> `redemptions.redeemed_for` (the `redemptions` table already existed); re-run
+> this after upgrading and confirm Phase 2 sees the new column. Unlike v0.6,
+> v0.7 is **mailer-independent** and fully checkable on the real host: complete
+> ≥3 tasks for a person → the People list shows a standing badge and
+> `floor(n/2)` credits; on the Roster page for that date, the **Door list**
+> shows workers, and "Redeem a credit" moves someone onto it and drops their
+> balance (Remove undoes it); with the sign-up gate on (Settings → Reputation),
+> an at-risk member's bot Join is refused and allowed again with it off; `/me`
+> in the bot returns standing + credits + last-3; deleting a person removes their
+> redemptions.
+
 > **v0.6 note.** `DB_VERSION` is now **3** — the migration adds `people.disabled_at`;
 > re-run this after upgrading and confirm Phase 2 sees the new column. v0.6 also
 > adds paths that are **mailer-dependent** and only provable on a host that can

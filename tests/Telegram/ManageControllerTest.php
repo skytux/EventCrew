@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Tests\TestCase;
 
@@ -13,7 +14,11 @@ final class ManageControllerTest extends TestCase
 {
     private function controller(): ManageController
     {
-        return new ManageController(new PersonRepository(), new AssignmentRepository());
+        return new ManageController(
+            new PersonRepository(),
+            new AssignmentRepository(),
+            new RedemptionRepository()
+        );
     }
 
     public function testDisableSwitchesTheAccountOff(): void
@@ -25,13 +30,13 @@ final class ManageControllerTest extends TestCase
         self::assertSame(['id' => 7], $this->wpdb->updates[0]['where']);
     }
 
-    public function testDeleteRemovesThePersonAndTheirAssignments(): void
+    public function testDeleteRemovesThePersonTheirAssignmentsAndRedemptions(): void
     {
         $outcome = $this->controller()->apply(7, ManageController::DELETE);
 
         self::assertSame(ManageController::DELETE, $outcome);
-        // Both the assignments and the person row are deleted.
-        self::assertCount(2, $this->wpdb->deletes);
+        // The assignments, the redemptions and the person row are all deleted.
+        self::assertCount(3, $this->wpdb->deletes);
     }
 
     public function testAnUnknownActionDoesNothing(): void

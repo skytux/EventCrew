@@ -7,6 +7,8 @@ namespace EventCrew\Admin;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Standing;
+use EventCrew\Support\StandingCalculator;
 use WP_List_Table;
 
 /**
@@ -21,9 +23,13 @@ final class PeopleListTable extends WP_List_Table
 
     private string $search = '';
 
+    /** @var array<int, Standing> memoised per-row standing, keyed by person id. */
+    private array $standingCache = [];
+
     public function __construct(
         private readonly PersonRepository $people,
-        private readonly AssignmentRepository $assignments
+        private readonly AssignmentRepository $assignments,
+        private readonly StandingCalculator $standing
     ) {
         parent::__construct([
             'singular' => 'person',
@@ -43,6 +49,8 @@ final class PeopleListTable extends WP_List_Table
             'telegram' => __('Telegram', 'eventcrew'),
             'opt_in' => __('Open-task email', 'eventcrew'),
             'completed' => __('Completed tasks', 'eventcrew'),
+            'standing' => __('Standing', 'eventcrew'),
+            'credits' => __('Credits', 'eventcrew'),
         ];
     }
 
@@ -190,6 +198,44 @@ final class PeopleListTable extends WP_List_Table
     public function column_completed($item): string
     {
         return esc_html((string) $this->assignments->countCompletedFor($item->id));
+    }
+
+    /**
+     * @param Person $item
+     */
+    public function column_standing($item): string
+    {
+        $standing = $this->standingFor($item);
+
+        $color = match ($standing->level) {
+            Standing::GOOD => '#1a7f37',
+            Standing::AT_RISK => '#b32d2e',
+            default => '#646970',
+        };
+
+        return sprintf(
+            '<span style="color:%s;font-weight:600">%s</span>',
+            esc_attr($color),
+            esc_html($standing->levelLabel())
+        );
+    }
+
+    /**
+     * @param Person $item
+     */
+    public function column_credits($item): string
+    {
+        return esc_html((string) $this->standingFor($item)->creditBalance);
+    }
+
+    /**
+     * The standing/credits columns are rendered separately for the same row, so
+     * the composed Standing is memoised to avoid reading a person's history
+     * twice per row.
+     */
+    private function standingFor(Person $item): Standing
+    {
+        return $this->standingCache[$item->id] ??= $this->standing->for($item->id);
     }
 
     /**
