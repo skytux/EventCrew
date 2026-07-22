@@ -171,6 +171,7 @@ be designing for a user who does not exist.
 | v1.0.8 | ✅ Signup page polish: task list capped so actions sit close and column-aligned; buttons use the theme's `wp-element-button` style; Sign out is a plain link |
 | v1.0.9 | ✅ Signup buttons colorized: deep green Sign up, deep red Cancel (white text, legible on light or dark) |
 | v1.0.10 | ✅ Signup/Cancel go through admin-ajax and re-render the board in place (no reload, scroll kept); buttons slightly smaller. Board extracted to a `signup-board.php` partial shared by the page and the AJAX response |
+| v1.0.11 | ✅ Notices restored as a fixed toast (visible after an in-place update wherever the list is scrolled); notice text centralized on `SignupController::noticeText()` |
 
 ## Done: v0.3 — verification, then the schema it exposed
 

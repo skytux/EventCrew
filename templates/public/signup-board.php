@@ -1,12 +1,12 @@
 <?php
 /**
- * The open-task board: the action notice plus the grouped task list with its
- * Sign up / Cancel buttons. Rendered both inside the full signup page and on
- * its own for the AJAX refresh, so a claim/drop updates the board in place
- * without reloading the page.
+ * The open-task board: the grouped task list with its Sign up / Cancel buttons.
+ * Rendered both inside the full signup page and on its own for the AJAX refresh,
+ * so a claim/drop updates the board in place without reloading the page. The
+ * action notice is shown separately as a toast, so it stays visible regardless
+ * of where the page is scrolled.
  *
  * @var array<string, mixed> $view The SignupController view model.
- * @var string $eventcrew_notice_code The notice to show, or '' for none.
  */
 
 declare(strict_types=1);
@@ -31,23 +31,6 @@ if (! isset($eventcrew_here) || false === $eventcrew_here || '' === $eventcrew_h
     }
 }
 
-$eventcrew_notices = [
-    'check_email' => __('Check your email for a sign-in link.', 'eventcrew'),
-    'bad_email' => __('That doesn’t look like a valid email address.', 'eventcrew'),
-    'signed_in' => __('You’re signed in.', 'eventcrew'),
-    'bad_link' => __('That sign-in link is invalid or has expired.', 'eventcrew'),
-    'signed_out' => __('You’re signed out.', 'eventcrew'),
-    'claimed' => __('You’re signed up — thanks!', 'eventcrew'),
-    'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
-    'already' => __('You were already signed up for that.', 'eventcrew'),
-    'full' => __('That slot just filled up.', 'eventcrew'),
-    'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
-    'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
-    'unavailable' => __('That task is no longer available.', 'eventcrew'),
-    'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
-    'please_sign_in' => __('Please sign in first.', 'eventcrew'),
-];
-
 $eventcrew_hidden = static function (string $action, string $csrf, string $here): string {
     return sprintf(
         '<input type="hidden" name="action" value="%s"><input type="hidden" name="csrf" value="%s"><input type="hidden" name="redirect_to" value="%s">',
@@ -57,10 +40,6 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
     );
 };
 ?>
-<?php if (isset($eventcrew_notices[$eventcrew_notice_code])) : ?>
-    <p class="eventcrew-notice"><?php echo esc_html($eventcrew_notices[$eventcrew_notice_code]); ?></p>
-<?php endif; ?>
-
 <?php if ([] === $view['groups']) : ?>
     <p><?php esc_html_e('No open tasks right now. Check back soon!', 'eventcrew'); ?></p>
 <?php endif; ?>
