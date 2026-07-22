@@ -221,6 +221,19 @@ final class TelegramClient
     }
 
     /**
+     * Removes the webhook. Used before a re-install to force Telegram to reset
+     * the webhook's state - notably the sticky last_error_message, which a
+     * setWebhook to the same URL leaves untouched. Pending updates are kept
+     * (drop_pending_updates defaults to false), so a healthy queue survives.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function deleteWebhook(): ?array
+    {
+        return $this->call('deleteWebhook');
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function getMe(): ?array
