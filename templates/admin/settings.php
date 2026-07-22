@@ -441,6 +441,7 @@ if (! defined('ABSPATH')) {
         if (is_array($eventcrew_info)) :
             $eventcrew_pending = (int) ($eventcrew_info['pending_update_count'] ?? 0);
             $eventcrew_last_error = (string) ($eventcrew_info['last_error_message'] ?? '');
+            $eventcrew_last_error_at = (int) ($eventcrew_info['last_error_date'] ?? 0);
             $eventcrew_active = '' !== (string) ($eventcrew_info['url'] ?? '');
             ?>
             <table class="widefat striped" style="max-width:640px;margin:1em 0">
@@ -462,7 +463,25 @@ if (! defined('ABSPATH')) {
                     <?php if ('' !== $eventcrew_last_error) : ?>
                         <tr>
                             <th scope="row"><?php esc_html_e('Last error', 'eventcrew'); ?></th>
-                            <td><?php echo esc_html($eventcrew_last_error); ?></td>
+                            <td>
+                                <?php
+                                echo esc_html($eventcrew_last_error);
+
+                                if ($eventcrew_last_error_at > 0) {
+                                    printf(
+                                        ' <span class="description">%s</span>',
+                                        esc_html(sprintf(
+                                            /* translators: %s: human-readable time since the last webhook error, e.g. "2 hours" */
+                                            __('(%s ago)', 'eventcrew'),
+                                            human_time_diff($eventcrew_last_error_at)
+                                        ))
+                                    );
+                                }
+                                ?>
+                                <p class="description" style="margin-top:.4em">
+                                    <?php esc_html_e('Telegram keeps only the most recent error and never clears it on a successful delivery. If Pending updates is 0 and this predates your last fix, it is stale — reinstall the webhook to clear it.', 'eventcrew'); ?>
+                                </p>
+                            </td>
                         </tr>
                     <?php endif; ?>
                     <?php if ('' !== $telegram['bot_username']) : ?>
