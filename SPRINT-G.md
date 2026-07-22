@@ -27,10 +27,10 @@
 
 ## Backlog after this
 
-Nothing tracked. What remains is host-side verification (see ROADMAP
-"Verification owed after v1.0"): webhook reachability, scripted concurrency, the
-notification cron across two runs, and one real bulk-mail delivery. The `tools/`
-verification kit stays bundled until those are done.
+Nothing tracked. Host-side verification (install, webhook, scripted concurrency,
+cron and mail) is **all green on the real host** — see ROADMAP "Verification —
+all green on the real host". With that done, the `tools/` verification kit has
+come out of the shipped zip (it stays in the repo for a future host).
 
 ## Verify
 

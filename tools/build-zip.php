@@ -38,9 +38,12 @@ if (! class_exists(ZipArchive::class)) {
  * Named explicitly rather than derived by excluding things, so a new top-level
  * directory has to be considered before it can end up on someone's server.
  *
- * The verification kit is here on purpose for now: v0.3's whole first half is
- * getting `tools/verify-install.php` onto the real host. It comes out again
- * when the schema is proven and v1.0 packaging is written.
+ * The `tools/` verification kit (VERIFY.md, verify-install.php,
+ * concurrency-check.php) used to ship so it would land on the real host with the
+ * plugin. As of v1.0 every owed host check has passed - install, webhook,
+ * concurrency, cron and mail - so the kit no longer ships; it stays in the repo
+ * for re-running against a future host. Re-add the three files here if a new
+ * host ever needs the on-site checks bundled again.
  */
 $include = [
     'eventcrew.php',
@@ -51,9 +54,6 @@ $include = [
     'templates',
     'blocks',
     'languages',
-    'tools/VERIFY.md',
-    'tools/verify-install.php',
-    'tools/concurrency-check.php',
 ];
 
 /** Never ships, at any point, whatever else changes above. */

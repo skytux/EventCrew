@@ -6,8 +6,9 @@
 > signup page, icons and mail). It makes no outbound calls, so it should load
 > instantly. Also confirm the plugin still activates cleanly and that
 > `dist/eventcrew-1.0.0.zip` now contains `README.md` and a `languages/` folder
-> with `eventcrew.pot`. This kit (`verify-install.php`, `concurrency-check.php`)
-> is still bundled on purpose — items 2–5 below are still owed on the real host.
+> with `eventcrew.pot`. All five host checks below have now passed on the live
+> host, so this kit (`verify-install.php`, `concurrency-check.php`) **no longer
+> ships** in the zip — it stays in the repo for re-running against a future host.
 
 > **v0.10 note.** No schema change (`DB_VERSION` stays 4). Make the signup page
 > installable: Settings → EventCrew → **Mobile app** → pick the page that holds

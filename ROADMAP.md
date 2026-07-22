@@ -639,27 +639,29 @@ called v0.3 "next" and described the superseded opt-in email model) to the real
 `composer lint` + `composer test` (and a packaging build) on PHP 8.2 and 8.3 on
 every push. `build-zip` now ships `README.md` and `languages/`.
 
-**Still packaged, deliberately:** `tools/`'s verification kit
-(`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) stays shipped until
-the one remaining host run below is green.
+**No longer packaged:** with every host check below green, the `tools/`
+verification kit (`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) has
+come out of the shipped zip as of v1.0. It stays in the repo for re-running
+against a future host; `build-zip.php` documents how to re-add it.
 
-## Verification — run on the real host (InfinityFree)
+## Verification — all green on the real host (InfinityFree)
 
-Carried forward from the planning document, because none of it is covered by
-unit tests. Run on the live host after v1.0; only the concurrency re-run remains.
+Carried forward from the planning document, because none of it is covered by unit
+tests. **All five now pass on the live host.**
 
 1. ~~**Real install**~~ — ✅ done. 103 checks passed; the one failure (MyISAM)
    is fixed in v0.3. Re-run `tools/VERIFY.md` after upgrading, since the
    migration now converts engines and widens two columns.
 2. ~~**Webhook reachability**~~ — ✅ confirmed working on the real host.
-3. **Concurrent capacity, scripted** — `tools/concurrency-check.php`. The first
-   run hit a `Call to undefined function curl_multi_exec()`: InfinityFree
-   disables the `curl_multi_*` family. Fixed after v1.0 — the script now falls
-   back to raw non-blocking sockets when curl_multi is absent (connect all, then
-   write every request back to back so they still race), and it fires at
-   `WebhookController::webhookUrl()` so it exercises whichever door is installed,
-   the admin-ajax fallback included, not the REST route that host rejects.
-   *Owed: re-run the updated script and confirm it prints PASS (2 of 6).*
+3. ~~**Concurrent capacity, scripted**~~ — ✅ **PASS (2 of 6)**. Getting there took
+   two host-specific fixes to `concurrency-check.php`: InfinityFree disables the
+   `curl_multi_*` family (while still defining `curl_multi_init`), so the script
+   now detects `curl_multi_exec` specifically and falls back to raw non-blocking
+   sockets — connect all, then write every request back to back so they still
+   race — and it fires at `WebhookController::webhookUrl()`, exercising whichever
+   door is installed (the admin-ajax fallback included) rather than the REST route
+   that host rejects. The capacity guard held: exactly two of six simultaneous
+   joins claimed the last two slots.
 4. ~~**Notification cron**~~ — ✅ confirmed functional on the real host.
 5. ~~**One real delivery**~~ — ✅ confirmed working (the mailer is verified on the
    host). Continue to ship bulk mail only while SPF and DKIM pass on the sending
