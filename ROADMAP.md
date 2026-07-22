@@ -168,6 +168,7 @@ be designing for a user who does not exist.
 | v1.0.5 | ✅ Signup page: background-agnostic styling (works on dark themes) and an optional "Open in Telegram" group link (new Settings → Group link) |
 | v1.0.6 | ✅ Fix: web claim/drop sent no confirmation email (only the bot did). Extracted the signup/cancel emails into a shared `ClaimNotifier` both channels call |
 | v1.0.7 | ✅ User-facing vocabulary: "Claim"→"Sign up", "Drop"/"drop out"→"Cancel" across the web buttons, bot board and emails (internal names unchanged) |
+| v1.0.8 | ✅ Signup page polish: task list capped so actions sit close and column-aligned; buttons use the theme's `wp-element-button` style; Sign out is a plain link |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
