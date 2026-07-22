@@ -96,6 +96,29 @@ final class TelegramClientTest extends TelegramTestCase
         self::assertSame('', $client->lastError());
     }
 
+    public function testBenignEditAndCallbackErrorsAreTreatedAsSuccess(): void
+    {
+        $client = $this->client();
+
+        // A no-op board edit: the board already shows this content.
+        Functions\when('wp_remote_post')->justReturn((string) json_encode([
+            'ok' => false,
+            'description' => 'Bad Request: message is not modified',
+        ]));
+        $result = $client->editMessageText(42, 7, 'same text');
+        self::assertIsArray($result);      // the "ok" sentinel, not null
+        self::assertSame('', $client->lastError());
+
+        // A callback answered after Telegram's window: nothing we can fix.
+        Functions\when('wp_remote_post')->justReturn((string) json_encode([
+            'ok' => false,
+            'description' => 'Bad Request: query is too old and response timeout expired or query ID is invalid',
+        ]));
+        $result = $client->answerCallbackQuery('cb-1', 'you’re in');
+        self::assertIsArray($result);
+        self::assertSame('', $client->lastError());
+    }
+
     public function testSetWebhookSendsTheSecretTokenAndNarrowedUpdates(): void
     {
         $this->client()->setWebhook('https://example.test/hook', 'sekret');
