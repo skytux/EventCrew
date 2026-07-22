@@ -10,9 +10,13 @@
  * slot in the same instant - and the one clicking around will never reproduce.
  *
  * This closes it over the real path the bot uses: it fires N synthetic
- * callback_query updates at the live webhook at once with curl_multi, against a
- * capacity-2 task seeded with N verified test people, then asserts exactly two
- * of them ended up holding a slot. Everything it creates is deleted afterwards.
+ * callback_query updates at the live webhook at once - with curl_multi where the
+ * host has it, or raw sockets where it does not (some shared hosts disable the
+ * curl_multi_* family) - against a capacity-2 task seeded with N verified test
+ * people, then asserts exactly two of them ended up holding a slot. It aims at
+ * whichever door the webhook is installed on, the admin-ajax fallback included,
+ * so it tests the same path Telegram uses. Everything it creates is deleted
+ * afterwards.
  *
  * Run it under WP-CLI from the WordPress root, after the bot's webhook has been
  * installed from Settings (it reads the same secret):
@@ -21,7 +25,8 @@
  *
  * Without WP-CLI, copy it to the WordPress root, load it in a browser while
  * signed in as an administrator, and delete it afterwards. It refuses to run
- * for anyone without `manage_options`, and needs the cURL extension.
+ * for anyone without `manage_options`. It uses curl_multi when available and
+ * falls back to raw sockets otherwise, so it needs no particular extension.
  *
  * @package EventCrew
  */
@@ -65,8 +70,8 @@ if (! $isCli) {
     header('Content-Type: text/plain; charset=utf-8');
 }
 
-if (! function_exists('curl_multi_init')) {
-    echo "FAIL: the cURL extension is required for the concurrent requests.\n";
+if (! function_exists('curl_multi_init') && ! function_exists('stream_socket_client')) {
+    echo "FAIL: neither curl_multi nor stream_socket_client is available to send concurrent requests.\n";
     exit(1);
 }
 
@@ -122,17 +127,131 @@ for ($i = 0; $i < $contenders; $i++) {
 }
 
 // ---------------------------------------------------------------------------
-// Fire every join at once at the real webhook.
+// Fire every join at once at whichever door the webhook is installed on - the
+// same URL Telegram is pointed at, so the admin-ajax fallback is exercised on
+// hosts that block /wp-json rather than the REST route those hosts would reject.
 // ---------------------------------------------------------------------------
 
-$url = rest_url(WebhookController::ROUTE_NAMESPACE . WebhookController::ROUTE);
-$multi = curl_multi_init();
-$handles = [];
+/**
+ * Fire all requests together with curl_multi.
+ *
+ * @param array<int, string> $payloads
+ */
+function eventcrew_fire_curl_multi(string $url, string $secret, array $payloads): void
+{
+    $multi = curl_multi_init();
+    $handles = [];
+
+    foreach ($payloads as $payload) {
+        $handle = curl_init($url);
+        curl_setopt_array($handle, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'X-Telegram-Bot-Api-Secret-Token: ' . $secret,
+            ],
+        ]);
+
+        curl_multi_add_handle($multi, $handle);
+        $handles[] = $handle;
+    }
+
+    do {
+        $status = curl_multi_exec($multi, $running);
+
+        if ($running) {
+            curl_multi_select($multi);
+        }
+    } while ($running && CURLM_OK === $status);
+
+    foreach ($handles as $handle) {
+        curl_multi_remove_handle($multi, $handle);
+        curl_close($handle);
+    }
+
+    curl_multi_close($multi);
+}
+
+/**
+ * The curl_multi-free path, for hosts that disable the curl_multi_* family
+ * (InfinityFree among them). Every socket is connected first - so the TLS
+ * handshakes are done - then all the requests are written back to back, so they
+ * reach the server as close to simultaneously as raw PHP allows. That overlap is
+ * the whole point: it is what puts two joins on the last slot at the same instant.
+ *
+ * @param array<int, string> $payloads
+ */
+function eventcrew_fire_sockets(string $url, string $secret, array $payloads): void
+{
+    $parts = wp_parse_url($url);
+    $scheme = (string) ($parts['scheme'] ?? 'https');
+    $host = (string) ($parts['host'] ?? '');
+    $port = (int) ($parts['port'] ?? ('https' === $scheme ? 443 : 80));
+    $path = (string) ($parts['path'] ?? '/');
+
+    if (isset($parts['query'])) {
+        $path .= '?' . $parts['query'];
+    }
+
+    $remote = ('https' === $scheme ? 'ssl' : 'tcp') . '://' . $host . ':' . $port;
+
+    /** @var array<int, resource> $sockets */
+    $sockets = [];
+    $requests = [];
+
+    foreach ($payloads as $i => $payload) {
+        $errno = 0;
+        $errstr = '';
+        $socket = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+
+        if (false === $socket) {
+            printf("  socket %d could not connect: %s (%d)\n", $i, $errstr, $errno);
+            continue;
+        }
+
+        $sockets[$i] = $socket;
+        $requests[$i] = sprintf(
+            "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: application/json\r\n"
+            . "X-Telegram-Bot-Api-Secret-Token: %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+            $path,
+            $host,
+            $secret,
+            strlen($payload),
+            $payload
+        );
+    }
+
+    // The connections are open; this loop is the moment the requests race.
+    foreach ($sockets as $i => $socket) {
+        fwrite($socket, $requests[$i]);
+        fflush($socket);
+    }
+
+    // Drain each response so the server finishes every join before teardown
+    // reads the count. The race already happened when the writes above landed.
+    foreach ($sockets as $socket) {
+        stream_set_timeout($socket, 30);
+
+        while (! feof($socket)) {
+            if ('' === (string) fread($socket, 8192)) {
+                break;
+            }
+        }
+
+        fclose($socket);
+    }
+}
+
+$url = WebhookController::webhookUrl($secret);
+$payloads = [];
 
 for ($i = 0; $i < $contenders; $i++) {
     $telegramId = $telegramBase + $i;
 
-    $update = [
+    $payloads[] = (string) wp_json_encode([
         'update_id' => $telegramId,
         'callback_query' => [
             'id' => (string) $telegramId,
@@ -140,38 +259,14 @@ for ($i = 0; $i < $contenders; $i++) {
             'message' => ['message_id' => 1, 'chat' => ['id' => $telegramId, 'type' => 'private']],
             'data' => 'j:' . $taskId,
         ],
-    ];
-
-    $handle = curl_init($url);
-    curl_setopt_array($handle, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => (string) wp_json_encode($update),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'X-Telegram-Bot-Api-Secret-Token: ' . $secret,
-        ],
     ]);
-
-    curl_multi_add_handle($multi, $handle);
-    $handles[] = $handle;
 }
 
-do {
-    $status = curl_multi_exec($multi, $running);
-
-    if ($running) {
-        curl_multi_select($multi);
-    }
-} while ($running && CURLM_OK === $status);
-
-foreach ($handles as $handle) {
-    curl_multi_remove_handle($multi, $handle);
-    curl_close($handle);
+if (function_exists('curl_multi_init')) {
+    eventcrew_fire_curl_multi($url, $secret, $payloads);
+} else {
+    eventcrew_fire_sockets($url, $secret, $payloads);
 }
-
-curl_multi_close($multi);
 
 // ---------------------------------------------------------------------------
 // Assert: exactly `capacity` slots were taken, no more.

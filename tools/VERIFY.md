@@ -84,8 +84,8 @@
 >
 > Phase 5 of `verify-install.php` still needs WP-CLI to run two PHP processes
 > into the conditional insert at once. `tools/concurrency-check.php` (below) is
-> the other way in — it hits the live webhook with `curl_multi`, which needs no
-> shell, only the installed bot.
+> the other way in — it hits the live webhook (with `curl_multi`, or raw sockets
+> where the host disables it), which needs no shell, only the installed bot.
 
 Everything below is verification items 1, 2 and 3 from `ROADMAP.md`. Items 4 and
 5 (the notification cron and a real bulk-mail delivery) depend on code that does
@@ -180,7 +180,9 @@ wp eval-file wp-content/plugins/eventcrew/tools/concurrency-check.php
 Or, without WP-CLI, copy `concurrency-check.php` to the WordPress root, open it
 in a browser while signed in as an administrator, **then delete it**. Unlike
 `verify-install.php`'s phase 5, this one needs no shell: it fires six
-`callback_query` joins at the live webhook at once with `curl_multi`, against a
+`callback_query` joins at the live webhook at once — with `curl_multi`, or raw
+sockets where the host disables it (InfinityFree does) — aimed at whichever door
+the webhook is installed on (the admin-ajax fallback included), against a
 capacity-2 task it seeds with six verified test people, and asserts exactly two
 claimed a slot. It deletes everything it created and prints `PASS` or `FAIL`.
 
