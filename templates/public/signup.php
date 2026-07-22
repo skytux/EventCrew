@@ -76,6 +76,22 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
     background: #229ED9; color: #fff; text-decoration: none; font-weight: 600;
 }
 .eventcrew-signup .eventcrew-tglink:hover { filter: brightness(1.08); color: #fff; }
+
+/*
+ * Keep the task list narrow so each row's action sits close to its text while
+ * still lining up in a column down the right edge, instead of being flung to
+ * the far side of a full-width content column.
+ */
+.eventcrew-signup ul { list-style: none; padding: 0; max-width: 30em; }
+.eventcrew-signup li { display: flex; gap: .6em; align-items: center; margin: .4em 0; }
+.eventcrew-signup .eventcrew-task { flex: 1; }
+.eventcrew-signup form { margin: 0; }
+
+/* Sign out is a quiet action, not a button - styled as a plain inline link. */
+.eventcrew-signup .eventcrew-linkbtn {
+    background: none; border: 0; padding: 0; font: inherit;
+    color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
+}
 </style>
 <div class="eventcrew-signup">
     <?php if (isset($eventcrew_notices[$eventcrew_notice_code])) : ?>
@@ -90,7 +106,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
             <label for="eventcrew-email"><?php esc_html_e('Your email to sign up:', 'eventcrew'); ?></label>
             <input type="email" id="eventcrew-email" name="email" required style="min-width:16em">
-            <button type="submit"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
+            <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
         </form>
     <?php else : ?>
         <p>
@@ -115,7 +131,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="display:inline">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <button type="submit" class="button-link"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+                <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>
         </p>
     <?php endif; ?>
@@ -134,15 +150,15 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
 
     <?php foreach ($view['groups'] as $eventcrew_group) : ?>
         <h3><?php echo esc_html($eventcrew_group['title']); ?></h3>
-        <ul style="list-style:none;padding:0">
+        <ul>
             <?php foreach ($eventcrew_group['tasks'] as $eventcrew_row) : ?>
                 <?php
                 $eventcrew_task = $eventcrew_row['task'];
                 $eventcrew_time = $eventcrew_task->timeRange();
                 $eventcrew_full = $eventcrew_row['taken'] >= $eventcrew_task->capacity;
                 ?>
-                <li style="margin:.4em 0;display:flex;gap:.6em;align-items:center">
-                    <span style="flex:1">
+                <li>
+                    <span class="eventcrew-task">
                         <?php echo esc_html($eventcrew_task->roleDisplay()); ?>
                         <?php echo '' === $eventcrew_time ? '' : ' · ' . esc_html($eventcrew_time); ?>
                         <?php echo esc_html($eventcrew_task->taskDate); ?>
@@ -157,7 +173,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['drop_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
                         </form>
                     <?php elseif ($eventcrew_full) : ?>
                         <span class="eventcrew-muted"><?php esc_html_e('full', 'eventcrew'); ?></span>
@@ -168,7 +184,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                             echo $eventcrew_hidden((string) $view['claim_action'], $eventcrew_csrf, $eventcrew_here);
                             ?>
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
-                            <button type="submit"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
                 </li>
