@@ -158,7 +158,7 @@ be designing for a user who does not exist.
 | v0.6 | ✅ Engagement: cancellation classified by notice, replacement flow, account disable/delete, door tickets, and transactional email (signup/cancel confirmations + the manual open-task send). Reputation *scoring* pulled out to v0.7. |
 | v0.7 | ✅ Reputation calculator + one threshold + join gate; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits; `/me` |
 | v0.8 | ✅ 24h reminders and the 48h open-task call automated, hourly cron + loopback-free fallback (`CronFallbackTrigger`), batching |
-| v0.9 | Public signup page, magic-link self-service |
+| v0.9 | ✅ Public signup page (shortcode + block), email magic-link self-service, web claim/drop sharing the bot's rules |
 | v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
 
 ## Done: v0.3 — verification, then the schema it exposed
@@ -546,6 +546,38 @@ pings hourly. Settings shows the next and last run so cron liveness is visible.
 Diagnostics page, translation pass, README and packaging CI (v1.0). Email
 delivery is **confirmed working on the real host**, so unlike the earlier
 mailer-dependent caveats this sprint is verifiable end to end.
+
+## Done: v0.9 — the public web signup page
+
+A second front door beside the Telegram group: a web page where someone who
+isn't in the group can see the open-task board and claim a slot, identified by
+email. **No schema change** — `auth_tokens`, `people` and `assignments` already
+carry everything; `DB_VERSION` stays 4.
+
+**One rulebook, two channels.** The gate + overlap + capacity checks that lived
+inside `BoardService` moved to `Support\SignupService`, which both the bot and
+the web now call. The two surfaces keep only their own wording; the decision
+"may this person take this slot?" has one answer, so they can never drift. (The
+`eventcrew_reputation_gate` / `eventcrew_notice_hours` options moved with it.)
+
+**Magic-link identity, no WP user.** `[eventcrew_signup]` (and a buildless
+dynamic block that shares its PHP renderer) shows the board. A visitor enters an
+email; `SignupController` finds or creates the person, issues a single-use
+`auth_token` and mails a link. Clicking it both **verifies the email** and starts
+a session, so the same person can move between the web and the bot. The session
+is a stateless, HMAC-signed **`Support\WebSession`** cookie (~30 days) — nothing
+stored server-side, matching the `SignedLink` style — with a per-person CSRF
+token guarding the claim/drop forms, since a logged-out visitor has no nonce.
+
+**Host-aware, like the bot.** The actions run over `admin-ajax.php`, not the REST
+API, because the target host serves a JS challenge on `/wp-json` (the same reason
+the webhook has an admin-ajax fallback). The page itself is an ordinary WP page.
+Claiming respects verification, capacity, overlap and the reputation gate exactly
+as the bot does, and the confirmation/ticket emails already built fire the same
+way.
+
+**Deferred, and the last tracked item:** the Diagnostics page, translation pass,
+README and packaging CI — **v1.0**.
 
 ## Verification owed before v1.0
 

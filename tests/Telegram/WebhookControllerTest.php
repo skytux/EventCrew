@@ -34,7 +34,7 @@ final class WebhookControllerTest extends TelegramTestCase
                 $this->client(),
                 new Logger(),
                 new Mailer(new Logger()),
-                $this->standing()
+                $this->signup()
             ),
             new RosterService(
                 new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
@@ -53,7 +53,7 @@ final class WebhookControllerTest extends TelegramTestCase
                     $this->client(),
                     new Logger(),
                     new Mailer(new Logger()),
-                    $this->standing()
+                    $this->signup()
                 ),
                 $this->client()
             ),

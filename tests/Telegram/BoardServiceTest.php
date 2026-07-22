@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\SignupService;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
@@ -47,7 +48,7 @@ final class BoardServiceTest extends TelegramTestCase
             $this->client(),
             new Logger(),
             new Mailer(new Logger()),
-            $this->standing()
+            $this->signup()
         );
     }
 
@@ -222,7 +223,7 @@ final class BoardServiceTest extends TelegramTestCase
 
     public function testTheGateBlocksAnAtRiskMemberFromSigningUp(): void
     {
-        $this->options[BoardService::GATE_OPTION] = '1';
+        $this->options[SignupService::GATE_OPTION] = '1';
         $this->verifiedPerson(555);
         // Three completions and three no-shows: rated, and a 0.5 score sits
         // under the 0.6 threshold.
@@ -237,7 +238,7 @@ final class BoardServiceTest extends TelegramTestCase
 
     public function testTheGateLetsAGoodStandingMemberJoin(): void
     {
-        $this->options[BoardService::GATE_OPTION] = '1';
+        $this->options[SignupService::GATE_OPTION] = '1';
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
         $this->queueStandingHistory(4, 0); // rated, perfect score

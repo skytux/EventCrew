@@ -26,6 +26,7 @@ use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -41,6 +42,7 @@ use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\SignupController;
 use Throwable;
 
 final class Kernel
@@ -84,6 +86,10 @@ final class Kernel
         // request when a host's WP-Cron never fires.
         $this->container->get(Scheduler::class)->boot();
         $this->container->get(CronFallbackTrigger::class)->boot();
+
+        // The public signup page: its shortcode, block and admin-ajax handlers
+        // must exist for logged-out visitors, so it boots on the front path too.
+        $this->container->get(SignupController::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -172,6 +178,14 @@ final class Kernel
         );
 
         $this->container->singleton(
+            SignupService::class,
+            fn (Container $container) => new SignupService(
+                $container->get(AssignmentRepository::class),
+                $container->get(StandingCalculator::class)
+            )
+        );
+
+        $this->container->singleton(
             DohResolver::class,
             fn (Container $container) => new DohResolver(
                 $container->get(Logger::class)
@@ -246,6 +260,19 @@ final class Kernel
         );
 
         $this->container->singleton(
+            SignupController::class,
+            fn (Container $container) => new SignupController(
+                $container->get(PersonRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(SignupService::class),
+                $container->get(StandingCalculator::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
             BoardService::class,
             fn (Container $container) => new BoardService(
                 $container->get(TaskRepository::class),
@@ -254,7 +281,7 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(Logger::class),
                 $container->get(Mailer::class),
-                $container->get(StandingCalculator::class)
+                $container->get(SignupService::class)
             )
         );
 

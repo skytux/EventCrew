@@ -271,6 +271,17 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
+        <h2><?php esc_html_e('Public signup page', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php
+            printf(
+                /* translators: %s: the shortcode, already wrapped in <code> */
+                esc_html__('Add the open-task board to any page with the %s shortcode, or the "EventCrew signup" block. Visitors sign in by email — no account needed — and claiming respects the same rules as the bot.', 'eventcrew'),
+                '<code>[eventcrew_signup]</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
+            );
+            ?>
+        </p>
+
         <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
         <p class="description">
             <?php esc_html_e('Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group.', 'eventcrew'); ?>
