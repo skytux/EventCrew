@@ -19,8 +19,15 @@ $eventcrew_standing = $view['standing'];
 $eventcrew_csrf = (string) $view['csrf'];
 $eventcrew_ajax = admin_url('admin-ajax.php');
 
-// The URL to return to after each action: this very page.
-$eventcrew_here = home_url(add_query_arg([], null));
+// The URL to return to after each action: this very page. get_permalink() gives
+// the clean canonical URL of the page the shortcode sits on - unlike
+// add_query_arg([], null), which yields an empty URI (so home_url() fell back to
+// the site root) and sent every action to the homepage.
+$eventcrew_here = get_permalink();
+
+if (false === $eventcrew_here) {
+    $eventcrew_here = home_url('/');
+}
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of a redirect-carried status.
 $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unslash($_GET['eventcrew_notice'])) : '';
