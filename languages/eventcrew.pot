@@ -1,0 +1,1428 @@
+# Copyright (C) EventCrew contributors
+# This file is distributed under the GPL-2.0 license.
+msgid ""
+msgstr ""
+"Project-Id-Version: EventCrew\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: eventcrew\n"
+
+#: src/Admin/TasksPage.php:196
+#. translators: 1: number of tasks created, 2: how many of them have no times
+msgid "%1$d task created, %2$d without times - the role has no offsets, or the event has no end recorded."
+msgid_plural "%1$d tasks created, %2$d without times - those roles have no offsets, or the event has no end recorded."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Support/OpenTaskCall.php:177
+#. translators: 1: recent-task list, 2: total completed
+msgid "%1$s\n\nTasks completed in total: %2$d."
+msgstr ""
+
+#: templates/admin/roster.php:129
+#. translators: 1: person name, 2: credit balance
+msgid "%1$s (%2$d credits)"
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:221
+#. translators: 1: cover's name, 2: person being covered, 3: role, 4: event
+msgid "%1$s is covering for %2$s: %3$s at %4$s."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:211
+#. translators: 1: cover's name, 2: role, 3: event
+msgid "%1$s is now covering your %2$s at %3$s. Thanks for arranging it!"
+msgstr ""
+
+#: src/Telegram/ProfileService.php:51
+#. translators: 1: name, 2: standing level
+msgid "%1$s — %2$s"
+msgstr ""
+
+#: templates/admin/settings.php:503
+#. translators: %d: number of active accounts
+msgid "%d active account(s) would receive the open-task email."
+msgstr ""
+
+#: templates/public/signup.php:90
+#. translators: %d: number of free-entry credits
+msgid "%d credit"
+msgid_plural "%d credits"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Admin/RosterPage.php:220
+#. translators: %d: number of people updated
+msgid "%d person updated."
+msgid_plural "%d people updated."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Admin/TasksPage.php:188
+#. translators: %d: number of tasks created
+msgid "%d task created."
+msgid_plural "%d tasks created."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/tasks.php:167
+#. translators: %s: role label
+msgid "%s (archived)"
+msgstr ""
+
+#: src/Admin/TasksPage.php:305 src/Support/DoorList.php:55 src/Support/DoorList.php:94 src/Support/RosterAssembler.php:47
+msgid "(deleted person)"
+msgstr ""
+
+#: templates/admin/settings.php:221
+msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three completed tasks are unrated. Default 0.6."
+msgstr ""
+
+#: templates/admin/diagnostics.php:41
+msgid "A read-only health check. Anything flagged is fixed on the Settings page — nothing here changes your site."
+msgstr ""
+
+#: src/Admin/PeoplePage.php:63
+msgid "A valid email address is required - it is how a person is identified."
+msgstr ""
+
+#: templates/admin/settings.php:425
+msgid "Add a bot token above and save before installing the webhook."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:207
+msgid "Add a bot token and save before installing the webhook."
+msgstr ""
+
+#: templates/admin/people.php:29
+msgid "Add a person"
+msgstr ""
+
+#: templates/admin/tasks.php:85
+msgid "Add a task"
+msgstr ""
+
+#: templates/admin/people.php:85
+msgid "Add person"
+msgstr ""
+
+#: templates/admin/tasks.php:221
+msgid "Add task"
+msgstr ""
+
+#: templates/admin/settings.php:282
+#. translators: %s: the shortcode, already wrapped in <code>
+msgid "Add the open-task board to any page with the %s shortcode, or the \"EventCrew signup\" block. Visitors sign in by email — no account needed — and claiming respects the same rules as the bot."
+msgstr ""
+
+#: src/Support/HealthReport.php:88
+#. translators: %s: schema version number
+msgid "All tables present at schema version %s."
+msgstr ""
+
+#: templates/admin/settings.php:268
+msgid "Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)"
+msgstr ""
+
+#: templates/admin/settings.php:413
+msgid "And this JSON body (Content-Type: application/json):"
+msgstr ""
+
+#: src/Admin/PeoplePage.php:73
+msgid "Another person already uses that email address."
+msgstr ""
+
+#: src/Support/HealthReport.php:202
+msgid "App icons"
+msgstr ""
+
+#: templates/admin/settings.php:311
+msgid "App name"
+msgstr ""
+
+#: templates/admin/settings.php:55
+msgid "Archived"
+msgstr ""
+
+#: templates/admin/settings.php:158
+msgid "Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:83
+msgid "Arrived"
+msgstr ""
+
+#: src/Telegram/VerificationController.php:93
+msgid "Ask the bot for a fresh one by sending it /start."
+msgstr ""
+
+#: src/Support/Standing.php:48
+msgid "At risk"
+msgstr ""
+
+#: src/Admin/RosterPage.php:176
+msgid "Attendance updated."
+msgstr ""
+
+#: templates/admin/settings.php:170
+msgid "Automatically create tasks when a new event is synced from EventMesh"
+msgstr ""
+
+#: templates/admin/settings.php:254
+msgid "Background job"
+msgstr ""
+
+#: templates/admin/settings.php:474
+msgid "Board group"
+msgstr ""
+
+#: templates/admin/settings.php:469
+msgid "Bot"
+msgstr ""
+
+#: templates/admin/settings.php:346
+msgid "Bot token"
+msgstr ""
+
+#: templates/admin/people.php:92 templates/admin/tasks.php:228
+msgid "Cancel"
+msgstr ""
+
+#: templates/admin/settings.php:182
+msgid "Cancellations"
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:88
+msgid "Cancelled"
+msgstr ""
+
+#: src/Telegram/BoardService.php:363
+#. translators: 1: role, 2: event
+msgid "Cancelled: %1$s for %2$s"
+msgstr ""
+
+#: templates/admin/settings.php:198
+msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
+msgstr ""
+
+#: templates/admin/diagnostics.php:25 templates/admin/diagnostics.php:48
+msgid "Check"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:163
+msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
+msgstr ""
+
+#: templates/public/signup.php:36
+msgid "Check your email for a sign-in link."
+msgstr ""
+
+#: templates/public/signup.php:144
+msgid "Claim"
+msgstr ""
+
+#: src/Support/Roles.php:79
+msgid "Clean"
+msgstr ""
+
+#: src/Web/SignupController.php:150
+#. translators: %s: sign-in link
+msgid "Click to sign in and manage your tasks:\n\n%s\n\nThe link is good for 30 minutes."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:84
+msgid "Completed"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:51
+msgid "Completed tasks"
+msgstr ""
+
+#: src/Telegram/ProfileService.php:57
+#. translators: 1: completed count, 2: credit balance
+msgid "Completed tasks: %1$d · Free-entry credits: %2$d"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:200
+msgid "Confirm your email for EventCrew"
+msgstr ""
+
+#: src/Support/EventMeshSyncListener.php:56
+msgid "Connected — auto-create off, tasks added manually"
+msgstr ""
+
+#: src/Support/EventMeshSyncListener.php:55
+msgid "Connected — auto-creating tasks for new events"
+msgstr ""
+
+#: templates/admin/settings.php:487
+msgid "Could not read the webhook status from Telegram. Check the token."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:265
+msgid "Cover someone else’s task"
+msgstr ""
+
+#: templates/admin/settings.php:341
+msgid "Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group."
+msgstr ""
+
+#: templates/admin/tasks.php:45
+msgid "Create an event's tasks"
+msgstr ""
+
+#: templates/admin/tasks.php:73
+msgid "Create tasks"
+msgstr ""
+
+#: templates/admin/tasks.php:47
+msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
+msgstr ""
+
+#: src/Admin/RosterPage.php:132
+msgid "Credit handed back."
+msgstr ""
+
+#: src/Admin/RosterPage.php:108
+msgid "Credit redeemed — they’re on the door list."
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:53
+msgid "Credits"
+msgstr ""
+
+#: src/Telegram/TicketController.php:111
+msgid "DISABLED"
+msgstr ""
+
+#: templates/admin/settings.php:363
+msgid "DNS workaround"
+msgstr ""
+
+#: src/Support/HealthReport.php:45
+msgid "Database"
+msgstr ""
+
+#: src/Admin/TasksListTable.php:47 templates/admin/roster.php:55
+msgid "Date"
+msgstr ""
+
+#: src/Support/Roles.php:56
+msgid "Decorate"
+msgstr ""
+
+#: templates/admin/tasks.php:187
+msgid "Defaults come from the role in Settings."
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:135 src/Admin/TasksListTable.php:135
+msgid "Delete"
+msgstr ""
+
+#: src/Telegram/ManageController.php:113
+msgid "Delete my data"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:133
+msgid "Delete this person and their whole task history?"
+msgstr ""
+
+#: src/Admin/TasksListTable.php:133
+msgid "Delete this task and everyone signed up for it?"
+msgstr ""
+
+#: templates/admin/diagnostics.php:49
+msgid "Detail"
+msgstr ""
+
+#: src/Admin/Admin.php:143 src/Admin/Admin.php:144
+msgid "Diagnostics"
+msgstr ""
+
+#: src/Telegram/ManageController.php:134
+msgid "Done — you won’t get any more emails. Send the bot /start to turn your account back on."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:199
+#. translators: 1: person being covered, 2: role
+msgid "Done — you’re covering %1$s’s %2$s."
+msgstr ""
+
+#: templates/admin/roster.php:80
+msgid "Door list"
+msgstr ""
+
+#: templates/public/signup.php:133
+msgid "Drop"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:127 src/Admin/TasksListTable.php:127
+msgid "Edit"
+msgstr ""
+
+#: templates/admin/people.php:28
+msgid "Edit person"
+msgstr ""
+
+#: templates/admin/tasks.php:84
+msgid "Edit task"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:226 templates/admin/people.php:41
+msgid "Email"
+msgstr ""
+
+#: src/Telegram/VerificationController.php:88
+msgid "Email confirmed"
+msgstr ""
+
+#: templates/public/signup.php:74
+msgid "Email me a sign-in link"
+msgstr ""
+
+#: templates/admin/people.php:103
+msgid "Email verified"
+msgstr ""
+
+#: templates/admin/settings.php:48
+msgid "Emoji"
+msgstr ""
+
+#: templates/admin/settings.php:390
+msgid "Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Re-install the webhook after changing it. Leave off on a normal host."
+msgstr ""
+
+#: templates/admin/settings.php:54 templates/admin/tasks.php:200
+msgid "Ends"
+msgstr ""
+
+#: templates/admin/diagnostics.php:63
+msgid "Environment"
+msgstr ""
+
+#: src/Admin/TasksListTable.php:48 templates/admin/tasks.php:55 templates/admin/tasks.php:98
+msgid "Event"
+msgstr ""
+
+#: templates/admin/settings.php:76
+msgid "Event end"
+msgstr ""
+
+#: templates/admin/tasks.php:135
+msgid "Event name"
+msgstr ""
+
+#: templates/admin/settings.php:75
+msgid "Event start"
+msgstr ""
+
+#: src/Admin/Admin.php:96 src/Admin/Admin.php:97 src/Support/EventMeshSyncListener.php:53 src/Telegram/ManageController.php:139
+msgid "EventCrew"
+msgstr ""
+
+#: templates/admin/diagnostics.php:38
+msgid "EventCrew Diagnostics"
+msgstr ""
+
+#: templates/admin/settings.php:30
+msgid "EventCrew Settings"
+msgstr ""
+
+#: templates/admin/diagnostics.php:67
+msgid "EventCrew version"
+msgstr ""
+
+#: templates/admin/settings.php:161
+msgid "EventMesh"
+msgstr ""
+
+#: templates/admin/settings.php:178
+msgid "EventMesh is not active, so there is nothing to sync tasks from."
+msgstr ""
+
+#: src/Admin/TasksPage.php:176
+msgid "Every active role already has a task for that event."
+msgstr ""
+
+#: templates/admin/roster.php:82
+msgid "Everyone who gets in free that night — working the event, or spending a credit."
+msgstr ""
+
+#: src/Admin/TasksListTable.php:51
+msgid "Filled"
+msgstr ""
+
+#: src/Telegram/BoardService.php:215
+msgid "First tap the “New here? Sign up” button below to confirm your email."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:85
+msgid "Found a replacement"
+msgstr ""
+
+#: templates/admin/roster.php:88
+msgid "Free entry"
+msgstr ""
+
+#: src/Support/DoorList.php:56
+msgid "Free-entry credit"
+msgstr ""
+
+#: src/Support/Standing.php:47
+msgid "Good standing"
+msgstr ""
+
+#: templates/admin/settings.php:208
+msgid "Good-standing threshold"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:193
+msgid "Hi %1$s,\n\nConfirm your email to finish signing up for EventCrew tasks:\n\n%2$s\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
+msgstr ""
+
+#: src/Support/ReminderCall.php:109
+msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to drop out, or /replace to hand it to someone."
+msgstr ""
+
+#: src/Support/OpenTaskCall.php:126
+msgid "Hi %1$s,\n\nSome tasks still need people on %2$s:\n\n%3$s\n\nSign up on the board in the group.\n\n%4$s"
+msgstr ""
+
+#: src/Telegram/BoardService.php:331
+msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s.\n\nShow this ticket at the door:\n%5$s\n\nCan't make it? Open the bot and tap the task to drop out, or /replace to hand it to someone."
+msgstr ""
+
+#: src/Telegram/BoardService.php:370
+msgid "Hi %1$s,\n\nYou've dropped out of %2$s at %3$s, and your ticket is now disabled.\n\n%4$s"
+msgstr ""
+
+#: templates/admin/settings.php:147
+msgid "Hide"
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:90
+msgid "I couldn’t find anyone by that name with an upcoming task to cover."
+msgstr ""
+
+#: templates/admin/diagnostics.php:27
+msgid "Info"
+msgstr ""
+
+#: templates/admin/settings.php:494
+msgid "Install / refresh webhook"
+msgstr ""
+
+#: templates/admin/settings.php:452
+msgid "Installed"
+msgstr ""
+
+#: templates/admin/settings.php:358
+msgid "Kept private on your server. Clearing it disconnects the bot."
+msgstr ""
+
+#: templates/admin/settings.php:49
+msgid "Label"
+msgstr ""
+
+#: templates/admin/settings.php:463
+msgid "Last error"
+msgstr ""
+
+#: src/Support/HealthReport.php:143
+#. translators: %s: human-readable time span, e.g. "5 hours"
+msgid "Last run %s ago; WP-Cron may not be firing. Consider the on-request fallback."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:86
+msgid "Late cancellation"
+msgstr ""
+
+#: templates/admin/settings.php:186
+msgid "Late-cancel window (hours)"
+msgstr ""
+
+#: templates/admin/tasks.php:206
+msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
+msgstr ""
+
+#: src/Telegram/ManageController.php:62
+msgid "Link expired"
+msgstr ""
+
+#: src/Support/HealthReport.php:240
+#. translators: %s: the site admin email address
+msgid "Mail sends via wp_mail (admin: %s). Deliverability depends on the host and SPF/DKIM."
+msgstr ""
+
+#: src/Telegram/ManageController.php:115
+msgid "Manage your EventCrew account"
+msgstr ""
+
+#: templates/admin/roster.php:206
+msgid "Mark all arrived"
+msgstr ""
+
+#: templates/admin/roster.php:209
+msgid "Mark all completed"
+msgstr ""
+
+#: templates/admin/settings.php:52
+msgid "Measured from"
+msgstr ""
+
+#: src/Support/HealthReport.php:64
+#. translators: %s: comma-separated table names
+msgid "Missing tables: %s. Deactivate and reactivate the plugin to run the migration."
+msgstr ""
+
+#: templates/admin/settings.php:288
+msgid "Mobile app"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:47 templates/admin/people.php:52
+msgid "Name"
+msgstr ""
+
+#: src/Support/Standing.php:49
+msgid "New"
+msgstr ""
+
+#: src/Telegram/BoardService.php:452
+msgid "New here? Sign up →"
+msgstr ""
+
+#: templates/admin/settings.php:260
+#. translators: 1: next run time, 2: last run time
+msgid "Next run: %1$s. Last run: %2$s."
+msgstr ""
+
+#: templates/admin/people.php:118
+msgid "No"
+msgstr ""
+
+#: src/Support/HealthReport.php:220
+msgid "No Site Icon and GD unavailable, so the app has no icon. Set one under Settings → General."
+msgstr ""
+
+#: src/Support/HealthReport.php:214
+msgid "No Site Icon set; a lettered icon is generated with GD."
+msgstr ""
+
+#: src/Support/HealthReport.php:102
+msgid "No bot token set. The bot is optional — add one in Settings to run the group board."
+msgstr ""
+
+#: templates/admin/tasks.php:127
+msgid "No linkable events found. Type a name below instead."
+msgstr ""
+
+#: src/Telegram/BoardService.php:125 templates/public/signup.php:105
+msgid "No open tasks right now. Check back soon!"
+msgstr ""
+
+#: src/Support/HealthReport.php:167
+msgid "No page chosen for web signup / the mobile app. Set one in Settings → Mobile app."
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:102
+msgid "No people yet."
+msgstr ""
+
+#: src/Support/HealthReport.php:232
+msgid "No site admin email is set, so wp_mail has no default sender."
+msgstr ""
+
+#: src/Telegram/RosterService.php:46
+msgid "No tasks are scheduled yet."
+msgstr ""
+
+#: templates/admin/roster.php:51
+msgid "No tasks have been created yet, so there is nothing to take a roster for."
+msgstr ""
+
+#: templates/admin/roster.php:142
+msgid "No tasks on that date."
+msgstr ""
+
+#: src/Admin/TasksListTable.php:102
+msgid "No tasks yet. Add one to get started."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:87
+msgid "No-show"
+msgstr ""
+
+#: templates/admin/roster.php:95
+msgid "Nobody on the door list yet."
+msgstr ""
+
+#: templates/admin/roster.php:166
+msgid "Nobody signed up."
+msgstr ""
+
+#: templates/admin/settings.php:453
+msgid "Not installed"
+msgstr ""
+
+#: templates/admin/people.php:135
+msgid "Not opted in"
+msgstr ""
+
+#: templates/admin/settings.php:479
+msgid "Not set yet - run /board in the group once."
+msgstr ""
+
+#: templates/admin/people.php:108
+msgid "Not yet"
+msgstr ""
+
+#: templates/admin/people.php:74 templates/admin/tasks.php:210
+msgid "Notes"
+msgstr ""
+
+#: src/Telegram/ManageController.php:136
+msgid "Nothing to do."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:185
+msgid "Nothing to send: no open tasks, or everyone eligible already has it."
+msgstr ""
+
+#: src/Support/HealthReport.php:123 templates/admin/settings.php:239
+msgid "Notifications"
+msgstr ""
+
+#: templates/admin/diagnostics.php:24
+msgid "OK"
+msgstr ""
+
+#: templates/admin/settings.php:374
+msgid "Only enable this if installing the webhook fails with “Could not resolve host: api.telegram.org”. It looks the address up over HTTPS instead of the server’s own DNS, which some shared hosts block. Leave off on a normal host."
+msgstr ""
+
+#: src/Telegram/RosterService.php:37
+msgid "Only organizers can see the roster."
+msgstr ""
+
+#: src/Telegram/BoardService.php:134
+msgid "Open tasks — tap one to sign up, tap again to drop out:"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:50 templates/admin/people.php:123 templates/admin/settings.php:498
+msgid "Open-task email"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:188
+#. translators: %d: number of people emailed
+msgid "Open-task email sent to %d person."
+msgid_plural "Open-task email sent to %d people."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/people.php:129
+#. translators: 1: date consent was given, 2: where it was given
+msgid "Opted in %1$s (%2$s)"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:141 templates/admin/people.php:68
+msgid "Organizer"
+msgstr ""
+
+#: templates/admin/people.php:70
+msgid "Organizers can mark attendance from the bot."
+msgstr ""
+
+#: templates/admin/tasks.php:120
+msgid "Other (type a name)"
+msgstr ""
+
+#: templates/admin/diagnostics.php:75
+msgid "PHP version"
+msgstr ""
+
+#: templates/admin/roster.php:67
+msgid "Past"
+msgstr ""
+
+#: templates/admin/settings.php:458
+msgid "Pending updates"
+msgstr ""
+
+#: src/Admin/Admin.php:125 src/Admin/Admin.php:126 templates/admin/people.php:20 templates/admin/settings.php:51
+msgid "People"
+msgstr ""
+
+#: templates/admin/tasks.php:179
+msgid "People needed"
+msgstr ""
+
+#: templates/admin/roster.php:87 templates/admin/roster.php:171
+msgid "Person"
+msgstr ""
+
+#: src/Admin/PeoplePage.php:97
+msgid "Person added."
+msgstr ""
+
+#: src/Admin/PeoplePage.php:118
+msgid "Person deleted."
+msgstr ""
+
+#: src/Admin/PeoplePage.php:88
+msgid "Person updated."
+msgstr ""
+
+#: src/Admin/TasksPage.php:100
+msgid "Pick a role that still exists in Settings."
+msgstr ""
+
+#: templates/admin/tasks.php:123
+msgid "Picking an event fills in the date and times below. Change them afterwards if this task runs to its own schedule."
+msgstr ""
+
+#: templates/public/signup.php:49
+msgid "Please sign in first."
+msgstr ""
+
+#: templates/admin/diagnostics.php:26
+msgid "Problem"
+msgstr ""
+
+#: templates/admin/settings.php:277
+msgid "Public signup page"
+msgstr ""
+
+#: templates/admin/settings.php:379
+msgid "REST workaround"
+msgstr ""
+
+#: templates/admin/settings.php:387
+msgid "Receive updates through admin-ajax.php instead of the REST API"
+msgstr ""
+
+#: src/Telegram/ProfileService.php:67
+msgid "Recent:"
+msgstr ""
+
+#: templates/admin/roster.php:136
+msgid "Redeem"
+msgstr ""
+
+#: templates/admin/roster.php:123
+msgid "Redeem a credit for"
+msgstr ""
+
+#: src/Support/ReminderCall.php:102
+#. translators: 1: role, 2: event
+msgid "Reminder: %1$s for %2$s"
+msgstr ""
+
+#: src/Support/ReminderCall.php:83
+#. translators: 1: role, 2: event, 3: date/time
+msgid "Reminder: you’re on %1$s at %2$s, %3$s. See you there!"
+msgstr ""
+
+#: src/Support/HealthReport.php:153
+#. translators: %s: human-readable time span, e.g. "20 minutes"
+msgid "Reminders and the open-task call ran %s ago."
+msgstr ""
+
+#: templates/admin/roster.php:109
+msgid "Remove"
+msgstr ""
+
+#: templates/admin/settings.php:204
+msgid "Reputation"
+msgstr ""
+
+#: templates/admin/settings.php:371
+msgid "Resolve Telegram’s address via Cloudflare (1.1.1.1)"
+msgstr ""
+
+#: src/Admin/TasksListTable.php:49 templates/admin/tasks.php:155
+msgid "Role"
+msgstr ""
+
+#: templates/admin/settings.php:36
+msgid "Roles"
+msgstr ""
+
+#: src/Admin/Admin.php:116 src/Admin/Admin.php:117 templates/admin/roster.php:48
+msgid "Roster"
+msgstr ""
+
+#: templates/admin/settings.php:419
+msgid "Save settings"
+msgstr ""
+
+#: templates/admin/people.php:151
+msgid "Search people"
+msgstr ""
+
+#: templates/admin/settings.php:514
+msgid "Send open-task email now"
+msgstr ""
+
+#: templates/admin/settings.php:400
+msgid "Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot."
+msgstr ""
+
+#: templates/admin/settings.php:509
+msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
+msgstr ""
+
+#: src/Telegram/ProfileService.php:40
+msgid "Set yourself up first with /start, then /me shows how you’re doing."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:46
+msgid "Set yourself up first, then you can cover someone’s task."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:118
+msgid "Set yourself up first."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:263
+msgid "Set yourself up to sign up for tasks"
+msgstr ""
+
+#: src/Admin/Admin.php:134 src/Admin/Admin.php:135
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:168
+msgid "Settings saved."
+msgstr ""
+
+#: templates/admin/roster.php:76
+msgid "Show"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:268
+msgid "Show the attendance roster (organizers)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:264
+msgid "Show the board of open tasks"
+msgstr ""
+
+#: templates/admin/settings.php:321
+msgid "Shown under the home-screen icon. Blank uses the site name."
+msgstr ""
+
+#: templates/public/signup.php:99
+msgid "Sign out"
+msgstr ""
+
+#: templates/admin/settings.php:226
+msgid "Sign-up gate"
+msgstr ""
+
+#: templates/public/signup.php:46
+msgid "Sign-ups are paused on your account — please contact the organizer."
+msgstr ""
+
+#: templates/public/signup.php:81
+#. translators: %s: person's name
+msgid "Signed in as %s."
+msgstr ""
+
+#: src/Support/AssignmentStatus.php:82 templates/admin/tasks.php:235
+msgid "Signed up"
+msgstr ""
+
+#: src/Support/HealthReport.php:161 templates/admin/settings.php:295
+msgid "Signup page"
+msgstr ""
+
+#: templates/admin/settings.php:50
+msgid "Slug"
+msgstr ""
+
+#: src/Support/OpenTaskCall.php:111
+msgid "Some tasks still need people"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:52 templates/admin/roster.php:89
+msgid "Standing"
+msgstr ""
+
+#: templates/admin/settings.php:53 templates/admin/tasks.php:191
+msgid "Starts"
+msgstr ""
+
+#: templates/admin/diagnostics.php:47 templates/admin/people.php:99 templates/admin/roster.php:172 templates/admin/settings.php:448
+msgid "Status"
+msgstr ""
+
+#: src/Telegram/ManageController.php:112
+msgid "Stop all emails"
+msgstr ""
+
+#: templates/admin/settings.php:230
+msgid "Stop at-risk members from signing up for new tasks"
+msgstr ""
+
+#: src/Support/HealthReport.php:77
+#. translators: 1: stored schema version, 2: expected version
+msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:267
+msgid "Switch your account off (no more emails)"
+msgstr ""
+
+#: src/Admin/TasksPage.php:143
+msgid "Task added."
+msgstr ""
+
+#: templates/admin/tasks.php:144
+msgid "Task date"
+msgstr ""
+
+#: src/Admin/TasksPage.php:226
+msgid "Task deleted."
+msgstr ""
+
+#: templates/admin/settings.php:241
+msgid "Task reminders (24h before) and the open-task email (48h before) are sent by an hourly background job."
+msgstr ""
+
+#: src/Admin/TasksPage.php:136
+msgid "Task updated."
+msgstr ""
+
+#: src/Admin/Admin.php:107 src/Admin/Admin.php:108 templates/admin/tasks.php:39
+msgid "Tasks"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:49
+msgid "Telegram"
+msgstr ""
+
+#: src/Support/HealthReport.php:96 templates/admin/settings.php:339
+msgid "Telegram bot"
+msgstr ""
+
+#: templates/admin/settings.php:403
+msgid "Telegram is posting to:"
+msgstr ""
+
+#: templates/admin/people.php:113
+msgid "Telegram linked"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:247
+#. translators: %s: the error Telegram returned
+msgid "Telegram refused the webhook: %s"
+msgstr ""
+
+#: templates/admin/settings.php:432
+#. translators: %s: the webhook URL Telegram will post updates to
+msgid "Telegram will post updates to %s. This needs HTTPS with a valid certificate - Telegram refuses plain HTTP and self-signed certificates."
+msgstr ""
+
+#: templates/admin/settings.php:398
+msgid "Test the endpoint by hand"
+msgstr ""
+
+#: src/Telegram/BoardService.php:356
+msgid "Thanks for the notice."
+msgstr ""
+
+#: src/Admin/RosterPage.php:197
+msgid "That bulk update could not be applied."
+msgstr ""
+
+#: src/Telegram/BoardService.php:265 src/Telegram/ReplacementService.php:159
+msgid "That clashes with another slot you already hold."
+msgstr ""
+
+#: templates/public/signup.php:45
+msgid "That clashes with another slot you hold."
+msgstr ""
+
+#: src/Admin/RosterPage.php:88
+msgid "That credit could not be redeemed."
+msgstr ""
+
+#: src/Admin/TasksPage.php:92
+msgid "That date could not be read. Use the date picker and try again."
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:131
+msgid "That doesn't look like an email address. Try again?"
+msgstr ""
+
+#: templates/public/signup.php:37
+msgid "That doesn’t look like a valid email address."
+msgstr ""
+
+#: src/Admin/TasksPage.php:168
+msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
+msgstr ""
+
+#: templates/public/signup.php:39
+msgid "That sign-in link is invalid or has expired."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:182
+msgid "That slot filled up before I could swap it."
+msgstr ""
+
+#: src/Telegram/BoardService.php:269 templates/public/signup.php:44
+msgid "That slot just filled up."
+msgstr ""
+
+#: src/Admin/RosterPage.php:166
+msgid "That status could not be set."
+msgstr ""
+
+#: src/Telegram/BoardService.php:270 src/Telegram/ReplacementService.php:128 templates/public/signup.php:47
+msgid "That task is no longer available."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:149
+msgid "That’s your own task."
+msgstr ""
+
+#: templates/admin/settings.php:334
+msgid "The app’s accent colour, and the fallback icon’s background."
+msgstr ""
+
+#: src/Support/HealthReport.php:186
+msgid "The chosen page has no [eventcrew_signup] shortcode or EventCrew signup block."
+msgstr ""
+
+#: src/Support/HealthReport.php:176
+msgid "The chosen signup page is missing or not published."
+msgstr ""
+
+#: templates/admin/tasks.php:151
+msgid "The day this task is filed under. A clean-up at 01:00 after a Saturday event still belongs to Saturday."
+msgstr ""
+
+#: src/Support/HealthReport.php:132
+msgid "The hourly job has never run. If it stays so, enable the fallback in Settings."
+msgstr ""
+
+#: src/Support/HealthReport.php:131
+msgid "The hourly job has not run yet; the on-request fallback will run it on a visit."
+msgstr ""
+
+#: templates/admin/settings.php:38
+msgid "The kinds of job a task can be. \"People needed\" is only the default for new tasks - each task keeps its own number."
+msgstr ""
+
+#: src/Admin/View.php:20
+msgid "The requested EventCrew admin view could not be loaded."
+msgstr ""
+
+#: templates/admin/settings.php:41
+msgid "The timing columns are what \"Create an event's tasks\" uses. Offsets are in minutes from the chosen anchor, negative for before it: decorating might run -120 to 0 from the start, cleaning 0 to 60 from the end. Leave both blank for a role whose timing varies - its tasks are created without times for you to fill in."
+msgstr ""
+
+#: templates/admin/settings.php:326
+msgid "Theme colour"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:99
+msgid "There is no account here to switch off."
+msgstr ""
+
+#: src/Admin/RosterPage.php:97
+msgid "They have no credit left to redeem."
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:146
+msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
+msgstr ""
+
+#: templates/admin/people.php:48
+msgid "This is how a person is identified across Telegram and the web."
+msgstr ""
+
+#: src/Telegram/VerificationController.php:89
+msgid "This link is invalid or has expired"
+msgstr ""
+
+#: src/Telegram/ManageController.php:63
+msgid "This link is no longer valid."
+msgstr ""
+
+#: src/Telegram/TicketController.php:105
+msgid "This ticket link is not valid."
+msgstr ""
+
+#: src/Telegram/BoardService.php:355
+msgid "This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time."
+msgstr ""
+
+#: src/Support/OpenTaskCall.php:172
+msgid "This will be your first task — welcome!"
+msgstr ""
+
+#: src/Telegram/TicketController.php:104
+msgid "Ticket not found"
+msgstr ""
+
+#: src/Admin/TasksListTable.php:50
+msgid "Time"
+msgstr ""
+
+#: src/Support/HealthReport.php:117
+msgid "Token set and webhook installed. The live status is on the Settings page."
+msgstr ""
+
+#: src/Support/HealthReport.php:111
+msgid "Token set, but the webhook is not installed — install it from the Settings page."
+msgstr ""
+
+#: templates/admin/settings.php:290
+msgid "Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android)."
+msgstr ""
+
+#: templates/admin/roster.php:58
+msgid "Upcoming"
+msgstr ""
+
+#: templates/admin/roster.php:192
+msgid "Update"
+msgstr ""
+
+#: templates/admin/people.php:84
+msgid "Update person"
+msgstr ""
+
+#: templates/admin/tasks.php:220
+msgid "Update task"
+msgstr ""
+
+#: templates/admin/settings.php:174
+msgid "Uses the active roles' offsets, exactly like \"Create an event's tasks\" on the Tasks page. Only ever runs the first time an event is synced - a later re-sync that corrects its time never touches tasks that may already have signups or edits on them. Use the button on the Tasks page for any event synced before this was turned on."
+msgstr ""
+
+#: src/Support/HealthReport.php:207
+msgid "Using the WordPress Site Icon for the installed app."
+msgstr ""
+
+#: src/Telegram/TicketController.php:110
+msgid "VALID"
+msgstr ""
+
+#: templates/admin/people.php:142
+msgid "Verification and open-task consent can only be given by the person themselves, so neither can be set from this screen."
+msgstr ""
+
+#: templates/admin/settings.php:271
+msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
+msgstr ""
+
+#: templates/admin/settings.php:422
+msgid "Webhook"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:274
+msgid "Webhook installed. Add the bot to your group and the board will appear there on its own."
+msgstr ""
+
+#: src/Support/Roles.php:67
+msgid "Welcome"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:54
+msgid "Welcome back — your account is on again. Tap a task on the board to sign up."
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:79
+msgid "Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks."
+msgstr ""
+
+#: templates/admin/settings.php:233
+msgid "When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected."
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:98
+msgid "Which of their tasks are you covering?"
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:55
+msgid "Whose task are you covering? Send their name, or @mention them."
+msgstr ""
+
+#: templates/admin/settings.php:408
+msgid "With header:"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:233
+#. translators: %s: the non-HTTPS URL WordPress generated
+msgid "WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy's forwarded-protocol header - and try again."
+msgstr ""
+
+#: templates/admin/diagnostics.php:71
+msgid "WordPress version"
+msgstr ""
+
+#: src/Support/DoorList.php:97
+#. translators: %s: comma-separated list of roles
+msgid "Working: %s"
+msgstr ""
+
+#: templates/admin/people.php:117
+msgid "Yes"
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:63
+msgid "You are already set up. Tap a task on the board to sign up."
+msgstr ""
+
+#: src/Telegram/VerificationController.php:92
+msgid "You can return to Telegram and sign up for tasks."
+msgstr ""
+
+#: src/Admin/Admin.php:191 src/Admin/PeoplePage.php:103 src/Admin/TasksPage.php:211
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: templates/public/signup.php:43
+msgid "You were already signed up for that."
+msgstr ""
+
+#: src/Telegram/BoardService.php:292 templates/public/signup.php:48
+msgid "You weren’t signed up for that one."
+msgstr ""
+
+#: src/Web/SignupController.php:147
+msgid "Your EventCrew sign-in link"
+msgstr ""
+
+#: src/Telegram/TicketController.php:122
+msgid "Your EventCrew ticket"
+msgstr ""
+
+#: src/Telegram/ManageController.php:109
+msgid "Your account is active."
+msgstr ""
+
+#: src/Telegram/ManageController.php:108
+msgid "Your account is currently switched off."
+msgstr ""
+
+#: src/Telegram/OnboardingService.php:109
+msgid "Your account is off: no more emails, and you’re off the boards. Send /start any time to turn it back on."
+msgstr ""
+
+#: src/Telegram/ManageController.php:135
+msgid "Your data has been deleted. Thanks for helping out."
+msgstr ""
+
+#: src/Telegram/VerificationController.php:78
+msgid "Your email is confirmed. Tap a task on the board to sign up."
+msgstr ""
+
+#: templates/public/signup.php:72
+msgid "Your email to sign up:"
+msgstr ""
+
+#: src/Telegram/BoardService.php:264
+msgid "Your recent attendance means sign-ups are paused for now — please message the organizer."
+msgstr ""
+
+#: src/Support/OpenTaskCall.php:173
+msgid "Your recent tasks:"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:266
+msgid "Your standing, credits and recent tasks"
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:155
+msgid "You’re already signed up for that one."
+msgstr ""
+
+#: src/Telegram/BoardService.php:268
+msgid "You’re already signed up for that."
+msgstr ""
+
+#: templates/public/signup.php:41
+msgid "You’re in — thanks!"
+msgstr ""
+
+#: src/Telegram/BoardService.php:267
+msgid "You’re in! See you there."
+msgstr ""
+
+#: src/Telegram/BoardService.php:291
+msgid "You’re out. Thanks for the notice."
+msgstr ""
+
+#: src/Telegram/BoardService.php:290
+msgid "You’re out. This close to the event it counts as a late cancellation."
+msgstr ""
+
+#: templates/public/signup.php:38
+msgid "You’re signed in."
+msgstr ""
+
+#: templates/public/signup.php:40
+msgid "You’re signed out."
+msgstr ""
+
+#: src/Telegram/BoardService.php:324
+#. translators: 1: role, 2: event
+msgid "You’re signed up: %1$s for %2$s"
+msgstr ""
+
+#: templates/public/signup.php:42
+msgid "You’ve dropped that task."
+msgstr ""
+
+#: src/Telegram/ProfileService.php:88
+msgid "a task"
+msgstr ""
+
+#: src/Telegram/BoardService.php:430 templates/public/signup.php:136
+msgid "full"
+msgstr ""
+
+#: templates/admin/settings.php:246
+msgid "never"
+msgstr ""
+
+#: templates/admin/settings.php:261
+msgid "not scheduled"
+msgstr ""
+
+#: templates/public/signup.php:125
+msgid "sign in to claim"
+msgstr ""
+
+#: src/Telegram/ReplacementService.php:191
+msgid "someone"
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:165
+msgid "unverified"
+msgstr ""
+
+#: src/Support/Mailer.php:56
+#. translators: %s: the manage-account link
+msgid "—\nManage your account or stop these emails: %s"
+msgstr ""
+
+#: templates/admin/settings.php:303
+msgid "— None (app disabled) —"
+msgstr ""
+
+#: src/Telegram/RosterService.php:91
+msgid "— nobody yet"
+msgstr ""
+
+#: src/Support/HealthReport.php:194
+#. translators: %s: the page title
+msgid "“%s” is published and carries the signup board."
+msgstr ""
+

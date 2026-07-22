@@ -1,5 +1,14 @@
 # EventCrew install verification
 
+> **v1.0 note.** No schema change (`DB_VERSION` stays 4). New: **EventCrew →
+> Diagnostics**, a read-only health page — open it and confirm each row reads
+> sensibly (schema OK, and whatever is/ isn't configured for the bot, cron,
+> signup page, icons and mail). It makes no outbound calls, so it should load
+> instantly. Also confirm the plugin still activates cleanly and that
+> `dist/eventcrew-1.0.0.zip` now contains `README.md` and a `languages/` folder
+> with `eventcrew.pot`. This kit (`verify-install.php`, `concurrency-check.php`)
+> is still bundled on purpose — items 2–5 below are still owed on the real host.
+
 > **v0.10 note.** No schema change (`DB_VERSION` stays 4). Make the signup page
 > installable: Settings → EventCrew → **Mobile app** → pick the page that holds
 > `[eventcrew_signup]` (optionally set the app name and colour). Then

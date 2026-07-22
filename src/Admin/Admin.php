@@ -137,6 +137,15 @@ final class Admin
             'eventcrew-settings',
             [$this->container->get(SettingsPage::class), 'render']
         );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Diagnostics', 'eventcrew'),
+            __('Diagnostics', 'eventcrew'),
+            self::CAPABILITY,
+            DiagnosticsPage::PAGE_SLUG,
+            [$this->container->get(DiagnosticsPage::class), 'render']
+        );
     }
 
     /**
