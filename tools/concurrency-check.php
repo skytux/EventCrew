@@ -70,7 +70,15 @@ if (! $isCli) {
     header('Content-Type: text/plain; charset=utf-8');
 }
 
-if (! function_exists('curl_multi_init') && ! function_exists('stream_socket_client')) {
+// A host can define curl_multi_init while disabling curl_multi_exec through
+// disable_functions (InfinityFree does exactly this), so the decision is made on
+// the functions actually called, not just the entry point.
+$hasCurlMulti = function_exists('curl_multi_init')
+    && function_exists('curl_multi_exec')
+    && function_exists('curl_multi_select')
+    && function_exists('curl_multi_add_handle');
+
+if (! $hasCurlMulti && ! function_exists('stream_socket_client')) {
     echo "FAIL: neither curl_multi nor stream_socket_client is available to send concurrent requests.\n";
     exit(1);
 }
@@ -94,6 +102,28 @@ $peopleTable = Schema::table(Schema::PEOPLE);
 $tasksTable = Schema::table(Schema::TASKS);
 $assignmentsTable = Schema::table(Schema::ASSIGNMENTS);
 $now = current_time('mysql');
+
+// ---------------------------------------------------------------------------
+// Clear anything a previously-aborted run left behind, so re-running after a
+// fatal does not collide on the unique email key. Only ever touches this
+// script's own tagged rows: the concurrency_check task and its test people.
+// ---------------------------------------------------------------------------
+
+$leftoverTaskIds = (array) $wpdb->get_col(
+    $wpdb->prepare("SELECT id FROM {$tasksTable} WHERE role_slug = %s", 'concurrency_check')
+);
+
+foreach ($leftoverTaskIds as $leftoverTaskId) {
+    $wpdb->delete($assignmentsTable, ['task_id' => (int) $leftoverTaskId]);
+    $wpdb->delete($tasksTable, ['id' => (int) $leftoverTaskId]);
+}
+
+$wpdb->query(
+    $wpdb->prepare(
+        "DELETE FROM {$peopleTable} WHERE email LIKE %s",
+        $wpdb->esc_like('concurrency+') . '%' . $wpdb->esc_like('@eventcrew.test')
+    )
+);
 
 // ---------------------------------------------------------------------------
 // Seed: one capacity-2 task, and N verified people each linked to a fake
@@ -262,7 +292,7 @@ for ($i = 0; $i < $contenders; $i++) {
     ]);
 }
 
-if (function_exists('curl_multi_init')) {
+if ($hasCurlMulti) {
     eventcrew_fire_curl_multi($url, $secret, $payloads);
 } else {
     eventcrew_fire_sockets($url, $secret, $payloads);
