@@ -159,6 +159,7 @@ be designing for a user who does not exist.
 | v0.7 | ✅ Reputation calculator + one threshold + join gate; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits; `/me` |
 | v0.8 | ✅ 24h reminders and the 48h open-task call automated, hourly cron + loopback-free fallback (`CronFallbackTrigger`), batching |
 | v0.9 | ✅ Public signup page (shortcode + block), email magic-link self-service, web claim/drop sharing the bot's rules |
+| v0.10 | ✅ Installable mobile web app (PWA) over the signup page: manifest, service worker, icons |
 | v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
 
 ## Done: v0.3 — verification, then the schema it exposed
@@ -577,6 +578,34 @@ as the bot does, and the confirmation/ticket emails already built fire the same
 way.
 
 **Deferred, and the last tracked item:** the Diagnostics page, translation pass,
+README and packaging CI — **v1.0**.
+
+## Done: v0.10 — the installable mobile web app (PWA)
+
+The v0.9 signup page becomes an app you add to a phone home screen and launch
+full-screen. **No schema change**, no native code, no build step; `DB_VERSION`
+stays 4.
+
+**`Web\PwaController`** serves three assets as ordinary front-end requests
+(`?eventcrew_pwa=…`, so `/wp-json` blocking is irrelevant): the **manifest**
+(`Support\WebManifest`, a pure builder — `display: standalone`, `start_url` on
+the signup page, 192/512/maskable icons), the **service worker** (a small
+network-first worker with a `fetch` handler, served from the site root so its
+scope covers the origin), and the **icons**. Icons prefer the WordPress **Site
+Icon** when the site has one (`get_site_icon_url`), otherwise `Support\AppIcon`
+draws a lettered icon in the theme colour via GD (and degrades gracefully where
+GD is absent). On the configured page it injects the `<link rel="manifest">`, the
+Apple `apple-mobile-web-app-*` / `apple-touch-icon` tags, and the service-worker
+registration, so **both Android (manifest + SW install prompt) and iOS (Add to
+Home Screen)** work.
+
+**Settings → Mobile app** picks the signup page (a `wp_dropdown_pages` picker —
+the app's `start_url`), the app name (defaults to the site name) and a theme
+colour. Also in this release: a **fix** to the v0.9 signup page, which sent every
+action to the homepage because it built its return URL with
+`add_query_arg([], null)` (an empty URI); it now uses `get_permalink()`.
+
+**Deferred, the last tracked item:** the Diagnostics page, translation pass,
 README and packaging CI — **v1.0**.
 
 ## Verification owed before v1.0

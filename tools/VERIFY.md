@@ -1,5 +1,17 @@
 # EventCrew install verification
 
+> **v0.10 note.** No schema change (`DB_VERSION` stays 4). Make the signup page
+> installable: Settings → EventCrew → **Mobile app** → pick the page that holds
+> `[eventcrew_signup]` (optionally set the app name and colour). Then
+> `?eventcrew_pwa=manifest` on the site returns valid JSON, `?eventcrew_pwa=sw`
+> returns the service worker, and `?eventcrew_pwa=icon&size=192` returns a PNG
+> (the Site Icon when one is set, else a generated one). Open the signup page on
+> an **Android** phone (Chrome) → an "Install app" prompt appears and the icon
+> launches full-screen to the board; on **iPhone** (Safari) → Share → Add to Home
+> Screen. DevTools → Application shows the manifest parsed and the worker
+> registered. (Also fixed here: the v0.9 signup page no longer bounces every
+> action to the homepage.)
+
 > **v0.9 note.** No schema change (`DB_VERSION` stays 4). The public signup page
 > is verifiable end to end (mail confirmed working): put `[eventcrew_signup]` on
 > a page (or drop the "EventCrew signup" block) → the open-task board shows;

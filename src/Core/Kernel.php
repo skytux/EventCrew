@@ -42,6 +42,7 @@ use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\PwaController;
 use EventCrew\Web\SignupController;
 use Throwable;
 
@@ -90,6 +91,10 @@ final class Kernel
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
         $this->container->get(SignupController::class)->boot();
+
+        // The PWA layer over the signup page: serves the manifest, service worker
+        // and icons, and injects the install tags. Front path, logged-out.
+        $this->container->get(PwaController::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -270,6 +275,11 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(Mailer::class)
             )
+        );
+
+        $this->container->singleton(
+            PwaController::class,
+            fn () => new PwaController()
         );
 
         $this->container->singleton(
