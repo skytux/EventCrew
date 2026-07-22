@@ -160,7 +160,7 @@ be designing for a user who does not exist.
 | v0.8 | ✅ 24h reminders and the 48h open-task call automated, hourly cron + loopback-free fallback (`CronFallbackTrigger`), batching |
 | v0.9 | ✅ Public signup page (shortcode + block), email magic-link self-service, web claim/drop sharing the bot's rules |
 | v0.10 | ✅ Installable mobile web app (PWA) over the signup page: manifest, service worker, icons |
-| v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
+| v1.0 | ✅ Diagnostics page, translation pass (POT + loader), README refresh, packaging + CI |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
@@ -608,7 +608,43 @@ action to the homepage because it built its return URL with
 **Deferred, the last tracked item:** the Diagnostics page, translation pass,
 README and packaging CI — **v1.0**.
 
-## Verification owed before v1.0
+## Done: v1.0 — diagnostics, i18n, README & CI
+
+The last tracked sprint: the polish that makes the plugin handable to someone who
+was not in the room while it was built. **No schema change** — `DB_VERSION` stays
+4.
+
+**A read-only Diagnostics page.** `Support\HealthReport` runs a set of
+self-contained checks — schema (tables present, version current), the Telegram
+bot (token + webhook installed), the notifications heartbeat (last run, and
+whether WP-Cron looks stalled), the signup page (chosen, published, and carrying
+the shortcode or block), the app icons (Site Icon / GD / neither) and mail — each
+returning a `Support\Diagnostic` (status + label + a plain-English detail).
+`Admin\DiagnosticsPage` renders them as a status table under EventCrew →
+Diagnostics. It makes **no outbound calls** by design, so the page can never hang
+on a slow Telegram round-trip; the live webhook status stays on Settings, where it
+already was. Every problem it flags is fixed on the Settings page — the
+Diagnostics page never writes.
+
+**The translation pass.** A `Domain Path: /languages` header and a
+`load_plugin_textdomain` on `init` (late enough for WP 6.7+'s just-in-time
+warning) wire up loading; `tools/make-pot.php` — a small token-based extractor,
+since this dev box has no WP-CLI — writes `languages/eventcrew.pot` from the ~343
+`__()` / `_n()` strings across `src` and `templates`, carrying each
+`/* translators: */` hint and every file:line reference.
+
+**README & CI.** The README was rewritten from its v0.2-era state (it still
+called v0.3 "next" and described the superseded opt-in email model) to the real
+1.0 feature set, install and configuration. `.github/workflows/ci.yml` runs
+`composer lint` + `composer test` (and a packaging build) on PHP 8.2 and 8.3 on
+every push. `build-zip` now ships `README.md` and `languages/`.
+
+**Still packaged, deliberately:** `tools/`'s verification kit
+(`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) still ships, because
+the host-side verification below is genuinely still owed — the kit comes out only
+once those runs are done, not merely because the version reached 1.0.
+
+## Verification owed after v1.0
 
 Carried forward from the planning document, because none of it is covered by
 unit tests:

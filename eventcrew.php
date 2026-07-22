@@ -2,13 +2,14 @@
 /**
  * Plugin Name: EventCrew
  * Description: Person task scheduling, attendance and rewards for recurring events, driven from Telegram.
- * Version: 0.10.0
+ * Version: 1.0.0
  * Requires at least: 6.8
  * Requires PHP: 8.2
  * Author: Lou H
  * License: GPL-2.0
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: eventcrew
+ * Domain Path: /languages
  */
 
 declare(strict_types=1);
@@ -17,7 +18,7 @@ if (! defined('ABSPATH')) {
 	exit;
 }
 
-define('EVENTCREW_VERSION', '0.10.0');
+define('EVENTCREW_VERSION', '1.0.0');
 define('EVENTCREW_PLUGIN_FILE', __FILE__);
 define('EVENTCREW_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EVENTCREW_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -25,6 +26,20 @@ define('EVENTCREW_PLUGIN_URL', plugin_dir_url(__FILE__));
 require EVENTCREW_PLUGIN_DIR . 'src/Support/Autoloader.php';
 
 EventCrew\Support\Autoloader::register();
+
+// Load translations from the bundled languages/ directory. Hooked on init
+// because WordPress 6.7+ warns when a textdomain loads earlier, and admin
+// strings are only needed from admin_menu onward, which fires well after this.
+add_action(
+	'init',
+	static function (): void {
+		load_plugin_textdomain(
+			'eventcrew',
+			false,
+			dirname(plugin_basename(EVENTCREW_PLUGIN_FILE)) . '/languages'
+		);
+	}
+);
 
 // Tables are created here for a fresh install, but the same migration also
 // runs on plugins_loaded when the stored schema version is behind - see

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\DiagnosticsPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
@@ -19,6 +20,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -455,6 +457,19 @@ final class Kernel
                 $container->get(DoorList::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class)
+            )
+        );
+
+        $this->container->singleton(
+            HealthReport::class,
+            fn () => new HealthReport()
+        );
+
+        $this->container->singleton(
+            DiagnosticsPage::class,
+            fn (Container $container) => new DiagnosticsPage(
+                $container->get(View::class),
+                $container->get(HealthReport::class)
             )
         );
 
