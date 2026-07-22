@@ -16,6 +16,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\PwaController;
 
@@ -250,6 +251,14 @@ final class SettingsPage
                 'error'
             );
         }
+
+        // Reset the idempotency high-water mark. An injected update - most
+        // likely a run of tools/concurrency-check.php, whose synthetic update_ids
+        // start at 900000000 - can push it above every real update_id, after
+        // which the router drops all genuine updates and the bot goes silent
+        // while still receiving everything. Reinstalling the webhook is the
+        // deliberate "start clean" action, so clearing it here is the fix.
+        update_option(UpdateRouter::LAST_UPDATE_OPTION, 0);
 
         $me = $this->telegram->getMe();
 

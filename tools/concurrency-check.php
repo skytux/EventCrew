@@ -36,6 +36,7 @@ declare(strict_types=1);
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 
 // ---------------------------------------------------------------------------
@@ -275,6 +276,13 @@ function eventcrew_fire_sockets(string $url, string $secret, array $payloads): v
     }
 }
 
+// The synthetic update_ids start at 900000000 - well above any real one, so the
+// webhook's idempotency guard does not mistake them for duplicates. But that
+// same guard records the highest id it sees, and left in place it would sit
+// above every genuine update_id and silently drop all real updates - a dead bot.
+// Snapshot the high-water mark now and restore it in teardown.
+$updateHighWater = get_option(UpdateRouter::LAST_UPDATE_OPTION, 0);
+
 $url = WebhookController::webhookUrl($secret);
 $payloads = [];
 
@@ -334,6 +342,10 @@ $wpdb->delete($tasksTable, ['id' => $taskId]);
 foreach ($personIds as $personId) {
     $wpdb->delete($peopleTable, ['id' => $personId]);
 }
+
+// Put the idempotency high-water mark back where it was, so the synthetic
+// 900000000-range ids this run injected do not go on dropping every real update.
+update_option(UpdateRouter::LAST_UPDATE_OPTION, $updateHighWater);
 
 echo "Cleaned up.\n";
 
