@@ -163,6 +163,7 @@ be designing for a user who does not exist.
 | v1.0 | ✅ Diagnostics page, translation pass (POT + loader), README refresh, packaging + CI |
 | v1.0.1 | ✅ Patch: Diagnostics activity panel + token-from-constant; treat benign Telegram errors (no-op board edit, stale callback) as success; POT dropped |
 | v1.0.2 | ✅ Fix: concurrency-check left the update-id high-water mark at 900000000, silently dropping every real update (dead bot). Script now restores it; reinstalling the webhook resets it |
+| v1.0.3 | ✅ Settings webhook table shows the last-error age ("X ago") and notes that Telegram never clears it on success, so a stale error reads as stale |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
