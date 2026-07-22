@@ -277,15 +277,43 @@ final class SignupController
     }
 
     /**
-     * Ends a claim/drop request: on an AJAX call, the fresh board plus the
-     * notice code as JSON; otherwise the usual redirect back to the page.
+     * The human text for a redirect/AJAX notice code, or '' if unknown. Static
+     * and public so the template can render the initial toast and the AJAX
+     * response can return the same wording - one source for both.
+     */
+    public static function noticeText(string $code): string
+    {
+        $map = [
+            'check_email' => __('Check your email for a sign-in link.', 'eventcrew'),
+            'bad_email' => __('That doesn’t look like a valid email address.', 'eventcrew'),
+            'signed_in' => __('You’re signed in.', 'eventcrew'),
+            'bad_link' => __('That sign-in link is invalid or has expired.', 'eventcrew'),
+            'signed_out' => __('You’re signed out.', 'eventcrew'),
+            'claimed' => __('You’re signed up — thanks!', 'eventcrew'),
+            'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
+            'already' => __('You were already signed up for that.', 'eventcrew'),
+            'full' => __('That slot just filled up.', 'eventcrew'),
+            'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
+            'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
+            'unavailable' => __('That task is no longer available.', 'eventcrew'),
+            'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
+            'please_sign_in' => __('Please sign in first.', 'eventcrew'),
+        ];
+
+        return $map[$code] ?? '';
+    }
+
+    /**
+     * Ends a claim/drop request: on an AJAX call, the fresh board list plus the
+     * notice text as JSON (the page shows it as a toast); otherwise the usual
+     * redirect back to the page.
      */
     private function finish(string $url, string $notice, bool $ajax): never
     {
         if ($ajax) {
             wp_send_json([
-                'notice' => $notice,
-                'board' => $this->renderBoard($notice, $url),
+                'notice' => self::noticeText($notice),
+                'board' => $this->renderBoard($url),
             ]);
         }
 
@@ -293,15 +321,14 @@ final class SignupController
     }
 
     /**
-     * Renders just the board partial - the notice and the grouped task list -
-     * against a fresh view model, for the AJAX in-place refresh. $here is the
-     * page URL the request came from, since get_permalink() has no queried page
-     * to read during admin-ajax.
+     * Renders just the board partial - the grouped task list - against a fresh
+     * view model, for the AJAX in-place refresh. $here is the page URL the
+     * request came from, since get_permalink() has no queried page to read
+     * during admin-ajax.
      */
-    public function renderBoard(string $noticeCode, string $here): string
+    public function renderBoard(string $here): string
     {
         $view = $this->viewModel();
-        $eventcrew_notice_code = $noticeCode;
         $eventcrew_here = $here;
 
         ob_start();

@@ -31,6 +31,7 @@ if (false === $eventcrew_here) {
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of a redirect-carried status.
 $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unslash($_GET['eventcrew_notice'])) : '';
+$eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_notice_code);
 ?>
 <style>
 /*
@@ -40,10 +41,20 @@ $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unsl
  * without knowing which it is on.
  */
 .eventcrew-signup .eventcrew-muted { opacity: .7; }
-.eventcrew-signup .eventcrew-notice {
-    padding: .6em 1em; margin: 1em 0; border-radius: 4px;
-    background: rgba(91, 141, 239, .14); border-left: 4px solid #5b8def; color: inherit;
+
+/*
+ * The action feedback is a toast pinned to the viewport, so it stays visible
+ * after an in-place update no matter where the list is scrolled - which the old
+ * inline notice, sitting at the top of the board, did not.
+ */
+.eventcrew-toast {
+    position: fixed; left: 50%; bottom: 1.5em; transform: translateX(-50%) translateY(.5em);
+    z-index: 100000; max-width: 90vw;
+    padding: .6em 1.1em; border-radius: 8px;
+    background: #222; color: #fff; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .28);
+    opacity: 0; visibility: hidden; transition: opacity .18s ease, transform .18s ease;
 }
+.eventcrew-toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 .eventcrew-signup .eventcrew-tglink {
     display: inline-flex; align-items: center; gap: .4em;
     padding: .5em .9em; margin: .5em 0; border-radius: 6px;
@@ -83,6 +94,8 @@ $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unsl
 .eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
 </style>
 <div class="eventcrew-signup">
+    <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
+
     <?php if (null === $eventcrew_person) : ?>
         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
@@ -141,6 +154,22 @@ $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unsl
 (function () {
     var root = document.querySelector('.eventcrew-signup');
     var board = document.getElementById('eventcrew-board');
+    var toast = document.getElementById('eventcrew-toast');
+
+    var toastTimer = null;
+    function showToast(text) {
+        if (!toast) { return; }
+        if (!text) { toast.classList.remove('show'); return; }
+        toast.textContent = text;
+        toast.classList.add('show');
+        if (toastTimer) { clearTimeout(toastTimer); }
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
+    }
+
+    // A server-rendered toast (from a full-page redirect) auto-hides too.
+    if (toast && toast.classList.contains('show')) {
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
+    }
 
     if (!root || !board || !window.fetch) {
         return;
@@ -175,6 +204,7 @@ $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unsl
         }).then(function (res) {
             if (res && typeof res.board === 'string') {
                 board.innerHTML = res.board;
+                showToast(res.notice || '');
             } else if (button) {
                 button.disabled = false;
             }
