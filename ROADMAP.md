@@ -161,6 +161,7 @@ be designing for a user who does not exist.
 | v0.9 | ✅ Public signup page (shortcode + block), email magic-link self-service, web claim/drop sharing the bot's rules |
 | v0.10 | ✅ Installable mobile web app (PWA) over the signup page: manifest, service worker, icons |
 | v1.0 | ✅ Diagnostics page, translation pass (POT + loader), README refresh, packaging + CI |
+| v1.0.1 | ✅ Patch: Diagnostics activity panel + token-from-constant; treat benign Telegram errors (no-op board edit, stale callback) as success; POT dropped |
 
 ## Done: v0.3 — verification, then the schema it exposed
 

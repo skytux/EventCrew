@@ -29,6 +29,22 @@ final class TelegramClient
     private const API_HOST = 'api.telegram.org';
     private const API_BASE = 'https://api.telegram.org/bot';
 
+    /**
+     * Bot API responses that read as errors but are normal operation, not
+     * faults. Editing the board to content it already shows is a no-op (the
+     * board is already correct), and answering a callback whose tap is older
+     * than Telegram's answer window - a redelivered or slow update - is beyond
+     * our control and only cosmetic (the join already committed). Neither should
+     * set lastError (the Settings page reads it) or log a warning (the
+     * Diagnostics activity panel reads warnings as problems). Matched loosely,
+     * since Telegram pads the core phrase with extra detail.
+     */
+    private const BENIGN_ERRORS = [
+        'message is not modified',
+        'query is too old',
+        'query id is invalid',
+    ];
+
     /** The description from the most recent failed call, for the admin to see. */
     private string $lastError = '';
 
@@ -92,10 +108,21 @@ final class TelegramClient
         $decoded = json_decode((string) wp_remote_retrieve_body($response), true);
 
         if (! is_array($decoded) || empty($decoded['ok'])) {
-            $this->lastError = is_array($decoded)
+            $description = is_array($decoded)
                 ? (string) ($decoded['description'] ?? 'unknown error')
                 : 'unparseable response';
 
+            // A benign response is treated as success: the board is already
+            // current, or the callback answer arrived too late to matter. Log a
+            // quiet breadcrumb, leave lastError clear, and return the same
+            // empty-array "ok" sentinel a bare `true` result gives.
+            if ($this->isBenign($description)) {
+                $this->logger->info(sprintf('Telegram %s: %s (ignored).', $method, $description));
+
+                return [];
+            }
+
+            $this->lastError = $description;
             $this->logger->warning(
                 sprintf('Telegram %s returned an error: %s', $method, $this->lastError)
             );
@@ -199,6 +226,22 @@ final class TelegramClient
     public function getMe(): ?array
     {
         return $this->call('getMe');
+    }
+
+    /**
+     * Whether a Bot API error description is one of the expected, benign ones
+     * (see BENIGN_ERRORS). Case-insensitive substring match, because Telegram's
+     * wording carries extra detail around the core phrase.
+     */
+    private function isBenign(string $description): bool
+    {
+        foreach (self::BENIGN_ERRORS as $fragment) {
+            if (false !== stripos($description, $fragment)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

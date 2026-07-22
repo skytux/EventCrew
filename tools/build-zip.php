@@ -53,7 +53,6 @@ $include = [
     'src',
     'templates',
     'blocks',
-    'languages',
 ];
 
 /** Never ships, at any point, whatever else changes above. */
