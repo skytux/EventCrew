@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
@@ -68,7 +69,7 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new Mailer(new Logger()),
+                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
                 $this->signup()
             ),
             new RosterService(
@@ -87,7 +88,7 @@ final class UpdateRouterTest extends TelegramTestCase
                     new PersonRepository(),
                     $this->client(),
                     new Logger(),
-                    new Mailer(new Logger()),
+                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
                     $this->signup()
                 ),
                 $this->client()

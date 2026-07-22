@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -47,7 +48,7 @@ final class BoardServiceTest extends TelegramTestCase
             new PersonRepository(),
             $this->client(),
             new Logger(),
-            new Mailer(new Logger()),
+            new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
             $this->signup()
         );
     }

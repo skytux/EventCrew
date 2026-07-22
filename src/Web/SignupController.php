@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
@@ -48,7 +49,8 @@ final class SignupController
         private readonly AssignmentRepository $assignments,
         private readonly SignupService $signup,
         private readonly StandingCalculator $standing,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly ClaimNotifier $notifier
     ) {
     }
 
@@ -242,10 +244,30 @@ final class SignupController
         }
 
         if (self::CLAIM_ACTION === $action) {
-            $this->redirect($redirect, $this->claimFor($person->id, $taskId));
+            $notice = $this->claimFor($person->id, $taskId);
+
+            // The same confirmation the bot sends on a join, so a slot claimed
+            // from the web arrives with its door ticket too.
+            if ('claimed' === $notice) {
+                $this->notifier->confirmSignup($person, $taskId);
+            }
+
+            $this->redirect($redirect, $notice);
         }
 
-        $this->redirect($redirect, $this->dropFor($person->id, $taskId));
+        $notice = $this->dropFor($person->id, $taskId);
+
+        if ('dropped' === $notice) {
+            // The drop has resolved the row to late_cancel or cancelled; read it
+            // back so the cancellation email carries the right standing note.
+            $assignment = $this->assignments->findFor($taskId, $person->id);
+
+            if (null !== $assignment) {
+                $this->notifier->confirmCancellation($person, $taskId, $assignment->status);
+            }
+        }
+
+        $this->redirect($redirect, $notice);
         // phpcs:enable WordPress.Security.NonceVerification
     }
 

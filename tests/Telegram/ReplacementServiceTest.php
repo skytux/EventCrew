@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Telegram\BoardService;
@@ -51,7 +52,7 @@ final class ReplacementServiceTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new Mailer(new Logger()),
+                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
                 $this->signup()
             ),
             $this->client()
