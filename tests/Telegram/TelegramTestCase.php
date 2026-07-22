@@ -8,8 +8,8 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
-use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -45,7 +45,7 @@ abstract class TelegramTestCase extends TestCase
         // exercise the gate turn it back on explicitly.
         $this->options = [
             TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
-            BoardService::GATE_OPTION => '0',
+            SignupService::GATE_OPTION => '0',
         ];
         $this->telegramResults = [];
 
@@ -86,11 +86,20 @@ abstract class TelegramTestCase extends TestCase
 
     /**
      * A real StandingCalculator over the fake wpdb, for the services that
-     * compose one (the board's join gate, /me, and so on).
+     * compose one (the People list, /me, and so on).
      */
     protected function standing(): StandingCalculator
     {
         return new StandingCalculator(new AssignmentRepository(), new RedemptionRepository());
+    }
+
+    /**
+     * A real SignupService over the fake wpdb - the claim/drop policy the board
+     * now delegates to.
+     */
+    protected function signup(): SignupService
+    {
+        return new SignupService(new AssignmentRepository(), $this->standing());
     }
 
     /**

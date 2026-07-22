@@ -52,7 +52,7 @@ final class ReplacementServiceTest extends TelegramTestCase
                 $this->client(),
                 new Logger(),
                 new Mailer(new Logger()),
-                $this->standing()
+                $this->signup()
             ),
             $this->client()
         );

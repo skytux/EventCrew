@@ -12,6 +12,7 @@ use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
@@ -51,12 +52,12 @@ final class SettingsPage
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
-                'notice_hours' => max(0, (int) get_option(BoardService::NOTICE_HOURS_OPTION, 48)),
+                'notice_hours' => max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48)),
                 'reputation_threshold' => (float) get_option(
                     StandingCalculator::THRESHOLD_OPTION,
                     Reputation::DEFAULT_THRESHOLD
                 ),
-                'reputation_gate' => (bool) get_option(BoardService::GATE_OPTION, true),
+                'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
@@ -126,7 +127,7 @@ final class SettingsPage
         update_option(WebhookController::USE_FALLBACK_OPTION, isset($_POST['telegram_use_fallback']));
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
-        update_option(BoardService::NOTICE_HOURS_OPTION, $noticeHours);
+        update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);
 
         // A threshold outside (0,1] would make the join gate never or always
         // fire; fall back to the default rather than store nonsense.
@@ -139,7 +140,7 @@ final class SettingsPage
         }
 
         update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
-        update_option(BoardService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
+        update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 

@@ -48,6 +48,7 @@ $include = [
     'LICENSE',
     'src',
     'templates',
+    'blocks',
     'tools/VERIFY.md',
     'tools/verify-install.php',
     'tools/concurrency-check.php',

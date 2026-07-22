@@ -12,7 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
-use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\SignupService;
 
 /**
  * The board itself: the single group message that lists open tasks, and the
@@ -32,12 +32,6 @@ final class BoardService
     /** Cached from getMe, for the "set me up" deep-link button. */
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
-    /** Hours before a task's start inside which a cancel counts as late. */
-    public const NOTICE_HOURS_OPTION = 'eventcrew_notice_hours';
-
-    /** Whether at-risk members are stopped from signing up. Default on. */
-    public const GATE_OPTION = 'eventcrew_reputation_gate';
-
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
@@ -45,7 +39,7 @@ final class BoardService
         private readonly TelegramClient $telegram,
         private readonly Logger $logger,
         private readonly Mailer $mailer,
-        private readonly StandingCalculator $standing
+        private readonly SignupService $signup
     ) {
     }
 
@@ -259,37 +253,16 @@ final class BoardService
 
     private function handleJoin(string $callbackId, int $taskId, Person $person): bool
     {
-        // A member whose recent attendance has put them at risk is held back
-        // from claiming more slots until they sort it out with the organizer -
-        // a soft gate the organizer can switch off entirely. New and
-        // good-standing members are never touched.
-        if ($this->gateBlocks($person)) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
-                true
-            );
-
-            return false;
-        }
-
-        // Holding a slot across events is fine; a genuine time clash between
-        // two of them is not, and that is exactly what hasOverlapping refuses.
-        if ($this->assignments->hasOverlapping($person->id, $taskId)) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('That clashes with another slot you already hold.', 'eventcrew'),
-                true
-            );
-
-            return false;
-        }
-
-        $outcome = $this->assignments->join($taskId, $person->id);
+        // The rules - the reputation gate, the overlap check, the capacity race -
+        // live in SignupService, shared with the web page; the bot keeps only the
+        // wording of the reply.
+        $outcome = $this->signup->claim($person->id, $taskId);
         $joined = in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true);
 
         $message = match ($outcome) {
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
+            SignupService::OVERLAP => __('That clashes with another slot you already hold.', 'eventcrew'),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),
@@ -310,7 +283,7 @@ final class BoardService
     {
         // Cancel, don't delete: the row stays for the reputation history, and
         // is classified late_cancel/cancelled by how much notice this gives.
-        $status = $this->assignments->cancel($taskId, $person->id, $this->noticeHours());
+        $status = $this->signup->drop($person->id, $taskId);
 
         $message = match ($status) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -408,25 +381,6 @@ final class BoardService
         $time = $task->timeRange();
 
         return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
-    }
-
-    private function noticeHours(): int
-    {
-        return max(0, (int) get_option(self::NOTICE_HOURS_OPTION, 48));
-    }
-
-    /**
-     * Whether this join should be refused on standing. Only ever true for a
-     * rated, at-risk member while the gate is on - the check is skipped
-     * entirely when it is off, so no history is read on a normal join.
-     */
-    private function gateBlocks(Person $person): bool
-    {
-        if (! (bool) get_option(self::GATE_OPTION, true)) {
-            return false;
-        }
-
-        return $this->standing->for($person->id)->isAtRisk();
     }
 
     /**

@@ -1,5 +1,16 @@
 # EventCrew install verification
 
+> **v0.9 note.** No schema change (`DB_VERSION` stays 4). The public signup page
+> is verifiable end to end (mail confirmed working): put `[eventcrew_signup]` on
+> a page (or drop the "EventCrew signup" block) → the open-task board shows;
+> enter an email → a sign-in link arrives; clicking it signs you in for ~30 days
+> and marks the email verified; **Claim** takes a slot (respecting capacity,
+> overlap and the reputation gate exactly as the bot does), **Drop** cancels it;
+> the same person also works from the bot; **Sign out** clears the cookie. The
+> actions go through `admin-ajax.php`, so they work even where `/wp-json` is
+> blocked (the block's in-editor *preview* uses `/wp-json` and may not load on
+> such a host — the front-end page still renders).
+
 > **v0.8 note.** No schema change (`DB_VERSION` stays 4). The scheduled sends are
 > now live and checkable end to end (mail is confirmed working): trigger
 > `wp-cron.php` (or wait for the external webcron) → each person signed up for a
