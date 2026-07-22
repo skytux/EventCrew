@@ -107,6 +107,7 @@ final class SettingsPage
             'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
             'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
+            'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
         ];
     }
@@ -130,6 +131,11 @@ final class SettingsPage
 
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
         update_option(WebhookController::USE_FALLBACK_OPTION, isset($_POST['telegram_use_fallback']));
+
+        $groupLink = isset($_POST['telegram_group_link'])
+            ? esc_url_raw(wp_unslash($_POST['telegram_group_link']))
+            : '';
+        update_option(BoardService::GROUP_LINK_OPTION, $groupLink);
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);

@@ -14,6 +14,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\WebSession;
+use EventCrew\Telegram\BoardService;
 
 /**
  * The public web front door: a shortcode/block showing the open-task board, with
@@ -116,6 +117,7 @@ final class SignupController
             'standing' => null === $person ? null : $this->standing->for($person->id),
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine),
+            'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,

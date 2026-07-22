@@ -17,7 +17,7 @@
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
 declare(strict_types=1);
@@ -373,6 +373,24 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('Only enable this if installing the webhook fails with “Could not resolve host: api.telegram.org”. It looks the address up over HTTPS instead of the server’s own DNS, which some shared hosts block. Leave off on a normal host.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-telegram-group-link"><?php esc_html_e('Group link', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="url"
+                        id="eventcrew-telegram-group-link"
+                        name="telegram_group_link"
+                        value="<?php echo esc_attr($telegram['group_link']); ?>"
+                        class="regular-text"
+                        placeholder="https://t.me/yourgroup"
+                        spellcheck="false">
+                    <p class="description">
+                        <?php esc_html_e('Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When set, the web signup page shows an “Open in Telegram” button so phone visitors can jump straight to the group.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
