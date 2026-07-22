@@ -138,7 +138,7 @@ final class BoardService
         $groups = $this->groupByEvent($tasks);
         $multiEvent = count($groups) > 1;
 
-        $lines = [__('Open tasks — tap one to sign up, tap again to drop out:', 'eventcrew')];
+        $lines = [__('Open tasks — tap one to sign up, tap again to cancel:', 'eventcrew')];
         $keyboard = [];
 
         foreach ($groups as $group) {

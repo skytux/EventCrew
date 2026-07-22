@@ -279,7 +279,7 @@ if (! defined('ABSPATH')) {
             <?php
             printf(
                 /* translators: %s: the shortcode, already wrapped in <code> */
-                esc_html__('Add the open-task board to any page with the %s shortcode, or the "EventCrew signup" block. Visitors sign in by email — no account needed — and claiming respects the same rules as the bot.', 'eventcrew'),
+                esc_html__('Add the open-task board to any page with the %s shortcode, or the "EventCrew signup" block. Visitors sign in by email — no account needed — and signing up respects the same rules as the bot.', 'eventcrew'),
                 '<code>[eventcrew_signup]</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
             );
             ?>
