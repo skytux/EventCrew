@@ -155,4 +155,44 @@ final class OpenTaskCallTest extends TestCase
         self::assertSame(0, $sent);
         self::assertSame([], $this->mails);
     }
+
+    public function testSendDueMailsForADateInsideTheLeadWindow(): void
+    {
+        // "now" is 2026-07-20 12:00; a 48h lead reaches to 2026-07-22.
+        // upcomingDates: one due date, one beyond the window.
+        $this->wpdb->nextCols[] = ['2026-07-21', '2026-08-01'];
+        // sendForDate('2026-07-21'): hasOpenSlotsOn (forDate, occupancy)
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = $this->occupancyRows(0);
+        // personIdsAssignedOn
+        $this->wpdb->nextCols[] = [];
+        // openTasksText (forDate, occupancy)
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = $this->occupancyRows(0);
+        // activeEmailRecipients
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        // ledger.hasSent, countCompletedFor
+        $this->wpdb->nextVars[] = null;
+        $this->wpdb->nextVars[] = 0;
+        // historyFor
+        $this->wpdb->nextResults[] = [];
+
+        $sent = $this->call()->sendDue(48, 25);
+
+        // The 2026-08-01 date is past the window, so only the due date sends.
+        self::assertSame(1, $sent);
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testSendDueSkipsDatesBeyondTheLeadWindow(): void
+    {
+        // The only upcoming date is well outside the 48h window: nothing sends,
+        // and no per-date queries run for it.
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+
+        $sent = $this->call()->sendDue(48, 25);
+
+        self::assertSame(0, $sent);
+        self::assertSame([], $this->mails);
+    }
 }

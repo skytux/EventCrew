@@ -157,7 +157,7 @@ be designing for a user who does not exist.
 | v0.5 | ✅ Roster and attendance marking in wp-admin, plus a read-only `/roster` for organizers over the bot |
 | v0.6 | ✅ Engagement: cancellation classified by notice, replacement flow, account disable/delete, door tickets, and transactional email (signup/cancel confirmations + the manual open-task send). Reputation *scoring* pulled out to v0.7. |
 | v0.7 | ✅ Reputation calculator + one threshold + join gate; credits (`floor(completed/2)−redeemed`), redemption, door-list ∪ credits; `/me` |
-| v0.8 | 24h reminders and the 48h open-task call automated, cron + loopback-free fallback (`CronFallbackTrigger`), batching |
+| v0.8 | ✅ 24h reminders and the 48h open-task call automated, hourly cron + loopback-free fallback (`CronFallbackTrigger`), batching |
 | v0.9 | Public signup page, magic-link self-service |
 | v1.0 | Diagnostics page, translation pass, README, packaging script, CI |
 
@@ -511,6 +511,41 @@ plus `CronFallbackTrigger` and batching (v0.8), the public web signup page
 (v1.0). This sprint is **mailer-independent** — the standing, credits and door
 paths are wp-admin and bot callbacks — so unlike v0.6 it can be verified in full
 on the real host without a working mailer.
+
+## Done: v0.8 — scheduled notifications
+
+The plugin stops needing a finger on the button: the reminders and the open-task
+call now fire on a schedule. **No schema change** — `assignments.reminded_at` and
+the `notifications` ledger already existed; `DB_VERSION` stays 4.
+
+**Two sends, both batched and idempotent.** `Support\ReminderCall` nudges
+everyone signed up for a task starting within 24h — a Telegram DM *and* an email
+to whoever has each (the DM still goes to a disabled account, since it's a
+commitment they made; the email doesn't) — guarded once-per-assignment by
+`reminded_at`/`markReminded()`. `Support\OpenTaskCall::sendDue()` sends the
+open-task email for any date whose event is within 48h and still has open slots,
+deduped through the ledger; the manual "Send now" button stays. Each run stops at
+25 sends so a shared-host request can't time out, and the next run resumes on
+what the guards left undone.
+
+**One heartbeat, reachable two ways.** `Support\Scheduler` owns a single hourly
+WP-Cron event that runs both sends and stamps a last-run time; the schedule
+self-heals on boot, so a file-drop update can't leave the site with no heartbeat,
+and it clears on deactivation. Because WP-Cron fires with nobody logged in, the
+event registers on the front/cron path like the other listeners.
+
+**The loopback-free fallback.** WP-Cron spawns its work with a loopback request
+the target host (InfinityFree) blocks. `Support\CronFallbackTrigger` — **off by
+default, enabled in Settings** — instead runs any due batch inline on an ordinary
+request (the bot webhook counts, so the board being used keeps the heartbeat
+going), throttled to hourly and lock-guarded so a request flurry can't double-run.
+The primary trigger stays real WP-Cron, which the user's external webcron already
+pings hourly. Settings shows the next and last run so cron liveness is visible.
+
+**Deferred, still tracked:** the public web signup page (v0.9), and the
+Diagnostics page, translation pass, README and packaging CI (v1.0). Email
+delivery is **confirmed working on the real host**, so unlike the earlier
+mailer-dependent caveats this sprint is verifiable end to end.
 
 ## Verification owed before v1.0
 

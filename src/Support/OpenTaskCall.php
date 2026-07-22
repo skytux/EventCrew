@@ -48,7 +48,45 @@ final class OpenTaskCall
         return 0;
     }
 
-    public function sendForDate(string $date): int
+    /**
+     * The automated call: sends for every upcoming date whose event is within
+     * $leadHours of now and still has open slots. Sending for a window rather
+     * than one exact day makes it robust to a missed cron run, and the ledger
+     * inside sendForDate() stops anyone being mailed twice. Stops once $limit
+     * people have been mailed this run; the rest resume on the next run.
+     */
+    public function sendDue(int $leadHours, int $limit): int
+    {
+        $cutoff = strtotime((string) current_time('mysql')) + $leadHours * HOUR_IN_SECONDS;
+        $sent = 0;
+
+        foreach ($this->tasks->upcomingDates() as $date) {
+            if ($sent >= $limit) {
+                break;
+            }
+
+            // task_date is the day a task is filed under; a date is due once its
+            // midnight is within the lead window.
+            $dateStart = strtotime($date . ' 00:00:00');
+
+            if (false === $dateStart || $dateStart > $cutoff) {
+                continue;
+            }
+
+            // sendForDate() no-ops on a fully-staffed date, so it is the only
+            // open-slots check needed.
+            $sent += $this->sendForDate($date, $limit - $sent);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * Mails every active recipient not already signed up for $date, up to
+     * $limit of them (0 means no cap - the manual button sends the lot). The
+     * ledger makes a capped or re-run send resume without doubling up.
+     */
+    public function sendForDate(string $date, int $limit = 0): int
     {
         if (! $this->tasks->hasOpenSlotsOn($date)) {
             return 0;
@@ -59,6 +97,10 @@ final class OpenTaskCall
         $sent = 0;
 
         foreach ($this->people->activeEmailRecipients() as $person) {
+            if ($limit > 0 && $sent >= $limit) {
+                break;
+            }
+
             if (isset($alreadyOn[$person->id]) || $this->ledger->hasSent(self::KIND, $person->id, $date)) {
                 continue;
             }

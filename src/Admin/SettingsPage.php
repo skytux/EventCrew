@@ -7,9 +7,11 @@ namespace EventCrew\Admin;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\Roles;
+use EventCrew\Support\Scheduler;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
@@ -55,6 +57,9 @@ final class SettingsPage
                     Reputation::DEFAULT_THRESHOLD
                 ),
                 'reputation_gate' => (bool) get_option(BoardService::GATE_OPTION, true),
+                'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
+                'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
+                'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
                 'telegram' => $this->telegramView(),
             ]
         );
@@ -135,6 +140,7 @@ final class SettingsPage
 
         update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
         update_option(BoardService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
+        update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         Admin::redirectTo(

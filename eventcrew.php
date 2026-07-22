@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EventCrew
  * Description: Person task scheduling, attendance and rewards for recurring events, driven from Telegram.
- * Version: 0.7.0
+ * Version: 0.8.0
  * Requires at least: 6.8
  * Requires PHP: 8.2
  * Author: Lou H
@@ -17,7 +17,7 @@ if (! defined('ABSPATH')) {
 	exit;
 }
 
-define('EVENTCREW_VERSION', '0.7.0');
+define('EVENTCREW_VERSION', '0.8.0');
 define('EVENTCREW_PLUGIN_FILE', __FILE__);
 define('EVENTCREW_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EVENTCREW_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -34,6 +34,16 @@ register_activation_hook(
 	EVENTCREW_PLUGIN_FILE,
 	static function (): void {
 		EventCrew\Database\Schema::migrate();
+	}
+);
+
+// Clear the notifications cron event on deactivation. The kernel is not booted
+// at this point, so this calls the scheduler's own static teardown rather than
+// reaching through a container.
+register_deactivation_hook(
+	EVENTCREW_PLUGIN_FILE,
+	static function (): void {
+		EventCrew\Support\Scheduler::unschedule();
 	}
 );
 
