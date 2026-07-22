@@ -640,37 +640,30 @@ called v0.3 "next" and described the superseded opt-in email model) to the real
 every push. `build-zip` now ships `README.md` and `languages/`.
 
 **Still packaged, deliberately:** `tools/`'s verification kit
-(`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) still ships, because
-the host-side verification below is genuinely still owed — the kit comes out only
-once those runs are done, not merely because the version reached 1.0.
+(`verify-install.php`, `concurrency-check.php`, `VERIFY.md`) stays shipped until
+the one remaining host run below is green.
 
-## Verification owed after v1.0
+## Verification — run on the real host (InfinityFree)
 
 Carried forward from the planning document, because none of it is covered by
-unit tests:
+unit tests. Run on the live host after v1.0; only the concurrency re-run remains.
 
 1. ~~**Real install**~~ — ✅ done. 103 checks passed; the one failure (MyISAM)
    is fixed in v0.3. Re-run `tools/VERIFY.md` after upgrading, since the
    migration now converts engines and widens two columns.
-2. **Webhook reachability** — now runnable (bot shipped in v0.4). Read live off
-   Settings → EventCrew after installing the webhook: `getWebhookInfo` shows
-   `pending_update_count` 0 and no `last_error_message`. HTTPS with a valid
-   certificate is a hard prerequisite; Telegram refuses self-signed and plain
-   HTTP. *Owed to actually run on the real host.*
-3. **Concurrent capacity, scripted** — now runnable via
-   `tools/concurrency-check.php`: it fires six simultaneous joins at a capacity-2
-   task over the live webhook (`curl_multi`, no shell needed) and asserts exactly
-   two claimed a slot. This is the failure the group surface makes likely and
-   that manual testing will not reproduce. *Owed to actually run on the real
-   host — the script exists and is packaged.*
-4. **Notification cron** — trigger twice, assert one message per recipient per
-   kind across both runs; fill every task and confirm the open-task call sends
-   nothing.
-5. **One real delivery to a Gmail inbox**, to an opted-in account and a
-   non-opted-in one — the first arrives and isn't in spam, its unsubscribe link
-   works signed-out, the second receives nothing. Ship bulk mail only once SPF
-   and DKIM pass on the sending domain, or it poisons deliverability for the
-   transactional reminders too.
+2. ~~**Webhook reachability**~~ — ✅ confirmed working on the real host.
+3. **Concurrent capacity, scripted** — `tools/concurrency-check.php`. The first
+   run hit a `Call to undefined function curl_multi_exec()`: InfinityFree
+   disables the `curl_multi_*` family. Fixed after v1.0 — the script now falls
+   back to raw non-blocking sockets when curl_multi is absent (connect all, then
+   write every request back to back so they still race), and it fires at
+   `WebhookController::webhookUrl()` so it exercises whichever door is installed,
+   the admin-ajax fallback included, not the REST route that host rejects.
+   *Owed: re-run the updated script and confirm it prints PASS (2 of 6).*
+4. ~~**Notification cron**~~ — ✅ confirmed functional on the real host.
+5. ~~**One real delivery**~~ — ✅ confirmed working (the mailer is verified on the
+   host). Continue to ship bulk mail only while SPF and DKIM pass on the sending
+   domain, so it doesn't poison deliverability for the transactional reminders.
 
 ## Local dev environment
 
