@@ -214,6 +214,11 @@ final class SignupController
         $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
         $redirect = $this->safeRedirect();
 
+        // Set by the board's fetch() call; when present, claim/drop answer with
+        // the re-rendered board as JSON instead of a redirect, so the page can
+        // update in place. Login/logout never carry it and stay full-page.
+        $isAjax = isset($_POST['eventcrew_ajax']);
+
         if (self::LOGIN_ACTION === $action && isset($_GET['token'])) {
             $personId = $this->consumeMagicLink(sanitize_text_field(wp_unslash($_GET['token'])));
 
@@ -240,7 +245,7 @@ final class SignupController
         $taskId = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
 
         if (null === $person || ! WebSession::verifyCsrf($person->id, $csrf)) {
-            $this->redirect($redirect, 'please_sign_in');
+            $this->finish($redirect, 'please_sign_in', $isAjax);
         }
 
         if (self::CLAIM_ACTION === $action) {
@@ -252,7 +257,7 @@ final class SignupController
                 $this->notifier->confirmSignup($person, $taskId);
             }
 
-            $this->redirect($redirect, $notice);
+            $this->finish($redirect, $notice, $isAjax);
         }
 
         $notice = $this->dropFor($person->id, $taskId);
@@ -267,8 +272,42 @@ final class SignupController
             }
         }
 
-        $this->redirect($redirect, $notice);
+        $this->finish($redirect, $notice, $isAjax);
         // phpcs:enable WordPress.Security.NonceVerification
+    }
+
+    /**
+     * Ends a claim/drop request: on an AJAX call, the fresh board plus the
+     * notice code as JSON; otherwise the usual redirect back to the page.
+     */
+    private function finish(string $url, string $notice, bool $ajax): never
+    {
+        if ($ajax) {
+            wp_send_json([
+                'notice' => $notice,
+                'board' => $this->renderBoard($notice, $url),
+            ]);
+        }
+
+        $this->redirect($url, $notice);
+    }
+
+    /**
+     * Renders just the board partial - the notice and the grouped task list -
+     * against a fresh view model, for the AJAX in-place refresh. $here is the
+     * page URL the request came from, since get_permalink() has no queried page
+     * to read during admin-ajax.
+     */
+    public function renderBoard(string $noticeCode, string $here): string
+    {
+        $view = $this->viewModel();
+        $eventcrew_notice_code = $noticeCode;
+        $eventcrew_here = $here;
+
+        ob_start();
+        require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php';
+
+        return (string) ob_get_clean();
     }
 
     /**

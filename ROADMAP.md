@@ -170,6 +170,7 @@ be designing for a user who does not exist.
 | v1.0.7 | ✅ User-facing vocabulary: "Claim"→"Sign up", "Drop"/"drop out"→"Cancel" across the web buttons, bot board and emails (internal names unchanged) |
 | v1.0.8 | ✅ Signup page polish: task list capped so actions sit close and column-aligned; buttons use the theme's `wp-element-button` style; Sign out is a plain link |
 | v1.0.9 | ✅ Signup buttons colorized: deep green Sign up, deep red Cancel (white text, legible on light or dark) |
+| v1.0.10 | ✅ Signup/Cancel go through admin-ajax and re-render the board in place (no reload, scroll kept); buttons slightly smaller. Board extracted to a `signup-board.php` partial shared by the page and the AJAX response |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
