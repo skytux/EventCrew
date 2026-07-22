@@ -72,7 +72,7 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
                         <button type="submit" class="wp-element-button eventcrew-btn-stop"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
                     </form>
                 <?php elseif ($eventcrew_full) : ?>
-                    <span class="eventcrew-muted"><?php esc_html_e('full', 'eventcrew'); ?></span>
+                    <button type="button" class="wp-element-button eventcrew-btn-full" disabled><?php esc_html_e('Full', 'eventcrew'); ?></button>
                 <?php else : ?>
                     <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                         <?php
