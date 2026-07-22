@@ -204,7 +204,10 @@ final class SignupController
         // actions are guarded by the signed session cookie and the CSRF token
         // instead, so the nonce sniff does not apply across this handler.
         // phpcs:disable WordPress.Security.NonceVerification
-        $action = isset($_GET['action']) ? sanitize_key(wp_unslash($_GET['action'])) : '';
+        // The action arrives in the POST body for the forms and in the query
+        // string for the magic link, so read it from either - the same
+        // $_REQUEST admin-ajax itself routed on to reach this handler.
+        $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
         $redirect = $this->safeRedirect();
 
         if (self::LOGIN_ACTION === $action && isset($_GET['token'])) {
