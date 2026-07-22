@@ -462,7 +462,9 @@ final class Kernel
 
         $this->container->singleton(
             HealthReport::class,
-            fn () => new HealthReport()
+            fn (Container $container) => new HealthReport(
+                $container->get(Logger::class)
+            )
         );
 
         $this->container->singleton(

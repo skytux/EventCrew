@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Database\Schema;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\PwaController;
 
@@ -20,6 +21,17 @@ use EventCrew\Web\PwaController;
  */
 final class HealthReport
 {
+    /**
+     * The Logger is default-constructed so the read-model can still be built
+     * with `new HealthReport()` (as the tests do); the Kernel passes the shared
+     * instance so the panel shows the same ring buffer the rest of the plugin
+     * writes to. Both the log buffer and the last-update marker are stored as
+     * options, so reading them keeps the no-outbound-call promise.
+     */
+    public function __construct(private readonly Logger $logger = new Logger())
+    {
+    }
+
     /**
      * Every check, in the order the page shows them - schema first, since a
      * broken migration undermines everything below it.
@@ -36,6 +48,28 @@ final class HealthReport
             $this->appIcons(),
             $this->email(),
         ];
+    }
+
+    /**
+     * The recent log entries the plugin captured (Telegram, mail, DoH and boot
+     * failures), newest first, for the activity panel. This is what turns "the
+     * bot isn't sending" from a guess into the actual last error text.
+     *
+     * @return array<int, array{level: string, message: string, timestamp: int}>
+     */
+    public function recentActivity(): array
+    {
+        return array_reverse($this->logger->recent());
+    }
+
+    /**
+     * The highest Telegram update_id the webhook has processed - 0 before the
+     * first update arrives. A number here is the simplest proof updates are
+     * actually reaching the site, separate from the webhook merely being installed.
+     */
+    public function lastUpdateId(): int
+    {
+        return (int) get_option(UpdateRouter::LAST_UPDATE_OPTION, 0);
     }
 
     private function database(): Diagnostic
@@ -217,7 +251,7 @@ final class HealthReport
 
         return Diagnostic::warn(
             $label,
-            __('No Site Icon and GD unavailable, so the app has no icon. Set one under Settings → General.', 'eventcrew')
+            __('No Site Icon and GD unavailable, so the app has no icon. Set one in Settings → General.', 'eventcrew')
         );
     }
 

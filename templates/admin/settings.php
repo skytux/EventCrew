@@ -356,6 +356,7 @@ if (! defined('ABSPATH')) {
                         spellcheck="false">
                     <p class="description">
                         <?php esc_html_e('Kept private on your server. Clearing it disconnects the bot.', 'eventcrew'); ?>
+                        <?php esc_html_e('You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

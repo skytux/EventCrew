@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Database\Schema;
 use EventCrew\Support\Diagnostic;
 use EventCrew\Support\HealthReport;
+use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -61,5 +62,24 @@ final class HealthReportTest extends TestCase
         $this->withOptions([Schema::VERSION_OPTION => '1']);
 
         self::assertSame(Diagnostic::WARN, (new HealthReport())->checks()[0]->status);
+    }
+
+    public function testRecentActivityIsNewestFirstAndLastUpdateIsRead(): void
+    {
+        $this->withOptions([
+            'eventcrew_recent_logs' => [
+                ['level' => 'WARNING', 'message' => 'older', 'timestamp' => 100],
+                ['level' => 'ERROR', 'message' => 'newer', 'timestamp' => 200],
+            ],
+            UpdateRouter::LAST_UPDATE_OPTION => 4321,
+        ]);
+
+        $report = new HealthReport();
+
+        $activity = $report->recentActivity();
+
+        self::assertSame('newer', $activity[0]['message']);
+        self::assertSame('older', $activity[1]['message']);
+        self::assertSame(4321, $report->lastUpdateId());
     }
 }

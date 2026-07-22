@@ -201,8 +201,21 @@ final class TelegramClient
         return $this->call('getMe');
     }
 
+    /**
+     * The bot token, read from the EVENTCREW_TELEGRAM_TOKEN constant first so it
+     * can live in wp-config.php and stay out of the database (and its backups and
+     * exports), falling back to the option the Settings page writes.
+     */
     private function token(): string
     {
+        if (defined('EVENTCREW_TELEGRAM_TOKEN')) {
+            $constant = trim((string) EVENTCREW_TELEGRAM_TOKEN);
+
+            if ('' !== $constant) {
+                return $constant;
+            }
+        }
+
         return trim((string) get_option(self::TOKEN_OPTION, ''));
     }
 
