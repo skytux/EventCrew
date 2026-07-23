@@ -1,4 +1,5 @@
 <?php
+
 /**
  * People admin view.
  *
@@ -68,6 +69,19 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                             <?php esc_html_e('Organizer', 'eventcrew'); ?>
                         </label>
                         <p><?php esc_html_e('Organizers can mark attendance from the bot.', 'eventcrew'); ?></p>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="eventcrew-notify-muted">
+                            <input
+                                name="notify_muted"
+                                id="eventcrew-notify-muted"
+                                type="checkbox"
+                                value="1"
+                                <?php checked($eventcrew_is_edit && $editing->notifyMuted); ?>>
+                            <?php esc_html_e('Mute bot DMs', 'eventcrew'); ?>
+                        </label>
+                        <p><?php esc_html_e('Stop the bot sending this person signup, cancellation and no-show confirmations by direct message. The group board is unaffected.', 'eventcrew'); ?></p>
                     </div>
 
                     <div class="form-field">

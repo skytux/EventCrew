@@ -18,6 +18,7 @@ use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
@@ -30,6 +31,7 @@ use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -230,7 +232,8 @@ final class Kernel
             fn (Container $container) => new ClaimNotifier(
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -262,10 +265,33 @@ final class Kernel
         );
 
         $this->container->singleton(
+            StandingNotice::class,
+            fn (Container $container) => new StandingNotice(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NotificationsRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
+            BoardPush::class,
+            fn (Container $container) => new BoardPush(
+                $container->get(TaskRepository::class),
+                $container->get(NotificationsRepository::class),
+                $container->get(BoardService::class)
+            )
+        );
+
+        $this->container->singleton(
             Scheduler::class,
             fn (Container $container) => new Scheduler(
                 $container->get(ReminderCall::class),
-                $container->get(OpenTaskCall::class)
+                $container->get(OpenTaskCall::class),
+                $container->get(StandingNotice::class),
+                $container->get(BoardPush::class)
             )
         );
 
@@ -334,6 +360,7 @@ final class Kernel
                 $container->get(RosterAssembler::class),
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class),
                 $container->get(TelegramClient::class)
             )
         );

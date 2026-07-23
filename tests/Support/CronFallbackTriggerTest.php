@@ -8,13 +8,20 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\BoardPush;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SignupService;
+use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\StandingNotice;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -51,9 +58,22 @@ final class CronFallbackTriggerTest extends TestCase
         $mailer = new Mailer(new Logger());
         $telegram = new TelegramClient(new Logger(), new DohResolver(new Logger()));
 
+        $ledger = new NotificationsRepository();
+        $board = new BoardService(
+            $tasks,
+            $assignments,
+            $people,
+            $telegram,
+            new Logger(),
+            new ClaimNotifier($tasks, $assignments, $mailer, $telegram),
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository()))
+        );
+
         $scheduler = new Scheduler(
             new ReminderCall($tasks, $assignments, $people, $telegram, $mailer),
-            new OpenTaskCall($tasks, $assignments, $people, new NotificationsRepository(), $mailer)
+            new OpenTaskCall($tasks, $assignments, $people, $ledger, $mailer),
+            new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
+            new BoardPush($tasks, $ledger, $board)
         );
 
         return new CronFallbackTrigger($scheduler);

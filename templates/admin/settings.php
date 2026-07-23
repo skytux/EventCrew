@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Settings admin view.
  *
@@ -11,6 +12,9 @@
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
+ * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
+ * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
+ * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
  * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
@@ -196,6 +200,58 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Board reminders', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Auto re-post the board', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="board_push_enabled" value="1" <?php checked($board_push_enabled); ?>>
+                        <?php esc_html_e('Re-post the group board as an open event approaches', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('When on, the board is re-posted into the group at each lead time below (deleting the previous one), so it resurfaces instead of sitting buried. It reaches the whole group and cannot be muted per person.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-push-lead-week"><?php esc_html_e('First reminder (hours before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-push-lead-week"
+                        name="board_push_lead_week"
+                        value="<?php echo esc_attr((string) $board_push_lead_week); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('How far ahead of an open event the first re-post goes out. Default 168 (one week). Set to 0 to skip this one.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-push-lead-soon"><?php esc_html_e('Second reminder (hours before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-push-lead-soon"
+                        name="board_push_lead_soon"
+                        value="<?php echo esc_attr((string) $board_push_lead_soon); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

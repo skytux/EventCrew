@@ -55,6 +55,7 @@ final class PeoplePage
             : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         $isOrganizer = isset($_POST['is_organizer']) && '1' === (string) $_POST['is_organizer'];
+        $notifyMuted = isset($_POST['notify_muted']) && '1' === (string) $_POST['notify_muted'];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ('' === $email || ! is_email($email)) {
@@ -80,6 +81,7 @@ final class PeoplePage
             'display_name' => $displayName,
             'notes' => $notes,
             'is_organizer' => $isOrganizer,
+            'notify_muted' => $notifyMuted ? 1 : 0,
         ];
 
         if ($id > 0) {

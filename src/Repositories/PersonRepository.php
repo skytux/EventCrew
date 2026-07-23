@@ -86,6 +86,7 @@ final class PersonRepository
                 'telegram_user_id' => $data['telegram_user_id'] ?? null,
                 'telegram_chat_id' => $data['telegram_chat_id'] ?? null,
                 'is_organizer' => ! empty($data['is_organizer']) ? 1 : 0,
+                'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
                 'email_opt_in_at' => $data['email_opt_in_at'] ?? null,
                 'email_opt_in_source' => (string) ($data['email_opt_in_source'] ?? ''),
                 'notes' => (string) ($data['notes'] ?? ''),

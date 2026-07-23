@@ -107,6 +107,52 @@ final class BoardService
 
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
 
+        $this->storeBoard($chatId, $result);
+    }
+
+    /**
+     * Posts a brand-new board and deletes the previous one, so a scheduled
+     * reminder surfaces as a fresh message at the foot of the group rather than
+     * a silent in-place edit nobody notices. The old board is removed only once
+     * the new one is up, so a failed post never leaves the group with no board;
+     * a delete that fails (message already gone, or older than Telegram lets a
+     * bot delete) is a swallowed benign case. Inert until the bot and board chat
+     * are set.
+     */
+    public function repost(): void
+    {
+        if (! $this->telegram->isConfigured()) {
+            return;
+        }
+
+        $board = $this->board();
+        $chatId = (int) ($board['chat_id'] ?? 0);
+
+        if (0 === $chatId) {
+            return;
+        }
+
+        $rendered = $this->render();
+        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+
+        $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
+        $previousId = (int) ($board['message_id'] ?? 0);
+
+        if ($previousId > 0) {
+            $this->telegram->deleteMessage($chatId, $previousId);
+        }
+
+        $this->storeBoard($chatId, $result);
+    }
+
+    /**
+     * Records the freshly-posted board's id, so the next refresh edits it in
+     * place and the next repost knows which message to delete.
+     *
+     * @param array<string, mixed>|null $result The sendMessage response.
+     */
+    private function storeBoard(int $chatId, ?array $result): void
+    {
         if (null !== $result && isset($result['message_id'])) {
             update_option(self::BOARD_OPTION, [
                 'chat_id' => $chatId,
@@ -138,26 +184,33 @@ final class BoardService
         $groups = $this->groupByEvent($tasks);
         $multiEvent = count($groups) > 1;
 
-        $lines = [__('Open tasks — tap one to sign up, tap again to cancel:', 'eventcrew')];
+        $lines = [__('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew')];
+        $lines[] = __('Send /me in a DM to get your summary.', 'eventcrew');
         $keyboard = [];
 
         foreach ($groups as $group) {
             if ($multiEvent) {
                 $lines[] = '';
-                $lines[] = '📅 ' . $group['title'];
+                $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
             }
 
             foreach ($group['tasks'] as $task) {
                 $taken = $occupancy[$task->id] ?? 0;
-                $lines[] = $this->taskLine($task, $taken);
+                //$lines[] = $this->taskLine($task, $taken);
                 $keyboard[] = [$this->taskButton($task, $taken, $multiEvent)];
             }
         }
 
-        $deepLink = $this->deepLinkButton();
+        $deepLinkOnboard = $this->deepLinkButton('onboard', __('New here? Sign up →', 'eventcrew'));
 
-        if (null !== $deepLink) {
-            $keyboard[] = [$deepLink];
+        if (null !== $deepLinkOnboard) {
+            $keyboard[] = [$deepLinkOnboard];
+        }
+
+        $deepLinkMe = $this->deepLinkButton('me', __('See my info →', 'eventcrew'));
+
+        if (null !== $deepLinkMe) {
+            $keyboard[] = [$deepLinkMe];
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
@@ -322,7 +375,11 @@ final class BoardService
                 : 'l:' . $task->eventLabel . '|' . $task->taskDate;
 
             if (! isset($groups[$key])) {
-                $groups[$key] = ['title' => $task->eventName(), 'tasks' => []];
+                $groups[$key] = [
+                    'title' => $task->eventName(),
+                    'tasks' => [],
+                    'date' => $this->shortDate($task->taskDate),
+                ];
             }
 
             $groups[$key]['tasks'][] = $task;
@@ -356,7 +413,7 @@ final class BoardService
         }
 
         if ($multiEvent) {
-            $label = $this->shortDate($task->taskDate) . ' · ' . $label;
+            $label = $this->shortDate($task->taskDate) . ' · ' . $task->timeRange() . ' · ' . $label;
         }
 
         return ['text' => $label, 'callback_data' => 't:' . $task->id];
@@ -365,7 +422,7 @@ final class BoardService
     /**
      * @return array<string, string>|null
      */
-    private function deepLinkButton(): ?array
+    private function deepLinkButton(string $payload = 'onboard', string $text = 'New here? Sign up →'): ?array
     {
         $username = trim((string) get_option(self::USERNAME_OPTION, ''));
 
@@ -374,8 +431,8 @@ final class BoardService
         }
 
         return [
-            'text' => __('New here? Sign up →', 'eventcrew'),
-            'url' => 'https://t.me/' . $username . '?start=onboard',
+            'text' => $text,
+            'url' => 'https://t.me/' . $username . '?start=' . rawurlencode($payload),
         ];
     }
 

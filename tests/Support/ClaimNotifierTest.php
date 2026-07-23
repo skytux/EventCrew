@@ -11,6 +11,8 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -42,7 +44,12 @@ final class ClaimNotifierTest extends TestCase
 
     private function notifier(): ClaimNotifier
     {
-        return new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()));
+        return new ClaimNotifier(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            new Mailer(new Logger()),
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
+        );
     }
 
     private function person(bool $disabled = false): Person
@@ -92,6 +99,68 @@ final class ClaimNotifierTest extends TestCase
         $this->notifier()->confirmSignup($this->person(true), 5);
 
         self::assertSame([], $this->mails);
-        self::assertSame([], $this->wpdb->nextRows); // returned before any read
+    }
+
+    public function testSignupAlsoConfirmsInTheTelegramDm(): void
+    {
+        // A bot token and a captured transport turn the DM into an assertion.
+        $sends = [];
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => TelegramClient::TOKEN_OPTION === $name ? 'BOT:TOKEN' : false
+        );
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args) use (&$sends): string {
+            $sends[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($this->telegramPerson(), 5);
+
+        self::assertCount(1, $sends);
+        self::assertSame(4242, $sends[0]['chat_id']);
+        self::assertStringContainsString('Signed up', (string) $sends[0]['text']);
+    }
+
+    public function testAMutedPersonGetsNoDm(): void
+    {
+        $sends = [];
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => TelegramClient::TOKEN_OPTION === $name ? 'BOT:TOKEN' : false
+        );
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args) use (&$sends): string {
+            $sends[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($this->telegramPerson(true), 5);
+
+        self::assertSame([], $sends); // muted: no DM, even though a chat is linked
+        self::assertCount(1, $this->mails); // email still goes
+    }
+
+    private function telegramPerson(bool $muted = false): Person
+    {
+        return Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 4242,
+            'notify_muted' => $muted ? 1 : 0,
+        ]);
     }
 }
