@@ -126,8 +126,10 @@ final class UpdateRouter
         }
 
         if (! $isPrivate && $this->isCommand($text, 'board')) {
-            $this->board->setBoardChat($chatId);
-            $this->board->refresh();
+            // Re-post fresh and delete the old board, rather than edit in place,
+            // so a re-run of /board brings the board back to the foot of the
+            // chat without leaving the previous copy stacked above it.
+            $this->board->repostInto($chatId);
 
             return;
         }

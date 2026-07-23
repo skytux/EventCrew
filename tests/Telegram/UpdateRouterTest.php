@@ -149,7 +149,7 @@ final class UpdateRouterTest extends TelegramTestCase
 
     public function testGroupBoardCommandSetsTheBoardChat(): void
     {
-        $this->wpdb->nextResults[] = []; // refresh render: no tasks
+        $this->wpdb->nextResults[] = []; // repost render: no tasks
 
         $this->router()->dispatch([
             'message' => [
@@ -160,6 +160,26 @@ final class UpdateRouterTest extends TelegramTestCase
         ]);
 
         self::assertSame(999, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
+    public function testGroupBoardCommandDeletesThePreviousBoard(): void
+    {
+        // A board already lives in this chat; re-running /board should post a
+        // fresh one and remove the old, not leave both stacked.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 999, 'message_id' => 7];
+        $this->wpdb->nextResults[] = []; // repost render: no tasks
+
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/board@eventcrew_bot',
+                'chat' => ['id' => 999, 'type' => 'supergroup'],
+                'from' => ['id' => 1],
+            ],
+        ]);
+
+        self::assertContains('sendMessage', $this->calledMethods());
+        self::assertSame(7, $this->lastCallTo('deleteMessage')['message_id']);
+        self::assertSame(999, $this->lastCallTo('deleteMessage')['chat_id']);
     }
 
     public function testRosterCommandReachesRosterService(): void
