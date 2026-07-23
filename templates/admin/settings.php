@@ -15,6 +15,8 @@
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
+ * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
+ * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
  * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
@@ -340,6 +342,51 @@ if (! defined('ABSPATH')) {
             );
             ?>
         </p>
+
+        <h2><?php esc_html_e('Spam protection', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php
+            printf(
+                /* translators: %s: the Cloudflare Turnstile dashboard URL, already wrapped in an anchor tag */
+                esc_html__('Add a Cloudflare Turnstile CAPTCHA to the public sign-in form so bots cannot use it to send sign-in emails. Create a free widget at %s and paste its two keys here. Leave both blank to turn it off.', 'eventcrew'),
+                '<a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" rel="noopener">dash.cloudflare.com</a>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
+            );
+            ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-turnstile-site-key"><?php esc_html_e('Site key', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-turnstile-site-key"
+                        name="turnstile_site_key"
+                        value="<?php echo esc_attr($turnstile_site_key); ?>"
+                        class="regular-text"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description"><?php esc_html_e('The public key that renders the widget. Safe to expose in the page.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-turnstile-secret"><?php esc_html_e('Secret key', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-turnstile-secret"
+                        name="turnstile_secret"
+                        value="<?php echo esc_attr($turnstile_secret); ?>"
+                        class="regular-text"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description"><?php esc_html_e('Kept private on your server; used to verify each submission with Cloudflare.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
 
         <h2><?php esc_html_e('Mobile app', 'eventcrew'); ?></h2>
         <p class="description">

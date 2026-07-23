@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Plugin Name: EventCrew
  * Description: Person task scheduling, attendance and rewards for recurring events, driven from Telegram.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 6.8
  * Requires PHP: 8.2
  * Author: Lou H
@@ -15,10 +16,10 @@
 declare(strict_types=1);
 
 if (! defined('ABSPATH')) {
-	exit;
+    exit;
 }
 
-define('EVENTCREW_VERSION', '1.1.0');
+define('EVENTCREW_VERSION', '1.2.0');
 define('EVENTCREW_PLUGIN_FILE', __FILE__);
 define('EVENTCREW_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EVENTCREW_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -31,14 +32,14 @@ EventCrew\Support\Autoloader::register();
 // because WordPress 6.7+ warns when a textdomain loads earlier, and admin
 // strings are only needed from admin_menu onward, which fires well after this.
 add_action(
-	'init',
-	static function (): void {
-		load_plugin_textdomain(
-			'eventcrew',
-			false,
-			dirname(plugin_basename(EVENTCREW_PLUGIN_FILE)) . '/languages'
-		);
-	}
+    'init',
+    static function (): void {
+        load_plugin_textdomain(
+            'eventcrew',
+            false,
+            dirname(plugin_basename(EVENTCREW_PLUGIN_FILE)) . '/languages'
+        );
+    }
 );
 
 // Tables are created here for a fresh install, but the same migration also
@@ -46,20 +47,20 @@ add_action(
 // Database\Schema. Activation alone is not enough, because WordPress does not
 // fire this hook when a plugin is updated through the normal updater.
 register_activation_hook(
-	EVENTCREW_PLUGIN_FILE,
-	static function (): void {
-		EventCrew\Database\Schema::migrate();
-	}
+    EVENTCREW_PLUGIN_FILE,
+    static function (): void {
+        EventCrew\Database\Schema::migrate();
+    }
 );
 
 // Clear the notifications cron event on deactivation. The kernel is not booted
 // at this point, so this calls the scheduler's own static teardown rather than
 // reaching through a container.
 register_deactivation_hook(
-	EVENTCREW_PLUGIN_FILE,
-	static function (): void {
-		EventCrew\Support\Scheduler::unschedule();
-	}
+    EVENTCREW_PLUGIN_FILE,
+    static function (): void {
+        EventCrew\Support\Scheduler::unschedule();
+    }
 );
 
 EventCrew\Core\Plugin::boot();

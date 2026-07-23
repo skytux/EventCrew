@@ -15,6 +15,7 @@ use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\UpdateRouter;
@@ -70,6 +71,8 @@ final class SettingsPage
                     0,
                     (int) get_option(BoardPush::LEAD_SOON_OPTION, BoardPush::LEAD_SOON_DEFAULT)
                 ),
+                'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
+                'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
@@ -172,6 +175,19 @@ final class SettingsPage
             : BoardPush::LEAD_SOON_DEFAULT;
         update_option(BoardPush::LEAD_WEEK_OPTION, $leadWeek);
         update_option(BoardPush::LEAD_SOON_OPTION, $leadSoon);
+
+        update_option(
+            Turnstile::SITE_KEY_OPTION,
+            isset($_POST['turnstile_site_key'])
+                ? sanitize_text_field(wp_unslash($_POST['turnstile_site_key']))
+                : ''
+        );
+        update_option(
+            Turnstile::SECRET_KEY_OPTION,
+            isset($_POST['turnstile_secret'])
+                ? sanitize_text_field(wp_unslash($_POST['turnstile_secret']))
+                : ''
+        );
 
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
