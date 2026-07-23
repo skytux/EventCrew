@@ -111,35 +111,51 @@ final class BoardService
     }
 
     /**
-     * Posts a brand-new board and deletes the previous one, so a scheduled
-     * reminder surfaces as a fresh message at the foot of the group rather than
-     * a silent in-place edit nobody notices. The old board is removed only once
-     * the new one is up, so a failed post never leaves the group with no board;
-     * a delete that fails (message already gone, or older than Telegram lets a
-     * bot delete) is a swallowed benign case. Inert until the bot and board chat
-     * are set.
+     * Re-posts the board into the chat it already lives in. Used by the
+     * scheduled reminder. Inert until the bot and a board chat are set.
      */
     public function repost(): void
     {
-        if (! $this->telegram->isConfigured()) {
+        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+
+        $this->repostInto($chatId);
+    }
+
+    /**
+     * Posts a brand-new board into $chatId and deletes the previous one, so a
+     * reminder (or a re-run of /board) surfaces as a fresh message at the foot
+     * of the group rather than a silent in-place edit nobody notices, and the
+     * stale copy is cleared rather than left stacking up.
+     *
+     * The chat is captured up front, so even a failed post leaves the board's
+     * home remembered for the next attempt. The old board is deleted only after
+     * the new one is up, so a failed post never leaves the group with no board;
+     * a delete that fails - the message is already gone, or is older than the
+     * 48 hours Telegram lets a non-admin bot delete - is a swallowed benign
+     * case. Inert until the bot is configured and a real chat is given.
+     */
+    public function repostInto(int $chatId): void
+    {
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
             return;
         }
 
-        $board = $this->board();
-        $chatId = (int) ($board['chat_id'] ?? 0);
+        $previous = $this->board();
+        $previousChat = (int) ($previous['chat_id'] ?? 0);
+        $previousId = (int) ($previous['message_id'] ?? 0);
 
-        if (0 === $chatId) {
-            return;
-        }
+        // Remember the chat immediately (with no message yet), so the board's
+        // home survives even if the post below fails; storeBoard fills in the
+        // new message id once Telegram confirms it.
+        update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
 
         $rendered = $this->render();
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
 
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
-        $previousId = (int) ($board['message_id'] ?? 0);
 
-        if ($previousId > 0) {
-            $this->telegram->deleteMessage($chatId, $previousId);
+        if ($previousId > 0 && 0 !== $previousChat) {
+            $this->telegram->deleteMessage($previousChat, $previousId);
         }
 
         $this->storeBoard($chatId, $result);
