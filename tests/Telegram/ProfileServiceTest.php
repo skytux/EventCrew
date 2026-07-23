@@ -94,4 +94,31 @@ final class ProfileServiceTest extends TelegramTestCase
 
         self::assertStringContainsString('/start', (string) $this->lastCallTo('sendMessage')['text']);
     }
+
+    public function testMyHistoryListsPastTasksInTheDm(): void
+    {
+        // A verified person...
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+        // ...whose history has one past task (today is 2026-07-20).
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-18'],
+        ];
+        $this->wpdb->nextRows[] = $this->taskRow(1);
+
+        // From the group (isPrivate = false): the list lands in the DM (555),
+        // and the public chat (999) only gets the nudge.
+        $this->service()->onMyHistory(555, 999, false);
+
+        $dm = $this->telegramCalls[0]['body'];
+        self::assertSame(555, $dm['chat_id']);
+        self::assertStringContainsString('2026-07-18', (string) $dm['text']);
+
+        self::assertSame(999, $this->telegramCalls[1]['body']['chat_id']);
+    }
 }

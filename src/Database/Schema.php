@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '4';
+    public const DB_VERSION = '5';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -185,6 +185,7 @@ final class Schema
                 telegram_user_id bigint(20) unsigned DEFAULT NULL,
                 telegram_chat_id bigint(20) DEFAULT NULL,
                 is_organizer tinyint(1) NOT NULL DEFAULT 0,
+                notify_muted tinyint(1) NOT NULL DEFAULT 0,
                 email_opt_in_at datetime DEFAULT NULL,
                 email_opt_in_source varchar(20) NOT NULL DEFAULT '',
                 disabled_at datetime DEFAULT NULL,

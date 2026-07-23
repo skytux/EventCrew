@@ -52,7 +52,9 @@ final class UpdateRouterTest extends TelegramTestCase
         Functions\when('is_email')->alias(
             static fn (string $email): bool => 1 === preg_match('/^[^@\s]+@[^@\s]+\.[^@\s]+$/', $email)
         );
-        Functions\when('rest_url')->alias(static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path);
+        Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path
+        );
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
         );
@@ -69,13 +71,14 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
+                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
                 $this->signup()
             ),
             new RosterService(
                 new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
                 new TaskRepository(),
                 new PersonRepository(),
+                new AssignmentRepository(),
                 $this->client()
             ),
             new ReplacementService(
@@ -88,7 +91,7 @@ final class UpdateRouterTest extends TelegramTestCase
                     new PersonRepository(),
                     $this->client(),
                     new Logger(),
-                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
+                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
                     $this->signup()
                 ),
                 $this->client()
@@ -127,6 +130,23 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertArrayHasKey('eventcrew_tg_await_email_555', $this->transients);
     }
 
+    public function testPrivateStartMePayloadGoesToTheProfileNotOnboarding(): void
+    {
+        // The "See my info" deep link lands as "/start me". It must not start
+        // onboarding (no await-email transient); it answers with the summary,
+        // here the set-up-first nudge since no person is linked.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start me',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertContains('sendMessage', $this->calledMethods());
+    }
+
     public function testGroupBoardCommandSetsTheBoardChat(): void
     {
         $this->wpdb->nextResults[] = []; // refresh render: no tasks
@@ -153,7 +173,10 @@ final class UpdateRouterTest extends TelegramTestCase
             ],
         ]);
 
-        self::assertSame('Only organizers can see the roster.', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame(
+            'Only organizers or people rostered on the day can see the roster.',
+            $this->lastCallTo('sendMessage')['text']
+        );
     }
 
     public function testPrivateEmailWhileAwaitingIsCaptured(): void

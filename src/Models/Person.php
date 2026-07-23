@@ -23,7 +23,8 @@ final class Person
         public readonly ?string $disabledAt = null,
         public readonly string $notes = '',
         public readonly string $createdAt = '',
-        public readonly string $updatedAt = ''
+        public readonly string $updatedAt = '',
+        public readonly bool $notifyMuted = false
     ) {
     }
 
@@ -45,7 +46,8 @@ final class Person
             self::nullableString($row['disabled_at'] ?? null),
             (string) ($row['notes'] ?? ''),
             (string) ($row['created_at'] ?? ''),
-            (string) ($row['updated_at'] ?? '')
+            (string) ($row['updated_at'] ?? ''),
+            1 === (int) ($row['notify_muted'] ?? 0)
         );
     }
 
@@ -57,6 +59,18 @@ final class Person
     public function hasTelegram(): bool
     {
         return null !== $this->telegramUserId;
+    }
+
+    /**
+     * Whether the bot may DM this person the convenience messages - signup and
+     * cancellation confirmations, and the standing notices. Muted from the
+     * People page for anyone who finds them noise; the group board push is not
+     * a DM and so is unaffected. Notices tied to an active commitment (the task
+     * reminder) ignore this, as they are not the convenience kind.
+     */
+    public function wantsBotDms(): bool
+    {
+        return ! $this->notifyMuted;
     }
 
     /**

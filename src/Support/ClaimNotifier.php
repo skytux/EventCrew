@@ -8,22 +8,27 @@ use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\TelegramClient;
 
 /**
- * The signup and cancellation confirmation emails, in one place so both the
- * Telegram bot and the web signup page send exactly the same message. Claiming
- * a slot is the same act on either channel, so its confirmation must not drift -
+ * The signup and cancellation confirmation messages, in one place so both the
+ * Telegram bot and the web signup page send exactly the same thing. Claiming a
+ * slot is the same act on either channel, so its confirmation must not drift -
  * the same reasoning that put the claim/drop rules in SignupService.
  *
- * A person who switched their account off is never mailed: the confirmation is a
- * convenience, and their "no email" wish outranks it.
+ * Each confirmation goes on both channels a person has: a Telegram DM (so the
+ * chat itself becomes a record they can scroll back through) and an email. The
+ * DM is about a commitment they just made, so it goes even to a switched-off
+ * account and even to one that has muted the open-task calls; only the email is
+ * held back for a disabled account, honouring its "no email" wish.
  */
 final class ClaimNotifier
 {
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly TelegramClient $telegram
     ) {
     }
 
@@ -32,14 +37,26 @@ final class ClaimNotifier
      */
     public function confirmSignup(Person $person, int $taskId): void
     {
-        if ($person->isDisabled()) {
-            return;
-        }
-
         $task = $this->tasks->find($taskId);
         $assignment = $this->assignments->findFor($taskId, $person->id);
 
         if (null === $task || null === $assignment) {
+            return;
+        }
+
+        $this->dm(
+            $person,
+            sprintf(
+                /* translators: 1: role, 2: event, 3: date/time */
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('✅ Signed up: %1$s at %2$s, %3$s. Tap the task again to cancel, or /replace to hand it on.', 'eventcrew'),
+                $task->roleLabel(),
+                $task->eventName(),
+                $this->whenText($task)
+            )
+        );
+
+        if ($person->isDisabled()) {
             return;
         }
 
@@ -71,10 +88,6 @@ final class ClaimNotifier
      */
     public function confirmCancellation(Person $person, int $taskId, string $status): void
     {
-        if ($person->isDisabled()) {
-            return;
-        }
-
         $task = $this->tasks->find($taskId);
 
         if (null === $task) {
@@ -85,6 +98,24 @@ final class ClaimNotifier
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time.", 'eventcrew')
             : __('Thanks for the notice.', 'eventcrew');
+
+        $this->dm(
+            $person,
+            sprintf(
+                /* translators: 1: cancellation kind, 2: role, 3: event, 4: standing note */
+                __('%1$s: %2$s at %3$s. %4$s', 'eventcrew'),
+                AssignmentStatus::LATE_CANCEL === $status
+                    ? __('⚠️ Late cancellation', 'eventcrew')
+                    : __('❌ Cancelled', 'eventcrew'),
+                $task->roleLabel(),
+                $task->eventName(),
+                $note
+            )
+        );
+
+        if ($person->isDisabled()) {
+            return;
+        }
 
         $this->mailer->toPerson(
             $person->id,
@@ -105,6 +136,20 @@ final class ClaimNotifier
                 $note
             )
         );
+    }
+
+    /**
+     * Sends a confirmation to the person's Telegram DM, when they have one. A
+     * no-op for a web-only person, and swallowed by TelegramClient if the send
+     * fails - a confirmation that doesn't arrive must never fail the signup.
+     */
+    private function dm(Person $person, string $text): void
+    {
+        if (null === $person->telegramChatId || ! $person->wantsBotDms()) {
+            return;
+        }
+
+        $this->telegram->sendMessage($person->telegramChatId, $text);
     }
 
     private function whenText(Task $task): string

@@ -42,8 +42,12 @@ final class UpdateRouter
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
 
-            if (str_starts_with((string) ($callbackQuery['data'] ?? ''), 'rep:')) {
+            $data = (string) ($callbackQuery['data'] ?? '');
+
+            if (str_starts_with($data, 'rep:')) {
                 $this->replacement->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, 'rm:')) {
+                $this->roster->onMark($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -71,6 +75,15 @@ final class UpdateRouter
         $isPrivate = 'private' === ($message['chat']['type'] ?? '');
 
         if ($isPrivate && $this->isCommand($text, 'start')) {
+            // The board's deep-link buttons both land here as /start with a
+            // payload: "onboard" (or none) is the sign-up flow, "me" is the
+            // returning member asking for their summary in the DM.
+            if ('me' === $this->commandPayload($text, 'start')) {
+                $this->profile->onMe($fromId, $chatId);
+
+                return;
+            }
+
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
             $this->onboarding->start($fromId, $chatId, $this->displayName($from));
 
@@ -97,8 +110,17 @@ final class UpdateRouter
             return;
         }
 
-        if ($isPrivate && $this->isCommand($text, 'me')) {
-            $this->profile->onMe($fromId, $chatId);
+        // /me and /myhistory work from either the group or a private chat; the
+        // service always answers in the asker's DM so a personal summary is
+        // never printed in front of the whole crew.
+        if ($this->isCommand($text, 'myhistory')) {
+            $this->profile->onMyHistory($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        if ($this->isCommand($text, 'me')) {
+            $this->profile->onMe($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -154,6 +176,20 @@ final class UpdateRouter
     private function isCommand(string $text, string $command): bool
     {
         return 1 === preg_match('#^/' . preg_quote($command, '#') . '(@\w+)?($|\s)#i', $text);
+    }
+
+    /**
+     * The first token after a command, e.g. "me" from "/start me" - the deep
+     * link payload Telegram appends when a t.me/bot?start=me button is tapped.
+     * Empty when the command carries no argument.
+     */
+    private function commandPayload(string $text, string $command): string
+    {
+        if (1 === preg_match('#^/' . preg_quote($command, '#') . '(?:@\w+)?\s+(\S+)#i', $text, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
     }
 
     /**

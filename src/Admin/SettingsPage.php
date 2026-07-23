@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
@@ -60,6 +61,15 @@ final class SettingsPage
                     Reputation::DEFAULT_THRESHOLD
                 ),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
+                'board_push_enabled' => (bool) get_option(BoardPush::ENABLED_OPTION, true),
+                'board_push_lead_week' => max(
+                    0,
+                    (int) get_option(BoardPush::LEAD_WEEK_OPTION, BoardPush::LEAD_WEEK_DEFAULT)
+                ),
+                'board_push_lead_soon' => max(
+                    0,
+                    (int) get_option(BoardPush::LEAD_SOON_OPTION, BoardPush::LEAD_SOON_DEFAULT)
+                ),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
@@ -152,6 +162,17 @@ final class SettingsPage
 
         update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
+
+        update_option(BoardPush::ENABLED_OPTION, isset($_POST['board_push_enabled']) ? '1' : '0');
+        $leadWeek = isset($_POST['board_push_lead_week'])
+            ? max(0, (int) $_POST['board_push_lead_week'])
+            : BoardPush::LEAD_WEEK_DEFAULT;
+        $leadSoon = isset($_POST['board_push_lead_soon'])
+            ? max(0, (int) $_POST['board_push_lead_soon'])
+            : BoardPush::LEAD_SOON_DEFAULT;
+        update_option(BoardPush::LEAD_WEEK_OPTION, $leadWeek);
+        update_option(BoardPush::LEAD_SOON_OPTION, $leadSoon);
+
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
@@ -280,13 +301,17 @@ final class SettingsPage
 
         // So /board shows in the command menu and reaches the bot reliably even
         // under group privacy mode.
+        // Each description leads with where the command is used - Group for the
+        // shared board, DM for anything personal - so the menu itself says
+        // which chat to run it in.
         $this->telegram->setMyCommands([
-            ['command' => 'start', 'description' => __('Set yourself up to sign up for tasks', 'eventcrew')],
-            ['command' => 'board', 'description' => __('Show the board of open tasks', 'eventcrew')],
-            ['command' => 'replace', 'description' => __('Cover someone else’s task', 'eventcrew')],
-            ['command' => 'me', 'description' => __('Your standing, credits and recent tasks', 'eventcrew')],
-            ['command' => 'stop', 'description' => __('Switch your account off (no more emails)', 'eventcrew')],
-            ['command' => 'roster', 'description' => __('Show the attendance roster (organizers)', 'eventcrew')],
+            ['command' => 'start', 'description' => __('DM — set yourself up to sign up for tasks', 'eventcrew')],
+            ['command' => 'board', 'description' => __('Group — show the board of open tasks', 'eventcrew')],
+            ['command' => 'replace', 'description' => __('DM — cover someone else’s task', 'eventcrew')],
+            ['command' => 'me', 'description' => __('DM — your standing, credits and upcoming tasks', 'eventcrew')],
+            ['command' => 'myhistory', 'description' => __('DM — your past tasks', 'eventcrew')],
+            ['command' => 'stop', 'description' => __('DM — switch your account off (no more emails)', 'eventcrew')],
+            ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
         ]);
 
         Admin::redirectTo(

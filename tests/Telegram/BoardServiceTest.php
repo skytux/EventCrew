@@ -48,7 +48,7 @@ final class BoardServiceTest extends TelegramTestCase
             new PersonRepository(),
             $this->client(),
             new Logger(),
-            new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger())),
+            new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
             $this->signup()
         );
     }
@@ -120,8 +120,8 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        $last = end($rendered['keyboard']);
-        self::assertStringContainsString('t.me/eventcrew_bot?start=onboard', $last[0]['url']);
+        $urls = array_map(static fn (array $row): string => $row[0]['url'] ?? '', $rendered['keyboard']);
+        self::assertContains('https://t.me/eventcrew_bot?start=onboard', $urls);
     }
 
     public function testRenderReportsAnEmptyBoard(): void
@@ -131,6 +131,19 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->board()->render();
 
         self::assertSame([], $rendered['keyboard']);
+    }
+
+    public function testRepostPostsAfreshBoardAndDeletesThePrevious(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')]; // render: upcoming
+        $this->wpdb->nextResults[] = []; // occupancyFor
+
+        $this->board()->repost();
+
+        // A new board is posted, and the old one is removed.
+        self::assertContains('sendMessage', $this->calledMethods());
+        self::assertSame(5, $this->lastCallTo('deleteMessage')['message_id']);
     }
 
     // --- onJoinLeave --------------------------------------------------------

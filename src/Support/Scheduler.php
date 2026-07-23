@@ -32,7 +32,9 @@ final class Scheduler
 
     public function __construct(
         private readonly ReminderCall $reminders,
-        private readonly OpenTaskCall $openTasks
+        private readonly OpenTaskCall $openTasks,
+        private readonly StandingNotice $standingNotices,
+        private readonly BoardPush $boardPush
     ) {
     }
 
@@ -57,6 +59,8 @@ final class Scheduler
     {
         $this->reminders->run(self::BATCH);
         $this->openTasks->sendDue(self::OPEN_TASK_LEAD_HOURS, self::BATCH);
+        $this->standingNotices->sendDue(self::BATCH);
+        $this->boardPush->run();
 
         update_option(self::LAST_RUN_OPTION, time());
     }

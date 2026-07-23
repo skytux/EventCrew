@@ -417,6 +417,55 @@ final class AssignmentRepository
         return array_map('intval', is_array($ids) ? $ids : []);
     }
 
+    /**
+     * Assignments an admin marked no-show or late-cancel at least as long ago
+     * as $cutoff, that have not yet had a standing notice recorded in the
+     * ledger under $kind. The NOT EXISTS guard is what lets the caller take a
+     * bounded batch each run without the already-notified backlog starving out
+     * newer rows - the same job reminders solve with reminded_at.
+     *
+     * @return array<int, array{assignment: Assignment, task_date: string}>
+     */
+    public function needingStandingNotice(string $cutoff, string $kind, int $limit): array
+    {
+        global $wpdb;
+
+        $notifications = Schema::table(Schema::NOTIFICATIONS);
+        $statuses = [AssignmentStatus::NO_SHOW, AssignmentStatus::LATE_CANCEL];
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        $sql = "SELECT a.*, s.task_date
+            FROM {$this->table()} a
+            INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+            WHERE a.status IN ({$statusPlaceholders})
+              AND a.status_changed_at IS NOT NULL
+              AND a.status_changed_at <= %s
+              AND NOT EXISTS (
+                SELECT 1 FROM {$notifications} n
+                WHERE n.kind = %s AND n.person_id = a.person_id AND n.task_date = s.task_date
+              )
+            ORDER BY a.status_changed_at ASC
+            LIMIT %d";
+
+        $params = array_merge($statuses, [$cutoff, $kind, $limit]);
+
+        // Assembled from table-name constants and generated placeholders, then
+        // bound through prepare(); the sniff cannot follow a query in a variable.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+
+        $out = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $out[] = [
+                'assignment' => Assignment::fromRow($row),
+                'task_date' => (string) ($row['task_date'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
     public function countCompletedFor(int $personId): int
     {
         global $wpdb;
