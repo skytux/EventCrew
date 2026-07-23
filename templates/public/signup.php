@@ -1,10 +1,13 @@
 <?php
+
 /**
  * Public signup board, rendered by the [eventcrew_signup] shortcode / block.
  *
  * @var array<string, mixed> $view The SignupController view model:
  *   person, standing, csrf, groups, and the four ajax action names.
  */
+
+
 
 declare(strict_types=1);
 
@@ -18,13 +21,11 @@ $eventcrew_person = $view['person'];
 $eventcrew_standing = $view['standing'];
 $eventcrew_csrf = (string) $view['csrf'];
 $eventcrew_ajax = admin_url('admin-ajax.php');
-
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
 // add_query_arg([], null), which yields an empty URI (so home_url() fell back to
 // the site root) and sent every action to the homepage.
 $eventcrew_here = get_permalink();
-
 if (false === $eventcrew_here) {
     $eventcrew_here = home_url('/');
 }
@@ -86,7 +87,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 .eventcrew-signup .eventcrew-btn-stop,
 .eventcrew-signup .eventcrew-btn-full {
     color: #fff; border: 0; border-radius: 5px; cursor: pointer;
-    padding: .28em .8em; font: inherit; font-size: .9em; font-weight: 600; line-height: 1.5;
+    padding: .28em .8em; font: inherit; font-size: .8em; font-weight: 600; line-height: 1.5;
 }
 .eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
 .eventcrew-signup .eventcrew-btn-go { background: #1b5e20; }
@@ -94,55 +95,107 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 .eventcrew-signup .eventcrew-btn-stop { background: #8e1616; }
 .eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
 .eventcrew-signup .eventcrew-btn-full { background: #6b7280; opacity: .8; cursor: not-allowed; }
+
+.eventcrew-signin-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75em;
+    flex-wrap: wrap;
+}
+
+.eventcrew-signin-row .wp-element-input,
+.eventcrew-signin-row .wp-element-button {
+    box-sizing: border-box;
+    height: 3em;              /* the shared source of truth */
+    padding-block: 0;         /* kill vertical padding differences */
+    padding-inline: 1em;
+    font-size: 1rem;
+    line-height: 1;
+    border-radius: var(--wp--custom--border-radius, 6px);
+    border: 1px solid var(--wp--preset--color--contrast, #333);
+}
+
+.eventcrew-signin-row .wp-element-input {
+    background-color: var(--wp--preset--color--base, #fff);
+    color: var(--wp--preset--color--contrast, #111);
+    min-width: 16em;
+    flex: 1 1 16em;
+}
+
+.eventcrew-signin-row .wp-element-input:focus {
+    outline: none;
+    border-color: var(--wp--preset--color--primary, #0073aa);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--wp--preset--color--primary, #0073aa) 25%, transparent);
+}
+
+.eventcrew-signin-row .wp-element-input::placeholder {
+    color: var(--wp--preset--color--contrast, #333);
+    opacity: 0.5;
+}
 </style>
 <div class="eventcrew-signup">
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
-    <?php if (null === $eventcrew_person) : ?>
+    <?php if (null === $eventcrew_person) :
+        ?>
+        <h2><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
         <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-            <label for="eventcrew-email"><?php esc_html_e('Your email to sign up:', 'eventcrew'); ?></label>
-            <input type="email" id="eventcrew-email" name="email" required style="min-width:16em">
-            <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
-        </form>
-    <?php else : ?>
+            <div class="eventcrew-signin-row">
+                <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
+                <input
+                    type="email"
+                    id="eventcrew-email"
+                    name="email"
+                    required
+                    placeholder="<?php esc_attr_e('hello@example.com', 'eventcrew'); ?>"
+                    class="wp-element-input"
+                >
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
+            </div>
+        <?php
+    else :
+        ?>
+        <h2><?php esc_html_e('Welcome', 'eventcrew'); ?></h2>
         <p>
             <?php
-            printf(
-                /* translators: %s: person's name */
+            printf(/* translators: %s: person's name */
                 esc_html__('Signed in as %s.', 'eventcrew'),
                 esc_html($eventcrew_person->name())
-            );
+            ); ?>
+        </p>
+        <p>
+            <?php
             if (null !== $eventcrew_standing) {
-                printf(
-                    ' <span class="eventcrew-muted">%s · %s</span>',
-                    esc_html($eventcrew_standing->levelLabel()),
-                    esc_html(sprintf(
-                        /* translators: %d: number of free-entry credits */
-                        _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
-                        $eventcrew_standing->creditBalance
-                    ))
-                );
+                printf(' <span class="">%s · %s</span>', esc_html($eventcrew_standing->levelLabel()), esc_html(sprintf(/* translators: %d: number of free-entry credits */
+                    _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
+                    $eventcrew_standing->creditBalance
+                )));
             }
             ?>
+        </p>
             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="display:inline">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                 <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>
         </p>
-    <?php endif; ?>
+        <?php
+    endif; ?>
 
-    <?php if ('' !== (string) $view['telegram_group_link']) : ?>
+    <?php if ('' !== (string) $view['telegram_group_link']) :
+        ?>
         <p>
             <a class="eventcrew-tglink" href="<?php echo esc_url((string) $view['telegram_group_link']); ?>" target="_blank" rel="noopener">
                 <?php esc_html_e('Open our group in Telegram', 'eventcrew'); ?> →
             </a>
         </p>
-    <?php endif; ?>
+        <?php
+    endif; ?>
 
     <div id="eventcrew-board" class="eventcrew-board">
+        <h2><?php esc_html_e('Board', 'eventcrew'); ?></h2>
         <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
     </div>
 </div>
