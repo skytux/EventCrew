@@ -34,6 +34,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
@@ -303,6 +304,13 @@ final class Kernel
         );
 
         $this->container->singleton(
+            Turnstile::class,
+            fn (Container $container) => new Turnstile(
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
             SignupController::class,
             fn (Container $container) => new SignupController(
                 $container->get(PersonRepository::class),
@@ -312,7 +320,8 @@ final class Kernel
                 $container->get(SignupService::class),
                 $container->get(StandingCalculator::class),
                 $container->get(Mailer::class),
-                $container->get(ClaimNotifier::class)
+                $container->get(ClaimNotifier::class),
+                $container->get(Turnstile::class)
             )
         );
 

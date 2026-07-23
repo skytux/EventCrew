@@ -20,6 +20,7 @@ $eventcrew_person = $view['person'];
 /** @var \EventCrew\Support\Standing|null $eventcrew_standing */
 $eventcrew_standing = $view['standing'];
 $eventcrew_csrf = (string) $view['csrf'];
+$eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
@@ -154,6 +155,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 >
                 <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
             </div>
+            <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
+                <div
+                    class="cf-turnstile"
+                    style="margin-top:.75em"
+                    data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
+                    data-theme="auto"></div>
+                <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
+            <?php endif; ?>
         <?php
     else :
         ?>
@@ -272,6 +281,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             }
             if (button) {
                 button.disabled = false;
+            }
+            // A Turnstile token is single-use; reset the widget so a second
+            // sign-in attempt (or a rejected one) can be solved afresh.
+            if (window.turnstile && form.querySelector('.cf-turnstile')) {
+                try { window.turnstile.reset(); } catch (e) {}
             }
         }).catch(function () {
             if (button) {

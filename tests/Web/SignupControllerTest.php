@@ -15,6 +15,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -78,7 +79,8 @@ final class SignupControllerTest extends TestCase
                 $assignments,
                 new Mailer(new Logger()),
                 new TelegramClient(new Logger(), new DohResolver(new Logger()))
-            )
+            ),
+            new Turnstile(new Logger())
         );
     }
 

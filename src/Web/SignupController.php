@@ -14,6 +14,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
 
@@ -50,7 +51,8 @@ final class SignupController
         private readonly SignupService $signup,
         private readonly StandingCalculator $standing,
         private readonly Mailer $mailer,
-        private readonly ClaimNotifier $notifier
+        private readonly ClaimNotifier $notifier,
+        private readonly Turnstile $turnstile
     ) {
     }
 
@@ -120,6 +122,7 @@ final class SignupController
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine),
             'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
+            'turnstile_site_key' => $this->turnstile->siteKey(),
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
@@ -230,6 +233,17 @@ final class SignupController
         }
 
         if (self::LOGIN_ACTION === $action) {
+            // The CAPTCHA is checked before a link is issued or mailed, so a
+            // script that never solved it cannot make the form send mail at
+            // all. Disabled Turnstile verifies as always-passing.
+            $token = isset($_POST[Turnstile::RESPONSE_FIELD])
+                ? sanitize_text_field(wp_unslash($_POST[Turnstile::RESPONSE_FIELD]))
+                : '';
+
+            if (! $this->turnstile->verify($token, $this->clientIp())) {
+                $this->finish($redirect, 'captcha_failed', $isAjax);
+            }
+
             $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
             $this->finish($redirect, $this->loginByEmail($email), $isAjax);
         }
@@ -288,6 +302,7 @@ final class SignupController
             'bad_email' => __('That doesn’t look like a valid email address.', 'eventcrew'),
             'signed_in' => __('You’re signed in.', 'eventcrew'),
             'bad_link' => __('That sign-in link is invalid or has expired.', 'eventcrew'),
+            'captcha_failed' => __('Couldn’t verify you’re human — please try again.', 'eventcrew'),
             'signed_out' => __('You’re signed out.', 'eventcrew'),
             'claimed' => __('You’re signed up — thanks!', 'eventcrew'),
             'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
@@ -428,6 +443,20 @@ final class SignupController
         // phpcs:enable WordPress.Security.NonceVerification
 
         return wp_validate_redirect($requested, home_url('/'));
+    }
+
+    /**
+     * The visitor's IP for Turnstile's optional remoteip check. REMOTE_ADDR
+     * only - the forwarded headers a proxy adds are spoofable, and Turnstile
+     * treats remoteip as advisory, so a wrong or empty value never blocks a
+     * genuine solve.
+     */
+    private function clientIp(): string
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification -- read-only, not a state change.
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) wp_unslash($_SERVER['REMOTE_ADDR']) : '';
+
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
     }
 
     private function redirect(string $url, string $notice): never
