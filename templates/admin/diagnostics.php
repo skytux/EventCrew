@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Diagnostics admin view: a health table, a recent-activity panel, and the
  * environment footer.

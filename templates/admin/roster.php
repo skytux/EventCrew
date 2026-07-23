@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Roster / attendance admin view.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tasks admin view.
  *
@@ -266,45 +267,45 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
 // the organizer can overwrite, and with JavaScript off the form still submits
 // correctly - just without the auto-fill.
 ( function () {
-	var picker = document.querySelector( '[data-eventcrew-events]' );
-	var otherRow = document.querySelector( '[data-eventcrew-other-label]' );
+    var picker = document.querySelector( '[data-eventcrew-events]' );
+    var otherRow = document.querySelector( '[data-eventcrew-other-label]' );
 
-	if ( ! picker ) {
-		return;
-	}
+    if ( ! picker ) {
+        return;
+    }
 
-	function apply( overwrite ) {
-		var option = picker.options[ picker.selectedIndex ];
-		var isOther = option.value === <?php echo wp_json_encode($event_other); ?>;
+    function apply( overwrite ) {
+        var option = picker.options[ picker.selectedIndex ];
+        var isOther = option.value === <?php echo wp_json_encode($event_other); ?>;
 
-		if ( otherRow ) {
-			otherRow.style.display = isOther ? '' : 'none';
-		}
+        if ( otherRow ) {
+            otherRow.style.display = isOther ? '' : 'none';
+        }
 
-		if ( isOther ) {
-			return;
-		}
+        if ( isOther ) {
+            return;
+        }
 
-		[
-			[ 'eventcrew-task-date', option.getAttribute( 'data-date' ) ],
-			[ 'eventcrew-starts-at', option.getAttribute( 'data-starts' ) ],
-			[ 'eventcrew-ends-at', option.getAttribute( 'data-ends' ) ]
-		].forEach( function ( pair ) {
-			var field = document.getElementById( pair[ 0 ] );
+        [
+            [ 'eventcrew-task-date', option.getAttribute( 'data-date' ) ],
+            [ 'eventcrew-starts-at', option.getAttribute( 'data-starts' ) ],
+            [ 'eventcrew-ends-at', option.getAttribute( 'data-ends' ) ]
+        ].forEach( function ( pair ) {
+            var field = document.getElementById( pair[ 0 ] );
 
-			// Never clobber something already typed unless the organizer just
-			// changed the event, which is an explicit "use this one instead".
-			if ( field && pair[ 1 ] && ( overwrite || ! field.value ) ) {
-				field.value = pair[ 1 ];
-			}
-		} );
-	}
+            // Never clobber something already typed unless the organizer just
+            // changed the event, which is an explicit "use this one instead".
+            if ( field && pair[ 1 ] && ( overwrite || ! field.value ) ) {
+                field.value = pair[ 1 ];
+            }
+        } );
+    }
 
-	picker.addEventListener( 'change', function () {
-		apply( true );
-	} );
+    picker.addEventListener( 'change', function () {
+        apply( true );
+    } );
 
-	apply( false );
+    apply( false );
 }() );
 </script>
 <?php endif; ?>
