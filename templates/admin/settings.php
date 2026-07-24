@@ -115,7 +115,7 @@ if (! defined('ABSPATH')) {
                         <td>
                             <input
                                 type="number"
-                                min="1"
+                                min="0"
                                 step="1"
                                 name="role_capacity[<?php echo esc_attr((string) $eventcrew_index); ?>]"
                                 value="<?php echo esc_attr((string) $eventcrew_role['capacity']); ?>"
