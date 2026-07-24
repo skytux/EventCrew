@@ -28,8 +28,9 @@ final class CreditGrantNotifier
     public function notify(Person $person, int $credits = 1): void
     {
         $credits = max(1, $credits);
+        $prefs = new NotificationPreferences();
 
-        if (null !== $person->telegramChatId && $person->wantsBotDms()) {
+        if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 sprintf(
@@ -46,7 +47,7 @@ final class CreditGrantNotifier
             );
         }
 
-        if ($person->isDisabled()) {
+        if (! $prefs->emailAllowed($person, NotificationPreferences::CREDIT)) {
             return;
         }
 

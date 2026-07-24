@@ -23,6 +23,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\GiftService;
+use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
@@ -145,7 +146,8 @@ abstract class TelegramTestCase extends TestCase
                 new TaskRepository(),
                 new PersonRepository(),
                 $this->boardService(),
-                $this->client()
+                $this->client(),
+                $mailer
             ),
             new ProfileService(
                 new PersonRepository(),
@@ -173,8 +175,10 @@ abstract class TelegramTestCase extends TestCase
             new PermissionService(
                 new PersonRepository(),
                 $this->client(),
-                new LeaderEligibility(new AssignmentRepository(), new PersonRepository())
-            )
+                new LeaderEligibility(new AssignmentRepository(), new PersonRepository()),
+                $mailer
+            ),
+            new NotificationSettingsService(new PersonRepository(), $this->client())
         );
     }
 

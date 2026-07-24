@@ -38,6 +38,11 @@ final class ReplacementServiceTest extends TelegramTestCase
             return true;
         });
         Functions\when('get_the_title')->justReturn('');
+        Functions\when('wp_mail')->justReturn(true);
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
     }
 
     private function service(): ReplacementService
@@ -55,7 +60,8 @@ final class ReplacementServiceTest extends TelegramTestCase
                 new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
                 $this->signup()
             ),
-            $this->client()
+            $this->client(),
+            new Mailer(new Logger())
         );
     }
 

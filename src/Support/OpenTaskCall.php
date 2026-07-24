@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\TelegramClient;
 
 /**
  * The open-task email: "some jobs still need people". Transactional now - it
@@ -29,7 +30,8 @@ final class OpenTaskCall
         private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
         private readonly NotificationsRepository $ledger,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly TelegramClient $telegram
     ) {
     }
 
@@ -94,6 +96,7 @@ final class OpenTaskCall
 
         $alreadyOn = array_flip($this->assignments->personIdsAssignedOn($date));
         $openList = $this->openTasksText($date);
+        $prefs = new NotificationPreferences();
         $sent = 0;
 
         foreach ($this->people->activeEmailRecipients() as $person) {
@@ -105,12 +108,36 @@ final class OpenTaskCall
                 continue;
             }
 
-            $this->mailer->toPerson(
-                $person->id,
-                $person->email,
-                __('Some tasks still need people', 'eventcrew'),
-                $this->body($person, $date, $openList)
-            );
+            $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
+            $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
+
+            // Both channels off for this person: leave them unrecorded so a later
+            // opt-in still reaches them, and don't count them against the batch.
+            if (! $emailOk && ! $dmOk) {
+                continue;
+            }
+
+            if ($emailOk) {
+                $this->mailer->toPerson(
+                    $person->id,
+                    $person->email,
+                    __('Some tasks still need people', 'eventcrew'),
+                    $this->body($person, $date, $openList)
+                );
+            }
+
+            if ($dmOk) {
+                $this->telegram->sendMessage(
+                    (int) $person->telegramChatId,
+                    sprintf(
+                        /* translators: 1: date, 2: open-task list */
+                        __("🔔 Some tasks still need people on %1\$s:\n\n%2\$s\n\nOpen the board in the group to sign up.", 'eventcrew'),
+                        $date,
+                        $openList
+                    )
+                );
+            }
+
             $this->ledger->recordSent(self::KIND, $person->id, $date);
             ++$sent;
         }

@@ -131,7 +131,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('Signed up', (string) $sends[0]['text']);
     }
 
-    public function testAMutedPersonGetsNoDm(): void
+    public function testAMutedPersonStillGetsTheCommitmentDm(): void
     {
         $sends = [];
         Functions\when('get_option')->alias(
@@ -151,8 +151,10 @@ final class ClaimNotifierTest extends TestCase
 
         $this->notifier()->confirmSignup($this->telegramPerson(true), 5);
 
-        self::assertSame([], $sends); // muted: no DM, even though a chat is linked
-        self::assertCount(1, $this->mails); // email still goes
+        // Signup is a commitment confirmation - locked on - so a muted account
+        // still gets the DM (and the email).
+        self::assertCount(1, $sends);
+        self::assertCount(1, $this->mails);
     }
 
     private function telegramPerson(bool $muted = false): Person

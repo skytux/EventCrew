@@ -27,7 +27,9 @@ final class Person
         public readonly bool $notifyMuted = false,
         public readonly bool $canLead = false,
         public readonly bool $hasAtRiskPass = false,
-        public readonly ?string $leaderEligibleNotifiedAt = null
+        public readonly ?string $leaderEligibleNotifiedAt = null,
+        /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
+        public readonly array $notifyPrefs = []
     ) {
     }
 
@@ -53,8 +55,23 @@ final class Person
             1 === (int) ($row['notify_muted'] ?? 0),
             1 === (int) ($row['can_lead'] ?? 0),
             1 === (int) ($row['at_risk_pass'] ?? 0),
-            self::nullableString($row['leader_eligible_notified_at'] ?? null)
+            self::nullableString($row['leader_eligible_notified_at'] ?? null),
+            self::decodePrefs($row['notify_prefs'] ?? null)
         );
+    }
+
+    /**
+     * @return array<string, array{dm?: bool, email?: bool}>
+     */
+    private static function decodePrefs(mixed $value): array
+    {
+        if (! is_string($value) || '' === $value) {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**

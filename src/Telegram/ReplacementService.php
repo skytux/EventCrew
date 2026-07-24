@@ -9,6 +9,8 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\Mailer;
+use EventCrew\Support\NotificationPreferences;
 
 /**
  * "I'll cover for someone" - the person stepping in drives it, and it completes
@@ -31,7 +33,8 @@ final class ReplacementService
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
         private readonly BoardService $board,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly Mailer $mailer
     ) {
     }
 
@@ -217,17 +220,33 @@ final class ReplacementService
             true
         );
 
-        if (null !== $original && null !== $original->telegramChatId) {
-            $this->telegram->sendMessage(
-                $original->telegramChatId,
-                sprintf(
-                    /* translators: 1: cover's name, 2: role, 3: event */
-                    __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
-                    $cover->name(),
-                    $role,
-                    $event
-                )
+        if (null !== $original) {
+            $line = sprintf(
+                /* translators: 1: cover's name, 2: role, 3: event */
+                __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
+                $cover->name(),
+                $role,
+                $event
             );
+            $prefs = new NotificationPreferences();
+
+            if ($prefs->dmAllowed($original, NotificationPreferences::COVER)) {
+                $this->telegram->sendMessage($original->telegramChatId, $line);
+            }
+
+            if ($prefs->emailAllowed($original, NotificationPreferences::COVER)) {
+                $this->mailer->toPerson(
+                    $original->id,
+                    $original->email,
+                    __('Your task is covered', 'eventcrew'),
+                    sprintf(
+                        /* translators: 1: name, 2: the cover line */
+                        __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                        $original->name(),
+                        $line
+                    )
+                );
+            }
         }
 
         $this->board->announce(sprintf(

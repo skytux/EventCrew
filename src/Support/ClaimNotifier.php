@@ -50,12 +50,13 @@ final class ClaimNotifier
         $this->dm(
             $person,
             sprintf(
-                /* translators: 1: role, 2: event, 3: date/time */
+                /* translators: 1: role, 2: event, 3: date/time, 4: door-ticket link */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('✅ Signed up: %1$s at %2$s, %3$s. Tap the task again to cancel, or ask someone to type /replace to take it over.', 'eventcrew'),
+                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow this ticket at the door:\n%4\$s\n\nTap the task again to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
                 $task->roleLabel(),
                 $task->eventName(),
-                $this->whenText($task)
+                $this->whenText($task),
+                $this->mailer->ticketUrl($assignment->id)
             ) . "\n\n" . $standingLine
         );
 
@@ -96,6 +97,13 @@ final class ClaimNotifier
 
         if (null === $task) {
             return;
+        }
+
+        // A late cancellation frees a slot close to the event, when it most needs
+        // filling; a listener broadcasts the opening to the crew. Fired here, at
+        // the one place both channels' cancellations converge.
+        if (AssignmentStatus::LATE_CANCEL === $status) {
+            do_action('eventcrew/slot_freed', $taskId, $person->id);
         }
 
         $note = AssignmentStatus::LATE_CANCEL === $status
@@ -152,7 +160,9 @@ final class ClaimNotifier
      */
     private function dm(Person $person, string $text): void
     {
-        if (null === $person->telegramChatId || ! $person->wantsBotDms()) {
+        // Signup and cancellation are commitment confirmations - locked on, so a
+        // muted account still gets word of what it just committed to (or dropped).
+        if (! (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP)) {
             return;
         }
 

@@ -11,6 +11,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -39,6 +40,7 @@ final class SignupController
     public const DROP_ACTION = 'eventcrew_web_drop';
     public const LOGOUT_ACTION = 'eventcrew_web_logout';
     public const REDEEM_ACTION = 'eventcrew_web_redeem_ticket';
+    public const PREFS_ACTION = 'eventcrew_web_prefs';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -66,7 +68,7 @@ final class SignupController
         add_shortcode('eventcrew_signup', [$this, 'renderShortcode']);
         add_action('init', [$this, 'registerBlock']);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION] as $action) {
+        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -122,6 +124,7 @@ final class SignupController
             'drop_action' => self::DROP_ACTION,
             'logout_action' => self::LOGOUT_ACTION,
             'redeem_action' => self::REDEEM_ACTION,
+            'prefs_action' => self::PREFS_ACTION,
         ];
     }
 
@@ -270,6 +273,21 @@ final class SignupController
             $this->finish($redirect, $notice, $isAjax);
         }
 
+        if (self::PREFS_ACTION === $action) {
+            $posted = isset($_POST['prefs']) && is_array($_POST['prefs']) ? wp_unslash($_POST['prefs']) : [];
+            $map = [];
+
+            foreach (array_keys(NotificationPreferences::labels()) as $slug) {
+                $map[$slug] = [
+                    'dm' => isset($posted[$slug]['dm']),
+                    'email' => isset($posted[$slug]['email']),
+                ];
+            }
+
+            $this->people->setNotifyPrefs($person->id, $map);
+            $this->finish($redirect, 'prefs_saved', $isAjax);
+        }
+
         if (self::REDEEM_ACTION === $action) {
             $date = isset($_POST['ticket_date']) ? sanitize_text_field(wp_unslash($_POST['ticket_date'])) : '';
             $result = $this->tickets->redeem($person->id, $date, 'web');
@@ -330,6 +348,7 @@ final class SignupController
             'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
             'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
+            'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),

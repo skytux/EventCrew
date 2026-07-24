@@ -74,14 +74,13 @@ final class StandingNotice
     private function notify(Person $person, Task $task, string $status): void
     {
         $isNoShow = AssignmentStatus::NO_SHOW === $status;
+        $prefs = new NotificationPreferences();
 
-        if (null !== $person->telegramChatId && $person->wantsBotDms()) {
+        if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
             $this->telegram->sendMessage($person->telegramChatId, $this->dmText($task, $isNoShow));
         }
 
-        // A disabled account asked for no email; the DM above still goes, since
-        // it is about their own standing, but the mail is held back.
-        if ($person->isDisabled()) {
+        if (! $prefs->emailAllowed($person, NotificationPreferences::STANDING)) {
             return;
         }
 

@@ -259,6 +259,33 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']); // breadcrumb to group
     }
 
+    public function testMyTicketsCommandReachesTheProfileService(): void
+    {
+        // Unlinked sender -> the set-up nudge, proof /mytickets routed.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/mytickets',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testNotificationsCommandReachesTheSettingsService(): void
+    {
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/notifications',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testRosterCommandReachesRosterService(): void
     {
         // Unlinked sender -> the roster service refuses, which is proof it ran.

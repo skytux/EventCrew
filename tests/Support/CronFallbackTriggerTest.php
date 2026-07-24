@@ -74,7 +74,7 @@ final class CronFallbackTriggerTest extends TestCase
 
         $scheduler = new Scheduler(
             new ReminderCall($tasks, $assignments, $people, $telegram, $mailer),
-            new OpenTaskCall($tasks, $assignments, $people, $ledger, $mailer),
+            new OpenTaskCall($tasks, $assignments, $people, $ledger, $mailer, $telegram),
             new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
             new BoardPush($tasks, $ledger, $board),
             $board,

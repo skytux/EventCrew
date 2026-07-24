@@ -6,9 +6,11 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\StandingExplainer;
+use EventCrew\Support\TicketList;
 
 /**
  * /me and /myhistory: a person's own standing, what they're signed up for next,
@@ -125,6 +127,52 @@ final class ProfileService
             : implode("\n", array_merge([__('Your past tasks:', 'eventcrew')], $past));
 
         $this->deliver($telegramUserId, $chatId, $isPrivate, $body);
+    }
+
+    /**
+     * @param bool $isPrivate See onMe(); the answer is a DM either way.
+     */
+    public function onMyTickets(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('Set yourself up first with /start, then /mytickets shows your tickets.', 'eventcrew')
+            );
+
+            return;
+        }
+
+        $tickets = (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id);
+        $lines = ['🎟 ' . __('Your tickets', 'eventcrew')];
+
+        if ([] === $tickets['upcoming'] && [] === $tickets['past']) {
+            $lines[] = __('No tickets yet — sign up for a task or spend a credit.', 'eventcrew');
+        } else {
+            if ([] !== $tickets['upcoming']) {
+                $lines[] = '';
+                $lines[] = __('Upcoming:', 'eventcrew');
+                $lines = array_merge($lines, array_map([$this, 'ticketLine'], $tickets['upcoming']));
+            }
+
+            if ([] !== $tickets['past']) {
+                $lines[] = '';
+                $lines[] = __('Past:', 'eventcrew');
+                $lines = array_merge($lines, array_map([$this, 'ticketLine'], $tickets['past']));
+            }
+        }
+
+        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines));
+    }
+
+    /**
+     * @param array{label: string, when: string, url: string} $ticket
+     */
+    private function ticketLine(array $ticket): string
+    {
+        return sprintf("• %s — %s\n%s", $ticket['label'], $ticket['when'], $ticket['url']);
     }
 
     /**
