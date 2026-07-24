@@ -305,6 +305,8 @@ final class BoardServiceTest extends TelegramTestCase
         $this->verifiedPerson(555);
         $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
+        // claim(): tasks->find for the leader-slot check (non-leader task)
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
         // join(): findFor -> null, then the conditional insert
         $this->wpdb->nextRows[] = null;
         $this->wpdb->nextQueryResults[] = 1;
@@ -379,6 +381,8 @@ final class BoardServiceTest extends TelegramTestCase
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
         $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
+        // claim(): tasks->find for the leader-slot check (non-leader task)
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
         // join(): findFor -> the same cancelled row, then the guarded UPDATE.
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
         $this->wpdb->nextQueryResults[] = 1;

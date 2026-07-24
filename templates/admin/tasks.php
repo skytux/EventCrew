@@ -182,10 +182,10 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                             name="capacity"
                             id="eventcrew-capacity"
                             type="number"
-                            min="1"
+                            min="0"
                             step="1"
                             value="<?php echo esc_attr((string) ($eventcrew_is_edit ? $editing->capacity : 2)); ?>">
-                        <p><?php esc_html_e('Defaults come from the role in Settings.', 'eventcrew'); ?></p>
+                        <p><?php esc_html_e('Defaults come from the role in Settings. Set to 0 to take a task off the board without deleting it.', 'eventcrew'); ?></p>
                     </div>
 
                     <div class="form-field">

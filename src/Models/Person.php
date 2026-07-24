@@ -24,7 +24,10 @@ final class Person
         public readonly string $notes = '',
         public readonly string $createdAt = '',
         public readonly string $updatedAt = '',
-        public readonly bool $notifyMuted = false
+        public readonly bool $notifyMuted = false,
+        public readonly bool $canLead = false,
+        public readonly bool $hasAtRiskPass = false,
+        public readonly ?string $leaderEligibleNotifiedAt = null
     ) {
     }
 
@@ -47,8 +50,35 @@ final class Person
             (string) ($row['notes'] ?? ''),
             (string) ($row['created_at'] ?? ''),
             (string) ($row['updated_at'] ?? ''),
-            1 === (int) ($row['notify_muted'] ?? 0)
+            1 === (int) ($row['notify_muted'] ?? 0),
+            1 === (int) ($row['can_lead'] ?? 0),
+            1 === (int) ($row['at_risk_pass'] ?? 0),
+            self::nullableString($row['leader_eligible_notified_at'] ?? null)
         );
+    }
+
+    /**
+     * Whether this person may hold the reserved Leader slot - trusted to run a
+     * night and mark attendance from Telegram, without being a full organizer.
+     */
+    public function canLead(): bool
+    {
+        return $this->canLead;
+    }
+
+    /**
+     * Whether this person holds a one-time pass to sign up despite being at
+     * risk. Consumed on their next successful signup.
+     */
+    public function hasAtRiskPass(): bool
+    {
+        return $this->hasAtRiskPass;
+    }
+
+    /** Whether the organizers have already been told this person is leader-eligible. */
+    public function leaderNotified(): bool
+    {
+        return null !== $this->leaderEligibleNotifiedAt;
     }
 
     public function isEmailVerified(): bool

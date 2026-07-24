@@ -480,6 +480,38 @@ final class AssignmentRepository
     }
 
     /**
+     * Completed tasks per role for one person - what leader eligibility reads to
+     * check they have proven themselves at every job. Keyed by role slug.
+     *
+     * @return array<string, int>
+     */
+    public function completedByRole(int $personId): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT s.role_slug AS role_slug, COUNT(*) AS n
+                FROM {$this->table()} a
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE a.person_id = %d AND a.status = %s
+                GROUP BY s.role_slug",
+                $personId,
+                AssignmentStatus::COMPLETED
+            ),
+            ARRAY_A
+        );
+
+        $out = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $out[(string) $row['role_slug']] = (int) $row['n'];
+        }
+
+        return $out;
+    }
+
+    /**
      * Whether a person already holds a slot in any task overlapping the
      * given one, used to stop someone signing up for two jobs at once.
      */

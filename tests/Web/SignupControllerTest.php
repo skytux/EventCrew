@@ -74,7 +74,7 @@ final class SignupControllerTest extends TestCase
             new AuthTokenRepository(),
             new TaskRepository(),
             $assignments,
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())),
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()), new PersonRepository(), new TaskRepository()),
             new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
             new Mailer(new Logger()),
             new ClaimNotifier(

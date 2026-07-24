@@ -86,6 +86,8 @@ final class PersonRepository
                 'telegram_user_id' => $data['telegram_user_id'] ?? null,
                 'telegram_chat_id' => $data['telegram_chat_id'] ?? null,
                 'is_organizer' => ! empty($data['is_organizer']) ? 1 : 0,
+                'can_lead' => ! empty($data['can_lead']) ? 1 : 0,
+                'at_risk_pass' => ! empty($data['at_risk_pass']) ? 1 : 0,
                 'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
                 'email_opt_in_at' => $data['email_opt_in_at'] ?? null,
                 'email_opt_in_source' => (string) ($data['email_opt_in_source'] ?? ''),
@@ -160,6 +162,55 @@ final class PersonRepository
     public function enable(int $id): void
     {
         $this->update($id, ['disabled_at' => null]);
+    }
+
+    public function setOrganizer(int $id, bool $isOrganizer): void
+    {
+        $this->update($id, ['is_organizer' => $isOrganizer ? 1 : 0]);
+    }
+
+    public function setCanLead(int $id, bool $canLead): void
+    {
+        $this->update($id, ['can_lead' => $canLead ? 1 : 0]);
+    }
+
+    /** Gives a one-time pass to sign up despite being at risk. */
+    public function grantAtRiskPass(int $id): void
+    {
+        $this->update($id, ['at_risk_pass' => 1]);
+    }
+
+    /** Spends the pass - called once a gated signup it waved through succeeds. */
+    public function clearAtRiskPass(int $id): void
+    {
+        $this->update($id, ['at_risk_pass' => 0]);
+    }
+
+    /** Records that the organizers have been told this person is leader-eligible. */
+    public function markLeaderNotified(int $id): void
+    {
+        $this->update($id, ['leader_eligible_notified_at' => current_time('mysql')]);
+    }
+
+    /**
+     * Every organizer - who gets the eligibility alerts and may run the
+     * admin-only bot commands.
+     *
+     * @return array<int, Person>
+     */
+    public function organizers(): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            "SELECT * FROM {$this->table()} WHERE is_organizer = 1 ORDER BY id ASC",
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Person => Person::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
     }
 
     /**

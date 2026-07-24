@@ -68,7 +68,7 @@ final class PeoplePage
                 'person' => null === $person ? __('(deleted person)', 'eventcrew') : $person->name(),
                 'credits' => $grant['credits'],
                 'note' => $grant['note'],
-                'granted_by' => $this->granterName($grant['granted_by']),
+                'granted_by' => $this->granterName($grant['granted_by_person_id'], $grant['granted_by']),
                 'granted_at' => $grant['granted_at'],
             ];
         }
@@ -77,18 +77,25 @@ final class PeoplePage
     }
 
     /**
-     * A granter's display name: a WordPress user for an admin grant, or "the bot"
-     * for a discretionary /gift (recorded with no user id).
+     * A granter's display name, in order of specificity: the granting person
+     * (a /gift from Telegram), a WordPress user (a wp-admin grant), or "the
+     * system" only when neither was recorded.
      */
-    private function granterName(?int $userId): string
+    private function granterName(?int $personId, ?int $userId): string
     {
-        if (null === $userId || 0 === $userId) {
-            return __('the bot', 'eventcrew');
+        if (null !== $personId && $personId > 0) {
+            $person = $this->people->find($personId);
+
+            return null === $person ? __('(deleted person)', 'eventcrew') : $person->name();
         }
 
-        $user = get_userdata($userId);
+        if (null !== $userId && 0 !== $userId) {
+            $user = get_userdata($userId);
 
-        return false === $user ? __('(unknown)', 'eventcrew') : (string) $user->display_name;
+            return false === $user ? __('(unknown)', 'eventcrew') : (string) $user->display_name;
+        }
+
+        return __('the system', 'eventcrew');
     }
 
     public function save(): void
@@ -103,6 +110,7 @@ final class PeoplePage
             : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         $isOrganizer = isset($_POST['is_organizer']) && '1' === (string) $_POST['is_organizer'];
+        $canLead = isset($_POST['can_lead']) && '1' === (string) $_POST['can_lead'];
         $notifyMuted = isset($_POST['notify_muted']) && '1' === (string) $_POST['notify_muted'];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
@@ -129,6 +137,7 @@ final class PeoplePage
             'display_name' => $displayName,
             'notes' => $notes,
             'is_organizer' => $isOrganizer,
+            'can_lead' => $canLead ? 1 : 0,
             'notify_muted' => $notifyMuted ? 1 : 0,
         ];
 
@@ -177,6 +186,33 @@ final class PeoplePage
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Credit granted.', 'eventcrew'),
+            'success',
+            ['person' => (string) $personId]
+        );
+    }
+
+    /**
+     * Gives a person a one-time pass to sign up despite being at risk - the
+     * wp-admin mirror of the bot's /allow pass. Spent on their next successful
+     * signup (SignupService::claim).
+     */
+    public function grantPass(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($personId <= 0 || null === $this->people->find($personId)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That pass could not be granted.', 'eventcrew'), 'error');
+        }
+
+        $this->people->grantAtRiskPass($personId);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('One-time sign-up pass granted.', 'eventcrew'),
             'success',
             ['person' => (string) $personId]
         );

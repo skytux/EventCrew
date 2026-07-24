@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TaskRepository;
 
 /**
  * The one rulebook for claiming and dropping a task slot, whatever the channel.
  *
  * The Telegram board and the public web page both go through here, so the
  * question "may this person take this slot?" has a single answer - the
- * reputation gate, the overlap check and the atomic capacity race can never say
- * one thing to the bot and another to the web. Each surface keeps only its own
- * wording; the decision lives here.
+ * reputation gate, the one-time at-risk pass, the leader-only slot, the overlap
+ * check and the atomic capacity race can never say one thing to the bot and
+ * another to the web. Each surface keeps only its own wording; the decision
+ * lives here.
  */
 final class SignupService
 {
@@ -29,20 +32,47 @@ final class SignupService
     /** Refused: the person already holds a clashing slot. */
     public const OVERLAP = 'overlap';
 
+    /** Refused: the leader slot, and this person has no leader permission. */
+    public const LEADER_ONLY = 'leader_only';
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly PersonRepository $people,
+        private readonly TaskRepository $tasks
     ) {
     }
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::OVERLAP, or an AssignmentRepository::JOIN_* outcome.
+     * self::LEADER_ONLY, self::OVERLAP, or an AssignmentRepository::JOIN_*
+     * outcome.
      */
     public function claim(int $personId, int $taskId): string
     {
+        $task = $this->tasks->find($taskId);
+
+        // The leader slot is reserved for crew granted leader permission.
+        if (null !== $task && Roles::LEADER_SLUG === $task->roleSlug) {
+            $person = $this->people->find($personId);
+
+            if (null === $person || ! $person->canLead()) {
+                return self::LEADER_ONLY;
+            }
+        }
+
+        // A blocked at-risk member may be waved through once by a pass, which is
+        // then spent - but only if the join actually succeeds.
+        $usePass = false;
+
         if ($this->gateBlocks($personId)) {
-            return self::GATED;
+            $person = $this->people->find($personId);
+
+            if (null !== $person && $person->hasAtRiskPass()) {
+                $usePass = true;
+            } else {
+                return self::GATED;
+            }
         }
 
         // Holding a slot across events is fine; a genuine time clash is not.
@@ -50,7 +80,13 @@ final class SignupService
             return self::OVERLAP;
         }
 
-        return $this->assignments->join($taskId, $personId);
+        $outcome = $this->assignments->join($taskId, $personId);
+
+        if ($usePass && in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
+            $this->people->clearAtRiskPass($personId);
+        }
+
+        return $outcome;
     }
 
     /**

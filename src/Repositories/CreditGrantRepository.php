@@ -41,8 +41,13 @@ final class CreditGrantRepository
      * Records a bonus credit (or several) for a person, with an optional note
      * and the organizer's user id for the record.
      */
-    public function record(int $personId, int $credits, string $note, int $grantedBy): void
-    {
+    public function record(
+        int $personId,
+        int $credits,
+        string $note,
+        int $grantedBy,
+        ?int $grantedByPersonId = null
+    ): void {
         global $wpdb;
 
         $wpdb->insert(
@@ -52,6 +57,7 @@ final class CreditGrantRepository
                 'credits' => max(1, $credits),
                 'note' => $note,
                 'granted_by' => 0 === $grantedBy ? null : $grantedBy,
+                'granted_by_person_id' => $grantedByPersonId,
                 'granted_at' => current_time('mysql'),
             ]
         );
@@ -62,7 +68,7 @@ final class CreditGrantRepository
      * audit log the People screen shows. Raw rows; the caller resolves the person
      * and granter names for display.
      *
-     * @return array<int, array{person_id: int, credits: int, note: string, granted_by: ?int, granted_at: string}>
+     * @return array<int, array{person_id: int, credits: int, note: string, granted_by: ?int, granted_by_person_id: ?int, granted_at: string}>
      */
     public function recent(int $limit = 20): array
     {
@@ -71,7 +77,7 @@ final class CreditGrantRepository
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single SQL statement; wrapping it just adds noise.
-                "SELECT person_id, credits, note, granted_by, granted_at FROM {$this->table()} ORDER BY id DESC LIMIT %d",
+                "SELECT person_id, credits, note, granted_by, granted_by_person_id, granted_at FROM {$this->table()} ORDER BY id DESC LIMIT %d",
                 max(1, $limit)
             ),
             ARRAY_A
@@ -83,6 +89,9 @@ final class CreditGrantRepository
                 'credits' => (int) $row['credits'],
                 'note' => (string) $row['note'],
                 'granted_by' => null === $row['granted_by'] ? null : (int) $row['granted_by'],
+                'granted_by_person_id' => null === $row['granted_by_person_id']
+                    ? null
+                    : (int) $row['granted_by_person_id'],
                 'granted_at' => (string) $row['granted_at'],
             ],
             is_array($rows) ? $rows : []

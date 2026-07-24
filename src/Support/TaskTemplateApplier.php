@@ -19,7 +19,8 @@ use EventCrew\Repositories\TaskRepository;
 final class TaskTemplateApplier
 {
     public function __construct(
-        private readonly TaskRepository $tasks
+        private readonly TaskRepository $tasks,
+        private readonly LeaderGate $leaderGate
     ) {
     }
 
@@ -65,6 +66,23 @@ final class TaskTemplateApplier
             if (null === $task['starts_at']) {
                 ++$untimed;
             }
+        }
+
+        // One reserved leader slot per event, when the feature is on for the day
+        // and the event doesn't already carry one. Untimed - the leader is on
+        // for the whole night, not a slice of it.
+        if ($this->leaderGate->isEnabled($event['date']) && ! isset($existing[Roles::LEADER_SLUG])) {
+            $this->tasks->create([
+                'event_post_id' => $eventPostId,
+                'event_label' => '',
+                'task_date' => $event['date'],
+                'starts_at' => null,
+                'ends_at' => null,
+                'role_slug' => Roles::LEADER_SLUG,
+                'capacity' => 1,
+                'notes' => '',
+            ]);
+            ++$created;
         }
 
         // A new batch of tasks makes the Telegram board out of date. The hook

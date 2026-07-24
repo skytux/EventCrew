@@ -45,8 +45,8 @@ final class CreditGrantRepositoryTest extends TestCase
     public function testRecentReturnsGrantsNewestFirstWithTypedFields(): void
     {
         $this->wpdb->nextResults[] = [
-            ['person_id' => '9', 'credits' => '2', 'note' => 'covered setup', 'granted_by' => '3', 'granted_at' => '2026-07-20 10:00:00'],
-            ['person_id' => '8', 'credits' => '1', 'note' => '', 'granted_by' => null, 'granted_at' => '2026-07-19 09:00:00'],
+            ['person_id' => '9', 'credits' => '2', 'note' => 'covered setup', 'granted_by' => '3', 'granted_by_person_id' => null, 'granted_at' => '2026-07-20 10:00:00'],
+            ['person_id' => '8', 'credits' => '1', 'note' => '', 'granted_by' => null, 'granted_by_person_id' => '7', 'granted_at' => '2026-07-19 09:00:00'],
         ];
 
         $rows = $this->repository()->recent(20);
@@ -55,8 +55,9 @@ final class CreditGrantRepositoryTest extends TestCase
         self::assertSame(9, $rows[0]['person_id']);
         self::assertSame(2, $rows[0]['credits']);
         self::assertSame(3, $rows[0]['granted_by']);
-        // A bot grant carries no user id.
+        // A bot /gift carries the granting person, not a WordPress user.
         self::assertNull($rows[1]['granted_by']);
+        self::assertSame(7, $rows[1]['granted_by_person_id']);
         self::assertStringContainsString('ORDER BY id DESC', $this->wpdb->lastQuery());
     }
 

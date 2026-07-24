@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 
 /**
@@ -67,7 +68,8 @@ final class RosterService
             return;
         }
 
-        $rendered = $this->render($date, $this->assembler->forDate($date), $person->isOrganizer);
+        $canMark = $person->isOrganizer || $this->isLeaderOn($person->id, $date);
+        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark);
         $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -93,12 +95,8 @@ final class RosterService
 
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
-        if (null === $person || ! $person->isOrganizer) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('Only organizers can mark attendance.', 'eventcrew'),
-                true
-            );
+        if (null === $person) {
+            $this->telegram->answerCallbackQuery($callbackId, $this->deniedMarkMessage(), true);
 
             return;
         }
@@ -107,6 +105,21 @@ final class RosterService
 
         if (null === $assignment) {
             $this->telegram->answerCallbackQuery($callbackId, __('That entry is gone.', 'eventcrew'), true);
+
+            return;
+        }
+
+        // Organizers may always mark; a crew leader may mark their own night -
+        // which needs the task's date, so its lookup is skipped for organizers.
+        $canMark = $person->isOrganizer;
+
+        if (! $canMark) {
+            $task = $this->tasks->find($assignment->taskId);
+            $canMark = null !== $task && $this->isLeaderOn($person->id, $task->taskDate);
+        }
+
+        if (! $canMark) {
+            $this->telegram->answerCallbackQuery($callbackId, $this->deniedMarkMessage(), true);
 
             return;
         }
@@ -126,6 +139,32 @@ final class RosterService
     private function deniedMessage(): string
     {
         return __('Only organizers or people rostered on the day can see the roster.', 'eventcrew');
+    }
+
+    private function deniedMarkMessage(): string
+    {
+        return __('Only organizers or the night’s leader can mark attendance.', 'eventcrew');
+    }
+
+    /**
+     * Whether this person holds the reserved leader slot on the given date -
+     * what lets a crew leader, not just an organizer, mark that night's crew.
+     */
+    private function isLeaderOn(int $personId, string $date): bool
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            if (Roles::LEADER_SLUG !== $task->roleSlug) {
+                continue;
+            }
+
+            $assignment = $this->assignments->findFor($task->id, $personId);
+
+            if (null !== $assignment && $assignment->isOccupying()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -10,6 +10,8 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\LeaderGate;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
 
@@ -34,7 +36,8 @@ final class RosterPage
         private readonly DoorList $doorList,
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
-        private readonly FreeEntryGate $freeEntry
+        private readonly FreeEntryGate $freeEntry,
+        private readonly LeaderGate $leaderGate
     ) {
     }
 
@@ -64,6 +67,7 @@ final class RosterPage
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosed($selected),
+                'leader_enabled' => '' !== $selected && $this->leaderGate->isEnabled($selected),
                 'statuses' => $this->statusChoices(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
@@ -178,6 +182,69 @@ final class RosterPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, $message, 'success', $this->dateArg($date));
+    }
+
+    /**
+     * Turns the reserved leader slot on or off for the roster's date. Enabling
+     * gives the leader task capacity 1 (creating it if the event has none);
+     * disabling sets it to 0, which drops it off both boards while keeping its
+     * row and whoever was signed up.
+     */
+    public function toggleLeader(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if (! $this->isValidDate($date)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That change could not be applied.', 'eventcrew'), 'error');
+        }
+
+        if ($this->leaderGate->isEnabled($date)) {
+            $this->leaderGate->disable($date);
+            $this->applyLeaderTask($date, false);
+            $message = __('Leader turned off for this event.', 'eventcrew');
+        } else {
+            $this->leaderGate->enable($date);
+            $this->applyLeaderTask($date, true);
+            $message = __('Leader turned on for this event.', 'eventcrew');
+        }
+
+        do_action('eventcrew/board_stale');
+
+        Admin::redirectTo(self::PAGE_SLUG, $message, 'success', $this->dateArg($date));
+    }
+
+    /**
+     * Brings the day's leader task in line with the toggle: set an existing
+     * one's capacity, or create a fresh capacity-1 slot when turning it on for
+     * an event that has none.
+     */
+    private function applyLeaderTask(string $date, bool $enabled): void
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            if (Roles::LEADER_SLUG === $task->roleSlug) {
+                $this->tasks->update($task->id, ['capacity' => $enabled ? 1 : 0]);
+
+                return;
+            }
+        }
+
+        if ($enabled) {
+            [$eventPostId, $eventLabel] = $this->eventContext($date);
+            $this->tasks->create([
+                'event_post_id' => $eventPostId,
+                'event_label' => null === $eventPostId ? $eventLabel : '',
+                'task_date' => $date,
+                'starts_at' => null,
+                'ends_at' => null,
+                'role_slug' => Roles::LEADER_SLUG,
+                'capacity' => 1,
+                'notes' => '',
+            ]);
+        }
     }
 
     /**

@@ -13,6 +13,8 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\LeaderEligibilityNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
@@ -44,7 +46,7 @@ final class SchedulerTest extends TestCase
             $telegram,
             new Logger(),
             new ClaimNotifier($tasks, $assignments, $mailer, $telegram, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())),
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()))
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()), new PersonRepository(), new TaskRepository())
         );
 
         return new Scheduler(
@@ -52,7 +54,8 @@ final class SchedulerTest extends TestCase
             new OpenTaskCall($tasks, $assignments, $people, $ledger, $mailer),
             new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
             new BoardPush($tasks, $ledger, $board),
-            $board
+            $board,
+            new LeaderEligibilityNotifier(new LeaderEligibility($assignments, $people), $people, $mailer, $telegram)
         );
     }
 
