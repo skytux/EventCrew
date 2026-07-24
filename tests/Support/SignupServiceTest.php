@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\SignupService;
@@ -34,7 +35,7 @@ final class SignupServiceTest extends TestCase
     {
         return new SignupService(
             new AssignmentRepository(),
-            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository())
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );
     }
 

@@ -17,6 +17,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\TicketRedemptionService;
 
 /**
  * The public web front door: a shortcode/block showing the open-task board, with
@@ -39,6 +40,7 @@ final class SignupController
     public const CLAIM_ACTION = 'eventcrew_web_claim';
     public const DROP_ACTION = 'eventcrew_web_drop';
     public const LOGOUT_ACTION = 'eventcrew_web_logout';
+    public const REDEEM_ACTION = 'eventcrew_web_redeem_ticket';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -52,7 +54,8 @@ final class SignupController
         private readonly StandingCalculator $standing,
         private readonly Mailer $mailer,
         private readonly ClaimNotifier $notifier,
-        private readonly Turnstile $turnstile
+        private readonly Turnstile $turnstile,
+        private readonly TicketRedemptionService $tickets
     ) {
     }
 
@@ -61,7 +64,7 @@ final class SignupController
         add_shortcode('eventcrew_signup', [$this, 'renderShortcode']);
         add_action('init', [$this, 'registerBlock']);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION] as $action) {
+        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -115,18 +118,27 @@ final class SignupController
         $tasks = $this->tasks->upcoming();
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
         $mine = null === $person ? [] : $this->occupiedTaskIds($person->id);
+        $standing = null === $person ? null : $this->standing->for($person->id);
+
+        // A person with a credit to spend is offered the events they can spend
+        // it on, so the profile can redeem a free-entry ticket without the bot.
+        $ticketDates = null !== $standing && $standing->creditBalance >= 1
+            ? $this->tickets->eligibleDatesFor($person->id)
+            : [];
 
         return [
             'person' => $person,
-            'standing' => null === $person ? null : $this->standing->for($person->id),
+            'standing' => $standing,
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine),
             'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'turnstile_site_key' => $this->turnstile->siteKey(),
+            'ticket_dates' => $ticketDates,
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
             'logout_action' => self::LOGOUT_ACTION,
+            'redeem_action' => self::REDEEM_ACTION,
         ];
     }
 
@@ -274,6 +286,29 @@ final class SignupController
             $this->finish($redirect, $notice, $isAjax);
         }
 
+        if (self::REDEEM_ACTION === $action) {
+            $date = isset($_POST['ticket_date']) ? sanitize_text_field(wp_unslash($_POST['ticket_date'])) : '';
+            $result = $this->tickets->redeem($person->id, $date, 'web');
+
+            // On an AJAX call the page opens the returned ticket link itself; a
+            // no-JS fallback lands straight on the ticket, or back with a notice.
+            if ($isAjax) {
+                wp_send_json([
+                    'notice' => $this->redeemNotice($result['code']),
+                    'board' => $this->renderBoard($redirect),
+                    'ticket_url' => $result['url'],
+                ]);
+            }
+
+            if (TicketRedemptionService::TICKET_READY === $result['code']) {
+                wp_safe_redirect($result['url']);
+
+                exit;
+            }
+
+            $this->redirect($redirect, 'ticket_' . $result['code']);
+        }
+
         $notice = $this->dropFor($person->id, $taskId);
 
         if ('dropped' === $notice) {
@@ -313,9 +348,27 @@ final class SignupController
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),
+            'ticket_ticket_ready' => __('Your free-entry ticket is ready.', 'eventcrew'),
+            'ticket_no_credit' => __('You have no free-entry credits to spend.', 'eventcrew'),
+            'ticket_entry_closed' => __('Free entry is closed for that date.', 'eventcrew'),
+            'ticket_already_redeemed' => __('You already have a free-entry ticket for that night.', 'eventcrew'),
+            'ticket_not_eligible' => __('That event is no longer available.', 'eventcrew'),
         ];
 
         return $map[$code] ?? '';
+    }
+
+    /**
+     * The toast text for a redeem outcome on an AJAX call: a success line, or
+     * the shared refusal wording from the ticket service.
+     */
+    private function redeemNotice(string $code): string
+    {
+        if (TicketRedemptionService::TICKET_READY === $code) {
+            return __('Your free-entry ticket is ready.', 'eventcrew');
+        }
+
+        return $this->tickets->noticeText($code);
     }
 
     /**

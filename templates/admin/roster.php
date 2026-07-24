@@ -6,8 +6,9 @@
  * @var array<int, string> $upcoming_dates Dates with tasks, today onward, nearest first.
  * @var array<int, string> $past_dates Dates with tasks before today, most recent first.
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
- * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool}>}> $roster
+ * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
+ * @var bool $free_entry_closed Whether free entry is closed for the shown date.
  * @var array<string, string> $statuses Status slug => label, for the pickers.
  * @var string $nonce_action Nonce action for the marking forms.
  * @var string $page_slug Admin page slug, for form targets.
@@ -41,7 +42,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
     return sprintf(
         '<span style="color:%s;font-weight:600">%s</span>',
         esc_attr($color),
-        esc_html($standing->levelLabel())
+        esc_html($standing->ratedSummary())
     );
 };
 ?>
@@ -82,6 +83,21 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
             <p class="description">
                 <?php esc_html_e('Everyone who gets in free that night — working the event, or spending a credit.', 'eventcrew'); ?>
             </p>
+            <p style="margin:.4em 0 1em">
+                <?php if ($free_entry_closed) : ?>
+                    <strong style="color:#b32d2e"><?php esc_html_e('Free entry is closed for this date — no credits can be spent on it.', 'eventcrew'); ?></strong><br>
+                <?php endif; ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                    <input type="hidden" name="action" value="eventcrew_toggle_ticket_closed">
+                    <?php wp_nonce_field($nonce_action); ?>
+                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                    <button type="submit" class="button">
+                        <?php echo $free_entry_closed
+                            ? esc_html__('Reopen free entry', 'eventcrew')
+                            : esc_html__('Close free entry (sold out)', 'eventcrew'); ?>
+                    </button>
+                </form>
+            </p>
             <table class="widefat striped" style="max-width:640px;margin-bottom:.5em">
                 <thead>
                     <tr>
@@ -116,7 +132,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 </tbody>
             </table>
 
-            <?php if ([] !== $door['candidates']) : ?>
+            <?php if ([] !== $door['candidates'] && ! $free_entry_closed) : ?>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-bottom:2em;display:flex;gap:.4em;align-items:center">
                     <input type="hidden" name="action" value="eventcrew_redeem_credit">
                     <?php wp_nonce_field($nonce_action); ?>
@@ -170,6 +186,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <thead>
                         <tr>
                             <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
+                            <th style="width:9em"><?php esc_html_e('Standing', 'eventcrew'); ?></th>
                             <th style="width:16em"><?php esc_html_e('Status', 'eventcrew'); ?></th>
                         </tr>
                     </thead>
@@ -177,6 +194,9 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <?php foreach ($eventcrew_row['people'] as $eventcrew_person) : ?>
                             <tr>
                                 <td><?php echo esc_html($eventcrew_person['name']); ?></td>
+                                <td><?php echo null === $eventcrew_person['standing']
+                                    ? ''
+                                    : $eventcrew_standing_badge($eventcrew_person['standing']); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- badge builds its own escaped markup. ?></td>
                                 <td>
                                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:.4em">
                                         <input type="hidden" name="action" value="eventcrew_mark_attendance">

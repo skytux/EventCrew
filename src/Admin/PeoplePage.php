@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\StandingCalculator;
@@ -19,7 +20,8 @@ final class PeoplePage
         private readonly PersonRepository $people,
         private readonly AssignmentRepository $assignments,
         private readonly RedemptionRepository $redemptions,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly CreditGrantRepository $grants
     ) {
     }
 
@@ -32,11 +34,14 @@ final class PeoplePage
         $table = new PeopleListTable($this->people, $this->assignments, $this->standing);
         $table->prepare_items();
 
+        $editing = $this->personBeingEdited();
+
         $this->view->render(
             'people',
             [
                 'table' => $table,
-                'editing' => $this->personBeingEdited(),
+                'editing' => $editing,
+                'editing_standing' => null === $editing ? null : $this->standing->for($editing->id),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
             ]
@@ -99,6 +104,35 @@ final class PeoplePage
         Admin::redirectTo(self::PAGE_SLUG, __('Person added.', 'eventcrew'));
     }
 
+    /**
+     * Hands a person one bonus free-entry credit by hand - for a spontaneous
+     * task outside the usual earn-per-two-completed rule. The grant is a ledger
+     * row, so the balance on the People list and in /me rises the same way an
+     * earned credit does.
+     */
+    public function grantCredit(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
+        $note = isset($_POST['grant_note']) ? sanitize_text_field(wp_unslash($_POST['grant_note'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($personId <= 0 || null === $this->people->find($personId)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That credit could not be granted.', 'eventcrew'), 'error');
+        }
+
+        $this->grants->record($personId, 1, $note, get_current_user_id());
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Credit granted.', 'eventcrew'),
+            'success',
+            ['person' => (string) $personId]
+        );
+    }
+
     public function delete(): void
     {
         if (! current_user_can(Admin::CAPABILITY)) {
@@ -114,6 +148,7 @@ final class PeoplePage
         if ($id > 0) {
             $this->assignments->deleteForPerson($id);
             $this->redemptions->deleteForPerson($id);
+            $this->grants->deleteForPerson($id);
             $this->people->delete($id);
         }
 

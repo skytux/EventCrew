@@ -11,7 +11,8 @@ use EventCrew\Repositories\TaskRepository;
 
 /**
  * Assembles "who is on what" for one date: every task that day, each with the
- * people signed up and how their attendance stands.
+ * people signed up, how their attendance stands, and their standing (so the
+ * organizer sees at a glance who is reliable).
  *
  * Pulled out so the wp-admin Roster page and the bot's /roster read the same
  * shape from one place - the admin page uses the assignment id to build its
@@ -22,14 +23,15 @@ final class RosterAssembler
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
-        private readonly PersonRepository $people
+        private readonly PersonRepository $people,
+        private readonly StandingCalculator $standing
     ) {
     }
 
     /**
      * @return array<int, array{task: Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, occupying: bool}>}>
+     *     status_label: string, occupying: bool, standing: ?Standing}>}>
      */
     public function forDate(string $date): array
     {
@@ -49,6 +51,7 @@ final class RosterAssembler
                     'status' => $assignment->status,
                     'status_label' => $assignment->statusLabel(),
                     'occupying' => $assignment->isOccupying(),
+                    'standing' => null === $person ? null : $this->standing->for($person->id),
                 ];
             }
 

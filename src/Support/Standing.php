@@ -49,4 +49,33 @@ final class Standing
             default => __('New', 'eventcrew'),
         };
     }
+
+    /**
+     * The reputation score as a whole percentage, e.g. 82. Only meaningful once
+     * rated; on an unrated person it is 0 and should not be shown (see
+     * ratedSummary(), which hides it).
+     */
+    public function scorePercent(): int
+    {
+        return (int) round($this->score * 100);
+    }
+
+    /**
+     * The level label with the score appended once there is enough history to
+     * rate it - "Good standing · 82%" - or just "New" while unrated, so a bare
+     * "0%" is never shown to someone who simply hasn't worked enough yet.
+     */
+    public function ratedSummary(): string
+    {
+        if (! $this->isRated()) {
+            return $this->levelLabel();
+        }
+
+        return sprintf(
+            /* translators: 1: standing level, 2: reputation score percentage */
+            __('%1$s · %2$d%%', 'eventcrew'),
+            $this->levelLabel(),
+            $this->scorePercent()
+        );
+    }
 }

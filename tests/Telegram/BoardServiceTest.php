@@ -48,7 +48,7 @@ final class BoardServiceTest extends TelegramTestCase
             new PersonRepository(),
             $this->client(),
             new Logger(),
-            new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
+            new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
             $this->signup()
         );
     }
@@ -233,6 +233,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         $this->wpdb->nextResults[] = $rows; // historyFor()
         $this->wpdb->nextVars[] = 0;        // countFor() redemptions
+        $this->wpdb->nextVars[] = 0;        // sumFor() credit grants
     }
 
     public function testTheGateBlocksAnAtRiskMemberFromSigningUp(): void
@@ -438,6 +439,35 @@ final class BoardServiceTest extends TelegramTestCase
             ['chat_id' => 321, 'message_id' => 0],
             $this->options[BoardService::BOARD_OPTION]
         );
+    }
+
+    public function testRefreshIfChangedEditsWhenTheBoardHasChanged(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->wpdb->nextResults[] = []; // render() -> no tasks
+        $this->wpdb->nextResults[] = []; // refresh() re-renders -> no tasks
+
+        $this->board()->refreshIfChanged();
+
+        self::assertContains('editMessageText', $this->calledMethods());
+        self::assertArrayHasKey(BoardService::BOARD_HASH_OPTION, $this->options);
+    }
+
+    public function testRefreshIfChangedDoesNothingWhenUnchanged(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->wpdb->nextResults[] = []; // first render
+        $this->wpdb->nextResults[] = []; // first refresh re-render
+        $this->board()->refreshIfChanged();
+
+        $editsAfterFirst = count(array_filter($this->calledMethods(), static fn (string $m): bool => 'editMessageText' === $m));
+
+        // Same content again: the stored hash matches, so no second edit.
+        $this->wpdb->nextResults[] = []; // second render only
+        $this->board()->refreshIfChanged();
+
+        $editsAfterSecond = count(array_filter($this->calledMethods(), static fn (string $m): bool => 'editMessageText' === $m));
+        self::assertSame($editsAfterFirst, $editsAfterSecond);
     }
 
     // --- onBotMembershipChange ----------------------------------------------

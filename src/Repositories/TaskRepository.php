@@ -103,6 +103,15 @@ final class TaskRepository
     }
 
     /**
+     * The open board: tasks that have not yet finished.
+     *
+     * A timed task drops the moment its end passes, so a day's board winds down
+     * through the evening rather than lingering until midnight. A task with no
+     * end time cannot be known to have finished, so it stays up to the end of
+     * its filing day (task_date). This also keeps an after-midnight cleanup -
+     * filed under the event's day but ending the next morning - on the board
+     * until it actually ends, which a bare task_date test would drop at midnight.
+     *
      * @return array<int, Task>
      */
     public function upcoming(int $limit = 100): array
@@ -112,10 +121,12 @@ final class TaskRepository
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()}
-                WHERE task_date >= %s
+                WHERE (ends_at IS NULL AND task_date >= %s)
+                   OR (ends_at IS NOT NULL AND ends_at >= %s)
                 ORDER BY task_date ASC, starts_at ASC, id ASC
                 LIMIT %d",
                 current_time('Y-m-d'),
+                current_time('mysql'),
                 $limit
             ),
             ARRAY_A

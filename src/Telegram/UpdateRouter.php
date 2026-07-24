@@ -22,7 +22,8 @@ final class UpdateRouter
         private readonly BoardService $board,
         private readonly RosterService $roster,
         private readonly ReplacementService $replacement,
-        private readonly ProfileService $profile
+        private readonly ProfileService $profile,
+        private readonly TicketRedemptionService $tickets
     ) {
     }
 
@@ -48,6 +49,8 @@ final class UpdateRouter
                 $this->replacement->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'rm:')) {
                 $this->roster->onMark($callbackQuery);
+            } elseif (str_starts_with($data, 'tkt:')) {
+                $this->tickets->onSelect($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -106,6 +109,15 @@ final class UpdateRouter
 
         if ($isPrivate && $this->isCommand($text, 'replace')) {
             $this->replacement->start($fromId, $chatId);
+
+            return;
+        }
+
+        // /ticket is a personal, credit-spending action, so it only answers in a
+        // private chat - never in the group, where it would leak who is spending
+        // credits and let a tap redeem someone else's.
+        if ($isPrivate && $this->isCommand($text, 'ticket')) {
+            $this->tickets->onTicketCommand($fromId, $chatId);
 
             return;
         }

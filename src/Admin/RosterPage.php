@@ -9,6 +9,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
 
@@ -32,7 +33,8 @@ final class RosterPage
         private readonly TaskRepository $tasks,
         private readonly DoorList $doorList,
         private readonly RedemptionRepository $redemptions,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly FreeEntryGate $freeEntry
     ) {
     }
 
@@ -61,6 +63,7 @@ final class RosterPage
                 'selected_date' => $selected,
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
+                'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosed($selected),
                 'statuses' => $this->statusChoices(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
@@ -86,6 +89,15 @@ final class RosterPage
             Admin::redirectTo(
                 self::PAGE_SLUG,
                 __('That credit could not be redeemed.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
+        if ($this->freeEntry->isClosed($date)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Free entry is closed for this date.', 'eventcrew'),
                 'error',
                 $this->dateArg($date)
             );
@@ -133,6 +145,39 @@ final class RosterPage
             'success',
             $this->dateArg($date)
         );
+    }
+
+    /**
+     * Closes or reopens free entry for the roster's date - a sold-out night, or
+     * a special event that credits can't be spent on. While closed, neither this
+     * page's "Redeem a credit" nor the self-service /ticket flow will spend a
+     * credit for that date.
+     */
+    public function toggleTicketClosed(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if (! $this->isValidDate($date)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That change could not be applied.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if ($this->freeEntry->isClosed($date)) {
+            $this->freeEntry->open($date);
+            $message = __('Free entry reopened for this date.', 'eventcrew');
+        } else {
+            $this->freeEntry->close($date);
+            $message = __('Free entry closed for this date.', 'eventcrew');
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, $message, 'success', $this->dateArg($date));
     }
 
     /**

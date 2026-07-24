@@ -216,7 +216,7 @@ final class PeopleListTable extends WP_List_Table
         return sprintf(
             '<span style="color:%s;font-weight:600">%s</span>',
             esc_attr($color),
-            esc_html($standing->levelLabel())
+            esc_html($standing->ratedSummary())
         );
     }
 

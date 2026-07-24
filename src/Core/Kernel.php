@@ -14,6 +14,7 @@ use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -22,6 +23,7 @@ use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
@@ -45,6 +47,7 @@ use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
+use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
@@ -181,10 +184,21 @@ final class Kernel
         );
 
         $this->container->singleton(
+            CreditGrantRepository::class,
+            fn () => new CreditGrantRepository()
+        );
+
+        $this->container->singleton(
+            FreeEntryGate::class,
+            fn () => new FreeEntryGate()
+        );
+
+        $this->container->singleton(
             StandingCalculator::class,
             fn (Container $container) => new StandingCalculator(
                 $container->get(AssignmentRepository::class),
-                $container->get(RedemptionRepository::class)
+                $container->get(RedemptionRepository::class),
+                $container->get(CreditGrantRepository::class)
             )
         );
 
@@ -234,7 +248,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(Mailer::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -292,7 +307,8 @@ final class Kernel
                 $container->get(ReminderCall::class),
                 $container->get(OpenTaskCall::class),
                 $container->get(StandingNotice::class),
-                $container->get(BoardPush::class)
+                $container->get(BoardPush::class),
+                $container->get(BoardService::class)
             )
         );
 
@@ -321,7 +337,8 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(Mailer::class),
                 $container->get(ClaimNotifier::class),
-                $container->get(Turnstile::class)
+                $container->get(Turnstile::class),
+                $container->get(TicketRedemptionService::class)
             )
         );
 
@@ -359,7 +376,8 @@ final class Kernel
             fn (Container $container) => new RosterAssembler(
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(PersonRepository::class)
+                $container->get(PersonRepository::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -397,13 +415,26 @@ final class Kernel
         );
 
         $this->container->singleton(
+            TicketRedemptionService::class,
+            fn (Container $container) => new TicketRedemptionService(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(FreeEntryGate::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
                 $container->get(BoardService::class),
                 $container->get(RosterService::class),
                 $container->get(ReplacementService::class),
-                $container->get(ProfileService::class)
+                $container->get(ProfileService::class),
+                $container->get(TicketRedemptionService::class)
             )
         );
 
@@ -428,7 +459,8 @@ final class Kernel
             fn (Container $container) => new TicketController(
                 $container->get(AssignmentRepository::class),
                 $container->get(TaskRepository::class),
-                $container->get(PersonRepository::class)
+                $container->get(PersonRepository::class),
+                $container->get(RedemptionRepository::class)
             )
         );
 
@@ -437,7 +469,8 @@ final class Kernel
             fn (Container $container) => new ManageController(
                 $container->get(PersonRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(RedemptionRepository::class)
+                $container->get(RedemptionRepository::class),
+                $container->get(CreditGrantRepository::class)
             )
         );
 
@@ -490,7 +523,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(CreditGrantRepository::class)
             )
         );
 
@@ -503,7 +537,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(DoorList::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(FreeEntryGate::class)
             )
         );
 

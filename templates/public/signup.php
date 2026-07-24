@@ -21,6 +21,9 @@ $eventcrew_person = $view['person'];
 $eventcrew_standing = $view['standing'];
 $eventcrew_csrf = (string) $view['csrf'];
 $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
+/** @var array<string, string> $eventcrew_ticket_dates date => label a credit can be spent on */
+$eventcrew_ticket_dates = is_array($view['ticket_dates'] ?? null) ? $view['ticket_dates'] : [];
+$eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
@@ -96,6 +99,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 .eventcrew-signup .eventcrew-btn-stop { background: #8e1616; }
 .eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
 .eventcrew-signup .eventcrew-btn-full { background: #6b7280; opacity: .8; cursor: not-allowed; }
+
+/* The free-entry redeem control and the collapsible score explainer. */
+.eventcrew-signup .eventcrew-redeem { display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin: .5em 0; }
+.eventcrew-signup .eventcrew-score-help { margin: .3em 0 .8em; font-size: .9em; }
+.eventcrew-signup .eventcrew-score-help summary { cursor: pointer; opacity: .8; }
+.eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
+.eventcrew-signup .eventcrew-score-help td { padding: .1em .8em .1em 0; }
 
 .eventcrew-signin-row {
     display: flex;
@@ -174,16 +184,47 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 esc_html($eventcrew_person->name())
             ); ?>
         </p>
-        <p>
-            <?php
-            if (null !== $eventcrew_standing) {
-                printf(' <span class="">%s · %s</span>', esc_html($eventcrew_standing->levelLabel()), esc_html(sprintf(/* translators: %d: number of free-entry credits */
+        <?php if (null !== $eventcrew_standing) : ?>
+            <p>
+                <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
+                &middot;
+                <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
                     _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
                     $eventcrew_standing->creditBalance
-                )));
-            }
-            ?>
-        </p>
+                )); ?></span>
+            </p>
+            <details class="eventcrew-score-help">
+                <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
+                <table>
+                    <tbody>
+                    <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
+                        <tr>
+                            <td><?php echo esc_html($eventcrew_label); ?></td>
+                            <td style="text-align:right"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
+            </details>
+        <?php endif; ?>
+
+        <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
+            <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
+                <select name="ticket_date" id="eventcrew-ticket-date">
+                    <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
+                        <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
+            </form>
+        <?php endif; ?>
+
+        <p>
             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="display:inline">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
@@ -278,6 +319,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             }
             if (res && res.notice) {
                 showToast(res.notice);
+            }
+            // A redeemed free-entry ticket: open it. Prefer a new tab; if the
+            // browser blocks the popup, navigate this one to the ticket instead.
+            if (res && res.ticket_url) {
+                var opened = window.open(res.ticket_url, '_blank');
+                if (!opened) {
+                    window.location.assign(res.ticket_url);
+                }
             }
             if (button) {
                 button.disabled = false;

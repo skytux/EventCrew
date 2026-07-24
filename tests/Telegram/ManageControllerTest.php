@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Telegram\ManageController;
@@ -17,7 +18,8 @@ final class ManageControllerTest extends TestCase
         return new ManageController(
             new PersonRepository(),
             new AssignmentRepository(),
-            new RedemptionRepository()
+            new RedemptionRepository(),
+            new CreditGrantRepository()
         );
     }
 
@@ -35,8 +37,9 @@ final class ManageControllerTest extends TestCase
         $outcome = $this->controller()->apply(7, ManageController::DELETE);
 
         self::assertSame(ManageController::DELETE, $outcome);
-        // The assignments, the redemptions and the person row are all deleted.
-        self::assertCount(3, $this->wpdb->deletes);
+        // The assignments, the redemptions, the credit grants and the person
+        // row are all deleted.
+        self::assertCount(4, $this->wpdb->deletes);
     }
 
     public function testAnUnknownActionDoesNothing(): void

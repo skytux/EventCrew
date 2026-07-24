@@ -80,6 +80,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_toggle_ticket_closed',
+            [$this->container->get(RosterPage::class), 'toggleTicketClosed']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );
@@ -87,6 +92,11 @@ final class Admin
         add_action(
             'admin_post_eventcrew_delete_person',
             [$this->container->get(PeoplePage::class), 'delete']
+        );
+
+        add_action(
+            'admin_post_eventcrew_grant_credit',
+            [$this->container->get(PeoplePage::class), 'grantCredit']
         );
     }
 

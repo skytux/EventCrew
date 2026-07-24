@@ -8,8 +8,10 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
@@ -18,6 +20,7 @@ use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
+use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 
 /**
@@ -71,11 +74,11 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
+                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
                 $this->signup()
             ),
             new RosterService(
-                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
+                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository(), $this->standing()),
                 new TaskRepository(),
                 new PersonRepository(),
                 new AssignmentRepository(),
@@ -91,7 +94,7 @@ final class UpdateRouterTest extends TelegramTestCase
                     new PersonRepository(),
                     $this->client(),
                     new Logger(),
-                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
+                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
                     $this->signup()
                 ),
                 $this->client()
@@ -101,6 +104,14 @@ final class UpdateRouterTest extends TelegramTestCase
                 new AssignmentRepository(),
                 new TaskRepository(),
                 $this->standing(),
+                $this->client()
+            ),
+            new TicketRedemptionService(
+                new PersonRepository(),
+                new TaskRepository(),
+                new RedemptionRepository(),
+                $this->standing(),
+                new FreeEntryGate(),
                 $this->client()
             )
         );
@@ -180,6 +191,32 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertContains('sendMessage', $this->calledMethods());
         self::assertSame(7, $this->lastCallTo('deleteMessage')['message_id']);
         self::assertSame(999, $this->lastCallTo('deleteMessage')['chat_id']);
+    }
+
+    public function testPrivateTicketCommandReachesTheTicketService(): void
+    {
+        // Unlinked sender -> the ticket service answers with the set-up nudge,
+        // which is proof the /ticket command routed to it.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/ticket',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testTicketCallbackReachesTheTicketService(): void
+    {
+        // Unlinked sender -> onSelect answers the callback with a refusal, proof
+        // the tkt: prefix routed to the ticket service.
+        $this->router()->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01'],
+        ]);
+
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
     }
 
     public function testRosterCommandReachesRosterService(): void

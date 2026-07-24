@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '5';
+    public const DB_VERSION = '6';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -25,6 +25,7 @@ final class Schema
     public const TASKS = 'eventcrew_tasks';
     public const ASSIGNMENTS = 'eventcrew_assignments';
     public const REDEMPTIONS = 'eventcrew_redemptions';
+    public const CREDIT_GRANTS = 'eventcrew_credit_grants';
     public const AUTH_TOKENS = 'eventcrew_auth_tokens';
     public const NOTIFICATIONS = 'eventcrew_notifications';
 
@@ -38,6 +39,7 @@ final class Schema
             self::TASKS,
             self::ASSIGNMENTS,
             self::REDEMPTIONS,
+            self::CREDIT_GRANTS,
             self::AUTH_TOKENS,
             self::NOTIFICATIONS,
         ];
@@ -168,6 +170,7 @@ final class Schema
         $tasks = self::table(self::TASKS);
         $assignments = self::table(self::ASSIGNMENTS);
         $redemptions = self::table(self::REDEMPTIONS);
+        $creditGrants = self::table(self::CREDIT_GRANTS);
         $authTokens = self::table(self::AUTH_TOKENS);
         $notifications = self::table(self::NOTIFICATIONS);
 
@@ -260,6 +263,22 @@ final class Schema
                 PRIMARY KEY  (id),
                 KEY person_id (person_id),
                 KEY redeemed_for (redeemed_for)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // A manual credit an organizer hands someone - a bonus outside the
+            // earn-one-per-two-completed rule (a spontaneous cleaner after a
+            // paid event, say). credits is normally 1 but is a count so a larger
+            // grant is one row. The balance in Support\Credits adds the sum of
+            // these to earned-minus-redeemed; there is no stored running total.
+            "CREATE TABLE {$creditGrants} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                person_id bigint(20) unsigned NOT NULL,
+                credits smallint(5) unsigned NOT NULL DEFAULT 1,
+                note varchar(191) NOT NULL DEFAULT '',
+                granted_by bigint(20) unsigned DEFAULT NULL,
+                granted_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                KEY person_id (person_id)
             ) ENGINE=InnoDB {$charsetCollate};",
 
             // Only the hash is stored, never the token itself, so a database

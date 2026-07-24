@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\SignedLink;
@@ -29,7 +30,8 @@ final class ManageController
     public function __construct(
         private readonly PersonRepository $people,
         private readonly AssignmentRepository $assignments,
-        private readonly RedemptionRepository $redemptions
+        private readonly RedemptionRepository $redemptions,
+        private readonly CreditGrantRepository $grants
     ) {
     }
 
@@ -94,6 +96,7 @@ final class ManageController
         if (self::DELETE === $action) {
             $this->assignments->deleteForPerson($personId);
             $this->redemptions->deleteForPerson($personId);
+            $this->grants->deleteForPerson($personId);
             $this->people->delete($personId);
 
             return self::DELETE;
