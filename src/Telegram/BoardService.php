@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
-use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
-use EventCrew\Support\Dates;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SignupService;
 
@@ -43,6 +41,9 @@ final class BoardService
      */
     public const GROUP_LINK_OPTION = 'eventcrew_telegram_group_link';
 
+    /** Composes the board text + keyboard; the pure "what it looks like" half. */
+    private readonly BoardRenderer $renderer;
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
@@ -52,6 +53,7 @@ final class BoardService
         private readonly ClaimNotifier $notifier,
         private readonly SignupService $signup
     ) {
+        $this->renderer = new BoardRenderer($tasks);
     }
 
     /**
@@ -215,58 +217,14 @@ final class BoardService
     }
 
     /**
-     * Builds the board text and its inline keyboard. Tasks are grouped by
-     * event, and the grouping only shows headings when more than one event is
-     * open at once - the multi-event board - so a single event stays a plain
-     * list.
+     * Builds the board text and its inline keyboard. Delegated to BoardRenderer;
+     * kept here so the lifecycle methods (and the tests) call it as before.
      *
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
     public function render(): array
     {
-        $tasks = $this->tasks->upcoming();
-
-        if ([] === $tasks) {
-            return [
-                'text' => __('No open tasks right now. Check back soon!', 'eventcrew'),
-                'keyboard' => [],
-            ];
-        }
-
-        $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
-        $groups = $this->groupByEvent($tasks);
-        $multiEvent = count($groups) > 1;
-
-        $lines = [__('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew')];
-        $lines[] = __('Send /me in a DM to get your summary.', 'eventcrew');
-        $keyboard = [];
-
-        foreach ($groups as $group) {
-            if ($multiEvent) {
-                $lines[] = '';
-                $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
-            }
-
-            foreach ($group['tasks'] as $task) {
-                $taken = $occupancy[$task->id] ?? 0;
-                //$lines[] = $this->taskLine($task, $taken);
-                $keyboard[] = [$this->taskButton($task, $taken, $multiEvent)];
-            }
-        }
-
-        $deepLinkOnboard = $this->deepLinkButton('onboard', __('New here? Sign up →', 'eventcrew'));
-
-        if (null !== $deepLinkOnboard) {
-            $keyboard[] = [$deepLinkOnboard];
-        }
-
-        $deepLinkMe = $this->deepLinkButton('me', __('See my info →', 'eventcrew'));
-
-        if (null !== $deepLinkMe) {
-            $keyboard[] = [$deepLinkMe];
-        }
-
-        return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
+        return $this->renderer->render();
     }
 
     /**
@@ -413,89 +371,6 @@ final class BoardService
         }
 
         return '' !== $status;
-    }
-
-    /**
-     * @param array<int, Task> $tasks
-     * @return array<string, array{title: string, tasks: array<int, Task>}>
-     */
-    private function groupByEvent(array $tasks): array
-    {
-        $groups = [];
-
-        foreach ($tasks as $task) {
-            $key = null !== $task->eventPostId
-                ? 'e:' . $task->eventPostId
-                : 'l:' . $task->eventLabel . '|' . $task->taskDate;
-
-            if (! isset($groups[$key])) {
-                $groups[$key] = [
-                    'title' => $task->eventName(),
-                    'tasks' => [],
-                    'date' => $this->shortDate($task->taskDate),
-                ];
-            }
-
-            $groups[$key]['tasks'][] = $task;
-        }
-
-        return $groups;
-    }
-
-    private function taskLine(Task $task, int $taken): string
-    {
-        $time = $task->timeRange();
-        $when = '' === $time ? '' : ' ' . $time;
-
-        return sprintf('• %s%s (%d/%d)', $task->roleDisplay(), $when, $taken, $task->capacity);
-    }
-
-    /**
-     * One toggle button per task. It carries the task's own emoji and count -
-     * no ✅, which read as "done" - and, when more than one event is open, the
-     * task's date, since the buttons sit in a flat list under the text and
-     * otherwise give no clue which day a task belongs to.
-     *
-     * @return array<string, string>
-     */
-    private function taskButton(Task $task, int $taken, bool $multiEvent): array
-    {
-        $label = sprintf('%s %d/%d', $task->roleDisplay(), $taken, $task->capacity);
-
-        if ($taken >= $task->capacity) {
-            $label .= ' · ' . __('full', 'eventcrew');
-        }
-
-        if ($multiEvent) {
-            $label = $this->shortDate($task->taskDate) . ' · ' . $task->timeRange() . ' · ' . $label;
-        }
-
-        return ['text' => $label, 'callback_data' => 't:' . $task->id];
-    }
-
-    /**
-     * @return array<string, string>|null
-     */
-    private function deepLinkButton(string $payload = 'onboard', string $text = 'New here? Sign up →'): ?array
-    {
-        $username = trim((string) get_option(self::USERNAME_OPTION, ''));
-
-        if ('' === $username) {
-            return null;
-        }
-
-        return [
-            'text' => $text,
-            'url' => 'https://t.me/' . $username . '?start=' . rawurlencode($payload),
-        ];
-    }
-
-    /**
-     * The task's filing day as a short, localized label like "Sat 1 Aug".
-     */
-    private function shortDate(string $date): string
-    {
-        return Dates::dayLabel($date);
     }
 
     /**
