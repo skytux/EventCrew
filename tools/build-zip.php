@@ -50,6 +50,7 @@ $include = [
     'uninstall.php',
     'LICENSE',
     'README.md',
+    'readme.txt',
     'src',
     'templates',
     'blocks',
