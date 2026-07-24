@@ -2,12 +2,14 @@
 
 /**
  * Plugin Name: EventCrew
- * Description: Person task scheduling, attendance and rewards for recurring events, driven from Telegram.
+ * Plugin URI: https://github.com/skytux/EventCrew
+ * Description: Staffing, attendance and rewards for recurring events, from a Telegram group and a public web page.
  * Version: 1.7.2
  * Requires at least: 6.8
  * Requires PHP: 8.2
  * Author: Lou H
- * License: GPL-2.0
+ * Author URI: https://github.com/skytux
+ * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: eventcrew
  * Domain Path: /languages
