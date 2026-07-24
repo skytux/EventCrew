@@ -305,7 +305,11 @@ final class Roles
             'slug' => $slug,
             'label' => '' === $label ? $slug : $label,
             'emoji' => trim((string) ($role['emoji'] ?? '')),
-            'capacity' => max(1, (int) ($role['capacity'] ?? 1)),
+            // Zero is allowed and meaningful: a role can be defined but generate
+            // no active slots, so its tasks stay on the books yet drop off the
+            // boards (capacity 0 is filtered out of the open-task lists), the
+            // same way a hand-edited task set to 0 does. Negative is nonsense.
+            'capacity' => max(0, (int) ($role['capacity'] ?? 1)),
             'archived' => ! empty($role['archived']),
             'anchor' => self::ANCHOR_END === $anchor ? self::ANCHOR_END : self::ANCHOR_START,
             'start_offset' => self::nullableOffset($role['start_offset'] ?? null),

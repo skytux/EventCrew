@@ -71,13 +71,17 @@ final class RolesTest extends TestCase
         self::assertSame('Clean', $saved[0]['label']);
     }
 
-    public function testNeverStoresACapacityBelowOne(): void
+    public function testKeepsACapacityOfZeroButNeverGoesNegative(): void
     {
+        // Zero is a real choice - a role that stays defined but generates no
+        // active slots (its tasks drop off the boards). Negative is clamped.
         $saved = $this->captureSavedRoles([
             ['slug' => 'welcome', 'label' => 'Welcome', 'emoji' => '', 'capacity' => 0],
+            ['slug' => 'bar', 'label' => 'Bar', 'emoji' => '', 'capacity' => -3],
         ]);
 
-        self::assertSame(1, $saved[0]['capacity']);
+        self::assertSame(0, $saved[0]['capacity']);
+        self::assertSame(0, $saved[1]['capacity']);
     }
 
     /**
