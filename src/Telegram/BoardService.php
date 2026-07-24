@@ -41,6 +41,14 @@ final class BoardService
      */
     public const GROUP_LINK_OPTION = 'eventcrew_telegram_group_link';
 
+    /**
+     * When set (the default), the board stays in the first group the bot joins:
+     * a later attempt to move it - the bot being added to another group, or
+     * /board run there - is ignored, so nobody can quietly hijack the crew's
+     * board into their own chat. Turned off from Settings to move it on purpose.
+     */
+    public const LOCK_OPTION = 'eventcrew_telegram_group_lock';
+
     /** Composes the board text + keyboard; the pure "what it looks like" half. */
     private readonly BoardRenderer $renderer;
 
@@ -64,6 +72,24 @@ final class BoardService
     public function setBoardChat(int $chatId): void
     {
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
+    }
+
+    /**
+     * Whether the group lock forbids moving the board to $chatId: it does when
+     * the lock is on (the default) and a *different* group already holds the
+     * board. The first capture (no group yet) and any action in the group that
+     * already holds it are always allowed, so locking never blocks legitimate
+     * refreshes - only a hijack to a new chat.
+     */
+    private function moveBlocked(int $chatId): bool
+    {
+        if (! (bool) get_option(self::LOCK_OPTION, true)) {
+            return false;
+        }
+
+        $current = (int) ($this->board()['chat_id'] ?? 0);
+
+        return 0 !== $current && $chatId !== $current;
     }
 
     /**
@@ -179,6 +205,12 @@ final class BoardService
             return;
         }
 
+        // /board in a different group cannot move a locked board either; the
+        // group it already lives in still reposts (same chat passes the check).
+        if ($this->moveBlocked($chatId)) {
+            return;
+        }
+
         $previous = $this->board();
         $previousChat = (int) ($previous['chat_id'] ?? 0);
         $previousId = (int) ($previous['message_id'] ?? 0);
@@ -252,7 +284,9 @@ final class BoardService
 
         $chatId = (int) ($chat['id'] ?? 0);
 
-        if (0 !== $chatId) {
+        // With the lock on, only the first group ever holds the board; a later
+        // group adding the bot is ignored rather than stealing it.
+        if (0 !== $chatId && ! $this->moveBlocked($chatId)) {
             $this->setBoardChat($chatId);
             $this->refresh();
         }
