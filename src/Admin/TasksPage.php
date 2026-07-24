@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
 
@@ -19,6 +20,7 @@ final class TasksPage
     public const PAGE_SLUG = 'eventcrew';
     private const NONCE_ACTION = 'eventcrew_task';
     private const TEMPLATE_NONCE_ACTION = 'eventcrew_apply_template';
+    private const SEND_NONCE_ACTION = 'eventcrew_send_open_task';
 
     /** The event picker's "not one of these" option. */
     public const EVENT_OTHER = 'other';
@@ -28,7 +30,8 @@ final class TasksPage
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
-        private readonly TaskTemplateApplier $templateApplier
+        private readonly TaskTemplateApplier $templateApplier,
+        private readonly OpenTaskCall $openTaskCall
     ) {
     }
 
@@ -61,6 +64,8 @@ final class TasksPage
                 'roster' => $this->rosterForEditedTask(),
                 'nonce_action' => self::NONCE_ACTION,
                 'template_nonce_action' => self::TEMPLATE_NONCE_ACTION,
+                'send_nonce_action' => self::SEND_NONCE_ACTION,
+                'active_recipients' => count($this->people->activeEmailRecipients()),
                 'page_slug' => self::PAGE_SLUG,
                 'event_other' => self::EVENT_OTHER,
             ]
@@ -226,6 +231,30 @@ final class TasksPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Task deleted.', 'eventcrew'));
+    }
+
+    /**
+     * Sends the open-task email now, for the nearest upcoming date with open
+     * slots. The send-once ledger means a second click never re-mails anyone.
+     * It lives on Tasks because it acts on the tasks the organizer is looking
+     * at, and returns them here afterwards.
+     */
+    public function sendOpenTaskEmail(): void
+    {
+        Admin::assertCanSave(self::SEND_NONCE_ACTION);
+
+        $sent = $this->openTaskCall->sendForNextOpenDate();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            0 === $sent
+                ? __('Nothing to send: no open tasks, or everyone eligible already has it.', 'eventcrew')
+                : sprintf(
+                    /* translators: %d: number of people emailed */
+                    _n('Open-task email sent to %d person.', 'Open-task email sent to %d people.', $sent, 'eventcrew'),
+                    $sent
+                )
+        );
     }
 
     /**

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.7.7
+Stable tag: 1.7.8
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.7.8 =
+* Moved the "Send open-task email now" control from Settings to the Tasks page, where it sits under the task list — it acts on the tasks you're looking at, and now returns you there after sending.
+
 = 1.7.7 =
 * A role's default capacity can now be set to 0 in Settings, matching per-task capacity: the role stays defined but generates no active slots, so its tasks drop off the boards until you raise it. Negative values are still clamped to 0.
 
@@ -164,6 +167,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.7.8 =
+The "Send open-task email now" button now lives on the Tasks page instead of Settings. No database change.
 
 = 1.7.7 =
 Role capacity can now be 0 (a defined role that generates no active slots). No database change.

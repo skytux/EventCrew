@@ -11,6 +11,8 @@
  * @var array<int, array{name: string, status: string}> $roster Signed-up people for the edited task.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $template_nonce_action Nonce action for the apply-template form.
+ * @var string $send_nonce_action Nonce action for the "send open-task email" form.
+ * @var int $active_recipients How many active accounts the open-task email would reach.
  * @var string $page_slug Admin page slug, for form targets.
  * @var string $event_other Sentinel value for the picker's "other" option.
  */
@@ -253,6 +255,27 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
 
         <div id="col-right" style="width:63%;float:left">
             <?php $table->display(); ?>
+
+            <div class="form-wrap" style="margin-top:2em">
+                <h2><?php esc_html_e('Open-task email', 'eventcrew'); ?></h2>
+                <p>
+                    <?php
+                    printf(
+                        /* translators: %d: number of active accounts */
+                        esc_html__('%d active account(s) would receive the open-task email.', 'eventcrew'),
+                        (int) $active_recipients
+                    );
+                    ?>
+                </p>
+                <p class="description">
+                    <?php esc_html_e('Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email).', 'eventcrew'); ?>
+                </p>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                    <input type="hidden" name="action" value="eventcrew_send_open_task">
+                    <?php wp_nonce_field($send_nonce_action); ?>
+                    <?php submit_button(__('Send open-task email now', 'eventcrew'), 'secondary'); ?>
+                </form>
+            </div>
         </div>
     </div>
 </div>

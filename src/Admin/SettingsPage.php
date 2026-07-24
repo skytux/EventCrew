@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
-use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
@@ -12,7 +11,6 @@ use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
-use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\Roles;
@@ -39,13 +37,10 @@ final class SettingsPage
     public const PAGE_SLUG = 'eventcrew-settings';
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
-    private const SEND_NONCE_ACTION = 'eventcrew_send_open_task';
 
     public function __construct(
         private readonly View $view,
-        private readonly PersonRepository $people,
-        private readonly TelegramClient $telegram,
-        private readonly OpenTaskCall $openTaskCall
+        private readonly TelegramClient $telegram
     ) {
     }
 
@@ -57,8 +52,6 @@ final class SettingsPage
             'settings',
             [
                 'roles' => Roles::all(),
-                'active_recipients' => count($this->people->activeEmailRecipients()),
-                'send_nonce_action' => self::SEND_NONCE_ACTION,
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
@@ -290,28 +283,6 @@ final class SettingsPage
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Settings saved.', 'eventcrew')
-        );
-    }
-
-    /**
-     * Sends the open-task email now, for the nearest upcoming date with open
-     * slots. The send-once ledger means a second click never re-mails anyone.
-     */
-    public function sendOpenTaskEmail(): void
-    {
-        Admin::assertCanSave(self::SEND_NONCE_ACTION);
-
-        $sent = $this->openTaskCall->sendForNextOpenDate();
-
-        Admin::redirectTo(
-            self::PAGE_SLUG,
-            0 === $sent
-                ? __('Nothing to send: no open tasks, or everyone eligible already has it.', 'eventcrew')
-                : sprintf(
-                    /* translators: %d: number of people emailed */
-                    _n('Open-task email sent to %d person.', 'Open-task email sent to %d people.', $sent, 'eventcrew'),
-                    $sent
-                )
         );
     }
 

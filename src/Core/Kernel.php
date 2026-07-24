@@ -574,9 +574,7 @@ final class Kernel
             SettingsPage::class,
             fn (Container $container) => new SettingsPage(
                 $container->get(View::class),
-                $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class),
-                $container->get(OpenTaskCall::class)
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -602,7 +600,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class),
-                $container->get(TaskTemplateApplier::class)
+                $container->get(TaskTemplateApplier::class),
+                $container->get(OpenTaskCall::class)
             )
         );
 

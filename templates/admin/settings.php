@@ -4,8 +4,6 @@
  * Settings admin view.
  *
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}> $roles
- * @var int $active_recipients How many active accounts the open-task email would reach.
- * @var string $send_nonce_action Nonce action for the "send now" form.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
@@ -747,23 +745,4 @@ if (! defined('ABSPATH')) {
             <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary'); ?>
         </form>
     <?php endif; ?>
-
-    <h2><?php esc_html_e('Open-task email', 'eventcrew'); ?></h2>
-    <p>
-        <?php
-        printf(
-            /* translators: %d: number of active accounts */
-            esc_html__('%d active account(s) would receive the open-task email.', 'eventcrew'),
-            (int) $active_recipients
-        );
-        ?>
-    </p>
-    <p class="description">
-        <?php esc_html_e('Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email).', 'eventcrew'); ?>
-    </p>
-    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-        <input type="hidden" name="action" value="eventcrew_send_open_task">
-        <?php wp_nonce_field($send_nonce_action); ?>
-        <?php submit_button(__('Send open-task email now', 'eventcrew'), 'secondary'); ?>
-    </form>
 </div>
