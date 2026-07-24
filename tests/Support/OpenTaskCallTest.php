@@ -92,8 +92,6 @@ final class OpenTaskCallTest extends TestCase
         // hasOpenSlotsOn: forDate, occupancyFor (0 taken -> open)
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // personIdsAssignedOn: nobody on yet
-        $this->wpdb->nextCols[] = [];
         // openTasksText: forDate, occupancyFor
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
@@ -114,20 +112,23 @@ final class OpenTaskCallTest extends TestCase
         self::assertNotSame([], $this->wpdb->inserts);
     }
 
-    public function testSkipsSomeoneAlreadySignedUpForThatDate(): void
+    public function testIncludesCrewAlreadyWorkingThatDay(): void
     {
+        // Being on a task that day no longer excludes someone - they may want a
+        // second, non-overlapping slot - so they still get the call.
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // personIdsAssignedOn: person 7 is already on
-        $this->wpdb->nextCols[] = [7];
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextResults[] = [$this->taskRow()];        // openTasksText: forDate
+        $this->wpdb->nextResults[] = $this->occupancyRows(0);   // openTasksText: occupancy
+        $this->wpdb->nextResults[] = [$this->activePerson()];   // activeEmailRecipients
+        $this->wpdb->nextVars[] = null;                         // ledger.hasSent -> not sent
+        $this->wpdb->nextVars[] = 0;                            // countCompletedFor (recap)
+        $this->wpdb->nextResults[] = [];                        // historyFor (recap)
 
         $sent = $this->call()->sendForDate('2026-08-01');
 
-        self::assertSame(0, $sent);
-        self::assertSame([], $this->mails);
+        self::assertSame(1, $sent);
+        self::assertCount(1, $this->mails);
     }
 
     public function testSendsNothingWhenEverythingIsStaffed(): void
@@ -146,7 +147,6 @@ final class OpenTaskCallTest extends TestCase
     {
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        $this->wpdb->nextCols[] = [];
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
         $this->wpdb->nextResults[] = [$this->activePerson()];
@@ -167,8 +167,6 @@ final class OpenTaskCallTest extends TestCase
         // sendForDate('2026-07-21'): hasOpenSlotsOn (forDate, occupancy)
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // personIdsAssignedOn
-        $this->wpdb->nextCols[] = [];
         // openTasksText (forDate, occupancy)
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = $this->occupancyRows(0);
