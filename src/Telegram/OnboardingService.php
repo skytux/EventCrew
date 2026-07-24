@@ -20,6 +20,8 @@ use EventCrew\Support\Logger;
  */
 final class OnboardingService
 {
+    use GroupBreadcrumb;
+
     /** The auth-token purpose for a bot email confirmation. */
     public const VERIFY_PURPOSE = 'email_verify';
 
@@ -150,17 +152,6 @@ final class OnboardingService
                 'url' => 'https://t.me/' . $username . '?start=onboard',
             ]]]]
         );
-    }
-
-    /**
-     * When the command was typed in a group, leave a short note there so the
-     * asker knows the answer went to their DM. A no-op in a private chat.
-     */
-    private function sentDmNote(int $chatId, bool $isPrivate): void
-    {
-        if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
-        }
     }
 
     /**

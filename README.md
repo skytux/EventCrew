@@ -15,8 +15,10 @@ assumes the work is unpaid.
   offsets, then generate a whole evening's tasks for an event in one click.
 - **The Telegram bot** — a board in your group with a Join button per open task;
   private-chat onboarding that verifies an email; atomic, capacity-safe joins;
-  `/replace` to arrange cover; `/me` for standing and credits; `/roster` for
-  organizers.
+  `/replace` to arrange cover; `/me` for standing and credits; `/ticket` to spend
+  an earned credit on a free door ticket; `/roster` and `/gift` for organizers.
+  Personal commands work from the group too — they answer in your DM and leave a
+  short breadcrumb behind.
 - **Public web signup** — an `[eventcrew_signup]` shortcode (and a matching
   block) showing the same board, with email magic-link sign-in and claim/drop
   that obey the same rules as the bot. Installable as a **mobile app** (PWA):
@@ -25,8 +27,11 @@ assumes the work is unpaid.
   or a whole crew at once. This is also the **door list**: everyone who gets in
   free tonight, workers plus credit-redeemers.
 - **Reputation & credits** — a recency-weighted read of each person's history
-  (never a stored score), an optional join gate for at-risk members, and free
-  entry earned at `floor(completed / 2)` credits.
+  (never a stored score), rated on every finished task, with per-outcome weights
+  and the good-standing threshold both editable in Settings. An optional join
+  gate holds back at-risk members; free entry is earned at `floor(completed / 2)`
+  credits, spendable by the member (`/ticket` or the web profile) or handed out
+  by an organizer (`/gift` or the People page, which notify the recipient).
 - **Scheduled notifications** — 24h task reminders and a 48h open-task call, sent
   by DM and email on an hourly WP-Cron heartbeat, with an opt-in on-request
   fallback for hosts where WP-Cron never fires.

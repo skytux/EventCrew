@@ -21,6 +21,8 @@ use EventCrew\Support\StandingExplainer;
  */
 final class ProfileService
 {
+    use GroupBreadcrumb;
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly AssignmentRepository $assignments,
@@ -133,10 +135,7 @@ final class ProfileService
     private function deliver(int $telegramUserId, int $chatId, bool $isPrivate, string $body): void
     {
         $this->telegram->sendMessage($telegramUserId, $body);
-
-        if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
-        }
+        $this->sentDmNote($chatId, $isPrivate);
     }
 
     /**

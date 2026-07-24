@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\Dates;
 use EventCrew\Support\RosterAssembler;
 
 /**
@@ -25,6 +26,8 @@ use EventCrew\Support\RosterAssembler;
  */
 final class RosterService
 {
+    use GroupBreadcrumb;
+
     /** Callback data prefix for a marking tap: rm:<assignment_id>:<c|n>. */
     private const MARK_PREFIX = 'rm:';
 
@@ -66,10 +69,7 @@ final class RosterService
 
         $rendered = $this->render($date, $this->assembler->forDate($date), $person->isOrganizer);
         $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
-
-        if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
-        }
+        $this->sentDmNote($chatId, $isPrivate);
     }
 
     /**
@@ -298,14 +298,6 @@ final class RosterService
 
     private function dateLabel(string $date): string
     {
-        $timestamp = strtotime($date . ' 12:00:00');
-
-        if (false === $timestamp) {
-            return $date;
-        }
-
-        return function_exists('wp_date')
-            ? (string) wp_date('D j M', $timestamp)
-            : gmdate('D j M', $timestamp);
+        return Dates::dayLabel($date);
     }
 }

@@ -11,6 +11,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\Dates;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SignupService;
 
@@ -489,21 +490,11 @@ final class BoardService
     }
 
     /**
-     * The task's filing day as a short, localized label like "Sat 1 Aug". Uses
-     * wp_date so weekday and month follow the site's locale; a bare date
-     * (no WordPress) falls back to the same English format.
+     * The task's filing day as a short, localized label like "Sat 1 Aug".
      */
     private function shortDate(string $date): string
     {
-        $timestamp = strtotime($date . ' 12:00:00');
-
-        if (false === $timestamp) {
-            return $date;
-        }
-
-        return function_exists('wp_date')
-            ? (string) wp_date('D j M', $timestamp)
-            : gmdate('D j M', $timestamp);
+        return Dates::dayLabel($date);
     }
 
     /**

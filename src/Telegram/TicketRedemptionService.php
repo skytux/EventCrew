@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\Dates;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignedLink;
@@ -23,6 +24,8 @@ use EventCrew\Support\StandingCalculator;
  */
 final class TicketRedemptionService
 {
+    use GroupBreadcrumb;
+
     /** redeem() outcomes. */
     public const TICKET_READY = 'ticket_ready';
     public const NO_CREDIT = 'no_credit';
@@ -106,18 +109,6 @@ final class TicketRedemptionService
             ['inline_keyboard' => $keyboard]
         );
         $this->sentDmNote($chatId, $isPrivate);
-    }
-
-    /**
-     * When /ticket was typed in the group, leave a short note there so the asker
-     * knows the answer went to their DM. A no-op in a private chat, where the
-     * answer already landed in the chat they typed in.
-     */
-    private function sentDmNote(int $chatId, bool $isPrivate): void
-    {
-        if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
-        }
     }
 
     /**
@@ -339,14 +330,6 @@ final class TicketRedemptionService
 
     private function shortDate(string $date): string
     {
-        $timestamp = strtotime($date . ' 12:00:00');
-
-        if (false === $timestamp) {
-            return $date;
-        }
-
-        return function_exists('wp_date')
-            ? (string) wp_date('D j M', $timestamp)
-            : gmdate('D j M', $timestamp);
+        return Dates::dayLabel($date);
     }
 }

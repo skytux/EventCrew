@@ -173,6 +173,12 @@ be designing for a user who does not exist.
 | v1.0.10 | ✅ Signup/Cancel go through admin-ajax and re-render the board in place (no reload, scroll kept); buttons slightly smaller. Board extracted to a `signup-board.php` partial shared by the page and the AJAX response |
 | v1.0.11 | ✅ Notices restored as a fixed toast (visible after an in-place update wherever the list is scrolled); notice text centralized on `SignupController::noticeText()` |
 | v1.0.12 | ✅ Toast reparented to `<body>` so a transformed ancestor can't trap it; email sign-in also goes through AJAX; full tasks show a grey disabled "Full" button |
+| v1.3.0 | ✅ Self-service free tickets (bot `/ticket` + web profile redeem), per-date close-to-free-entry gate, manual credit grants ledger, board wind-down before midnight (`ends_at` predicate + hourly `refreshIfChanged`), and the reliability score made visible everywhere as a percentage with a "how your score works" table. Door tickets print their issue time and a live clock to make a stale screenshot detectable |
+| v1.3.1 | ✅ Fix: the ticket "Issued" time was double-timezoned (site offset applied to an already-local value); reformat the stored wall-clock as-is. Free-ticket claim now emails + DMs the link; `/roster` shows each person's standing; `/replace` copy + keyboard (name · date · task · event) clarified |
+| v1.3.2 | ✅ Group-issued `/roster` and `/ticket` answer by DM with a "Sent you a DM" breadcrumb, instead of DMing silently or being ignored |
+| v1.4.0 | ✅ Reputation outcome weights (completed/replacement/late/no-show) are editable in Settings and read from the database everywhere (`ReputationSettings`); standing is now rated on every finished task, not only completions. New organizer `/gift` command; `/start`, `/stop`, `/replace` work from a group (start deep-links into the DM, the others answer by DM) |
+| v1.4.1 | ✅ Granting a credit (People page or `/gift`) now emails + DMs the recipient via a shared `CreditGrantNotifier` |
+| v1.4.2 | ✅ Coherence pass: date/time formatting consolidated in `Dates` (timezone-safe by construction), name/@mention resolution in `PersonResolver`, the group breadcrumb in a `GroupBreadcrumb` trait; docs brought current |
 
 ## Done: v0.3 — verification, then the schema it exposed
 
