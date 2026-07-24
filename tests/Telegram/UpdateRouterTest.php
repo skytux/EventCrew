@@ -112,7 +112,8 @@ final class UpdateRouterTest extends TelegramTestCase
                 new RedemptionRepository(),
                 $this->standing(),
                 new FreeEntryGate(),
-                $this->client()
+                $this->client(),
+                new Mailer(new Logger())
             )
         );
     }

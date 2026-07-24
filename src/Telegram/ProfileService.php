@@ -67,6 +67,19 @@ final class ProfileService
             ),
         ];
 
+        if ($standing->creditBalance > 0) {
+            $lines[] = sprintf(
+                /* translators: %d: number of free-entry credits the person holds */
+                _n(
+                    'You have %d free-entry credit — send /ticket to spend it on a free ticket.',
+                    'You have %d free-entry credits — send /ticket to spend one on a free ticket.',
+                    $standing->creditBalance,
+                    'eventcrew'
+                ),
+                $standing->creditBalance
+            );
+        }
+
         $upcoming = $this->upcomingLines($person->id);
 
         $lines[] = '';

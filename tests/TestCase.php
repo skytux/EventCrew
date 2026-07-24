@@ -41,6 +41,11 @@ abstract class TestCase extends PHPUnitTestCase
     {
         Functions\when('__')->returnArg(1);
         Functions\when('_x')->returnArg(1);
+        // Returns the singular or plural template by count, the way WordPress
+        // does; sprintf in the caller still fills in the number.
+        Functions\when('_n')->alias(
+            static fn (string $single, string $plural, int $number): string => 1 === $number ? $single : $plural
+        );
         Functions\when('esc_html__')->returnArg(1);
         Functions\when('esc_attr__')->returnArg(1);
         Functions\when('sanitize_key')->alias(

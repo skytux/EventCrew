@@ -91,7 +91,8 @@ final class SignupControllerTest extends TestCase
                 new RedemptionRepository(),
                 new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
                 new FreeEntryGate(),
-                new TelegramClient(new Logger(), new DohResolver(new Logger()))
+                new TelegramClient(new Logger(), new DohResolver(new Logger())),
+                new Mailer(new Logger())
             )
         );
     }

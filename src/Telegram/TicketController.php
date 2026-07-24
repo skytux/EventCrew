@@ -231,15 +231,14 @@ final class TicketController
 
     private function formatIssued(string $issued): string
     {
-        $timestamp = strtotime($issued);
+        // The stored value is already local wall-clock time (current_time('mysql')
+        // when the ticket was made), so reformat its own digits and never run it
+        // back through a timezone - doing that moved the issue time by the
+        // site's UTC offset. The door only cares what the clock read when it was
+        // issued, not which zone that was.
+        $when = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $issued);
 
-        if (false === $timestamp) {
-            return $issued;
-        }
-
-        return function_exists('wp_date')
-            ? (string) wp_date('H:i, D j M', $timestamp)
-            : gmdate('H:i, D j M', $timestamp);
+        return false === $when ? $issued : $when->format('H:i, D j M');
     }
 
     private function document(string $title, string $inner): string

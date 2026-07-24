@@ -8,6 +8,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 
@@ -35,7 +36,8 @@ final class TicketRedemptionService
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
         private readonly FreeEntryGate $freeEntry,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly Mailer $mailer
     ) {
     }
 
@@ -133,15 +135,9 @@ final class TicketRedemptionService
             return;
         }
 
-        $this->telegram->answerCallbackQuery($callbackId, __('Credit spent — here’s your ticket.', 'eventcrew'));
-        $this->telegram->sendMessage(
-            $telegramUserId,
-            sprintf(
-                /* translators: %s: the ticket link */
-                __('🎟 Your free-entry ticket — show this at the door:%s', 'eventcrew'),
-                "\n" . $result['url']
-            )
-        );
+        // redeem() already DM'd (and emailed) the ticket link; the callback answer
+        // just closes the tap so the button stops spinning.
+        $this->telegram->answerCallbackQuery($callbackId, __('Credit spent — check your DM for the ticket.', 'eventcrew'));
     }
 
     /**
@@ -170,8 +166,60 @@ final class TicketRedemptionService
 
         [$eventPostId, $eventLabel] = $this->eventContext($date);
         $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel, $note);
+        $url = $this->ticketUrl($redemptionId);
 
-        return ['code' => self::TICKET_READY, 'url' => $this->ticketUrl($redemptionId)];
+        // The ticket link goes to both of the person's channels here, in the one
+        // place a credit is spent, so a claim from the bot and a claim from the
+        // web profile both leave the same email and DM record to fall back on.
+        $this->deliverTicket($personId, $date, $url);
+
+        return ['code' => self::TICKET_READY, 'url' => $url];
+    }
+
+    /**
+     * Sends the just-claimed ticket link to the person's Telegram DM and email,
+     * so they have it even if they close the page. Both sends are best-effort:
+     * TicketRedemptionService already recorded the redemption, and a missed
+     * confirmation must never undo a spent credit.
+     */
+    private function deliverTicket(int $personId, string $date, string $url): void
+    {
+        $person = $this->people->find($personId);
+
+        if (null === $person) {
+            return;
+        }
+
+        $when = $this->shortDate($date);
+
+        if (null !== $person->telegramChatId && $person->wantsBotDms()) {
+            $this->telegram->sendMessage(
+                $person->telegramChatId,
+                sprintf(
+                    /* translators: 1: event date, 2: the ticket link */
+                    __('🎟 Your free-entry ticket for %1$s — show this at the door:%2$s', 'eventcrew'),
+                    $when,
+                    "\n" . $url
+                )
+            );
+        }
+
+        if ($person->isDisabled()) {
+            return;
+        }
+
+        $this->mailer->toPerson(
+            $person->id,
+            $person->email,
+            __('Your free-entry ticket', 'eventcrew'),
+            sprintf(
+                /* translators: 1: name, 2: event date, 3: the ticket link */
+                __("Hi %1\$s,\n\nHere is your free-entry ticket for %2\$s. Show it at the door:\n%3\$s", 'eventcrew'),
+                $person->name(),
+                $when,
+                $url
+            )
+        );
     }
 
     /**
