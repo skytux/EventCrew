@@ -209,6 +209,21 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testGroupTicketCommandReachesTheTicketService(): void
+    {
+        // /ticket now works from the group too; an unlinked sender gets the
+        // set-up nudge back in the group they asked in, proof it routed.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/ticket',
+                'chat' => ['id' => -100, 'type' => 'supergroup'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testTicketCallbackReachesTheTicketService(): void
     {
         // Unlinked sender -> onSelect answers the callback with a refusal, proof

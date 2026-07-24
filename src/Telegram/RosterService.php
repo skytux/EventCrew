@@ -37,16 +37,15 @@ final class RosterService
     ) {
     }
 
-    public function onRosterCommand(int $telegramUserId, int $chatId): void
+    public function onRosterCommand(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
-        // Everything about the roster is private, so the whole reply - refusals
-        // included - goes to the asker's DM rather than the chat they typed in.
-        $reply = $telegramUserId;
-
+        // Refusals and nudges go back to wherever they asked, so they are visible
+        // even from the group; only the roster itself - the sensitive part - goes
+        // to the DM, with a breadcrumb in the group so the asker knows to look.
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person) {
-            $this->telegram->sendMessage($reply, $this->deniedMessage());
+            $this->telegram->sendMessage($chatId, $this->deniedMessage());
 
             return;
         }
@@ -54,19 +53,23 @@ final class RosterService
         $date = $this->defaultDate();
 
         if ('' === $date) {
-            $this->telegram->sendMessage($reply, __('No tasks are scheduled yet.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, __('No tasks are scheduled yet.', 'eventcrew'));
 
             return;
         }
 
         if (! $person->isOrganizer && ! $this->isRosteredOn($person->id, $date)) {
-            $this->telegram->sendMessage($reply, $this->deniedMessage());
+            $this->telegram->sendMessage($chatId, $this->deniedMessage());
 
             return;
         }
 
         $rendered = $this->render($date, $this->assembler->forDate($date), $person->isOrganizer);
-        $this->telegram->sendMessage($reply, $rendered['text'], $this->markup($rendered['keyboard']));
+        $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
+
+        if (! $isPrivate) {
+            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
+        }
     }
 
     /**

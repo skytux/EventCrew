@@ -96,7 +96,7 @@ final class UpdateRouter
         // /roster works from either the group or a private chat; the service
         // itself refuses anyone who is not a linked organizer.
         if ($this->isCommand($text, 'roster')) {
-            $this->roster->onRosterCommand($fromId, $chatId);
+            $this->roster->onRosterCommand($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -113,11 +113,12 @@ final class UpdateRouter
             return;
         }
 
-        // /ticket is a personal, credit-spending action, so it only answers in a
-        // private chat - never in the group, where it would leak who is spending
-        // credits and let a tap redeem someone else's.
-        if ($isPrivate && $this->isCommand($text, 'ticket')) {
-            $this->tickets->onTicketCommand($fromId, $chatId);
+        // /ticket is a personal, credit-spending action, so its answer - the
+        // spendable buttons - always goes to the DM, never into the group. Asked
+        // in the group it still works: the person gets the DM and a breadcrumb
+        // points them at it, the same way /me does.
+        if ($this->isCommand($text, 'ticket')) {
+            $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate);
 
             return;
         }
