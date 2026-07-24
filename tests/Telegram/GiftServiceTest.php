@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\GiftService;
 
 /**
@@ -15,13 +19,33 @@ use EventCrew\Telegram\GiftService;
  */
 final class GiftServiceTest extends TelegramTestCase
 {
+    /** @var array<int, array{to: string, body: string}> */
+    private array $mails = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mails = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
+            $this->mails[] = ['to' => $to, 'body' => $body];
+
+            return true;
+        });
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+    }
+
     private function service(): GiftService
     {
         return new GiftService(
             new PersonRepository(),
             new CreditGrantRepository(),
             $this->standing(),
-            $this->client()
+            $this->client(),
+            new CreditGrantNotifier(new Mailer(new Logger()), $this->client())
         );
     }
 
@@ -29,7 +53,9 @@ final class GiftServiceTest extends TelegramTestCase
     {
         // findByTelegramUserId(organizer), then people->find(recipient).
         $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Boss', 'is_organizer' => 1, 'telegram_user_id' => 555];
-        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'telegram_chat_id' => 999];
+        $this->wpdb->nextRows[] = [
+            'id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999,
+        ];
 
         $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gift:8']);
 
@@ -37,8 +63,9 @@ final class GiftServiceTest extends TelegramTestCase
         self::assertCount(1, $this->wpdb->inserts);
         self::assertSame(8, $this->wpdb->inserts[0]['data']['person_id']);
         self::assertSame(1, $this->wpdb->inserts[0]['data']['credits']);
-        // ...and the recipient was told, in their DM.
+        // ...and the recipient was told, on both channels.
         self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame('sam@example.com', $this->mails[0]['to']);
     }
 
     public function testANonOrganizerCannotGift(): void

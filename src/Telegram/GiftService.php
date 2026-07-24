@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\StandingCalculator;
 
 /**
@@ -29,7 +30,8 @@ final class GiftService
         private readonly PersonRepository $people,
         private readonly CreditGrantRepository $grants,
         private readonly StandingCalculator $standing,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly CreditGrantNotifier $notifier
     ) {
     }
 
@@ -156,12 +158,9 @@ final class GiftService
             )
         );
 
-        if (null !== $recipient->telegramChatId && $recipient->wantsBotDms()) {
-            $this->telegram->sendMessage(
-                $recipient->telegramChatId,
-                __('🎁 An organizer gave you a free-entry credit. Send /ticket to spend it on an event.', 'eventcrew')
-            );
-        }
+        // The recipient hears about it on both channels, the same as a gift from
+        // the People page.
+        $this->notifier->notify($recipient);
     }
 
     /**

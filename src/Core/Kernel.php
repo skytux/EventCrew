@@ -27,6 +27,7 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
+use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\ReminderCall;
@@ -429,12 +430,21 @@ final class Kernel
         );
 
         $this->container->singleton(
+            CreditGrantNotifier::class,
+            fn (Container $container) => new CreditGrantNotifier(
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             GiftService::class,
             fn (Container $container) => new GiftService(
                 $container->get(PersonRepository::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(StandingCalculator::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(CreditGrantNotifier::class)
             )
         );
 
@@ -537,7 +547,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
-                $container->get(CreditGrantRepository::class)
+                $container->get(CreditGrantRepository::class),
+                $container->get(CreditGrantNotifier::class)
             )
         );
 
