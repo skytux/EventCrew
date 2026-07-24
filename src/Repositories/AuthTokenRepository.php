@@ -89,6 +89,24 @@ final class AuthTokenRepository
         return (int) $row['person_id'];
     }
 
+    /**
+     * Deletes tokens that can no longer be used - past their expiry, or already
+     * consumed - so the table stays small now that a fresh sign-in token is
+     * issued for every email's account-link footer. Called from the hourly
+     * Scheduler heartbeat. Returns the number of rows removed.
+     */
+    public function purgeExpired(): int
+    {
+        global $wpdb;
+
+        return (int) $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$this->table()} WHERE expires_at < %s OR used_at IS NOT NULL",
+                current_time('mysql')
+            )
+        );
+    }
+
     private function hash(string $rawToken): string
     {
         return hash('sha256', $rawToken);

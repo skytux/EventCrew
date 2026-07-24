@@ -86,4 +86,18 @@ final class AuthTokenRepositoryTest extends TestCase
         // Never even queried the database.
         self::assertSame([], $this->wpdb->queries);
     }
+
+    public function testPurgeExpiredDeletesSpentAndExpiredTokens(): void
+    {
+        $this->wpdb->nextQueryResults[] = 4; // rows the DELETE reports removed
+
+        $removed = $this->repo()->purgeExpired();
+
+        self::assertSame(4, $removed);
+        self::assertCount(1, $this->wpdb->queries);
+        // A single DELETE that clears both the past-expiry and already-used rows.
+        self::assertStringContainsString('DELETE FROM', $this->wpdb->queries[0]);
+        self::assertStringContainsString('expires_at <', $this->wpdb->queries[0]);
+        self::assertStringContainsString('used_at IS NOT NULL', $this->wpdb->queries[0]);
+    }
 }

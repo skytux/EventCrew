@@ -32,16 +32,17 @@ final class MailerTest extends TestCase
         );
     }
 
-    public function testManageUrlPointsAtTheSignupPageWhenOneIsConfigured(): void
+    public function testManageUrlPointsAtTheSignupPageWithAOneTimeLoginToken(): void
     {
         $this->options['eventcrew_signup_page_id'] = 42;
 
         $url = (new Mailer(new Logger()))->manageUrl(7);
 
-        // Lands on the public profile page carrying a reusable manage token, so
-        // the person arrives signed in where the account controls live.
+        // Lands on the public profile page carrying a single-use sign-in token,
+        // so the person arrives signed in where the account controls live - and
+        // a forwarded old email can't be replayed as a login.
         self::assertStringStartsWith('https://site.test/signup/?', $url);
-        self::assertStringContainsString('eventcrew_manage=', $url);
+        self::assertStringContainsString('eventcrew_login=', $url);
         self::assertStringNotContainsString('wp-json', $url);
     }
 

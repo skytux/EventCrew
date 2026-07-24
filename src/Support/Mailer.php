@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\AuthTokenRepository;
+
 /**
  * One place every transactional email goes through, so they all share a footer
  * carrying the manage/disable link. Sending is inline `wp_mail`; a failure is
@@ -35,24 +37,30 @@ final class Mailer
 
     public function manageUrl(int $personId): string
     {
-        $token = SignedLink::sign('manage', $personId);
-
-        // Prefer the public signup page: the link then lands the person on their
-        // own signed-in profile, where pausing email or deleting their data now
-        // lives, rather than on a bare REST endpoint. SignupController trades the
-        // token for a session on that page load. The option name mirrors
-        // Web\PwaController::PAGE_OPTION, kept literal so this low-level Support
-        // class does not reach up into the Web layer.
+        // The option name mirrors Web\PwaController::PAGE_OPTION, kept literal so
+        // this low-level Support class does not reach up into the Web layer.
         $pageId = (int) get_option('eventcrew_signup_page_id', 0);
         $pageUrl = $pageId > 0 ? get_permalink($pageId) : false;
 
         if (is_string($pageUrl) && '' !== $pageUrl) {
-            return add_query_arg(['eventcrew_manage' => $token], $pageUrl);
+            // A single-use, 30-minute sign-in link - the same kind of token the
+            // login form mails - landing on the person's own profile page, where
+            // pausing email and deleting data live. One-time and short-lived so a
+            // forwarded or leaked old email can't be replayed as a login.
+            // Purpose/TTL mirror SignupController::LOGIN_PURPOSE / LOGIN_TTL; the
+            // param is consumed there on template_redirect.
+            $token = (new AuthTokenRepository())->issue($personId, 'web_login', 30 * MINUTE_IN_SECONDS);
+
+            return add_query_arg(['eventcrew_login' => $token], $pageUrl);
         }
 
-        // No public page configured (a Telegram-only install): fall back to the
-        // standalone self-service page served over REST.
-        return add_query_arg(['token' => $token], rest_url('eventcrew/v1/manage'));
+        // No public page (a Telegram-only install): fall back to the standalone
+        // self-service page over REST. It only ever offers pause/delete, never a
+        // session, so its stateless reusable token stays appropriately narrow.
+        return add_query_arg(
+            ['token' => SignedLink::sign('manage', $personId)],
+            rest_url('eventcrew/v1/manage')
+        );
     }
 
     public function ticketUrl(int $assignmentId): string
