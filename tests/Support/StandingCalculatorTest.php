@@ -87,6 +87,21 @@ final class StandingCalculatorTest extends TestCase
         self::assertTrue($standing->isAtRisk());
     }
 
+    public function testANoShowOnlyRecordIsRatedAtRisk(): void
+    {
+        // No completions at all, but three no-shows are three finished tasks -
+        // enough to rate. A zero score then puts them at risk instead of letting
+        // them hide behind "New" for never completing anything.
+        $this->queueHistory(array_fill(0, 3, AssignmentStatus::NO_SHOW));
+        $this->wpdb->nextVars[] = 0; // countFor: nothing redeemed
+
+        $standing = $this->calculator()->for(9);
+
+        self::assertSame(Standing::AT_RISK, $standing->level);
+        self::assertSame(0, $standing->completedCount);
+        self::assertSame(0, $standing->creditBalance);
+    }
+
     public function testTooLittleHistoryIsUnrated(): void
     {
         $this->queueHistory([AssignmentStatus::COMPLETED, AssignmentStatus::COMPLETED]);

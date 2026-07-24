@@ -84,13 +84,30 @@ final class ReputationTest extends TestCase
         self::assertLessThan(0.1, Reputation::score($flipped, self::NOW));
     }
 
-    public function testTooFewCompletionsIsUnrated(): void
+    public function testTooFewFinishedTasksIsUnrated(): void
     {
-        // Two completions is below the minimum, so the level is unrated even
+        // Two finished tasks is below the minimum, so the level is unrated even
         // though the score is a perfect 1.0.
         $level = Reputation::level(2, 1.0, Reputation::DEFAULT_THRESHOLD);
 
         self::assertSame(Standing::UNRATED, $level);
+    }
+
+    public function testScoredCountCountsEveryTerminalOutcome(): void
+    {
+        // Every finished outcome counts toward being rated - not just the
+        // completion - while the two in-progress statuses are left out.
+        $history = $this->history([
+            [AssignmentStatus::COMPLETED, $this->today()],
+            [AssignmentStatus::NO_SHOW, $this->today()],
+            [AssignmentStatus::LATE_CANCEL, $this->today()],
+            [AssignmentStatus::REPLACED, $this->today()],
+            [AssignmentStatus::SIGNED_UP, $this->today()],
+            [AssignmentStatus::ARRIVED, $this->today()],
+        ]);
+
+        self::assertSame(4, Reputation::scoredCount($history));
+        self::assertSame(1, Reputation::completedCount($history));
     }
 
     public function testThresholdSplitsGoodFromAtRisk(): void

@@ -21,8 +21,12 @@ use EventCrew\Models\Assignment;
  */
 final class Reputation
 {
-    /** Completed tasks below which there is too little history to rate. */
-    public const MIN_RATED_COMPLETED = 3;
+    /**
+     * Finished tasks below which there is too little history to rate - counting
+     * every terminal outcome, not just completions, so a run of no-shows or late
+     * cancellations rates (and so exposes) a person just as completions do.
+     */
+    public const MIN_RATED_TASKS = 3;
 
     /** Score at or above which a rated person is in good standing. */
     public const DEFAULT_THRESHOLD = 0.6;
@@ -66,7 +70,7 @@ final class Reputation
 
     /**
      * Recency-weighted average outcome in [0, 1]. No scored history yields 0,
-     * but the <MIN_RATED_COMPLETED rule (see level()) means that reads as
+     * but the <MIN_RATED_TASKS rule (see level()) means that reads as
      * "unrated", not "worst possible".
      *
      * @param array<int, array{assignment: Assignment, task_date: string}> $history
@@ -112,12 +116,36 @@ final class Reputation
     }
 
     /**
-     * The standing level: unrated until there is enough history, then good or
-     * at-risk on either side of the threshold.
+     * How many of the history's tasks reached a terminal outcome - completed,
+     * replaced, late-cancelled or no-showed. This is what the rating threshold is
+     * gated on, so a person is judged on everything they finished, not only the
+     * ones they completed.
+     *
+     * @param array<int, array{assignment: Assignment, task_date: string}> $history
      */
-    public static function level(int $completedCount, float $score, float $threshold): string
+    public static function scoredCount(array $history): int
     {
-        if ($completedCount < self::MIN_RATED_COMPLETED) {
+        $weights = self::weights();
+        $count = 0;
+
+        foreach ($history as $entry) {
+            if (array_key_exists($entry['assignment']->status, $weights)) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * The standing level: unrated until there is enough finished history, then
+     * good or at-risk on either side of the threshold. $ratedCount is the number
+     * of terminal outcomes (see scoredCount()), so no-shows and late cancels
+     * count toward being rated exactly as completions do.
+     */
+    public static function level(int $ratedCount, float $score, float $threshold): string
+    {
+        if ($ratedCount < self::MIN_RATED_TASKS) {
             return Standing::UNRATED;
         }
 

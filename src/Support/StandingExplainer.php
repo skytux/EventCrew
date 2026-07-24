@@ -53,9 +53,10 @@ final class StandingExplainer
         $lines[] = '';
         $lines[] = __('Recent tasks count for more than old ones.', 'eventcrew');
         $lines[] = sprintf(
-            /* translators: 1: number of completed tasks needed to be rated, 2: good-standing threshold percentage */
-            __('You’re rated once you’ve completed %1$d tasks; %2$d%% or higher is good standing.', 'eventcrew'),
-            Reputation::MIN_RATED_COMPLETED,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            /* translators: 1: number of finished tasks needed to be rated, 2: good-standing threshold percentage */
+            __('You’re rated after %1$d finished tasks — completions, replacements, late cancels and no-shows all count; %2$d%% or higher is good standing.', 'eventcrew'),
+            Reputation::MIN_RATED_TASKS,
             $threshold
         );
         $lines[] = sprintf(

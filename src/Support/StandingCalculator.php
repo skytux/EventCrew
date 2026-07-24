@@ -34,7 +34,9 @@ final class StandingCalculator
 
         $completed = Reputation::completedCount($history);
         $score = Reputation::score($history, $now);
-        $level = Reputation::level($completed, $score, $this->threshold());
+        // Rated on every finished task, not just completions, so a no-show record
+        // is judged; credits below still come from completions alone.
+        $level = Reputation::level(Reputation::scoredCount($history), $score, $this->threshold());
 
         $balance = Credits::balance(
             $completed,
