@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -65,15 +66,16 @@ final class CronFallbackTriggerTest extends TestCase
             $people,
             $telegram,
             new Logger(),
-            new ClaimNotifier($tasks, $assignments, $mailer, $telegram),
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository()))
+            new ClaimNotifier($tasks, $assignments, $mailer, $telegram, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())),
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()))
         );
 
         $scheduler = new Scheduler(
             new ReminderCall($tasks, $assignments, $people, $telegram, $mailer),
             new OpenTaskCall($tasks, $assignments, $people, $ledger, $mailer),
             new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
-            new BoardPush($tasks, $ledger, $board)
+            new BoardPush($tasks, $ledger, $board),
+            $board
         );
 
         return new CronFallbackTrigger($scheduler);

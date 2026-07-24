@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\StandingExplainer;
 
 /**
  * /me and /myhistory: a person's own standing, what they're signed up for next,
@@ -53,10 +54,10 @@ final class ProfileService
 
         $lines = [
             sprintf(
-                /* translators: 1: name, 2: standing level */
+                /* translators: 1: name, 2: standing level and score */
                 __('%1$s — %2$s', 'eventcrew'),
                 $person->name(),
-                $standing->levelLabel()
+                $standing->ratedSummary()
             ),
             sprintf(
                 /* translators: 1: completed count, 2: credit balance */
@@ -76,6 +77,9 @@ final class ProfileService
         } else {
             $lines[] = __('Nothing on your calendar yet — tap a task on the board to sign up.', 'eventcrew');
         }
+
+        $lines[] = '';
+        $lines = array_merge($lines, StandingExplainer::lines());
 
         $lines[] = '';
         $lines[] = __('Send /myhistory to see everything you’ve done.', 'eventcrew');

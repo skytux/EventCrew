@@ -30,4 +30,12 @@ final class CreditsTest extends TestCase
         // point it is recorded - but the balance still must not read below zero.
         self::assertSame(0, Credits::balance(2, 5));
     }
+
+    public function testGrantedCreditsAreAddedOnTopOfEarned(): void
+    {
+        // A hand-granted bonus adds to the earned-minus-redeemed balance.
+        self::assertSame(1, Credits::balance(0, 0, 1));  // nothing earned, one granted
+        self::assertSame(3, Credits::balance(4, 0, 1));  // two earned + one granted
+        self::assertSame(1, Credits::balance(4, 2, 1));  // two earned - two spent + one granted
+    }
 }

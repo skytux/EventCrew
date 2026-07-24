@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BoardService;
+
 /**
  * The heartbeat: one hourly WP-Cron event that runs the scheduled sends - the
  * task reminders and the automated open-task call - in bounded batches.
@@ -34,7 +36,8 @@ final class Scheduler
         private readonly ReminderCall $reminders,
         private readonly OpenTaskCall $openTasks,
         private readonly StandingNotice $standingNotices,
-        private readonly BoardPush $boardPush
+        private readonly BoardPush $boardPush,
+        private readonly BoardService $board
     ) {
     }
 
@@ -61,6 +64,10 @@ final class Scheduler
         $this->openTasks->sendDue(self::OPEN_TASK_LEAD_HOURS, self::BATCH);
         $this->standingNotices->sendDue(self::BATCH);
         $this->boardPush->run();
+
+        // Wind the board down as a day's tasks finish: edit it in place, but only
+        // when what it shows has changed since the last tick.
+        $this->board->refreshIfChanged();
 
         update_option(self::LAST_RUN_OPTION, time());
     }

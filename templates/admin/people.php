@@ -5,6 +5,7 @@
  *
  * @var \EventCrew\Admin\PeopleListTable $table Prepared list table of people.
  * @var \EventCrew\Models\Person|null $editing Person open in the editor, if any.
+ * @var \EventCrew\Support\Standing|null $editing_standing Standing of the edited person.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
  */
@@ -150,11 +151,36 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                                     <?php endif; ?>
                                 </td>
                             </tr>
+                            <?php if (null !== $editing_standing) : ?>
+                                <tr>
+                                    <td><?php esc_html_e('Standing', 'eventcrew'); ?></td>
+                                    <td><?php echo esc_html($editing_standing->ratedSummary()); ?></td>
+                                </tr>
+                                <tr>
+                                    <td><?php esc_html_e('Free-entry credits', 'eventcrew'); ?></td>
+                                    <td><?php echo esc_html((string) $editing_standing->creditBalance); ?></td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                     <p class="description">
                         <?php esc_html_e('Verification and open-task consent can only be given by the person themselves, so neither can be set from this screen.', 'eventcrew'); ?>
                     </p>
+
+                    <h3><?php esc_html_e('Give a free-entry credit', 'eventcrew'); ?></h3>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <input type="hidden" name="action" value="eventcrew_grant_credit">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $editing->id); ?>">
+                        <div class="form-field">
+                            <label for="eventcrew-grant-note"><?php esc_html_e('Reason (optional)', 'eventcrew'); ?></label>
+                            <input name="grant_note" id="eventcrew-grant-note" type="text" placeholder="<?php esc_attr_e('e.g. covered a cleaning task', 'eventcrew'); ?>">
+                        </div>
+                        <p class="submit">
+                            <button type="submit" class="button"><?php esc_html_e('Grant 1 credit', 'eventcrew'); ?></button>
+                        </p>
+                        <p class="description"><?php esc_html_e('A one-off bonus, on top of the credit earned for every two completed tasks.', 'eventcrew'); ?></p>
+                    </form>
                 <?php endif; ?>
             </div>
         </div>

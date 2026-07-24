@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Web;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -15,10 +16,12 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
@@ -71,16 +74,25 @@ final class SignupControllerTest extends TestCase
             new AuthTokenRepository(),
             new TaskRepository(),
             $assignments,
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository())),
-            new StandingCalculator($assignments, new RedemptionRepository()),
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())),
+            new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
             new Mailer(new Logger()),
             new ClaimNotifier(
                 new TaskRepository(),
                 $assignments,
                 new Mailer(new Logger()),
-                new TelegramClient(new Logger(), new DohResolver(new Logger()))
+                new TelegramClient(new Logger(), new DohResolver(new Logger())),
+                new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())
             ),
-            new Turnstile(new Logger())
+            new Turnstile(new Logger()),
+            new TicketRedemptionService(
+                $people,
+                new TaskRepository(),
+                new RedemptionRepository(),
+                new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
+                new FreeEntryGate(),
+                new TelegramClient(new Logger(), new DohResolver(new Logger()))
+            )
         );
     }
 

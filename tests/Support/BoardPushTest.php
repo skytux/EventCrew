@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -38,8 +39,8 @@ final class BoardPushTest extends TelegramTestCase
             new PersonRepository(),
             $telegram,
             new Logger(),
-            new ClaimNotifier($tasks, $assignments, new Mailer(new Logger()), $telegram),
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository()))
+            new ClaimNotifier($tasks, $assignments, new Mailer(new Logger()), $telegram, $this->standing()),
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()))
         );
 
         return new BoardPush($tasks, new NotificationsRepository(), $board);

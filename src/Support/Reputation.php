@@ -47,6 +47,24 @@ final class Reputation
     }
 
     /**
+     * The same weights as whole percentages against a human label for each
+     * outcome, in best-to-worst order - the single source of truth behind the
+     * "how your score works" table shown in /me and on the web profile. Kept
+     * here so the explanation can never drift from the scoring.
+     *
+     * @return array<string, int> label => percent
+     */
+    public static function outcomeWeights(): array
+    {
+        return [
+            __('Completed the task', 'eventcrew') => 100,
+            __('Found a replacement', 'eventcrew') => 80,
+            __('Cancelled late', 'eventcrew') => 40,
+            __('No-show', 'eventcrew') => 0,
+        ];
+    }
+
+    /**
      * Recency-weighted average outcome in [0, 1]. No scored history yields 0,
      * but the <MIN_RATED_COMPLETED rule (see level()) means that reads as
      * "unrated", not "worst possible".

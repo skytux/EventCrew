@@ -7,8 +7,10 @@ namespace EventCrew\Tests\Telegram;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
@@ -17,6 +19,7 @@ use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
+use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use Brain\Monkey\Functions;
 use EventCrew\Telegram\WebhookController;
@@ -34,11 +37,11 @@ final class WebhookControllerTest extends TelegramTestCase
                 new PersonRepository(),
                 $this->client(),
                 new Logger(),
-                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
+                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
                 $this->signup()
             ),
             new RosterService(
-                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
+                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository(), $this->standing()),
                 new TaskRepository(),
                 new PersonRepository(),
                 new AssignmentRepository(),
@@ -54,7 +57,7 @@ final class WebhookControllerTest extends TelegramTestCase
                     new PersonRepository(),
                     $this->client(),
                     new Logger(),
-                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client()),
+                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
                     $this->signup()
                 ),
                 $this->client()
@@ -64,6 +67,14 @@ final class WebhookControllerTest extends TelegramTestCase
                 new AssignmentRepository(),
                 new TaskRepository(),
                 $this->standing(),
+                $this->client()
+            ),
+            new TicketRedemptionService(
+                new PersonRepository(),
+                new TaskRepository(),
+                new RedemptionRepository(),
+                $this->standing(),
+                new FreeEntryGate(),
                 $this->client()
             )
         );

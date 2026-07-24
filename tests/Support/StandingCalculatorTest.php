@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Standing;
@@ -26,7 +27,8 @@ final class StandingCalculatorTest extends TestCase
     {
         return new StandingCalculator(
             new AssignmentRepository(),
-            new RedemptionRepository()
+            new RedemptionRepository(),
+            new CreditGrantRepository()
         );
     }
 

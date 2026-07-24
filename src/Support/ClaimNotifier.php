@@ -28,7 +28,8 @@ final class ClaimNotifier
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
         private readonly Mailer $mailer,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly StandingCalculator $standing
     ) {
     }
 
@@ -44,6 +45,8 @@ final class ClaimNotifier
             return;
         }
 
+        $standingLine = $this->standingLine($person);
+
         $this->dm(
             $person,
             sprintf(
@@ -53,7 +56,7 @@ final class ClaimNotifier
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task)
-            )
+            ) . "\n\n" . $standingLine
         );
 
         if ($person->isDisabled()) {
@@ -70,14 +73,15 @@ final class ClaimNotifier
                 $task->eventName()
             ),
             sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link */
+                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link, 6: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or /replace to hand it to someone.", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\nCan't make it? Open the bot and tap the task to cancel, or /replace to hand it to someone.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task),
-                $this->mailer->ticketUrl($assignment->id)
+                $this->mailer->ticketUrl($assignment->id),
+                $standingLine
             )
         );
     }
@@ -99,6 +103,8 @@ final class ClaimNotifier
             ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time.", 'eventcrew')
             : __('Thanks for the notice.', 'eventcrew');
 
+        $standingLine = $this->standingLine($person);
+
         $this->dm(
             $person,
             sprintf(
@@ -110,7 +116,7 @@ final class ClaimNotifier
                 $task->roleLabel(),
                 $task->eventName(),
                 $note
-            )
+            ) . "\n\n" . $standingLine
         );
 
         if ($person->isDisabled()) {
@@ -127,13 +133,14 @@ final class ClaimNotifier
                 $task->eventName()
             ),
             sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: standing note */
+                /* translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s\n\n%5\$s", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
-                $note
+                $note,
+                $standingLine
             )
         );
     }
@@ -150,6 +157,23 @@ final class ClaimNotifier
         }
 
         $this->telegram->sendMessage($person->telegramChatId, $text);
+    }
+
+    /**
+     * A one-line "where you stand" note appended to every confirmation, so a
+     * person sees their reliability and free-entry credits move as they sign up
+     * and cancel - the same figures the organizer sees on the People list.
+     */
+    private function standingLine(Person $person): string
+    {
+        $standing = $this->standing->for($person->id);
+
+        return sprintf(
+            /* translators: 1: standing level and score, 2: number of free-entry credits */
+            __('Your standing: %1$s · %2$d free-entry credits.', 'eventcrew'),
+            $standing->ratedSummary(),
+            $standing->creditBalance
+        );
     }
 
     private function whenText(Task $task): string

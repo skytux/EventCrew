@@ -29,6 +29,9 @@ final class BoardService
     /** Stores the live board's chat and message ids: {chat_id, message_id}. */
     public const BOARD_OPTION = 'eventcrew_telegram_board';
 
+    /** Hash of the last-rendered board, so the hourly tick only edits on change. */
+    public const BOARD_HASH_OPTION = 'eventcrew_telegram_board_hash';
+
     /** Cached from getMe, for the "set me up" deep-link button. */
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
@@ -108,6 +111,39 @@ final class BoardService
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
 
         $this->storeBoard($chatId, $result);
+    }
+
+    /**
+     * Edits the board in place, but only when what it would show has actually
+     * changed since last time - the hourly heartbeat calls this so a day's board
+     * winds down (a finished task drops off) before midnight, without an editing
+     * request every hour when nothing has moved. The content hash is the guard.
+     *
+     * Data-change refreshes (a join, a task edit) go through refresh() directly
+     * and do not touch the hash, so at worst this makes one redundant edit after
+     * such a change, which Telegram answers with a harmless "not modified".
+     */
+    public function refreshIfChanged(): void
+    {
+        if (! $this->telegram->isConfigured()) {
+            return;
+        }
+
+        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+
+        if (0 === $chatId) {
+            return;
+        }
+
+        $rendered = $this->render();
+        $hash = md5($rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard']));
+
+        if ($hash === (string) get_option(self::BOARD_HASH_OPTION, '')) {
+            return;
+        }
+
+        $this->refresh();
+        update_option(self::BOARD_HASH_OPTION, $hash);
     }
 
     /**

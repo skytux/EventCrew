@@ -4,20 +4,34 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\StandingCalculator;
 use EventCrew\Tests\TestCase;
 
 final class RosterAssemblerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Each rostered person's standing is now composed too, which reads the
+        // reputation threshold option; the default is fine for these cases.
+        Functions\when('get_option')->justReturn(false);
+    }
+
     private function assembler(): RosterAssembler
     {
         return new RosterAssembler(
             new TaskRepository(),
             new AssignmentRepository(),
-            new PersonRepository()
+            new PersonRepository(),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );
     }
 

@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SignupService;
@@ -90,7 +91,7 @@ abstract class TelegramTestCase extends TestCase
      */
     protected function standing(): StandingCalculator
     {
-        return new StandingCalculator(new AssignmentRepository(), new RedemptionRepository());
+        return new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository());
     }
 
     /**

@@ -7,10 +7,13 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -48,7 +51,8 @@ final class ClaimNotifierTest extends TestCase
             new TaskRepository(),
             new AssignmentRepository(),
             new Mailer(new Logger()),
-            new TelegramClient(new Logger(), new DohResolver(new Logger()))
+            new TelegramClient(new Logger(), new DohResolver(new Logger())),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );
     }
 

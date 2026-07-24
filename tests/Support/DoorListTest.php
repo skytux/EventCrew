@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -33,7 +34,7 @@ final class DoorListTest extends TestCase
             new AssignmentRepository(),
             new PersonRepository(),
             new RedemptionRepository(),
-            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository())
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );
     }
 

@@ -37,8 +37,9 @@ final class RedemptionRepository
     }
 
     /**
-     * Records a credit spent for entry to the event on $date. The caller
-     * (the door list) re-checks the balance first; this is the write only.
+     * Records a credit spent for entry to the event on $date and returns the new
+     * row's id (which the self-service ticket signs its link with). The caller
+     * re-checks the balance first; this is the write only.
      */
     public function record(
         int $personId,
@@ -46,7 +47,7 @@ final class RedemptionRepository
         ?int $eventPostId = null,
         string $eventLabel = '',
         string $note = ''
-    ): void {
+    ): int {
         global $wpdb;
 
         $wpdb->insert(
@@ -60,6 +61,24 @@ final class RedemptionRepository
                 'note' => $note,
             ]
         );
+
+        return (int) $wpdb->insert_id;
+    }
+
+    /**
+     * One redemption by id, or null when it is gone - what the self-service
+     * ticket page reads to know its credit is still live.
+     */
+    public function find(int $id): ?Redemption
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id = %d", $id),
+            ARRAY_A
+        );
+
+        return is_array($row) ? Redemption::fromRow($row) : null;
     }
 
     /**

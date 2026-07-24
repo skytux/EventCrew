@@ -23,7 +23,7 @@ final class RosterServiceTest extends TelegramTestCase
     private function service(): RosterService
     {
         return new RosterService(
-            new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository()),
+            new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository(), $this->standing()),
             new TaskRepository(),
             new PersonRepository(),
             new AssignmentRepository(),

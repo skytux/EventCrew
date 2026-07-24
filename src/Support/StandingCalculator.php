@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 
 /**
  * The one place a person's Standing is assembled from storage: their history
- * (for the reputation weighting) and their redemptions (for the credit
- * balance). Every surface - the People list, the door list, the bot's join gate
- * and /me - reads through here, so they can never disagree about where someone
- * stands.
+ * (for the reputation weighting), their redemptions and any hand-granted bonus
+ * (for the credit balance). Every surface - the People list, the door list, the
+ * bot's join gate and /me - reads through here, so they can never disagree about
+ * where someone stands.
  */
 final class StandingCalculator
 {
@@ -21,7 +22,8 @@ final class StandingCalculator
 
     public function __construct(
         private readonly AssignmentRepository $assignments,
-        private readonly RedemptionRepository $redemptions
+        private readonly RedemptionRepository $redemptions,
+        private readonly CreditGrantRepository $grants
     ) {
     }
 
@@ -34,7 +36,11 @@ final class StandingCalculator
         $score = Reputation::score($history, $now);
         $level = Reputation::level($completed, $score, $this->threshold());
 
-        $balance = Credits::balance($completed, $this->redemptions->countFor($personId));
+        $balance = Credits::balance(
+            $completed,
+            $this->redemptions->countFor($personId),
+            $this->grants->sumFor($personId)
+        );
 
         return new Standing($level, $score, $completed, $balance);
     }
