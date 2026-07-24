@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
-use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
@@ -42,30 +41,32 @@ final class SlotFreedNoticeTest extends TestCase
     {
         return new SlotFreedNotice(
             new TaskRepository(),
-            new AssignmentRepository(),
             new PersonRepository(),
             new Mailer(new Logger()),
             new TelegramClient(new Logger(), new DohResolver(new Logger()))
         );
     }
 
-    public function testBroadcastsToEligibleCrewExceptTheCancellerAndTheBusy(): void
+    public function testBroadcastsToEveryoneExceptTheCanceller(): void
     {
         $this->wpdb->nextRows[] = [
             'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3,
             'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => null, 'ends_at' => null,
         ]; // tasks->find
-        $this->wpdb->nextCols[] = [8]; // personIdsAssignedOn: person 8 is already on that day
         $this->wpdb->nextResults[] = [ // activeEmailRecipients
             ['id' => 7, 'email' => 'canceller@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
-            ['id' => 8, 'email' => 'busy@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+            ['id' => 8, 'email' => 'working@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
             ['id' => 9, 'email' => 'free@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
         ];
 
         $this->notice()->announce(5, 7); // canceller is person 7
 
-        // Only person 9 is told - 7 just cancelled, 8 is already working that day.
-        self::assertCount(1, $this->mails);
-        self::assertSame('free@example.com', $this->mails[0]['to']);
+        // Everyone but the canceller is told - including person 8, who is already
+        // working that day and may want a second, non-overlapping shift.
+        self::assertCount(2, $this->mails);
+        $recipients = array_column($this->mails, 'to');
+        self::assertContains('working@example.com', $recipients);
+        self::assertContains('free@example.com', $recipients);
+        self::assertNotContains('canceller@example.com', $recipients);
     }
 }
