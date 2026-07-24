@@ -12,6 +12,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -121,7 +122,8 @@ final class UpdateRouterTest extends TelegramTestCase
                 new PersonRepository(),
                 new CreditGrantRepository(),
                 $this->standing(),
-                $this->client()
+                $this->client(),
+                new CreditGrantNotifier(new Mailer(new Logger()), $this->client())
             )
         );
     }

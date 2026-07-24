@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\StandingCalculator;
 
 final class PeoplePage
@@ -21,7 +22,8 @@ final class PeoplePage
         private readonly AssignmentRepository $assignments,
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
-        private readonly CreditGrantRepository $grants
+        private readonly CreditGrantRepository $grants,
+        private readonly CreditGrantNotifier $notifier
     ) {
     }
 
@@ -119,11 +121,16 @@ final class PeoplePage
         $note = isset($_POST['grant_note']) ? sanitize_text_field(wp_unslash($_POST['grant_note'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        if ($personId <= 0 || null === $this->people->find($personId)) {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person) {
             Admin::redirectTo(self::PAGE_SLUG, __('That credit could not be granted.', 'eventcrew'), 'error');
         }
 
         $this->grants->record($personId, 1, $note, get_current_user_id());
+
+        // Tell them on both channels, the same as a gift from the bot's /gift.
+        $this->notifier->notify($person);
 
         Admin::redirectTo(
             self::PAGE_SLUG,
