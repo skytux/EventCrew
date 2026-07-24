@@ -564,7 +564,6 @@ final class Kernel
             SlotFreedNotice::class,
             fn (Container $container) => new SlotFreedNotice(
                 $container->get(TaskRepository::class),
-                $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class)

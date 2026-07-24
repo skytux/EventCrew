@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
-use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\TelegramClient;
@@ -14,16 +13,15 @@ use EventCrew\Telegram\TelegramClient;
  * filling - this tells the crew, on both channels, so someone can step in.
  *
  * Listens on the eventcrew/slot_freed action that ClaimNotifier fires. The
- * audience is the same as the open-task call (active recipients not already on
- * that day), minus the person who just cancelled, and it honours each person's
- * open-task preference so a fill-call and the scheduled open-task call share one
- * on/off switch.
+ * audience is every active recipient except the person who just cancelled -
+ * someone already working that day is deliberately still told, since they may
+ * want a second, non-overlapping slot. It honours each person's open-task
+ * preference so a fill-call and the scheduled open-task call share one switch.
  */
 final class SlotFreedNotice
 {
     public function __construct(
         private readonly TaskRepository $tasks,
-        private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
         private readonly TelegramClient $telegram
@@ -43,7 +41,6 @@ final class SlotFreedNotice
             return;
         }
 
-        $busy = array_flip($this->assignments->personIdsAssignedOn($task->taskDate));
         $prefs = new NotificationPreferences();
 
         $when = '' === $task->timeRange() ? $task->taskDate : $task->taskDate . ' ' . $task->timeRange();
@@ -56,8 +53,8 @@ final class SlotFreedNotice
         );
 
         foreach ($this->people->activeEmailRecipients() as $person) {
-            // Skip the person who just cancelled and anyone already on that day.
-            if ($person->id === $cancellerId || isset($busy[$person->id])) {
+            // Skip only the person who just cancelled this slot.
+            if ($person->id === $cancellerId) {
                 continue;
             }
 
