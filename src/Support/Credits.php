@@ -20,9 +20,16 @@ final class Credits
      * Earned plus granted less redeemed, never negative. Redemption is guarded
      * against overspending at the point it is recorded, so a negative here would
      * only come from hand-edited data - clamp it rather than surface nonsense.
+     *
+     * @param int $tasksPerCredit Completed tasks per earned credit; the shipped
+     *        default, or an organizer's configured value (never below 1).
      */
-    public static function balance(int $completed, int $redeemed, int $granted = 0): int
-    {
-        return max(0, intdiv($completed, self::TASKS_PER_CREDIT) + $granted - $redeemed);
+    public static function balance(
+        int $completed,
+        int $redeemed,
+        int $granted = 0,
+        int $tasksPerCredit = self::TASKS_PER_CREDIT
+    ): int {
+        return max(0, intdiv($completed, max(1, $tasksPerCredit)) + $granted - $redeemed);
     }
 }

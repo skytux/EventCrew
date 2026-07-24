@@ -12,6 +12,9 @@
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
+ * @var int $tasks_per_credit Completed tasks a member works to earn one free-entry credit.
+ * @var int $min_rated_tasks Finished tasks before a member is rated rather than "New".
+ * @var int $reputation_half_life Days for an outcome to count half as much toward the score.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
@@ -301,6 +304,44 @@ if (! defined('ABSPATH')) {
                     <?php endforeach; ?>
                     <p class="description">
                         <?php esc_html_e('What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-tasks-per-credit"><?php esc_html_e('Tasks per credit', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input type="number" id="eventcrew-tasks-per-credit" name="tasks_per_credit"
+                        value="<?php echo esc_attr((string) $tasks_per_credit); ?>" min="1" step="1" style="width:5em">
+                    <p class="description">
+                        <?php esc_html_e('Completed tasks a member works to earn one free-entry credit. Default 2.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-min-rated-tasks"><?php esc_html_e('Rated after', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input type="number" id="eventcrew-min-rated-tasks" name="min_rated_tasks"
+                        value="<?php echo esc_attr((string) $min_rated_tasks); ?>" min="1" step="1" style="width:5em">
+                    <?php esc_html_e('finished tasks', 'eventcrew'); ?>
+                    <p class="description">
+                        <?php esc_html_e('Below this a member is “New” (unrated); at or above it they are scored. Default 3.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-half-life"><?php esc_html_e('Recency half-life', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input type="number" id="eventcrew-half-life" name="reputation_half_life"
+                        value="<?php echo esc_attr((string) $reputation_half_life); ?>" min="1" step="1" style="width:6em">
+                    <?php esc_html_e('days', 'eventcrew'); ?>
+                    <p class="description">
+                        <?php esc_html_e('An outcome this many days old counts half as much toward the score as a same-day one. Default 180.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

@@ -84,6 +84,30 @@ final class ReputationTest extends TestCase
         self::assertLessThan(0.1, Reputation::score($flipped, self::NOW));
     }
 
+    public function testAShorterHalfLifeAgesOutcomesFaster(): void
+    {
+        // One old completion, one fresh no-show. With the default 180-day
+        // half-life the old completion still holds the score up; with a 30-day
+        // half-life it has decayed away and the fresh no-show dominates.
+        $history = $this->history([
+            [AssignmentStatus::COMPLETED, $this->daysAgo(180)],
+            [AssignmentStatus::NO_SHOW, $this->today()],
+        ]);
+
+        self::assertGreaterThan(
+            Reputation::score($history, self::NOW, null, 30),
+            Reputation::score($history, self::NOW, null, 180)
+        );
+    }
+
+    public function testAHigherMinRatedTasksKeepsAPersonUnratedLonger(): void
+    {
+        // Three finished tasks is rated by default, but unrated when the minimum
+        // is raised to five.
+        self::assertSame(Standing::GOOD, Reputation::level(3, 1.0, 0.6));
+        self::assertSame(Standing::UNRATED, Reputation::level(3, 1.0, 0.6, 5));
+    }
+
     public function testCustomWeightsChangeTheScore(): void
     {
         // A no-show is worthless by default, but an install that weights it at

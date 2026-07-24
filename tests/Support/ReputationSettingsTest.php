@@ -64,4 +64,35 @@ final class ReputationSettingsTest extends TestCase
 
         self::assertSame(Reputation::DEFAULT_THRESHOLD, (new ReputationSettings())->threshold());
     }
+
+    public function testRatingAndCreditKnobsDefaultThenReadStoredValues(): void
+    {
+        $settings = new ReputationSettings();
+
+        // Unset: the shipped defaults.
+        self::assertSame(2, $settings->tasksPerCredit());
+        self::assertSame(3, $settings->minRatedTasks());
+        self::assertSame(180, $settings->halfLifeDays());
+
+        // Stored sane values are read back.
+        $this->options[ReputationSettings::TASKS_PER_CREDIT_OPTION] = 3;
+        $this->options[ReputationSettings::MIN_RATED_TASKS_OPTION] = 5;
+        $this->options[ReputationSettings::HALF_LIFE_OPTION] = 90;
+
+        self::assertSame(3, $settings->tasksPerCredit());
+        self::assertSame(5, $settings->minRatedTasks());
+        self::assertSame(90, $settings->halfLifeDays());
+    }
+
+    public function testAnInvalidKnobFallsBackToItsDefault(): void
+    {
+        // A blanket non-integer stub (as some tests use) must not read as 1.
+        $this->options[ReputationSettings::TASKS_PER_CREDIT_OPTION] = 0.6;
+        $this->options[ReputationSettings::MIN_RATED_TASKS_OPTION] = 0;
+
+        $settings = new ReputationSettings();
+
+        self::assertSame(2, $settings->tasksPerCredit());
+        self::assertSame(3, $settings->minRatedTasks());
+    }
 }

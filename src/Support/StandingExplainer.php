@@ -45,7 +45,8 @@ final class StandingExplainer
             );
         }
 
-        $threshold = (int) round((new ReputationSettings())->threshold() * 100);
+        $settings = new ReputationSettings();
+        $threshold = (int) round($settings->threshold() * 100);
 
         $lines[] = '';
         $lines[] = __('Recent tasks count for more than old ones.', 'eventcrew');
@@ -53,13 +54,13 @@ final class StandingExplainer
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             /* translators: 1: number of finished tasks needed to be rated, 2: good-standing threshold percentage */
             __('You’re rated after %1$d finished tasks — completions, replacements, late cancels and no-shows all count; %2$d%% or higher is good standing.', 'eventcrew'),
-            Reputation::MIN_RATED_TASKS,
+            $settings->minRatedTasks(),
             $threshold
         );
         $lines[] = sprintf(
             /* translators: %d: completed tasks needed to earn one free-entry credit */
             __('You earn 1 free-entry credit for every %d completed tasks.', 'eventcrew'),
-            Credits::TASKS_PER_CREDIT
+            $settings->tasksPerCredit()
         );
 
         return $lines;

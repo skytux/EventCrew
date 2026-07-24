@@ -23,6 +23,15 @@ final class ReputationSettings
     /** Per-outcome weights, stored as whole percentages keyed by status slug. */
     public const WEIGHTS_OPTION = 'eventcrew_reputation_weights';
 
+    /** Completed tasks per earned free-entry credit. */
+    public const TASKS_PER_CREDIT_OPTION = 'eventcrew_tasks_per_credit';
+
+    /** Finished tasks before a person is rated rather than "New". */
+    public const MIN_RATED_TASKS_OPTION = 'eventcrew_min_rated_tasks';
+
+    /** Days for an outcome to count half as much toward the score. */
+    public const HALF_LIFE_OPTION = 'eventcrew_reputation_half_life_days';
+
     /**
      * The good-standing threshold as a fraction in (0, 1]. A stored value outside
      * that range would make the join gate never or always fire, so fall back to
@@ -62,6 +71,43 @@ final class ReputationSettings
         }
 
         return $weights;
+    }
+
+    /** Completed tasks per earned free-entry credit (never below 1). */
+    public function tasksPerCredit(): int
+    {
+        return $this->positiveInt(self::TASKS_PER_CREDIT_OPTION, Credits::TASKS_PER_CREDIT);
+    }
+
+    /** Finished tasks before a person is rated (never below 1). */
+    public function minRatedTasks(): int
+    {
+        return $this->positiveInt(self::MIN_RATED_TASKS_OPTION, Reputation::MIN_RATED_TASKS);
+    }
+
+    /** Recency half-life in days (never below 1). */
+    public function halfLifeDays(): int
+    {
+        return $this->positiveInt(self::HALF_LIFE_OPTION, Reputation::HALF_LIFE_DAYS);
+    }
+
+    /**
+     * A stored positive integer option, or the default when it is missing or not
+     * a sane value >= 1. Defaulting (rather than clamping to 1) keeps a stray
+     * non-integer - a test's blanket get_option stub, say - reading as the
+     * shipped value, not as 1.
+     */
+    private function positiveInt(string $option, int $default): int
+    {
+        $value = get_option($option, $default);
+
+        if (! is_numeric($value)) {
+            return $default;
+        }
+
+        $int = (int) $value;
+
+        return $int >= 1 ? $int : $default;
     }
 
     /**

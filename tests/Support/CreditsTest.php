@@ -38,4 +38,13 @@ final class CreditsTest extends TestCase
         self::assertSame(3, Credits::balance(4, 0, 1));  // two earned + one granted
         self::assertSame(1, Credits::balance(4, 2, 1));  // two earned - two spent + one granted
     }
+
+    public function testAConfiguredRatioChangesWhatIsEarned(): void
+    {
+        // Three completed tasks per credit: six earns two, five earns one.
+        self::assertSame(2, Credits::balance(6, 0, 0, 3));
+        self::assertSame(1, Credits::balance(5, 0, 0, 3));
+        // A nonsensical zero ratio is floored at one, never a divide-by-zero.
+        self::assertSame(4, Credits::balance(4, 0, 0, 0));
+    }
 }
