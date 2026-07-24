@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\Turnstile;
@@ -67,6 +68,10 @@ final class SignupBoardView
             'my_tickets' => null === $person
                 ? ['upcoming' => [], 'past' => []]
                 : (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id),
+            // Account management (pause emails / delete data) reuses the signed
+            // /manage endpoint the emails link to - the profile just posts to it.
+            'manage_endpoint' => rest_url('eventcrew/v1/manage'),
+            'manage_token' => null === $person ? '' : SignedLink::sign('manage', $person->id),
         ];
     }
 

@@ -31,6 +31,8 @@ $eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
 $eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
     ? $view['my_tickets']
     : ['upcoming' => [], 'past' => []];
+$eventcrew_manage_endpoint = (string) ($view['manage_endpoint'] ?? '');
+$eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
@@ -283,6 +285,24 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </table>
                     <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on both channels.', 'eventcrew'); ?></p>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
+                </form>
+            </details>
+        <?php endif; ?>
+
+        <?php if ('' !== $eventcrew_manage_token) : ?>
+            <details class="eventcrew-score-help">
+                <summary><?php esc_html_e('Account', 'eventcrew'); ?></summary>
+                <p class="eventcrew-muted"><?php esc_html_e('Pause all emails (turn your account back on any time with /start in the bot), or delete your data for good.', 'eventcrew'); ?></p>
+                <form method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>" style="margin:.4em 0">
+                    <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
+                    <input type="hidden" name="action" value="disable">
+                    <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Pause emails (switch account off)', 'eventcrew'); ?></button>
+                </form>
+                <form method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>" style="margin:.4em 0"
+                    onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
+                    <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="eventcrew-linkbtn" style="color:#b32d2e"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
                 </form>
             </details>
         <?php endif; ?>

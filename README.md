@@ -1,7 +1,7 @@
 # EventCrew
 
 [![CI](https://github.com/skytux/EventCrew/actions/workflows/ci.yml/badge.svg)](https://github.com/skytux/EventCrew/actions/workflows/ci.yml)
-[![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](LICENSE)
+[![License: GPLv2](https://img.shields.io/badge/License-GPLv2-blue.svg)](LICENSE)
 
 A WordPress plugin for **staffing, attendance and rewards at recurring events** —
 run from a Telegram group and a public web page, administered from wp-admin.
@@ -194,4 +194,4 @@ release history.
 
 ## Licence
 
-GPL-2.0-or-later. See [LICENSE](LICENSE).
+GPLv2. See [LICENSE](LICENSE).

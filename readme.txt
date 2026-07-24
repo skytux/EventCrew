@@ -4,8 +4,8 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.7.2
-License: GPLv2 or later
+Stable tag: 1.7.3
+License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Staffing, attendance and rewards for recurring events, run from a Telegram group and a public web page, administered from WordPress.
@@ -125,6 +125,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.7.3 =
+* The signed-in web profile now offers account management directly — pause all emails (switch the account off) or delete your data — reusing the same signed self-service page the emails link to.
+
 = 1.7.2 =
 * Open-task and freed-slot calls now also reach crew already working that day (they may want a second, non-overlapping slot).
 
@@ -149,6 +152,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.7.3 =
+Signed-in web users can now pause emails or delete their data from the profile. No database change.
 
 = 1.7.2 =
 Adds per-channel notification preferences and closes every notification gap. After upgrading, re-run "Install webhook" in Settings so the new `/notifications` and `/mytickets` commands appear; the database migrates automatically.
