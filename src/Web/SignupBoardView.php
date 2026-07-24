@@ -7,8 +7,11 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketList;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
@@ -60,6 +63,10 @@ final class SignupBoardView
             'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,
+            'notify_matrix' => null === $person ? [] : (new NotificationPreferences())->matrix($person),
+            'my_tickets' => null === $person
+                ? ['upcoming' => [], 'past' => []]
+                : (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id),
         ];
     }
 

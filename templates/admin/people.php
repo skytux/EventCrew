@@ -87,19 +87,6 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                     </div>
 
                     <div class="form-field">
-                        <label for="eventcrew-notify-muted">
-                            <input
-                                name="notify_muted"
-                                id="eventcrew-notify-muted"
-                                type="checkbox"
-                                value="1"
-                                <?php checked($eventcrew_is_edit && $editing->notifyMuted); ?>>
-                            <?php esc_html_e('Mute bot DMs', 'eventcrew'); ?>
-                        </label>
-                        <p><?php esc_html_e('Stop the bot sending this person signup, cancellation and no-show confirmations by direct message. The group board is unaffected.', 'eventcrew'); ?></p>
-                    </div>
-
-                    <div class="form-field">
                         <label for="eventcrew-person-notes"><?php esc_html_e('Notes', 'eventcrew'); ?></label>
                         <textarea name="notes" id="eventcrew-person-notes" rows="3"><?php
                             echo esc_textarea($eventcrew_is_edit ? $editing->notes : '');

@@ -25,7 +25,8 @@ final class UpdateRouter
         private readonly ProfileService $profile,
         private readonly TicketRedemptionService $tickets,
         private readonly GiftService $gift,
-        private readonly PermissionService $permissions
+        private readonly PermissionService $permissions,
+        private readonly NotificationSettingsService $notifications
     ) {
     }
 
@@ -57,6 +58,8 @@ final class UpdateRouter
                 $this->gift->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'perm:')) {
                 $this->permissions->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, 'np:')) {
+                $this->notifications->onToggle($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -141,6 +144,13 @@ final class UpdateRouter
             return;
         }
 
+        // /notifications: the per-person channel preferences menu.
+        if ($this->isCommand($text, 'notifications')) {
+            $this->notifications->start($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
         // /ticket is a personal, credit-spending action, so its answer - the
         // spendable buttons - always goes to the DM, never into the group. Asked
         // in the group it still works: the person gets the DM and a breadcrumb
@@ -156,6 +166,12 @@ final class UpdateRouter
         // never printed in front of the whole crew.
         if ($this->isCommand($text, 'myhistory')) {
             $this->profile->onMyHistory($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        if ($this->isCommand($text, 'mytickets')) {
+            $this->profile->onMyTickets($fromId, $chatId, $isPrivate);
 
             return;
         }

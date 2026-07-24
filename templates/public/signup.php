@@ -24,6 +24,13 @@ $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 /** @var array<string, string> $eventcrew_ticket_dates date => label a credit can be spent on */
 $eventcrew_ticket_dates = is_array($view['ticket_dates'] ?? null) ? $view['ticket_dates'] : [];
 $eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
+/** @var array<string, array{label: string, dm: bool, email: bool}> $eventcrew_notify_matrix */
+$eventcrew_notify_matrix = is_array($view['notify_matrix'] ?? null) ? $view['notify_matrix'] : [];
+$eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
+/** @var array{upcoming: array<int, array{label: string, when: string, url: string}>, past: array<int, array{label: string, when: string, url: string}>} $eventcrew_my_tickets */
+$eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
+    ? $view['my_tickets']
+    : ['upcoming' => [], 'past' => []];
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
@@ -222,6 +229,62 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </select>
                 <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
             </form>
+        <?php endif; ?>
+
+        <?php if ([] !== $eventcrew_my_tickets['upcoming'] || [] !== $eventcrew_my_tickets['past']) : ?>
+            <details class="eventcrew-score-help">
+                <summary><?php esc_html_e('My tickets', 'eventcrew'); ?></summary>
+                <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
+                    <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
+                        <p class="eventcrew-muted" style="margin:.4em 0 .2em"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
+                        <ul style="margin:0 0 .4em;padding-left:1.2em">
+                            <?php foreach ($eventcrew_my_tickets[$eventcrew_group] as $eventcrew_ticket) : ?>
+                                <li>
+                                    <a href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
+                                        <?php echo esc_html($eventcrew_ticket['label']); ?>
+                                    </a>
+                                    — <?php echo esc_html($eventcrew_ticket['when']); ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </details>
+        <?php endif; ?>
+
+        <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
+            <details class="eventcrew-score-help">
+                <summary><?php esc_html_e('Notifications', 'eventcrew'); ?></summary>
+                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_prefs_action); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th><?php esc_html_e('Telegram', 'eventcrew'); ?></th>
+                                <th><?php esc_html_e('Email', 'eventcrew'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($eventcrew_notify_matrix as $eventcrew_type => $eventcrew_pref) : ?>
+                            <tr>
+                                <td><?php echo esc_html($eventcrew_pref['label']); ?></td>
+                                <td style="text-align:center">
+                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][dm]" value="1" <?php checked($eventcrew_pref['dm']); ?>>
+                                </td>
+                                <td style="text-align:center">
+                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][email]" value="1" <?php checked($eventcrew_pref['email']); ?>>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on both channels.', 'eventcrew'); ?></p>
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
+                </form>
+            </details>
         <?php endif; ?>
 
         <p>

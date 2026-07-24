@@ -14,6 +14,7 @@ use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Telegram\TicketRedemptionService;
 
 /**
  * Attendance: who turned up for a given day's tasks, and marking how it went.
@@ -37,7 +38,8 @@ final class RosterPage
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
         private readonly FreeEntryGate $freeEntry,
-        private readonly LeaderGate $leaderGate
+        private readonly LeaderGate $leaderGate,
+        private readonly TicketRedemptionService $tickets
     ) {
     }
 
@@ -117,7 +119,11 @@ final class RosterPage
         }
 
         [$eventPostId, $eventLabel] = $this->eventContext($date);
-        $this->redemptions->record($personId, $date, $eventPostId, $eventLabel);
+        $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel);
+
+        // Transactional: hand the person their door-ticket link on both channels,
+        // the same as the self-service /ticket flow does.
+        $this->tickets->notifyRedemption($personId, $date, $redemptionId);
 
         Admin::redirectTo(
             self::PAGE_SLUG,

@@ -6,6 +6,8 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\Mailer;
+use EventCrew\Support\NotificationPreferences;
 
 /**
  * /allow and /leaders - the organizer's permission tools from Telegram.
@@ -28,7 +30,8 @@ final class PermissionService
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
-        private readonly LeaderEligibility $eligibility
+        private readonly LeaderEligibility $eligibility,
+        private readonly Mailer $mailer
     ) {
     }
 
@@ -162,8 +165,27 @@ final class PermissionService
         [$answer, $dm] = $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
         $this->telegram->answerCallbackQuery($callbackId, $answer);
 
-        if ('' !== $dm && null !== $person->telegramChatId && $person->wantsBotDms()) {
-            $this->telegram->sendMessage($person->telegramChatId, $dm);
+        // Tell the affected person on both channels they allow.
+        if ('' !== $dm) {
+            $prefs = new NotificationPreferences();
+
+            if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
+                $this->telegram->sendMessage($person->telegramChatId, $dm);
+            }
+
+            if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
+                $this->mailer->toPerson(
+                    $person->id,
+                    $person->email,
+                    __('Your EventCrew access changed', 'eventcrew'),
+                    sprintf(
+                        /* translators: 1: name, 2: what changed */
+                        __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                        $person->name(),
+                        $dm
+                    )
+                );
+            }
         }
     }
 

@@ -12,6 +12,8 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 
 final class OpenTaskCallTest extends TestCase
@@ -47,7 +49,8 @@ final class OpenTaskCallTest extends TestCase
             new AssignmentRepository(),
             new PersonRepository(),
             new NotificationsRepository(),
-            new Mailer(new Logger())
+            new Mailer(new Logger()),
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
         );
     }
 

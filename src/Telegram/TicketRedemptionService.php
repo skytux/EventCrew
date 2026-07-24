@@ -10,6 +10,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 
@@ -200,8 +201,9 @@ final class TicketRedemptionService
         }
 
         $when = $this->shortDate($date);
+        $prefs = new NotificationPreferences();
 
-        if (null !== $person->telegramChatId && $person->wantsBotDms()) {
+        if ($prefs->dmAllowed($person, NotificationPreferences::TICKET)) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 sprintf(
@@ -213,7 +215,7 @@ final class TicketRedemptionService
             );
         }
 
-        if ($person->isDisabled()) {
+        if (! $prefs->emailAllowed($person, NotificationPreferences::TICKET)) {
             return;
         }
 
@@ -252,6 +254,17 @@ final class TicketRedemptionService
         }
 
         return $dates;
+    }
+
+    /**
+     * Sends the ticket link for an already-recorded redemption to the person, on
+     * both channels they allow. Used when an organizer redeems a credit at the
+     * door list, so the person gets the same DM + email the self-service flow
+     * delivers.
+     */
+    public function notifyRedemption(int $personId, string $date, int $redemptionId): void
+    {
+        $this->deliverTicket($personId, $date, $this->ticketUrl($redemptionId));
     }
 
     /**

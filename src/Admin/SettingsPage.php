@@ -402,6 +402,8 @@ final class SettingsPage
             ['command' => 'me', 'description' => __('DM — your standing, credits and upcoming tasks', 'eventcrew')],
             ['command' => 'ticket', 'description' => __('DM — spend a free-entry credit for a ticket', 'eventcrew')],
             ['command' => 'myhistory', 'description' => __('DM — your past tasks', 'eventcrew')],
+            ['command' => 'mytickets', 'description' => __('DM — your upcoming and past tickets', 'eventcrew')],
+            ['command' => 'notifications', 'description' => __('DM — choose what reaches you, and how', 'eventcrew')],
             ['command' => 'stop', 'description' => __('DM — switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],

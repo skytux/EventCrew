@@ -37,6 +37,7 @@ use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
@@ -48,6 +49,7 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
+use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
@@ -96,6 +98,7 @@ final class Kernel
         $this->container->get(TicketController::class)->boot();
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
+        $this->container->get(SlotFreedNotice::class)->boot();
 
         // The notifications heartbeat: the hourly cron event self-schedules and
         // registers its run action here (front/cron path, since WP-Cron fires
@@ -279,7 +282,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(NotificationsRepository::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -432,7 +436,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(BoardService::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
             )
         );
 
@@ -484,7 +489,16 @@ final class Kernel
             fn (Container $container) => new PermissionService(
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(LeaderEligibility::class)
+                $container->get(LeaderEligibility::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
+            NotificationSettingsService::class,
+            fn (Container $container) => new NotificationSettingsService(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -498,7 +512,8 @@ final class Kernel
                 $container->get(ProfileService::class),
                 $container->get(TicketRedemptionService::class),
                 $container->get(GiftService::class),
-                $container->get(PermissionService::class)
+                $container->get(PermissionService::class),
+                $container->get(NotificationSettingsService::class)
             )
         );
 
@@ -542,6 +557,17 @@ final class Kernel
             BoardRefreshListener::class,
             fn (Container $container) => new BoardRefreshListener(
                 $container->get(BoardService::class)
+            )
+        );
+
+        $this->container->singleton(
+            SlotFreedNotice::class,
+            fn (Container $container) => new SlotFreedNotice(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -605,7 +631,8 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
-                $container->get(LeaderGate::class)
+                $container->get(LeaderGate::class),
+                $container->get(TicketRedemptionService::class)
             )
         );
 

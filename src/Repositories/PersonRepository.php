@@ -174,6 +174,16 @@ final class PersonRepository
         $this->update($id, ['can_lead' => $canLead ? 1 : 0]);
     }
 
+    /**
+     * Stores a person's per-type notification channel preferences as JSON.
+     *
+     * @param array<string, array{dm?: bool, email?: bool}> $prefs
+     */
+    public function setNotifyPrefs(int $id, array $prefs): void
+    {
+        $this->update($id, ['notify_prefs' => wp_json_encode($prefs)]);
+    }
+
     /** Gives a one-time pass to sign up despite being at risk. */
     public function grantAtRiskPass(int $id): void
     {
