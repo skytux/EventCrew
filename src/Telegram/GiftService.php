@@ -24,6 +24,9 @@ final class GiftService
 
     private const AWAIT_PREFIX = 'eventcrew_tg_await_gift_target_';
 
+    /** Holds the parsed amount + note between naming someone and tapping them. */
+    private const AMOUNT_PREFIX = 'eventcrew_tg_gift_amount_';
+
     /** Callback data prefix for a gift pick: gift:<person_id>. */
     private const PICK_PREFIX = 'gift:';
 
@@ -57,7 +60,8 @@ final class GiftService
         set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
             $telegramUserId,
-            __('Who should get a free-entry credit? Send their name, or @mention them.', 'eventcrew')
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Who should get a free-entry credit? Send their name (or @mention). For more than one, add a number — "Sam 3" — and any words after it become the note.', 'eventcrew')
         );
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -77,9 +81,19 @@ final class GiftService
     {
         delete_transient(self::AWAIT_PREFIX . $telegramUserId);
 
+        // Pull a trailing "<n> [note]" off the reply so it is not searched as
+        // part of the name; the amount and note ride a short-lived transient to
+        // the tap, since callback data can't safely carry free text.
+        [$query, $credits, $note] = $this->parseAmount($text);
+        set_transient(
+            self::AMOUNT_PREFIX . $telegramUserId,
+            ['credits' => $credits, 'note' => $note],
+            15 * MINUTE_IN_SECONDS
+        );
+
         $buttons = [];
 
-        foreach (PersonResolver::matching($this->people, $text, $entities) as $person) {
+        foreach (PersonResolver::matching($this->people, $query, $entities) as $person) {
             $buttons[] = [[
                 'text' => sprintf(
                     /* translators: 1: person's name, 2: their current credit balance */
@@ -141,23 +155,70 @@ final class GiftService
             return;
         }
 
+        [$credits, $note] = $this->pendingAmount($organizerTelegramId);
+
         // A discretionary bot grant carries no WordPress user id, so it is
         // recorded as granted_by null - the ledger still shows the credit.
-        $this->grants->record($recipient->id, 1, 'gift via bot', 0);
+        $this->grants->record($recipient->id, $credits, $note, 0);
         $balance = $this->standing->for($recipient->id)->creditBalance;
 
         $this->telegram->answerCallbackQuery(
             $callbackId,
             sprintf(
-                /* translators: 1: recipient's name, 2: their new credit balance */
-                __('Gave %1$s a credit — they now have %2$d.', 'eventcrew'),
+                /* translators: 1: recipient's name, 2: credits granted, 3: their new balance */
+                _n(
+                    'Gave %1$s %2$d credit — they now have %3$d.',
+                    'Gave %1$s %2$d credits — they now have %3$d.',
+                    $credits,
+                    'eventcrew'
+                ),
                 $recipient->name(),
+                $credits,
                 $balance
             )
         );
 
         // The recipient hears about it on both channels, the same as a gift from
         // the People page.
-        $this->notifier->notify($recipient);
+        $this->notifier->notify($recipient, $credits);
+    }
+
+    /**
+     * The credits and note the organizer set when they named this person, or the
+     * defaults if the short-lived transient has expired.
+     *
+     * @return array{0: int, 1: string}
+     */
+    private function pendingAmount(int $organizerTelegramId): array
+    {
+        $pending = get_transient(self::AMOUNT_PREFIX . $organizerTelegramId);
+        delete_transient(self::AMOUNT_PREFIX . $organizerTelegramId);
+
+        $credits = is_array($pending) && isset($pending['credits']) ? max(1, (int) $pending['credits']) : 1;
+        $note = is_array($pending) && isset($pending['note']) && '' !== (string) $pending['note']
+            ? (string) $pending['note']
+            : 'gift via bot';
+
+        return [$credits, $note];
+    }
+
+    /**
+     * Splits a reply like "Sam 3 covered setup" into the name to search, the
+     * credit count and the note. With no trailing number it is all name, one
+     * credit, the default note.
+     *
+     * @return array{0: string, 1: int, 2: string}
+     */
+    private function parseAmount(string $text): array
+    {
+        $query = trim($text);
+
+        if (1 === preg_match('/^(.*?)\s+(\d{1,3})(?:\s+(.+\S))?\s*$/u', $query, $m)) {
+            $note = isset($m[3]) && '' !== trim($m[3]) ? trim($m[3]) : 'gift via bot';
+
+            return [trim($m[1]), max(1, (int) $m[2]), $note];
+        }
+
+        return [$query, 1, 'gift via bot'];
     }
 }

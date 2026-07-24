@@ -22,11 +22,15 @@ final class GiftServiceTest extends TelegramTestCase
     /** @var array<int, array{to: string, body: string}> */
     private array $mails = [];
 
+    /** @var array<string, mixed> */
+    private array $transients = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mails = [];
+        $this->transients = [];
         Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
             $this->mails[] = ['to' => $to, 'body' => $body];
 
@@ -36,6 +40,12 @@ final class GiftServiceTest extends TelegramTestCase
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
         );
+        Functions\when('get_transient')->alias(fn (string $key): mixed => $this->transients[$key] ?? false);
+        Functions\when('delete_transient')->alias(function (string $key): bool {
+            unset($this->transients[$key]);
+
+            return true;
+        });
     }
 
     private function service(): GiftService
@@ -66,6 +76,20 @@ final class GiftServiceTest extends TelegramTestCase
         // ...and the recipient was told, on both channels.
         self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
+    }
+
+    public function testGiftGrantsTheQuantityAndNoteTheOrganizerSet(): void
+    {
+        // The amount + note the organizer typed ("Sam 3 covered setup") rode a
+        // transient to the tap.
+        $this->transients['eventcrew_tg_gift_amount_555'] = ['credits' => 3, 'note' => 'covered setup'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Boss', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com'];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gift:8']);
+
+        self::assertSame(3, $this->wpdb->inserts[0]['data']['credits']);
+        self::assertSame('covered setup', $this->wpdb->inserts[0]['data']['note']);
     }
 
     public function testANonOrganizerCannotGift(): void

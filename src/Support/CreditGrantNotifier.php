@@ -25,13 +25,24 @@ final class CreditGrantNotifier
     ) {
     }
 
-    public function notify(Person $person): void
+    public function notify(Person $person, int $credits = 1): void
     {
+        $credits = max(1, $credits);
+
         if (null !== $person->telegramChatId && $person->wantsBotDms()) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('🎁 You’ve been given a free-entry credit. Send /ticket to spend it on an upcoming event.', 'eventcrew')
+                sprintf(
+                    /* translators: %d: number of free-entry credits granted */
+                    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    _n(
+                        '🎁 You’ve been given %d free-entry credit. Send /ticket to spend it on an upcoming event.',
+                        '🎁 You’ve been given %d free-entry credits. Send /ticket to spend them on upcoming events.',
+                        $credits,
+                        'eventcrew'
+                    ),
+                    $credits
+                )
             );
         }
 
@@ -42,12 +53,18 @@ final class CreditGrantNotifier
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            __('You’ve been given a free-entry credit', 'eventcrew'),
+            __('You’ve been given free entry', 'eventcrew'),
             sprintf(
-                /* translators: %s: the person's name */
+                /* translators: 1: the person's name, 2: number of credits */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot and send /ticket, or use your sign-up page, to get your free ticket.", 'eventcrew'),
-                $person->name()
+                _n(
+                    "Hi %1\$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot and send /ticket, or use your sign-up page, to get your free ticket.",
+                    "Hi %1\$s,\n\nAn organizer has given you %2\$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot and send /ticket, or use your sign-up page, to get your free ticket.",
+                    $credits,
+                    'eventcrew'
+                ),
+                $person->name(),
+                $credits
             )
         );
     }

@@ -44,10 +44,51 @@ final class PeoplePage
                 'table' => $table,
                 'editing' => $editing,
                 'editing_standing' => null === $editing ? null : $this->standing->for($editing->id),
+                'credit_grants' => $this->creditGrantRows(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
             ]
         );
+    }
+
+    /**
+     * The recent credit-grant ledger for the audit panel: each grant with the
+     * recipient's and granter's names resolved for display.
+     *
+     * @return array<int, array{person: string, credits: int, note: string, granted_by: string, granted_at: string}>
+     */
+    private function creditGrantRows(): array
+    {
+        $rows = [];
+
+        foreach ($this->grants->recent(20) as $grant) {
+            $person = $this->people->find($grant['person_id']);
+
+            $rows[] = [
+                'person' => null === $person ? __('(deleted person)', 'eventcrew') : $person->name(),
+                'credits' => $grant['credits'],
+                'note' => $grant['note'],
+                'granted_by' => $this->granterName($grant['granted_by']),
+                'granted_at' => $grant['granted_at'],
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * A granter's display name: a WordPress user for an admin grant, or "the bot"
+     * for a discretionary /gift (recorded with no user id).
+     */
+    private function granterName(?int $userId): string
+    {
+        if (null === $userId || 0 === $userId) {
+            return __('the bot', 'eventcrew');
+        }
+
+        $user = get_userdata($userId);
+
+        return false === $user ? __('(unknown)', 'eventcrew') : (string) $user->display_name;
     }
 
     public function save(): void
@@ -119,6 +160,7 @@ final class PeoplePage
         // phpcs:disable WordPress.Security.NonceVerification.Missing
         $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
         $note = isset($_POST['grant_note']) ? sanitize_text_field(wp_unslash($_POST['grant_note'])) : '';
+        $credits = isset($_POST['grant_credits']) ? max(1, (int) $_POST['grant_credits']) : 1;
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $person = $personId > 0 ? $this->people->find($personId) : null;
@@ -127,10 +169,10 @@ final class PeoplePage
             Admin::redirectTo(self::PAGE_SLUG, __('That credit could not be granted.', 'eventcrew'), 'error');
         }
 
-        $this->grants->record($personId, 1, $note, get_current_user_id());
+        $this->grants->record($personId, $credits, $note, get_current_user_id());
 
         // Tell them on both channels, the same as a gift from the bot's /gift.
-        $this->notifier->notify($person);
+        $this->notifier->notify($person, $credits);
 
         Admin::redirectTo(
             self::PAGE_SLUG,

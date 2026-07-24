@@ -6,6 +6,7 @@
  * @var \EventCrew\Admin\PeopleListTable $table Prepared list table of people.
  * @var \EventCrew\Models\Person|null $editing Person open in the editor, if any.
  * @var \EventCrew\Support\Standing|null $editing_standing Standing of the edited person.
+ * @var array<int, array{person: string, credits: int, note: string, granted_by: string, granted_at: string}> $credit_grants Recent credit-grant audit rows.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
  */
@@ -173,13 +174,17 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                         <?php wp_nonce_field($nonce_action); ?>
                         <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $editing->id); ?>">
                         <div class="form-field">
+                            <label for="eventcrew-grant-credits"><?php esc_html_e('Credits', 'eventcrew'); ?></label>
+                            <input name="grant_credits" id="eventcrew-grant-credits" type="number" value="1" min="1" step="1" style="width:5em">
+                        </div>
+                        <div class="form-field">
                             <label for="eventcrew-grant-note"><?php esc_html_e('Reason (optional)', 'eventcrew'); ?></label>
                             <input name="grant_note" id="eventcrew-grant-note" type="text" placeholder="<?php esc_attr_e('e.g. covered a cleaning task', 'eventcrew'); ?>">
                         </div>
                         <p class="submit">
-                            <button type="submit" class="button"><?php esc_html_e('Grant 1 credit', 'eventcrew'); ?></button>
+                            <button type="submit" class="button"><?php esc_html_e('Grant credits', 'eventcrew'); ?></button>
                         </p>
-                        <p class="description"><?php esc_html_e('A one-off bonus, on top of the credit earned for every two completed tasks.', 'eventcrew'); ?></p>
+                        <p class="description"><?php esc_html_e('A one-off bonus, on top of the credits earned for completed tasks.', 'eventcrew'); ?></p>
                     </form>
                 <?php endif; ?>
             </div>
@@ -193,4 +198,30 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
             <?php $table->display(); ?>
         </div>
     </div>
+
+    <?php if ([] !== $credit_grants) : ?>
+        <h2><?php esc_html_e('Recent credit grants', 'eventcrew'); ?></h2>
+        <table class="wp-list-table widefat fixed striped" style="max-width:60em">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
+                    <th><?php esc_html_e('Credits', 'eventcrew'); ?></th>
+                    <th><?php esc_html_e('Reason', 'eventcrew'); ?></th>
+                    <th><?php esc_html_e('Granted by', 'eventcrew'); ?></th>
+                    <th><?php esc_html_e('When', 'eventcrew'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($credit_grants as $eventcrew_grant) : ?>
+                    <tr>
+                        <td><?php echo esc_html($eventcrew_grant['person']); ?></td>
+                        <td><?php echo esc_html((string) $eventcrew_grant['credits']); ?></td>
+                        <td><?php echo '' === $eventcrew_grant['note'] ? '&mdash;' : esc_html($eventcrew_grant['note']); ?></td>
+                        <td><?php echo esc_html($eventcrew_grant['granted_by']); ?></td>
+                        <td><?php echo esc_html($eventcrew_grant['granted_at']); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 </div>
