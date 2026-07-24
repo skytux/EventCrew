@@ -84,9 +84,11 @@ final class OpenTaskCall
     }
 
     /**
-     * Mails every active recipient not already signed up for $date, up to
-     * $limit of them (0 means no cap - the manual button sends the lot). The
-     * ledger makes a capped or re-run send resume without doubling up.
+     * Mails/DMs every active recipient about the open slots on $date, up to
+     * $limit of them (0 means no cap - the manual button sends the lot). Crew
+     * already working that day are included, since they may want a second,
+     * non-overlapping slot; the ledger makes a capped or re-run send resume
+     * without doubling up.
      */
     public function sendForDate(string $date, int $limit = 0): int
     {
@@ -94,7 +96,6 @@ final class OpenTaskCall
             return 0;
         }
 
-        $alreadyOn = array_flip($this->assignments->personIdsAssignedOn($date));
         $openList = $this->openTasksText($date);
         $prefs = new NotificationPreferences();
         $sent = 0;
@@ -104,7 +105,7 @@ final class OpenTaskCall
                 break;
             }
 
-            if (isset($alreadyOn[$person->id]) || $this->ledger->hasSent(self::KIND, $person->id, $date)) {
+            if ($this->ledger->hasSent(self::KIND, $person->id, $date)) {
                 continue;
             }
 
