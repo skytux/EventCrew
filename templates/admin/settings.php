@@ -29,7 +29,7 @@
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
 declare(strict_types=1);
@@ -590,6 +590,22 @@ if (! defined('ABSPATH')) {
                         spellcheck="false">
                     <p class="description">
                         <?php esc_html_e('Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When set, the web signup page shows an “Open in Telegram” button so phone visitors can jump straight to the group.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Group lock', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="telegram_group_lock"
+                            value="1"
+                            <?php checked($telegram['group_lock']); ?>>
+                        <?php esc_html_e('Keep the board locked to the first group the bot joins', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('On by default. While locked, adding the bot to another group — or running /board there — will not move the board, so no one can hijack it into a different chat. To move the board on purpose (for example, going live): untick this, save, add the bot to the new group (or run /board in it), then tick it again and save.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

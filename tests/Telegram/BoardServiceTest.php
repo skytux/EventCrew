@@ -509,4 +509,60 @@ final class BoardServiceTest extends TelegramTestCase
 
         self::assertArrayNotHasKey(BoardService::BOARD_OPTION, $this->options);
     }
+
+    // --- group lock ---------------------------------------------------------
+
+    public function testLockKeepsTheBoardInTheFirstGroupWhenAddedToAnother(): void
+    {
+        // The lock defaults on, so a board already bound to one group is not
+        // moved when the bot is added to a second.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+
+        $this->board()->onBotMembershipChange([
+            'chat' => ['id' => -200, 'type' => 'supergroup'],
+            'new_chat_member' => ['status' => 'member'],
+        ]);
+
+        self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testLockStillCapturesTheveryFirstGroup(): void
+    {
+        // No board bound yet: even locked, the first group to add the bot is
+        // captured - the lock only blocks a move, not the initial home.
+        $this->wpdb->nextResults[] = []; // refresh render: no tasks
+
+        $this->board()->onBotMembershipChange([
+            'chat' => ['id' => -100, 'type' => 'supergroup'],
+            'new_chat_member' => ['status' => 'member'],
+        ]);
+
+        self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
+    public function testUnlockedBoardMovesToTheNewGroup(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->options[BoardService::LOCK_OPTION] = '0'; // unlocked to move it
+        $this->wpdb->nextResults[] = []; // refresh render
+
+        $this->board()->onBotMembershipChange([
+            'chat' => ['id' => -200, 'type' => 'supergroup'],
+            'new_chat_member' => ['status' => 'member'],
+        ]);
+
+        self::assertSame(-200, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
+    public function testLockAlsoBlocksBoardCommandInAnotherGroup(): void
+    {
+        // /board run in a different group cannot move a locked board either.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+
+        $this->board()->repostInto(-200);
+
+        self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+        self::assertSame([], $this->telegramCalls);
+    }
 }

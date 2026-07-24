@@ -133,6 +133,7 @@ final class SettingsPage
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
             'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
+            'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
         ];
     }
@@ -184,6 +185,10 @@ final class SettingsPage
             ? esc_url_raw(wp_unslash($_POST['telegram_group_link']))
             : '';
         update_option(BoardService::GROUP_LINK_OPTION, $groupLink);
+
+        // Checkbox: absent means unticked (unlocked), so the board can be moved
+        // to another group on the next add / /board. Default is on.
+        update_option(BoardService::LOCK_OPTION, isset($_POST['telegram_group_lock']) ? '1' : '0');
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);

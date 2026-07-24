@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.7.5
+Stable tag: 1.7.6
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.7.6 =
+* New "Group lock" setting (on by default): the board stays in the first Telegram group the bot joins, so adding the bot to another group — or running /board there — can no longer hijack the board into a different chat. Untick it to move the board on purpose.
+
 = 1.7.5 =
 * The email account link is now a single-use, 30-minute sign-in link (like the login form's), so a forwarded or leaked old email can't be replayed as a login. Spent and expired sign-in tokens are swept on the hourly cron so the table stays small.
 
@@ -158,6 +161,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.7.6 =
+The board is now locked to its first group by default, preventing accidental or malicious moves. No database change.
 
 = 1.7.5 =
 The email account link is now a single-use, 30-minute sign-in link, and expired tokens are auto-swept. No database change.
