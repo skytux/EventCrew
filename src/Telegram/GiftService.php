@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
-use EventCrew\Models\Person;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\CreditGrantNotifier;
@@ -21,6 +20,8 @@ use EventCrew\Support\StandingCalculator;
  */
 final class GiftService
 {
+    use GroupBreadcrumb;
+
     private const AWAIT_PREFIX = 'eventcrew_tg_await_gift_target_';
 
     /** Callback data prefix for a gift pick: gift:<person_id>. */
@@ -58,10 +59,7 @@ final class GiftService
             $telegramUserId,
             __('Who should get a free-entry credit? Send their name, or @mention them.', 'eventcrew')
         );
-
-        if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
-        }
+        $this->sentDmNote($chatId, $isPrivate);
     }
 
     public function isAwaitingTarget(int $telegramUserId): bool
@@ -81,7 +79,7 @@ final class GiftService
 
         $buttons = [];
 
-        foreach ($this->resolveTargets($text, $entities) as $person) {
+        foreach (PersonResolver::matching($this->people, $text, $entities) as $person) {
             $buttons[] = [[
                 'text' => sprintf(
                     /* translators: 1: person's name, 2: their current credit balance */
@@ -161,30 +159,5 @@ final class GiftService
         // The recipient hears about it on both channels, the same as a gift from
         // the People page.
         $this->notifier->notify($recipient);
-    }
-
-    /**
-     * The people the named text points at: an exact match from a Telegram
-     * text-mention if present, else a name search. Same resolution the cover
-     * flow uses.
-     *
-     * @param array<int, array<string, mixed>> $entities
-     * @return array<int, Person>
-     */
-    private function resolveTargets(string $text, array $entities): array
-    {
-        foreach ($entities as $entity) {
-            if ('text_mention' === ($entity['type'] ?? '') && isset($entity['user']['id'])) {
-                $person = $this->people->findByTelegramUserId((int) $entity['user']['id']);
-
-                if (null !== $person) {
-                    return [$person];
-                }
-            }
-        }
-
-        $name = ltrim(trim($text), '@');
-
-        return '' === $name ? [] : $this->people->all(['search' => $name, 'per_page' => 10]);
     }
 }

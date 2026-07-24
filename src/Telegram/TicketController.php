@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\Dates;
 use EventCrew\Support\SignedLink;
 use WP_REST_Request;
 
@@ -232,13 +233,10 @@ final class TicketController
     private function formatIssued(string $issued): string
     {
         // The stored value is already local wall-clock time (current_time('mysql')
-        // when the ticket was made), so reformat its own digits and never run it
-        // back through a timezone - doing that moved the issue time by the
-        // site's UTC offset. The door only cares what the clock read when it was
-        // issued, not which zone that was.
-        $when = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $issued);
-
-        return false === $when ? $issued : $when->format('H:i, D j M');
+        // when the ticket was made), so Dates::wallClock reformats its own digits
+        // without running it back through a timezone - the door only cares what
+        // the clock read when it was issued, not which zone that was.
+        return Dates::wallClock($issued, 'H:i, D j M');
     }
 
     private function document(string $title, string $inner): string
