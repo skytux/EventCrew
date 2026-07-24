@@ -35,12 +35,15 @@ final class Reputation
     private const HALF_LIFE_DAYS = 180;
 
     /**
-     * Only terminal outcomes score. signed_up and arrived are still in
-     * progress and are left out entirely - neither rewarded nor penalised.
+     * The shipped weights: only terminal outcomes score, and signed_up and
+     * arrived are still in progress so they are left out entirely - neither
+     * rewarded nor penalised. These are the defaults an organizer's tuned
+     * per-outcome percentages (ReputationSettings) fall back to; the set of
+     * scoring statuses is these keys, whatever their configured values.
      *
      * @return array<string, float>
      */
-    private static function weights(): array
+    public static function defaultWeights(): array
     {
         return [
             AssignmentStatus::COMPLETED => 1.0,
@@ -51,20 +54,19 @@ final class Reputation
     }
 
     /**
-     * The same weights as whole percentages against a human label for each
-     * outcome, in best-to-worst order - the single source of truth behind the
-     * "how your score works" table shown in /me and on the web profile. Kept
-     * here so the explanation can never drift from the scoring.
+     * A human label for each scoring outcome, in best-to-worst order and keyed
+     * by status - the labels the "how your score works" table pairs with the
+     * live weights.
      *
-     * @return array<string, int> label => percent
+     * @return array<string, string> status => label
      */
-    public static function outcomeWeights(): array
+    public static function outcomeLabels(): array
     {
         return [
-            __('Completed the task', 'eventcrew') => 100,
-            __('Found a replacement', 'eventcrew') => 80,
-            __('Cancelled late', 'eventcrew') => 40,
-            __('No-show', 'eventcrew') => 0,
+            AssignmentStatus::COMPLETED => __('Completed the task', 'eventcrew'),
+            AssignmentStatus::REPLACED => __('Found a replacement', 'eventcrew'),
+            AssignmentStatus::LATE_CANCEL => __('Cancelled late', 'eventcrew'),
+            AssignmentStatus::NO_SHOW => __('No-show', 'eventcrew'),
         ];
     }
 
@@ -74,10 +76,12 @@ final class Reputation
      * "unrated", not "worst possible".
      *
      * @param array<int, array{assignment: Assignment, task_date: string}> $history
+     * @param array<string, float>|null $weights status => weight in [0,1]; the
+     *        shipped defaults when null, or an organizer's tuned values.
      */
-    public static function score(array $history, int $nowTs): float
+    public static function score(array $history, int $nowTs, ?array $weights = null): float
     {
-        $weights = self::weights();
+        $weights ??= self::defaultWeights();
         $weightedSum = 0.0;
         $totalWeight = 0.0;
 
@@ -125,7 +129,7 @@ final class Reputation
      */
     public static function scoredCount(array $history): int
     {
-        $weights = self::weights();
+        $weights = self::defaultWeights();
         $count = 0;
 
         foreach ($history as $entry) {

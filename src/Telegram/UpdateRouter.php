@@ -23,7 +23,8 @@ final class UpdateRouter
         private readonly RosterService $roster,
         private readonly ReplacementService $replacement,
         private readonly ProfileService $profile,
-        private readonly TicketRedemptionService $tickets
+        private readonly TicketRedemptionService $tickets,
+        private readonly GiftService $gift
     ) {
     }
 
@@ -51,6 +52,8 @@ final class UpdateRouter
                 $this->roster->onMark($callbackQuery);
             } elseif (str_starts_with($data, 'tkt:')) {
                 $this->tickets->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, 'gift:')) {
+                $this->gift->onSelect($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -77,18 +80,18 @@ final class UpdateRouter
         $fromId = (int) ($message['from']['id'] ?? 0);
         $isPrivate = 'private' === ($message['chat']['type'] ?? '');
 
-        if ($isPrivate && $this->isCommand($text, 'start')) {
+        if ($this->isCommand($text, 'start')) {
             // The board's deep-link buttons both land here as /start with a
             // payload: "onboard" (or none) is the sign-up flow, "me" is the
             // returning member asking for their summary in the DM.
             if ('me' === $this->commandPayload($text, 'start')) {
-                $this->profile->onMe($fromId, $chatId);
+                $this->profile->onMe($fromId, $chatId, $isPrivate);
 
                 return;
             }
 
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
-            $this->onboarding->start($fromId, $chatId, $this->displayName($from));
+            $this->onboarding->start($fromId, $chatId, $this->displayName($from), $isPrivate);
 
             return;
         }
@@ -101,14 +104,22 @@ final class UpdateRouter
             return;
         }
 
-        if ($isPrivate && $this->isCommand($text, 'stop')) {
-            $this->onboarding->stop($fromId, $chatId);
+        if ($this->isCommand($text, 'stop')) {
+            $this->onboarding->stop($fromId, $chatId, $isPrivate);
 
             return;
         }
 
-        if ($isPrivate && $this->isCommand($text, 'replace')) {
-            $this->replacement->start($fromId, $chatId);
+        if ($this->isCommand($text, 'replace')) {
+            $this->replacement->start($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /gift is organizers-only and answers in the DM, like /ticket; the
+        // service refuses anyone who is not a linked organizer.
+        if ($this->isCommand($text, 'gift')) {
+            $this->gift->start($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -148,12 +159,15 @@ final class UpdateRouter
         }
 
         // A plain private message is only meaningful as the answer to a question
-        // the bot just asked - who the cover is standing in for, or the
-        // onboarding email.
+        // the bot just asked - who the cover is standing in for, who to gift a
+        // credit, or the onboarding email.
         if ($isPrivate && 0 !== $fromId) {
+            $entities = is_array($message['entities'] ?? null) ? $message['entities'] : [];
+
             if ($this->replacement->isAwaitingTarget($fromId)) {
-                $entities = is_array($message['entities'] ?? null) ? $message['entities'] : [];
                 $this->replacement->captureTarget($fromId, $chatId, $text, $entities);
+            } elseif ($this->gift->isAwaitingTarget($fromId)) {
+                $this->gift->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }

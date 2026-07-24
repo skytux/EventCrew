@@ -42,6 +42,7 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
@@ -428,6 +429,16 @@ final class Kernel
         );
 
         $this->container->singleton(
+            GiftService::class,
+            fn (Container $container) => new GiftService(
+                $container->get(PersonRepository::class),
+                $container->get(CreditGrantRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
@@ -435,7 +446,8 @@ final class Kernel
                 $container->get(RosterService::class),
                 $container->get(ReplacementService::class),
                 $container->get(ProfileService::class),
-                $container->get(TicketRedemptionService::class)
+                $container->get(TicketRedemptionService::class),
+                $container->get(GiftService::class)
             )
         );
 

@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -16,6 +17,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
@@ -114,6 +116,12 @@ final class UpdateRouterTest extends TelegramTestCase
                 new FreeEntryGate(),
                 $this->client(),
                 new Mailer(new Logger())
+            ),
+            new GiftService(
+                new PersonRepository(),
+                new CreditGrantRepository(),
+                $this->standing(),
+                $this->client()
             )
         );
     }
@@ -233,6 +241,71 @@ final class UpdateRouterTest extends TelegramTestCase
         ]);
 
         self::assertContains('answerCallbackQuery', $this->calledMethods());
+    }
+
+    public function testGiftCommandReachesTheGiftService(): void
+    {
+        // Unlinked sender -> the gift service refuses (not an organizer), which
+        // is proof /gift routed to it.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/gift',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testGiftCallbackReachesTheGiftService(): void
+    {
+        // Unlinked sender -> onSelect answers the callback with a refusal, proof
+        // the gift: prefix routed to the gift service.
+        $this->router()->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gift:8'],
+        ]);
+
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testGroupStartNudgesToThePrivateChat(): void
+    {
+        // /start in a group can't onboard (Telegram won't let the bot DM a
+        // stranger), so it answers in the group rather than doing nothing.
+        $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
+
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start',
+                'chat' => ['id' => -100, 'type' => 'supergroup'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
+    }
+
+    public function testGroupReplaceDmsThePromptWithABreadcrumb(): void
+    {
+        // A verified cover asking /replace in the group: the prompt goes to the
+        // DM, a breadcrumb to the group.
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'cover@example.com', 'display_name' => 'Cover',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555,
+        ];
+
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/replace',
+                'chat' => ['id' => -100, 'type' => 'supergroup'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame(555, $this->telegramCalls[0]['body']['chat_id']); // prompt to DM
+        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']); // breadcrumb to group
     }
 
     public function testRosterCommandReachesRosterService(): void
