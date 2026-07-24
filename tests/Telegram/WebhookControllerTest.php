@@ -4,26 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
-use EventCrew\Repositories\AssignmentRepository;
-use EventCrew\Repositories\AuthTokenRepository;
-use EventCrew\Repositories\CreditGrantRepository;
-use EventCrew\Repositories\PersonRepository;
-use EventCrew\Repositories\RedemptionRepository;
-use EventCrew\Repositories\TaskRepository;
-use EventCrew\Support\ClaimNotifier;
-use EventCrew\Support\CreditGrantNotifier;
-use EventCrew\Support\FreeEntryGate;
-use EventCrew\Support\Logger;
-use EventCrew\Support\Mailer;
-use EventCrew\Support\RosterAssembler;
-use EventCrew\Telegram\BoardService;
-use EventCrew\Telegram\GiftService;
-use EventCrew\Telegram\OnboardingService;
-use EventCrew\Telegram\ProfileService;
-use EventCrew\Telegram\ReplacementService;
-use EventCrew\Telegram\RosterService;
-use EventCrew\Telegram\TicketRedemptionService;
-use EventCrew\Telegram\UpdateRouter;
 use Brain\Monkey\Functions;
 use EventCrew\Telegram\WebhookController;
 use WP_REST_Request;
@@ -32,65 +12,7 @@ final class WebhookControllerTest extends TelegramTestCase
 {
     private function controller(): WebhookController
     {
-        $router = new UpdateRouter(
-            new OnboardingService(new PersonRepository(), new AuthTokenRepository(), $this->client(), new Logger()),
-            new BoardService(
-                new TaskRepository(),
-                new AssignmentRepository(),
-                new PersonRepository(),
-                $this->client(),
-                new Logger(),
-                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
-                $this->signup()
-            ),
-            new RosterService(
-                new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository(), $this->standing()),
-                new TaskRepository(),
-                new PersonRepository(),
-                new AssignmentRepository(),
-                $this->client()
-            ),
-            new ReplacementService(
-                new AssignmentRepository(),
-                new TaskRepository(),
-                new PersonRepository(),
-                new BoardService(
-                    new TaskRepository(),
-                    new AssignmentRepository(),
-                    new PersonRepository(),
-                    $this->client(),
-                    new Logger(),
-                    new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger()), $this->client(), $this->standing()),
-                    $this->signup()
-                ),
-                $this->client()
-            ),
-            new ProfileService(
-                new PersonRepository(),
-                new AssignmentRepository(),
-                new TaskRepository(),
-                $this->standing(),
-                $this->client()
-            ),
-            new TicketRedemptionService(
-                new PersonRepository(),
-                new TaskRepository(),
-                new RedemptionRepository(),
-                $this->standing(),
-                new FreeEntryGate(),
-                $this->client(),
-                new Mailer(new Logger())
-            ),
-            new GiftService(
-                new PersonRepository(),
-                new CreditGrantRepository(),
-                $this->standing(),
-                $this->client(),
-                new CreditGrantNotifier(new Mailer(new Logger()), $this->client())
-            )
-        );
-
-        return new WebhookController($router);
+        return new WebhookController($this->updateRouter());
     }
 
     private function request(string $secretHeader): WP_REST_Request
