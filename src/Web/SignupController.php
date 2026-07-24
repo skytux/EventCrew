@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Models\Person;
-use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -16,7 +15,6 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
-use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -45,6 +43,9 @@ final class SignupController
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
 
+    /** Composes the board's view model; the presentation half of this class. */
+    private readonly SignupBoardView $boardView;
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly AuthTokenRepository $tokens,
@@ -57,6 +58,7 @@ final class SignupController
         private readonly Turnstile $turnstile,
         private readonly TicketRedemptionService $tickets
     ) {
+        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile);
     }
 
     public function boot(): void
@@ -106,34 +108,15 @@ final class SignupController
     }
 
     /**
-     * Everything the template needs, resolved from the session cookie and the
-     * board. Kept separate from rendering so the composition is testable
-     * without a template or an output buffer.
+     * Everything the template needs: the board composition (delegated to
+     * SignupBoardView, resolved for the session's person) plus the admin-ajax
+     * action names this controller owns.
      *
      * @return array<string, mixed>
      */
     public function viewModel(): array
     {
-        $person = $this->currentPerson();
-        $tasks = $this->tasks->upcoming();
-        $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
-        $mine = null === $person ? [] : $this->occupiedTaskIds($person->id);
-        $standing = null === $person ? null : $this->standing->for($person->id);
-
-        // A person with a credit to spend is offered the events they can spend
-        // it on, so the profile can redeem a free-entry ticket without the bot.
-        $ticketDates = null !== $standing && $standing->creditBalance >= 1
-            ? $this->tickets->eligibleDatesFor($person->id)
-            : [];
-
-        return [
-            'person' => $person,
-            'standing' => $standing,
-            'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
-            'groups' => $this->groupByEvent($tasks, $occupancy, $mine),
-            'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
-            'turnstile_site_key' => $this->turnstile->siteKey(),
-            'ticket_dates' => $ticketDates,
+        return $this->boardView->build($this->currentPerson()) + [
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
@@ -419,54 +402,6 @@ final class SignupController
         $personId = WebSession::read($cookie);
 
         return null === $personId ? null : $this->people->find($personId);
-    }
-
-    /**
-     * Task ids this person still occupies, so the board can show Drop rather
-     * than Claim for them.
-     *
-     * @return array<int, bool> task id => true
-     */
-    private function occupiedTaskIds(int $personId): array
-    {
-        $ids = [];
-
-        foreach ($this->assignments->forPerson($personId) as $assignment) {
-            if ($assignment->isOccupying()) {
-                $ids[$assignment->taskId] = true;
-            }
-        }
-
-        return $ids;
-    }
-
-    /**
-     * @param array<int, Task> $tasks
-     * @param array<int, int> $occupancy
-     * @param array<int, bool> $mine
-     * @return array<int, array{title: string, tasks: array<int, array{task: Task, taken: int, mine: bool}>}>
-     */
-    private function groupByEvent(array $tasks, array $occupancy, array $mine): array
-    {
-        $groups = [];
-
-        foreach ($tasks as $task) {
-            $key = null !== $task->eventPostId
-                ? 'e:' . $task->eventPostId
-                : 'l:' . $task->eventLabel . '|' . $task->taskDate;
-
-            if (! isset($groups[$key])) {
-                $groups[$key] = ['title' => $task->eventName(), 'tasks' => []];
-            }
-
-            $groups[$key]['tasks'][] = [
-                'task' => $task,
-                'taken' => $occupancy[$task->id] ?? 0,
-                'mine' => isset($mine[$task->id]),
-            ];
-        }
-
-        return array_values($groups);
     }
 
     private function loginUrl(string $rawToken): string
