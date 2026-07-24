@@ -16,6 +16,8 @@
  * @var int $min_rated_tasks Finished tasks before a member is rated rather than "New".
  * @var int $reputation_half_life Days for an outcome to count half as much toward the score.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
+ * @var bool $leader_enabled Whether new events carry a crew-leader slot by default.
+ * @var int $leader_experience Completions in each role before someone is leader-eligible.
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
@@ -354,6 +356,35 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Leadership', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Crew leader', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="leader_enabled" value="1" <?php checked($leader_enabled); ?>>
+                        <?php esc_html_e('Offer a crew-leader slot by default on new events', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('A reserved 🧭 Leader slot only crew you’ve cleared can take; its holder can mark that night’s crew from the bot. Turn it on or off per event on the Roster screen.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-leader-experience"><?php esc_html_e('Eligible after', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input type="number" id="eventcrew-leader-experience" name="leader_experience"
+                        value="<?php echo esc_attr((string) $leader_experience); ?>" min="1" step="1" style="width:5em">
+                    <?php esc_html_e('completions in each role', 'eventcrew'); ?>
+                    <p class="description">
+                        <?php esc_html_e('How many tasks someone must have completed in every active role before they show as an eligible leader (and the organizers are alerted). Default 2.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

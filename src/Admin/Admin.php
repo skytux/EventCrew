@@ -85,6 +85,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_toggle_leader',
+            [$this->container->get(RosterPage::class), 'toggleLeader']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );
@@ -97,6 +102,11 @@ final class Admin
         add_action(
             'admin_post_eventcrew_grant_credit',
             [$this->container->get(PeoplePage::class), 'grantCredit']
+        );
+
+        add_action(
+            'admin_post_eventcrew_grant_pass',
+            [$this->container->get(PeoplePage::class), 'grantPass']
         );
     }
 
@@ -137,6 +147,15 @@ final class Admin
             self::CAPABILITY,
             'eventcrew-people',
             [$this->container->get(PeoplePage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Leadership', 'eventcrew'),
+            __('Leadership', 'eventcrew'),
+            self::CAPABILITY,
+            LeadersPage::PAGE_SLUG,
+            [$this->container->get(LeadersPage::class), 'render']
         );
 
         add_submenu_page(

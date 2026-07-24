@@ -157,9 +157,10 @@ final class GiftService
 
         [$credits, $note] = $this->pendingAmount($organizerTelegramId);
 
-        // A discretionary bot grant carries no WordPress user id, so it is
-        // recorded as granted_by null - the ledger still shows the credit.
-        $this->grants->record($recipient->id, $credits, $note, 0);
+        // A discretionary bot grant carries no WordPress user id, but the
+        // organizer who ran /gift is a known person, so record them - the audit
+        // log then names them rather than "the bot".
+        $this->grants->record($recipient->id, $credits, $note, 0, $organizer->id);
         $balance = $this->standing->for($recipient->id)->creditBalance;
 
         $this->telegram->answerCallbackQuery(

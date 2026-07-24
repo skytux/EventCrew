@@ -37,7 +37,8 @@ final class Scheduler
         private readonly OpenTaskCall $openTasks,
         private readonly StandingNotice $standingNotices,
         private readonly BoardPush $boardPush,
-        private readonly BoardService $board
+        private readonly BoardService $board,
+        private readonly LeaderEligibilityNotifier $leaderCandidates
     ) {
     }
 
@@ -68,6 +69,9 @@ final class Scheduler
         // Wind the board down as a day's tasks finish: edit it in place, but only
         // when what it shows has changed since the last tick.
         $this->board->refreshIfChanged();
+
+        // Tell the organizers about anyone newly eligible to lead.
+        $this->leaderCandidates->run();
 
         update_option(self::LAST_RUN_OPTION, time());
     }

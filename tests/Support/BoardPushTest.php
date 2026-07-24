@@ -40,7 +40,7 @@ final class BoardPushTest extends TelegramTestCase
             $telegram,
             new Logger(),
             new ClaimNotifier($tasks, $assignments, new Mailer(new Logger()), $telegram, $this->standing()),
-            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()))
+            new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()), new PersonRepository(), new TaskRepository())
         );
 
         return new BoardPush($tasks, new NotificationsRepository(), $board);

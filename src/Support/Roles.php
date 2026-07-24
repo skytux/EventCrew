@@ -38,6 +38,14 @@ final class Roles
 {
     public const OPTION_NAME = 'eventcrew_roles';
 
+    /**
+     * The reserved role for the crew leader. It is never in the editable role
+     * list - the plugin auto-manages a single leader task per event - but tasks
+     * still carry the slug, so display()/label()/exists() recognise it and
+     * save() refuses to let an organizer create or archive it by hand.
+     */
+    public const LEADER_SLUG = 'leader';
+
     /** Offsets are measured from when the event starts. */
     public const ANCHOR_START = 'start';
 
@@ -171,7 +179,9 @@ final class Roles
                 $slug = sanitize_key($label);
             }
 
-            if ('' === $slug || isset($seen[$slug])) {
+            // The leader slug is reserved and auto-managed; never let a hand-typed
+            // role take it over.
+            if ('' === $slug || self::LEADER_SLUG === $slug || isset($seen[$slug])) {
                 continue;
             }
 
@@ -231,6 +241,10 @@ final class Roles
 
     public static function label(string $slug): string
     {
+        if (self::LEADER_SLUG === $slug) {
+            return __('Leader', 'eventcrew');
+        }
+
         return self::find($slug)['label'] ?? $slug;
     }
 
@@ -239,6 +253,10 @@ final class Roles
      */
     public static function display(string $slug): string
     {
+        if (self::LEADER_SLUG === $slug) {
+            return __('🧭 Leader', 'eventcrew');
+        }
+
         $role = self::find($slug);
 
         if (null === $role) {
@@ -263,7 +281,7 @@ final class Roles
      */
     public static function exists(string $slug): bool
     {
-        return null !== self::find($slug);
+        return self::LEADER_SLUG === $slug || null !== self::find($slug);
     }
 
     public static function isArchived(string $slug): bool

@@ -24,7 +24,8 @@ final class UpdateRouter
         private readonly ReplacementService $replacement,
         private readonly ProfileService $profile,
         private readonly TicketRedemptionService $tickets,
-        private readonly GiftService $gift
+        private readonly GiftService $gift,
+        private readonly PermissionService $permissions
     ) {
     }
 
@@ -54,6 +55,8 @@ final class UpdateRouter
                 $this->tickets->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gift:')) {
                 $this->gift->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, 'perm:')) {
+                $this->permissions->onSelect($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -124,6 +127,20 @@ final class UpdateRouter
             return;
         }
 
+        // /allow (organizers only) sets leader / one-time-pass / admin.
+        if ($this->isCommand($text, 'allow')) {
+            $this->permissions->start($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /leaders (organizers only): who is eligible and who has been allowed.
+        if ($this->isCommand($text, 'leaders')) {
+            $this->permissions->onLeaders($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
         // /ticket is a personal, credit-spending action, so its answer - the
         // spendable buttons - always goes to the DM, never into the group. Asked
         // in the group it still works: the person gets the DM and a breadcrumb
@@ -168,6 +185,8 @@ final class UpdateRouter
                 $this->replacement->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->gift->isAwaitingTarget($fromId)) {
                 $this->gift->captureTarget($fromId, $chatId, $text, $entities);
+            } elseif ($this->permissions->isAwaitingTarget($fromId)) {
+                $this->permissions->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }

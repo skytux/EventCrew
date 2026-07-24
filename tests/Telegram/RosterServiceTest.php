@@ -155,9 +155,12 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
-    public function testNonOrganizerCannotMark(): void
+    public function testANonOrganizerNonLeaderCannotMark(): void
     {
-        $this->organizer(false);
+        $this->organizer(false); // a linked, non-organizer person (id 7)
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up']; // assignment
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3]; // task
+        $this->wpdb->nextResults[] = []; // isLeaderOn: no leader task that day
 
         $this->service()->onMark([
             'id' => 'cbq',
@@ -166,7 +169,28 @@ final class RosterServiceTest extends TelegramTestCase
             'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
         ]);
 
-        self::assertSame('Only organizers can mark attendance.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertStringContainsString('leader', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertNotContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testALeaderCanMarkTheirOwnNight(): void
+    {
+        // A non-organizer who holds the leader slot that day may mark attendance.
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Lead', 'is_organizer' => 0, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 9, 'status' => 'signed_up']; // marked assignment
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3]; // its task
+        // isLeaderOn: a leader task that day, and the marker holds it.
+        $this->wpdb->nextResults[] = [['id' => 7, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1]];
+        $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 7, 'person_id' => 8, 'status' => 'signed_up'];
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:11:c',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame('Marked completed.', $this->lastCallTo('answerCallbackQuery')['text']);
     }
 }

@@ -10,6 +10,8 @@ use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
+use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\LeaderGate;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
@@ -70,6 +72,8 @@ final class SettingsPage
                 'min_rated_tasks' => $reputation->minRatedTasks(),
                 'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
+                'leader_enabled' => (bool) get_option(LeaderGate::ENABLED_OPTION, false),
+                'leader_experience' => max(1, (int) get_option(LeaderEligibility::THRESHOLD_OPTION, 2)),
                 'board_push_enabled' => (bool) get_option(BoardPush::ENABLED_OPTION, true),
                 'board_push_lead_week' => max(
                     0,
@@ -230,6 +234,12 @@ final class SettingsPage
         update_option(ReputationSettings::HALF_LIFE_OPTION, $halfLife);
 
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
+
+        update_option(LeaderGate::ENABLED_OPTION, isset($_POST['leader_enabled']));
+        $leaderExperience = isset($_POST['leader_experience'])
+            ? max(1, (int) $_POST['leader_experience'])
+            : 2;
+        update_option(LeaderEligibility::THRESHOLD_OPTION, $leaderExperience);
 
         update_option(BoardPush::ENABLED_OPTION, isset($_POST['board_push_enabled']) ? '1' : '0');
         $leadWeek = isset($_POST['board_push_lead_week'])
@@ -395,6 +405,8 @@ final class SettingsPage
             ['command' => 'stop', 'description' => __('DM — switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
+            ['command' => 'allow', 'description' => __('DM — organizers: set leader / pass / admin', 'eventcrew')],
+            ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],
         ]);
 
         Admin::redirectTo(

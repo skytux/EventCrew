@@ -375,6 +375,7 @@ final class BoardService
         $message = match ($outcome) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
+            SignupService::LEADER_ONLY => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             SignupService::OVERLAP => __('That clashes with another slot you already hold.', 'eventcrew'),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),

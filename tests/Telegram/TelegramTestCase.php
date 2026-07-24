@@ -14,6 +14,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
@@ -23,6 +24,7 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
@@ -116,7 +118,7 @@ abstract class TelegramTestCase extends TestCase
      */
     protected function signup(): SignupService
     {
-        return new SignupService(new AssignmentRepository(), $this->standing());
+        return new SignupService(new AssignmentRepository(), $this->standing(), new PersonRepository(), new TaskRepository());
     }
 
     /**
@@ -167,6 +169,11 @@ abstract class TelegramTestCase extends TestCase
                 $this->standing(),
                 $this->client(),
                 new CreditGrantNotifier($mailer, $this->client())
+            ),
+            new PermissionService(
+                new PersonRepository(),
+                $this->client(),
+                new LeaderEligibility(new AssignmentRepository(), new PersonRepository())
             )
         );
     }

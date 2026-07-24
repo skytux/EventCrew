@@ -145,6 +145,29 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testAllowCommandReachesThePermissionService(): void
+    {
+        // Unlinked sender -> refused as not an organizer, proof /allow routed.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/allow',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testPermCallbackReachesThePermissionService(): void
+    {
+        $this->router()->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:leader:8'],
+        ]);
+
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
     public function testGroupTicketCommandReachesTheTicketService(): void
     {
         // /ticket now works from the group too; an unlinked sender gets the

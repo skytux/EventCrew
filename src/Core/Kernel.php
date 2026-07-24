@@ -6,6 +6,7 @@ namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
 use EventCrew\Admin\DiagnosticsPage;
+use EventCrew\Admin\LeadersPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
@@ -24,6 +25,9 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\LeaderEligibilityNotifier;
+use EventCrew\Support\LeaderGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
@@ -44,6 +48,7 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
+use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
@@ -196,6 +201,11 @@ final class Kernel
         );
 
         $this->container->singleton(
+            LeaderGate::class,
+            fn () => new LeaderGate()
+        );
+
+        $this->container->singleton(
             StandingCalculator::class,
             fn (Container $container) => new StandingCalculator(
                 $container->get(AssignmentRepository::class),
@@ -208,7 +218,9 @@ final class Kernel
             SignupService::class,
             fn (Container $container) => new SignupService(
                 $container->get(AssignmentRepository::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class)
             )
         );
 
@@ -304,13 +316,32 @@ final class Kernel
         );
 
         $this->container->singleton(
+            LeaderEligibility::class,
+            fn (Container $container) => new LeaderEligibility(
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            LeaderEligibilityNotifier::class,
+            fn (Container $container) => new LeaderEligibilityNotifier(
+                $container->get(LeaderEligibility::class),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             Scheduler::class,
             fn (Container $container) => new Scheduler(
                 $container->get(ReminderCall::class),
                 $container->get(OpenTaskCall::class),
                 $container->get(StandingNotice::class),
                 $container->get(BoardPush::class),
-                $container->get(BoardService::class)
+                $container->get(BoardService::class),
+                $container->get(LeaderEligibilityNotifier::class)
             )
         );
 
@@ -449,6 +480,15 @@ final class Kernel
         );
 
         $this->container->singleton(
+            PermissionService::class,
+            fn (Container $container) => new PermissionService(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(LeaderEligibility::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
@@ -457,7 +497,8 @@ final class Kernel
                 $container->get(ReplacementService::class),
                 $container->get(ProfileService::class),
                 $container->get(TicketRedemptionService::class),
-                $container->get(GiftService::class)
+                $container->get(GiftService::class),
+                $container->get(PermissionService::class)
             )
         );
 
@@ -517,7 +558,8 @@ final class Kernel
         $this->container->singleton(
             TaskTemplateApplier::class,
             fn (Container $container) => new TaskTemplateApplier(
-                $container->get(TaskRepository::class)
+                $container->get(TaskRepository::class),
+                $container->get(LeaderGate::class)
             )
         );
 
@@ -562,7 +604,18 @@ final class Kernel
                 $container->get(DoorList::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
-                $container->get(FreeEntryGate::class)
+                $container->get(FreeEntryGate::class),
+                $container->get(LeaderGate::class)
+            )
+        );
+
+        $this->container->singleton(
+            LeadersPage::class,
+            fn (Container $container) => new LeadersPage(
+                $container->get(View::class),
+                $container->get(LeaderEligibility::class),
+                $container->get(PersonRepository::class),
+                $container->get(LeaderGate::class)
             )
         );
 

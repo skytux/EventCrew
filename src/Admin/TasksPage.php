@@ -122,7 +122,9 @@ final class TasksPage
             // when there is no link, so the two can never disagree on screen.
             'event_label' => null === $eventPostId ? $eventLabel : '',
             'event_post_id' => $eventPostId,
-            'capacity' => max(1, $capacity),
+            // 0 is allowed: it takes a task off both boards (see
+            // TaskRepository::upcoming) while keeping its row and any history.
+            'capacity' => max(0, $capacity),
             'notes' => $notes,
         ];
 

@@ -74,6 +74,19 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                     </div>
 
                     <div class="form-field">
+                        <label for="eventcrew-can-lead">
+                            <input
+                                name="can_lead"
+                                id="eventcrew-can-lead"
+                                type="checkbox"
+                                value="1"
+                                <?php checked($eventcrew_is_edit && $editing->canLead); ?>>
+                            <?php esc_html_e('Crew leader', 'eventcrew'); ?>
+                        </label>
+                        <p><?php esc_html_e('May take the reserved 🧭 Leader slot and mark that night’s crew from the bot, without being an organizer.', 'eventcrew'); ?></p>
+                    </div>
+
+                    <div class="form-field">
                         <label for="eventcrew-notify-muted">
                             <input
                                 name="notify_muted"
@@ -185,6 +198,19 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                             <button type="submit" class="button"><?php esc_html_e('Grant credits', 'eventcrew'); ?></button>
                         </p>
                         <p class="description"><?php esc_html_e('A one-off bonus, on top of the credits earned for completed tasks.', 'eventcrew'); ?></p>
+                    </form>
+
+                    <h3><?php esc_html_e('One-time at-risk pass', 'eventcrew'); ?></h3>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <input type="hidden" name="action" value="eventcrew_grant_pass">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $editing->id); ?>">
+                        <p class="submit">
+                            <button type="submit" class="button"><?php echo $editing->hasAtRiskPass
+                                ? esc_html__('Pass already granted — re-grant', 'eventcrew')
+                                : esc_html__('Grant a one-time pass', 'eventcrew'); ?></button>
+                        </p>
+                        <p class="description"><?php esc_html_e('Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup.', 'eventcrew'); ?></p>
                     </form>
                 <?php endif; ?>
             </div>

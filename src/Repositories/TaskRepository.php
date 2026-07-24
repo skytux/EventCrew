@@ -52,7 +52,7 @@ final class TaskRepository
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
                 'role_slug' => (string) ($data['role_slug'] ?? ''),
-                'capacity' => max(1, (int) ($data['capacity'] ?? 1)),
+                'capacity' => max(0, (int) ($data['capacity'] ?? 1)),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => current_time('mysql'),
             ]
@@ -121,8 +121,11 @@ final class TaskRepository
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()}
-                WHERE (ends_at IS NULL AND task_date >= %s)
-                   OR (ends_at IS NOT NULL AND ends_at >= %s)
+                WHERE capacity > 0
+                  AND (
+                    (ends_at IS NULL AND task_date >= %s)
+                    OR (ends_at IS NOT NULL AND ends_at >= %s)
+                  )
                 ORDER BY task_date ASC, starts_at ASC, id ASC
                 LIMIT %d",
                 current_time('Y-m-d'),

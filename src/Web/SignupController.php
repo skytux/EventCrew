@@ -199,6 +199,7 @@ final class SignupController
     {
         return match ($this->signup->claim($personId, $taskId)) {
             SignupService::GATED => 'gated',
+            SignupService::LEADER_ONLY => 'leader_only',
             SignupService::OVERLAP => 'overlap',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
@@ -345,6 +346,7 @@ final class SignupController
             'full' => __('That slot just filled up.', 'eventcrew'),
             'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
+            'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),

@@ -9,6 +9,7 @@
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var bool $free_entry_closed Whether free entry is closed for the shown date.
+ * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
  * @var array<string, string> $statuses Status slug => label, for the pickers.
  * @var string $nonce_action Nonce action for the marking forms.
  * @var string $page_slug Admin page slug, for form targets.
@@ -95,6 +96,16 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <?php echo $free_entry_closed
                             ? esc_html__('Reopen free entry', 'eventcrew')
                             : esc_html__('Close free entry (sold out)', 'eventcrew'); ?>
+                    </button>
+                </form>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                    <input type="hidden" name="action" value="eventcrew_toggle_leader">
+                    <?php wp_nonce_field($nonce_action); ?>
+                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                    <button type="submit" class="button">
+                        <?php echo $leader_enabled
+                            ? esc_html__('Turn off crew leader', 'eventcrew')
+                            : esc_html__('Turn on crew leader', 'eventcrew'); ?>
                     </button>
                 </form>
             </p>
