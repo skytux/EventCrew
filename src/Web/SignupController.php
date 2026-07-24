@@ -12,7 +12,6 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
-use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -68,7 +67,7 @@ final class SignupController
     {
         add_shortcode('eventcrew_signup', [$this, 'renderShortcode']);
         add_action('init', [$this, 'registerBlock']);
-        add_action('template_redirect', [$this, 'maybeStartManageSession']);
+        add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
 
         foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
@@ -203,33 +202,33 @@ final class SignupController
 
     /**
      * The account link in every email points at this public page carrying a
-     * reusable 'manage' token (see Mailer::manageUrl). On the page load, trade a
-     * valid token for a normal session and strip the param, so the person lands
-     * on their own signed-in profile - where pausing email or deleting their
-     * data now lives - instead of a bare endpoint. An old email keeps working
-     * because the token is a stateless signature, not a single-use login link.
+     * single-use `web_login` token (see Mailer::manageUrl). On the page load,
+     * consume it - exactly the magic-link sign-in the login form uses, one-time
+     * and good for 30 minutes - and land the person on their own signed-in
+     * profile, where pausing email or deleting their data now lives, instead of
+     * a bare endpoint. A stale or reused link just drops them on the sign-in
+     * form with a notice to request a fresh one.
      */
-    public function maybeStartManageSession(): void
+    public function maybeSignInFromEmailLink(): void
     {
-        // phpcs:disable WordPress.Security.NonceVerification -- a signed token authenticates this, not a nonce.
-        if (! isset($_GET['eventcrew_manage'])) {
+        // phpcs:disable WordPress.Security.NonceVerification -- a single-use signed token authenticates this, not a nonce.
+        if (! isset($_GET['eventcrew_login'])) {
             return;
         }
 
-        $token = sanitize_text_field(wp_unslash($_GET['eventcrew_manage']));
+        $token = sanitize_text_field(wp_unslash($_GET['eventcrew_login']));
         // phpcs:enable WordPress.Security.NonceVerification
 
-        $personId = SignedLink::verify('manage', $token);
+        $personId = $this->consumeMagicLink($token);
 
-        if (null !== $personId && null !== $this->people->find($personId)) {
+        if (null !== $personId) {
             $this->setSessionCookie(WebSession::mint($personId));
         }
 
-        // Drop the token from the URL whether or not it verified, so it never
-        // lingers in history or a shared link; the reload renders signed in.
-        wp_safe_redirect(remove_query_arg('eventcrew_manage'));
-
-        exit;
+        // Strip the token and reload so it never lingers in history or a shared
+        // link; the reload renders signed in, or shows the sign-in form on a bad
+        // or expired link.
+        $this->redirect(remove_query_arg('eventcrew_login'), null !== $personId ? 'signed_in' : 'bad_link');
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Telegram\BoardService;
 
 /**
@@ -72,6 +73,12 @@ final class Scheduler
 
         // Tell the organizers about anyone newly eligible to lead.
         $this->leaderCandidates->run();
+
+        // Sweep spent and expired sign-in tokens - one is issued per email's
+        // account-link footer, so the table would grow unbounded otherwise. The
+        // repository is newed inline like the other stateless helpers, so this
+        // adds no constructor to the heartbeat.
+        (new AuthTokenRepository())->purgeExpired();
 
         update_option(self::LAST_RUN_OPTION, time());
     }

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.7.4
+Stable tag: 1.7.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.7.5 =
+* The email account link is now a single-use, 30-minute sign-in link (like the login form's), so a forwarded or leaked old email can't be replayed as a login. Spent and expired sign-in tokens are swept on the hourly cron so the table stays small.
+
 = 1.7.4 =
 * The "manage your account" link in emails now opens your own signed-in profile page (where pausing email and deleting your data live) instead of a bare endpoint. Telegram-only installs keep the standalone self-service page.
 
@@ -155,6 +158,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.7.5 =
+The email account link is now a single-use, 30-minute sign-in link, and expired tokens are auto-swept. No database change.
 
 = 1.7.4 =
 The email account link now lands on your signed-in profile page. No database change.
