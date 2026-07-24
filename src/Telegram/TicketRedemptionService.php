@@ -45,11 +45,12 @@ final class TicketRedemptionService
      * /ticket in a DM: offer the upcoming events a credit can be spent on, as
      * tappable buttons, or explain why there is nothing to offer.
      */
-    public function onTicketCommand(int $telegramUserId, int $chatId): void
+    public function onTicketCommand(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
+            // A harmless nudge, so it goes back to wherever they asked.
             $this->telegram->sendMessage(
                 $chatId,
                 __('Set yourself up first with /start, then /ticket lets you spend a free-entry credit.', 'eventcrew')
@@ -58,13 +59,16 @@ final class TicketRedemptionService
             return;
         }
 
+        // The rest names credits and offers spendable buttons, so it always goes
+        // to the DM - never into the group - with a breadcrumb pointing there.
         $balance = $this->standing->for($person->id)->creditBalance;
 
         if ($balance < 1) {
             $this->telegram->sendMessage(
-                $chatId,
+                $telegramUserId,
                 __('You have no free-entry credits yet — you earn one for every two tasks you complete.', 'eventcrew')
             );
+            $this->sentDmNote($chatId, $isPrivate);
 
             return;
         }
@@ -73,9 +77,10 @@ final class TicketRedemptionService
 
         if ([] === $dates) {
             $this->telegram->sendMessage(
-                $chatId,
+                $telegramUserId,
                 __('No upcoming events to spend a credit on right now — check back when the next one is on the board.', 'eventcrew')
             );
+            $this->sentDmNote($chatId, $isPrivate);
 
             return;
         }
@@ -87,7 +92,7 @@ final class TicketRedemptionService
         }
 
         $this->telegram->sendMessage(
-            $chatId,
+            $telegramUserId,
             sprintf(
                 /* translators: %d: number of free-entry credits */
                 _n(
@@ -100,6 +105,19 @@ final class TicketRedemptionService
             ),
             ['inline_keyboard' => $keyboard]
         );
+        $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * When /ticket was typed in the group, leave a short note there so the asker
+     * knows the answer went to their DM. A no-op in a private chat, where the
+     * answer already landed in the chat they typed in.
+     */
+    private function sentDmNote(int $chatId, bool $isPrivate): void
+    {
+        if (! $isPrivate) {
+            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
+        }
     }
 
     /**

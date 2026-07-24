@@ -88,6 +88,29 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertStringContainsString('Arrived', $text);
     }
 
+    public function testFromAGroupTheRosterGoesToTheDmWithABreadcrumb(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // datesWithTasks()
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'arrived'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        // Asked from a group (chat -100 differs from the asker 555), not private.
+        $this->service()->onRosterCommand(555, -100, false);
+
+        // The roster itself lands in the asker's DM...
+        self::assertSame(555, $this->telegramCalls[0]['body']['chat_id']);
+        self::assertStringContainsString('Sam', $this->telegramCalls[0]['body']['text']);
+        // ...and only a breadcrumb goes to the group.
+        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame('📬 Sent you a DM.', $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testTellsTheOrganizerWhenNothingIsScheduled(): void
     {
         $this->organizer(true);
