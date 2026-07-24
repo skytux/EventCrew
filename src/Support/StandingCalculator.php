@@ -17,8 +17,12 @@ use EventCrew\Repositories\RedemptionRepository;
  */
 final class StandingCalculator
 {
-    /** Threshold below which a rated person counts as at-risk. */
-    public const THRESHOLD_OPTION = 'eventcrew_reputation_threshold';
+    /**
+     * Threshold below which a rated person counts as at-risk. The canonical name
+     * lives on ReputationSettings now; kept here so existing references (Settings,
+     * tests) resolve to the same option.
+     */
+    public const THRESHOLD_OPTION = ReputationSettings::THRESHOLD_OPTION;
 
     public function __construct(
         private readonly AssignmentRepository $assignments,
@@ -32,11 +36,13 @@ final class StandingCalculator
         $history = $this->assignments->historyFor($personId);
         $now = (int) strtotime((string) current_time('mysql'));
 
+        $settings = new ReputationSettings();
+
         $completed = Reputation::completedCount($history);
-        $score = Reputation::score($history, $now);
+        $score = Reputation::score($history, $now, $settings->weights());
         // Rated on every finished task, not just completions, so a no-show record
         // is judged; credits below still come from completions alone.
-        $level = Reputation::level(Reputation::scoredCount($history), $score, $this->threshold());
+        $level = Reputation::level(Reputation::scoredCount($history), $score, $settings->threshold());
 
         $balance = Credits::balance(
             $completed,
@@ -45,18 +51,5 @@ final class StandingCalculator
         );
 
         return new Standing($level, $score, $completed, $balance);
-    }
-
-    private function threshold(): float
-    {
-        $value = (float) get_option(self::THRESHOLD_OPTION, Reputation::DEFAULT_THRESHOLD);
-
-        // A misconfigured 0 or a value outside [0,1] would make the gate either
-        // never or always fire; fall back to the default rather than trust it.
-        if ($value <= 0.0 || $value > 1.0) {
-            return Reputation::DEFAULT_THRESHOLD;
-        }
-
-        return $value;
     }
 }

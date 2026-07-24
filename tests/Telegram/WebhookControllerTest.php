@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -15,6 +16,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
@@ -77,6 +79,12 @@ final class WebhookControllerTest extends TelegramTestCase
                 new FreeEntryGate(),
                 $this->client(),
                 new Mailer(new Logger())
+            ),
+            new GiftService(
+                new PersonRepository(),
+                new CreditGrantRepository(),
+                $this->standing(),
+                $this->client()
             )
         );
 

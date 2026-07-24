@@ -35,12 +35,23 @@ final class OnboardingService
     }
 
     /**
-     * Handles /start in a private chat. An already-verified account is told it
-     * is set up; anyone else is asked for their email, and we remember for a
-     * few minutes that this user's next message is that answer.
+     * Handles /start. In a private chat an already-verified account is told it
+     * is set up; anyone else is asked for their email, and we remember for a few
+     * minutes that this user's next message is that answer.
+     *
+     * Asked in a group it can't run: Telegram forbids a bot from opening a DM to
+     * someone who hasn't messaged it first, so onboarding a newcomer by DM is
+     * impossible. Instead the group gets a one-tap link into the bot's private
+     * chat, where /start then works normally.
      */
-    public function start(int $telegramUserId, int $chatId, string $displayName): void
+    public function start(int $telegramUserId, int $chatId, string $displayName, bool $isPrivate = true): void
     {
+        if (! $isPrivate) {
+            $this->nudgeToPrivateChat($chatId);
+
+            return;
+        }
+
         $existing = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null !== $existing) {
@@ -87,13 +98,15 @@ final class OnboardingService
 
     /**
      * Handles /stop: switches the account off (no email, off the boards) while
-     * keeping the row, so /start can turn it back on later.
+     * keeping the row, so /start can turn it back on later. The confirmation is
+     * personal, so it goes to the DM with a breadcrumb when asked in a group.
      */
-    public function stop(int $telegramUserId, int $chatId): void
+    public function stop(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person) {
+            // A harmless nudge, so it goes back to wherever they asked.
             $this->telegram->sendMessage(
                 $chatId,
                 __('There is no account here to switch off.', 'eventcrew')
@@ -104,10 +117,50 @@ final class OnboardingService
 
         $this->people->disable($person->id);
         $this->telegram->sendMessage(
-            $chatId,
+            $telegramUserId,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __('Your account is off: no more emails, and you’re off the boards. Send /start any time to turn it back on.', 'eventcrew')
         );
+        $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * Points a group at the bot's private chat with a one-tap deep link, for
+     * /start where onboarding can only happen in the DM. Falls back to plain
+     * guidance if the bot's username isn't cached yet.
+     */
+    private function nudgeToPrivateChat(int $chatId): void
+    {
+        $username = trim((string) get_option(BoardService::USERNAME_OPTION, ''));
+
+        if ('' === $username) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('Open the bot in a private chat and send /start there to set up your account.', 'eventcrew')
+            );
+
+            return;
+        }
+
+        $this->telegram->sendMessage(
+            $chatId,
+            __('Let’s set you up in a private chat — tap below to open the bot.', 'eventcrew'),
+            ['inline_keyboard' => [[[
+                'text' => __('Set me up →', 'eventcrew'),
+                'url' => 'https://t.me/' . $username . '?start=onboard',
+            ]]]]
+        );
+    }
+
+    /**
+     * When the command was typed in a group, leave a short note there so the
+     * asker knows the answer went to their DM. A no-op in a private chat.
+     */
+    private function sentDmNote(int $chatId, bool $isPrivate): void
+    {
+        if (! $isPrivate) {
+            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
+        }
     }
 
     /**

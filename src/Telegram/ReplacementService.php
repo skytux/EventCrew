@@ -34,13 +34,16 @@ final class ReplacementService
     }
 
     /**
-     * /replace in a private chat: asks who the cover is standing in for.
+     * /replace: asks who the cover is standing in for. The exchange is personal
+     * (it lists another member's tasks), so it runs in the DM - asked in a group
+     * the prompt goes to the DM and a breadcrumb points there.
      */
-    public function start(int $telegramUserId, int $chatId): void
+    public function start(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         $cover = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $cover || ! $cover->isEmailVerified()) {
+            // A harmless nudge, so it goes back to wherever they asked.
             $this->telegram->sendMessage(
                 $chatId,
                 __('Set yourself up first, then you can cover someone’s task.', 'eventcrew')
@@ -51,9 +54,13 @@ final class ReplacementService
 
         set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
-            $chatId,
+            $telegramUserId,
             __('Whose task are you covering? Send their name, or @mention them.', 'eventcrew')
         );
+
+        if (! $isPrivate) {
+            $this->telegram->sendMessage($chatId, __('📬 Sent you a DM.', 'eventcrew'));
+        }
     }
 
     public function isAwaitingTarget(int $telegramUserId): bool

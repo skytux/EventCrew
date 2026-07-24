@@ -8,24 +8,21 @@ namespace EventCrew\Support;
  * The plain-language "how your score works" explanation, in two shapes: aligned
  * text lines for the bot's /me reply (Telegram messages are plain text, so no
  * HTML table), and label/percent rows for the web profile to build a real table
- * from. Both draw their numbers from Reputation, so the explanation can never
- * drift from the actual scoring.
- *
- * The threshold shown is the shipped default; an install that has tuned
- * StandingCalculator::THRESHOLD_OPTION would read a little differently, which is
- * a fair trade for keeping this a pure, storage-free helper.
+ * from. Both draw their numbers from the live ReputationSettings - the same
+ * weights and threshold the scoring uses - so the explanation always shows the
+ * configured values and can never drift from what is actually scored.
  */
 final class StandingExplainer
 {
     /**
      * Outcome label => weight percent, best to worst - the rows of the score
-     * table on the web profile.
+     * table on the web profile, from the configured weights.
      *
      * @return array<string, int>
      */
     public static function rows(): array
     {
-        return Reputation::outcomeWeights();
+        return (new ReputationSettings())->outcomeRows();
     }
 
     /**
@@ -48,7 +45,7 @@ final class StandingExplainer
             );
         }
 
-        $threshold = (int) round(Reputation::DEFAULT_THRESHOLD * 100);
+        $threshold = (int) round((new ReputationSettings())->threshold() * 100);
 
         $lines[] = '';
         $lines[] = __('Recent tasks count for more than old ones.', 'eventcrew');

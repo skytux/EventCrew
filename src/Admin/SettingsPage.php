@@ -11,6 +11,7 @@ use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
+use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SignupService;
@@ -61,6 +62,7 @@ final class SettingsPage
                     StandingCalculator::THRESHOLD_OPTION,
                     Reputation::DEFAULT_THRESHOLD
                 ),
+                'reputation_weights' => $this->reputationWeightRows(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
                 'board_push_enabled' => (bool) get_option(BoardPush::ENABLED_OPTION, true),
                 'board_push_lead_week' => max(
@@ -125,6 +127,29 @@ final class SettingsPage
         ];
     }
 
+    /**
+     * The per-outcome reputation weights as ordered rows the Settings form
+     * renders - each with the status slug it posts under, its human label and
+     * the current percentage.
+     *
+     * @return array<int, array{status: string, label: string, percent: int}>
+     */
+    private function reputationWeightRows(): array
+    {
+        $percents = (new ReputationSettings())->weightPercents();
+        $rows = [];
+
+        foreach (Reputation::outcomeLabels() as $status => $label) {
+            $rows[] = [
+                'status' => $status,
+                'label' => $label,
+                'percent' => $percents[$status] ?? 0,
+            ];
+        }
+
+        return $rows;
+    }
+
     public function save(): void
     {
         Admin::assertCanSave(self::NONCE_ACTION);
@@ -164,6 +189,22 @@ final class SettingsPage
         }
 
         update_option(StandingCalculator::THRESHOLD_OPTION, $threshold);
+
+        // Per-outcome weights, posted as reputation_weight[<status>] percentages.
+        // Only the known scoring statuses are read, each clamped to 0..100, so a
+        // stray field can never widen the set or store nonsense.
+        $postedWeights = isset($_POST['reputation_weight']) && is_array($_POST['reputation_weight'])
+            ? wp_unslash($_POST['reputation_weight'])
+            : [];
+        $weights = [];
+
+        foreach (array_keys(Reputation::defaultWeights()) as $status) {
+            if (isset($postedWeights[$status]) && is_numeric($postedWeights[$status])) {
+                $weights[$status] = max(0, min(100, (int) $postedWeights[$status]));
+            }
+        }
+
+        update_option(ReputationSettings::WEIGHTS_OPTION, $weights);
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
 
         update_option(BoardPush::ENABLED_OPTION, isset($_POST['board_push_enabled']) ? '1' : '0');
@@ -329,6 +370,7 @@ final class SettingsPage
             ['command' => 'myhistory', 'description' => __('DM — your past tasks', 'eventcrew')],
             ['command' => 'stop', 'description' => __('DM — switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
+            ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
         ]);
 
         Admin::redirectTo(

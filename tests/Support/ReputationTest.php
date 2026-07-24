@@ -84,6 +84,19 @@ final class ReputationTest extends TestCase
         self::assertLessThan(0.1, Reputation::score($flipped, self::NOW));
     }
 
+    public function testCustomWeightsChangeTheScore(): void
+    {
+        // A no-show is worthless by default, but an install that weights it at
+        // 100% scores it exactly like a completion.
+        $history = $this->history([[AssignmentStatus::NO_SHOW, $this->today()]]);
+
+        self::assertSame(0.0, Reputation::score($history, self::NOW));
+        self::assertSame(
+            1.0,
+            Reputation::score($history, self::NOW, [AssignmentStatus::NO_SHOW => 1.0])
+        );
+    }
+
     public function testTooFewFinishedTasksIsUnrated(): void
     {
         // Two finished tasks is below the minimum, so the level is unrated even

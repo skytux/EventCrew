@@ -11,6 +11,7 @@
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
+ * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
@@ -276,7 +277,30 @@ if (! defined('ABSPATH')) {
                         step="0.05"
                         style="width:6em">
                     <p class="description">
-                        <?php esc_html_e('A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three completed tasks are unrated. Default 0.6.', 'eventcrew'); ?>
+                        <?php esc_html_e('A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Outcome weights', 'eventcrew'); ?></th>
+                <td>
+                    <?php foreach ($reputation_weights as $eventcrew_weight) : ?>
+                        <p style="margin:.2em 0">
+                            <label style="display:inline-block;min-width:12em">
+                                <?php echo esc_html($eventcrew_weight['label']); ?>
+                            </label>
+                            <input
+                                type="number"
+                                name="reputation_weight[<?php echo esc_attr($eventcrew_weight['status']); ?>]"
+                                value="<?php echo esc_attr((string) $eventcrew_weight['percent']); ?>"
+                                min="0"
+                                max="100"
+                                step="1"
+                                style="width:5em"> %
+                        </p>
+                    <?php endforeach; ?>
+                    <p class="description">
+                        <?php esc_html_e('What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
