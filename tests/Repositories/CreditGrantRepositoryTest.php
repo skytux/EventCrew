@@ -42,6 +42,24 @@ final class CreditGrantRepositoryTest extends TestCase
         self::assertSame(3, $insert['data']['granted_by']);
     }
 
+    public function testRecentReturnsGrantsNewestFirstWithTypedFields(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['person_id' => '9', 'credits' => '2', 'note' => 'covered setup', 'granted_by' => '3', 'granted_at' => '2026-07-20 10:00:00'],
+            ['person_id' => '8', 'credits' => '1', 'note' => '', 'granted_by' => null, 'granted_at' => '2026-07-19 09:00:00'],
+        ];
+
+        $rows = $this->repository()->recent(20);
+
+        self::assertCount(2, $rows);
+        self::assertSame(9, $rows[0]['person_id']);
+        self::assertSame(2, $rows[0]['credits']);
+        self::assertSame(3, $rows[0]['granted_by']);
+        // A bot grant carries no user id.
+        self::assertNull($rows[1]['granted_by']);
+        self::assertStringContainsString('ORDER BY id DESC', $this->wpdb->lastQuery());
+    }
+
     public function testDeleteForPersonRemovesEveryGrant(): void
     {
         $this->repository()->deleteForPerson(9);

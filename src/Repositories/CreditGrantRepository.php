@@ -57,6 +57,38 @@ final class CreditGrantRepository
         );
     }
 
+    /**
+     * The most recent grants across everyone, newest first - the credit-grant
+     * audit log the People screen shows. Raw rows; the caller resolves the person
+     * and granter names for display.
+     *
+     * @return array<int, array{person_id: int, credits: int, note: string, granted_by: ?int, granted_at: string}>
+     */
+    public function recent(int $limit = 20): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single SQL statement; wrapping it just adds noise.
+                "SELECT person_id, credits, note, granted_by, granted_at FROM {$this->table()} ORDER BY id DESC LIMIT %d",
+                max(1, $limit)
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): array => [
+                'person_id' => (int) $row['person_id'],
+                'credits' => (int) $row['credits'],
+                'note' => (string) $row['note'],
+                'granted_by' => null === $row['granted_by'] ? null : (int) $row['granted_by'],
+                'granted_at' => (string) $row['granted_at'],
+            ],
+            is_array($rows) ? $rows : []
+        );
+    }
+
     public function deleteForPerson(int $personId): void
     {
         global $wpdb;
