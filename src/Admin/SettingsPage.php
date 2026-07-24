@@ -9,6 +9,7 @@ use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
+use EventCrew\Support\Credits;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
@@ -48,6 +49,8 @@ final class SettingsPage
 
     public function render(): void
     {
+        $reputation = new ReputationSettings();
+
         $this->view->render(
             'settings',
             [
@@ -63,6 +66,9 @@ final class SettingsPage
                     Reputation::DEFAULT_THRESHOLD
                 ),
                 'reputation_weights' => $this->reputationWeightRows(),
+                'tasks_per_credit' => $reputation->tasksPerCredit(),
+                'min_rated_tasks' => $reputation->minRatedTasks(),
+                'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
                 'board_push_enabled' => (bool) get_option(BoardPush::ENABLED_OPTION, true),
                 'board_push_lead_week' => max(
@@ -205,6 +211,24 @@ final class SettingsPage
         }
 
         update_option(ReputationSettings::WEIGHTS_OPTION, $weights);
+
+        // The rating and credit knobs, each floored at 1 - zero would divide by
+        // zero (credits) or rate everyone from their first outcome (min tasks).
+        $tasksPerCredit = isset($_POST['tasks_per_credit'])
+            ? max(1, (int) $_POST['tasks_per_credit'])
+            : Credits::TASKS_PER_CREDIT;
+        update_option(ReputationSettings::TASKS_PER_CREDIT_OPTION, $tasksPerCredit);
+
+        $minRatedTasks = isset($_POST['min_rated_tasks'])
+            ? max(1, (int) $_POST['min_rated_tasks'])
+            : Reputation::MIN_RATED_TASKS;
+        update_option(ReputationSettings::MIN_RATED_TASKS_OPTION, $minRatedTasks);
+
+        $halfLife = isset($_POST['reputation_half_life'])
+            ? max(1, (int) $_POST['reputation_half_life'])
+            : Reputation::HALF_LIFE_DAYS;
+        update_option(ReputationSettings::HALF_LIFE_OPTION, $halfLife);
+
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
 
         update_option(BoardPush::ENABLED_OPTION, isset($_POST['board_push_enabled']) ? '1' : '0');

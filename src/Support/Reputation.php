@@ -32,7 +32,7 @@ final class Reputation
     public const DEFAULT_THRESHOLD = 0.6;
 
     /** Days after which an outcome counts for half of a same-day one. */
-    private const HALF_LIFE_DAYS = 180;
+    public const HALF_LIFE_DAYS = 180;
 
     /**
      * The shipped weights: only terminal outcomes score, and signed_up and
@@ -78,10 +78,13 @@ final class Reputation
      * @param array<int, array{assignment: Assignment, task_date: string}> $history
      * @param array<string, float>|null $weights status => weight in [0,1]; the
      *        shipped defaults when null, or an organizer's tuned values.
+     * @param int|null $halfLifeDays Days for an outcome to count half; the
+     *        shipped default when null.
      */
-    public static function score(array $history, int $nowTs, ?array $weights = null): float
+    public static function score(array $history, int $nowTs, ?array $weights = null, ?int $halfLifeDays = null): float
     {
         $weights ??= self::defaultWeights();
+        $halfLife = null === $halfLifeDays ? self::HALF_LIFE_DAYS : max(1, $halfLifeDays);
         $weightedSum = 0.0;
         $totalWeight = 0.0;
 
@@ -92,7 +95,7 @@ final class Reputation
                 continue;
             }
 
-            $recency = self::recencyWeight($entry['task_date'], $nowTs);
+            $recency = self::recencyWeight($entry['task_date'], $nowTs, $halfLife);
             $weightedSum += $weights[$status] * $recency;
             $totalWeight += $recency;
         }
@@ -147,9 +150,11 @@ final class Reputation
      * of terminal outcomes (see scoredCount()), so no-shows and late cancels
      * count toward being rated exactly as completions do.
      */
-    public static function level(int $ratedCount, float $score, float $threshold): string
+    public static function level(int $ratedCount, float $score, float $threshold, ?int $minRatedTasks = null): string
     {
-        if ($ratedCount < self::MIN_RATED_TASKS) {
+        $min = null === $minRatedTasks ? self::MIN_RATED_TASKS : max(1, $minRatedTasks);
+
+        if ($ratedCount < $min) {
             return Standing::UNRATED;
         }
 
@@ -160,7 +165,7 @@ final class Reputation
      * An outcome's weight by age: 1.0 on the day, halving every HALF_LIFE_DAYS.
      * A task with no readable date, or one dated in the future, counts as today.
      */
-    private static function recencyWeight(string $taskDate, int $nowTs): float
+    private static function recencyWeight(string $taskDate, int $nowTs, int $halfLifeDays = self::HALF_LIFE_DAYS): float
     {
         $taskTs = strtotime($taskDate);
 
@@ -170,6 +175,6 @@ final class Reputation
 
         $daysAgo = max(0.0, ($nowTs - $taskTs) / DAY_IN_SECONDS);
 
-        return 2.0 ** (-$daysAgo / self::HALF_LIFE_DAYS);
+        return 2.0 ** (-$daysAgo / $halfLifeDays);
     }
 }

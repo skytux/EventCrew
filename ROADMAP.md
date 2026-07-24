@@ -179,6 +179,7 @@ be designing for a user who does not exist.
 | v1.4.0 | ✅ Reputation outcome weights (completed/replacement/late/no-show) are editable in Settings and read from the database everywhere (`ReputationSettings`); standing is now rated on every finished task, not only completions. New organizer `/gift` command; `/start`, `/stop`, `/replace` work from a group (start deep-links into the DM, the others answer by DM) |
 | v1.4.1 | ✅ Granting a credit (People page or `/gift`) now emails + DMs the recipient via a shared `CreditGrantNotifier` |
 | v1.4.2 | ✅ Coherence pass: date/time formatting consolidated in `Dates` (timezone-safe by construction), name/@mention resolution in `PersonResolver`, the group breadcrumb in a `GroupBreadcrumb` trait; docs brought current |
+| v1.4.3 | ✅ The last hardcoded reputation knobs are now editable in Settings and read through `ReputationSettings`: tasks per credit, finished tasks before rated, and the recency half-life. The pure `Reputation`/`Credits` functions take them as arguments; `/me` and the web score help reflect the configured values |
 
 ## Done: v0.3 — verification, then the schema it exposed
 

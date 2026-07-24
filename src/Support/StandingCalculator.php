@@ -39,15 +39,21 @@ final class StandingCalculator
         $settings = new ReputationSettings();
 
         $completed = Reputation::completedCount($history);
-        $score = Reputation::score($history, $now, $settings->weights());
+        $score = Reputation::score($history, $now, $settings->weights(), $settings->halfLifeDays());
         // Rated on every finished task, not just completions, so a no-show record
         // is judged; credits below still come from completions alone.
-        $level = Reputation::level(Reputation::scoredCount($history), $score, $settings->threshold());
+        $level = Reputation::level(
+            Reputation::scoredCount($history),
+            $score,
+            $settings->threshold(),
+            $settings->minRatedTasks()
+        );
 
         $balance = Credits::balance(
             $completed,
             $this->redemptions->countFor($personId),
-            $this->grants->sumFor($personId)
+            $this->grants->sumFor($personId),
+            $settings->tasksPerCredit()
         );
 
         return new Standing($level, $score, $completed, $balance);
