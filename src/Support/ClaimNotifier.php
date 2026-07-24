@@ -52,7 +52,7 @@ final class ClaimNotifier
             sprintf(
                 /* translators: 1: role, 2: event, 3: date/time */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('✅ Signed up: %1$s at %2$s, %3$s. Tap the task again to cancel, or /replace to hand it on.', 'eventcrew'),
+                __('✅ Signed up: %1$s at %2$s, %3$s. Tap the task again to cancel, or ask someone to type /replace to take it over.', 'eventcrew'),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task)
@@ -75,7 +75,7 @@ final class ClaimNotifier
             sprintf(
                 /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link, 6: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\nCan't make it? Open the bot and tap the task to cancel, or /replace to hand it to someone.", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),

@@ -9,6 +9,8 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -37,7 +39,8 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
             new RedemptionRepository(),
             $this->standing(),
             new FreeEntryGate(),
-            $this->client()
+            $this->client(),
+            new Mailer(new Logger())
         );
     }
 
@@ -73,6 +76,36 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertSame(TicketRedemptionService::TICKET_READY, $result['code']);
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $result['url']);
         self::assertCount(1, $this->wpdb->inserts); // the redemption was recorded
+    }
+
+    public function testRedeemEmailsAndDmsTheTicketLink(): void
+    {
+        $mails = [];
+        Functions\when('wp_mail')->alias(
+            function (string $to, string $subject, string $body) use (&$mails): bool {
+                $mails[] = ['to' => $to, 'body' => $body];
+
+                return true;
+            }
+        );
+
+        $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates (eligible)
+        $this->wpdb->nextResults[] = [];          // forPerson -> not already redeemed
+        $this->queueBalanceAndEvent(2);           // two completions -> one credit
+        $this->wpdb->nextRows[] = [               // people->find(7) for the DM + email
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 999,
+        ];
+
+        $result = $this->service()->redeem(7, '2026-08-01');
+
+        self::assertSame(TicketRedemptionService::TICKET_READY, $result['code']);
+        // The link lands in the person's DM...
+        self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertStringContainsString($result['url'], (string) $this->lastCallTo('sendMessage')['text']);
+        // ...and in an email carrying the same link.
+        self::assertNotEmpty($mails);
+        self::assertStringContainsString($result['url'], $mails[0]['body']);
     }
 
     public function testRedeemRefusesWithNoCredit(): void

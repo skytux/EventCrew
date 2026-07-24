@@ -246,7 +246,15 @@ final class RosterService
 
             foreach ($row['people'] as $person) {
                 $mark = $person['occupying'] ? '•' : '×';
-                $lines[] = sprintf('  %s %s (%s)', $mark, $person['name'], $person['status_label']);
+                $standing = $person['standing'] ?? null;
+                $reliability = null === $standing ? '' : ' — ' . $standing->ratedSummary();
+                $lines[] = sprintf(
+                    '  %s %s (%s)%s',
+                    $mark,
+                    $person['name'],
+                    $person['status_label'],
+                    $reliability
+                );
 
                 if ($canMark && $this->isMarkable($person['status'])) {
                     $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);

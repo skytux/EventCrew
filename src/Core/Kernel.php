@@ -422,7 +422,8 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
             )
         );
 

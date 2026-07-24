@@ -78,7 +78,15 @@ final class ReplacementService
             foreach ($this->upcomingSlots($person->id) as $entry) {
                 $task = $entry['task'];
                 $buttons[] = [[
-                    'text' => sprintf('%s — %s (%s)', $person->name(), $task->roleLabel(), $task->eventName()),
+                    // Name · date · task · event, so the button says exactly whose
+                    // slot on which day you are stepping into before you tap.
+                    'text' => sprintf(
+                        '%s · %s · %s · %s',
+                        $person->name(),
+                        $task->taskDate,
+                        $task->roleLabel(),
+                        $task->eventName()
+                    ),
                     'callback_data' => 'rep:' . $entry['assignmentId'],
                 ]];
             }

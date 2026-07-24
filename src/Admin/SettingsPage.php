@@ -325,6 +325,7 @@ final class SettingsPage
             ['command' => 'board', 'description' => __('Group — show the board of open tasks', 'eventcrew')],
             ['command' => 'replace', 'description' => __('DM — cover someone else’s task', 'eventcrew')],
             ['command' => 'me', 'description' => __('DM — your standing, credits and upcoming tasks', 'eventcrew')],
+            ['command' => 'ticket', 'description' => __('DM — spend a free-entry credit for a ticket', 'eventcrew')],
             ['command' => 'myhistory', 'description' => __('DM — your past tasks', 'eventcrew')],
             ['command' => 'stop', 'description' => __('DM — switch your account off (no more emails)', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
