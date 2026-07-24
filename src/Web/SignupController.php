@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -67,6 +68,7 @@ final class SignupController
     {
         add_shortcode('eventcrew_signup', [$this, 'renderShortcode']);
         add_action('init', [$this, 'registerBlock']);
+        add_action('template_redirect', [$this, 'maybeStartManageSession']);
 
         foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
@@ -197,6 +199,37 @@ final class SignupController
     public function dropFor(int $personId, int $taskId): string
     {
         return '' === $this->signup->drop($personId, $taskId) ? 'not_on' : 'dropped';
+    }
+
+    /**
+     * The account link in every email points at this public page carrying a
+     * reusable 'manage' token (see Mailer::manageUrl). On the page load, trade a
+     * valid token for a normal session and strip the param, so the person lands
+     * on their own signed-in profile - where pausing email or deleting their
+     * data now lives - instead of a bare endpoint. An old email keeps working
+     * because the token is a stateless signature, not a single-use login link.
+     */
+    public function maybeStartManageSession(): void
+    {
+        // phpcs:disable WordPress.Security.NonceVerification -- a signed token authenticates this, not a nonce.
+        if (! isset($_GET['eventcrew_manage'])) {
+            return;
+        }
+
+        $token = sanitize_text_field(wp_unslash($_GET['eventcrew_manage']));
+        // phpcs:enable WordPress.Security.NonceVerification
+
+        $personId = SignedLink::verify('manage', $token);
+
+        if (null !== $personId && null !== $this->people->find($personId)) {
+            $this->setSessionCookie(WebSession::mint($personId));
+        }
+
+        // Drop the token from the URL whether or not it verified, so it never
+        // lingers in history or a shared link; the reload renders signed in.
+        wp_safe_redirect(remove_query_arg('eventcrew_manage'));
+
+        exit;
     }
 
     /**

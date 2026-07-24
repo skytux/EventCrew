@@ -35,10 +35,24 @@ final class Mailer
 
     public function manageUrl(int $personId): string
     {
-        return add_query_arg(
-            ['token' => SignedLink::sign('manage', $personId)],
-            rest_url('eventcrew/v1/manage')
-        );
+        $token = SignedLink::sign('manage', $personId);
+
+        // Prefer the public signup page: the link then lands the person on their
+        // own signed-in profile, where pausing email or deleting their data now
+        // lives, rather than on a bare REST endpoint. SignupController trades the
+        // token for a session on that page load. The option name mirrors
+        // Web\PwaController::PAGE_OPTION, kept literal so this low-level Support
+        // class does not reach up into the Web layer.
+        $pageId = (int) get_option('eventcrew_signup_page_id', 0);
+        $pageUrl = $pageId > 0 ? get_permalink($pageId) : false;
+
+        if (is_string($pageUrl) && '' !== $pageUrl) {
+            return add_query_arg(['eventcrew_manage' => $token], $pageUrl);
+        }
+
+        // No public page configured (a Telegram-only install): fall back to the
+        // standalone self-service page served over REST.
+        return add_query_arg(['token' => $token], rest_url('eventcrew/v1/manage'));
     }
 
     public function ticketUrl(int $assignmentId): string
