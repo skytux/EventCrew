@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.8.3
+Stable tag: 1.9.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,13 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.9.0 =
+* Admin overhaul: the Settings page is now organized into tabs — Telegram bot, Web page, Roles & tasks, Reputation & alerts — instead of one long scroll, and it reopens the tab you were last on. Telegram setup leads, so connecting the bot is the first thing you see.
+* New "Getting started" checklist on the Tasks page for fresh installs — connect a channel, create a task, put it in front of your crew — that ticks itself off and disappears once you're set up.
+* Leadership moved under People as a tab, trimming the top-level menu.
+* Diagnostics now shows an at-a-glance health banner (green / amber / red) above the detail table.
+* The advanced reputation "outcome weights" are tucked into a collapsible so the Reputation tab reads simpler.
+
 = 1.8.3 =
 * The Telegram webhook and command menu now re-install themselves automatically on the first admin page load after a plugin update — no more clicking "Install / refresh webhook" after an upgrade. The button stays for a manual retry.
 * The `/notifications` bot menu now lays out as three columns — the type's name, a 📱 Telegram toggle and a ✉ email toggle — matching the web Notifications tab, so the name no longer doubles as the Telegram toggle.
@@ -186,6 +193,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.9.0 =
+Admin UX overhaul: tabbed Settings, a first-run checklist, Leadership under People, and a Diagnostics health banner. No database change.
 
 = 1.8.3 =
 The bot webhook and command menu now refresh themselves after an update — you no longer need to re-run "Install / refresh webhook". No database change.

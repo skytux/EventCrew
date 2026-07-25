@@ -56,6 +56,29 @@ $eventcrew_log_color = static function (string $level): string {
         <?php esc_html_e('A read-only health check. Anything flagged is fixed on the Settings page — nothing here changes your site.', 'eventcrew'); ?>
     </p>
 
+    <?php
+    // An at-a-glance summary: the worst status across every check, so a problem
+    // is obvious before reading the table.
+    $eventcrew_worst = Diagnostic::OK;
+    foreach ($checks as $eventcrew_summary_check) {
+        if (Diagnostic::ERROR === $eventcrew_summary_check->status) {
+            $eventcrew_worst = Diagnostic::ERROR;
+            break;
+        }
+        if (Diagnostic::WARN === $eventcrew_summary_check->status) {
+            $eventcrew_worst = Diagnostic::WARN;
+        }
+    }
+    [$eventcrew_summary_bg, $eventcrew_summary_text] = match ($eventcrew_worst) {
+        Diagnostic::ERROR => ['#b32d2e', __('Problems found — see the flagged rows below.', 'eventcrew')],
+        Diagnostic::WARN => ['#bd8600', __('Needs attention — some checks want a look.', 'eventcrew')],
+        default => ['#1a7f37', __('All systems go.', 'eventcrew')],
+    };
+    ?>
+    <p style="max-width:900px;margin:1em 0;padding:.7em 1.1em;border-radius:8px;color:#fff;font-weight:600;background:<?php echo esc_attr($eventcrew_summary_bg); ?>">
+        <?php echo esc_html($eventcrew_summary_text); ?>
+    </p>
+
     <table class="widefat striped" style="max-width:900px;margin-top:1em">
         <thead>
             <tr>

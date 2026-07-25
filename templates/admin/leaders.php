@@ -27,6 +27,11 @@ $eventcrew_edit_url = static function (int $personId) use ($people_page): string
 <div class="wrap">
     <h1><?php esc_html_e('Leadership', 'eventcrew'); ?></h1>
 
+    <h2 class="nav-tab-wrapper" style="margin:.5em 0 1em">
+        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-people')); ?>" class="nav-tab"><?php esc_html_e('People', 'eventcrew'); ?></a>
+        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-leaders')); ?>" class="nav-tab nav-tab-active"><?php esc_html_e('Leadership', 'eventcrew'); ?></a>
+    </h2>
+
     <p class="description">
         <?php echo esc_html(sprintf(
             /* translators: %d: completions required in each role */

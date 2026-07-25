@@ -11,6 +11,9 @@ use EventCrew\Support\EventSource;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\TelegramClient;
+use EventCrew\Web\PwaController;
 
 /**
  * @phpstan-import-type Role from Roles
@@ -66,10 +69,37 @@ final class TasksPage
                 'template_nonce_action' => self::TEMPLATE_NONCE_ACTION,
                 'send_nonce_action' => self::SEND_NONCE_ACTION,
                 'active_recipients' => count($this->people->activeEmailRecipients()),
+                'setup' => $this->setupState(),
+                'settings_url' => admin_url('admin.php?page=' . SettingsPage::PAGE_SLUG),
                 'page_slug' => self::PAGE_SLUG,
                 'event_other' => self::EVENT_OTHER,
             ]
         );
+    }
+
+    /**
+     * The first-run checklist state: what still stands between a fresh install
+     * and a working crew. Each step reads live state, so a box ticks itself as
+     * it is done and the whole panel disappears once all three are - it never
+     * needs dismissing.
+     *
+     * @return array{connected: bool, has_tasks: bool, live: bool, done: bool}
+     */
+    private function setupState(): array
+    {
+        $hasBot = '' !== trim((string) get_option(TelegramClient::TOKEN_OPTION, ''));
+        $hasPage = 0 < (int) get_option(PwaController::PAGE_OPTION, 0);
+        $board = get_option(BoardService::BOARD_OPTION, []);
+        $boardSet = is_array($board) && 0 !== (int) ($board['chat_id'] ?? 0);
+
+        $state = [
+            'connected' => $hasBot || $hasPage,
+            'has_tasks' => $this->tasks->count() > 0,
+            'live' => $hasPage || $boardSet,
+        ];
+        $state['done'] = $state['connected'] && $state['has_tasks'] && $state['live'];
+
+        return $state;
     }
 
     public function save(): void
