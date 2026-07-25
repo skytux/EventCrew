@@ -83,7 +83,6 @@ final class OpenTaskCallTest extends TestCase
             'id' => 7,
             'email' => 'sam@example.com',
             'email_verified_at' => '2026-07-01 00:00:00',
-            'disabled_at' => null,
         ];
     }
 

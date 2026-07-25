@@ -23,15 +23,6 @@ final class ManageControllerTest extends TestCase
         );
     }
 
-    public function testDisableSwitchesTheAccountOff(): void
-    {
-        $outcome = $this->controller()->apply(7, ManageController::DISABLE);
-
-        self::assertSame(ManageController::DISABLE, $outcome);
-        self::assertNotEmpty($this->wpdb->updates[0]['data']['disabled_at']);
-        self::assertSame(['id' => 7], $this->wpdb->updates[0]['where']);
-    }
-
     public function testDeleteRemovesThePersonTheirAssignmentsAndRedemptions(): void
     {
         $outcome = $this->controller()->apply(7, ManageController::DELETE);

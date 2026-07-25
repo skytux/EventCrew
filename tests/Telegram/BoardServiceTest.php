@@ -321,25 +321,6 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
     }
 
-    public function testADisabledPersonSigningUpGetsNoEmail(): void
-    {
-        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
-        $this->wpdb->nextRows[] = [
-            'id' => 7,
-            'email' => 'sam@example.com',
-            'email_verified_at' => '2026-07-01 00:00:00',
-            'telegram_user_id' => 555,
-            'disabled_at' => '2026-07-10 09:00:00',
-        ];
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
-        $this->wpdb->nextVars[] = 2; // taskCapacity
-        $this->wpdb->nextRows[] = null; // join findFor
-        $this->wpdb->nextQueryResults[] = 1;
-
-        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
-
-        self::assertSame([], $this->mails);
-    }
 
     public function testToggleJoinsWhenNotYetSignedUp(): void
     {

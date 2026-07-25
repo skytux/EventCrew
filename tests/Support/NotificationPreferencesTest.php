@@ -46,16 +46,6 @@ final class NotificationPreferencesTest extends TestCase
         self::assertTrue($this->prefs()->emailAllowed($person, NotificationPreferences::CREDIT));
     }
 
-    public function testADisabledAccountBlocksAllEmail(): void
-    {
-        $person = $this->person(['telegram_chat_id' => 1, 'disabled_at' => '2026-01-01 00:00:00']);
-
-        self::assertFalse($this->prefs()->emailAllowed($person, NotificationPreferences::CREDIT));
-        self::assertFalse($this->prefs()->emailAllowed($person, NotificationPreferences::SIGNUP));
-        // The DM is unaffected by the email off-switch.
-        self::assertTrue($this->prefs()->dmAllowed($person, NotificationPreferences::CREDIT));
-    }
-
     public function testNoLinkedChatMeansNoDm(): void
     {
         self::assertFalse($this->prefs()->dmAllowed($this->person([]), NotificationPreferences::CREDIT));

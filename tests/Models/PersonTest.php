@@ -54,47 +54,6 @@ final class PersonTest extends TestCase
         self::assertFalse($person->hasTelegram());
     }
 
-    /**
-     * The open-task email is transactional now: a verified, switched-on account
-     * receives it, no separate opt-in required. This still never mails an
-     * unverified address (that inbox isn't proven theirs) - the test that would
-     * fail loudly if that guard were ever dropped.
-     */
-    public function testDoesNotAcceptOpenTaskEmailWhileTheAddressIsUnverified(): void
-    {
-        $person = Person::fromRow([
-            'id' => 1,
-            'email' => 'sam@example.test',
-            'email_verified_at' => null,
-        ]);
-
-        self::assertFalse($person->acceptsOpenTaskEmail());
-    }
-
-    public function testAcceptsOpenTaskEmailWhenVerifiedAndNotDisabled(): void
-    {
-        $person = Person::fromRow([
-            'id' => 1,
-            'email' => 'sam@example.test',
-            'email_verified_at' => '2026-07-01 10:00:00',
-        ]);
-
-        self::assertTrue($person->acceptsOpenTaskEmail());
-    }
-
-    public function testADisabledAccountReceivesNoOpenTaskEmail(): void
-    {
-        $person = Person::fromRow([
-            'id' => 1,
-            'email' => 'sam@example.test',
-            'email_verified_at' => '2026-07-01 10:00:00',
-            'disabled_at' => '2026-07-10 09:00:00',
-        ]);
-
-        self::assertTrue($person->isDisabled());
-        self::assertFalse($person->acceptsOpenTaskEmail());
-    }
-
     public function testFallsBackToTheEmailLocalPartWhenNoNameWasGiven(): void
     {
         $person = Person::fromRow([

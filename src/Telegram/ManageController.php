@@ -13,18 +13,18 @@ use EventCrew\Support\SignedLink;
 use WP_REST_Request;
 
 /**
- * The manage-account page every email links to: switch emails off, or delete
- * your data entirely.
+ * The manage-account page every email links to (on a Telegram-only install with
+ * no public sign-up page): delete your data entirely. Where a sign-up page
+ * exists, the email link instead lands on the signed-in web profile, which
+ * carries the same Delete and the per-type notification controls.
  *
- * The signed link is reusable (an unsubscribe link must work in an old email),
- * so the destructive actions are never the bare GET - they are POST buttons on
- * the page, which a mail client's link prefetch cannot trigger. Disable is
- * reversible (via the bot's /start); delete removes the person and their
+ * The signed link is reusable (it must work in an old email), so the destructive
+ * delete is never the bare GET - it is a POST button on the page, which a mail
+ * client's link prefetch cannot trigger. Delete removes the person and their
  * assignments for good.
  */
 final class ManageController
 {
-    public const DISABLE = 'disable';
     public const DELETE = 'delete';
 
     public function __construct(
@@ -83,16 +83,10 @@ final class ManageController
     /**
      * Performs a manage action and reports which one happened.
      *
-     * @return self::DISABLE|self::DELETE|''
+     * @return self::DELETE|''
      */
     public function apply(int $personId, string $action): string
     {
-        if (self::DISABLE === $action) {
-            $this->people->disable($personId);
-
-            return self::DISABLE;
-        }
-
         if (self::DELETE === $action) {
             $this->assignments->deleteForPerson($personId);
             $this->redemptions->deleteForPerson($personId);
@@ -107,12 +101,8 @@ final class ManageController
 
     private function accountPage(Person $person, string $token): string
     {
-        $status = $person->isDisabled()
-            ? esc_html__('Your account is currently switched off.', 'eventcrew')
-            : esc_html__('Your account is active.', 'eventcrew');
-
-        $body = '<p>' . esc_html($person->email) . '</p><p>' . $status . '</p>'
-            . $this->form($token, self::DISABLE, __('Stop all emails', 'eventcrew'), false)
+        $body = '<p>' . esc_html($person->email) . '</p>'
+            . '<p>' . esc_html__('Deleting erases your account and history for good. This cannot be undone.', 'eventcrew') . '</p>'
             . $this->form($token, self::DELETE, __('Delete my data', 'eventcrew'), true);
 
         return $this->document(__('Manage your EventCrew account', 'eventcrew'), $body);
@@ -133,8 +123,6 @@ final class ManageController
     private function confirmationPage(string $outcome): string
     {
         $message = match ($outcome) {
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            self::DISABLE => __('Done — you won’t get any more emails. Send the bot /start to turn your account back on.', 'eventcrew'),
             self::DELETE => __('Your data has been deleted. Thanks for helping out.', 'eventcrew'),
             default => __('Nothing to do.', 'eventcrew'),
         };

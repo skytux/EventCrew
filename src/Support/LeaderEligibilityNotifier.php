@@ -60,14 +60,12 @@ final class LeaderEligibilityNotifier
                 $this->telegram->sendMessage($organizer->telegramChatId, '🧭 ' . $line);
             }
 
-            if (! $organizer->isDisabled()) {
-                $this->mailer->toPerson(
-                    $organizer->id,
-                    $organizer->email,
-                    __('New crew-leader candidate', 'eventcrew'),
-                    $line
-                );
-            }
+            $this->mailer->toPerson(
+                $organizer->id,
+                $organizer->email,
+                __('New crew-leader candidate', 'eventcrew'),
+                $line
+            );
         }
     }
 }

@@ -86,23 +86,6 @@ final class OnboardingServiceTest extends TelegramTestCase
         self::assertSame(['sendMessage'], $this->calledMethods());
     }
 
-    public function testStartReEnablesADisabledAccount(): void
-    {
-        $this->wpdb->nextRows[] = [
-            'id' => 7,
-            'email' => 'sam@example.com',
-            'email_verified_at' => '2026-07-01 00:00:00',
-            'telegram_user_id' => 555,
-            'disabled_at' => '2026-07-10 09:00:00',
-        ];
-
-        $this->service()->start(555, 555, 'Sam');
-
-        // The account is switched back on and no onboarding is started.
-        self::assertNull($this->wpdb->updates[0]['data']['disabled_at']);
-        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
-    }
-
     public function testCaptureEmailCreatesThePersonIssuesATokenAndSendsTheLink(): void
     {
         $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];

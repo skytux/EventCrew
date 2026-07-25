@@ -18,10 +18,10 @@ use EventCrew\Telegram\TelegramClient;
  * the same reasoning that put the claim/drop rules in SignupService.
  *
  * Each confirmation goes on both channels a person has: a Telegram DM (so the
- * chat itself becomes a record they can scroll back through) and an email. The
- * DM is about a commitment they just made, so it goes even to a switched-off
- * account and even to one that has muted the open-task calls; only the email is
- * held back for a disabled account, honouring its "no email" wish.
+ * chat itself becomes a record they can scroll back through) and an email. Both
+ * are about a commitment they just made, so they are locked on - a signup or
+ * cancellation always confirms, even for someone who has muted the toggleable
+ * notifications.
  */
 final class ClaimNotifier
 {
@@ -61,10 +61,6 @@ final class ClaimNotifier
                 $this->mailer->ticketUrl($assignment->id)
             ) . "\n\n" . $calendarLine . "\n\n" . $standingLine
         );
-
-        if ($person->isDisabled()) {
-            return;
-        }
 
         $this->mailer->toPerson(
             $person->id,
@@ -142,10 +138,6 @@ final class ClaimNotifier
                 $note
             ) . "\n\n" . $standingLine
         );
-
-        if ($person->isDisabled()) {
-            return;
-        }
 
         $this->mailer->toPerson(
             $person->id,
