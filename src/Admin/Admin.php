@@ -153,18 +153,6 @@ final class Admin
             [$this->container->get(PeoplePage::class), 'render']
         );
 
-        // Grouped with People via a tab on both pages (see their templates),
-        // but kept a real menu item: hiding it with remove_submenu_page also
-        // strips the capability WordPress needs to grant access to the URL.
-        add_submenu_page(
-            self::MENU_SLUG,
-            __('Leadership', 'eventcrew'),
-            __('Leadership', 'eventcrew'),
-            self::CAPABILITY,
-            LeadersPage::PAGE_SLUG,
-            [$this->container->get(LeadersPage::class), 'render']
-        );
-
         add_submenu_page(
             self::MENU_SLUG,
             __('Settings', 'eventcrew'),

@@ -9,6 +9,9 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\LeaderGate;
+use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 
 final class PeoplePage
@@ -23,7 +26,9 @@ final class PeoplePage
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
         private readonly CreditGrantRepository $grants,
-        private readonly CreditGrantNotifier $notifier
+        private readonly CreditGrantNotifier $notifier,
+        private readonly LeaderEligibility $eligibility,
+        private readonly LeaderGate $leaderGate
     ) {
     }
 
@@ -47,8 +52,57 @@ final class PeoplePage
                 'credit_grants' => $this->creditGrantRows(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
+                // The Leadership view, shown as a second tab on this page: who has
+                // earned crew-leader eligibility and who has been granted it.
+                'lead_roles' => array_map(
+                    static fn (array $role): array => ['slug' => $role['slug'], 'label' => $role['label']],
+                    Roles::active()
+                ),
+                'lead_eligible' => $this->eligibleRows(),
+                'lead_allowed' => $this->allowedRows(),
+                'lead_threshold' => $this->eligibility->threshold(),
+                'lead_default' => $this->leaderGate->enabledByDefault(),
             ]
         );
+    }
+
+    /**
+     * People who meet the crew-leader bar, with their per-role completion counts.
+     *
+     * @return array<int, array{id: int, name: string, can_lead: bool, by_role: array<string, int>}>
+     */
+    private function eligibleRows(): array
+    {
+        $rows = [];
+
+        foreach ($this->eligibility->eligiblePeople() as $person) {
+            $rows[] = [
+                'id' => $person->id,
+                'name' => $person->name(),
+                'can_lead' => $person->canLead(),
+                'by_role' => $this->eligibility->byActiveRole($person->id),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Everyone who currently holds leader permission.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function allowedRows(): array
+    {
+        $rows = [];
+
+        foreach ($this->people->all(['per_page' => 1000]) as $person) {
+            if ($person->canLead()) {
+                $rows[] = ['id' => $person->id, 'name' => $person->name()];
+            }
+        }
+
+        return $rows;
     }
 
     /**

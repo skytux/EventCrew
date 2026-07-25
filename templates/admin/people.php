@@ -9,6 +9,11 @@
  * @var array<int, array{person: string, credits: int, note: string, granted_by: string, granted_at: string}> $credit_grants Recent credit-grant audit rows.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
+ * @var array<int, array{slug: string, label: string}> $lead_roles Active roles, for the Leadership columns.
+ * @var array<int, array{id: int, name: string, can_lead: bool, by_role: array<string, int>}> $lead_eligible People who meet the leader bar.
+ * @var array<int, array{id: int, name: string}> $lead_allowed People with leader permission.
+ * @var int $lead_threshold Completions required in each role.
+ * @var bool $lead_default Whether the leader slot is on by default globally.
  */
 
 declare(strict_types=1);
@@ -22,11 +27,12 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 <div class="wrap">
     <h1><?php esc_html_e('People', 'eventcrew'); ?></h1>
 
-    <h2 class="nav-tab-wrapper" style="margin:.5em 0 1em">
-        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-people')); ?>" class="nav-tab nav-tab-active"><?php esc_html_e('People', 'eventcrew'); ?></a>
-        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-leaders')); ?>" class="nav-tab"><?php esc_html_e('Leadership', 'eventcrew'); ?></a>
+    <h2 class="nav-tab-wrapper eventcrew-people-tabs" style="margin:.5em 0 1em">
+        <a href="#" class="nav-tab" data-ec-tab="people"><?php esc_html_e('People', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="leadership"><?php esc_html_e('Leadership', 'eventcrew'); ?></a>
     </h2>
 
+    <div class="ec-tab-panel" data-ec-tab="people">
     <div id="col-container" class="wp-clearfix">
         <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">
             <div class="form-wrap">
@@ -242,4 +248,113 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
             </tbody>
         </table>
     <?php endif; ?>
+    </div>
+
+    <div class="ec-tab-panel" data-ec-tab="leadership">
+        <p class="description">
+            <?php echo esc_html(sprintf(
+                /* translators: %d: completions required in each role */
+                __('Eligible = has completed at least %d tasks in every active role. Eligibility is only a suggestion; grant leader by editing a person, or with the bot’s /allow.', 'eventcrew'),
+                $lead_threshold
+            )); ?>
+            <br>
+            <?php echo $lead_default
+                ? esc_html__('The leader slot is on by default for new events.', 'eventcrew')
+                : esc_html__('The leader slot is off by default; turn it on per event on the Roster screen.', 'eventcrew'); ?>
+        </p>
+
+        <h2><?php esc_html_e('Eligible', 'eventcrew'); ?></h2>
+        <?php if ([] === $lead_eligible) : ?>
+            <p><?php esc_html_e('Nobody has completed enough of every role yet.', 'eventcrew'); ?></p>
+        <?php else : ?>
+            <table class="wp-list-table widefat fixed striped" style="max-width:60em">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
+                        <?php foreach ($lead_roles as $eventcrew_role) : ?>
+                            <th><?php echo esc_html($eventcrew_role['label']); ?></th>
+                        <?php endforeach; ?>
+                        <th><?php esc_html_e('Leader', 'eventcrew'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($lead_eligible as $eventcrew_leader) : ?>
+                        <tr>
+                            <td>
+                                <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_leader['id']], admin_url('admin.php'))); ?>">
+                                    <?php echo esc_html($eventcrew_leader['name']); ?>
+                                </a>
+                            </td>
+                            <?php foreach ($lead_roles as $eventcrew_role) : ?>
+                                <td><?php echo esc_html((string) ($eventcrew_leader['by_role'][$eventcrew_role['slug']] ?? 0)); ?></td>
+                            <?php endforeach; ?>
+                            <td><?php echo $eventcrew_leader['can_lead']
+                                ? '<span class="dashicons dashicons-yes" style="color:#1a7f37"></span>'
+                                : '&mdash;'; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+
+        <h2><?php esc_html_e('Allowed to lead', 'eventcrew'); ?></h2>
+        <?php if ([] === $lead_allowed) : ?>
+            <p><?php esc_html_e('No one has been granted leader permission yet.', 'eventcrew'); ?></p>
+        <?php else : ?>
+            <table class="wp-list-table widefat fixed striped" style="max-width:40em">
+                <tbody>
+                    <?php foreach ($lead_allowed as $eventcrew_leader) : ?>
+                        <tr>
+                            <td>
+                                <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_leader['id']], admin_url('admin.php'))); ?>">
+                                    <?php echo esc_html($eventcrew_leader['name']); ?>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
+    <script>
+    // In-page tabs, the same pattern as Settings. With JS off both panels show.
+    (function () {
+        var nav = document.querySelector('.eventcrew-people-tabs');
+        if (!nav) { return; }
+
+        var panels = document.querySelectorAll('.ec-tab-panel');
+        var tabs = nav.querySelectorAll('.nav-tab');
+
+        function show(key) {
+            panels.forEach(function (p) {
+                p.style.display = p.getAttribute('data-ec-tab') === key ? '' : 'none';
+            });
+            tabs.forEach(function (t) {
+                t.classList.toggle('nav-tab-active', t.getAttribute('data-ec-tab') === key);
+            });
+            try { localStorage.setItem('eventcrew_people_tab', key); } catch (e) {}
+        }
+
+        tabs.forEach(function (t) {
+            t.addEventListener('click', function (e) {
+                e.preventDefault();
+                show(t.getAttribute('data-ec-tab'));
+            });
+        });
+
+        // Editing a person always belongs on the People tab; otherwise reopen
+        // the last-used tab (a save reloads the page), else People.
+        var initial = 'people';
+        <?php if (! $eventcrew_is_edit) : ?>
+        try {
+            var saved = localStorage.getItem('eventcrew_people_tab');
+            if (saved && nav.querySelector('.nav-tab[data-ec-tab="' + saved + '"]')) {
+                initial = saved;
+            }
+        } catch (e) {}
+        <?php endif; ?>
+        show(initial);
+    })();
+    </script>
 </div>

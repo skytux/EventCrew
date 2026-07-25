@@ -6,7 +6,6 @@ namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
 use EventCrew\Admin\DiagnosticsPage;
-use EventCrew\Admin\LeadersPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
@@ -623,7 +622,9 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
                 $container->get(CreditGrantRepository::class),
-                $container->get(CreditGrantNotifier::class)
+                $container->get(CreditGrantNotifier::class),
+                $container->get(LeaderEligibility::class),
+                $container->get(LeaderGate::class)
             )
         );
 
@@ -640,16 +641,6 @@ final class Kernel
                 $container->get(FreeEntryGate::class),
                 $container->get(LeaderGate::class),
                 $container->get(TicketRedemptionService::class)
-            )
-        );
-
-        $this->container->singleton(
-            LeadersPage::class,
-            fn (Container $container) => new LeadersPage(
-                $container->get(View::class),
-                $container->get(LeaderEligibility::class),
-                $container->get(PersonRepository::class),
-                $container->get(LeaderGate::class)
             )
         );
 
