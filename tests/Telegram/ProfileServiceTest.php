@@ -95,6 +95,37 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringContainsString('/start', (string) $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testWebDmsAOneTimeSignInLinkToTheBoard(): void
+    {
+        Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $this->options['eventcrew_signup_page_id'] = 42;
+
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+
+        $this->service()->onWeb(555, 555);
+
+        $body = (string) $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('https://site.test/signup/?eventcrew_login=', $body);
+        // A single-use token was issued (a row written to auth_tokens).
+        self::assertNotEmpty($this->wpdb->inserts);
+    }
+
+    public function testWebAsksAnUnknownUserToSetUpFirst(): void
+    {
+        $this->service()->onWeb(999, 999);
+
+        self::assertStringContainsString('/start', (string) $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testMyHistoryListsPastTasksInTheDm(): void
     {
         // A verified person...

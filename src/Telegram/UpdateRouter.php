@@ -110,12 +110,6 @@ final class UpdateRouter
             return;
         }
 
-        if ($this->isCommand($text, 'stop')) {
-            $this->onboarding->stop($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
         if ($this->isCommand($text, 'replace')) {
             $this->replacement->start($fromId, $chatId, $isPrivate);
 
@@ -172,6 +166,14 @@ final class UpdateRouter
 
         if ($this->isCommand($text, 'mytickets')) {
             $this->profile->onMyTickets($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /web DMs a one-time link that signs the person in to the web board, so
+        // a Telegram member can hop to the web without typing their email.
+        if ($this->isCommand($text, 'web')) {
+            $this->profile->onWeb($fromId, $chatId, $isPrivate);
 
             return;
         }
