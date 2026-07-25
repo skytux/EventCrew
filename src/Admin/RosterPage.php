@@ -268,30 +268,55 @@ final class RosterPage
         return [null, ''];
     }
 
-    public function markAttendance(): void
+    /**
+     * The roster's single "Update" action: every person's status picker posts
+     * together as status[<assignment_id>], so the organizer sets the whole
+     * night in one submit rather than a row at a time. Only rows whose status
+     * actually changed are written - so re-saving does not restamp untouched
+     * ones - and an unknown status or a stale id is skipped, never failing the
+     * batch.
+     */
+    public function saveRoster(): void
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing
-        $assignmentId = isset($_POST['assignment_id']) ? (int) $_POST['assignment_id'] : 0;
-        $status = isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : '';
+        $statuses = isset($_POST['status']) && is_array($_POST['status'])
+            ? wp_unslash($_POST['status'])
+            : [];
         $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status)) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                __('That status could not be set.', 'eventcrew'),
-                'error',
-                $this->dateArg($date)
-            );
-        }
+        $changedBy = get_current_user_id();
+        $updated = 0;
 
-        $this->assignments->setStatus($assignmentId, $status, get_current_user_id());
+        foreach ($statuses as $assignmentId => $status) {
+            $assignmentId = (int) $assignmentId;
+            $status = sanitize_key((string) $status);
+
+            if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status)) {
+                continue;
+            }
+
+            $assignment = $this->assignments->find($assignmentId);
+
+            if (null === $assignment || $assignment->status === $status) {
+                continue;
+            }
+
+            $this->assignments->setStatus($assignmentId, $status, $changedBy);
+            ++$updated;
+        }
 
         Admin::redirectTo(
             self::PAGE_SLUG,
-            __('Attendance updated.', 'eventcrew'),
+            0 === $updated
+                ? __('No changes to save.', 'eventcrew')
+                : sprintf(
+                    /* translators: %d: number of people updated */
+                    _n('%d person updated.', '%d people updated.', $updated, 'eventcrew'),
+                    $updated
+                ),
             'success',
             $this->dateArg($date)
         );

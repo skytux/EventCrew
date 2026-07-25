@@ -114,6 +114,22 @@ final class ReminderCallTest extends TelegramTestCase
         self::assertArrayHasKey('reminded_at', $this->wpdb->updates[0]['data']);
     }
 
+    public function testReminderDmCarriesAOneTapCancelButton(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        // The button reuses the board's own leave callback ('l:<taskId>'), so
+        // tapping it runs the exact same cancel - classification, slot-freed
+        // broadcast and confirmation all included.
+        $body = (string) wp_json_encode($this->lastCallTo('sendMessage'));
+        self::assertStringContainsString('callback_data', $body);
+        self::assertStringContainsString('l:5', $body);
+    }
+
     public function testDoesNotRemindAnAlreadyRemindedAssignment(): void
     {
         $this->wpdb->nextResults[] = [$this->taskRow(5)];

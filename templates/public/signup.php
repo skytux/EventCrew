@@ -31,6 +31,8 @@ $eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
 $eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
     ? $view['my_tickets']
     : ['upcoming' => [], 'past' => []];
+/** @var array<int, array{task_id: int, label: string, when: string, calendar_url: string}> $eventcrew_my_upcoming */
+$eventcrew_my_upcoming = is_array($view['my_upcoming'] ?? null) ? $view['my_upcoming'] : [];
 $eventcrew_manage_endpoint = (string) ($view['manage_endpoint'] ?? '');
 $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
 $eventcrew_ajax = admin_url('admin-ajax.php');
@@ -159,7 +161,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     <?php if (null === $eventcrew_person) :
         ?>
         <h2><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
-        <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
+        <form class="eventcrew-action" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
             <div class="eventcrew-signin-row">
@@ -169,11 +171,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     id="eventcrew-email"
                     name="email"
                     required
+                    autocomplete="email"
                     placeholder="<?php esc_attr_e('hello@example.com', 'eventcrew'); ?>"
                     class="wp-element-input"
                 >
                 <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
             </div>
+            <p class="eventcrew-muted" style="margin:.5em 0 0"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
             <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
                 <div
                     class="cf-turnstile"
@@ -182,6 +186,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     data-theme="auto"></div>
                 <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
             <?php endif; ?>
+        </form>
+        <p id="eventcrew-signin-sent" class="eventcrew-muted" hidden style="margin:1em 0"><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
         <?php
     else :
         ?>
@@ -193,6 +199,21 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 esc_html($eventcrew_person->name())
             ); ?>
         </p>
+
+        <?php if ([] !== $eventcrew_my_upcoming) : ?>
+            <div class="eventcrew-upcoming" style="margin:.6em 0 1em">
+                <p style="margin:0 0 .3em"><strong><?php esc_html_e('You’re on next', 'eventcrew'); ?></strong></p>
+                <ul style="list-style:none;margin:0;padding:0">
+                    <?php foreach ($eventcrew_my_upcoming as $eventcrew_shift) : ?>
+                        <li style="margin:.2em 0">
+                            <?php echo esc_html($eventcrew_shift['when'] . ' · ' . $eventcrew_shift['label']); ?>
+                            — <a href="<?php echo esc_url($eventcrew_shift['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
         <?php if (null !== $eventcrew_standing) : ?>
             <p>
                 <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
@@ -292,12 +313,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         <?php if ('' !== $eventcrew_manage_token) : ?>
             <details class="eventcrew-score-help">
                 <summary><?php esc_html_e('Account', 'eventcrew'); ?></summary>
-                <p class="eventcrew-muted"><?php esc_html_e('Pause all emails (turn your account back on any time with /start in the bot), or delete your data for good.', 'eventcrew'); ?></p>
-                <form method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>" style="margin:.4em 0">
-                    <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
-                    <input type="hidden" name="action" value="disable">
-                    <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Pause emails (switch account off)', 'eventcrew'); ?></button>
-                </form>
+                <p class="eventcrew-muted"><?php esc_html_e('To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone.', 'eventcrew'); ?></p>
                 <form method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>" style="margin:.4em 0"
                     onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
                     <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
@@ -366,6 +382,15 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
     }
 
+    // Remember the sign-in email so a return visit (or a resend) doesn't have to
+    // retype it - the one bit of friction in a passwordless, leave-and-come-back
+    // sign-in. Runs regardless of the fetch path below.
+    var EMAIL_KEY = 'eventcrew_email';
+    var emailField = document.getElementById('eventcrew-email');
+    if (emailField && !emailField.value) {
+        try { emailField.value = localStorage.getItem(EMAIL_KEY) || ''; } catch (e) {}
+    }
+
     if (!root || !board || !window.fetch) {
         return;
     }
@@ -386,6 +411,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             button.disabled = true;
         }
 
+        var isSignin = form.hasAttribute('data-eventcrew-signin');
+        if (isSignin && emailField) {
+            try { localStorage.setItem(EMAIL_KEY, emailField.value || ''); } catch (e) {}
+        }
+
         var data = new FormData(form);
         data.append('eventcrew_ajax', '1');
 
@@ -402,6 +432,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             }
             if (res && res.notice) {
                 showToast(res.notice);
+            }
+            // The sign-in link was just requested: reveal the "check your inbox"
+            // note in place and turn the button into a clear Resend.
+            if (isSignin) {
+                var sent = document.getElementById('eventcrew-signin-sent');
+                if (sent) { sent.hidden = false; }
+                if (button) { button.textContent = <?php echo wp_json_encode(__('Resend link', 'eventcrew')); ?>; }
             }
             // A redeemed free-entry ticket: open it. Prefer a new tab; if the
             // browser blocks the popup, navigate this one to the ticket instead.

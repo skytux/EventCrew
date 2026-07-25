@@ -84,7 +84,18 @@ final class ReminderCall
                     $task->roleLabel(),
                     $task->eventName(),
                     $when
-                )
+                ),
+                // A one-tap out, so a "can't make it" turns into an early cancel
+                // someone else can cover rather than a silent no-show. It carries
+                // the board's own leave callback ('l:'), so tapping it runs the
+                // exact same drop - late-cancel classification, the slot-freed
+                // broadcast and the cancellation confirmation all included.
+                ['inline_keyboard' => [[
+                    [
+                        'text' => __('Can’t make it? Cancel', 'eventcrew'),
+                        'callback_data' => 'l:' . $task->id,
+                    ],
+                ]]]
             );
         }
 

@@ -170,6 +170,17 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
             <p><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>
         <?php endif; ?>
 
+        <?php if ([] !== $roster) : ?>
+            <?php /* One form for the whole night: each person's status picker below posts into it by id, so a single Update saves them all. */ ?>
+            <form method="post" id="eventcrew-roster-save" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:.5em 0 1em">
+                <input type="hidden" name="action" value="eventcrew_save_roster">
+                <?php wp_nonce_field($nonce_action); ?>
+                <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                <button type="submit" class="button button-primary"><?php esc_html_e('Update attendance', 'eventcrew'); ?></button>
+                <span class="description" style="margin-left:.5em"><?php esc_html_e('Saves every status picker below at once.', 'eventcrew'); ?></span>
+            </form>
+        <?php endif; ?>
+
         <?php foreach ($roster as $eventcrew_row) : ?>
             <?php
             $eventcrew_task = $eventcrew_row['task'];
@@ -209,20 +220,13 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                                     ? ''
                                     : $eventcrew_standing_badge($eventcrew_person['standing']); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- badge builds its own escaped markup. ?></td>
                                 <td>
-                                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:.4em">
-                                        <input type="hidden" name="action" value="eventcrew_mark_attendance">
-                                        <?php wp_nonce_field($nonce_action); ?>
-                                        <input type="hidden" name="assignment_id" value="<?php echo esc_attr((string) $eventcrew_person['assignment_id']); ?>">
-                                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
-                                        <select name="status">
-                                            <?php foreach ($statuses as $eventcrew_slug => $eventcrew_label) : ?>
-                                                <option value="<?php echo esc_attr($eventcrew_slug); ?>" <?php selected($eventcrew_slug, $eventcrew_person['status']); ?>>
-                                                    <?php echo esc_html($eventcrew_label); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button type="submit" class="button"><?php esc_html_e('Update', 'eventcrew'); ?></button>
-                                    </form>
+                                    <select name="status[<?php echo esc_attr((string) $eventcrew_person['assignment_id']); ?>]" form="eventcrew-roster-save">
+                                        <?php foreach ($statuses as $eventcrew_slug => $eventcrew_label) : ?>
+                                            <option value="<?php echo esc_attr($eventcrew_slug); ?>" <?php selected($eventcrew_slug, $eventcrew_person['status']); ?>>
+                                                <?php echo esc_html($eventcrew_label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -243,5 +247,11 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 </form>
             <?php endif; ?>
         <?php endforeach; ?>
+
+        <?php if ([] !== $roster) : ?>
+            <p style="margin:0 0 2em">
+                <button type="submit" form="eventcrew-roster-save" class="button button-primary"><?php esc_html_e('Update attendance', 'eventcrew'); ?></button>
+            </p>
+        <?php endif; ?>
     <?php endif; ?>
 </div>

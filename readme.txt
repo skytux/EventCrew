@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.7.8
+Stable tag: 1.8.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,14 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.8.0 =
+* Add-to-calendar: signup confirmations (email and Telegram) and the web profile now carry an "Add to calendar" link that drops the task, with its own alarm, into any calendar app — the strongest nudge there is against a no-show.
+* "You're on next": the signed-in web profile shows your upcoming tasks up front, soonest first, instead of leaving them to be hunted on the board.
+* Smoother sign-in: the web form remembers your email, explains the passwordless one-time link, and offers a clear "resend".
+* The 24h Telegram reminder now has a one-tap "Can't make it? Cancel" button, turning a would-be no-show into an early cancel someone else can cover.
+* Roster: one global "Update attendance" button saves every status at once, instead of a button per person.
+* Removed the web "pause account" control (it duplicated Notifications and could strand a non-Telegram user) and the "Open-task email" column from the People list. Fixed the Settings roles table overflowing sideways.
+
 = 1.7.8 =
 * Moved the "Send open-task email now" control from Settings to the Tasks page, where it sits under the task list — it acts on the tasks you're looking at, and now returns you there after sending.
 
@@ -167,6 +175,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Adds calendar holds, an upcoming-tasks summary, a one-tap reminder cancel, and a single-button roster. No database change.
 
 = 1.7.8 =
 The "Send open-task email now" button now lives on the Tasks page instead of Settings. No database change.

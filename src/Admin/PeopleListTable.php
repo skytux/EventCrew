@@ -47,7 +47,6 @@ final class PeopleListTable extends WP_List_Table
             'display_name' => __('Name', 'eventcrew'),
             'email' => __('Email', 'eventcrew'),
             'telegram' => __('Telegram', 'eventcrew'),
-            'opt_in' => __('Open-task email', 'eventcrew'),
             'completed' => __('Completed tasks', 'eventcrew'),
             'standing' => __('Standing', 'eventcrew'),
             'credits' => __('Credits', 'eventcrew'),
@@ -174,22 +173,6 @@ final class PeopleListTable extends WP_List_Table
         return $item->hasTelegram()
             ? '<span class="dashicons dashicons-yes" style="color:#1a7f37"></span>'
             : '&mdash;';
-    }
-
-    /**
-     * @param Person $item
-     */
-    public function column_opt_in($item): string
-    {
-        if (! $item->acceptsOpenTaskEmail()) {
-            return '&mdash;';
-        }
-
-        return sprintf(
-            '<span class="dashicons dashicons-yes" style="color:#1a7f37"></span> <span title="%s">%s</span>',
-            esc_attr($item->emailOptInAt ?? ''),
-            esc_html($item->emailOptInSource)
-        );
     }
 
     /**
