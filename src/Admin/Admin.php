@@ -29,6 +29,10 @@ final class Admin
         add_action('admin_menu', [$this, 'registerMenus']);
         add_action('admin_notices', [$this, 'renderNotice']);
 
+        // Re-publish the webhook and command menu once after a plugin update, so
+        // a release that changes a bot command takes effect on its own.
+        add_action('admin_init', [$this->container->get(SettingsPage::class), 'installOnUpdate']);
+
         add_action(
             'admin_post_eventcrew_save_settings',
             [$this->container->get(SettingsPage::class), 'save']
