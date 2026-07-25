@@ -55,6 +55,29 @@ final class TaskTemplateTest extends TestCase
         self::assertSame('2026-08-01 21:00:00', $tasks[0]['ends_at']);
     }
 
+    public function testAZeroCapacityRoleProducesAZeroCapacityTask(): void
+    {
+        // A role parked at 0 people must generate a task that stays off the
+        // boards (capacity 0), not a clamped-to-1 one that reappears on Telegram.
+        $tasks = TaskTemplate::build(
+            '2026-08-01',
+            '2026-08-01 21:00:00',
+            '2026-08-02 01:00:00',
+            [[
+                'slug' => 'parked',
+                'label' => 'Parked',
+                'emoji' => '',
+                'capacity' => 0,
+                'archived' => false,
+                'anchor' => Roles::ANCHOR_START,
+                'start_offset' => 0,
+                'end_offset' => null,
+            ]]
+        );
+
+        self::assertSame(0, $tasks[0]['capacity']);
+    }
+
     /**
      * The case the end anchor exists for. Cleaning happens entirely on the
      * Sunday, but it is Saturday's event and belongs to Saturday's board.

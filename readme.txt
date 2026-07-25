@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,11 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.9.1 =
+* Fixed: the Leadership page returned "you do not have permission" after 1.9.0 — hiding it from the menu also stripped the capability WordPress checks for access. It is a normal menu item again, still grouped with People by a tab.
+* Fixed: a role set to 0 people generated a task with capacity 1 that reappeared on the Telegram board. It now generates a capacity-0 task that stays off the boards, the same as a hand-edited 0.
+* Settings: the Roles tab now comes first and is named simply "Roles"; the Cancellations settings moved to the "Reputation & alerts" tab.
+
 = 1.9.0 =
 * Admin overhaul: the Settings page is now organized into tabs — Telegram bot, Web page, Roles & tasks, Reputation & alerts — instead of one long scroll, and it reopens the tab you were last on. Telegram setup leads, so connecting the bot is the first thing you see.
 * New "Getting started" checklist on the Tasks page for fresh installs — connect a channel, create a task, put it in front of your crew — that ticks itself off and disappears once you're set up.
@@ -193,6 +198,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.9.1 =
+Fixes Leadership page access and 0-people roles reappearing on the board, and tidies the Settings tabs. No database change.
 
 = 1.9.0 =
 Admin UX overhaul: tabbed Settings, a first-run checklist, Leadership under People, and a Diagnostics health banner. No database change.

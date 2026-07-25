@@ -52,7 +52,11 @@ final class TaskTemplate
                 'task_date' => $taskDate,
                 'starts_at' => self::offsetFrom($anchor, $role['start_offset'] ?? null),
                 'ends_at' => self::offsetFrom($anchor, $role['end_offset'] ?? null),
-                'capacity' => max(1, (int) ($role['capacity'] ?? 1)),
+                // A role set to 0 people generates a capacity-0 task: on the
+                // books but off the boards (TaskRepository::upcoming filters
+                // capacity > 0), the same as a hand-edited 0. Clamping to 1 here
+                // wrongly put those roles' tasks back on the Telegram board.
+                'capacity' => max(0, (int) ($role['capacity'] ?? 1)),
                 'event_post_id' => $eventPostId,
                 'event_label' => $eventLabel,
                 'notes' => '',
