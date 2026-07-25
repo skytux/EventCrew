@@ -13,6 +13,8 @@
  * @var string $template_nonce_action Nonce action for the apply-template form.
  * @var string $send_nonce_action Nonce action for the "send open-task email" form.
  * @var int $active_recipients How many active accounts the open-task email would reach.
+ * @var array{connected: bool, has_tasks: bool, live: bool, done: bool} $setup First-run checklist state.
+ * @var string $settings_url URL of the Settings page.
  * @var string $page_slug Admin page slug, for form targets.
  * @var string $event_other Sentinel value for the picker's "other" option.
  */
@@ -40,6 +42,29 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Tasks', 'eventcrew'); ?></h1>
+
+    <?php if (! $setup['done']) : ?>
+        <div class="notice notice-info" style="padding:.6em 1.2em;margin:1em 0">
+            <h2 style="margin:.3em 0;font-size:1.1em"><?php esc_html_e('Getting started', 'eventcrew'); ?></h2>
+            <ul style="margin:.4em 0 .6em;list-style:none;padding:0;line-height:2">
+                <li>
+                    <?php echo $setup['connected'] ? '✅' : '⬜'; ?>
+                    <a href="<?php echo esc_url($settings_url); ?>"><strong><?php esc_html_e('Connect a channel', 'eventcrew'); ?></strong></a>
+                    — <?php esc_html_e('add a Telegram bot token, or set a public signup page, in Settings.', 'eventcrew'); ?>
+                </li>
+                <li>
+                    <?php echo $setup['has_tasks'] ? '✅' : '⬜'; ?>
+                    <strong><?php esc_html_e('Create your first task', 'eventcrew'); ?></strong>
+                    — <?php esc_html_e('use the form on the left, or generate a whole event’s tasks from a linked event.', 'eventcrew'); ?>
+                </li>
+                <li>
+                    <?php echo $setup['live'] ? '✅' : '⬜'; ?>
+                    <strong><?php esc_html_e('Put it in front of your crew', 'eventcrew'); ?></strong>
+                    — <?php esc_html_e('add the bot to your Telegram group (the board appears on its own), or share your signup page link.', 'eventcrew'); ?>
+                </li>
+            </ul>
+        </div>
+    <?php endif; ?>
 
     <div id="col-container" class="wp-clearfix">
         <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">

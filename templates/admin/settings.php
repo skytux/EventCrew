@@ -39,10 +39,18 @@ if (! defined('ABSPATH')) {
 <div class="wrap">
     <h1><?php esc_html_e('EventCrew Settings', 'eventcrew'); ?></h1>
 
+    <h2 class="nav-tab-wrapper eventcrew-tabs" style="margin:.5em 0 1em">
+        <a href="#" class="nav-tab" data-ec-tab="telegram"><?php esc_html_e('Telegram bot', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="web"><?php esc_html_e('Web page', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="roles"><?php esc_html_e('Roles & tasks', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="tuning"><?php esc_html_e('Reputation & alerts', 'eventcrew'); ?></a>
+    </h2>
+
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="eventcrew_save_settings">
         <?php wp_nonce_field($nonce_action); ?>
 
+        <div class="ec-tab-panel" data-ec-tab="roles">
         <h2><?php esc_html_e('Roles', 'eventcrew'); ?></h2>
         <p class="description">
             <?php esc_html_e('The kinds of job a task can be. "People needed" is only the default for new tasks - each task keeps its own number.', 'eventcrew'); ?>
@@ -211,6 +219,8 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
+        </div>
+        <div class="ec-tab-panel" data-ec-tab="tuning">
         <h2><?php esc_html_e('Board reminders', 'eventcrew'); ?></h2>
         <table class="form-table" role="presentation">
             <tr>
@@ -287,24 +297,29 @@ if (! defined('ABSPATH')) {
             <tr>
                 <th scope="row"><?php esc_html_e('Outcome weights', 'eventcrew'); ?></th>
                 <td>
-                    <?php foreach ($reputation_weights as $eventcrew_weight) : ?>
-                        <p style="margin:.2em 0">
-                            <label style="display:inline-block;min-width:12em">
-                                <?php echo esc_html($eventcrew_weight['label']); ?>
-                            </label>
-                            <input
-                                type="number"
-                                name="reputation_weight[<?php echo esc_attr($eventcrew_weight['status']); ?>]"
-                                value="<?php echo esc_attr((string) $eventcrew_weight['percent']); ?>"
-                                min="0"
-                                max="100"
-                                step="1"
-                                style="width:5em"> %
-                        </p>
-                    <?php endforeach; ?>
-                    <p class="description">
-                        <?php esc_html_e('What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0.', 'eventcrew'); ?>
-                    </p>
+                    <details>
+                        <summary style="cursor:pointer"><?php esc_html_e('Adjust what each outcome is worth (advanced)', 'eventcrew'); ?></summary>
+                        <div style="margin-top:.6em">
+                            <?php foreach ($reputation_weights as $eventcrew_weight) : ?>
+                                <p style="margin:.2em 0">
+                                    <label style="display:inline-block;min-width:12em">
+                                        <?php echo esc_html($eventcrew_weight['label']); ?>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="reputation_weight[<?php echo esc_attr($eventcrew_weight['status']); ?>]"
+                                        value="<?php echo esc_attr((string) $eventcrew_weight['percent']); ?>"
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        style="width:5em"> %
+                                </p>
+                            <?php endforeach; ?>
+                            <p class="description">
+                                <?php esc_html_e('What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0.', 'eventcrew'); ?>
+                            </p>
+                        </div>
+                    </details>
                 </td>
             </tr>
             <tr>
@@ -426,6 +441,8 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
+        </div>
+        <div class="ec-tab-panel" data-ec-tab="web">
         <h2><?php esc_html_e('Public signup page', 'eventcrew'); ?></h2>
         <p class="description">
             <?php
@@ -533,6 +550,8 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
+        </div>
+        <div class="ec-tab-panel" data-ec-tab="telegram">
         <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
         <p class="description">
             <?php esc_html_e('Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group.', 'eventcrew'); ?>
@@ -648,9 +667,11 @@ if (! defined('ABSPATH')) {
             </details>
         <?php endif; ?>
 
+        </div>
         <?php submit_button(__('Save settings', 'eventcrew')); ?>
     </form>
 
+    <div class="ec-tab-panel" data-ec-tab="telegram">
     <h2><?php esc_html_e('Webhook', 'eventcrew'); ?></h2>
     <?php if (! $telegram['configured']) : ?>
         <p class="description">
@@ -745,4 +766,44 @@ if (! defined('ABSPATH')) {
             <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary'); ?>
         </form>
     <?php endif; ?>
+    </div>
+
+    <script>
+    // Progressive enhancement: turn the section groups into tabs. With JS off,
+    // every panel stays visible and the page behaves as one long form.
+    (function () {
+        var nav = document.querySelector('.eventcrew-tabs');
+        if (!nav) { return; }
+
+        var panels = document.querySelectorAll('.ec-tab-panel');
+        var tabs = nav.querySelectorAll('.nav-tab');
+
+        function show(key) {
+            panels.forEach(function (p) {
+                p.style.display = p.getAttribute('data-ec-tab') === key ? '' : 'none';
+            });
+            tabs.forEach(function (t) {
+                t.classList.toggle('nav-tab-active', t.getAttribute('data-ec-tab') === key);
+            });
+            try { localStorage.setItem('eventcrew_settings_tab', key); } catch (e) {}
+        }
+
+        tabs.forEach(function (t) {
+            t.addEventListener('click', function (e) {
+                e.preventDefault();
+                show(t.getAttribute('data-ec-tab'));
+            });
+        });
+
+        // Reopen the tab last used (a Save reloads the page), else the first.
+        var initial = 'telegram';
+        try {
+            var saved = localStorage.getItem('eventcrew_settings_tab');
+            if (saved && nav.querySelector('.nav-tab[data-ec-tab="' + saved + '"]')) {
+                initial = saved;
+            }
+        } catch (e) {}
+        show(initial);
+    })();
+    </script>
 </div>

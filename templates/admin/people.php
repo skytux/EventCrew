@@ -22,6 +22,11 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 <div class="wrap">
     <h1><?php esc_html_e('People', 'eventcrew'); ?></h1>
 
+    <h2 class="nav-tab-wrapper" style="margin:.5em 0 1em">
+        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-people')); ?>" class="nav-tab nav-tab-active"><?php esc_html_e('People', 'eventcrew'); ?></a>
+        <a href="<?php echo esc_url(admin_url('admin.php?page=eventcrew-leaders')); ?>" class="nav-tab"><?php esc_html_e('Leadership', 'eventcrew'); ?></a>
+    </h2>
+
     <div id="col-container" class="wp-clearfix">
         <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">
             <div class="form-wrap">

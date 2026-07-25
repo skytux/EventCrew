@@ -162,6 +162,12 @@ final class Admin
             [$this->container->get(LeadersPage::class), 'render']
         );
 
+        // Leadership is a specialised view most nights don't need, so it is kept
+        // registered (and reachable) but lifted out of the menu; the People page
+        // carries a tab to it. This trims the top-level menu without losing the
+        // page. remove_submenu_page hides the item; the page hook stays live.
+        remove_submenu_page(self::MENU_SLUG, LeadersPage::PAGE_SLUG);
+
         add_submenu_page(
             self::MENU_SLUG,
             __('Settings', 'eventcrew'),
