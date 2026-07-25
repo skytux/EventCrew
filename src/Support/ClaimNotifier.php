@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -46,6 +47,7 @@ final class ClaimNotifier
         }
 
         $standingLine = $this->standingLine($person);
+        $calendarLine = $this->calendarLine($task->id);
 
         $this->dm(
             $person,
@@ -57,7 +59,7 @@ final class ClaimNotifier
                 $task->eventName(),
                 $this->whenText($task),
                 $this->mailer->ticketUrl($assignment->id)
-            ) . "\n\n" . $standingLine
+            ) . "\n\n" . $calendarLine . "\n\n" . $standingLine
         );
 
         if ($person->isDisabled()) {
@@ -74,16 +76,30 @@ final class ClaimNotifier
                 $task->eventName()
             ),
             sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link, 6: standing line */
+                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link, 6: add-to-calendar link, 7: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\n%7\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task),
                 $this->mailer->ticketUrl($assignment->id),
+                $this->calendarLine($task->id),
                 $standingLine
             )
+        );
+    }
+
+    /**
+     * The "add to calendar" line: putting the task in a person's own calendar,
+     * with its own alarm, is the strongest nudge there is against a no-show.
+     */
+    private function calendarLine(int $taskId): string
+    {
+        return sprintf(
+            /* translators: %s: a link that adds the task to the person's calendar */
+            __('📅 Add it to your calendar: %s', 'eventcrew'),
+            CalendarController::url($taskId)
         );
     }
 

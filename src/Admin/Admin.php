@@ -60,8 +60,8 @@ final class Admin
         );
 
         add_action(
-            'admin_post_eventcrew_mark_attendance',
-            [$this->container->get(RosterPage::class), 'markAttendance']
+            'admin_post_eventcrew_save_roster',
+            [$this->container->get(RosterPage::class), 'saveRoster']
         );
 
         add_action(

@@ -96,6 +96,8 @@ final class ClaimNotifierTest extends TestCase
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
+        // Also an add-to-calendar hold, the strongest nudge against a no-show.
+        self::assertStringContainsString('wp-json/eventcrew/v1/calendar?token=', $this->mails[0]['body']);
     }
 
     public function testADisabledAccountIsNeverMailed(): void

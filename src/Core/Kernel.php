@@ -55,6 +55,7 @@ use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
@@ -96,6 +97,7 @@ final class Kernel
         $this->container->get(WebhookController::class)->boot();
         $this->container->get(VerificationController::class)->boot();
         $this->container->get(TicketController::class)->boot();
+        $this->container->get(CalendarController::class)->boot();
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
         $this->container->get(SlotFreedNotice::class)->boot();
@@ -540,6 +542,13 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(RedemptionRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            CalendarController::class,
+            fn (Container $container) => new CalendarController(
+                $container->get(TaskRepository::class)
             )
         );
 

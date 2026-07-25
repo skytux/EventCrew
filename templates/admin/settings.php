@@ -100,14 +100,14 @@ if (! defined('ABSPATH')) {
                                 type="text"
                                 name="role_label[<?php echo esc_attr((string) $eventcrew_index); ?>]"
                                 value="<?php echo esc_attr($eventcrew_role['label']); ?>"
-                                class="regular-text">
+                                style="width:11em;max-width:100%">
                         </td>
                         <td>
                             <input
                                 type="text"
                                 name="role_slug[<?php echo esc_attr((string) $eventcrew_index); ?>]"
                                 value="<?php echo esc_attr($eventcrew_role['slug']); ?>"
-                                class="regular-text"
+                                style="width:9em;max-width:100%"
                                 <?php echo '' !== $eventcrew_role['slug'] ? 'readonly' : ''; ?>>
                         </td>
                         <td>
