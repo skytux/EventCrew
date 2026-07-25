@@ -40,9 +40,9 @@ if (! defined('ABSPATH')) {
     <h1><?php esc_html_e('EventCrew Settings', 'eventcrew'); ?></h1>
 
     <h2 class="nav-tab-wrapper eventcrew-tabs" style="margin:.5em 0 1em">
+        <a href="#" class="nav-tab" data-ec-tab="roles"><?php esc_html_e('Roles', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="telegram"><?php esc_html_e('Telegram bot', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="web"><?php esc_html_e('Web page', 'eventcrew'); ?></a>
-        <a href="#" class="nav-tab" data-ec-tab="roles"><?php esc_html_e('Roles & tasks', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="tuning"><?php esc_html_e('Reputation & alerts', 'eventcrew'); ?></a>
     </h2>
 
@@ -197,6 +197,8 @@ if (! defined('ABSPATH')) {
             </p>
         <?php endif; ?>
 
+        </div>
+        <div class="ec-tab-panel" data-ec-tab="tuning">
         <h2><?php esc_html_e('Cancellations', 'eventcrew'); ?></h2>
         <table class="form-table" role="presentation">
             <tr>
@@ -219,8 +221,6 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
-        </div>
-        <div class="ec-tab-panel" data-ec-tab="tuning">
         <h2><?php esc_html_e('Board reminders', 'eventcrew'); ?></h2>
         <table class="form-table" role="presentation">
             <tr>
@@ -796,7 +796,7 @@ if (! defined('ABSPATH')) {
         });
 
         // Reopen the tab last used (a Save reloads the page), else the first.
-        var initial = 'telegram';
+        var initial = 'roles';
         try {
             var saved = localStorage.getItem('eventcrew_settings_tab');
             if (saved && nav.querySelector('.nav-tab[data-ec-tab="' + saved + '"]')) {

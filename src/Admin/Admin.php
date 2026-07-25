@@ -153,6 +153,9 @@ final class Admin
             [$this->container->get(PeoplePage::class), 'render']
         );
 
+        // Grouped with People via a tab on both pages (see their templates),
+        // but kept a real menu item: hiding it with remove_submenu_page also
+        // strips the capability WordPress needs to grant access to the URL.
         add_submenu_page(
             self::MENU_SLUG,
             __('Leadership', 'eventcrew'),
@@ -161,12 +164,6 @@ final class Admin
             LeadersPage::PAGE_SLUG,
             [$this->container->get(LeadersPage::class), 'render']
         );
-
-        // Leadership is a specialised view most nights don't need, so it is kept
-        // registered (and reachable) but lifted out of the menu; the People page
-        // carries a tab to it. This trims the top-level menu without losing the
-        // page. remove_submenu_page hides the item; the page hook stays live.
-        remove_submenu_page(self::MENU_SLUG, LeadersPage::PAGE_SLUG);
 
         add_submenu_page(
             self::MENU_SLUG,
