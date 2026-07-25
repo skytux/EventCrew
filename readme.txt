@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,10 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.8.1 =
+* New `/web` bot command: DMs you a one-time, 30-minute sign-in link for the web board, so you can hop from Telegram to the web without typing your email.
+* Removed the `/stop` command (account disable), matching the removal of the web "pause account" control — turn individual notifications off under /notifications instead. Re-run "Install / refresh webhook" in Settings so the command menu updates.
+
 = 1.8.0 =
 * Add-to-calendar: signup confirmations (email and Telegram) and the web profile now carry an "Add to calendar" link that drops the task, with its own alarm, into any calendar app — the strongest nudge there is against a no-show.
 * "You're on next": the signed-in web profile shows your upcoming tasks up front, soonest first, instead of leaving them to be hunted on the board.
@@ -175,6 +179,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.8.1 =
+Adds a /web sign-in link command and removes /stop. Re-run "Install / refresh webhook" in Settings so the bot's command menu updates. No database change.
 
 = 1.8.0 =
 Adds calendar holds, an upcoming-tasks summary, a one-tap reminder cancel, and a single-button roster. No database change.
