@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.8.2 =
+* Removed the account "disable / pause emails" concept entirely — it duplicated the per-type Notifications controls and could strand a member who had no Telegram. To stop a kind of email, untick it under Notifications (web) or /notifications (bot); the emailed self-service page now only offers "Delete my data". The now-unused `disabled_at` column is dropped on upgrade. A wanted email (a gifted credit, a reminder, a signup confirmation) is no longer silently swallowed by a stale "disabled" flag.
+
 = 1.8.1 =
 * New `/web` bot command: DMs you a one-time, 30-minute sign-in link for the web board, so you can hop from Telegram to the web without typing your email.
 * Removed the `/stop` command (account disable), matching the removal of the web "pause account" control — turn individual notifications off under /notifications instead. Re-run "Install / refresh webhook" in Settings so the command menu updates.
@@ -179,6 +182,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.8.2 =
+Removes the account-disable feature; email is now controlled only by the per-type Notifications preferences. The database migrates automatically (the disabled_at column is dropped).
 
 = 1.8.1 =
 Adds a /web sign-in link command and removes /stop. Re-run "Install / refresh webhook" in Settings so the bot's command menu updates. No database change.

@@ -99,12 +99,6 @@ final class ReminderCall
             );
         }
 
-        // A disabled account asked for no email; the DM above still goes, since
-        // it is about a commitment they made, but the mail is held back.
-        if ($person->isDisabled()) {
-            return;
-        }
-
         $this->mailer->toPerson(
             $person->id,
             $person->email,

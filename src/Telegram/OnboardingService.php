@@ -56,28 +56,13 @@ final class OnboardingService
 
         $existing = $this->people->findByTelegramUserId($telegramUserId);
 
-        if (null !== $existing) {
-            // /start doubles as "turn my account back on" for anyone whose
-            // account was switched off, so a disabled person is welcomed back
-            // rather than sent through onboarding again.
-            if ($existing->isDisabled()) {
-                $this->people->enable($existing->id);
-                $this->telegram->sendMessage(
-                    $chatId,
-                    __('Welcome back — your account is on again. Tap a task on the board to sign up.', 'eventcrew')
-                );
+        if (null !== $existing && $existing->isEmailVerified()) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('You are already set up. Tap a task on the board to sign up.', 'eventcrew')
+            );
 
-                return;
-            }
-
-            if ($existing->isEmailVerified()) {
-                $this->telegram->sendMessage(
-                    $chatId,
-                    __('You are already set up. Tap a task on the board to sign up.', 'eventcrew')
-                );
-
-                return;
-            }
+            return;
         }
 
         set_transient(

@@ -20,7 +20,7 @@ use EventCrew\Tests\TestCase;
 
 /**
  * The shared confirmation emails both channels send. Light coverage: a signup
- * mails a ticket, and a switched-off account is never mailed.
+ * mails a ticket (with a calendar hold) and also confirms in the Telegram DM.
  */
 final class ClaimNotifierTest extends TestCase
 {
@@ -56,14 +56,13 @@ final class ClaimNotifierTest extends TestCase
         );
     }
 
-    private function person(bool $disabled = false): Person
+    private function person(): Person
     {
         return Person::fromRow([
             'id' => 7,
             'email' => 'sam@example.com',
             'display_name' => 'Sam',
             'email_verified_at' => '2026-07-01 00:00:00',
-            'disabled_at' => $disabled ? '2026-07-10 09:00:00' : null,
         ]);
     }
 
@@ -98,13 +97,6 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
         // Also an add-to-calendar hold, the strongest nudge against a no-show.
         self::assertStringContainsString('wp-json/eventcrew/v1/calendar?token=', $this->mails[0]['body']);
-    }
-
-    public function testADisabledAccountIsNeverMailed(): void
-    {
-        $this->notifier()->confirmSignup($this->person(true), 5);
-
-        self::assertSame([], $this->mails);
     }
 
     public function testSignupAlsoConfirmsInTheTelegramDm(): void

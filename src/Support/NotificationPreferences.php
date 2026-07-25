@@ -71,13 +71,9 @@ final class NotificationPreferences
 
     public function emailAllowed(Person $person, string $type): bool
     {
-        // A disabled account is the hard "no email" switch. (The open-task mail's
-        // own consent gate stays where it is - OpenTaskCall only sends to
-        // activeEmailRecipients - so it is not re-checked here.)
-        if ($person->isDisabled()) {
-            return false;
-        }
-
+        // Locked (transactional) types always send; toggleable ones honour the
+        // person's per-type email preference, defaulting on. This is the only
+        // email off-switch now - the old blanket "disabled account" flag is gone.
         if (! in_array($type, self::TOGGLEABLE, true)) {
             return true;
         }

@@ -85,7 +85,7 @@ final class ReminderCallTest extends TelegramTestCase
     /**
      * @return array<string, mixed>
      */
-    private function personRow(bool $disabled = false, ?int $chatId = 999): array
+    private function personRow(?int $chatId = 999): array
     {
         return [
             'id' => 7,
@@ -93,7 +93,6 @@ final class ReminderCallTest extends TelegramTestCase
             'display_name' => 'Sam',
             'email_verified_at' => '2026-07-01 00:00:00',
             'telegram_chat_id' => $chatId,
-            'disabled_at' => $disabled ? '2026-07-10 00:00:00' : null,
         ];
     }
 
@@ -140,19 +139,6 @@ final class ReminderCallTest extends TelegramTestCase
         self::assertSame(0, $sent);
         self::assertSame([], $this->mails);
         self::assertNull($this->lastCallTo('sendMessage'));
-    }
-
-    public function testDisabledPersonGetsTheDmButNoEmail(): void
-    {
-        $this->wpdb->nextResults[] = [$this->taskRow(5)];
-        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
-        $this->wpdb->nextRows[] = $this->personRow(true);
-
-        $sent = $this->call()->run(25);
-
-        self::assertSame(1, $sent);
-        self::assertContains('sendMessage', $this->calledMethods()); // DM still goes
-        self::assertSame([], $this->mails);                          // email held back
     }
 
     public function testHonoursTheBatchLimit(): void

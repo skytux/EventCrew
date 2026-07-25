@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '8';
+    public const DB_VERSION = '9';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -77,8 +77,37 @@ final class Schema
         }
 
         self::ensureInnoDb();
+        self::dropRetiredColumns();
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
+    }
+
+    /**
+     * dbDelta never drops a column - it only adds and widens - so a field the
+     * plugin has retired lingers on installs that once had it. The account
+     * "disabled" flag was removed in favour of the per-type notification
+     * preferences, so its column is dropped here if it is still present. Guarded
+     * by an information_schema check, so it runs once and is a no-op thereafter.
+     */
+    private static function dropRetiredColumns(): void
+    {
+        global $wpdb;
+
+        $table = self::table(self::PEOPLE);
+
+        $present = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+                $table,
+                'disabled_at'
+            )
+        );
+
+        if (null !== $present && '' !== (string) $present) {
+            // Table name is a constant joined to $wpdb->prefix; DROP takes no placeholders.
+            $wpdb->query("ALTER TABLE {$table} DROP COLUMN disabled_at"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        }
     }
 
     /**
@@ -195,7 +224,6 @@ final class Schema
                 notify_prefs text DEFAULT NULL,
                 email_opt_in_at datetime DEFAULT NULL,
                 email_opt_in_source varchar(20) NOT NULL DEFAULT '',
-                disabled_at datetime DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

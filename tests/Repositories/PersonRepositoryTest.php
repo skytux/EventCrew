@@ -37,24 +37,12 @@ final class PersonRepositoryTest extends TestCase
         self::assertSame('new@example.test', $this->wpdb->updates[0]['data']['email']);
     }
 
-    public function testDisableStampsTheAccountAndEnableClearsIt(): void
-    {
-        $repo = new PersonRepository();
-
-        $repo->disable(7);
-        self::assertNotEmpty($this->wpdb->updates[0]['data']['disabled_at']);
-        self::assertSame(['id' => 7], $this->wpdb->updates[0]['where']);
-
-        $repo->enable(7);
-        self::assertNull($this->wpdb->updates[1]['data']['disabled_at']);
-    }
-
     /**
-     * The recipient policy is default-deny: both a verified address and an
-     * enabled account are required, so this test would fail if either clause
-     * were ever dropped and people who shouldn't be mailed slipped in.
+     * The open-task recipient policy never mails an unverified address, since
+     * that inbox isn't proven theirs - this test would fail if that clause were
+     * ever dropped and people who shouldn't be mailed slipped in.
      */
-    public function testActiveEmailRecipientsRequireVerifiedAndNotDisabled(): void
+    public function testActiveEmailRecipientsRequireAVerifiedAddress(): void
     {
         $this->wpdb->nextResults = [[]];
 
@@ -62,7 +50,6 @@ final class PersonRepositoryTest extends TestCase
 
         $sql = $this->wpdb->lastQuery();
         self::assertStringContainsString('email_verified_at IS NOT NULL', $sql);
-        self::assertStringContainsString('disabled_at IS NULL', $sql);
     }
 
     /**

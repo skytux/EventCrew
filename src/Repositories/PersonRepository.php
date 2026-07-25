@@ -150,20 +150,6 @@ final class PersonRepository
         $this->update($id, ['email_verified_at' => current_time('mysql')]);
     }
 
-    /**
-     * Switches an account off: no email, off the boards and rosters, until the
-     * person turns it back on. The row and its history are kept.
-     */
-    public function disable(int $id): void
-    {
-        $this->update($id, ['disabled_at' => current_time('mysql')]);
-    }
-
-    public function enable(int $id): void
-    {
-        $this->update($id, ['disabled_at' => null]);
-    }
-
     public function setOrganizer(int $id, bool $isOrganizer): void
     {
         $this->update($id, ['is_organizer' => $isOrganizer ? 1 : 0]);
@@ -224,10 +210,10 @@ final class PersonRepository
     }
 
     /**
-     * Everyone the open-task email may go to: a verified address on an account
-     * that is switched on. This is the whole recipient policy in one query -
-     * the failure mode of getting it wrong is mailing people who shouldn't be
-     * mailed, so it is default-deny (both columns must be right).
+     * Everyone the open-task email may go to: any verified address. We never
+     * mail an unverified one, since that is someone else's inbox until they
+     * prove it is theirs; per-type opt-outs are enforced later, by the
+     * NotificationPreferences gate.
      *
      * @return array<int, Person>
      */
@@ -237,7 +223,7 @@ final class PersonRepository
 
         $rows = $wpdb->get_results(
             "SELECT * FROM {$this->table()}
-            WHERE email_verified_at IS NOT NULL AND disabled_at IS NULL
+            WHERE email_verified_at IS NOT NULL
             ORDER BY id ASC",
             ARRAY_A
         );
