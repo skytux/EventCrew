@@ -9,8 +9,9 @@ use EventCrew\Support\NotificationPreferences;
 
 /**
  * /notifications - a keyboard menu for a person to choose which notifications
- * reach them, and on which channel. Two toggle buttons per type (Telegram, and
- * email), tapping either flips it and edits the message in place.
+ * reach them, and on which channel. Three columns per row, like the web tab: the
+ * type's name (a no-op cell), a 📱 Telegram toggle and a ✉ email toggle; tapping
+ * either toggle flips it and edits the message in place.
  *
  * The same per-type, per-channel preferences the web Notifications tab edits, so
  * a change in one shows in the other.
@@ -103,15 +104,27 @@ final class NotificationSettingsService
     {
         $rows = [];
 
+        // A header row labels the two toggle columns; the name cell above each
+        // row's toggles is a no-op, so a tap on the label never changes a pref.
+        $rows[] = [
+            ['text' => ' ', 'callback_data' => self::PREFIX . 'noop'],
+            ['text' => '📱', 'callback_data' => self::PREFIX . 'noop'],
+            ['text' => '✉', 'callback_data' => self::PREFIX . 'noop'],
+        ];
+
         foreach (NotificationPreferences::labels() as $type => $label) {
             $pref = $map[$type] ?? ['dm' => true, 'email' => true];
             $rows[] = [
                 [
-                    'text' => $label . ' 📱' . ($pref['dm'] ? '✅' : '❌'),
+                    'text' => $label,
+                    'callback_data' => self::PREFIX . 'noop',
+                ],
+                [
+                    'text' => $pref['dm'] ? '✅' : '❌',
                     'callback_data' => self::PREFIX . $type . ':dm',
                 ],
                 [
-                    'text' => '✉' . ($pref['email'] ? '✅' : '❌'),
+                    'text' => $pref['email'] ? '✅' : '❌',
                     'callback_data' => self::PREFIX . $type . ':email',
                 ],
             ];

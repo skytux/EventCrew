@@ -38,6 +38,9 @@ final class SettingsPage
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
 
+    /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
+    private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
+
     public function __construct(
         private readonly View $view,
         private readonly TelegramClient $telegram
@@ -287,25 +290,78 @@ final class SettingsPage
     }
 
     /**
-     * Points Telegram at this site's webhook, generating the shared secret on
-     * first run and caching the bot's username for the board's deep-link
-     * button. HTTPS with a valid certificate is Telegram's own hard
-     * requirement here - it refuses plain HTTP and self-signed certs outright.
+     * The Settings "Install / refresh webhook" button: runs the install and
+     * reports the outcome as an admin notice.
      */
     public function setupWebhook(): void
     {
         Admin::assertCanSave(self::SETUP_NONCE_ACTION);
 
-        if (! $this->telegram->isConfigured()) {
+        $result = $this->installWebhook();
+
+        if ($result['ok']) {
+            // Stamp the version so the automatic on-update refresh does not run
+            // again this release after a manual install.
+            update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
+
             Admin::redirectTo(
                 self::PAGE_SLUG,
-                __('Add a bot token and save before installing the webhook.', 'eventcrew'),
-                'error'
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Webhook installed. Add the bot to your group and the board will appear there on its own.', 'eventcrew')
             );
         }
 
-        // The secret is generated first because the admin-post door carries it
-        // in its URL, so the URL cannot be built until it exists.
+        Admin::redirectTo(self::PAGE_SLUG, $result['error'], 'error');
+    }
+
+    /**
+     * Re-installs the webhook whenever the running plugin version differs from
+     * the one last installed for - i.e. on every update, from any prior version,
+     * however it arrived (the updater or an FTP drop) - so a release that adds
+     * or renames a bot command, or changes the webhook, takes effect on the next
+     * admin request without anyone clicking the button. The stored-version check
+     * is only a once-per-update guard (it mirrors Schema::maybeMigrate); it never
+     * needs to know which version the site came from. Runs only when a bot token
+     * is configured; failures are logged by TelegramClient and the manual button
+     * remains for a deliberate retry.
+     */
+    public function installOnUpdate(): void
+    {
+        if (EVENTCREW_VERSION === (string) get_option(self::WEBHOOK_VERSION_OPTION, '')) {
+            return;
+        }
+
+        // An un-configured install has nothing to point at; leave the version
+        // unstamped so configuring a token later triggers this on the next load.
+        if (! $this->telegram->isConfigured()) {
+            return;
+        }
+
+        $this->installWebhook();
+
+        // Stamp regardless of outcome, so a persistent misconfiguration (a
+        // non-HTTPS site) is attempted once per release rather than on every
+        // admin page load.
+        update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
+    }
+
+    /**
+     * Points Telegram at this site's webhook, generating the shared secret on
+     * first run, caching the bot's username for the board's deep-link button,
+     * and (re)publishing the command menu. HTTPS with a valid certificate is
+     * Telegram's own hard requirement - it refuses plain HTTP and self-signed
+     * certs outright. Returns whether it succeeded and, if not, a ready-to-show
+     * reason; it never redirects or checks a nonce, so both the Settings button
+     * and the automatic on-update refresh can drive it.
+     *
+     * @return array{ok: bool, error: string}
+     */
+    public function installWebhook(): array
+    {
+        if (! $this->telegram->isConfigured()) {
+            return ['ok' => false, 'error' => __('Add a bot token and save before installing the webhook.', 'eventcrew')];
+        }
+
         $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
 
         if ('' === $secret) {
@@ -321,15 +377,14 @@ final class SettingsPage
         // rather than surfacing as Telegram's opaque "HTTPS url must be
         // provided".
         if (! str_starts_with($url, 'https://')) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                sprintf(
+            return [
+                'ok' => false,
+                'error' => sprintf(
                     /* translators: %s: the non-HTTPS URL WordPress generated */
                     __('WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy\'s forwarded-protocol header - and try again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     $url
                 ),
-                'error'
-            );
+            ];
         }
 
         // Telegram keeps last_error_message even across a setWebhook to the same
@@ -341,15 +396,14 @@ final class SettingsPage
         $installed = $this->telegram->setWebhook($url, $secret);
 
         if (null === $installed) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                sprintf(
+            return [
+                'ok' => false,
+                'error' => sprintf(
                     /* translators: %s: the error Telegram returned */
                     __('Telegram refused the webhook: %s', 'eventcrew'),
                     $this->telegram->lastError()
                 ),
-                'error'
-            );
+            ];
         }
 
         // Reset the idempotency high-water mark. An injected update - most
@@ -387,11 +441,7 @@ final class SettingsPage
             ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],
         ]);
 
-        Admin::redirectTo(
-            self::PAGE_SLUG,
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('Webhook installed. Add the bot to your group and the board will appear there on its own.', 'eventcrew')
-        );
+        return ['ok' => true, 'error' => ''];
     }
 
     /**
