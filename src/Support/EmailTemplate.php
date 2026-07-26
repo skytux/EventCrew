@@ -389,67 +389,11 @@ final class EmailTemplate
     {
         $color = sanitize_hex_color((string) get_option('eventcrew_app_theme_color', ''));
 
-        if (is_string($color) && '' !== $color) {
-            return $color;
-        }
-
-        return self::paletteAccent() ?? '#4a6cf7';
-    }
-
-    /**
-     * The site's own brand colour, taken from the theme's global styles palette
-     * when the plugin has not been given one of its own.
-     *
-     * The slug order is the guess this rests on: a palette entry actually named
-     * for the brand comes first, and only then the text colour, which in a block
-     * theme is the near-black most sites read as "their" dark. Anything the
-     * palette expresses as something other than a plain hex - a CSS variable, an
-     * rgba() - is skipped rather than half-understood, and an install where the
-     * guess lands wrong sets the colour explicitly in Settings, which wins.
-     */
-    private static function paletteAccent(): ?string
-    {
-        if (! function_exists('wp_get_global_settings')) {
-            return null;
-        }
-
-        $palette = wp_get_global_settings(['color', 'palette']);
-
-        if (! is_array($palette)) {
-            return null;
-        }
-
-        // Called without a context, this comes back keyed by origin; a theme
-        // that defines its own should beat the WordPress defaults.
-        $entries = [];
-
-        foreach (['custom', 'theme', 'default'] as $origin) {
-            if (isset($palette[$origin]) && is_array($palette[$origin])) {
-                $entries = [...$entries, ...$palette[$origin]];
-            }
-        }
-
-        if ([] === $entries) {
-            $entries = $palette;
-        }
-
-        $bySlug = [];
-
-        foreach ($entries as $entry) {
-            if (is_array($entry) && isset($entry['slug'], $entry['color'])) {
-                $bySlug[(string) $entry['slug']] ??= (string) $entry['color'];
-            }
-        }
-
-        foreach (['accent', 'primary', 'contrast', 'foreground'] as $slug) {
-            $color = sanitize_hex_color($bySlug[$slug] ?? '');
-
-            if (is_string($color) && '' !== $color) {
-                return $color;
-            }
-        }
-
-        return null;
+        // Deliberately not read from the theme's global-styles palette: themes
+        // name their palette entries as they please, so picking one by slug is
+        // a guess, and a guess that lands on the wrong colour is worse than a
+        // neutral default nobody mistakes for a setting.
+        return is_string($color) && '' !== $color ? $color : '#4a6cf7';
     }
 
     private static function siteName(): string
