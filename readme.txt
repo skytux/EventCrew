@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.3
+Stable tag: 1.14.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.4 =
+* Your standing and credits ("New · 9 credits"), and the "How your score works" explainer, now sit under your name above the tabs — visible from every tab instead of only from Me.
+* The Me tab is split into two named sections, My tasks and Tickets, each shown even when empty so you can tell the difference between having nothing and the page having lost something. Spending a free-entry credit moved under Tickets, which is what it produces.
+* Your tickets are no longer hidden behind a collapsed disclosure.
 
 = 1.14.3 =
 * The Me tab reads in the order asked for: standing and credits, then your next tasks, then spending a free-entry credit, then your tickets. 1.14.1 moved the credit-spending control above the task list as well, which was not the request.

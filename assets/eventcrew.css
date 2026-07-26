@@ -47,7 +47,9 @@
     display: flex; align-items: baseline; gap: .5em; flex-wrap: wrap;
     margin: 0 0 .6em; font-size: .9em;
 }
-.eventcrew-signup .eventcrew-subhead { margin: 1.2em 0 .3em; font-size: 1em; }
+.eventcrew-signup .eventcrew-subhead { margin: 0 0 .5em; font-size: 1.05em; }
+.eventcrew-signup .eventcrew-me-section { margin: 0 0 1.5em; }
+.eventcrew-signup .eventcrew-me-section:last-child { margin-bottom: 0; }
 .eventcrew-signup .eventcrew-section { margin: 0 0 1.5em; }
 
 /*
@@ -261,7 +263,8 @@
 .eventcrew-signup .eventcrew-redeem button { align-self: center; min-height: 44px; }
 
 /* The collapsible disclosures. */
-.eventcrew-signup .eventcrew-standing { margin: .8em 0 .2em; }
+/* Part of the header block above the tabs, so it sits tight under the name. */
+.eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; font-weight: 600; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
 .eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
