@@ -161,35 +161,37 @@
  * the right. Wraps to two rows on a narrow phone rather than crushing the
  * button.
  */
+/*
+ * A two-column grid, not a wrapping flex row.
+ *
+ * Flex-wrap was the wrong tool: it means "put this on a new line whenever it
+ * does not fit", and then every fix is an argument about what counts as
+ * fitting. A grid of "everything left, as much as is left over" and "the
+ * action, exactly as wide as it needs" cannot wrap at all - the name and time
+ * wrap inside their own column instead, which is where wrapping belongs.
+ *
+ * minmax(0, 1fr) rather than 1fr, because a bare 1fr still refuses to go below
+ * its content's minimum width - the same trap min-width:auto sets on a flex
+ * item, and the reason a long event name could shove the button aside.
+ */
 .eventcrew-signup .eventcrew-task-row {
-    display: flex; align-items: center; gap: .4em .75em; flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .75em;
     padding: .6em 0; border-bottom: 1px solid var(--eventcrew-line);
 }
 .eventcrew-signup .eventcrew-task-row:last-child { border-bottom: 0; }
-/*
- * min-width:0 is the whole trick. A flex item defaults to min-width:auto, which
- * means it will not shrink below its own longest word - so a long event name
- * held this column at its intrinsic width and shoved the count and the button
- * onto a second line while there was still room for them. Allowed to shrink,
- * the row stays on one line until it genuinely cannot.
- */
 .eventcrew-signup .eventcrew-task-main {
-    flex: 1 1 10em; min-width: 0;
     display: flex; flex-direction: column; gap: .1em;
+    min-width: 0; overflow-wrap: anywhere;
 }
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
 
-/*
- * The count sits above the action rather than beside it. Stacked, this block is
- * only as wide as the button - about 7.5em - instead of count plus gap plus
- * button, and that difference is most of what was pushing rows onto a second
- * line at phone widths. The auto margin holds the block against the right edge,
- * and centring inside it puts the count over the middle of the button.
- */
+/* The count above the action, the pair as narrow as the button itself. */
 .eventcrew-signup .eventcrew-task-side {
     display: flex; flex-direction: column; align-items: center; gap: .35em;
-    flex: 0 0 auto; margin-left: auto;
 }
 
 /*
