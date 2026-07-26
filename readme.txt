@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.4
+Stable tag: 1.14.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.5 =
+* The slot dots are bigger and drawn at full strength — an empty slot is a solid green ring, a filled one is that ring filled in. Before they were hairline circles at half opacity, which at that size amounted to nothing.
 
 = 1.14.4 =
 * Your standing and credits ("New · 9 credits"), and the "How your score works" explainer, now sit under your name above the tabs — visible from every tab instead of only from Me.
