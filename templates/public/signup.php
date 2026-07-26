@@ -33,6 +33,8 @@ $eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
     : ['upcoming' => [], 'past' => []];
 /** @var array<int, array{task_id: int, label: string, when: string, calendar_url: string}> $eventcrew_my_upcoming */
 $eventcrew_my_upcoming = is_array($view['my_upcoming'] ?? null) ? $view['my_upcoming'] : [];
+/** @var array<int, array{when: string, label: string, status: string}> $eventcrew_my_history */
+$eventcrew_my_history = is_array($view['my_history'] ?? null) ? $view['my_history'] : [];
 $eventcrew_manage_endpoint = (string) ($view['manage_endpoint'] ?? '');
 $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
 $eventcrew_ajax = admin_url('admin-ajax.php');
@@ -233,6 +235,23 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </ul>
                 <?php endif; ?>
             </div>
+
+            <?php if ([] !== $eventcrew_my_history) : ?>
+                <div class="eventcrew-me-section eventcrew-divider">
+                    <h3 class="eventcrew-subhead"><?php esc_html_e('What you’ve done', 'eventcrew'); ?></h3>
+                    <ul class="eventcrew-plain-list">
+                        <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
+                            <li>
+                                <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_past['label']); ?></span>
+                                <span class="eventcrew-mine-when">
+                                    <?php echo esc_html($eventcrew_past['when']); ?>
+                                    · <?php echo esc_html($eventcrew_past['status']); ?>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
             <div class="eventcrew-me-section eventcrew-divider">
                 <h3 class="eventcrew-subhead"><?php esc_html_e('Tickets', 'eventcrew'); ?></h3>
@@ -507,7 +526,23 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             return r.json();
         }).then(function (res) {
             if (res && typeof res.board === 'string') {
-                board.innerHTML = res.board;
+                /*
+             * Swapping the board's HTML destroys the button that was just
+             * pressed, and with it the focus - dumping a keyboard or screen
+             * reader user back at the top of the document with no idea what
+             * happened. Put focus on whatever now stands in that row's place,
+             * so the next tab press carries on from where they were.
+             */
+            var focusedTask = form.querySelector('input[name="task_id"]');
+            focusedTask = focusedTask ? focusedTask.value : '';
+
+            board.innerHTML = res.board;
+
+            if (focusedTask) {
+                var row = board.querySelector('[data-eventcrew-task="' + focusedTask + '"]');
+                var target = row && row.querySelector('button, a');
+                if (target) { target.focus(); }
+            }
             }
             if (res && res.notice) {
                 showToast(res.notice);

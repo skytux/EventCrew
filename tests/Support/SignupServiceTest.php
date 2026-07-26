@@ -94,6 +94,20 @@ final class SignupServiceTest extends TestCase
         ];
     }
 
+    /**
+     * The board asks this to say "you cannot take this" before anyone presses
+     * a button. It has to give the same answer claim() would, and it must not
+     * write anything on the way to giving it.
+     */
+    public function testRefusalForAnswersWithoutClaiming(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow('leader');       // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'can_lead' => 0];   // people->find
+
+        self::assertSame(SignupService::LEADER_ONLY, $this->service()->refusalFor(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
     public function testLeaderSlotRefusesAMemberWithoutLeaderPermission(): void
     {
         $this->wpdb->nextRows[] = $this->taskRow('leader');       // claim tasks->find

@@ -58,7 +58,7 @@ endif; ?>
             /* translators: 1: people signed up so far, 2: people needed in total */
             $eventcrew_fill = sprintf(__('%1$d of %2$d', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);
             ?>
-            <li class="eventcrew-task-row">
+            <li class="eventcrew-task-row" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
                 <span class="eventcrew-task-main">
                     <span class="eventcrew-task-role"><?php echo esc_html($eventcrew_task->roleDisplay()); ?></span>
                     <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
@@ -82,9 +82,28 @@ endif; ?>
                     <?php endif; ?>
                     <span class="eventcrew-capacity-count"><?php echo esc_html($eventcrew_fill); ?></span>
                 </span>
+                <?php
+                $eventcrew_blocked = (string) ($eventcrew_row['blocked'] ?? '');
+                ?>
                 <?php if (null === $eventcrew_person) :
                     ?>
                     <span class="eventcrew-muted"><?php esc_html_e('sign in first', 'eventcrew'); ?></span>
+                    <?php
+                elseif (! $eventcrew_row['mine'] && '' !== $eventcrew_blocked) :
+                    /*
+                     * Say so here rather than after the press. The rule is
+                     * SignupService::refusalFor()'s; this only words it.
+                     */
+                    ?>
+                    <span class="eventcrew-blocked">
+                        <?php
+                        echo esc_html(
+                            \EventCrew\Support\SignupService::LEADER_ONLY === $eventcrew_blocked
+                                ? __('Crew leaders only', 'eventcrew')
+                                : __('On hold — talk to an organizer', 'eventcrew')
+                        );
+                        ?>
+                    </span>
                     <?php
                 elseif ($eventcrew_row['mine']) :
                     ?>

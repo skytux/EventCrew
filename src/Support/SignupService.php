@@ -50,34 +50,10 @@ final class SignupService
      */
     public function claim(int $personId, int $taskId): string
     {
-        $task = $this->tasks->find($taskId);
+        ['refusal' => $refusal, 'pass' => $usePass] = $this->evaluate($personId, $taskId);
 
-        // The leader slot is reserved for crew granted leader permission.
-        if (null !== $task && Roles::LEADER_SLUG === $task->roleSlug) {
-            $person = $this->people->find($personId);
-
-            if (null === $person || ! $person->canLead()) {
-                return self::LEADER_ONLY;
-            }
-        }
-
-        // A blocked at-risk member may be waved through once by a pass, which is
-        // then spent - but only if the join actually succeeds.
-        $usePass = false;
-
-        if ($this->gateBlocks($personId)) {
-            $person = $this->people->find($personId);
-
-            if (null !== $person && $person->hasAtRiskPass()) {
-                $usePass = true;
-            } else {
-                return self::GATED;
-            }
-        }
-
-        // Holding a slot across events is fine; a genuine time clash is not.
-        if ($this->assignments->hasOverlapping($personId, $taskId)) {
-            return self::OVERLAP;
+        if ('' !== $refusal) {
+            return $refusal;
         }
 
         $outcome = $this->assignments->join($taskId, $personId);
@@ -87,6 +63,67 @@ final class SignupService
         }
 
         return $outcome;
+    }
+
+    /**
+     * Why a claim would be refused right now, or '' if it would be allowed.
+     *
+     * Read-only, and the same checks claim() itself runs - it calls this - so
+     * the board can say "you cannot take this" before anyone presses a button
+     * without a second, drifting copy of the rules. It reports no refusal for
+     * someone holding an at-risk pass, because the pass would wave them
+     * through; a refusal shown to them would simply be wrong.
+     *
+     * Returns self::GATED, self::LEADER_ONLY, self::OVERLAP or ''.
+     */
+    public function refusalFor(int $personId, int $taskId): string
+    {
+        return $this->evaluate($personId, $taskId)['refusal'];
+    }
+
+    /**
+     * The single pass over the rules: why this claim would be refused, and
+     * whether an at-risk pass is what is carrying it.
+     *
+     * One method rather than two so the gate is consulted once - claim() needs
+     * both answers, and asking twice would both cost a second standing
+     * calculation and open a gap between the two reads.
+     *
+     * @return array{refusal: string, pass: bool}
+     */
+    private function evaluate(int $personId, int $taskId): array
+    {
+        $task = $this->tasks->find($taskId);
+
+        // The leader slot is reserved for crew granted leader permission.
+        if (null !== $task && Roles::LEADER_SLUG === $task->roleSlug) {
+            $person = $this->people->find($personId);
+
+            if (null === $person || ! $person->canLead()) {
+                return ['refusal' => self::LEADER_ONLY, 'pass' => false];
+            }
+        }
+
+        // A blocked at-risk member may be waved through once by a pass, which
+        // is then spent - but only if the join actually succeeds.
+        $usePass = false;
+
+        if ($this->gateBlocks($personId)) {
+            $person = $this->people->find($personId);
+
+            if (null !== $person && $person->hasAtRiskPass()) {
+                $usePass = true;
+            } else {
+                return ['refusal' => self::GATED, 'pass' => false];
+            }
+        }
+
+        // Holding a slot across events is fine; a genuine time clash is not.
+        if ($this->assignments->hasOverlapping($personId, $taskId)) {
+            return ['refusal' => self::OVERLAP, 'pass' => false];
+        }
+
+        return ['refusal' => '', 'pass' => $usePass];
     }
 
     /**

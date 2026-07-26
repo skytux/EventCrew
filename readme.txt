@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.8
+Stable tag: 1.15.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.15.0 =
+* The board now says when you cannot take a task, on the row, instead of letting you press Sign up and refusing afterwards. A crew-leader slot reads "Crew leaders only", and someone held by the standing gate sees "On hold — talk to an organizer".
+* New "What you've done" section on the Me tab: your last five finished tasks and how each turned out. Your standing is calculated from exactly this, so it can now be checked rather than taken on trust.
+* An unrated member is "Beginner" rather than "New".
+* Accessibility: signing up or cancelling no longer throws keyboard focus back to the top of the page. Focus lands on whatever replaces the button you pressed.
 
 = 1.14.8 =
 * The slot dots are filled shapes rather than outlined ones, so they are properly round. An outline gives the screen two curved edges to draw across twelve pixels, which is not enough for either of them; a filled shape has one. An empty slot is now a faint dot and a taken one a green dot.

@@ -46,7 +46,7 @@ final class Standing
         return match ($this->level) {
             self::GOOD => __('Good standing', 'eventcrew'),
             self::AT_RISK => __('At risk', 'eventcrew'),
-            default => __('New', 'eventcrew'),
+            default => __('Beginner', 'eventcrew'),
         };
     }
 
