@@ -181,12 +181,14 @@
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
 
 /*
- * The count and the action as one block, pushed to the right by the auto
- * margin. On a line of their own after wrapping, that same margin keeps them
- * against the right edge instead of stranded at the left.
+ * The count sits above the action rather than beside it. Stacked, this block is
+ * only as wide as the button - about 7.5em - instead of count plus gap plus
+ * button, and that difference is most of what was pushing rows onto a second
+ * line at phone widths. The auto margin holds the block against the right edge,
+ * and centring inside it puts the count over the middle of the button.
  */
 .eventcrew-signup .eventcrew-task-side {
-    display: flex; align-items: center; gap: .75em;
+    display: flex; flex-direction: column; align-items: center; gap: .35em;
     flex: 0 0 auto; margin-left: auto;
 }
 
