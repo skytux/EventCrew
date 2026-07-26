@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\DmBody;
 use EventCrew\Support\NotificationPreferences;
 
 /**
@@ -170,7 +171,9 @@ final class PermissionService
             $prefs = new NotificationPreferences();
 
             if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
-                $this->telegram->sendMessage($person->telegramChatId, $dm);
+                // Unprompted from the affected person's side: an organizer, not
+                // they, pressed the button that caused this.
+                $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $dm));
             }
 
             if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {

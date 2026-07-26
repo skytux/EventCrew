@@ -33,7 +33,7 @@ final class CreditGrantNotifier
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                sprintf(
+                DmBody::frame($person, sprintf(
                     /* translators: %d: number of free-entry credits granted */
                     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     _n(
@@ -43,7 +43,7 @@ final class CreditGrantNotifier
                         'eventcrew'
                     ),
                     $credits
-                )
+                ))
             );
         }
 
