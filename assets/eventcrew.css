@@ -18,13 +18,24 @@
  * so the three finally match; the rest resolve against the theme's global
  * styles with a sane fallback for a classic theme that defines none.
  */
+/*
+ * Nothing here needs to know whether the page is light or dark, and nothing
+ * asks. A block theme in dark mode already answers through its own presets -
+ * its "contrast" is the light colour - and every fallback below resolves to
+ * currentColor or transparent, so a classic theme, a dark theme, or a dark
+ * section of a light page all work by inheriting rather than by being
+ * detected. An absolute #111 or #fff here is what would need a setting to
+ * correct, and a setting is a thing to keep in sync with a theme that changes.
+ */
 .eventcrew-signup {
     --eventcrew-accent: var(--wp--preset--color--primary, #4a6cf7);
     --eventcrew-on-accent: #fff;
-    --eventcrew-ink: var(--wp--preset--color--contrast, #111);
-    --eventcrew-surface: var(--wp--preset--color--base, #fff);
+    --eventcrew-ink: var(--wp--preset--color--contrast, currentColor);
+    --eventcrew-surface: var(--wp--preset--color--base, transparent);
     --eventcrew-radius: var(--wp--custom--border-radius, 8px);
-    --eventcrew-line: color-mix(in srgb, var(--eventcrew-ink) 14%, transparent);
+    /* currentColor, not --eventcrew-ink: a border has to read against the text
+       actually on the page, which is the one thing always known. */
+    --eventcrew-line: color-mix(in srgb, currentColor 18%, transparent);
     /* Sign up keeps its own deep green: "go" is a meaning, not a brand, and a
        crew whose accent happens to be red would otherwise get a red Sign up. */
     --eventcrew-go: #1b5e20;
@@ -176,11 +187,16 @@
 .eventcrew-signup .eventcrew-pip {
     box-sizing: border-box;
     width: .85em; height: .85em; border-radius: 50%;
-    border: 2px solid var(--eventcrew-pip);
+    /* An empty slot rings in the page's own text colour - dark on a light
+       theme, light on a dark one - so it needs no theme detection, and it does
+       not read as half-filled the way a green ring did. */
+    border: 2px solid color-mix(in srgb, currentColor 45%, transparent);
     background: transparent;
     flex: none;
 }
-.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-pip); }
+.eventcrew-signup .eventcrew-pip.is-filled {
+    background: var(--eventcrew-pip); border-color: var(--eventcrew-pip);
+}
 .eventcrew-signup .eventcrew-capacity-count {
     font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
