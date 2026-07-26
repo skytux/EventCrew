@@ -138,6 +138,55 @@ final class EmailTemplateTest extends TestCase
         self::assertStringNotContainsString('Only a header', $wrapper);
     }
 
+    public function testALocalLogoIsEmbeddedRatherThanLinked(): void
+    {
+        // A host that refuses to serve images to anything that does not look
+        // like a browser - and a client that blocks remote images - both break
+        // a linked masthead, so a logo we hold on disk travels with the message.
+        $file = (string) tempnam(sys_get_temp_dir(), 'logo');
+        file_put_contents($file, 'not really a png');
+
+        Functions\when('get_theme_mod')->justReturn(9);
+        Functions\when('wp_get_attachment_image_src')->justReturn(
+            ['https://site.test/wp-content/uploads/logo.png', 400, 100]
+        );
+        Functions\when('get_attached_file')->justReturn($file);
+
+        $html = EmailTemplate::logoHtml();
+
+        // cid:, and not stripped: esc_url() would throw the whole src away,
+        // since cid is not one of the protocols WordPress allows.
+        self::assertStringContainsString('src="cid:eventcrew-logo"', $html);
+        self::assertSame($file, EmailTemplate::logoPath());
+
+        unlink($file);
+    }
+
+    public function testALogoHostedElsewhereIsLinkedRatherThanEmbedded(): void
+    {
+        // Nothing to attach: the URL is not one of this site's own uploads, so
+        // it stays a plain remote image.
+        $this->options['eventcrew_email_logo'] = 'https://cdn.example.com/logo.png';
+        Functions\when('wp_upload_dir')->justReturn(
+            ['baseurl' => 'https://site.test/wp-content/uploads', 'basedir' => sys_get_temp_dir()]
+        );
+
+        self::assertStringContainsString('src="https://cdn.example.com/logo.png"', EmailTemplate::logoHtml());
+        self::assertSame('', EmailTemplate::logoPath());
+    }
+
+    public function testTheMastheadSitsOnTheAccentColour(): void
+    {
+        // A white logo - what a site usually has ready for a dark header - is
+        // invisible on a white card, and reads as a broken image.
+        $this->options['eventcrew_app_theme_color'] = '#123456';
+
+        $html = (new EmailTemplate(new Logger()))->render('Hi', '<p>Body</p>', '<p>Footer</p>');
+
+        self::assertStringContainsString('background:#123456', $html);
+        self::assertStringNotContainsString('{{accent}}', $html);
+    }
+
     public function testTheMastheadFallsBackToTheSiteNameWithNoLogoAnywhere(): void
     {
         // No explicit URL, no Customizer logo and no Site Icon: the site's name,
