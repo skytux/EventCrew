@@ -166,14 +166,21 @@
  * they are counting - the number is what makes them legible the first time.
  */
 .eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .45em; align-items: center; }
-.eventcrew-signup .eventcrew-pips { display: inline-flex; gap: .2em; align-items: center; }
+.eventcrew-signup .eventcrew-pips { display: inline-flex; gap: .25em; align-items: center; }
+/*
+ * Big enough to see and drawn at full strength. A hairline circle dimmed to
+ * half opacity is invisible at this size, so an empty slot is a solid ring in
+ * the same green and a filled one is that ring filled in - the difference is
+ * ink, not transparency. border-box, so the ring does not inflate the circle.
+ */
 .eventcrew-signup .eventcrew-pip {
-    width: .6em; height: .6em; border-radius: 50%;
-    border: 1px solid var(--eventcrew-pip); opacity: .45;
+    box-sizing: border-box;
+    width: .85em; height: .85em; border-radius: 50%;
+    border: 2px solid var(--eventcrew-pip);
+    background: transparent;
+    flex: none;
 }
-.eventcrew-signup .eventcrew-pip.is-filled {
-    background: var(--eventcrew-pip); border-color: var(--eventcrew-pip); opacity: 1;
-}
+.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-pip); }
 .eventcrew-signup .eventcrew-capacity-count {
     font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
