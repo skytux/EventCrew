@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.5
+Stable tag: 1.14.6
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.6 =
+* The signup page works on a dark theme without being told it is on one. Borders, text and the empty slot rings now take their colour from the page itself rather than assuming a light background, so a dark theme, a classic theme, or a dark section of a light page all look right. There is deliberately no light/dark setting: it would be one more thing to keep in step with your theme, and the page can simply look instead.
 
 = 1.14.5 =
 * The slot dots are bigger and drawn at full strength — an empty slot is a solid green ring, a filled one is that ring filled in. Before they were hairline circles at half opacity, which at that size amounted to nothing.
