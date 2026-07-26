@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.7
+Stable tag: 1.14.8
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.8 =
+* The slot dots are filled shapes rather than outlined ones, so they are properly round. An outline gives the screen two curved edges to draw across twelve pixels, which is not enough for either of them; a filled shape has one. An empty slot is now a faint dot and a taken one a green dot.
+
+Note for anyone whose changes to this plugin's appearance do not seem to take effect: if your site uses a CSS minifier or optimiser, it combines stylesheets into a bundle of its own and the plugin's version number never reaches the browser. Purge that plugin's cache after updating, or exclude eventcrew.css from its aggregation.
 
 = 1.14.7 =
 * The slot dots are round, and identical to each other. They were sized in a unit that worked out to 13.6 pixels, which no screen can draw, so each one was rounded off slightly differently from its neighbour. They are a plain 12 pixels now.

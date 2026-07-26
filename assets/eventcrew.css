@@ -192,22 +192,24 @@
  * decorative 12px dot has nothing to gain from scaling with the text and
  * everything to gain from being the same 12px every time.
  */
+/*
+ * Solid discs, not rings. A 2px ring on a 12px dot gives the renderer two
+ * curved edges to anti-alias across about twelve pixels of diameter, which is
+ * not enough to describe both - hence the flat spots and the faintly lumpy
+ * outline. A filled shape has one edge, and comes out round at any size and on
+ * any display. The two states then differ only in colour, which is the thing
+ * they are actually meant to differ in.
+ */
 .eventcrew-signup .eventcrew-pip {
     box-sizing: border-box;
     width: 12px; height: 12px; border-radius: 50%;
-    /* An empty slot rings in the page's own text colour - dark on a light
-       theme, light on a dark one - so it needs no theme detection, and it does
-       not read as half-filled the way a green ring did. Two thirds rather than
-       45%: a thin translucent ring next to a solid disc reads as a lighter,
-       smaller shape even at identical geometry, and the two are meant to
-       differ in state, not in weight. */
-    border: 2px solid color-mix(in srgb, currentColor 65%, transparent);
-    background: transparent;
+    border: 0;
+    /* The page's own text colour, faint: no theme detection needed, and it
+       reads as an empty slot rather than a differently-coloured full one. */
+    background: color-mix(in srgb, currentColor 25%, transparent);
     flex: none;
 }
-.eventcrew-signup .eventcrew-pip.is-filled {
-    background: var(--eventcrew-pip); border-color: var(--eventcrew-pip);
-}
+.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-pip); }
 .eventcrew-signup .eventcrew-capacity-count {
     font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
