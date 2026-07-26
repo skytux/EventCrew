@@ -54,6 +54,10 @@ $include = [
     'src',
     'templates',
     'blocks',
+    // The public stylesheet. Omitting this ships a plugin whose signup page
+    // renders unstyled, which no test catches - the CSS moved out of the
+    // template in 1.14.0 precisely so it could be cached and versioned.
+    'assets',
 ];
 
 /** Never ships, at any point, whatever else changes above. */

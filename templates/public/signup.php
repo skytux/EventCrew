@@ -49,150 +49,57 @@ if (false === $eventcrew_here) {
 $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unslash($_GET['eventcrew_notice'])) : '';
 $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_notice_code);
 ?>
-<style>
-/*
- * Background-agnostic on purpose: the widget inherits the theme's text colour,
- * dims secondary text with opacity rather than a fixed grey, and tints the
- * notice with a translucent overlay - so it reads on a light or a dark theme
- * without knowing which it is on.
- */
-.eventcrew-signup .eventcrew-muted { opacity: .7; }
-
-/*
- * The action feedback is a toast pinned to the viewport, so it stays visible
- * after an in-place update no matter where the list is scrolled - which the old
- * inline notice, sitting at the top of the board, did not.
- */
-.eventcrew-toast {
-    position: fixed; left: 50%; bottom: 1.5em; transform: translateX(-50%) translateY(.5em);
-    z-index: 100000; max-width: 90vw;
-    padding: .6em 1.1em; border-radius: 8px;
-    background: #222; color: #fff; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .28);
-    opacity: 0; visibility: hidden; transition: opacity .18s ease, transform .18s ease;
-}
-.eventcrew-toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
-.eventcrew-signup .eventcrew-tglink {
-    display: inline-flex; align-items: center; gap: .4em;
-    padding: .5em .9em; margin: .5em 0; border-radius: 6px;
-    background: #229ED9; color: #fff; text-decoration: none; font-weight: 600;
-}
-.eventcrew-signup .eventcrew-tglink:hover { filter: brightness(1.08); color: #fff; }
-
-/*
- * Keep the task list narrow so each row's action sits close to its text while
- * still lining up in a column down the right edge, instead of being flung to
- * the far side of a full-width content column.
- */
-.eventcrew-signup ul { list-style: none; padding: 0; max-width: 30em; }
-.eventcrew-signup li { display: flex; gap: .6em; align-items: center; margin: .4em 0; }
-.eventcrew-signup .eventcrew-task { flex: 1; }
-.eventcrew-signup form { margin: 0; }
-
-/* Sign out is a quiet action, not a button - styled as a plain inline link. */
-.eventcrew-signup .eventcrew-linkbtn {
-    background: none; border: 0; padding: 0; font: inherit;
-    color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
-}
-
-/*
- * Sign up reads go, Cancel reads stop. Deep, dark shades so white text stays
- * legible and they sit calmly on a light or dark theme alike.
- */
-.eventcrew-signup .eventcrew-btn-go,
-.eventcrew-signup .eventcrew-btn-stop,
-.eventcrew-signup .eventcrew-btn-full {
-    color: #fff; border: 0; border-radius: 5px; cursor: pointer;
-    padding: .28em .8em; font: inherit; font-size: .8em; font-weight: 600; line-height: 1.5;
-}
-.eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
-.eventcrew-signup .eventcrew-btn-go { background: #1b5e20; }
-.eventcrew-signup .eventcrew-btn-go:hover { background: #164a1a; color: #fff; }
-.eventcrew-signup .eventcrew-btn-stop { background: #8e1616; }
-.eventcrew-signup .eventcrew-btn-stop:hover { background: #741212; color: #fff; }
-.eventcrew-signup .eventcrew-btn-full { background: #6b7280; opacity: .8; cursor: not-allowed; }
-
-/* The free-entry redeem control and the collapsible score explainer. */
-.eventcrew-signup .eventcrew-redeem { display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin: .5em 0; }
-.eventcrew-signup .eventcrew-score-help { margin: .3em 0 .8em; font-size: .9em; }
-.eventcrew-signup .eventcrew-score-help summary { cursor: pointer; opacity: .8; }
-.eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
-.eventcrew-signup .eventcrew-score-help td { padding: .1em .8em .1em 0; }
-
-.eventcrew-signin-row {
-    display: flex;
-    align-items: stretch;
-    gap: 0.75em;
-    flex-wrap: wrap;
-}
-
-.eventcrew-signin-row .wp-element-input,
-.eventcrew-signin-row .wp-element-button {
-    box-sizing: border-box;
-    height: 3em;              /* the shared source of truth */
-    padding-block: 0;         /* kill vertical padding differences */
-    padding-inline: 1em;
-    font-size: 1rem;
-    line-height: 1;
-    border-radius: var(--wp--custom--border-radius, 6px);
-    border: 1px solid var(--wp--preset--color--contrast, #333);
-}
-
-.eventcrew-signin-row .wp-element-input {
-    background-color: var(--wp--preset--color--base, #fff);
-    color: var(--wp--preset--color--contrast, #111);
-    min-width: 16em;
-    flex: 1 1 16em;
-}
-
-.eventcrew-signin-row .wp-element-input:focus {
-    outline: none;
-    border-color: var(--wp--preset--color--primary, #0073aa);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--wp--preset--color--primary, #0073aa) 25%, transparent);
-}
-
-.eventcrew-signin-row .wp-element-input::placeholder {
-    color: var(--wp--preset--color--contrast, #333);
-    opacity: 0.5;
-}
-</style>
+<?php
+// The stylesheet is registered and enqueued by SignupController; see
+// assets/eventcrew.css. It used to live here as an inline <style> block, which
+// meant it was neither cacheable nor versioned - and, because the PWA service
+// worker caches the page HTML, a restyle never reached an installed app.
+?>
 <div class="eventcrew-signup">
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
     <?php if (null === $eventcrew_person) :
+        // Signed out there are only two things - sign in, and look at the board
+        // - so there is nothing to tab between and no tab strip is drawn.
         ?>
-        <h2><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
-        <form class="eventcrew-action" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="margin:1em 0">
-            <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
-            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-            <div class="eventcrew-signin-row">
-                <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
-                <input
-                    type="email"
-                    id="eventcrew-email"
-                    name="email"
-                    required
-                    autocomplete="email"
-                    placeholder="<?php esc_attr_e('hello@example.com', 'eventcrew'); ?>"
-                    class="wp-element-input"
-                >
-                <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
-            </div>
-            <p class="eventcrew-muted" style="margin:.5em 0 0"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
-            <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
-                <div
-                    class="cf-turnstile"
-                    style="margin-top:.75em"
-                    data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
-                    data-theme="auto"></div>
-                <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
-            <?php endif; ?>
-        </form>
-        <p id="eventcrew-signin-sent" class="eventcrew-muted" hidden style="margin:1em 0"><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+        <section class="eventcrew-section">
+            <h2><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
+            <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <div class="eventcrew-signin-row">
+                    <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
+                    <input
+                        type="email"
+                        id="eventcrew-email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        placeholder="<?php esc_attr_e('hello@example.com', 'eventcrew'); ?>"
+                        class="wp-element-input"
+                    >
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
+                </div>
+                <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
+                <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
+                    <div
+                        class="cf-turnstile eventcrew-turnstile"
+                        data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
+                        data-theme="auto"></div>
+                    <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
+                <?php endif; ?>
+            </form>
+            <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+        </section>
+
+        <div id="eventcrew-board" class="eventcrew-board">
+            <h2><?php esc_html_e('Board', 'eventcrew'); ?></h2>
+            <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
+        </div>
         <?php
     else :
         ?>
-        <h2><?php esc_html_e('Welcome', 'eventcrew'); ?></h2>
-        <p>
+        <p class="eventcrew-identity eventcrew-muted">
             <?php
             printf(/* translators: %s: person's name */
                 esc_html__('Signed in as %s.', 'eventcrew'),
@@ -200,89 +107,136 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             ); ?>
         </p>
 
-        <?php if ([] !== $eventcrew_my_upcoming) : ?>
-            <div class="eventcrew-upcoming" style="margin:.6em 0 1em">
-                <p style="margin:0 0 .3em"><strong><?php esc_html_e('You’re on next', 'eventcrew'); ?></strong></p>
-                <ul style="list-style:none;margin:0;padding:0">
-                    <?php foreach ($eventcrew_my_upcoming as $eventcrew_shift) : ?>
-                        <li style="margin:.2em 0">
-                            <?php echo esc_html($eventcrew_shift['when'] . ' · ' . $eventcrew_shift['label']); ?>
-                            — <a href="<?php echo esc_url($eventcrew_shift['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
+        <?php
+        /*
+         * Real anchors, not buttons: with JavaScript off every panel stays
+         * visible and these degrade to jump links down one long page, which is
+         * the same posture the rest of this page takes. The script upgrades
+         * them to a tablist in place.
+         */
+        ?>
+        <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your crew page', 'eventcrew'); ?>">
+            <?php
+            $eventcrew_tabs = [
+                'board' => __('Board', 'eventcrew'),
+                'me' => __('Me', 'eventcrew'),
+                'settings' => __('Settings', 'eventcrew'),
+            ];
+            foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
+                ?>
+                <a
+                    class="eventcrew-tab"
+                    id="eventcrew-tab-<?php echo esc_attr($eventcrew_key); ?>"
+                    href="#eventcrew-panel-<?php echo esc_attr($eventcrew_key); ?>"
+                    data-eventcrew-tab="<?php echo esc_attr($eventcrew_key); ?>"
+                ><?php echo esc_html($eventcrew_label); ?></a>
+            <?php endforeach; ?>
+        </nav>
+
+        <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Board', 'eventcrew'); ?></h2>
+            <div id="eventcrew-board" class="eventcrew-board">
+                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
             </div>
-        <?php endif; ?>
 
-        <?php if (null !== $eventcrew_standing) : ?>
-            <p>
-                <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
-                &middot;
-                <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
-                    _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
-                    $eventcrew_standing->creditBalance
-                )); ?></span>
-            </p>
-            <details class="eventcrew-score-help">
-                <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
-                <table>
-                    <tbody>
-                    <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
-                        <tr>
-                            <td><?php echo esc_html($eventcrew_label); ?></td>
-                            <td style="text-align:right"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
-                        </tr>
+            <?php if ('' !== (string) $view['telegram_group_link']) : ?>
+                <p class="eventcrew-tgline">
+                    <a class="eventcrew-tglink wp-element-button is-style-outline" href="<?php echo esc_url((string) $view['telegram_group_link']); ?>" target="_blank" rel="noopener">
+                        <?php esc_html_e('Open our group in Telegram', 'eventcrew'); ?> →
+                    </a>
+                </p>
+            <?php endif; ?>
+        </section>
+
+        <section class="eventcrew-panel" id="eventcrew-panel-me" data-eventcrew-panel="me" aria-labelledby="eventcrew-tab-me">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Me', 'eventcrew'); ?></h2>
+
+            <?php if ([] !== $eventcrew_my_upcoming) : ?>
+                <div class="eventcrew-upcoming">
+                    <h3 class="eventcrew-subhead"><?php esc_html_e('You’re on next', 'eventcrew'); ?></h3>
+                    <ul class="eventcrew-plain-list">
+                        <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
+                            <li>
+                                <?php echo esc_html($eventcrew_mine['when'] . ' · ' . $eventcrew_mine['label']); ?>
+                                — <a href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php if (null !== $eventcrew_standing) : ?>
+                <p class="eventcrew-standing">
+                    <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
+                    &middot;
+                    <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
+                        _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
+                        $eventcrew_standing->creditBalance
+                    )); ?></span>
+                </p>
+                <details class="eventcrew-disclosure eventcrew-score-help">
+                    <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
+                    <table>
+                        <tbody>
+                        <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
+                            <tr>
+                                <td><?php echo esc_html($eventcrew_label); ?></td>
+                                <td class="eventcrew-num"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
+                </details>
+            <?php endif; ?>
+
+            <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
+                <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
+                    <select name="ticket_date" id="eventcrew-ticket-date">
+                        <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
+                            <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
+
+            <?php if ([] !== $eventcrew_my_tickets['upcoming'] || [] !== $eventcrew_my_tickets['past']) : ?>
+                <details class="eventcrew-disclosure">
+                    <summary><?php esc_html_e('My tickets', 'eventcrew'); ?></summary>
+                    <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
+                        <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
+                            <p class="eventcrew-muted eventcrew-listhead"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
+                            <ul class="eventcrew-ticket-list">
+                                <?php foreach ($eventcrew_my_tickets[$eventcrew_group] as $eventcrew_ticket) : ?>
+                                    <li>
+                                        <a href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
+                                            <?php echo esc_html($eventcrew_ticket['label']); ?>
+                                        </a>
+                                        — <?php echo esc_html($eventcrew_ticket['when']); ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
                     <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
-            </details>
-        <?php endif; ?>
+                </details>
+            <?php endif; ?>
+        </section>
 
-        <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
-            <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
-                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
-                <select name="ticket_date" id="eventcrew-ticket-date">
-                    <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
-                        <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
-            </form>
-        <?php endif; ?>
+        <section class="eventcrew-panel" id="eventcrew-panel-settings" data-eventcrew-panel="settings" aria-labelledby="eventcrew-tab-settings">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Settings', 'eventcrew'); ?></h2>
 
-        <?php if ([] !== $eventcrew_my_tickets['upcoming'] || [] !== $eventcrew_my_tickets['past']) : ?>
-            <details class="eventcrew-score-help">
-                <summary><?php esc_html_e('My tickets', 'eventcrew'); ?></summary>
-                <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
-                    <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
-                        <p class="eventcrew-muted" style="margin:.4em 0 .2em"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
-                        <ul style="margin:0 0 .4em;padding-left:1.2em">
-                            <?php foreach ($eventcrew_my_tickets[$eventcrew_group] as $eventcrew_ticket) : ?>
-                                <li>
-                                    <a href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
-                                        <?php echo esc_html($eventcrew_ticket['label']); ?>
-                                    </a>
-                                    — <?php echo esc_html($eventcrew_ticket['when']); ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </details>
-        <?php endif; ?>
-
-        <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
-            <details class="eventcrew-score-help">
-                <summary><?php esc_html_e('Notifications', 'eventcrew'); ?></summary>
-                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+            <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Notifications', 'eventcrew'); ?></h3>
+                <form class="eventcrew-prefs" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_prefs_action); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <table>
+                    <table class="eventcrew-matrix">
                         <thead>
                             <tr>
                                 <th></th>
@@ -294,10 +248,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <?php foreach ($eventcrew_notify_matrix as $eventcrew_type => $eventcrew_pref) : ?>
                             <tr>
                                 <td><?php echo esc_html($eventcrew_pref['label']); ?></td>
-                                <td style="text-align:center">
+                                <td class="eventcrew-tick">
                                     <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][dm]" value="1" <?php checked($eventcrew_pref['dm']); ?>>
                                 </td>
-                                <td style="text-align:center">
+                                <td class="eventcrew-tick">
                                     <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][email]" value="1" <?php checked($eventcrew_pref['email']); ?>>
                                 </td>
                             </tr>
@@ -307,48 +261,126 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on both channels.', 'eventcrew'); ?></p>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
                 </form>
-            </details>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <?php if ('' !== $eventcrew_manage_token) : ?>
-            <details class="eventcrew-score-help">
-                <summary><?php esc_html_e('Account', 'eventcrew'); ?></summary>
+            <?php if ('' !== $eventcrew_manage_token) : ?>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Account', 'eventcrew'); ?></h3>
                 <p class="eventcrew-muted"><?php esc_html_e('To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone.', 'eventcrew'); ?></p>
-                <form method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>" style="margin:.4em 0"
+                <form class="eventcrew-danger" method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>"
                     onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
                     <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
                     <input type="hidden" name="action" value="delete">
-                    <button type="submit" class="eventcrew-linkbtn" style="color:#b32d2e"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-linkbtn eventcrew-linkbtn-danger"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
                 </form>
-            </details>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <p>
-            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" style="display:inline">
+            <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                 <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>
-        </p>
+        </section>
         <?php
     endif; ?>
-
-    <?php if ('' !== (string) $view['telegram_group_link']) :
-        ?>
-        <p>
-            <a class="eventcrew-tglink" href="<?php echo esc_url((string) $view['telegram_group_link']); ?>" target="_blank" rel="noopener">
-                <?php esc_html_e('Open our group in Telegram', 'eventcrew'); ?> →
-            </a>
-        </p>
-        <?php
-    endif; ?>
-
-    <div id="eventcrew-board" class="eventcrew-board">
-        <h2><?php esc_html_e('Board', 'eventcrew'); ?></h2>
-        <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
-    </div>
 </div>
 <script>
+/*
+ * Progressive enhancement: turn the three sections into tabs.
+ *
+ * The markup ships as a jump-link nav over three visible panels, so with
+ * JavaScript off the page is one readable scroll and every link still goes
+ * somewhere. Only when this runs does it become a tablist - which is why the
+ * hiding lives behind the .is-tabbed class this adds, and not in the
+ * stylesheet's default state.
+ *
+ * Unlike the admin's tabs, the last-used tab is deliberately NOT remembered:
+ * the board is what this page is for, and it must be what you land on.
+ */
+(function () {
+    var root = document.querySelector('.eventcrew-signup');
+    var nav = root && root.querySelector('.eventcrew-tabs');
+
+    if (!nav) { return; }  // signed out: nothing to tab between
+
+    var tabs = [].slice.call(nav.querySelectorAll('.eventcrew-tab'));
+    var panels = [].slice.call(root.querySelectorAll('[data-eventcrew-panel]'));
+
+    if (tabs.length === 0 || panels.length === 0) { return; }
+
+    nav.setAttribute('role', 'tablist');
+    panels.forEach(function (panel) {
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('tabindex', '0');
+    });
+
+    function panelFor(key) {
+        return panels.filter(function (p) { return p.getAttribute('data-eventcrew-panel') === key; })[0];
+    }
+
+    function show(key, focusTab) {
+        tabs.forEach(function (tab) {
+            var isActive = tab.getAttribute('data-eventcrew-tab') === key;
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            tab.setAttribute('aria-controls', 'eventcrew-panel-' + tab.getAttribute('data-eventcrew-tab'));
+            // Roving tabindex: one stop for the whole strip, arrows move within.
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+            tab.classList.toggle('is-active', isActive);
+            if (isActive && focusTab) { tab.focus(); }
+        });
+
+        panels.forEach(function (panel) {
+            panel.classList.toggle('is-active', panel.getAttribute('data-eventcrew-panel') === key);
+        });
+
+        // replaceState, not the hash directly: setting location.hash would jump
+        // the page to the panel, undoing the point of a tab. Deep links still
+        // work, because the hash is read on load below.
+        if (window.history && window.history.replaceState) {
+            try { window.history.replaceState(null, '', '#eventcrew-panel-' + key); } catch (e) {}
+        }
+    }
+
+    tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function (e) {
+            e.preventDefault();
+            show(tab.getAttribute('data-eventcrew-tab'), false);
+        });
+
+        tab.addEventListener('keydown', function (e) {
+            var next = null;
+            if (e.key === 'ArrowRight') { next = tabs[(index + 1) % tabs.length]; }
+            if (e.key === 'ArrowLeft') { next = tabs[(index - 1 + tabs.length) % tabs.length]; }
+            if (e.key === 'Home') { next = tabs[0]; }
+            if (e.key === 'End') { next = tabs[tabs.length - 1]; }
+            if (!next) { return; }
+            e.preventDefault();
+            show(next.getAttribute('data-eventcrew-tab'), true);
+        });
+    });
+
+    /*
+     * Which tab opens. The board wins unless something specific says otherwise:
+     * a deep link, or a notice from an action that lives on another tab - the
+     * preferences and delete forms are full-page posts, so without that second
+     * rule saving your preferences would dump you back on the board with no
+     * sign it had worked.
+     */
+    function initialKey() {
+        var fromHash = (window.location.hash || '').replace('#eventcrew-panel-', '');
+        if (fromHash && panelFor(fromHash)) { return fromHash; }
+
+        var notice = (window.location.search.match(/[?&]eventcrew_notice=([a-z_]+)/) || [])[1] || '';
+        if (notice === 'prefs_saved' && panelFor('settings')) { return 'settings'; }
+        if (notice.indexOf('ticket_') === 0 && panelFor('me')) { return 'me'; }
+
+        return 'board';
+    }
+
+    root.classList.add('is-tabbed');
+    show(initialKey(), false);
+})();
+
 /*
  * Progressive enhancement: send Sign up / Cancel through admin-ajax and swap the
  * board's HTML for the fresh copy the server returns, so the button flips state

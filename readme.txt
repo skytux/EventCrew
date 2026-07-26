@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,15 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.14.0 =
+* The signup page is now organised into three tabs — Board, Me and Settings — instead of one long scroll. The board is still what you land on, and still the first thing anyone sees.
+* Signed-out visitors get a simpler page: the sign-in form and the board, nothing else. The "open our group in Telegram" link is no longer shown to people who are not signed in.
+* The page's styling moved out of the page itself into a proper stylesheet, so it is cached by the browser and versioned with the plugin. Installed-app users now actually receive design changes; before, the app could keep serving the old look from its cache indefinitely.
+* Colours follow your theme, with one accent taken from the theme colour under Settings ▸ Web page — the same colour the installed app and the notification emails use, so the three finally match. The hardcoded greens, reds and Telegram blue are gone.
+* Board rows redesigned: the role reads first, the date and time sit under it, and how full a task is shows as a row of dots rather than "(1/2)". Buttons are big enough to hit on a phone.
+* Accessibility: the tabs are a proper tablist with arrow-key navigation, event headings no longer skip a level, and the capacity dots carry their real numbers for screen readers.
+* With JavaScript turned off the page still works — the tabs become links down one long page, exactly as before.
+
 = 1.13.0 =
 * Telegram messages you did not ask for now say who is writing and greet you by name, the way the emails already did. A message that simply arrives — an open-task call, a reminder, a spot opening up — may land weeks after someone last touched the bot, in one chat among dozens; it now opens with your crew's name instead of a bare "Reminder:".
 * New Signature setting under Settings ▸ Email: how your crew signs off. It closes every notification email and the Telegram messages that go out to everyone. Blank by default, and nothing is added when it is blank.
@@ -244,6 +253,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.14.0 =
+The public signup page is reorganised into Board / Me / Settings tabs and restyled to follow your theme. The board still opens by default. Styling moved to a stylesheet file, so clear any page cache after upgrading. No database change.
 
 = 1.13.0 =
 Unprompted Telegram messages now introduce themselves and greet by name, and a new Signature setting signs off both channels. Set it under Settings ▸ Email, then reset the email template to place it. No database change.

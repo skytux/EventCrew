@@ -1,0 +1,219 @@
+/*
+ * EventCrew public signup page.
+ *
+ * Background-agnostic on purpose: the widget inherits the theme's text colour,
+ * dims secondary text with opacity rather than a fixed grey, and takes its
+ * surfaces and borders from the theme's own presets - so it reads on a light or
+ * a dark theme without knowing which it is on.
+ *
+ * Lives in a real file rather than a <style> block in the template so it is
+ * cacheable and versioned with the plugin. That matters more than it looks:
+ * the PWA service worker caches the page HTML, so an inline stylesheet only
+ * ever reached an installed app when a network fetch happened to succeed.
+ */
+
+/*
+ * The token layer. --eventcrew-accent is set per-install by an inline style
+ * from SignupController (the same option the installed app and the emails use),
+ * so the three finally match; the rest resolve against the theme's global
+ * styles with a sane fallback for a classic theme that defines none.
+ */
+.eventcrew-signup {
+    --eventcrew-accent: var(--wp--preset--color--primary, #4a6cf7);
+    --eventcrew-on-accent: #fff;
+    --eventcrew-ink: var(--wp--preset--color--contrast, #111);
+    --eventcrew-surface: var(--wp--preset--color--base, #fff);
+    --eventcrew-radius: var(--wp--custom--border-radius, 8px);
+    --eventcrew-line: color-mix(in srgb, var(--eventcrew-ink) 14%, transparent);
+    --eventcrew-go: var(--eventcrew-accent);
+    --eventcrew-stop: #8e1616;
+}
+
+.eventcrew-signup .eventcrew-muted { opacity: .7; }
+.eventcrew-signup .eventcrew-hint { margin: .5em 0 0; font-size: .9em; }
+.eventcrew-signup .eventcrew-turnstile { margin-top: .75em; }
+.eventcrew-signup .eventcrew-identity { margin: 0 0 .6em; font-size: .9em; }
+.eventcrew-signup .eventcrew-subhead { margin: 1.2em 0 .3em; font-size: 1em; }
+.eventcrew-signup .eventcrew-section { margin: 0 0 1.5em; }
+
+/*
+ * The action feedback is a toast pinned to the viewport, so it stays visible
+ * after an in-place update no matter where the list is scrolled - which the old
+ * inline notice, sitting at the top of the board, did not.
+ */
+.eventcrew-toast {
+    position: fixed; left: 50%; bottom: 1.5em; transform: translateX(-50%) translateY(.5em);
+    z-index: 100000; max-width: 90vw;
+    padding: .6em 1.1em; border-radius: 8px;
+    background: #222; color: #fff; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .28);
+    opacity: 0; visibility: hidden; transition: opacity .18s ease, transform .18s ease;
+}
+.eventcrew-toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+/*
+ * Tabs. Everything here is inert until the script adds .is-tabbed: without it
+ * every panel stays visible and the nav is a row of jump links, which is what a
+ * JavaScript-less visitor gets.
+ */
+.eventcrew-signup .eventcrew-tabs {
+    display: flex; gap: .25em; flex-wrap: wrap;
+    margin: 0 0 1.2em; padding: 0 0 .1em;
+    border-bottom: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-tab {
+    padding: .55em 1em; border-radius: var(--eventcrew-radius) var(--eventcrew-radius) 0 0;
+    color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
+    border-bottom: 2px solid transparent; opacity: .65;
+    /* A comfortable target on a phone without making the strip tall. */
+    min-height: 44px; display: inline-flex; align-items: center;
+}
+.eventcrew-signup .eventcrew-tab:hover { opacity: 1; }
+.eventcrew-signup .eventcrew-tab.is-active {
+    opacity: 1; border-bottom-color: var(--eventcrew-accent); color: var(--eventcrew-accent);
+}
+.eventcrew-signup .eventcrew-tab:focus-visible {
+    outline: 2px solid var(--eventcrew-accent); outline-offset: -2px;
+}
+
+.eventcrew-signup.is-tabbed .eventcrew-panel { display: none; }
+.eventcrew-signup.is-tabbed .eventcrew-panel.is-active { display: block; }
+.eventcrew-signup.is-tabbed .eventcrew-panel:focus { outline: none; }
+
+/*
+ * With tabs on, the tab already names the panel, so the heading would say it
+ * twice. Hidden visually rather than removed, because it is still the panel's
+ * accessible name and its landmark for a screen-reader heading list.
+ */
+.eventcrew-signup.is-tabbed .eventcrew-panel-title {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* The board list. Scoped to the board so ticket and task lists elsewhere in the
+   panels keep the theme's own list styling. */
+.eventcrew-signup .eventcrew-board ul { list-style: none; padding: 0; margin: 0 0 1.2em; }
+.eventcrew-signup .eventcrew-board h3 { margin: 1em 0 .4em; font-size: 1em; }
+.eventcrew-signup .eventcrew-plain-list { list-style: none; margin: 0; padding: 0; }
+.eventcrew-signup .eventcrew-plain-list li { margin: .2em 0; }
+.eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .4em; padding-left: 1.2em; }
+.eventcrew-signup .eventcrew-listhead { margin: .4em 0 .2em; }
+.eventcrew-signup .eventcrew-upcoming { margin: .6em 0 1em; }
+.eventcrew-signup form { margin: 0; }
+
+/*
+ * One task: what and when on the left, how full in the middle, the action on
+ * the right. Wraps to two rows on a narrow phone rather than crushing the
+ * button.
+ */
+.eventcrew-signup .eventcrew-task-row {
+    display: flex; align-items: center; gap: .75em; flex-wrap: wrap;
+    padding: .6em 0; border-bottom: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-task-row:last-child { border-bottom: 0; }
+.eventcrew-signup .eventcrew-task-main { flex: 1 1 12em; display: flex; flex-direction: column; gap: .1em; }
+.eventcrew-signup .eventcrew-task-role { font-weight: 600; }
+.eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
+
+/* Capacity at a glance: one pip per slot, filled for each person signed up. */
+.eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .2em; align-items: center; }
+.eventcrew-signup .eventcrew-pip {
+    width: .5em; height: .5em; border-radius: 50%;
+    border: 1px solid var(--eventcrew-accent); opacity: .55;
+}
+.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-accent); opacity: 1; }
+.eventcrew-signup .eventcrew-capacity-count { font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; }
+
+/* Sign out is a quiet action, not a button - styled as a plain inline link. */
+.eventcrew-signup .eventcrew-linkbtn {
+    background: none; border: 0; padding: 0; font: inherit;
+    color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
+}
+.eventcrew-signup .eventcrew-linkbtn-danger { color: var(--eventcrew-stop); opacity: 1; }
+.eventcrew-signup .eventcrew-danger { margin: .4em 0; }
+.eventcrew-signup .eventcrew-signout { margin: 1.5em 0 0; }
+
+/*
+ * Sign up reads go, Cancel reads stop. Go takes the crew's accent so the page
+ * matches the app and the emails; stop stays a deep red, which is the one
+ * colour a theme should not get to reassign.
+ */
+.eventcrew-signup .eventcrew-btn-go,
+.eventcrew-signup .eventcrew-btn-stop,
+.eventcrew-signup .eventcrew-btn-full {
+    border: 0; border-radius: var(--eventcrew-radius); cursor: pointer;
+    padding: .5em 1em; font: inherit; font-size: .85em; font-weight: 600; line-height: 1.4;
+    min-height: 44px;
+}
+.eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
+.eventcrew-signup .eventcrew-btn-go { background: var(--eventcrew-go); color: var(--eventcrew-on-accent); }
+.eventcrew-signup .eventcrew-btn-go:hover { filter: brightness(.92); color: var(--eventcrew-on-accent); }
+.eventcrew-signup .eventcrew-btn-stop { background: var(--eventcrew-stop); color: #fff; }
+.eventcrew-signup .eventcrew-btn-stop:hover { filter: brightness(.9); color: #fff; }
+.eventcrew-signup .eventcrew-btn-full {
+    background: transparent; color: inherit; opacity: .5; cursor: not-allowed;
+    border: 1px solid var(--eventcrew-line);
+}
+
+/* The Telegram jump. The theme's own outline button, not a Telegram-blue slab. */
+.eventcrew-signup .eventcrew-tgline { margin: 1.2em 0 0; }
+.eventcrew-signup .eventcrew-tglink {
+    display: inline-flex; align-items: center; gap: .4em;
+    padding: .5em 1em; border-radius: var(--eventcrew-radius);
+    border: 1px solid var(--eventcrew-line);
+    background: transparent; color: inherit; text-decoration: none; font-weight: 600;
+}
+.eventcrew-signup .eventcrew-tglink:hover {
+    border-color: var(--eventcrew-accent); color: var(--eventcrew-accent);
+}
+
+/* The free-entry redeem control and the collapsible disclosures. */
+.eventcrew-signup .eventcrew-redeem { display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin: .8em 0; }
+.eventcrew-signup .eventcrew-standing { margin: .8em 0 .2em; }
+.eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
+.eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
+.eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
+.eventcrew-signup .eventcrew-score-help td { padding: .1em .8em .1em 0; }
+.eventcrew-signup .eventcrew-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.eventcrew-signup .eventcrew-matrix { border-collapse: collapse; }
+.eventcrew-signup .eventcrew-matrix th,
+.eventcrew-signup .eventcrew-matrix td { padding: .3em .6em .3em 0; }
+.eventcrew-signup .eventcrew-tick { text-align: center; }
+
+.eventcrew-signin-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75em;
+    flex-wrap: wrap;
+}
+
+.eventcrew-signin-row .wp-element-input,
+.eventcrew-signin-row .wp-element-button {
+    box-sizing: border-box;
+    height: 3em;              /* the shared source of truth */
+    padding-block: 0;         /* kill vertical padding differences */
+    padding-inline: 1em;
+    font-size: 1rem;
+    line-height: 1;
+    border-radius: var(--eventcrew-radius);
+    border: 1px solid var(--eventcrew-ink);
+}
+
+.eventcrew-signin-row .wp-element-input {
+    background-color: var(--eventcrew-surface);
+    color: var(--eventcrew-ink);
+    min-width: 16em;
+    flex: 1 1 16em;
+}
+
+.eventcrew-signin-row .wp-element-input:focus {
+    outline: none;
+    border-color: var(--eventcrew-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--eventcrew-accent) 25%, transparent);
+}
+
+.eventcrew-signin-row .wp-element-input::placeholder {
+    color: var(--eventcrew-ink);
+    opacity: 0.5;
+}
