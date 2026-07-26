@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.10.1
+Stable tag: 1.10.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,10 +125,15 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.10.2 =
+* Fixed: 1.10.1 replaced the linked logo with one attached inside the message, and on many sites that produced a broken image instead of a logo. Attaching happens through PHPMailer, which a site sending mail through a relay or an API-based SMTP plugin never reaches — leaving the HTML pointing at an attachment that was never made. The logo is linked again, as it was in 1.10.0.
+* The white-on-white problem 1.10.1 also fixed remains fixed: the header band uses your theme colour, so a logo drawn for a dark header is visible.
+* Note for sites sending through a relay: the plain-text copy that accompanies each email is added on the same PHPMailer hook, so it may not survive either. Nothing a reader needs is in it alone — it is a duplicate of the HTML — but if you require a plain-text part, turn HTML off under Settings ▸ Email.
+
 = 1.10.1 =
-* Fixed: the logo did not appear in emails. It was linked back to your site, and plenty of hosts refuse to serve an image to anything that does not look like a browser — some free hosts drop the connection outright — while many mail clients block remote images anyway. A logo from your own media library is now attached inside the message, so it shows without anything being fetched. A URL pointing at another site is still linked as before.
-* Fixed: a white logo was invisible. The header band now uses your theme colour instead of the card's white, which is what a logo drawn for a dark header needs. New `{{accent}}` tag for the template.
+* Fixed: a white logo was invisible in emails. The header band now uses your theme colour instead of the card's white, which is what a logo drawn for a dark header needs. New `{{accent}}` tag for the template.
 * Fixed: the logo sat against the left edge rather than centred — `align="center"` does not centre a block-level image.
+* Changed the logo to an inline attachment. This was a mistake and is reverted in 1.10.2; upgrade straight past this version.
 * Existing templates keep the design they were created with; use Settings ▸ Email ▸ "Reset the template" to take up the new header.
 
 = 1.10.0 =
@@ -216,8 +221,11 @@ Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
 
+= 1.10.2 =
+Fixes the broken email logo introduced in 1.10.1 by linking it again. If you are on 1.10.1, upgrade. Reset the template under Settings ▸ Email to take up the coloured header band.
+
 = 1.10.1 =
-Fixes the missing email logo: it now travels inside the message instead of being fetched from your site, and the header band is coloured so a white logo is visible. Reset the template under Settings ▸ Email to take up the new header.
+Colours the email header band so a white logo is visible. Contains a logo regression fixed in 1.10.2 — go straight there.
 
 = 1.10.0 =
 Notification emails become HTML, with your logo and buttons, and the design is editable under EventCrew ▸ Email template. No database change; existing sends are unaffected apart from how they look.

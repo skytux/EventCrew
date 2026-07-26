@@ -138,41 +138,29 @@ final class EmailTemplateTest extends TestCase
         self::assertStringNotContainsString('Only a header', $wrapper);
     }
 
-    public function testALocalLogoIsEmbeddedRatherThanLinked(): void
+    public function testTheSiteLogoIsLinkedAndScaledToFitTheMasthead(): void
     {
-        // A host that refuses to serve images to anything that does not look
-        // like a browser - and a client that blocks remote images - both break
-        // a linked masthead, so a logo we hold on disk travels with the message.
-        $file = (string) tempnam(sys_get_temp_dir(), 'logo');
-        file_put_contents($file, 'not really a png');
-
+        // Linked, not attached: embedding rides on phpmailer_init, which an
+        // install sending through a relay never reaches, and a cid: with no
+        // part behind it is a broken image rather than a missing one.
         Functions\when('get_theme_mod')->justReturn(9);
         Functions\when('wp_get_attachment_image_src')->justReturn(
             ['https://site.test/wp-content/uploads/logo.png', 400, 100]
         );
-        Functions\when('get_attached_file')->justReturn($file);
 
         $html = EmailTemplate::logoHtml();
 
-        // cid:, and not stripped: esc_url() would throw the whole src away,
-        // since cid is not one of the protocols WordPress allows.
-        self::assertStringContainsString('src="cid:eventcrew-logo"', $html);
-        self::assertSame($file, EmailTemplate::logoPath());
-
-        unlink($file);
+        self::assertStringContainsString('src="https://site.test/wp-content/uploads/logo.png"', $html);
+        self::assertStringNotContainsString('cid:', $html);
+        // 400x100 fits the 260x72 masthead by width, so it lands at 260.
+        self::assertStringContainsString('width="260"', $html);
     }
 
-    public function testALogoHostedElsewhereIsLinkedRatherThanEmbedded(): void
+    public function testAnExplicitLogoUrlWins(): void
     {
-        // Nothing to attach: the URL is not one of this site's own uploads, so
-        // it stays a plain remote image.
         $this->options['eventcrew_email_logo'] = 'https://cdn.example.com/logo.png';
-        Functions\when('wp_upload_dir')->justReturn(
-            ['baseurl' => 'https://site.test/wp-content/uploads', 'basedir' => sys_get_temp_dir()]
-        );
 
         self::assertStringContainsString('src="https://cdn.example.com/logo.png"', EmailTemplate::logoHtml());
-        self::assertSame('', EmailTemplate::logoPath());
     }
 
     public function testTheMastheadSitsOnTheAccentColour(): void
