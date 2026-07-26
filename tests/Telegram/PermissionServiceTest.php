@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Telegram\PermissionService;
@@ -43,7 +44,7 @@ final class PermissionServiceTest extends TelegramTestCase
             new PersonRepository(),
             $this->client(),
             new LeaderEligibility(new AssignmentRepository(), new PersonRepository()),
-            new Mailer(new Logger())
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 

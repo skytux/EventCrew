@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -39,7 +40,7 @@ final class BoardPushTest extends TelegramTestCase
             new PersonRepository(),
             $telegram,
             new Logger(),
-            new ClaimNotifier($tasks, $assignments, new Mailer(new Logger()), $telegram, $this->standing()),
+            new ClaimNotifier($tasks, $assignments, new Mailer(new Logger(), new EmailTemplate(new Logger())), $telegram, $this->standing()),
             new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()), new PersonRepository(), new TaskRepository())
         );
 

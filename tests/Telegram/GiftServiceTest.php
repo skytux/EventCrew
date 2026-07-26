@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Telegram\GiftService;
@@ -55,7 +56,7 @@ final class GiftServiceTest extends TelegramTestCase
             new CreditGrantRepository(),
             $this->standing(),
             $this->client(),
-            new CreditGrantNotifier(new Mailer(new Logger()), $this->client())
+            new CreditGrantNotifier(new Mailer(new Logger(), new EmailTemplate(new Logger())), $this->client())
         );
     }
 

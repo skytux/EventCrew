@@ -23,6 +23,7 @@ use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderEligibilityNotifier;
@@ -88,6 +89,11 @@ final class Kernel
         // the case this exists to handle: a new event's tasks appearing
         // with nobody watching.
         $this->container->get(EventMeshSyncListener::class)->boot();
+
+        // The email template's post type. Registered unconditionally, and not
+        // only in wp-admin, because the notification cron renders the template
+        // with nobody logged in.
+        $this->container->get(EmailTemplate::class)->boot();
 
         // The bot's endpoints and board refresh live on the front/cron path
         // for the same reason: Telegram posts updates to a REST route with
@@ -254,9 +260,17 @@ final class Kernel
         );
 
         $this->container->singleton(
+            EmailTemplate::class,
+            fn (Container $container) => new EmailTemplate(
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
             Mailer::class,
             fn (Container $container) => new Mailer(
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(EmailTemplate::class)
             )
         );
 
@@ -582,7 +596,9 @@ final class Kernel
             SettingsPage::class,
             fn (Container $container) => new SettingsPage(
                 $container->get(View::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class),
+                $container->get(EmailTemplate::class)
             )
         );
 

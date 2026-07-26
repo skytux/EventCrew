@@ -12,6 +12,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -76,11 +77,11 @@ final class SignupControllerTest extends TestCase
             $assignments,
             new SignupService($assignments, new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()), new PersonRepository(), new TaskRepository()),
             new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
-            new Mailer(new Logger()),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
             new ClaimNotifier(
                 new TaskRepository(),
                 $assignments,
-                new Mailer(new Logger()),
+                new Mailer(new Logger(), new EmailTemplate(new Logger())),
                 new TelegramClient(new Logger(), new DohResolver(new Logger())),
                 new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository())
             ),
@@ -92,7 +93,7 @@ final class SignupControllerTest extends TestCase
                 new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository()),
                 new FreeEntryGate(),
                 new TelegramClient(new Logger(), new DohResolver(new Logger())),
-                new Mailer(new Logger())
+                new Mailer(new Logger(), new EmailTemplate(new Logger()))
             )
         );
     }

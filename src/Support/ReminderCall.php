@@ -62,7 +62,7 @@ final class ReminderCall
                     continue;
                 }
 
-                $this->remind($person, $task);
+                $this->remind($person, $task, $assignment->id);
                 $this->assignments->markReminded($assignment->id);
                 ++$sent;
             }
@@ -71,7 +71,7 @@ final class ReminderCall
         return $sent;
     }
 
-    private function remind(Person $person, Task $task): void
+    private function remind(Person $person, Task $task, int $assignmentId): void
     {
         $when = $this->whenText($task);
 
@@ -116,7 +116,10 @@ final class ReminderCall
                 $task->roleLabel(),
                 $task->eventName(),
                 $when
-            )
+            ),
+            // The ticket again, a day out: the reminder is the message people
+            // still have open when they arrive at the door.
+            [['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)]]
         );
     }
 

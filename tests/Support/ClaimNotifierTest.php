@@ -11,6 +11,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\StandingCalculator;
@@ -50,7 +51,7 @@ final class ClaimNotifierTest extends TestCase
         return new ClaimNotifier(
             new TaskRepository(),
             new AssignmentRepository(),
-            new Mailer(new Logger()),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
             new TelegramClient(new Logger(), new DohResolver(new Logger())),
             new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );

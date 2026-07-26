@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.9.2
+Stable tag: 1.10.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,14 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.10.0 =
+* Notification emails are now designed HTML: your site's logo across the top, the message in a card, and a button for whatever it is asking people to do — "Show your ticket", "Add to calendar", "Sign in", "See open tasks" — instead of a bare URL in the text. A plain-text copy travels with every message, so a client that will not render HTML still gets the whole thing.
+* New "Email template" item under EventCrew opens the design in the normal block editor, with revisions and undo. Keep `{{content}}` where the message goes; `{{logo}}`, `{{footer}}`, `{{site_name}}`, `{{site_url}}`, `{{subject}}` and `{{year}}` are available too. Settings ▸ Email has a "Reset the template" button, so an edit is never a dead end.
+* The logo is your site's own — the Customizer logo, falling back to the Site Icon, then to your site's name set as a wordmark. Point Settings ▸ Email at a different image (a wide banner works as well as a square logo) to override it.
+* Settings ▸ Email also carries a "Send a test email" button, which mails the real template to your own address.
+* Buttons and the wordmark use the theme colour from Settings ▸ Web page, so the emails and the installed app match.
+* Emails can be switched back to plain text with one checkbox.
+
 = 1.9.2 =
 * Leadership is now a tab on the People page — an in-page tab exactly like the Settings tabs — rather than its own menu item. Tab behaviour is consistent across the admin, and the top-level menu is one item shorter (Tasks · Roster · People · Settings · Diagnostics). Editing a person from the Leadership list opens on the People tab as before.
 
@@ -201,6 +209,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.10.0 =
+Notification emails become HTML, with your logo and buttons, and the design is editable under EventCrew ▸ Email template. No database change; existing sends are unaffected apart from how they look.
 
 = 1.9.2 =
 Leadership moves from its own menu item to a tab on the People page. No database change.

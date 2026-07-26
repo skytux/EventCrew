@@ -15,6 +15,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderEligibility;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
@@ -129,7 +130,7 @@ abstract class TelegramTestCase extends TestCase
      */
     protected function updateRouter(): UpdateRouter
     {
-        $mailer = new Mailer(new Logger());
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
 
         return new UpdateRouter(
             new OnboardingService(new PersonRepository(), new AuthTokenRepository(), $this->client(), new Logger()),
@@ -193,7 +194,7 @@ abstract class TelegramTestCase extends TestCase
             new ClaimNotifier(
                 new TaskRepository(),
                 new AssignmentRepository(),
-                new Mailer(new Logger()),
+                new Mailer(new Logger(), new EmailTemplate(new Logger())),
                 $this->client(),
                 $this->standing()
             ),

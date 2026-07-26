@@ -72,17 +72,23 @@ final class ClaimNotifier
                 $task->eventName()
             ),
             sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: ticket link, 6: add-to-calendar link, 7: standing line */
+                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s.\n\nShow this ticket at the door:\n%5\$s\n\n%6\$s\n\n%7\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task),
-                $this->mailer->ticketUrl($assignment->id),
-                $this->calendarLine($task->id),
                 $standingLine
-            )
+            ),
+            // The ticket first: it is the thing this email exists to hand over.
+            // The calendar hold second, since a task in someone's own calendar,
+            // with its own alarm, is the strongest nudge there is against a
+            // no-show.
+            [
+                ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignment->id)],
+                ['label' => __('Add to calendar', 'eventcrew'), 'url' => CalendarController::url($task->id)],
+            ]
         );
     }
 
@@ -157,7 +163,10 @@ final class ClaimNotifier
                 $task->eventName(),
                 $note,
                 $standingLine
-            )
+            ),
+            // A cancellation is the moment someone is most likely to pick up a
+            // different slot, so the board is one tap away.
+            [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
         );
     }
 

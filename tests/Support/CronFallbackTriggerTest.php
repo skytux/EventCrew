@@ -16,6 +16,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderEligibilityNotifier;
 use EventCrew\Support\CronFallbackTrigger;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
@@ -58,7 +59,7 @@ final class CronFallbackTriggerTest extends TestCase
         $tasks = new TaskRepository();
         $assignments = new AssignmentRepository();
         $people = new PersonRepository();
-        $mailer = new Mailer(new Logger());
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
         $telegram = new TelegramClient(new Logger(), new DohResolver(new Logger()));
 
         $ledger = new NotificationsRepository();

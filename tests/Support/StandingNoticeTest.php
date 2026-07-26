@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\StandingNotice;
@@ -69,7 +70,7 @@ final class StandingNoticeTest extends TestCase
             new PersonRepository(),
             $ledger,
             new TelegramClient(new Logger(), new DohResolver(new Logger())),
-            new Mailer(new Logger())
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 
