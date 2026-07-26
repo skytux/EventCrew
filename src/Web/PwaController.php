@@ -212,12 +212,34 @@ final class PwaController
             : self::DEFAULT_COLOR;
     }
 
+    /**
+     * The cache name carries the plugin version, so a release invalidates the
+     * shell instead of leaving an installed app on the previous one. It matters
+     * because this caches the page HTML: before the public CSS moved into its
+     * own versioned file, a restyle reached an installed app only if a network
+     * fetch happened to succeed first.
+     *
+     * Nowdoc, so nothing in the JavaScript is interpolated by accident; the one
+     * value that does vary is substituted deliberately.
+     */
     private function serviceWorkerJs(): string
     {
-        return <<<'JS'
-        const EVENTCREW_CACHE = 'eventcrew-shell-v1';
+        $js = <<<'JS'
+        const EVENTCREW_CACHE = '%s';
         self.addEventListener('install', function () { self.skipWaiting(); });
-        self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+        self.addEventListener('activate', function (e) {
+            // Drop the shells of previous versions rather than accumulating one
+            // per release in the visitor's storage quota.
+            e.waitUntil(
+                caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) {
+                        return (k.indexOf('eventcrew-shell-') === 0 && k !== EVENTCREW_CACHE)
+                            ? caches.delete(k)
+                            : null;
+                    }));
+                }).then(function () { return self.clients.claim(); })
+            );
+        });
         self.addEventListener('fetch', function (e) {
             if (e.request.method !== 'GET') { return; }
             e.respondWith(
@@ -229,5 +251,7 @@ final class PwaController
             );
         });
         JS;
+
+        return sprintf($js, 'eventcrew-shell-' . EVENTCREW_VERSION);
     }
 }

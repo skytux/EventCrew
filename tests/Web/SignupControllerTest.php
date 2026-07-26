@@ -117,6 +117,46 @@ final class SignupControllerTest extends TestCase
         ];
     }
 
+    /**
+     * The two things a restructure of the public template is most likely to
+     * break without anyone noticing: the element the AJAX board swap targets,
+     * and the rule that a logged-out visitor is shown nothing personal.
+     */
+    public function testTheRenderedPageKeepsTheBoardTargetAndHidesTheGroupFromStrangers(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => 'eventcrew_telegram_group_link' === $name
+                ? 'https://t.me/+secretcrew'
+                : false
+        );
+        Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+        Functions\when('wp_enqueue_style')->justReturn(null);
+
+        // The echoing translation helpers the template uses; TestCase stubs
+        // only the returning ones, which every other test gets by with.
+        foreach (['esc_html_e', 'esc_attr_e', '_e'] as $echoingHelper) {
+            Functions\when($echoingHelper)->alias(static function (string $text): void {
+                echo $text;
+            });
+        }
+
+        $this->wpdb->nextResults[] = [];   // upcoming dates: an empty board is enough
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        // The JS assigns the fresh board HTML to this element on every claim
+        // and drop; lose the id and the page silently stops updating in place.
+        self::assertStringContainsString('id="eventcrew-board"', $html);
+
+        // Signed out there is nothing to tab between, and the group invite is
+        // not for passers-by.
+        self::assertStringNotContainsString('https://t.me/+secretcrew', $html);
+        // The markup, not the class name: the tab script mentions the selector
+        // whether or not there is a strip to upgrade.
+        self::assertStringNotContainsString('<nav class="eventcrew-tabs"', $html);
+    }
+
     public function testViewModelForALoggedOutVisitorShowsTheBoardAndNoPerson(): void
     {
         $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming

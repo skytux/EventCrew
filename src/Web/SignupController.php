@@ -10,6 +10,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignupService;
@@ -63,10 +64,14 @@ final class SignupController
         $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile);
     }
 
+    /** The public stylesheet's handle, shared by the block and the shortcode. */
+    public const STYLE_HANDLE = 'eventcrew-signup';
+
     public function boot(): void
     {
         add_shortcode('eventcrew_signup', [$this, 'renderShortcode']);
         add_action('init', [$this, 'registerBlock']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueueStyle']);
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
 
         foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
@@ -92,8 +97,72 @@ final class SignupController
         register_block_type('eventcrew/signup', [
             'api_version' => 2,
             'editor_script' => 'eventcrew-signup-editor',
+            // WordPress enqueues this itself whenever the block renders, which
+            // covers the block path without any page sniffing.
+            'style' => self::STYLE_HANDLE,
             'render_callback' => [$this, 'renderShortcode'],
         ]);
+    }
+
+    /**
+     * Registers the public stylesheet, and enqueues it on a page that visibly
+     * uses the widget.
+     *
+     * Registration is unconditional so the block's 'style' handle above and the
+     * late enqueue in renderShortcode() both have something to point at. The
+     * eager enqueue is the only path that gets the sheet into <head> rather
+     * than the footer, so it is worth the content sniff.
+     */
+    public function enqueueStyle(): void
+    {
+        wp_register_style(
+            self::STYLE_HANDLE,
+            plugins_url('assets/eventcrew.css', EVENTCREW_PLUGIN_FILE),
+            [],
+            EVENTCREW_VERSION
+        );
+
+        $accent = $this->accentStyle();
+
+        if ('' !== $accent) {
+            wp_add_inline_style(self::STYLE_HANDLE, $accent);
+        }
+
+        $post = get_post();
+
+        if (! $post instanceof \WP_Post) {
+            return;
+        }
+
+        if (has_shortcode((string) $post->post_content, 'eventcrew_signup') || has_block('eventcrew/signup', $post)) {
+            wp_enqueue_style(self::STYLE_HANDLE);
+        }
+    }
+
+    /**
+     * The crew's accent colour, handed to the stylesheet as a custom property.
+     *
+     * The same option the installed app and the notification emails read, so
+     * all three finally look like one thing. Scoped to the widget rather than
+     * :root - a plugin has no business claiming the document's variables - and
+     * only emitted when it is actually set, so an install that has never chosen
+     * a colour falls through to the theme's own primary in the stylesheet.
+     */
+    private function accentStyle(): string
+    {
+        // Mirrors Web\PwaController::COLOR_OPTION; kept literal here for the
+        // same reason the Support layer does it.
+        $color = sanitize_hex_color((string) get_option('eventcrew_app_theme_color', ''));
+
+        if (! is_string($color) || '' === $color) {
+            return '';
+        }
+
+        return sprintf(
+            '.eventcrew-signup{--eventcrew-accent:%s;--eventcrew-on-accent:%s}',
+            $color,
+            EmailBody::readableOn($color)
+        );
     }
 
     /**
@@ -102,6 +171,13 @@ final class SignupController
      */
     public function renderShortcode(): string
     {
+        // Belt and braces for the placements enqueueStyle() cannot see: a
+        // widget, a template part, a shortcode nested inside another block.
+        // Enqueuing after wp_head has run puts the sheet in the footer rather
+        // than losing it, which is worse than <head> but far better than an
+        // unstyled widget.
+        wp_enqueue_style(self::STYLE_HANDLE);
+
         $view = $this->viewModel();
 
         ob_start();
