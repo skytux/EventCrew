@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.11.0
+Stable tag: 1.11.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,14 +125,17 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.11.1 =
+* The open-task message now lists the next five open tasks across all upcoming dates, not just the one date that triggered it, so people can see what is coming and sign up early. On both email and Telegram.
+* Both the email and the Telegram DM now offer a link to your crew's group, taken from the group link already set under Settings ▸ Telegram bot. Skipped when no link is configured.
+* Emails no longer try to guess an accent colour from your theme's style settings. Themes name their palette entries as they please, so the guess was as likely to land on the wrong colour as the right one; set the colour under Settings ▸ Web page instead.
+* Button and wordmark text in emails switches between white and near-black on its own, so a light accent colour stays readable.
+
 = 1.11.0 =
 * The open-task call ("some tasks still need people") now goes out at two lead times instead of one — a heads-up a week ahead and a last call 48 hours ahead — and both are configurable under Settings ▸ Reputation & alerts ▸ Open-task call. Previously it went once, 48 hours out, with no setting.
 * Fixed: a task added to a date people had already been told about was never announced. The ledger recorded "told them about this date", so the new job went out to nobody. It now re-sends when something has genuinely been added since the last send — and only then, so an unfilled date never turns into a daily drip.
 * Nobody gets more than one open-task notice a day. Two events falling due at once used to mean two separate emails; they are now gathered into one message listing each date.
-* The message now lists the next five open tasks across all upcoming dates, not just the one date that triggered it, so people can see what is coming and sign up early. On both email and Telegram.
-* Both the email and the Telegram DM now offer a link to your crew's group, from the group link already set under Settings ▸ Telegram bot. Skipped when no link is configured.
 * Fewer database queries per run: the open-task list for a date is now looked up once, not once per recipient.
-* Button and wordmark text in emails switches between white and near-black on its own, so a light accent colour stays readable.
 
 = 1.10.2 =
 * Fixed: 1.10.1 replaced the linked logo with one attached inside the message, and on many sites that produced a broken image instead of a logo. Attaching happens through PHPMailer, which a site sending mail through a relay or an API-based SMTP plugin never reaches — leaving the HTML pointing at an attachment that was never made. The logo is linked again, as it was in 1.10.0.
@@ -229,6 +232,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.11.1 =
+The open-task message now shows the next five open tasks and links to your Telegram group. No database change.
 
 = 1.11.0 =
 The open-task call gains a week-ahead heads-up alongside the existing 48-hour last call, is capped at one message per person per day, and now notices tasks added to a date after people were told about it. No database change. Check the new lead times under Settings ▸ Reputation & alerts before the next event.
