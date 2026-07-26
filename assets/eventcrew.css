@@ -25,7 +25,9 @@
     --eventcrew-surface: var(--wp--preset--color--base, #fff);
     --eventcrew-radius: var(--wp--custom--border-radius, 8px);
     --eventcrew-line: color-mix(in srgb, var(--eventcrew-ink) 14%, transparent);
-    --eventcrew-go: var(--eventcrew-accent);
+    /* Sign up keeps its own deep green: "go" is a meaning, not a brand, and a
+       crew whose accent happens to be red would otherwise get a red Sign up. */
+    --eventcrew-go: #1b5e20;
     --eventcrew-stop: #8e1616;
 }
 
@@ -56,23 +58,27 @@
  * JavaScript-less visitor gets.
  */
 .eventcrew-signup .eventcrew-tabs {
-    display: flex; gap: .25em; flex-wrap: wrap;
-    margin: 0 0 1.2em; padding: 0 0 .1em;
+    display: flex; gap: 1.5em; flex-wrap: wrap;
+    margin: 0 0 1.2em;
     border-bottom: 1px solid var(--eventcrew-line);
 }
+/*
+ * No horizontal padding, so the active underline is exactly as wide as the
+ * word above it rather than a bar spanning the whole hit area. The tab is still
+ * a comfortable 44px to tap - that comes from the height, which costs nothing
+ * visually, not from padding, which would show.
+ */
 .eventcrew-signup .eventcrew-tab {
-    padding: .55em 1em; border-radius: var(--eventcrew-radius) var(--eventcrew-radius) 0 0;
-    color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
-    border-bottom: 2px solid transparent; opacity: .65;
-    /* A comfortable target on a phone without making the strip tall. */
+    padding: 0; color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
+    border-bottom: 2px solid transparent; opacity: .6;
     min-height: 44px; display: inline-flex; align-items: center;
 }
 .eventcrew-signup .eventcrew-tab:hover { opacity: 1; }
 .eventcrew-signup .eventcrew-tab.is-active {
-    opacity: 1; border-bottom-color: var(--eventcrew-accent); color: var(--eventcrew-accent);
+    opacity: 1; border-bottom-color: currentColor;
 }
 .eventcrew-signup .eventcrew-tab:focus-visible {
-    outline: 2px solid var(--eventcrew-accent); outline-offset: -2px;
+    outline: 2px solid var(--eventcrew-accent); outline-offset: 3px;
 }
 
 .eventcrew-signup.is-tabbed .eventcrew-panel { display: none; }
@@ -94,8 +100,25 @@
    panels keep the theme's own list styling. */
 .eventcrew-signup .eventcrew-board ul { list-style: none; padding: 0; margin: 0 0 1.2em; }
 .eventcrew-signup .eventcrew-board h3 { margin: 1em 0 .4em; font-size: 1em; }
+/*
+ * Each upcoming task breaks where it should: the job on its own line, the when
+ * and the calendar link beneath. Left to wrap on its own it split mid-phrase
+ * at whatever width the column happened to be.
+ */
 .eventcrew-signup .eventcrew-plain-list { list-style: none; margin: 0; padding: 0; }
-.eventcrew-signup .eventcrew-plain-list li { margin: .2em 0; }
+.eventcrew-signup .eventcrew-plain-list li {
+    display: flex; flex-direction: column; gap: .1em;
+    padding: .5em 0; border-bottom: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-plain-list li:last-child { border-bottom: 0; }
+.eventcrew-signup .eventcrew-mine-label { font-weight: 600; }
+.eventcrew-signup .eventcrew-mine-when { font-size: .85em; opacity: .75; }
+.eventcrew-signup .eventcrew-mine-when a { white-space: nowrap; }
+
+/* A rule, not just space, so the tickets read as their own thing. */
+.eventcrew-signup .eventcrew-divider {
+    margin: 1.5em 0 0; padding-top: 1.2em; border-top: 1px solid var(--eventcrew-line);
+}
 .eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .4em; padding-left: 1.2em; }
 .eventcrew-signup .eventcrew-listhead { margin: .4em 0 .2em; }
 .eventcrew-signup .eventcrew-upcoming { margin: .6em 0 1em; }
@@ -115,14 +138,21 @@
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
 
-/* Capacity at a glance: one pip per slot, filled for each person signed up. */
-.eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .2em; align-items: center; }
+/*
+ * Capacity: one pip per slot, filled for each person signed up, with the count
+ * spelled out beside it. The dots alone read at a glance but do not say what
+ * they are counting - the number is what makes them legible the first time.
+ */
+.eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .45em; align-items: center; }
+.eventcrew-signup .eventcrew-pips { display: inline-flex; gap: .2em; align-items: center; }
 .eventcrew-signup .eventcrew-pip {
-    width: .5em; height: .5em; border-radius: 50%;
-    border: 1px solid var(--eventcrew-accent); opacity: .55;
+    width: .55em; height: .55em; border-radius: 50%;
+    border: 1px solid var(--eventcrew-go); opacity: .5;
 }
-.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-accent); opacity: 1; }
-.eventcrew-signup .eventcrew-capacity-count { font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; }
+.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-go); border-color: var(--eventcrew-go); opacity: 1; }
+.eventcrew-signup .eventcrew-capacity-count {
+    font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 
 /* Sign out is a quiet action, not a button - styled as a plain inline link. */
 .eventcrew-signup .eventcrew-linkbtn {
@@ -138,12 +168,17 @@
  * matches the app and the emails; stop stays a deep red, which is the one
  * colour a theme should not get to reassign.
  */
+/*
+ * One width for all three, so "Sign up", "Cancel" and "Full" line up down the
+ * right edge instead of each row's button starting wherever its own word
+ * happens to end.
+ */
 .eventcrew-signup .eventcrew-btn-go,
 .eventcrew-signup .eventcrew-btn-stop,
 .eventcrew-signup .eventcrew-btn-full {
     border: 0; border-radius: var(--eventcrew-radius); cursor: pointer;
     padding: .5em 1em; font: inherit; font-size: .85em; font-weight: 600; line-height: 1.4;
-    min-height: 44px;
+    min-height: 44px; min-width: 7.5em; text-align: center;
 }
 .eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
 .eventcrew-signup .eventcrew-btn-go { background: var(--eventcrew-go); color: var(--eventcrew-on-accent); }
@@ -156,7 +191,7 @@
 }
 
 /* The Telegram jump. The theme's own outline button, not a Telegram-blue slab. */
-.eventcrew-signup .eventcrew-tgline { margin: 1.2em 0 0; }
+.eventcrew-signup .eventcrew-tgline { margin: 1.5em 0 0; text-align: center; }
 .eventcrew-signup .eventcrew-tglink {
     display: inline-flex; align-items: center; gap: .4em;
     padding: .5em 1em; border-radius: var(--eventcrew-radius);
@@ -167,8 +202,43 @@
     border-color: var(--eventcrew-accent); color: var(--eventcrew-accent);
 }
 
-/* The free-entry redeem control and the collapsible disclosures. */
-.eventcrew-signup .eventcrew-redeem { display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin: .8em 0; }
+/*
+ * Spending a credit. A stacked block rather than a cramped inline row: label,
+ * the date on a line of its own, then the button centred under it. The select
+ * is dressed to match the sign-in field - same height, radius, border and
+ * surface - instead of being left as the browser's grey default, which was the
+ * one control on the page that looked like it belonged to a different decade.
+ */
+.eventcrew-signup .eventcrew-redeem {
+    display: flex; flex-direction: column; gap: .5em;
+    margin: 1em 0; padding: 1em;
+    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
+}
+.eventcrew-signup .eventcrew-redeem label { font-weight: 600; }
+.eventcrew-signup .eventcrew-redeem select {
+    box-sizing: border-box; width: 100%;
+    height: 3em; padding: 0 2.5em 0 1em;
+    font: inherit; font-size: 1rem; line-height: 1;
+    color: var(--eventcrew-ink);
+    background-color: var(--eventcrew-surface);
+    border: 1px solid var(--eventcrew-ink);
+    border-radius: var(--eventcrew-radius);
+    /* The browser's own arrow is part of the grey look being replaced. */
+    appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 1.15em center, right .85em center;
+    background-size: .35em .35em, .35em .35em;
+    background-repeat: no-repeat;
+}
+.eventcrew-signup .eventcrew-redeem select:focus {
+    outline: none;
+    border-color: var(--eventcrew-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--eventcrew-accent) 25%, transparent);
+}
+.eventcrew-signup .eventcrew-redeem button { align-self: center; min-height: 44px; }
+
+/* The collapsible disclosures. */
 .eventcrew-signup .eventcrew-standing { margin: .8em 0 .2em; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
@@ -187,6 +257,30 @@
     gap: 0.75em;
     flex-wrap: wrap;
 }
+
+/*
+ * With a captcha in the row there are three controls, and a 300px widget will
+ * never share a baseline with a field and a button. Stacking them to a single
+ * column of one width is the only arrangement that does not look accidental.
+ */
+.eventcrew-signin-row.has-captcha {
+    flex-direction: column;
+    align-items: stretch;
+    /* Centred, because on a signed-out page this column is the only thing
+       there and hugging the left edge just looks like it fell over. */
+    max-width: 22em;
+    margin-inline: auto;
+}
+.eventcrew-signin-row.has-captcha .wp-element-input { min-width: 0; flex: none; text-align: center; }
+.eventcrew-signin-row.has-captcha .wp-element-input::placeholder { text-align: center; }
+.eventcrew-signin-row.has-captcha .wp-element-button { width: 100%; }
+/* The widget is a fixed-width iframe, so it is centred rather than stretched. */
+.eventcrew-signin-row.has-captcha .eventcrew-turnstile { margin-inline: auto; }
+.eventcrew-signup .eventcrew-turnstile { min-height: 65px; }
+
+/* The note under the centred form is centred with it. A sibling selector, not
+   :has(), so this needs nothing newer than the rest of the sheet. */
+.eventcrew-signup .has-captcha ~ .eventcrew-hint { text-align: center; }
 
 .eventcrew-signin-row .wp-element-input,
 .eventcrew-signin-row .wp-element-button {
