@@ -72,6 +72,12 @@ endif; ?>
                  * the dots stop being countable and only the words remain.
                  */
                 ?>
+                <?php
+                // The count and the action travel together: when the row is too
+                // narrow for one line they wrap as a pair to the right, rather
+                // than one of them dropping away from the other.
+                ?>
+                <span class="eventcrew-task-side">
                 <span class="eventcrew-capacity">
                     <?php if ($eventcrew_task->capacity <= 6) : ?>
                         <span class="eventcrew-pips" aria-hidden="true">
@@ -132,6 +138,7 @@ endif; ?>
                     </form>
                     <?php
                 endif; ?>
+                </span>
             </li>
             <?php
         endforeach; ?>

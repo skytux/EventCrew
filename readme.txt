@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.15.2
+Stable tag: 1.15.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.15.3 =
+* Fixed: on a phone, a task's slot count and its button often broke onto a second line when there was room for them, and one could end up stranded away from the other. The task's name and time can now give way, so rows stay on one line far more often — and when a row genuinely is too narrow, the count and the button move down together and stay against the right edge.
 
 = 1.15.2 =
 * Fixed: on a sign-in form with a captcha, the email you typed was centred inside its own box. The form is centred on the page; the text in the field is not.
