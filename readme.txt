@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.0
+Stable tag: 1.14.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,18 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.1 =
+* Sign out is now next to your name above the tabs, reachable from any tab instead of only from Settings.
+* The tab underline sits under the word rather than spanning the whole tab.
+* The slot dots now show the count beside them ("1 of 2"), so it is clear what they are counting.
+* Sign up, Cancel and Full buttons share one width, so they line up down the right edge instead of shifting with the length of their label.
+* Sign up is back to its familiar green rather than taking the crew's accent colour — "go" is a meaning, not a brand.
+* The sign-in form stacks and centres when a captcha is shown: email field, captcha under it, button below. Before, the three sat in an L that shared no edge.
+* Spending a free-entry credit is now a proper block: the date picker is styled like the rest of the page instead of the browser's grey default, on its own line, with the button centred under it.
+* "You're on next" breaks where it should — the job on one line, the date and calendar link beneath — instead of wrapping mid-phrase.
+* Your standing and credits come before your upcoming tasks, and there is a rule above My tickets.
+* "Open our group in Telegram" is centred.
 
 = 1.14.0 =
 * The signup page is now organised into three tabs — Board, Me and Settings — instead of one long scroll. The board is still what you land on, and still the first thing anyone sees.
@@ -253,6 +265,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.14.1 =
+Visual refinements to the signup page from 1.14.0: sign out on every tab, clearer slot counts, aligned buttons, a tidier sign-in with captcha, and a modern date picker for spending credits. No database change.
 
 = 1.14.0 =
 The public signup page is reorganised into Board / Me / Settings tabs and restyled to follow your theme. The board still opens by default. Styling moved to a stylesheet file, so clear any page cache after upgrading. No database change.

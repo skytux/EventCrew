@@ -55,8 +55,8 @@ endif; ?>
             $eventcrew_full = $eventcrew_row['taken'] >= $eventcrew_task->capacity;
             $eventcrew_when = date_i18n('j M', strtotime($eventcrew_task->taskDate))
                 . ('' === $eventcrew_time ? '' : ' · ' . $eventcrew_time);
-            /* translators: 1: people signed up, 2: people needed */
-            $eventcrew_fill = sprintf(__('%1$d of %2$d filled', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);
+            /* translators: 1: people signed up so far, 2: people needed in total */
+            $eventcrew_fill = sprintf(__('%1$d of %2$d', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);
             ?>
             <li class="eventcrew-task-row">
                 <span class="eventcrew-task-main">
@@ -65,23 +65,23 @@ endif; ?>
                 </span>
                 <?php
                 /*
-                 * How full, at a glance: one pip per slot up to a handful, and a
-                 * plain count beyond that - past six or so, pips stop being
-                 * something you can read without counting them. Either way the
-                 * numbers are the accessible name, since a row of dots is not.
+                 * How full, at a glance: one pip per slot, with the count in
+                 * words beside it. The dots read quickly but do not say what
+                 * they are counting, so the words carry the meaning the first
+                 * time and the dots carry it every time after. Past six slots
+                 * the dots stop being countable and only the words remain.
                  */
                 ?>
-                <?php if ($eventcrew_task->capacity <= 6) : ?>
-                    <span class="eventcrew-capacity" role="img" aria-label="<?php echo esc_attr($eventcrew_fill); ?>">
-                        <?php for ($eventcrew_pip = 1; $eventcrew_pip <= $eventcrew_task->capacity; $eventcrew_pip++) : ?>
-                            <span class="eventcrew-pip<?php echo $eventcrew_pip <= $eventcrew_row['taken'] ? ' is-filled' : ''; ?>"></span>
-                        <?php endfor; ?>
-                    </span>
-                <?php else : ?>
-                    <span class="eventcrew-capacity-count" aria-label="<?php echo esc_attr($eventcrew_fill); ?>">
-                        <?php echo esc_html(sprintf('%d/%d', $eventcrew_row['taken'], $eventcrew_task->capacity)); ?>
-                    </span>
-                <?php endif; ?>
+                <span class="eventcrew-capacity">
+                    <?php if ($eventcrew_task->capacity <= 6) : ?>
+                        <span class="eventcrew-pips" aria-hidden="true">
+                            <?php for ($eventcrew_pip = 1; $eventcrew_pip <= $eventcrew_task->capacity; $eventcrew_pip++) : ?>
+                                <span class="eventcrew-pip<?php echo $eventcrew_pip <= $eventcrew_row['taken'] ? ' is-filled' : ''; ?>"></span>
+                            <?php endfor; ?>
+                        </span>
+                    <?php endif; ?>
+                    <span class="eventcrew-capacity-count"><?php echo esc_html($eventcrew_fill); ?></span>
+                </span>
                 <?php if (null === $eventcrew_person) :
                     ?>
                     <span class="eventcrew-muted"><?php esc_html_e('sign in first', 'eventcrew'); ?></span>

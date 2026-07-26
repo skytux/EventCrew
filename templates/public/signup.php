@@ -67,7 +67,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <div class="eventcrew-signin-row">
+                <?php
+                /*
+                 * The captcha lives inside the row, between the field and the
+                 * button, and switches the row to a column. Left beside a
+                 * side-by-side field and button it made an L of three things
+                 * that do not share an edge; stacked, all three line up and the
+                 * order reads the way the form is filled in.
+                 */
+                ?>
+                <div class="eventcrew-signin-row<?php echo '' !== $eventcrew_turnstile_site_key ? ' has-captcha' : ''; ?>">
                     <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
                     <input
                         type="email"
@@ -78,14 +87,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         placeholder="<?php esc_attr_e('hello@example.com', 'eventcrew'); ?>"
                         class="wp-element-input"
                     >
+                    <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
+                        <div
+                            class="cf-turnstile eventcrew-turnstile"
+                            data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
+                            data-theme="auto"></div>
+                    <?php endif; ?>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
                 </div>
                 <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
                 <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
-                    <div
-                        class="cf-turnstile eventcrew-turnstile"
-                        data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
-                        data-theme="auto"></div>
                     <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
                 <?php endif; ?>
             </form>
@@ -99,13 +110,25 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         <?php
     else :
         ?>
-        <p class="eventcrew-identity eventcrew-muted">
-            <?php
-            printf(/* translators: %s: person's name */
-                esc_html__('Signed in as %s.', 'eventcrew'),
-                esc_html($eventcrew_person->name())
-            ); ?>
-        </p>
+        <?php
+        // Sign out lives here, above the tabs, rather than inside Settings:
+        // it is the one thing you might want from any tab, and hunting for it
+        // is a poor last impression.
+        ?>
+        <div class="eventcrew-identity eventcrew-muted">
+            <span>
+                <?php
+                printf(/* translators: %s: person's name */
+                    esc_html__('Signed in as %s.', 'eventcrew'),
+                    esc_html($eventcrew_person->name())
+                ); ?>
+            </span>
+            <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+            </form>
+        </div>
 
         <?php
         /*
@@ -151,20 +174,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         <section class="eventcrew-panel" id="eventcrew-panel-me" data-eventcrew-panel="me" aria-labelledby="eventcrew-tab-me">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Me', 'eventcrew'); ?></h2>
 
-            <?php if ([] !== $eventcrew_my_upcoming) : ?>
-                <div class="eventcrew-upcoming">
-                    <h3 class="eventcrew-subhead"><?php esc_html_e('You’re on next', 'eventcrew'); ?></h3>
-                    <ul class="eventcrew-plain-list">
-                        <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
-                            <li>
-                                <?php echo esc_html($eventcrew_mine['when'] . ' · ' . $eventcrew_mine['label']); ?>
-                                — <a href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
-
+            <?php
+            /*
+             * Standing and credits lead: they are the answer to "how am I
+             * doing", which is what someone opens this tab for, and the credit
+             * count is the premise of the redeem control that follows it.
+             */
+            ?>
             <?php if (null !== $eventcrew_standing) : ?>
                 <p class="eventcrew-standing">
                     <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
@@ -205,8 +221,25 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </form>
             <?php endif; ?>
 
+            <?php if ([] !== $eventcrew_my_upcoming) : ?>
+                <div class="eventcrew-upcoming">
+                    <h3 class="eventcrew-subhead"><?php esc_html_e('You’re on next', 'eventcrew'); ?></h3>
+                    <ul class="eventcrew-plain-list">
+                        <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
+                            <li>
+                                <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_mine['label']); ?></span>
+                                <span class="eventcrew-mine-when">
+                                    <?php echo esc_html($eventcrew_mine['when']); ?>
+                                    · <a href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
             <?php if ([] !== $eventcrew_my_tickets['upcoming'] || [] !== $eventcrew_my_tickets['past']) : ?>
-                <details class="eventcrew-disclosure">
+                <details class="eventcrew-disclosure eventcrew-divider">
                     <summary><?php esc_html_e('My tickets', 'eventcrew'); ?></summary>
                     <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
                         <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
@@ -274,11 +307,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </form>
             <?php endif; ?>
 
-            <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
-            </form>
         </section>
         <?php
     endif; ?>
