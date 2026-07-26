@@ -132,6 +132,39 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
         <?php
         /*
+         * Standing and credits sit with the name, above the tabs, rather than
+         * inside one of them: "how am I doing" and "what can I spend" are the
+         * context you want while reading any tab, not a thing to go and look
+         * up. The score explainer follows it, collapsed.
+         */
+        ?>
+        <?php if (null !== $eventcrew_standing) : ?>
+            <p class="eventcrew-standing">
+                <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
+                &middot;
+                <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
+                    _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
+                    $eventcrew_standing->creditBalance
+                )); ?></span>
+            </p>
+            <details class="eventcrew-disclosure eventcrew-score-help">
+                <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
+                <table>
+                    <tbody>
+                    <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
+                        <tr>
+                            <td><?php echo esc_html($eventcrew_label); ?></td>
+                            <td class="eventcrew-num"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
+            </details>
+        <?php endif; ?>
+
+        <?php
+        /*
          * Real anchors, not buttons: with JavaScript off every panel stays
          * visible and these degrade to jump links down one long page, which is
          * the same posture the rest of this page takes. The script upgrades
@@ -176,39 +209,17 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
             <?php
             /*
-             * Standing and credits lead: they are the answer to "how am I
-             * doing", which is what someone opens this tab for, and the credit
-             * count is the premise of the redeem control that follows it.
+             * Two named sections rather than a loose stack, each always drawn
+             * even when it has nothing in it: a heading that is missing is
+             * indistinguishable from a feature that is missing, and "you are
+             * not on anything yet" is itself worth knowing.
              */
             ?>
-            <?php if (null !== $eventcrew_standing) : ?>
-                <p class="eventcrew-standing">
-                    <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
-                    &middot;
-                    <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
-                        _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
-                        $eventcrew_standing->creditBalance
-                    )); ?></span>
-                </p>
-                <details class="eventcrew-disclosure eventcrew-score-help">
-                    <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
-                    <table>
-                        <tbody>
-                        <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
-                            <tr>
-                                <td><?php echo esc_html($eventcrew_label); ?></td>
-                                <td class="eventcrew-num"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
-                </details>
-            <?php endif; ?>
-
-            <?php if ([] !== $eventcrew_my_upcoming) : ?>
-                <div class="eventcrew-upcoming">
-                    <h3 class="eventcrew-subhead"><?php esc_html_e('You’re on next', 'eventcrew'); ?></h3>
+            <div class="eventcrew-me-section">
+                <h3 class="eventcrew-subhead"><?php esc_html_e('My tasks', 'eventcrew'); ?></h3>
+                <?php if ([] === $eventcrew_my_upcoming) : ?>
+                    <p class="eventcrew-muted"><?php esc_html_e('You’re not signed up for anything yet — take a look at the board.', 'eventcrew'); ?></p>
+                <?php else : ?>
                     <ul class="eventcrew-plain-list">
                         <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
                             <li>
@@ -220,27 +231,35 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
 
-            <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
-                <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
-                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
-                    <select name="ticket_date" id="eventcrew-ticket-date">
-                        <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
-                            <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
-                </form>
-            <?php endif; ?>
+            <div class="eventcrew-me-section eventcrew-divider">
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Tickets', 'eventcrew'); ?></h3>
 
-            <?php if ([] !== $eventcrew_my_tickets['upcoming'] || [] !== $eventcrew_my_tickets['past']) : ?>
-                <details class="eventcrew-disclosure eventcrew-divider">
-                    <summary><?php esc_html_e('My tickets', 'eventcrew'); ?></summary>
+                <?php
+                // Spending a credit lives here rather than beside the credit
+                // count: what it produces is a ticket, and this is where the
+                // tickets are.
+                ?>
+                <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
+                    <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                        <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
+                        <select name="ticket_date" id="eventcrew-ticket-date">
+                            <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
+                                <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
+                    </form>
+                <?php endif; ?>
+
+                <?php if ([] === $eventcrew_my_tickets['upcoming'] && [] === $eventcrew_my_tickets['past']) : ?>
+                    <p class="eventcrew-muted"><?php esc_html_e('No tickets yet. Sign up for a task, or spend a free-entry credit.', 'eventcrew'); ?></p>
+                <?php else : ?>
                     <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
                         <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
                             <p class="eventcrew-muted eventcrew-listhead"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
@@ -256,8 +275,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             </ul>
                         <?php endif; ?>
                     <?php endforeach; ?>
-                </details>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-settings" data-eventcrew-panel="settings" aria-labelledby="eventcrew-tab-settings">
