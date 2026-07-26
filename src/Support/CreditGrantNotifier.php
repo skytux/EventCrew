@@ -66,7 +66,8 @@ final class CreditGrantNotifier
                 ),
                 $person->name(),
                 $credits
-            )
+            ),
+            [['label' => __('Get your free ticket', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
         );
     }
 }

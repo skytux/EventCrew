@@ -72,7 +72,8 @@ final class SlotFreedNotice
                         __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
                         $person->name(),
                         $line
-                    )
+                    ),
+                    [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
                 );
             }
         }

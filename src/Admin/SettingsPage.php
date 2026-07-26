@@ -9,6 +9,8 @@ use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
+use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Reputation;
@@ -37,13 +39,16 @@ final class SettingsPage
     public const PAGE_SLUG = 'eventcrew-settings';
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
+    private const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
 
     public function __construct(
         private readonly View $view,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly Mailer $mailer,
+        private readonly EmailTemplate $emailTemplate
     ) {
     }
 
@@ -87,6 +92,11 @@ final class SettingsPage
                 'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
                 'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
+                'email_html' => EmailTemplate::enabled(),
+                'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
+                'email_edit_url' => $this->emailTemplate->editUrl(),
+                'email_nonce_action' => self::EMAIL_NONCE_ACTION,
+                'email_test_to' => (string) wp_get_current_user()->user_email,
                 'telegram' => $this->telegramView(),
             ]
         );
@@ -267,6 +277,12 @@ final class SettingsPage
 
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
+        update_option(EmailTemplate::HTML_OPTION, isset($_POST['email_html']) ? '1' : '0');
+        update_option(
+            EmailTemplate::LOGO_OPTION,
+            isset($_POST['email_logo']) ? esc_url_raw(wp_unslash($_POST['email_logo'])) : ''
+        );
+
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
         update_option(PwaController::PAGE_OPTION, $appPageId);
         update_option(
@@ -286,6 +302,66 @@ final class SettingsPage
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Settings saved.', 'eventcrew')
+        );
+    }
+
+    /**
+     * The Settings "Send a test email" button. It goes to the logged-in
+     * administrator's own address - the one person we know is entitled to see
+     * it - so the button can never be turned into a way to mail someone else.
+     */
+    public function sendTestEmail(): void
+    {
+        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        $to = (string) wp_get_current_user()->user_email;
+
+        if ('' === $to) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Your user account has no email address to send to.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if ($this->mailer->sendTest($to)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the administrator's email address */
+                    __('Test email sent to %s.', 'eventcrew'),
+                    $to
+                )
+            );
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('The test email could not be sent. Check the site’s mail configuration, then look at Diagnostics for the logged reason.', 'eventcrew'),
+            'error'
+        );
+    }
+
+    /**
+     * The Settings "Reset the template" button. The edit being discarded stays
+     * in the post's revisions, so this is recoverable.
+     */
+    public function resetEmailTemplate(): void
+    {
+        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        if ($this->emailTemplate->reset()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('The email template was reset to the built-in design.', 'eventcrew')
+            );
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('The email template could not be reset.', 'eventcrew'),
+            'error'
         );
     }
 

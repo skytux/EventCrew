@@ -27,6 +27,11 @@
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
+ * @var bool $email_html Whether notifications go out as HTML rather than plain text.
+ * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
+ * @var string $email_edit_url Admin URL that opens the email template in the editor.
+ * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
+ * @var string $email_test_to The address a test email would go to (the current user's).
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
@@ -43,6 +48,7 @@ if (! defined('ABSPATH')) {
         <a href="#" class="nav-tab" data-ec-tab="roles"><?php esc_html_e('Roles', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="telegram"><?php esc_html_e('Telegram bot', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="web"><?php esc_html_e('Web page', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="email"><?php esc_html_e('Email', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="tuning"><?php esc_html_e('Reputation & alerts', 'eventcrew'); ?></a>
     </h2>
 
@@ -551,6 +557,70 @@ if (! defined('ABSPATH')) {
         </table>
 
         </div>
+        <div class="ec-tab-panel" data-ec-tab="email">
+        <h2><?php esc_html_e('Notification emails', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Every notification goes out as a designed HTML email with your logo on top and a button for whatever it is asking people to do — show a ticket, sign in, take an open slot. A plain-text copy travels with each one, so a mail client that will not show HTML still gets the whole message.', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Format', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="email_html" value="1" <?php checked($email_html); ?>>
+                        <?php esc_html_e('Send notifications as HTML', 'eventcrew'); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e('Turn this off to send plain text only.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-email-logo"><?php esc_html_e('Logo', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="url"
+                        id="eventcrew-email-logo"
+                        name="email_logo"
+                        value="<?php echo esc_attr($email_logo); ?>"
+                        class="large-text"
+                        placeholder="https://…"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description">
+                        <?php esc_html_e('The image at the top of every email. Leave this blank to use your site’s own logo, falling back to the Site Icon, then to your site’s name in text. Paste a URL here to use a different image — a wide banner works as well as a square logo.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Design', 'eventcrew'); ?></th>
+                <td>
+                    <a href="<?php echo esc_url($email_edit_url); ?>" class="button">
+                        <?php esc_html_e('Edit the email template', 'eventcrew'); ?>
+                    </a>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: the list of merge tags, already wrapped in <code> */
+                            esc_html__('Opens the template in the normal editor, with revisions and undo. It is the frame around each message, not the wording: keep %s where the message should appear, and use the other tags wherever you want them.', 'eventcrew'),
+                            '<code>{{content}}</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
+                        );
+                        ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Available tags:', 'eventcrew'); ?>
+                        <code>{{content}}</code> <code>{{logo}}</code> <code>{{footer}}</code>
+                        <code>{{site_name}}</code> <code>{{site_url}}</code> <code>{{subject}}</code>
+                        <code>{{year}}</code>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Buttons and the fallback wordmark are drawn in the theme colour set under “Web page”.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        </div>
         <div class="ec-tab-panel" data-ec-tab="telegram">
         <h2><?php esc_html_e('Telegram bot', 'eventcrew'); ?></h2>
         <p class="description">
@@ -670,6 +740,33 @@ if (! defined('ABSPATH')) {
         </div>
         <?php submit_button(__('Save settings', 'eventcrew')); ?>
     </form>
+
+    <div class="ec-tab-panel" data-ec-tab="email">
+    <h2><?php esc_html_e('Check it', 'eventcrew'); ?></h2>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: %s: the current administrator's email address */
+            esc_html__('Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first.', 'eventcrew'),
+            '<code>' . esc_html($email_test_to) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+        );
+        ?>
+    </p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block">
+        <input type="hidden" name="action" value="eventcrew_send_test_email">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <?php submit_button(__('Send a test email', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+    <form
+        method="post"
+        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+        style="display:inline-block;margin-left:.5em"
+        onsubmit="return confirm('<?php echo esc_js(__('Replace the template with the built-in design? Your version stays in the template’s revisions.', 'eventcrew')); ?>');">
+        <input type="hidden" name="action" value="eventcrew_reset_email_template">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <?php submit_button(__('Reset the template', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+    </div>
 
     <div class="ec-tab-panel" data-ec-tab="telegram">
     <h2><?php esc_html_e('Webhook', 'eventcrew'); ?></h2>

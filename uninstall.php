@@ -33,3 +33,15 @@ delete_option('eventcrew_roles');
 delete_option('eventcrew_recent_logs');
 delete_option('eventcrew_delete_data_on_uninstall');
 delete_transient('eventcrew_admin_notice');
+
+// The email template is a real post, so leaving it behind would strand an
+// orphan of an unregistered type in the posts table.
+$eventcrew_template = (int) get_option('eventcrew_email_template_id', 0);
+
+if ($eventcrew_template > 0) {
+    wp_delete_post($eventcrew_template, true);
+}
+
+delete_option('eventcrew_email_template_id');
+delete_option('eventcrew_email_html');
+delete_option('eventcrew_email_logo');

@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Telegram\TicketRedemptionService;
@@ -40,7 +41,7 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
             $this->standing(),
             new FreeEntryGate(),
             $this->client(),
-            new Mailer(new Logger())
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 

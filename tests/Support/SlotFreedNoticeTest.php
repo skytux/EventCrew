@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SlotFreedNotice;
@@ -42,7 +43,7 @@ final class SlotFreedNoticeTest extends TestCase
         return new SlotFreedNotice(
             new TaskRepository(),
             new PersonRepository(),
-            new Mailer(new Logger()),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
             new TelegramClient(new Logger(), new DohResolver(new Logger()))
         );
     }

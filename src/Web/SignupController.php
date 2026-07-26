@@ -151,11 +151,11 @@ final class SignupController
             $personId,
             $email,
             __('Your EventCrew sign-in link', 'eventcrew'),
-            sprintf(
-                /* translators: %s: sign-in link */
-                __("Click to sign in and manage your tasks:\n\n%s\n\nThe link is good for 30 minutes.", 'eventcrew'),
-                $this->loginUrl($raw)
-            )
+            __(
+                "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
+                'eventcrew'
+            ),
+            [['label' => __('Sign in', 'eventcrew'), 'url' => $this->loginUrl($raw)]]
         );
 
         return 'check_email';

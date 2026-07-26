@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\ReminderCall;
@@ -47,7 +48,7 @@ final class ReminderCallTest extends TelegramTestCase
             new AssignmentRepository(),
             new PersonRepository(),
             $this->client(),
-            new Mailer(new Logger())
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 

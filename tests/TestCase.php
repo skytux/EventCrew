@@ -63,5 +63,34 @@ abstract class TestCase extends PHPUnitTestCase
         // (e.g. eventcrew/board_stale) that most tests do not care about. A
         // test that does care re-stubs this with a capturing alias.
         Functions\when('do_action')->justReturn(null);
+
+        $this->stubEmailFunctions();
+    }
+
+    /**
+     * What rendering an email touches. Every notification now goes through the
+     * HTML template, so any unit that sends one reaches these whether or not it
+     * is what the test is about. The defaults describe a plain site - no custom
+     * logo, no Site Icon, no edited template - which lands on the built-in
+     * design; a test about the template itself re-stubs them.
+     */
+    private function stubEmailFunctions(): void
+    {
+        Functions\stubEscapeFunctions();
+
+        Functions\when('sanitize_hex_color')->returnArg(1);
+        Functions\when('get_bloginfo')->justReturn('Test Site');
+        Functions\when('home_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test' . $path
+        );
+        Functions\when('get_theme_mod')->justReturn(false);
+        Functions\when('has_site_icon')->justReturn(false);
+        Functions\when('get_site_icon_url')->justReturn('');
+        Functions\when('do_blocks')->returnArg(1);
+        Functions\when('get_post')->justReturn(null);
+        Functions\when('get_post_type')->justReturn(false);
+        Functions\when('wp_insert_post')->justReturn(123);
+        Functions\when('update_option')->justReturn(true);
+        Functions\when('is_wp_error')->justReturn(false);
     }
 }

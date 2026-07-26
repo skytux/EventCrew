@@ -6,6 +6,9 @@ namespace EventCrew\Tests\Admin;
 
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\View;
+use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
@@ -20,7 +23,14 @@ final class SettingsPageTest extends TelegramTestCase
 
     private function page(): SettingsPage
     {
-        return new SettingsPage(new View(), $this->client());
+        $logger = new Logger();
+
+        return new SettingsPage(
+            new View(),
+            $this->client(),
+            new Mailer($logger, new EmailTemplate($logger)),
+            new EmailTemplate($logger)
+        );
     }
 
     public function testInstallOnUpdateDoesNothingWhenAlreadyCurrent(): void

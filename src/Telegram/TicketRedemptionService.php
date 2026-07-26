@@ -224,12 +224,12 @@ final class TicketRedemptionService
             $person->email,
             __('Your free-entry ticket', 'eventcrew'),
             sprintf(
-                /* translators: 1: name, 2: event date, 3: the ticket link */
-                __("Hi %1\$s,\n\nHere is your free-entry ticket for %2\$s. Show it at the door:\n%3\$s", 'eventcrew'),
+                /* translators: 1: name, 2: event date */
+                __("Hi %1\$s,\n\nHere is your free-entry ticket for %2\$s. Show it at the door.", 'eventcrew'),
                 $person->name(),
-                $when,
-                $url
-            )
+                $when
+            ),
+            [['label' => __('Show your ticket', 'eventcrew'), 'url' => $url]]
         );
     }
 

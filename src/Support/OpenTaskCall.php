@@ -123,7 +123,8 @@ final class OpenTaskCall
                     $person->id,
                     $person->email,
                     __('Some tasks still need people', 'eventcrew'),
-                    $this->body($person, $date, $openList)
+                    $this->body($person, $date, $openList),
+                    [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
                 );
             }
 
@@ -151,7 +152,7 @@ final class OpenTaskCall
         return sprintf(
             /* translators: 1: name, 2: date, 3: open-task list, 4: personal recap */
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Hi %1\$s,\n\nSome tasks still need people on %2\$s:\n\n%3\$s\n\nSign up on the board in the group.\n\n%4\$s", 'eventcrew'),
+            __("Hi %1\$s,\n\nSome tasks still need people on %2\$s:\n\n%3\$s\n\nSign up on the board.\n\n%4\$s", 'eventcrew'),
             $person->name(),
             $date,
             $openList,

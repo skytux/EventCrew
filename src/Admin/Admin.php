@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Core\Container;
+use EventCrew\Support\EmailTemplate;
 
 /**
  * Single manifest of every admin hook, and the only place the required
@@ -41,6 +42,16 @@ final class Admin
         add_action(
             'admin_post_eventcrew_telegram_setup',
             [$this->container->get(SettingsPage::class), 'setupWebhook']
+        );
+
+        add_action(
+            'admin_post_eventcrew_send_test_email',
+            [$this->container->get(SettingsPage::class), 'sendTestEmail']
+        );
+
+        add_action(
+            'admin_post_eventcrew_reset_email_template',
+            [$this->container->get(SettingsPage::class), 'resetEmailTemplate']
         );
 
         add_action(
@@ -160,6 +171,18 @@ final class Admin
             self::CAPABILITY,
             'eventcrew-settings',
             [$this->container->get(SettingsPage::class), 'render']
+        );
+
+        // Straight to the editor rather than to a list screen: there is exactly
+        // one template, so a list of one is a click in the way. Passing a
+        // post.php URL as the slug is how WordPress links a menu item at a core
+        // screen; the post is created on the first load that needs it.
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Email template', 'eventcrew'),
+            __('Email template', 'eventcrew'),
+            self::CAPABILITY,
+            'post.php?post=' . $this->container->get(EmailTemplate::class)->postId() . '&action=edit'
         );
 
         add_submenu_page(
