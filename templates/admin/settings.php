@@ -29,6 +29,7 @@
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
+ * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
@@ -611,6 +612,25 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('Every notification goes out as a designed HTML email with your logo on top and a button for whatever it is asking people to do — show a ticket, sign in, take an open slot. A plain-text copy travels with each one, so a mail client that will not show HTML still gets the whole message.', 'eventcrew'); ?>
         </p>
         <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-signature"><?php esc_html_e('Signature', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <textarea
+                        id="eventcrew-signature"
+                        name="signature"
+                        rows="2"
+                        class="large-text"
+                        placeholder="<?php esc_attr_e('Barefoot and with ♥ — the Example crew', 'eventcrew'); ?>"><?php echo esc_textarea($signature); ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e('How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
             <tr>
                 <th scope="row"><?php esc_html_e('Format', 'eventcrew'); ?></th>
                 <td>

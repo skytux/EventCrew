@@ -18,6 +18,7 @@ use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -102,6 +103,7 @@ final class SettingsPage
                 'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
                 'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
+                'signature' => Signature::text(),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
@@ -302,6 +304,13 @@ final class SettingsPage
         );
 
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
+
+        // sanitize_textarea_field, not sanitize_text_field: a sign-off may run
+        // to two lines, and the newline is the whole difference.
+        update_option(
+            Signature::OPTION,
+            isset($_POST['signature']) ? sanitize_textarea_field(wp_unslash($_POST['signature'])) : ''
+        );
 
         update_option(EmailTemplate::HTML_OPTION, isset($_POST['email_html']) ? '1' : '0');
         update_option(

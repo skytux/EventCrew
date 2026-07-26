@@ -185,9 +185,19 @@ final class EmailTemplate
     public function render(string $subject, string $content, string $footer): string
     {
         $body = str_replace(
-            ['{{footer}}', '{{logo}}', '{{accent}}', '{{site_name}}', '{{site_url}}', '{{subject}}', '{{year}}'],
+            [
+                '{{footer}}',
+                '{{signature}}',
+                '{{logo}}',
+                '{{accent}}',
+                '{{site_name}}',
+                '{{site_url}}',
+                '{{subject}}',
+                '{{year}}',
+            ],
             [
                 $footer,
+                Signature::html(),
                 self::logoHtml(),
                 esc_attr(self::accent()),
                 esc_html(self::siteName()),
@@ -259,8 +269,8 @@ final class EmailTemplate
      * Tables and inline styles throughout, and a 600px card, because that is
      * what still renders the same in Outlook, Gmail and Apple Mail. The merge
      * tags are the whole contract with the editor: {{logo}}, {{content}},
-     * {{footer}}, {{accent}}, {{site_name}}, {{site_url}}, {{subject}} and
-     * {{year}}.
+     * {{footer}}, {{signature}}, {{accent}}, {{site_name}}, {{site_url}},
+     * {{subject}} and {{year}}.
      *
      * The masthead sits on the accent colour rather than on the card's white,
      * because a logo drawn in white - the usual thing a site has ready for a
@@ -286,7 +296,7 @@ final class EmailTemplate
                                 <td style="padding:28px 32px">{{content}}</td>
                             </tr>
                             <tr>
-                                <td style="padding:20px 32px;border-top:1px solid #eceef1">{{footer}}</td>
+                                <td style="padding:20px 32px;border-top:1px solid #eceef1">{{signature}}{{footer}}</td>
                             </tr>
                         </table>
                         <p style="margin:16px 0 0;font-family:{$font};font-size:12px;line-height:1.5;color:#9aa1ab">

@@ -77,7 +77,12 @@ final class StandingNotice
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
-            $this->telegram->sendMessage($person->telegramChatId, $this->dmText($task, $isNoShow));
+            // Framed but not signed: a warm sign-off under "you were marked as a
+            // no-show" would read as sarcasm.
+            $this->telegram->sendMessage(
+                $person->telegramChatId,
+                DmBody::frame($person, $this->dmText($task, $isNoShow))
+            );
         }
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::STANDING)) {

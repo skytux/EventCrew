@@ -251,10 +251,14 @@ final class OpenTaskCall
         if ($dmOk) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                sprintf(
-                    /* translators: %s: the open-task list, already grouped by date */
-                    __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
-                    $openList
+                DmBody::frame(
+                    $person,
+                    sprintf(
+                        /* translators: %s: the open-task list, already grouped by date */
+                        __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
+                        $openList
+                    ),
+                    true
                 ),
                 // The DM arrives in a private chat, so the group is a tap away
                 // rather than a scroll away. Omitted when no link is configured;

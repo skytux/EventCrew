@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,12 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.13.0 =
+* Telegram messages you did not ask for now say who is writing and greet you by name, the way the emails already did. A message that simply arrives — an open-task call, a reminder, a spot opening up — may land weeks after someone last touched the bot, in one chat among dozens; it now opens with your crew's name instead of a bare "Reminder:".
+* New Signature setting under Settings ▸ Email: how your crew signs off. It closes every notification email and the Telegram messages that go out to everyone. Blank by default, and nothing is added when it is blank.
+* The signature is deliberately kept off messages that answer a command, where the person is mid-conversation, and off the standing notices, where a warm sign-off would land badly.
+* New `{{signature}}` tag for the email template, so you can move the sign-off around. Reset the template under Settings ▸ Email to take up the new default placement.
+
 = 1.12.0 =
 * EventCrew now finds your Telegram group's link by itself, so the "open the group" button in the open-task email and DM works without anyone pasting a link into Settings. A public group is resolved from its @username; a private one from its invite link, or from a new invite link created for the purpose, when the bot is an administrator. Your own link, if you have set one, always wins and is never overwritten.
 * The discovery runs when you install or refresh the webhook, and at most once a week after that — a group link changes approximately never, and a bot that is only a member cannot be told one at all.
@@ -238,6 +244,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.13.0 =
+Unprompted Telegram messages now introduce themselves and greet by name, and a new Signature setting signs off both channels. Set it under Settings ▸ Email, then reset the email template to place it. No database change.
 
 = 1.12.0 =
 The Telegram group link is now discovered automatically, so the "open the group" buttons work without configuring one. Make the bot an administrator of your group if it is private and you want this to work. No database change.

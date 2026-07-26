@@ -57,7 +57,10 @@ final class LeaderEligibilityNotifier
 
         foreach ($organizers as $organizer) {
             if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
-                $this->telegram->sendMessage($organizer->telegramChatId, '🧭 ' . $line);
+                $this->telegram->sendMessage(
+                    $organizer->telegramChatId,
+                    DmBody::frame($organizer, '🧭 ' . $line)
+                );
             }
 
             $this->mailer->toPerson(

@@ -59,7 +59,10 @@ final class SlotFreedNotice
             }
 
             if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
-                $this->telegram->sendMessage((int) $person->telegramChatId, '⚡ ' . $line);
+                $this->telegram->sendMessage(
+                    (int) $person->telegramChatId,
+                    DmBody::frame($person, '⚡ ' . $line, true)
+                );
             }
 
             if ($prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)) {

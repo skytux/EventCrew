@@ -78,12 +78,16 @@ final class ReminderCall
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                sprintf(
-                    /* translators: 1: role, 2: event, 3: date/time */
-                    __('Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
-                    $task->roleLabel(),
-                    $task->eventName(),
-                    $when
+                DmBody::frame(
+                    $person,
+                    sprintf(
+                        /* translators: 1: role, 2: event, 3: date/time */
+                        __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
+                        $task->roleLabel(),
+                        $task->eventName(),
+                        $when
+                    ),
+                    true
                 ),
                 // A one-tap out, so a "can't make it" turns into an early cancel
                 // someone else can cover rather than a silent no-show. It carries

@@ -36,7 +36,7 @@ final class Mailer
     public function toPerson(int $personId, string $to, string $subject, string $body, array $actions = []): bool
     {
         $manageUrl = $this->manageUrl($personId);
-        $text = EmailBody::toText($body, $actions) . "\n\n" . $this->footerText($manageUrl);
+        $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
 
         $sent = EmailTemplate::enabled()
             ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text)
@@ -69,7 +69,7 @@ final class Mailer
             ? []
             : [['label' => __('Open the signup page', 'eventcrew'), 'url' => $board]];
 
-        $text = EmailBody::toText($body, $actions) . "\n\n" . $this->footerText($board);
+        $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($board);
 
         return $this->sendHtml($to, $subject, $body, $actions, $board, $text);
     }
@@ -161,6 +161,15 @@ final class Mailer
         $url = $pageId > 0 ? get_permalink($pageId) : false;
 
         return is_string($url) ? $url : '';
+    }
+
+    /**
+     * The sign-off for the plain-text half. The HTML half gets it from the
+     * template's {{signature}} slot instead, so it can be moved about.
+     */
+    private function signatureText(): string
+    {
+        return Signature::isSet() ? "\n\n" . Signature::text() : '';
     }
 
     private function footerLabel(): string
