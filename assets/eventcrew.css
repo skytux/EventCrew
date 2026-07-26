@@ -177,20 +177,31 @@
  * they are counting - the number is what makes them legible the first time.
  */
 .eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .45em; align-items: center; }
-.eventcrew-signup .eventcrew-pips { display: inline-flex; gap: .25em; align-items: center; }
+.eventcrew-signup .eventcrew-pips { display: inline-flex; gap: 5px; align-items: center; }
 /*
  * Big enough to see and drawn at full strength. A hairline circle dimmed to
  * half opacity is invisible at this size, so an empty slot is a solid ring in
  * the same green and a filled one is that ring filled in - the difference is
  * ink, not transparency. border-box, so the ring does not inflate the circle.
  */
+/*
+ * Whole pixels, not em. At .85em these were 13.6px boxes with a 2px border and
+ * a 50% radius, rasterized onto a whole-pixel grid - so the curve came out
+ * uneven, and because the gap was fractional too, each pip landed on a
+ * different sub-pixel offset and rounded differently from its neighbour. A
+ * decorative 12px dot has nothing to gain from scaling with the text and
+ * everything to gain from being the same 12px every time.
+ */
 .eventcrew-signup .eventcrew-pip {
     box-sizing: border-box;
-    width: .85em; height: .85em; border-radius: 50%;
+    width: 12px; height: 12px; border-radius: 50%;
     /* An empty slot rings in the page's own text colour - dark on a light
        theme, light on a dark one - so it needs no theme detection, and it does
-       not read as half-filled the way a green ring did. */
-    border: 2px solid color-mix(in srgb, currentColor 45%, transparent);
+       not read as half-filled the way a green ring did. Two thirds rather than
+       45%: a thin translucent ring next to a solid disc reads as a lighter,
+       smaller shape even at identical geometry, and the two are meant to
+       differ in state, not in weight. */
+    border: 2px solid color-mix(in srgb, currentColor 65%, transparent);
     background: transparent;
     flex: none;
 }
