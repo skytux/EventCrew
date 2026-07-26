@@ -75,9 +75,9 @@ final class BoardPushTest extends TelegramTestCase
 
         $this->push()->run();
 
-        $kinds = array_map(static fn (array $i): string => $i['data']['kind'], $this->wpdb->inserts);
-        self::assertContains('board_push_168', $kinds);
-        self::assertContains('board_push_48', $kinds);
+        $ledgerWrites = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString('board_push_168', $ledgerWrites);
+        self::assertStringContainsString('board_push_48', $ledgerWrites);
         // Inert bot: nothing was actually posted.
         self::assertNotContains('sendMessage', $this->calledMethods());
     }

@@ -11,6 +11,7 @@ use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Reputation;
@@ -83,6 +84,14 @@ final class SettingsPage
                 'board_push_lead_soon' => max(
                     0,
                     (int) get_option(BoardPush::LEAD_SOON_OPTION, BoardPush::LEAD_SOON_DEFAULT)
+                ),
+                'open_task_lead_week' => max(
+                    0,
+                    (int) get_option(OpenTaskCall::LEAD_WEEK_OPTION, OpenTaskCall::LEAD_WEEK_DEFAULT)
+                ),
+                'open_task_lead_soon' => max(
+                    0,
+                    (int) get_option(OpenTaskCall::LEAD_SOON_OPTION, OpenTaskCall::LEAD_SOON_DEFAULT)
                 ),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
@@ -261,6 +270,21 @@ final class SettingsPage
             : BoardPush::LEAD_SOON_DEFAULT;
         update_option(BoardPush::LEAD_WEEK_OPTION, $leadWeek);
         update_option(BoardPush::LEAD_SOON_OPTION, $leadSoon);
+
+        // The open-task call's own leads. Zero is meaningful here - it turns
+        // that one of the two sends off - so these floor at 0 rather than 1.
+        update_option(
+            OpenTaskCall::LEAD_WEEK_OPTION,
+            isset($_POST['open_task_lead_week'])
+                ? max(0, (int) $_POST['open_task_lead_week'])
+                : OpenTaskCall::LEAD_WEEK_DEFAULT
+        );
+        update_option(
+            OpenTaskCall::LEAD_SOON_OPTION,
+            isset($_POST['open_task_lead_soon'])
+                ? max(0, (int) $_POST['open_task_lead_soon'])
+                : OpenTaskCall::LEAD_SOON_DEFAULT
+        );
 
         update_option(
             Turnstile::SITE_KEY_OPTION,

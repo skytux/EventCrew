@@ -183,7 +183,7 @@ final class EmailBody
                 esc_attr($accent),
                 esc_url($url),
                 self::FONT,
-                $primary ? '#ffffff' : esc_attr($accent),
+                $primary ? self::readableOn($accent) : esc_attr($accent),
                 esc_html($action['label'])
             );
 
@@ -197,6 +197,41 @@ final class EmailBody
         }
 
         return $buttons;
+    }
+
+    /**
+     * Black or white text, whichever is readable on $background.
+     *
+     * The accent is whatever the site's palette says, and a site is as likely
+     * to brand itself beige as navy. White label text baked in would vanish on
+     * the light half of that range, so the choice is made from the colour's
+     * luminance rather than assumed. The sRGB coefficients and the 0.55 split
+     * are the usual WCAG ones, nudged to favour dark text on the midtones where
+     * both are legible and dark reads better.
+     */
+    public static function readableOn(string $background): string
+    {
+        $hex = ltrim(trim($background), '#');
+
+        if (3 === strlen($hex)) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+
+        if (6 !== strlen($hex) || 1 !== preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+            return '#ffffff';
+        }
+
+        $channel = static function (string $pair): float {
+            $value = hexdec($pair) / 255;
+
+            return $value <= 0.03928 ? $value / 12.92 : (($value + 0.055) / 1.055) ** 2.4;
+        };
+
+        $luminance = 0.2126 * $channel(substr($hex, 0, 2))
+            + 0.7152 * $channel(substr($hex, 2, 2))
+            + 0.0722 * $channel(substr($hex, 4, 2));
+
+        return $luminance > 0.55 ? self::TEXT_COLOR : '#ffffff';
     }
 
     /**

@@ -315,6 +315,25 @@ final class TaskRepository
      * open-task call, which must send nothing at all when everything is
      * already staffed.
      */
+    /**
+     * Whether a task on $date was created after $since (a 'Y-m-d H:i:s' local
+     * timestamp). This is what separates "we already told them about this date"
+     * from "we told them about this date, but a job has been added since" - the
+     * second is worth mailing about again, the first is not.
+     */
+    public function hasTaskCreatedSince(string $date, string $since): bool
+    {
+        global $wpdb;
+
+        return null !== $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$this->table()} WHERE task_date = %s AND created_at > %s LIMIT 1",
+                $date,
+                $since
+            )
+        );
+    }
+
     public function hasOpenSlotsOn(string $date): bool
     {
         $tasks = $this->forDate($date);

@@ -112,6 +112,6 @@ final class StandingNoticeTest extends TestCase
         self::assertStringContainsString('no-show', (string) $this->sends[0]['text']);
         self::assertCount(1, $this->mails);
         // The ledger row that stops the next run repeating it.
-        self::assertSame('standing_hit', $this->wpdb->inserts[0]['data']['kind']);
+        self::assertStringContainsString('standing_hit', $this->wpdb->lastQuery());
     }
 }

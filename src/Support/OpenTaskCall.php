@@ -23,7 +23,47 @@ use EventCrew\Telegram\TelegramClient;
  */
 final class OpenTaskCall
 {
+    /**
+     * The nearer lead's ledger kind. Deliberately still the bare 'open_task'
+     * this has always written, so an upgrade does not re-announce every date
+     * that has already had its last-call email.
+     */
     public const KIND = 'open_task';
+
+    /** The further lead's ledger kind - the heads-up, new in 1.11. */
+    public const KIND_WEEK = 'open_task_week';
+
+    /** The further lead, in hours. Default 168 (one week). */
+    public const LEAD_WEEK_OPTION = 'eventcrew_open_task_lead_week';
+
+    /** The nearer lead, in hours. Default 48. */
+    public const LEAD_SOON_OPTION = 'eventcrew_open_task_lead_soon';
+
+    public const LEAD_WEEK_DEFAULT = 168;
+    public const LEAD_SOON_DEFAULT = 48;
+
+    /**
+     * The configured leads, as the ledger kind each records under. Two sends per
+     * date by design: a heads-up while there is still time to rearrange a
+     * weekend, and a last call. A date that first appears inside both windows
+     * gets one email, not two, because both kinds are recorded together.
+     *
+     * @return array<string, int>
+     */
+    public static function leads(): array
+    {
+        return [
+            self::KIND_WEEK => max(0, (int) get_option(self::LEAD_WEEK_OPTION, self::LEAD_WEEK_DEFAULT)),
+            self::KIND => max(0, (int) get_option(self::LEAD_SOON_OPTION, self::LEAD_SOON_DEFAULT)),
+        ];
+    }
+
+    /**
+     * Open-task lines per date, memoised for the life of one run.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private array $openLines = [];
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -51,36 +91,156 @@ final class OpenTaskCall
     }
 
     /**
-     * The automated call: sends for every upcoming date whose event is within
-     * $leadHours of now and still has open slots. Sending for a window rather
-     * than one exact day makes it robust to a missed cron run, and the ledger
-     * inside sendForDate() stops anyone being mailed twice. Stops once $limit
-     * people have been mailed this run; the rest resume on the next run.
+     * The automated call. One email per person per day, covering every date
+     * that is due for them, rather than one email per date - two events falling
+     * inside a window on the same day is a normal week, not a reason to send
+     * somebody two separate mails.
+     *
+     * A date is due for a person when it has open slots and either it has
+     * crossed into a lead they have not been mailed at, or a task has been
+     * added to it since they were last mailed. That second clause is what fixes
+     * the old behaviour: the ledger recorded "told them about this date", so a
+     * job added to an already-announced day was never announced at all.
+     *
+     * Stops once $limit people have been mailed this run; the rest resume on
+     * the next one, since nobody due is recorded until they are actually sent.
+     *
+     * @param array<string, int> $leads Ledger kind => hours before the date.
      */
-    public function sendDue(int $leadHours, int $limit): int
+    public function sendDue(array $leads, int $limit): int
     {
-        $cutoff = strtotime((string) current_time('mysql')) + $leadHours * HOUR_IN_SECONDS;
+        $now = (string) current_time('mysql');
+        $today = (string) current_time('Y-m-d');
+        $prefs = new NotificationPreferences();
         $sent = 0;
 
-        foreach ($this->tasks->upcomingDates() as $date) {
+        foreach ($this->people->activeEmailRecipients() as $person) {
             if ($sent >= $limit) {
                 break;
             }
 
-            // task_date is the day a task is filed under; a date is due once its
-            // midnight is within the lead window.
-            $dateStart = strtotime($date . ' 00:00:00');
-
-            if (false === $dateStart || $dateStart > $cutoff) {
+            // The daily cap, asked before any of the per-date work.
+            if ($this->ledger->sentOnDay(self::KIND, $person->id, $today)) {
                 continue;
             }
 
-            // sendForDate() no-ops on a fully-staffed date, so it is the only
-            // open-slots check needed.
-            $sent += $this->sendForDate($date, $limit - $sent);
+            $due = $this->dueDatesFor($person->id, $leads, $now);
+
+            if ([] === $due) {
+                continue;
+            }
+
+            if (! $this->notify($person, array_keys($due), $prefs)) {
+                continue;
+            }
+
+            foreach ($due as $date => $kinds) {
+                foreach ($kinds as $kind) {
+                    $this->ledger->recordSent($kind, $person->id, (string) $date);
+                }
+            }
+
+            ++$sent;
         }
 
         return $sent;
+    }
+
+    /**
+     * The dates this person is due to hear about, each with the ledger kinds
+     * the send should be recorded under.
+     *
+     * @param array<string, int> $leads
+     *
+     * @return array<string, array<int, string>> date => kinds
+     */
+    private function dueDatesFor(int $personId, array $leads, string $now): array
+    {
+        $nowTime = strtotime($now);
+        $furthest = max([0, ...array_values($leads)]);
+        $due = [];
+
+        if (false === $nowTime || $furthest <= 0) {
+            return [];
+        }
+
+        foreach ($this->tasks->upcomingDates() as $date) {
+            // task_date is the day a task is filed under; a date is due once
+            // its midnight is within the lead window.
+            $dateStart = strtotime($date . ' 00:00:00');
+
+            if (false === $dateStart) {
+                continue;
+            }
+
+            // upcomingDates is ascending, so once one date is beyond the
+            // furthest lead, so is everything after it.
+            if ($dateStart > $nowTime + $furthest * HOUR_IN_SECONDS) {
+                break;
+            }
+
+            if (! $this->hasOpenSlots($date)) {
+                continue;
+            }
+
+            foreach ($leads as $kind => $leadHours) {
+                if ($leadHours <= 0 || $dateStart > $nowTime + $leadHours * HOUR_IN_SECONDS) {
+                    continue;
+                }
+
+                $sentAt = $this->ledger->sentAt($kind, $personId, $date);
+
+                // Never mailed at this lead, or something has been added to the
+                // date since we last did.
+                if (null === $sentAt || $this->tasks->hasTaskCreatedSince($date, $sentAt)) {
+                    $due[$date][] = $kind;
+                }
+            }
+        }
+
+        return $due;
+    }
+
+    /**
+     * Sends the digest on whichever channels this person allows. Returns false
+     * when they allow neither, so they are left unrecorded and a later opt-in
+     * still reaches them.
+     *
+     * @param array<int, string> $dates
+     */
+    private function notify(Person $person, array $dates, NotificationPreferences $prefs): bool
+    {
+        $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
+        $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
+
+        if (! $emailOk && ! $dmOk) {
+            return false;
+        }
+
+        $openList = $this->openTasksText($dates);
+
+        if ($emailOk) {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                __('Some tasks still need people', 'eventcrew'),
+                $this->body($person, $openList),
+                [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+            );
+        }
+
+        if ($dmOk) {
+            $this->telegram->sendMessage(
+                (int) $person->telegramChatId,
+                sprintf(
+                    /* translators: %s: the open-task list, already grouped by date */
+                    __("🔔 Some tasks still need people:\n\n%s\n\nOpen the board in the group to sign up.", 'eventcrew'),
+                    $openList
+                )
+            );
+        }
+
+        return true;
     }
 
     /**
@@ -92,11 +252,10 @@ final class OpenTaskCall
      */
     public function sendForDate(string $date, int $limit = 0): int
     {
-        if (! $this->tasks->hasOpenSlotsOn($date)) {
+        if (! $this->hasOpenSlots($date)) {
             return 0;
         }
 
-        $openList = $this->openTasksText($date);
         $prefs = new NotificationPreferences();
         $sent = 0;
 
@@ -109,35 +268,8 @@ final class OpenTaskCall
                 continue;
             }
 
-            $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
-            $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
-
-            // Both channels off for this person: leave them unrecorded so a later
-            // opt-in still reaches them, and don't count them against the batch.
-            if (! $emailOk && ! $dmOk) {
+            if (! $this->notify($person, [$date], $prefs)) {
                 continue;
-            }
-
-            if ($emailOk) {
-                $this->mailer->toPerson(
-                    $person->id,
-                    $person->email,
-                    __('Some tasks still need people', 'eventcrew'),
-                    $this->body($person, $date, $openList),
-                    [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
-                );
-            }
-
-            if ($dmOk) {
-                $this->telegram->sendMessage(
-                    (int) $person->telegramChatId,
-                    sprintf(
-                        /* translators: 1: date, 2: open-task list */
-                        __("🔔 Some tasks still need people on %1\$s:\n\n%2\$s\n\nOpen the board in the group to sign up.", 'eventcrew'),
-                        $date,
-                        $openList
-                    )
-                );
             }
 
             $this->ledger->recordSent(self::KIND, $person->id, $date);
@@ -147,21 +279,66 @@ final class OpenTaskCall
         return $sent;
     }
 
-    private function body(Person $person, string $date, string $openList): string
+    private function body(Person $person, string $openList): string
     {
         return sprintf(
-            /* translators: 1: name, 2: date, 3: open-task list, 4: personal recap */
+            /* translators: 1: name, 2: open-task list grouped by date, 3: personal recap */
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Hi %1\$s,\n\nSome tasks still need people on %2\$s:\n\n%3\$s\n\nSign up on the board.\n\n%4\$s", 'eventcrew'),
+            __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\nSign up on the board.\n\n%3\$s", 'eventcrew'),
             $person->name(),
-            $date,
             $openList,
             $this->recap($person)
         );
     }
 
-    private function openTasksText(string $date): string
+    /**
+     * The open tasks across every date in the digest. A single date keeps the
+     * flat list it always had; more than one gets a heading each, so a reader
+     * can tell which day a job belongs to.
+     *
+     * @param array<int, string> $dates
+     */
+    private function openTasksText(array $dates): string
     {
+        $blocks = [];
+
+        foreach ($dates as $date) {
+            $lines = $this->openTaskLines($date);
+
+            if ([] === $lines) {
+                continue;
+            }
+
+            $blocks[] = count($dates) > 1
+                ? $date . "\n" . implode("\n", $lines)
+                : implode("\n", $lines);
+        }
+
+        return implode("\n\n", $blocks);
+    }
+
+    /** A date has something worth calling about when it has an open line. */
+    private function hasOpenSlots(string $date): bool
+    {
+        return [] !== $this->openTaskLines($date);
+    }
+
+    /**
+     * The open tasks on one date, remembered for the rest of this run.
+     *
+     * Every recipient is offered the same list for a given date, and each date
+     * is also tested for open slots before it is listed, so without this the
+     * same two queries would run once per person per date - the difference
+     * between a couple of queries and a couple of hundred on a decent crew.
+     *
+     * @return array<int, string>
+     */
+    private function openTaskLines(string $date): array
+    {
+        if (isset($this->openLines[$date])) {
+            return $this->openLines[$date];
+        }
+
         $tasks = $this->tasks->forDate($date);
         $occupancy = $this->tasks->occupancyFor(array_map(static fn ($task): int => $task->id, $tasks));
         $lines = [];
@@ -180,7 +357,9 @@ final class OpenTaskCall
             }
         }
 
-        return implode("\n", $lines);
+        $this->openLines[$date] = $lines;
+
+        return $lines;
     }
 
     private function recap(Person $person): string
