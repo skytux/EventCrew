@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.15.4
+Stable tag: 1.15.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.15.5 =
+* Fixed: a task's slot count and button now always sit to the right of its name and time, on every screen size. They were laid out in a way that moved them to a new line whenever they did not quite fit, which on a phone was most of the time; they are now in a column of their own that cannot move, and a long name wraps within its own space instead.
 
 = 1.15.4 =
 * A task's slot count now sits above its button rather than beside it, which makes that whole block about a third narrower — so rows stay on one line on a phone instead of wrapping.
