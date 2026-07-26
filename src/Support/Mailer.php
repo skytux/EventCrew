@@ -91,19 +91,36 @@ final class Mailer
             EmailBody::footerHtml($this->footerLabel(), $manageUrl)
         );
 
-        // The plain-text half of the multipart message. PHPMailer only offers
-        // this through its own object, so it is set on the instance wp_mail is
-        // about to use and the filter is removed straight after - leaving it
-        // attached would put this body on every other plugin's mail too.
-        $altBody = static function ($phpmailer) use ($text): void {
+        $logo = EmailTemplate::logoPath();
+
+        // The parts PHPMailer only exposes through its own object: the
+        // plain-text half of the multipart message, and the logo attached
+        // inline. Both are set on the instance wp_mail is about to use, and the
+        // filter comes off straight after - leaving it attached would put this
+        // body and this attachment on every other plugin's mail too.
+        $prepare = static function ($phpmailer) use ($text, $logo): void {
             $phpmailer->AltBody = $text;
+
+            if ('' === $logo) {
+                return;
+            }
+
+            // Embedded rather than linked, so the masthead does not depend on
+            // the mail client being willing - or allowed - to fetch from this
+            // site. A failure here is not worth losing the email over: the
+            // message still reads without its logo.
+            try {
+                $phpmailer->addEmbeddedImage($logo, EmailTemplate::LOGO_CID, basename($logo));
+            } catch (\Throwable) {
+                return;
+            }
         };
 
-        add_action('phpmailer_init', $altBody);
+        add_action('phpmailer_init', $prepare);
 
         $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
 
-        remove_action('phpmailer_init', $altBody);
+        remove_action('phpmailer_init', $prepare);
 
         return $sent;
     }

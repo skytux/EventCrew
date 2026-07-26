@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,12 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.10.1 =
+* Fixed: the logo did not appear in emails. It was linked back to your site, and plenty of hosts refuse to serve an image to anything that does not look like a browser — some free hosts drop the connection outright — while many mail clients block remote images anyway. A logo from your own media library is now attached inside the message, so it shows without anything being fetched. A URL pointing at another site is still linked as before.
+* Fixed: a white logo was invisible. The header band now uses your theme colour instead of the card's white, which is what a logo drawn for a dark header needs. New `{{accent}}` tag for the template.
+* Fixed: the logo sat against the left edge rather than centred — `align="center"` does not centre a block-level image.
+* Existing templates keep the design they were created with; use Settings ▸ Email ▸ "Reset the template" to take up the new header.
+
 = 1.10.0 =
 * Notification emails are now designed HTML: your site's logo across the top, the message in a card, and a button for whatever it is asking people to do — "Show your ticket", "Add to calendar", "Sign in", "See open tasks" — instead of a bare URL in the text. A plain-text copy travels with every message, so a client that will not render HTML still gets the whole thing.
 * New "Email template" item under EventCrew opens the design in the normal block editor, with revisions and undo. Keep `{{content}}` where the message goes; `{{logo}}`, `{{footer}}`, `{{site_name}}`, `{{site_url}}`, `{{subject}}` and `{{year}}` are available too. Settings ▸ Email has a "Reset the template" button, so an edit is never a dead end.
@@ -209,6 +215,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.10.1 =
+Fixes the missing email logo: it now travels inside the message instead of being fetched from your site, and the header band is coloured so a white logo is visible. Reset the template under Settings ▸ Email to take up the new header.
 
 = 1.10.0 =
 Notification emails become HTML, with your logo and buttons, and the design is editable under EventCrew ▸ Email template. No database change; existing sends are unaffected apart from how they look.

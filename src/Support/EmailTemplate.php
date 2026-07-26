@@ -35,6 +35,15 @@ final class EmailTemplate
     /** The slot the message drops into; a wrapper without it is unusable. */
     private const CONTENT_TAG = '{{content}}';
 
+    /**
+     * The Content-ID the logo is attached under. The masthead points at
+     * `cid:` this rather than at a URL, so no mail client ever has to fetch the
+     * image: some hosts refuse to serve one to anything that does not look like
+     * a browser, and plenty of clients block remote images regardless. See
+     * Mailer::sendHtml(), which does the attaching.
+     */
+    public const LOGO_CID = 'eventcrew-logo';
+
     public function __construct(
         private readonly Logger $logger
     ) {
@@ -174,10 +183,11 @@ final class EmailTemplate
     public function render(string $subject, string $content, string $footer): string
     {
         $body = str_replace(
-            ['{{footer}}', '{{logo}}', '{{site_name}}', '{{site_url}}', '{{subject}}', '{{year}}'],
+            ['{{footer}}', '{{logo}}', '{{accent}}', '{{site_name}}', '{{site_url}}', '{{subject}}', '{{year}}'],
             [
                 $footer,
                 self::logoHtml(),
+                esc_attr(self::accent()),
                 esc_html(self::siteName()),
                 esc_url(home_url('/')),
                 esc_html($subject),
@@ -247,7 +257,13 @@ final class EmailTemplate
      * Tables and inline styles throughout, and a 600px card, because that is
      * what still renders the same in Outlook, Gmail and Apple Mail. The merge
      * tags are the whole contract with the editor: {{logo}}, {{content}},
-     * {{footer}}, {{site_name}}, {{site_url}}, {{subject}} and {{year}}.
+     * {{footer}}, {{accent}}, {{site_name}}, {{site_url}}, {{subject}} and
+     * {{year}}.
+     *
+     * The masthead sits on the accent colour rather than on the card's white,
+     * because a logo drawn in white - the usual thing a site has ready for a
+     * dark header - is invisible on white and looks to the reader like a broken
+     * image.
      */
     public static function defaultWrapper(): string
     {
@@ -261,10 +277,11 @@ final class EmailTemplate
                         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
                             style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e6e8eb;border-radius:14px">
                             <tr>
-                                <td align="center" style="padding:32px 32px 12px">{{logo}}</td>
+                                <td align="center"
+                                    style="padding:28px 32px;background:{{accent}};border-radius:13px 13px 0 0">{{logo}}</td>
                             </tr>
                             <tr>
-                                <td style="padding:8px 32px 28px">{{content}}</td>
+                                <td style="padding:28px 32px">{{content}}</td>
                             </tr>
                             <tr>
                                 <td style="padding:20px 32px;border-top:1px solid #eceef1">{{footer}}</td>
@@ -287,31 +304,130 @@ final class EmailTemplate
      */
     public static function logoHtml(): string
     {
+        $source = self::logoSource();
+
+        if (null === $source) {
+            return self::wordmark();
+        }
+
+        // A local file is embedded in the message; anything else (an explicit
+        // URL pointing off-site) still has to be fetched the ordinary way.
+        return '' !== $source['path']
+            ? self::image('cid:' . self::LOGO_CID, $source['width'], $source['height'])
+            : self::image($source['url'], $source['width'], $source['height']);
+    }
+
+    /**
+     * The file the masthead image should be attached from, or '' when there is
+     * nothing local to attach - no logo at all, or one hosted elsewhere.
+     */
+    public static function logoPath(): string
+    {
+        return self::logoSource()['path'] ?? '';
+    }
+
+    /**
+     * Where the masthead image comes from: the explicit setting first, then the
+     * site's own logo, then the Site Icon. Each is resolved to a filesystem path
+     * as well as a URL wherever it is one of this site's own uploads, because
+     * embedding beats linking for every client that will not fetch.
+     *
+     * @return array{path: string, url: string, width: int, height: int}|null
+     */
+    private static function logoSource(): ?array
+    {
         $explicit = trim((string) get_option(self::LOGO_OPTION, ''));
 
         if ('' !== $explicit) {
-            return self::image($explicit, 0, 0);
+            // Dimensions are unknown for a pasted URL, so the masthead falls
+            // back to its default width.
+            return ['path' => self::localPath($explicit), 'url' => $explicit, 'width' => 0, 'height' => 0];
         }
 
         $customLogo = (int) get_theme_mod('custom_logo');
 
         if ($customLogo > 0) {
-            $source = wp_get_attachment_image_src($customLogo, 'full');
+            $found = self::fromAttachment($customLogo);
 
-            if (is_array($source) && isset($source[0])) {
-                return self::image((string) $source[0], (int) ($source[1] ?? 0), (int) ($source[2] ?? 0));
+            if (null !== $found) {
+                return $found;
             }
         }
 
         if (function_exists('has_site_icon') && has_site_icon()) {
+            $found = self::fromAttachment((int) get_option('site_icon', 0));
+
+            if (null !== $found) {
+                return $found;
+            }
+
             $icon = get_site_icon_url(180);
 
             if (is_string($icon) && '' !== $icon) {
-                return self::image($icon, 180, 180);
+                return ['path' => '', 'url' => $icon, 'width' => 180, 'height' => 180];
             }
         }
 
-        return self::wordmark();
+        return null;
+    }
+
+    /**
+     * @return array{path: string, url: string, width: int, height: int}|null
+     */
+    private static function fromAttachment(int $attachmentId): ?array
+    {
+        if ($attachmentId <= 0) {
+            return null;
+        }
+
+        $source = wp_get_attachment_image_src($attachmentId, 'full');
+
+        if (! is_array($source) || ! isset($source[0])) {
+            return null;
+        }
+
+        $path = (string) get_attached_file($attachmentId);
+
+        return [
+            'path' => '' !== $path && is_readable($path) ? $path : '',
+            'url' => (string) $source[0],
+            'width' => (int) ($source[1] ?? 0),
+            'height' => (int) ($source[2] ?? 0),
+        ];
+    }
+
+    /**
+     * Maps a URL back to a file in this site's uploads, or '' when it points
+     * somewhere else. Only the uploads directory is considered: a URL is not
+     * permission to read an arbitrary path off the disk and attach it to mail.
+     */
+    private static function localPath(string $url): string
+    {
+        $uploads = wp_upload_dir();
+
+        if (! is_array($uploads) || empty($uploads['baseurl']) || empty($uploads['basedir'])) {
+            return '';
+        }
+
+        $baseUrl = (string) $uploads['baseurl'];
+
+        // Scheme-agnostic: a logo saved while the site was on http must still
+        // match once it is served over https.
+        $normalize = static fn (string $value): string => (string) preg_replace('#^https?://#', '//', $value);
+
+        if (! str_starts_with($normalize($url), $normalize($baseUrl))) {
+            return '';
+        }
+
+        $relative = substr($normalize($url), strlen($normalize($baseUrl)));
+        $path = rtrim((string) $uploads['basedir'], '/\\') . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+
+        // No traversal out of uploads, whatever the URL claimed.
+        if (str_contains($relative, '..') || ! is_readable($path) || ! is_file($path)) {
+            return '';
+        }
+
+        return $path;
     }
 
     /**
@@ -331,23 +447,33 @@ final class EmailTemplate
             $rendered = (int) round($width * $scale);
         }
 
+        // esc_url() would strip a cid: URL to nothing - the protocol is not on
+        // WordPress's allow-list - so the one we built ourselves from a class
+        // constant is passed through, and only a real URL is escaped.
+        $src = str_starts_with($url, 'cid:') ? $url : esc_url($url);
+
+        // margin:0 auto, not the td's align="center": that attribute sets
+        // text-align, which centres inline content and does nothing for a
+        // display:block image - the logo would sit against the left padding.
         return sprintf(
-            '<img src="%s" alt="%s" width="%d" style="display:block;border:0;outline:none;'
+            '<img src="%s" alt="%s" width="%d" style="display:block;margin:0 auto;border:0;outline:none;'
                 . 'width:%dpx;max-width:100%%;height:auto">',
-            esc_url($url),
+            $src,
             esc_attr(self::siteName()),
             $rendered,
             $rendered
         );
     }
 
-    /** The fallback masthead: the site's name, set large. */
+    /**
+     * The fallback masthead: the site's name, set large. White, because it sits
+     * on the accent-coloured band the default template gives the header.
+     */
     private static function wordmark(): string
     {
         return sprintf(
-            '<p style="margin:0;font-family:%s;font-size:22px;font-weight:700;line-height:1.2;color:%s">%s</p>',
+            '<p style="margin:0;font-family:%s;font-size:22px;font-weight:700;line-height:1.2;color:#ffffff">%s</p>',
             EmailBody::FONT,
-            esc_attr(self::accent()),
             esc_html(self::siteName())
         );
     }

@@ -589,6 +589,7 @@ if (! defined('ABSPATH')) {
                         spellcheck="false">
                     <p class="description">
                         <?php esc_html_e('The image at the top of every email. Leave this blank to use your site’s own logo, falling back to the Site Icon, then to your site’s name in text. Paste a URL here to use a different image — a wide banner works as well as a square logo.', 'eventcrew'); ?>
+                        <?php esc_html_e('An image from your own media library travels inside the message, so it shows even in clients that block remote images. A URL pointing at another site is still fetched the ordinary way.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
@@ -610,11 +611,14 @@ if (! defined('ABSPATH')) {
                     <p class="description">
                         <?php esc_html_e('Available tags:', 'eventcrew'); ?>
                         <code>{{content}}</code> <code>{{logo}}</code> <code>{{footer}}</code>
-                        <code>{{site_name}}</code> <code>{{site_url}}</code> <code>{{subject}}</code>
-                        <code>{{year}}</code>
+                        <code>{{accent}}</code> <code>{{site_name}}</code> <code>{{site_url}}</code>
+                        <code>{{subject}}</code> <code>{{year}}</code>
                     </p>
                     <p class="description">
-                        <?php esc_html_e('Buttons and the fallback wordmark are drawn in the theme colour set under “Web page”.', 'eventcrew'); ?>
+                        <?php esc_html_e('The header band, the buttons and the fallback wordmark all use the theme colour set under “Web page”. The band is coloured so a white logo — the kind most sites keep for a dark header — is visible rather than white on white.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
