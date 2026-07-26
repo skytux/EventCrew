@@ -19,6 +19,8 @@
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
+ * @var int $open_task_lead_week Hours before an open date the heads-up open-task call goes out.
+ * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
  * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
@@ -274,6 +276,52 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Open-task call', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('The personal “some tasks still need people” notice, sent by email and Telegram DM to everyone active. It goes out at the two lead times below — a heads-up while there is still time to rearrange a weekend, then a last call — and again if a job is added to a date after people have already been told about it.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('Nobody gets more than one of these a day, however many dates are open: they are gathered into a single message.', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-open-task-lead-week"><?php esc_html_e('Heads-up (hours before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-open-task-lead-week"
+                        name="open_task_lead_week"
+                        value="<?php echo esc_attr((string) $open_task_lead_week); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 168 (one week). Set to 0 to skip it and send only the last call.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-open-task-lead-soon"><?php esc_html_e('Last call (hours before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-open-task-lead-soon"
+                        name="open_task_lead_soon"
+                        value="<?php echo esc_attr((string) $open_task_lead_soon); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 48. Set to 0 to skip it. A date that first appears inside both windows gets one message, not two.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
@@ -615,7 +663,7 @@ if (! defined('ABSPATH')) {
                         <code>{{subject}}</code> <code>{{year}}</code>
                     </p>
                     <p class="description">
-                        <?php esc_html_e('The header band, the buttons and the fallback wordmark all use the theme colour set under “Web page”. The band is coloured so a white logo — the kind most sites keep for a dark header — is visible rather than white on white.', 'eventcrew'); ?>
+                        <?php esc_html_e('The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent.', 'eventcrew'); ?>
                     </p>
                     <p class="description">
                         <?php esc_html_e('Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one.', 'eventcrew'); ?>

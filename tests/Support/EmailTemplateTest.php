@@ -175,6 +175,37 @@ final class EmailTemplateTest extends TestCase
         self::assertStringNotContainsString('{{accent}}', $html);
     }
 
+    public function testTheAccentFallsBackToTheThemePalette(): void
+    {
+        // Nothing set in the plugin's own field, so the site's global styles
+        // decide - which is what makes the emails look like the site.
+        Functions\when('wp_get_global_settings')->justReturn([
+            'theme' => [
+                ['slug' => 'base', 'color' => '#f6f0e4'],
+                ['slug' => 'contrast', 'color' => '#111111'],
+            ],
+        ]);
+
+        self::assertSame('#111111', EmailTemplate::accent());
+    }
+
+    public function testAnExplicitThemeColourBeatsThePalette(): void
+    {
+        $this->options['eventcrew_app_theme_color'] = '#123456';
+        Functions\when('wp_get_global_settings')->justReturn([
+            'theme' => [['slug' => 'primary', 'color' => '#abcdef']],
+        ]);
+
+        self::assertSame('#123456', EmailTemplate::accent());
+    }
+
+    public function testLabelsFlipToDarkTextOnALightAccent(): void
+    {
+        // A site branded beige would otherwise get white text on near-white.
+        self::assertSame('#1f2328', EmailBody::readableOn('#f6f0e4'));
+        self::assertSame('#ffffff', EmailBody::readableOn('#111111'));
+    }
+
     public function testTheMastheadFallsBackToTheSiteNameWithNoLogoAnywhere(): void
     {
         // No explicit URL, no Customizer logo and no Site Icon: the site's name,

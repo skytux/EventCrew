@@ -24,9 +24,6 @@ final class Scheduler
 
     public const LAST_RUN_OPTION = 'eventcrew_cron_last_run';
 
-    /** How far ahead of an event the open-task call goes out. */
-    private const OPEN_TASK_LEAD_HOURS = 48;
-
     /** Most sends per run, so a shared-host request can't time out mid-batch. */
     private const BATCH = 25;
 
@@ -63,7 +60,7 @@ final class Scheduler
     public function run(): void
     {
         $this->reminders->run(self::BATCH);
-        $this->openTasks->sendDue(self::OPEN_TASK_LEAD_HOURS, self::BATCH);
+        $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
         $this->standingNotices->sendDue(self::BATCH);
         $this->boardPush->run();
 

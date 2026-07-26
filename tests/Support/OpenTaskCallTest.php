@@ -87,55 +87,59 @@ final class OpenTaskCallTest extends TestCase
         ];
     }
 
+    /** The two leads the scheduler passes: a week out, then 48 hours out. */
+    private function leads(): array
+    {
+        return [OpenTaskCall::KIND_WEEK => 168, OpenTaskCall::KIND => 48];
+    }
+
+    /** Queues the open-task lookup for one date: forDate, then occupancyFor. */
+    private function queueOpenDate(int $taken = 0): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = $this->occupancyRows($taken);
+    }
+
+    /** Queues the two reads the personal recap makes. */
+    private function queueRecap(): void
+    {
+        $this->wpdb->nextVars[] = 0;       // countCompletedFor
+        $this->wpdb->nextResults[] = [];   // historyFor
+    }
+
     public function testMailsAnActiveRecipientAndRecordsTheSend(): void
     {
-        // hasOpenSlotsOn: forDate, occupancyFor (0 taken -> open)
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // openTasksText: forDate, occupancyFor
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // activeEmailRecipients
-        $this->wpdb->nextResults[] = [$this->activePerson()];
-        // ledger.hasSent -> not sent; countCompletedFor -> 0
-        $this->wpdb->nextVars[] = null;
-        $this->wpdb->nextVars[] = 0;
-        // historyFor -> none
-        $this->wpdb->nextResults[] = [];
+        $this->queueOpenDate();                                 // hasOpenSlots
+        $this->wpdb->nextResults[] = [$this->activePerson()];   // activeEmailRecipients
+        $this->wpdb->nextVars[] = null;                         // ledger.hasSent -> not sent
+        $this->queueRecap();
 
         $sent = $this->call()->sendForDate('2026-08-01');
 
         self::assertSame(1, $sent);
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
-        // Recorded in the send-once ledger.
-        self::assertNotSame([], $this->wpdb->inserts);
+        // Recorded in the send-once ledger, as an upsert so a re-send refreshes
+        // the timestamp the "anything added since?" check measures from.
+        self::assertStringContainsString('ON DUPLICATE KEY UPDATE', $this->wpdb->lastQuery());
     }
 
     public function testIncludesCrewAlreadyWorkingThatDay(): void
     {
         // Being on a task that day no longer excludes someone - they may want a
         // second, non-overlapping slot - so they still get the call.
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        $this->wpdb->nextResults[] = [$this->taskRow()];        // openTasksText: forDate
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);   // openTasksText: occupancy
-        $this->wpdb->nextResults[] = [$this->activePerson()];   // activeEmailRecipients
-        $this->wpdb->nextVars[] = null;                         // ledger.hasSent -> not sent
-        $this->wpdb->nextVars[] = 0;                            // countCompletedFor (recap)
-        $this->wpdb->nextResults[] = [];                        // historyFor (recap)
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
+        $this->queueRecap();
 
-        $sent = $this->call()->sendForDate('2026-08-01');
-
-        self::assertSame(1, $sent);
+        self::assertSame(1, $this->call()->sendForDate('2026-08-01'));
         self::assertCount(1, $this->mails);
     }
 
     public function testSendsNothingWhenEverythingIsStaffed(): void
     {
-        // hasOpenSlotsOn: the one task is full (2 of 2)
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(2);
+        $this->queueOpenDate(2);   // the one task is full (2 of 2)
 
         $sent = $this->call()->sendForDate('2026-08-01');
 
@@ -145,13 +149,9 @@ final class OpenTaskCallTest extends TestCase
 
     public function testSkipsAnyoneAlreadyMailedForThatDate(): void
     {
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
+        $this->queueOpenDate();
         $this->wpdb->nextResults[] = [$this->activePerson()];
-        // ledger.hasSent -> already sent (an id comes back)
-        $this->wpdb->nextVars[] = 3;
+        $this->wpdb->nextVars[] = '2026-07-19 09:00:00';   // ledger.hasSent -> already sent
 
         $sent = $this->call()->sendForDate('2026-08-01');
 
@@ -159,39 +159,86 @@ final class OpenTaskCallTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
-    public function testSendDueMailsForADateInsideTheLeadWindow(): void
+    public function testOneEmailCoversEveryDueDate(): void
     {
-        // "now" is 2026-07-20 12:00; a 48h lead reaches to 2026-07-22.
-        // upcomingDates: one due date, one beyond the window.
-        $this->wpdb->nextCols[] = ['2026-07-21', '2026-08-01'];
-        // sendForDate('2026-07-21'): hasOpenSlotsOn (forDate, occupancy)
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // openTasksText (forDate, occupancy)
-        $this->wpdb->nextResults[] = [$this->taskRow()];
-        $this->wpdb->nextResults[] = $this->occupancyRows(0);
-        // activeEmailRecipients
-        $this->wpdb->nextResults[] = [$this->activePerson()];
-        // ledger.hasSent, countCompletedFor
+        // "now" is 2026-07-20 12:00. Two dates inside the 48h window would once
+        // have been two separate emails to the same person.
+        $this->wpdb->nextResults[] = [$this->activePerson()];   // activeEmailRecipients
+        $this->wpdb->nextVars[] = null;                         // daily cap: nothing today
+        $this->wpdb->nextCols[] = ['2026-07-21', '2026-07-22']; // upcomingDates
+
+        $this->queueOpenDate();                                 // 07-21 open
+        $this->wpdb->nextVars[] = null;                         // sentAt week
+        $this->wpdb->nextVars[] = null;                         // sentAt soon
+        $this->queueOpenDate();                                 // 07-22 open
         $this->wpdb->nextVars[] = null;
-        $this->wpdb->nextVars[] = 0;
-        // historyFor
-        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = null;
+        $this->queueRecap();
 
-        $sent = $this->call()->sendDue(48, 25);
+        $sent = $this->call()->sendDue($this->leads(), 25);
 
-        // The 2026-08-01 date is past the window, so only the due date sends.
         self::assertSame(1, $sent);
         self::assertCount(1, $this->mails);
     }
 
-    public function testSendDueSkipsDatesBeyondTheLeadWindow(): void
+    public function testTheDailyCapStopsASecondEmailTheSameDay(): void
     {
-        // The only upcoming date is well outside the 48h window: nothing sends,
-        // and no per-date queries run for it.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        // Already had an open-task notice today: nothing else is even looked up.
+        $this->wpdb->nextVars[] = 3;
+
+        $sent = $this->call()->sendDue($this->leads(), 25);
+
+        self::assertSame(0, $sent);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testATaskAddedSinceTheLastSendEarnsAnotherCall(): void
+    {
+        // The gap this closes: the ledger recorded "told them about this date",
+        // so a job added to an already-announced day was never announced.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;                          // daily cap clear
+        $this->wpdb->nextCols[] = ['2026-07-21'];
+        $this->queueOpenDate();
+        $this->wpdb->nextVars[] = '2026-07-19 09:00:00';         // sentAt week
+        $this->wpdb->nextVars[] = 11;                            // a task created since
+        $this->wpdb->nextVars[] = '2026-07-19 09:00:00';         // sentAt soon
+        $this->wpdb->nextVars[] = 11;
+        $this->queueRecap();
+
+        self::assertSame(1, $this->call()->sendDue($this->leads(), 25));
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testNothingNewSinceTheLastSendMeansNoEmail(): void
+    {
+        // The other half of the same rule: no daily drip while a date sits open
+        // and unchanged.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
+        $this->wpdb->nextCols[] = ['2026-07-21'];
+        $this->queueOpenDate();
+        $this->wpdb->nextVars[] = '2026-07-19 09:00:00';   // sentAt week
+        $this->wpdb->nextVars[] = null;                    // nothing created since
+        $this->wpdb->nextVars[] = '2026-07-19 09:00:00';   // sentAt soon
+        $this->wpdb->nextVars[] = null;
+
+        $sent = $this->call()->sendDue($this->leads(), 25);
+
+        self::assertSame(0, $sent);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testDatesBeyondTheFurthestLeadAreNotLookedUpAtAll(): void
+    {
+        // "now" is 2026-07-20; a 168h lead reaches 2026-07-27. Since
+        // upcomingDates is ascending, the loop stops rather than querying on.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
         $this->wpdb->nextCols[] = ['2026-08-01'];
 
-        $sent = $this->call()->sendDue(48, 25);
+        $sent = $this->call()->sendDue($this->leads(), 25);
 
         self::assertSame(0, $sent);
         self::assertSame([], $this->mails);
