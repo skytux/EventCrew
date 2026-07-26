@@ -44,7 +44,8 @@ final class SignupBoardView
         private readonly AssignmentRepository $assignments,
         private readonly StandingCalculator $standing,
         private readonly TicketRedemptionService $tickets,
-        private readonly Turnstile $turnstile
+        private readonly Turnstile $turnstile,
+        private readonly SignupService $signup
     ) {
     }
 
@@ -68,7 +69,7 @@ final class SignupBoardView
             'person' => $person,
             'standing' => $standing,
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
-            'groups' => $this->groupByEvent($tasks, $occupancy, $mine, $person, $standing),
+            'groups' => $this->groupByEvent($tasks, $occupancy, $mine, $person),
             'telegram_group_link' => BoardService::groupLink(),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,
@@ -198,9 +199,12 @@ final class SignupBoardView
      * @param array<int, bool> $mine
      * @return array<int, array{title: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string}>}>
      */
-    private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person, ?Standing $standing): array
+    private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
         $groups = [];
+
+        // Asked once for the whole board: it is the same answer for every row.
+        $personRefusal = null === $person ? '' : $this->signup->personRefusal($person->id);
 
         foreach ($tasks as $task) {
             $key = null !== $task->eventPostId
@@ -215,7 +219,7 @@ final class SignupBoardView
                 'task' => $task,
                 'taken' => $occupancy[$task->id] ?? 0,
                 'mine' => isset($mine[$task->id]),
-                'blocked' => $this->blockedReason($task, $person, $standing),
+                'blocked' => $this->blockedReason($task, $person, $personRefusal),
             ];
         }
 
@@ -225,33 +229,26 @@ final class SignupBoardView
     /**
      * Why this person cannot take this task, or '' if they can.
      *
-     * Only the two refusals that cost nothing to know: whether the slot is
-     * leader-only, which is a property of the task, and whether the standing
-     * gate is holding them, which is a property of the person. Both are already
-     * in hand, so the whole board is decided without another query.
+     * Both answers come from SignupService rather than being worked out again
+     * here: the gate rule in particular is the sort that gets edited in one
+     * place and silently disagreed with in another, and a board that offers a
+     * button the claim will refuse is worse than one that never offered it.
      *
-     * The third refusal SignupService knows about - an overlapping task - needs
-     * a query per row to answer, which is a lot of database work for a rare
-     * case; it stays a message after the press. Whatever is shown here has to
-     * agree with SignupService::refusalFor(), which is the real rulebook.
+     * Only the two refusals that cost nothing per row. The third SignupService
+     * knows about - an overlapping task - needs a query each to answer, which
+     * is a lot of database work for a rare case, so it stays a message after
+     * the press.
      */
-    private function blockedReason(Task $task, ?Person $person, ?Standing $standing): string
+    private function blockedReason(Task $task, ?Person $person, string $personRefusal): string
     {
         if (null === $person) {
             return '';
         }
 
-        if (Roles::LEADER_SLUG === $task->roleSlug && ! $person->canLead()) {
+        if (SignupService::blocksLeaderSlot($task, $person)) {
             return SignupService::LEADER_ONLY;
         }
 
-        // A pass waves them through, so it is not a refusal to show.
-        $gateOn = (bool) get_option(SignupService::GATE_OPTION, true);
-
-        if ($gateOn && null !== $standing && $standing->isAtRisk() && ! $person->hasAtRiskPass()) {
-            return SignupService::GATED;
-        }
-
-        return '';
+        return $personRefusal;
     }
 }

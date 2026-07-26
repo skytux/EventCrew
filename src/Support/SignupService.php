@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -95,27 +97,19 @@ final class SignupService
     {
         $task = $this->tasks->find($taskId);
 
-        // The leader slot is reserved for crew granted leader permission.
+        // The person is only fetched when the slot is actually leader-only,
+        // which most are not: asking first would put a row read on every claim
+        // to answer a question that usually does not arise.
         if (null !== $task && Roles::LEADER_SLUG === $task->roleSlug) {
-            $person = $this->people->find($personId);
-
-            if (null === $person || ! $person->canLead()) {
+            if (self::blocksLeaderSlot($task, $this->people->find($personId))) {
                 return ['refusal' => self::LEADER_ONLY, 'pass' => false];
             }
         }
 
-        // A blocked at-risk member may be waved through once by a pass, which
-        // is then spent - but only if the join actually succeeds.
-        $usePass = false;
+        $gate = $this->gateRefusal($personId);
 
-        if ($this->gateBlocks($personId)) {
-            $person = $this->people->find($personId);
-
-            if (null !== $person && $person->hasAtRiskPass()) {
-                $usePass = true;
-            } else {
-                return ['refusal' => self::GATED, 'pass' => false];
-            }
+        if ('' !== $gate['refusal']) {
+            return $gate;
         }
 
         // Holding a slot across events is fine; a genuine time clash is not.
@@ -123,7 +117,52 @@ final class SignupService
             return ['refusal' => self::OVERLAP, 'pass' => false];
         }
 
-        return ['refusal' => '', 'pass' => $usePass];
+        return ['refusal' => '', 'pass' => $gate['pass']];
+    }
+
+    /**
+     * Whether this task's slot is reserved for crew leaders and this person is
+     * not one. Static and pure, so a caller holding a task and a person can ask
+     * without a service or a query - which is what lets the board decide a whole
+     * screen of rows without reimplementing the rule.
+     */
+    public static function blocksLeaderSlot(?Task $task, ?Person $person): bool
+    {
+        if (null === $task || Roles::LEADER_SLUG !== $task->roleSlug) {
+            return false;
+        }
+
+        return null === $person || ! $person->canLead();
+    }
+
+    /**
+     * The refusal that does not depend on which task is being claimed: the
+     * standing gate. One query's worth of answer that applies to every row on a
+     * board alike, so a caller asks once rather than per task.
+     */
+    public function personRefusal(int $personId): string
+    {
+        return $this->gateRefusal($personId)['refusal'];
+    }
+
+    /**
+     * The gate, and whether an at-risk pass is what is getting them through.
+     *
+     * @return array{refusal: string, pass: bool}
+     */
+    private function gateRefusal(int $personId): array
+    {
+        if (! $this->gateBlocks($personId)) {
+            return ['refusal' => '', 'pass' => false];
+        }
+
+        // A blocked at-risk member may be waved through once by a pass, which
+        // is then spent - but only if the join actually succeeds.
+        $person = $this->people->find($personId);
+
+        return null !== $person && $person->hasAtRiskPass()
+            ? ['refusal' => '', 'pass' => true]
+            : ['refusal' => self::GATED, 'pass' => false];
     }
 
     /**
