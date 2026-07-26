@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.2
+Stable tag: 1.14.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.3 =
+* The Me tab reads in the order asked for: standing and credits, then your next tasks, then spending a free-entry credit, then your tickets. 1.14.1 moved the credit-spending control above the task list as well, which was not the request.
+* The slot dots use a vivid green, so a filled slot is obvious at a glance instead of a dark speck.
 
 = 1.14.2 =
 * Fixed: on some sites the signup page arrived with none of its styling — no centring, no aligned buttons, no slot dots, and the browser's own focus ring round the tabs. The stylesheet was only registered while WordPress was preparing the page's assets, so a page rendered by any other route (a site-editor template part, a page builder, the block's preview) asked for a stylesheet that had never been registered, and asking for an unregistered stylesheet fails silently. It is now registered wherever it is first needed.

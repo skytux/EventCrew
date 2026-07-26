@@ -29,6 +29,10 @@
        crew whose accent happens to be red would otherwise get a red Sign up. */
     --eventcrew-go: #1b5e20;
     --eventcrew-stop: #8e1616;
+    /* The pips are half a character wide, where the button's deep green reads
+       as near-black. They get a vivid one of their own so a filled slot is
+       obvious at a glance rather than a dark speck. */
+    --eventcrew-pip: #22c55e;
 }
 
 .eventcrew-signup .eventcrew-muted { opacity: .7; }
@@ -162,10 +166,12 @@
 .eventcrew-signup .eventcrew-capacity { display: inline-flex; gap: .45em; align-items: center; }
 .eventcrew-signup .eventcrew-pips { display: inline-flex; gap: .2em; align-items: center; }
 .eventcrew-signup .eventcrew-pip {
-    width: .55em; height: .55em; border-radius: 50%;
-    border: 1px solid var(--eventcrew-go); opacity: .5;
+    width: .6em; height: .6em; border-radius: 50%;
+    border: 1px solid var(--eventcrew-pip); opacity: .45;
 }
-.eventcrew-signup .eventcrew-pip.is-filled { background: var(--eventcrew-go); border-color: var(--eventcrew-go); opacity: 1; }
+.eventcrew-signup .eventcrew-pip.is-filled {
+    background: var(--eventcrew-pip); border-color: var(--eventcrew-pip); opacity: 1;
+}
 .eventcrew-signup .eventcrew-capacity-count {
     font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
