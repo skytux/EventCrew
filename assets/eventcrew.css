@@ -154,7 +154,6 @@
 }
 .eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .4em; padding-left: 1.2em; }
 .eventcrew-signup .eventcrew-listhead { margin: .4em 0 .2em; }
-.eventcrew-signup .eventcrew-upcoming { margin: .6em 0 1em; }
 .eventcrew-signup form { margin: 0; }
 
 /*
@@ -337,8 +336,9 @@
     max-width: 22em;
     margin-inline: auto;
 }
-.eventcrew-signin-row.has-captcha .wp-element-input { min-width: 0; flex: none; text-align: center; }
-.eventcrew-signin-row.has-captcha .wp-element-input::placeholder { text-align: center; }
+/* The column is centred on the page; the text inside the field is not. An
+   email typed down the middle of its box looks like a mistake. */
+.eventcrew-signin-row.has-captcha .wp-element-input { min-width: 0; flex: none; }
 .eventcrew-signin-row.has-captcha .wp-element-button { width: 100%; }
 /* The widget is a fixed-width iframe, so it is centred rather than stretched. */
 .eventcrew-signin-row.has-captcha .eventcrew-turnstile { margin-inline: auto; }
