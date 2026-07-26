@@ -162,13 +162,33 @@
  * button.
  */
 .eventcrew-signup .eventcrew-task-row {
-    display: flex; align-items: center; gap: .75em; flex-wrap: wrap;
+    display: flex; align-items: center; gap: .4em .75em; flex-wrap: wrap;
     padding: .6em 0; border-bottom: 1px solid var(--eventcrew-line);
 }
 .eventcrew-signup .eventcrew-task-row:last-child { border-bottom: 0; }
-.eventcrew-signup .eventcrew-task-main { flex: 1 1 12em; display: flex; flex-direction: column; gap: .1em; }
+/*
+ * min-width:0 is the whole trick. A flex item defaults to min-width:auto, which
+ * means it will not shrink below its own longest word - so a long event name
+ * held this column at its intrinsic width and shoved the count and the button
+ * onto a second line while there was still room for them. Allowed to shrink,
+ * the row stays on one line until it genuinely cannot.
+ */
+.eventcrew-signup .eventcrew-task-main {
+    flex: 1 1 10em; min-width: 0;
+    display: flex; flex-direction: column; gap: .1em;
+}
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
+
+/*
+ * The count and the action as one block, pushed to the right by the auto
+ * margin. On a line of their own after wrapping, that same margin keeps them
+ * against the right edge instead of stranded at the left.
+ */
+.eventcrew-signup .eventcrew-task-side {
+    display: flex; align-items: center; gap: .75em;
+    flex: 0 0 auto; margin-left: auto;
+}
 
 /*
  * Capacity: one pip per slot, filled for each person signed up, with the count
