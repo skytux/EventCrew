@@ -43,6 +43,12 @@ final class OpenTaskCall
     public const LEAD_SOON_DEFAULT = 48;
 
     /**
+     * How many open tasks the message lists. Enough to show what is coming
+     * without turning a nudge into a wall of text nobody reads to the end of.
+     */
+    private const DIGEST_TASKS = 5;
+
+    /**
      * The configured leads, as the ledger kind each records under. Two sends per
      * date by design: a heads-up while there is still time to rearrange a
      * weekend, and a last call. A date that first appears inside both windows
@@ -65,6 +71,14 @@ final class OpenTaskCall
      */
     private array $openLines = [];
 
+    /**
+     * Upcoming dates, memoised alongside the lines. Both the due check and the
+     * digest walk this list, once per recipient each.
+     *
+     * @var array<int, string>|null
+     */
+    private ?array $upcoming = null;
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
@@ -81,7 +95,7 @@ final class OpenTaskCall
      */
     public function sendForNextOpenDate(): int
     {
-        foreach ($this->tasks->upcomingDates() as $date) {
+        foreach ($this->upcomingDates() as $date) {
             if ($this->tasks->hasOpenSlotsOn($date)) {
                 return $this->sendForDate($date);
             }
@@ -130,7 +144,7 @@ final class OpenTaskCall
                 continue;
             }
 
-            if (! $this->notify($person, array_keys($due), $prefs)) {
+            if (! $this->notify($person, $prefs)) {
                 continue;
             }
 
@@ -164,7 +178,7 @@ final class OpenTaskCall
             return [];
         }
 
-        foreach ($this->tasks->upcomingDates() as $date) {
+        foreach ($this->upcomingDates() as $date) {
             // task_date is the day a task is filed under; a date is due once
             // its midnight is within the lead window.
             $dateStart = strtotime($date . ' 00:00:00');
@@ -208,7 +222,7 @@ final class OpenTaskCall
      *
      * @param array<int, string> $dates
      */
-    private function notify(Person $person, array $dates, NotificationPreferences $prefs): bool
+    private function notify(Person $person, NotificationPreferences $prefs): bool
     {
         $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
         $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
@@ -217,7 +231,8 @@ final class OpenTaskCall
             return false;
         }
 
-        $openList = $this->openTasksText($dates);
+        $openList = $this->openTasksText($this->digest(self::DIGEST_TASKS));
+        $groupLink = self::groupLink();
 
         if ($emailOk) {
             $this->mailer->toPerson(
@@ -225,7 +240,10 @@ final class OpenTaskCall
                 $person->email,
                 __('Some tasks still need people', 'eventcrew'),
                 $this->body($person, $openList),
-                [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+                [
+                    ['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()],
+                    ['label' => __('Open the group in Telegram', 'eventcrew'), 'url' => $groupLink],
+                ]
             );
         }
 
@@ -234,13 +252,30 @@ final class OpenTaskCall
                 (int) $person->telegramChatId,
                 sprintf(
                     /* translators: %s: the open-task list, already grouped by date */
-                    __("🔔 Some tasks still need people:\n\n%s\n\nOpen the board in the group to sign up.", 'eventcrew'),
+                    __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
                     $openList
-                )
+                ),
+                // The DM arrives in a private chat, so the group is a tap away
+                // rather than a scroll away. Omitted when no link is configured;
+                // a chat id cannot be turned into one.
+                '' === $groupLink
+                    ? null
+                    : ['inline_keyboard' => [[
+                        ['text' => __('Open the group', 'eventcrew'), 'url' => $groupLink],
+                    ]]]
             );
         }
 
         return true;
+    }
+
+    /**
+     * The public t.me link to the crew's group, as set in Settings. The option
+     * name mirrors Telegram\BoardService::GROUP_LINK_OPTION.
+     */
+    private static function groupLink(): string
+    {
+        return trim((string) get_option('eventcrew_telegram_group_link', ''));
     }
 
     /**
@@ -268,7 +303,7 @@ final class OpenTaskCall
                 continue;
             }
 
-            if (! $this->notify($person, [$date], $prefs)) {
+            if (! $this->notify($person, $prefs)) {
                 continue;
             }
 
@@ -292,29 +327,64 @@ final class OpenTaskCall
     }
 
     /**
-     * The open tasks across every date in the digest. A single date keeps the
-     * flat list it always had; more than one gets a heading each, so a reader
-     * can tell which day a job belongs to.
+     * The next few open tasks across all upcoming dates - not only the dates
+     * that made this send due.
      *
-     * @param array<int, string> $dates
+     * Someone deciding whether they can help wants to see what is coming, and
+     * an early sign-up is worth more to an organizer than a last-minute one. The
+     * dates that triggered the send are the soonest open ones, so they head the
+     * list naturally; the rest is what is behind them.
+     *
+     * @return array<string, array<int, string>> date => open-task lines
      */
-    private function openTasksText(array $dates): string
+    private function digest(int $limit): array
     {
         $blocks = [];
+        $counted = 0;
 
-        foreach ($dates as $date) {
+        foreach ($this->upcomingDates() as $date) {
+            if ($counted >= $limit) {
+                break;
+            }
+
             $lines = $this->openTaskLines($date);
 
             if ([] === $lines) {
                 continue;
             }
 
-            $blocks[] = count($dates) > 1
-                ? $date . "\n" . implode("\n", $lines)
-                : implode("\n", $lines);
+            $lines = array_slice($lines, 0, $limit - $counted);
+            $blocks[$date] = $lines;
+            $counted += count($lines);
         }
 
-        return implode("\n\n", $blocks);
+        return $blocks;
+    }
+
+    /**
+     * The digest as text, a heading per date. The heading is always shown, even
+     * for a single date: the list now reaches past whatever made the send due,
+     * so "when" is no longer implied by the message around it.
+     *
+     * @param array<string, array<int, string>> $blocks
+     */
+    private function openTasksText(array $blocks): string
+    {
+        $rendered = [];
+
+        foreach ($blocks as $date => $lines) {
+            $rendered[] = $date . "\n" . implode("\n", $lines);
+        }
+
+        return implode("\n\n", $rendered);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function upcomingDates(): array
+    {
+        return $this->upcoming ??= $this->tasks->upcomingDates();
     }
 
     /** A date has something worth calling about when it has an open line. */

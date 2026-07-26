@@ -32,8 +32,8 @@ final class OpenTaskCallTest extends TestCase
         Functions\when('get_option')->justReturn(null);
         Functions\when('get_the_title')->justReturn('');
 
-        Functions\when('wp_mail')->alias(function (string $to, string $subject): bool {
-            $this->mails[] = ['to' => $to, 'subject' => $subject];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body = ''): bool {
+            $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
 
             return true;
         });
@@ -228,6 +228,48 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame(0, $sent);
         self::assertSame([], $this->mails);
+    }
+
+    public function testTheMessageListsWhatIsComingBeyondTheDueDate(): void
+    {
+        // The call is due on 07-21, but someone deciding whether they can help
+        // wants to see what is behind it too - so the list runs on past the
+        // date that triggered the send.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;                          // daily cap clear
+        $this->wpdb->nextCols[] = ['2026-07-21', '2026-08-01'];  // upcomingDates
+        $this->queueOpenDate();                                  // 07-21 open
+        $this->wpdb->nextVars[] = null;                          // sentAt week
+        $this->wpdb->nextVars[] = null;                          // sentAt soon
+        // 08-01 is past the furthest lead, so the due loop stops there - but the
+        // digest still walks it, off the same memoised dates.
+        $this->queueOpenDate();                                  // 08-01 open
+        $this->queueRecap();
+
+        $this->call()->sendDue($this->leads(), 25);
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('2026-07-21', $body);
+        self::assertStringContainsString('2026-08-01', $body);
+    }
+
+    public function testTheGroupLinkIsOfferedWhenOneIsConfigured(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => 'eventcrew_telegram_group_link' === $name
+                ? 'https://t.me/+abc123'
+                : null
+        );
+
+        $this->queueOpenDate();                                 // hasOpenSlots
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;                         // ledger.hasSent
+        $this->wpdb->nextCols[] = ['2026-08-01'];               // upcomingDates (digest)
+        $this->queueRecap();
+
+        $this->call()->sendForDate('2026-08-01');
+
+        self::assertStringContainsString('https://t.me/+abc123', $this->mails[0]['body']);
     }
 
     public function testDatesBeyondTheFurthestLeadAreNotLookedUpAtAll(): void
