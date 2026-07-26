@@ -115,6 +115,36 @@ final class SignupController
      */
     public function enqueueStyle(): void
     {
+        $this->registerStyle();
+
+        $post = get_post();
+
+        if (! $post instanceof \WP_Post) {
+            return;
+        }
+
+        if (has_shortcode((string) $post->post_content, 'eventcrew_signup') || has_block('eventcrew/signup', $post)) {
+            wp_enqueue_style(self::STYLE_HANDLE);
+        }
+    }
+
+    /**
+     * Registers the stylesheet, once, wherever the need is first noticed.
+     *
+     * Separate from the enqueue because registration is the part that must not
+     * be missed: wp_enqueue_style() on an unregistered handle is a silent no-op,
+     * so a render reached by a path that never fired wp_enqueue_scripts - an
+     * FSE template part, a page builder, the block's REST preview - would ask
+     * for a stylesheet that does not exist and get no stylesheet and no error.
+     * That is precisely how a page ends up serving the new markup with none of
+     * its CSS.
+     */
+    private function registerStyle(): void
+    {
+        if (wp_style_is(self::STYLE_HANDLE, 'registered')) {
+            return;
+        }
+
         wp_register_style(
             self::STYLE_HANDLE,
             plugins_url('assets/eventcrew.css', EVENTCREW_PLUGIN_FILE),
@@ -126,16 +156,6 @@ final class SignupController
 
         if ('' !== $accent) {
             wp_add_inline_style(self::STYLE_HANDLE, $accent);
-        }
-
-        $post = get_post();
-
-        if (! $post instanceof \WP_Post) {
-            return;
-        }
-
-        if (has_shortcode((string) $post->post_content, 'eventcrew_signup') || has_block('eventcrew/signup', $post)) {
-            wp_enqueue_style(self::STYLE_HANDLE);
         }
     }
 
@@ -173,9 +193,11 @@ final class SignupController
     {
         // Belt and braces for the placements enqueueStyle() cannot see: a
         // widget, a template part, a shortcode nested inside another block.
-        // Enqueuing after wp_head has run puts the sheet in the footer rather
-        // than losing it, which is worse than <head> but far better than an
-        // unstyled widget.
+        // Registering here too is the point - see registerStyle() - because an
+        // enqueue of an unregistered handle fails silently. Enqueuing after
+        // wp_head has run puts the sheet in the footer rather than losing it,
+        // which is worse than <head> but far better than an unstyled widget.
+        $this->registerStyle();
         wp_enqueue_style(self::STYLE_HANDLE);
 
         $view = $this->viewModel();

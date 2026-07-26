@@ -24,6 +24,10 @@ if (! defined('EVENTCREW_PLUGIN_URL')) {
     define('EVENTCREW_PLUGIN_URL', 'https://example.test/wp-content/plugins/eventcrew/');
 }
 
+if (! defined('EVENTCREW_PLUGIN_FILE')) {
+    define('EVENTCREW_PLUGIN_FILE', dirname(__DIR__) . '/eventcrew.php');
+}
+
 if (! defined('ARRAY_A')) {
     define('ARRAY_A', 'ARRAY_A');
 }
