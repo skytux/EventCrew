@@ -130,7 +130,18 @@ final class SignupControllerTest extends TestCase
                 : false
         );
         Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+
+        // The stylesheet plumbing. wp_style_is returns false so the render path
+        // takes its registration branch - the one that exists because an
+        // enqueue of an unregistered handle fails silently.
+        Functions\when('wp_style_is')->justReturn(false);
+        Functions\when('wp_register_style')->justReturn(true);
+        Functions\when('wp_add_inline_style')->justReturn(true);
         Functions\when('wp_enqueue_style')->justReturn(null);
+        Functions\when('plugins_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-content/plugins/eventcrew/' . $path
+        );
+        Functions\when('sanitize_hex_color')->returnArg(1);
 
         // The echoing translation helpers the template uses; TestCase stubs
         // only the returning ones, which every other test gets by with.

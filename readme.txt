@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.14.1
+Stable tag: 1.14.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.14.2 =
+* Fixed: on some sites the signup page arrived with none of its styling — no centring, no aligned buttons, no slot dots, and the browser's own focus ring round the tabs. The stylesheet was only registered while WordPress was preparing the page's assets, so a page rendered by any other route (a site-editor template part, a page builder, the block's preview) asked for a stylesheet that had never been registered, and asking for an unregistered stylesheet fails silently. It is now registered wherever it is first needed.
+* Fixed: Sign out sat far below your name instead of beside it.
+* Fixed: focusing a tab drew a box around it. The underline thickens instead.
 
 = 1.14.1 =
 * Sign out is now next to your name above the tabs, reachable from any tab instead of only from Settings.
@@ -265,6 +270,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.14.2 =
+Fixes the signup page loading without its stylesheet on some sites, which left it looking unstyled. If 1.14.0 or 1.14.1 looked broken to you, this is why. No database change.
 
 = 1.14.1 =
 Visual refinements to the signup page from 1.14.0: sign out on every tab, clearer slot counts, aligned buttons, a tidier sign-in with captcha, and a modern date picker for spending credits. No database change.

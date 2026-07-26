@@ -34,7 +34,15 @@
 .eventcrew-signup .eventcrew-muted { opacity: .7; }
 .eventcrew-signup .eventcrew-hint { margin: .5em 0 0; font-size: .9em; }
 .eventcrew-signup .eventcrew-turnstile { margin-top: .75em; }
-.eventcrew-signup .eventcrew-identity { margin: 0 0 .6em; font-size: .9em; }
+/*
+ * Name and sign out on one line. The form is a block element, so without this
+ * it drops to its own row and the link ends up nowhere near the name it
+ * belongs to.
+ */
+.eventcrew-signup .eventcrew-identity {
+    display: flex; align-items: baseline; gap: .5em; flex-wrap: wrap;
+    margin: 0 0 .6em; font-size: .9em;
+}
 .eventcrew-signup .eventcrew-subhead { margin: 1.2em 0 .3em; font-size: 1em; }
 .eventcrew-signup .eventcrew-section { margin: 0 0 1.5em; }
 
@@ -77,8 +85,16 @@
 .eventcrew-signup .eventcrew-tab.is-active {
     opacity: 1; border-bottom-color: currentColor;
 }
+/*
+ * No box. A ring drawn round a tab that is only an underline looks like a
+ * mistake, and browsers draw their own on click as well as on keyboard focus.
+ * The focus state thickens and colours the underline instead - visible, and
+ * the same shape as the thing it is marking.
+ */
+.eventcrew-signup .eventcrew-tab:focus { outline: none; }
 .eventcrew-signup .eventcrew-tab:focus-visible {
-    outline: 2px solid var(--eventcrew-accent); outline-offset: 3px;
+    outline: none; opacity: 1;
+    border-bottom-width: 3px; border-bottom-color: var(--eventcrew-accent);
 }
 
 .eventcrew-signup.is-tabbed .eventcrew-panel { display: none; }
@@ -161,7 +177,7 @@
 }
 .eventcrew-signup .eventcrew-linkbtn-danger { color: var(--eventcrew-stop); opacity: 1; }
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
-.eventcrew-signup .eventcrew-signout { margin: 1.5em 0 0; }
+.eventcrew-signup .eventcrew-signout { margin: 0; display: inline; }
 
 /*
  * Sign up reads go, Cancel reads stop. Go takes the crew's accent so the page
