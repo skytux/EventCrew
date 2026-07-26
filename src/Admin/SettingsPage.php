@@ -49,7 +49,8 @@ final class SettingsPage
         private readonly View $view,
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
-        private readonly EmailTemplate $emailTemplate
+        private readonly EmailTemplate $emailTemplate,
+        private readonly BoardService $board
     ) {
     }
 
@@ -148,6 +149,7 @@ final class SettingsPage
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
             'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
+            'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
         ];
@@ -398,6 +400,10 @@ final class SettingsPage
         Admin::assertCanSave(self::SETUP_NONCE_ACTION);
 
         $result = $this->installWebhook();
+
+        // The moment the bot is known-good is the moment to look for a link to
+        // the group, rather than leaving it to the next weekly sweep.
+        $this->board->refreshGroupLink(true);
 
         if ($result['ok']) {
             // Stamp the version so the automatic on-update refresh does not run

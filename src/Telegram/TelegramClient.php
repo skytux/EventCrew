@@ -258,6 +258,42 @@ final class TelegramClient
     }
 
     /**
+     * The chat's own record. Carries `username` for a public group and, when the
+     * bot is an administrator, the primary `invite_link` - between them, the two
+     * ways to turn a chat id into something a person can actually tap.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getChat(int|string $chatId): ?array
+    {
+        return $this->call('getChat', ['chat_id' => $chatId]);
+    }
+
+    /**
+     * Creates an additional invite link for a private group.
+     *
+     * Deliberately not exportChatInviteLink, which the Bot API documents as
+     * *revoking* the previous primary link: that would silently break whatever
+     * link the crew has already been given. This one adds a link and leaves the
+     * existing ones working. Needs the bot to be an admin with can_invite_users;
+     * without it Telegram answers with an error and this returns null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function createChatInviteLink(int|string $chatId, string $name = ''): ?array
+    {
+        $params = ['chat_id' => $chatId];
+
+        if ('' !== $name) {
+            // Shown to admins in Telegram's invite-link list, so it is obvious
+            // later which link the plugin made and why.
+            $params['name'] = $name;
+        }
+
+        return $this->call('createChatInviteLink', $params);
+    }
+
+    /**
      * Whether a Bot API error description is one of the expected, benign ones
      * (see BENIGN_ERRORS). Case-insensitive substring match, because Telegram's
      * wording carries extra detail around the core phrase.

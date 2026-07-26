@@ -29,7 +29,8 @@ final class SettingsPageTest extends TelegramTestCase
             new View(),
             $this->client(),
             new Mailer($logger, new EmailTemplate($logger)),
-            new EmailTemplate($logger)
+            new EmailTemplate($logger),
+            $this->boardService()
         );
     }
 

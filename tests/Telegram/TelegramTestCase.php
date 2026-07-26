@@ -183,7 +183,7 @@ abstract class TelegramTestCase extends TestCase
         );
     }
 
-    private function boardService(): BoardService
+    protected function boardService(): BoardService
     {
         return new BoardService(
             new TaskRepository(),
