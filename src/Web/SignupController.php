@@ -61,7 +61,7 @@ final class SignupController
         private readonly Turnstile $turnstile,
         private readonly TicketRedemptionService $tickets
     ) {
-        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile);
+        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup);
     }
 
     /** The public stylesheet's handle, shared by the block and the shortcode. */

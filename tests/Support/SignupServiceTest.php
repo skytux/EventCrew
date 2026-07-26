@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -106,6 +108,27 @@ final class SignupServiceTest extends TestCase
 
         self::assertSame(SignupService::LEADER_ONLY, $this->service()->refusalFor(9, 5));
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /**
+     * The board decides a whole screen of rows from these two, rather than
+     * working the rules out again for itself - which is what it did at first,
+     * and the gate is exactly the rule that gets edited in one place and
+     * silently disagreed with in another.
+     */
+    public function testTheBoardsTwoCheapChecksComeFromHere(): void
+    {
+        $leaderTask = Task::fromRow($this->taskRow('leader'));
+        $person = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'can_lead' => 0]);
+        $leader = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'can_lead' => 1]);
+
+        self::assertTrue(SignupService::blocksLeaderSlot($leaderTask, $person));
+        self::assertFalse(SignupService::blocksLeaderSlot($leaderTask, $leader));
+        self::assertFalse(SignupService::blocksLeaderSlot(Task::fromRow($this->taskRow('decorate')), $person));
+
+        // The gate off means no person-level refusal, and no standing read.
+        $this->options[SignupService::GATE_OPTION] = '0';
+        self::assertSame('', $this->service()->personRefusal(9));
     }
 
     public function testLeaderSlotRefusesAMemberWithoutLeaderPermission(): void

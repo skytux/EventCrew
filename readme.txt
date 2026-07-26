@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.15.0
+Stable tag: 1.15.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.15.1 =
+* Fixed: the board worked out for itself whether the standing gate was holding someone, rather than asking the code that actually decides it. Change the gate's behaviour and the board would have gone on showing the old answer — offering a Sign up button the signup would then refuse, or hiding one that would have worked. Both checks now come from the single rulebook.
 
 = 1.15.0 =
 * The board now says when you cannot take a task, on the row, instead of letting you press Sign up and refusing afterwards. A crew-leader slot reads "Crew leaders only", and someone held by the standing gate sees "On hold — talk to an organizer".
