@@ -36,13 +36,15 @@ final class EmailTemplate
     private const CONTENT_TAG = '{{content}}';
 
     /**
-     * The Content-ID the logo is attached under. The masthead points at
-     * `cid:` this rather than at a URL, so no mail client ever has to fetch the
-     * image: some hosts refuse to serve one to anything that does not look like
-     * a browser, and plenty of clients block remote images regardless. See
-     * Mailer::sendHtml(), which does the attaching.
+     * The masthead links its image rather than embedding it as an inline (CID)
+     * attachment. Embedding was tried and reverted in 1.10.2: attaching happens
+     * on `phpmailer_init`, which never fires on an install whose mail goes out
+     * through a relay or an API-based SMTP plugin instead of PHPMailer. There
+     * the HTML would keep its cid: reference with no part behind it, which is a
+     * guaranteed broken image - strictly worse than a link, which at least
+     * works wherever the host serves the file. The same caveat applies to the
+     * plain-text AltBody set in Mailer::sendHtml().
      */
-    public const LOGO_CID = 'eventcrew-logo';
 
     public function __construct(
         private readonly Logger $logger
@@ -304,130 +306,33 @@ final class EmailTemplate
      */
     public static function logoHtml(): string
     {
-        $source = self::logoSource();
-
-        if (null === $source) {
-            return self::wordmark();
-        }
-
-        // A local file is embedded in the message; anything else (an explicit
-        // URL pointing off-site) still has to be fetched the ordinary way.
-        return '' !== $source['path']
-            ? self::image('cid:' . self::LOGO_CID, $source['width'], $source['height'])
-            : self::image($source['url'], $source['width'], $source['height']);
-    }
-
-    /**
-     * The file the masthead image should be attached from, or '' when there is
-     * nothing local to attach - no logo at all, or one hosted elsewhere.
-     */
-    public static function logoPath(): string
-    {
-        return self::logoSource()['path'] ?? '';
-    }
-
-    /**
-     * Where the masthead image comes from: the explicit setting first, then the
-     * site's own logo, then the Site Icon. Each is resolved to a filesystem path
-     * as well as a URL wherever it is one of this site's own uploads, because
-     * embedding beats linking for every client that will not fetch.
-     *
-     * @return array{path: string, url: string, width: int, height: int}|null
-     */
-    private static function logoSource(): ?array
-    {
         $explicit = trim((string) get_option(self::LOGO_OPTION, ''));
 
         if ('' !== $explicit) {
             // Dimensions are unknown for a pasted URL, so the masthead falls
             // back to its default width.
-            return ['path' => self::localPath($explicit), 'url' => $explicit, 'width' => 0, 'height' => 0];
+            return self::image($explicit, 0, 0);
         }
 
         $customLogo = (int) get_theme_mod('custom_logo');
 
         if ($customLogo > 0) {
-            $found = self::fromAttachment($customLogo);
+            $source = wp_get_attachment_image_src($customLogo, 'full');
 
-            if (null !== $found) {
-                return $found;
+            if (is_array($source) && isset($source[0])) {
+                return self::image((string) $source[0], (int) ($source[1] ?? 0), (int) ($source[2] ?? 0));
             }
         }
 
         if (function_exists('has_site_icon') && has_site_icon()) {
-            $found = self::fromAttachment((int) get_option('site_icon', 0));
-
-            if (null !== $found) {
-                return $found;
-            }
-
             $icon = get_site_icon_url(180);
 
             if (is_string($icon) && '' !== $icon) {
-                return ['path' => '', 'url' => $icon, 'width' => 180, 'height' => 180];
+                return self::image($icon, 180, 180);
             }
         }
 
-        return null;
-    }
-
-    /**
-     * @return array{path: string, url: string, width: int, height: int}|null
-     */
-    private static function fromAttachment(int $attachmentId): ?array
-    {
-        if ($attachmentId <= 0) {
-            return null;
-        }
-
-        $source = wp_get_attachment_image_src($attachmentId, 'full');
-
-        if (! is_array($source) || ! isset($source[0])) {
-            return null;
-        }
-
-        $path = (string) get_attached_file($attachmentId);
-
-        return [
-            'path' => '' !== $path && is_readable($path) ? $path : '',
-            'url' => (string) $source[0],
-            'width' => (int) ($source[1] ?? 0),
-            'height' => (int) ($source[2] ?? 0),
-        ];
-    }
-
-    /**
-     * Maps a URL back to a file in this site's uploads, or '' when it points
-     * somewhere else. Only the uploads directory is considered: a URL is not
-     * permission to read an arbitrary path off the disk and attach it to mail.
-     */
-    private static function localPath(string $url): string
-    {
-        $uploads = wp_upload_dir();
-
-        if (! is_array($uploads) || empty($uploads['baseurl']) || empty($uploads['basedir'])) {
-            return '';
-        }
-
-        $baseUrl = (string) $uploads['baseurl'];
-
-        // Scheme-agnostic: a logo saved while the site was on http must still
-        // match once it is served over https.
-        $normalize = static fn (string $value): string => (string) preg_replace('#^https?://#', '//', $value);
-
-        if (! str_starts_with($normalize($url), $normalize($baseUrl))) {
-            return '';
-        }
-
-        $relative = substr($normalize($url), strlen($normalize($baseUrl)));
-        $path = rtrim((string) $uploads['basedir'], '/\\') . str_replace('/', DIRECTORY_SEPARATOR, $relative);
-
-        // No traversal out of uploads, whatever the URL claimed.
-        if (str_contains($relative, '..') || ! is_readable($path) || ! is_file($path)) {
-            return '';
-        }
-
-        return $path;
+        return self::wordmark();
     }
 
     /**
@@ -447,18 +352,13 @@ final class EmailTemplate
             $rendered = (int) round($width * $scale);
         }
 
-        // esc_url() would strip a cid: URL to nothing - the protocol is not on
-        // WordPress's allow-list - so the one we built ourselves from a class
-        // constant is passed through, and only a real URL is escaped.
-        $src = str_starts_with($url, 'cid:') ? $url : esc_url($url);
-
         // margin:0 auto, not the td's align="center": that attribute sets
         // text-align, which centres inline content and does nothing for a
         // display:block image - the logo would sit against the left padding.
         return sprintf(
             '<img src="%s" alt="%s" width="%d" style="display:block;margin:0 auto;border:0;outline:none;'
                 . 'width:%dpx;max-width:100%%;height:auto">',
-            $src,
+            esc_url($url),
             esc_attr(self::siteName()),
             $rendered,
             $rendered

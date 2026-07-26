@@ -86,10 +86,7 @@ abstract class TestCase extends PHPUnitTestCase
         Functions\when('get_theme_mod')->justReturn(false);
         Functions\when('has_site_icon')->justReturn(false);
         Functions\when('get_site_icon_url')->justReturn('');
-        Functions\when('get_attached_file')->justReturn('');
-        Functions\when('wp_upload_dir')->justReturn(
-            ['baseurl' => 'https://site.test/wp-content/uploads', 'basedir' => sys_get_temp_dir()]
-        );
+        Functions\when('wp_get_attachment_image_src')->justReturn(false);
         Functions\when('do_blocks')->returnArg(1);
         Functions\when('get_post')->justReturn(null);
         Functions\when('get_post_type')->justReturn(false);

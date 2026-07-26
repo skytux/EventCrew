@@ -589,7 +589,7 @@ if (! defined('ABSPATH')) {
                         spellcheck="false">
                     <p class="description">
                         <?php esc_html_e('The image at the top of every email. Leave this blank to use your site’s own logo, falling back to the Site Icon, then to your site’s name in text. Paste a URL here to use a different image — a wide banner works as well as a square logo.', 'eventcrew'); ?>
-                        <?php esc_html_e('An image from your own media library travels inside the message, so it shows even in clients that block remote images. A URL pointing at another site is still fetched the ordinary way.', 'eventcrew'); ?>
+                        <?php esc_html_e('The image is linked, so the mail client fetches it from wherever it is hosted when the email is opened. If it does not appear, check that the file is reachable without being logged in — some hosts refuse to serve images to anything that is not a browser.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
