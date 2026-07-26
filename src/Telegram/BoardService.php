@@ -35,11 +35,40 @@ final class BoardService
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
     /**
-     * The public t.me link to the group (a @username or a +invite hash), set by
-     * the organizer. A chat id cannot be turned into a joinable link, so this is
-     * the only way the web page can offer an "Open in Telegram" jump to the group.
+     * The public t.me link to the group, set by the organizer. A chat id cannot
+     * be turned into a joinable link, so a link has to come from somewhere: this
+     * is the organizer's own, and it always wins over the discovered one.
      */
     public const GROUP_LINK_OPTION = 'eventcrew_telegram_group_link';
+
+    /**
+     * The link discovered from Telegram, kept apart from the organizer's own so
+     * a refresh can never overwrite something typed by hand.
+     */
+    public const GROUP_LINK_AUTO_OPTION = 'eventcrew_telegram_group_link_auto';
+
+    /** When the discovery last ran, successful or not; throttles the lookup. */
+    public const GROUP_LINK_CHECKED_OPTION = 'eventcrew_telegram_group_link_checked';
+
+    /** How long a discovered link is trusted before it is looked up again. */
+    private const GROUP_LINK_TTL = 7 * DAY_IN_SECONDS;
+
+    /**
+     * The link to the crew's group: the organizer's, or the one discovered from
+     * Telegram. Empty when neither exists, and every caller is expected to drop
+     * whatever button it was going to draw rather than point at nothing.
+     *
+     * A plain option read with no API call, so the web page, the emails and the
+     * DMs can all ask without any of them needing a Telegram client.
+     */
+    public static function groupLink(): string
+    {
+        $manual = trim((string) get_option(self::GROUP_LINK_OPTION, ''));
+
+        return '' !== $manual
+            ? $manual
+            : trim((string) get_option(self::GROUP_LINK_AUTO_OPTION, ''));
+    }
 
     /**
      * When set (the default), the board stays in the first group the bot joins:
@@ -90,6 +119,85 @@ final class BoardService
         $current = (int) ($this->board()['chat_id'] ?? 0);
 
         return 0 !== $current && $chatId !== $current;
+    }
+
+    /**
+     * Asks Telegram for a link to the board's group and caches it, so the
+     * organizer does not have to find and paste one by hand.
+     *
+     * Three outcomes, in order of preference: a public group answers with a
+     * @username, which needs no permissions at all; a private group whose bot is
+     * an administrator answers with its primary invite_link; failing both, and
+     * only if the bot may invite, a fresh additional link is created. A bot that
+     * is merely a member of a private group can do none of this - Telegram tells
+     * it nothing about invites - and the organizer's own field stays the answer.
+     *
+     * Throttled to once a week, and skipped outright while a manual link is set,
+     * so the hourly heartbeat this hangs off does not talk to Telegram for
+     * something that changes approximately never. Returns the resolved link.
+     */
+    public function refreshGroupLink(bool $force = false): string
+    {
+        $manual = trim((string) get_option(self::GROUP_LINK_OPTION, ''));
+
+        if ('' !== $manual) {
+            return $manual;
+        }
+
+        $cached = trim((string) get_option(self::GROUP_LINK_AUTO_OPTION, ''));
+        $checked = (int) get_option(self::GROUP_LINK_CHECKED_OPTION, 0);
+
+        if (! $force && (time() - $checked) < self::GROUP_LINK_TTL) {
+            return $cached;
+        }
+
+        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return $cached;
+        }
+
+        // Stamped before the calls, not after: a bot that is not an admin will
+        // fail every week otherwise, and the failure is the normal state of a
+        // perfectly working install rather than something to keep retrying.
+        update_option(self::GROUP_LINK_CHECKED_OPTION, time());
+
+        $link = $this->discoverGroupLink($chatId);
+
+        if ('' !== $link) {
+            update_option(self::GROUP_LINK_AUTO_OPTION, $link);
+
+            return $link;
+        }
+
+        return $cached;
+    }
+
+    private function discoverGroupLink(int $chatId): string
+    {
+        $chat = $this->telegram->getChat($chatId);
+
+        if (is_array($chat)) {
+            $username = trim((string) ($chat['username'] ?? ''));
+
+            if ('' !== $username) {
+                return 'https://t.me/' . $username;
+            }
+
+            $invite = trim((string) ($chat['invite_link'] ?? ''));
+
+            if ('' !== $invite) {
+                return $invite;
+            }
+        }
+
+        $created = $this->telegram->createChatInviteLink(
+            $chatId,
+            /* translators: the name shown against the invite link in Telegram's admin list */
+            __('EventCrew', 'eventcrew')
+        );
+
+        return is_array($created) ? trim((string) ($created['invite_link'] ?? '')) : '';
     }
 
     /**

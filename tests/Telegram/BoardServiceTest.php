@@ -54,6 +54,40 @@ final class BoardServiceTest extends TelegramTestCase
         );
     }
 
+    public function testAPublicGroupsUsernameBecomesTheLink(): void
+    {
+        $this->options[TelegramClient::TOKEN_OPTION] = 'token';
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -1001234, 'message_id' => 0];
+        $this->telegramResults['getChat'] = ['username' => 'ourcrew'];
+
+        self::assertSame('https://t.me/ourcrew', $this->board()->refreshGroupLink(true));
+    }
+
+    public function testAPrivateGroupFallsBackToCreatingAnInviteLink(): void
+    {
+        // No username and no primary invite_link visible, so a link is made.
+        // Never exportChatInviteLink, which would revoke the crew's existing one.
+        $this->options[TelegramClient::TOKEN_OPTION] = 'token';
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -1001234, 'message_id' => 0];
+        $this->telegramResults['getChat'] = ['type' => 'supergroup'];
+        $this->telegramResults['createChatInviteLink'] = ['invite_link' => 'https://t.me/+abc123'];
+
+        self::assertSame('https://t.me/+abc123', $this->board()->refreshGroupLink(true));
+        self::assertContains('createChatInviteLink', $this->calledMethods());
+        self::assertNotContains('exportChatInviteLink', $this->calledMethods());
+    }
+
+    public function testAHandTypedLinkIsNeverOverwrittenOrLookedUp(): void
+    {
+        $this->options[TelegramClient::TOKEN_OPTION] = 'token';
+        $this->options[BoardService::GROUP_LINK_OPTION] = 'https://t.me/typed';
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -1001234, 'message_id' => 0];
+
+        self::assertSame('https://t.me/typed', $this->board()->refreshGroupLink(true));
+        // Not even asked: the organizer has already answered the question.
+        self::assertNotContains('getChat', $this->calledMethods());
+    }
+
     /**
      * @return array<string, mixed>
      */

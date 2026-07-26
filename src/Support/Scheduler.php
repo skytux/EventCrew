@@ -68,6 +68,11 @@ final class Scheduler
         // when what it shows has changed since the last tick.
         $this->board->refreshIfChanged();
 
+        // Discover a link to the group, so the emails and DMs can offer a way
+        // in without anyone pasting one into Settings. Throttled to once a week
+        // inside, and a no-op when the organizer has set their own.
+        $this->board->refreshGroupLink();
+
         // Tell the organizers about anyone newly eligible to lead.
         $this->leaderCandidates->run();
 

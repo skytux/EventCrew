@@ -598,7 +598,8 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
-                $container->get(EmailTemplate::class)
+                $container->get(EmailTemplate::class),
+                $container->get(BoardService::class)
             )
         );
 

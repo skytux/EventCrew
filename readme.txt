@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.11.1
+Stable tag: 1.12.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -125,6 +125,12 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 
 == Changelog ==
 
+= 1.12.0 =
+* EventCrew now finds your Telegram group's link by itself, so the "open the group" button in the open-task email and DM works without anyone pasting a link into Settings. A public group is resolved from its @username; a private one from its invite link, or from a new invite link created for the purpose, when the bot is an administrator. Your own link, if you have set one, always wins and is never overwritten.
+* The discovery runs when you install or refresh the webhook, and at most once a week after that — a group link changes approximately never, and a bot that is only a member cannot be told one at all.
+* Settings ▸ Telegram bot now shows the link it found, and says plainly what to do when it cannot find one.
+* The web signup page's "Open in Telegram" button uses the same resolved link, so it appears on installs that never filled the field in.
+
 = 1.11.1 =
 * The open-task message now lists the next five open tasks across all upcoming dates, not just the one date that triggered it, so people can see what is coming and sign up early. On both email and Telegram.
 * Both the email and the Telegram DM now offer a link to your crew's group, taken from the group link already set under Settings ▸ Telegram bot. Skipped when no link is configured.
@@ -232,6 +238,9 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.12.0 =
+The Telegram group link is now discovered automatically, so the "open the group" buttons work without configuring one. Make the bot an administrator of your group if it is private and you want this to work. No database change.
 
 = 1.11.1 =
 The open-task message now shows the next five open tasks and links to your Telegram group. No database change.

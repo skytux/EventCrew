@@ -62,7 +62,7 @@ final class SignupBoardView
             'standing' => $standing,
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine),
-            'telegram_group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
+            'telegram_group_link' => BoardService::groupLink(),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,
             'notify_matrix' => null === $person ? [] : (new NotificationPreferences())->matrix($person),

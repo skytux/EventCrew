@@ -34,7 +34,7 @@
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  */
 
 declare(strict_types=1);
@@ -728,8 +728,23 @@ if (! defined('ABSPATH')) {
                         placeholder="https://t.me/yourgroup"
                         spellcheck="false">
                     <p class="description">
-                        <?php esc_html_e('Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When set, the web signup page shows an “Open in Telegram” button so phone visitors can jump straight to the group.', 'eventcrew'); ?>
+                        <?php esc_html_e('Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When there is a link, the web signup page, the open-task emails and the open-task DMs all offer a way straight into the group.', 'eventcrew'); ?>
                     </p>
+                    <?php if ('' !== $telegram['group_link_auto']) : ?>
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: %s: the invite link discovered from Telegram, already wrapped in <code> */
+                                esc_html__('Leave this blank and EventCrew uses the link it found by asking Telegram: %s. Anything you type here wins over it.', 'eventcrew'),
+                                '<code style="word-break:break-all">' . esc_html($telegram['group_link_auto']) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+                            );
+                            ?>
+                        </p>
+                    <?php else : ?>
+                        <p class="description">
+                            <?php esc_html_e('Left blank, EventCrew asks Telegram for one. That works for a public group, or a private one where the bot is an administrator; otherwise paste your own here.', 'eventcrew'); ?>
+                        </p>
+                    <?php endif; ?>
                 </td>
             </tr>
             <tr>

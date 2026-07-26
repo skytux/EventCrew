@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -270,12 +271,12 @@ final class OpenTaskCall
     }
 
     /**
-     * The public t.me link to the crew's group, as set in Settings. The option
-     * name mirrors Telegram\BoardService::GROUP_LINK_OPTION.
+     * The link to the crew's group - the organizer's own, or the one discovered
+     * from Telegram. A plain option read; the discovery runs on the heartbeat.
      */
     private static function groupLink(): string
     {
-        return trim((string) get_option('eventcrew_telegram_group_link', ''));
+        return BoardService::groupLink();
     }
 
     /**
