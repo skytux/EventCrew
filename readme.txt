@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.15.5
+Stable tag: 1.16.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.16.0 =
+* Security: the signup page is no longer cacheable while somebody is signed in. Crew are not WordPress users, so their session cookie is one a caching plugin has never heard of — and a plugin that only skips caching for logged-in WordPress users would store a signed-in page and serve it to the next visitor, complete with that person's name, standing, ticket links and the token that deletes their account. If you run any page cache, this release matters.
+* Uninstalling with "delete my data" enabled now removes every setting and temporary value the plugin ever wrote, by prefix. About thirty were being left behind, including the Telegram bot token and the Turnstile secret.
+* Your crew can now get their data out, not just delete it: EventCrew answers WordPress's Tools ▸ Export Personal Data with a person's profile, every task they took and how it went, and any free entry they used.
 
 = 1.15.5 =
 * Fixed: a task's slot count and button now always sit to the right of its name and time, on every screen size. They were laid out in a way that moved them to a new line whenever they did not quite fit, which on a phone was most of the time; they are now in a column of their own that cannot move, and a long name wraps within its own space instead.

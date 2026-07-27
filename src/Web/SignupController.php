@@ -73,6 +73,7 @@ final class SignupController
         add_action('init', [$this, 'registerBlock']);
         add_action('wp_enqueue_scripts', [$this, 'enqueueStyle']);
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
+        add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
 
         foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
@@ -126,6 +127,44 @@ final class SignupController
         if (has_shortcode((string) $post->post_content, 'eventcrew_signup') || has_block('eventcrew/signup', $post)) {
             wp_enqueue_style(self::STYLE_HANDLE);
         }
+    }
+
+    /**
+     * Tells page caches not to store this page while somebody is signed in.
+     *
+     * Crew are not WordPress users, so their session lives in a cookie a caching
+     * plugin has never heard of - and a plugin that only skips caching for
+     * `wordpress_logged_in_*` will happily cache a signed-in render and serve it
+     * to the next visitor. That page carries the person's name and standing, the
+     * signed links to their door tickets, their CSRF token, and the manage token
+     * that deletes their account. None of it should ever reach a second reader.
+     *
+     * DONOTCACHEPAGE is the constant every major caching plugin honours;
+     * nocache_headers() covers proxies and the browser's own store. Both are
+     * skipped for a signed-out visitor, whose view is a public board worth
+     * caching.
+     */
+    public function preventCachingWhenSignedIn(): void
+    {
+        if (! isset($_COOKIE[WebSession::COOKIE])) {
+            return;
+        }
+
+        $post = get_post();
+
+        if (! $post instanceof \WP_Post) {
+            return;
+        }
+
+        if (! has_shortcode((string) $post->post_content, 'eventcrew_signup') && ! has_block('eventcrew/signup', $post)) {
+            return;
+        }
+
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+
+        nocache_headers();
     }
 
     /**

@@ -34,6 +34,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\PrivacyExporter;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\Scheduler;
@@ -121,6 +122,11 @@ final class Kernel
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
         $this->container->get(PwaController::class)->boot();
+
+        // The personal-data export hook. Registered on every request rather
+        // than gated to admin, because the filter it adds to is also read by
+        // the privacy request emails WordPress sends from the front end.
+        $this->container->get(PrivacyExporter::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -397,6 +403,17 @@ final class Kernel
         $this->container->singleton(
             PwaController::class,
             fn () => new PwaController()
+        );
+
+        $this->container->singleton(
+            PrivacyExporter::class,
+            fn (Container $container) => new PrivacyExporter(
+                $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(CreditGrantRepository::class)
+            )
         );
 
         $this->container->singleton(
