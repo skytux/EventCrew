@@ -100,6 +100,17 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextResults[] = $this->occupancyRows($taken);
     }
 
+    /**
+     * As above, plus the earliest start on the date - which the automated call
+     * asks for so a lead counts back from when the work begins rather than from
+     * the date's midnight. Early in the day, so the lead is always reached.
+     */
+    private function queueDueDate(int $taken = 0): void
+    {
+        $this->queueOpenDate($taken);
+        $this->wpdb->nextVars[] = '2026-07-21 09:00:00';
+    }
+
     /** Queues the two reads the personal recap makes. */
     private function queueRecap(): void
     {
@@ -167,10 +178,10 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextVars[] = null;                         // daily cap: nothing today
         $this->wpdb->nextCols[] = ['2026-07-21', '2026-07-22']; // upcomingDates
 
-        $this->queueOpenDate();                                 // 07-21 open
+        $this->queueDueDate();                                 // 07-21 open
         $this->wpdb->nextVars[] = null;                         // sentAt week
         $this->wpdb->nextVars[] = null;                         // sentAt soon
-        $this->queueOpenDate();                                 // 07-22 open
+        $this->queueDueDate();                                 // 07-22 open
         $this->wpdb->nextVars[] = null;
         $this->wpdb->nextVars[] = null;
         $this->queueRecap();
@@ -179,6 +190,34 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame(1, $sent);
         self::assertCount(1, $this->mails);
+    }
+
+    /**
+     * The lead counts back from when the work starts, not from the date's
+     * midnight. Reported from the field: a 48-hour last call for a task at
+     * 17:00 arrived 65 hours ahead, because midnight was what the clock was
+     * being compared against.
+     */
+    public function testTheLeadCountsBackFromTheTaskNotTheMidnightBeforeIt(): void
+    {
+        // "now" is 2026-07-20 12:00. The task is at 17:00 on the 22nd, which is
+        // 53 hours away - outside a 48-hour last call, though its midnight is
+        // only 36 hours away and would once have triggered one.
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;                          // daily cap clear
+        $this->wpdb->nextCols[] = ['2026-07-22'];
+        $this->queueOpenDate();                                  // open slots
+        $this->wpdb->nextVars[] = '2026-07-22 17:00:00';         // earliest start
+
+        // The week lead still reaches it, so a heads-up is due and the last
+        // call is not: one ledger read, for the week kind alone.
+        $this->wpdb->nextVars[] = null;                          // sentAt week
+        $this->queueRecap();
+
+        self::assertSame(1, $this->call()->sendDue($this->leads(), 25));
+
+        $recorded = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString(OpenTaskCall::KIND_WEEK, $recorded);
     }
 
     public function testTheDailyCapStopsASecondEmailTheSameDay(): void
@@ -200,7 +239,7 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextResults[] = [$this->activePerson()];
         $this->wpdb->nextVars[] = null;                          // daily cap clear
         $this->wpdb->nextCols[] = ['2026-07-21'];
-        $this->queueOpenDate();
+        $this->queueDueDate();
         $this->wpdb->nextVars[] = '2026-07-19 09:00:00';         // sentAt week
         $this->wpdb->nextVars[] = 11;                            // a task created since
         $this->wpdb->nextVars[] = '2026-07-19 09:00:00';         // sentAt soon
@@ -218,7 +257,7 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextResults[] = [$this->activePerson()];
         $this->wpdb->nextVars[] = null;
         $this->wpdb->nextCols[] = ['2026-07-21'];
-        $this->queueOpenDate();
+        $this->queueDueDate();
         $this->wpdb->nextVars[] = '2026-07-19 09:00:00';   // sentAt week
         $this->wpdb->nextVars[] = null;                    // nothing created since
         $this->wpdb->nextVars[] = '2026-07-19 09:00:00';   // sentAt soon
@@ -238,7 +277,7 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextResults[] = [$this->activePerson()];
         $this->wpdb->nextVars[] = null;                          // daily cap clear
         $this->wpdb->nextCols[] = ['2026-07-21', '2026-08-01'];  // upcomingDates
-        $this->queueOpenDate();                                  // 07-21 open
+        $this->queueDueDate();                                  // 07-21 open
         $this->wpdb->nextVars[] = null;                          // sentAt week
         $this->wpdb->nextVars[] = null;                          // sentAt soon
         // 08-01 is past the furthest lead, so the due loop stops there - but the

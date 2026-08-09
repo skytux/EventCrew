@@ -80,6 +80,13 @@ final class OpenTaskCall
      */
     private ?array $upcoming = null;
 
+    /**
+     * When each date's work starts, memoised for the life of one run.
+     *
+     * @var array<string, int>
+     */
+    private array $starts = [];
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
@@ -180,23 +187,28 @@ final class OpenTaskCall
         }
 
         foreach ($this->upcomingDates() as $date) {
-            // task_date is the day a task is filed under; a date is due once
-            // its midnight is within the lead window.
-            $dateStart = strtotime($date . ' 00:00:00');
+            $midnight = strtotime($date . ' 00:00:00');
 
-            if (false === $dateStart) {
+            if (false === $midnight) {
                 continue;
             }
 
-            // upcomingDates is ascending, so once one date is beyond the
-            // furthest lead, so is everything after it.
-            if ($dateStart > $nowTime + $furthest * HOUR_IN_SECONDS) {
+            // upcomingDates is ascending and midnight is never later than
+            // anything on that day, so once it is beyond the furthest lead so
+            // is every date after it. A cheap bound for the loop; the decision
+            // below uses the real time.
+            if ($midnight > $nowTime + $furthest * HOUR_IN_SECONDS) {
                 break;
             }
 
             if (! $this->hasOpenSlots($date)) {
                 continue;
             }
+
+            // Counted back from when the day's work actually starts. Measured
+            // from midnight instead, a 48-hour last call reached someone 65
+            // hours before a task beginning at five in the afternoon.
+            $dateStart = $this->startOn($date);
 
             foreach ($leads as $kind => $leadHours) {
                 if ($leadHours <= 0 || $dateStart > $nowTime + $leadHours * HOUR_IN_SECONDS) {
@@ -390,6 +402,33 @@ final class OpenTaskCall
     private function upcomingDates(): array
     {
         return $this->upcoming ??= $this->tasks->upcomingDates();
+    }
+
+    /**
+     * When a date's work begins, as a timestamp, for counting a lead back from.
+     *
+     * Memoised because the due check runs once per recipient, and the answer is
+     * a property of the date rather than of the person - without this a crew of
+     * forty would ask the same question forty times.
+     *
+     * A date whose tasks carry no times at all falls back to its midnight,
+     * which is the only defensible reading of "that day" when nobody has said
+     * when.
+     */
+    private function startOn(string $date): int
+    {
+        if (isset($this->starts[$date])) {
+            return $this->starts[$date];
+        }
+
+        $earliest = $this->tasks->earliestStartOn($date);
+        $at = null === $earliest ? false : strtotime($earliest);
+
+        if (false === $at) {
+            $at = (int) strtotime($date . ' 00:00:00');
+        }
+
+        return $this->starts[$date] = (int) $at;
     }
 
     /** A date has something worth calling about when it has an open line. */
