@@ -18,6 +18,7 @@ use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SendWindow;
 use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
@@ -87,6 +88,7 @@ final class SettingsPage
                     0,
                     (int) get_option(BoardPush::LEAD_SOON_OPTION, BoardPush::LEAD_SOON_DEFAULT)
                 ),
+                'notify_hour' => SendWindow::hour(),
                 'open_task_lead_week' => max(
                     0,
                     (int) get_option(OpenTaskCall::LEAD_WEEK_OPTION, OpenTaskCall::LEAD_WEEK_DEFAULT)
@@ -274,6 +276,15 @@ final class SettingsPage
             : BoardPush::LEAD_SOON_DEFAULT;
         update_option(BoardPush::LEAD_WEEK_OPTION, $leadWeek);
         update_option(BoardPush::LEAD_SOON_OPTION, $leadSoon);
+
+        // The hour scheduled notifications may start going out. Anything
+        // outside 0-23 is not a time of day, so it falls back to the default
+        // rather than being stored and quietly disabling every send.
+        $notifyHour = isset($_POST['notify_hour']) ? (int) $_POST['notify_hour'] : SendWindow::DEFAULT_HOUR;
+        update_option(
+            SendWindow::OPTION,
+            $notifyHour >= 0 && $notifyHour <= 23 ? $notifyHour : SendWindow::DEFAULT_HOUR
+        );
 
         // The open-task call's own leads. Zero is meaningful here - it turns
         // that one of the two sends off - so these floor at 0 rather than 1.

@@ -97,6 +97,53 @@ final class ReminderCallTest extends TelegramTestCase
         ];
     }
 
+    /**
+     * Pins the site clock, since whether a reminder may go out now is entirely
+     * a question about the hour.
+     */
+    private function clockAt(string $utc): void
+    {
+        $timestamp = (int) strtotime($utc . ' UTC');
+
+        Functions\when('current_time')->alias(
+            static function (string $format) use ($timestamp): string|int {
+                if ('mysql' === $format) {
+                    return gmdate('Y-m-d H:i:s', $timestamp);
+                }
+
+                return 'timestamp' === $format ? $timestamp : gmdate($format, $timestamp);
+            }
+        );
+    }
+
+    public function testAReminderWaitsForACivilisedHour(): void
+    {
+        // 03:00, and the task is not until 08:00 tomorrow - comfortably after
+        // the window opens at nine, so there is no reason to wake anyone.
+        $this->clockAt('2026-07-20 03:00:00');
+
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+
+        self::assertSame(0, $this->call()->run(25));
+        self::assertSame([], $this->mails);
+        self::assertNotContains('sendMessage', $this->calledMethods());
+    }
+
+    public function testAReminderGoesAnywayWhenWaitingWouldMissTheTask(): void
+    {
+        // Also 03:00, but the task starts at 08:00 today - before the window
+        // opens. Holding it until nine would deliver it an hour too late.
+        $this->clockAt('2026-07-21 03:00:00');
+
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        self::assertSame(1, $this->call()->run(25));
+        self::assertCount(1, $this->mails);
+    }
+
     public function testRemindsOnBothChannelsAndMarksReminded(): void
     {
         $this->wpdb->nextResults[] = [$this->taskRow(5)];          // startingBetween

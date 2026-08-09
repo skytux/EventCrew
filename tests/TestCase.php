@@ -54,10 +54,19 @@ abstract class TestCase extends PHPUnitTestCase
         Functions\when('sanitize_text_field')->alias(
             static fn (string $value): string => trim(strip_tags($value))
         );
+        // 'timestamp' answers with a real integer, not gmdate('timestamp'):
+        // SendWindow asks for one, and a garbage value would read as midnight
+        // and hold every scheduled notification in every test.
         Functions\when('current_time')->alias(
-            static fn (string $format): string => 'mysql' === $format
-                ? '2026-07-20 12:00:00'
-                : gmdate($format, strtotime('2026-07-20 12:00:00'))
+            static function (string $format): string|int {
+                $at = (int) strtotime('2026-07-20 12:00:00');
+
+                if ('mysql' === $format) {
+                    return '2026-07-20 12:00:00';
+                }
+
+                return 'timestamp' === $format ? $at : gmdate($format, $at);
+            }
         );
         // Harmless by default: several repositories and services fire actions
         // (e.g. eventcrew/board_stale) that most tests do not care about. A

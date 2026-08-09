@@ -59,22 +59,34 @@ final class Scheduler
      */
     public function run(): void
     {
+        /*
+         * Reminders run every tick and decide for themselves: they are the one
+         * scheduled send with a deadline, so a task starting before the window
+         * next opens has to be reminded about now rather than politely at nine
+         * tomorrow, by which time it has happened.
+         *
+         * The rest have no such deadline. A crew-wide email about next weekend
+         * gains nothing from going at 04:00 and loses a good deal.
+         */
         $this->reminders->run(self::BATCH);
-        $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
-        $this->standingNotices->sendDue(self::BATCH);
-        $this->boardPush->run();
 
-        // Wind the board down as a day's tasks finish: edit it in place, but only
-        // when what it shows has changed since the last tick.
+        if (SendWindow::isOpen()) {
+            $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
+            $this->standingNotices->sendDue(self::BATCH);
+            $this->boardPush->run();
+
+            // Tell the organizers about anyone newly eligible to lead.
+            $this->leaderCandidates->run();
+        }
+
+        // Not gated: editing the pinned board in place sends nobody a
+        // notification, and a board left stale until morning is just wrong.
         $this->board->refreshIfChanged();
 
         // Discover a link to the group, so the emails and DMs can offer a way
         // in without anyone pasting one into Settings. Throttled to once a week
         // inside, and a no-op when the organizer has set their own.
         $this->board->refreshGroupLink();
-
-        // Tell the organizers about anyone newly eligible to lead.
-        $this->leaderCandidates->run();
 
         // Sweep spent and expired sign-in tokens - one is issued per email's
         // account-link footer, so the table would grow unbounded otherwise. The
