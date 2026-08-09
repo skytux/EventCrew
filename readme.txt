@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.17.0 =
+* Notifications no longer arrive in the middle of the night. There is a new "Start sending at" setting under Settings ▸ Reputation & alerts, defaulting to 09:00: scheduled messages wait for that hour and go out over the twelve hours after it. Before this, a message left the moment it came due, so a task starting at three in the morning produced a reminder at three in the morning.
+* Held: task reminders, the open-task call, standing notices, the board re-post and crew-leader candidate notices. Never held: anything answering something a person just did — a signup confirmation, a freed slot, a ticket.
+* Also never held: a reminder for a task that starts before the window next opens. Waiting until nine for something that begins at eight would be worse than the odd hour.
 
 = 1.16.0 =
 * Security: the signup page is no longer cacheable while somebody is signed in. Crew are not WordPress users, so their session cookie is one a caching plugin has never heard of — and a plugin that only skips caching for logged-in WordPress users would store a signed-in page and serve it to the next visitor, complete with that person's name, standing, ticket links and the token that deletes their account. If you run any page cache, this release matters.

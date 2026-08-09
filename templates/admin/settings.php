@@ -19,6 +19,7 @@
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
+ * @var int $notify_hour Hour of day (0-23) the scheduled notification window opens.
  * @var int $open_task_lead_week Hours before an open date the heads-up open-task call goes out.
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
@@ -277,6 +278,39 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('When notifications go out', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Scheduled messages — task reminders, the open-task call, standing notices and the board re-post — are held until this hour and go out over the twelve hours that follow. Without it they left the moment they came due, which for a task starting at three in the morning meant a reminder at three in the morning.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('Messages that answer something a person just did — a signup confirmation, a freed slot, a ticket — are never held. Nor is a reminder for a task that starts before the next window opens: missing it entirely would be worse than an awkward hour.', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-notify-hour"><?php esc_html_e('Start sending at', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <select name="notify_hour" id="eventcrew-notify-hour">
+                        <?php for ($eventcrew_h = 0; $eventcrew_h <= 23; $eventcrew_h++) : ?>
+                            <option value="<?php echo esc_attr((string) $eventcrew_h); ?>" <?php selected($notify_hour, $eventcrew_h); ?>>
+                                <?php echo esc_html(sprintf('%02d:00', $eventcrew_h)); ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: the site's timezone, e.g. Europe/Helsinki */
+                            esc_html__('Your site’s time (%s). Default 09:00.', 'eventcrew'),
+                            esc_html(wp_timezone_string())
+                        );
+                        ?>
                     </p>
                 </td>
             </tr>

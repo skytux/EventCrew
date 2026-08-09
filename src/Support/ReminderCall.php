@@ -56,6 +56,10 @@ final class ReminderCall
                     continue;
                 }
 
+                if (! $this->mayRemindNow($task)) {
+                    continue;
+                }
+
                 $person = $this->people->find($assignment->personId);
 
                 if (null === $person) {
@@ -69,6 +73,27 @@ final class ReminderCall
         }
 
         return $sent;
+    }
+
+    /**
+     * Whether this reminder may go out on this tick.
+     *
+     * Inside the send window, yes. Outside it, only when waiting would mean
+     * missing the task altogether - one starting at eight tomorrow morning
+     * cannot wait for a window that opens at nine. Everything else holds until
+     * a civilised hour, which is the whole reason the window exists.
+     */
+    private function mayRemindNow(Task $task): bool
+    {
+        if (SendWindow::isOpen()) {
+            return true;
+        }
+
+        // Every task here came from startingBetween(), which selects only rows
+        // with a start time, so there is always one to compare.
+        $starts = strtotime((string) $task->startsAt);
+
+        return false !== $starts && $starts <= SendWindow::nextOpening();
     }
 
     private function remind(Person $person, Task $task, int $assignmentId): void
