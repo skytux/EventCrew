@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.17.0
+Stable tag: 1.17.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.17.1 =
+* Fixed: lead times were counted back from midnight of the task's day rather than from the task itself, so a "48 hours before" notice for a task at 17:00 went out 65 hours before it. Both the open-task call and the board re-post now count from when the day's work actually starts. A date whose tasks have no times recorded still counts from its midnight, which is the only thing it can mean.
 
 = 1.17.0 =
 * Notifications no longer arrive in the middle of the night. There is a new "Start sending at" setting under Settings ▸ Reputation & alerts, defaulting to 09:00: scheduled messages wait for that hour and go out over the twelve hours after it. Before this, a message left the moment it came due, so a task starting at three in the morning produced a reminder at three in the morning.

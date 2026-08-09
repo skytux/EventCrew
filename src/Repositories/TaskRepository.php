@@ -316,6 +316,30 @@ final class TaskRepository
      * already staffed.
      */
     /**
+     * When the day's work actually begins: the earliest start time recorded on
+     * $date, or null when nothing on it has a time.
+     *
+     * This is what a lead time should count back from. Counting from the date's
+     * midnight instead - which is what every lead did until 1.17.1 - makes a
+     * "48 hours before" notice arrive 65 hours before a task that starts at
+     * five in the afternoon.
+     */
+    public function earliestStartOn(string $date): ?string
+    {
+        global $wpdb;
+
+        $earliest = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT MIN(starts_at) FROM {$this->table()}
+                WHERE task_date = %s AND starts_at IS NOT NULL",
+                $date
+            )
+        );
+
+        return null === $earliest ? null : (string) $earliest;
+    }
+
+    /**
      * Whether a task on $date was created after $since (a 'Y-m-d H:i:s' local
      * timestamp). This is what separates "we already told them about this date"
      * from "we told them about this date, but a job has been added since" - the

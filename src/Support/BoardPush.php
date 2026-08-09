@@ -97,15 +97,28 @@ final class BoardPush
         $due = [];
 
         foreach ($this->tasks->upcomingDates() as $date) {
-            $dateStart = strtotime($date . ' 00:00:00');
+            $midnight = strtotime($date . ' 00:00:00');
 
-            // Not yet within the window - and since upcomingDates is ascending,
-            // nothing further out will be either.
-            if (false === $dateStart || $dateStart > $cutoff) {
+            // Not yet within the window - and since upcomingDates is ascending
+            // and midnight is never later than anything on that day, nothing
+            // further out will be either.
+            if (false === $midnight || $midnight > $cutoff) {
                 break;
             }
 
             if (! $this->tasks->hasOpenSlotsOn($date)) {
+                continue;
+            }
+
+            // The lead counts back from when the day's work starts, not from
+            // its midnight - otherwise a "48 hours before" re-post lands 65
+            // hours before a task that begins at five in the afternoon. Only
+            // reached for a date that is already worth posting about, so it
+            // costs one query on the handful of dates in the window.
+            $earliest = $this->tasks->earliestStartOn($date);
+            $startsAt = null === $earliest ? false : strtotime($earliest);
+
+            if (false !== $startsAt && $startsAt > $cutoff) {
                 continue;
             }
 
