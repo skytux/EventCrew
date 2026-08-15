@@ -41,18 +41,14 @@
     --eventcrew-go: #1b5e20;
     --eventcrew-stop: #8e1616;
     /*
-     * The same red, but as text rather than as a background.
-     *
-     * --eventcrew-stop is a deep red chosen to carry white on top of it, which
-     * is right for a filled button and wrong for a bare link: on a dark page -
-     * a dark theme, or a section over a dark background image - dark red on
-     * dark is barely there, and the Delete link was the one control nobody
-     * could find. Mixing it toward currentColor keeps the red reading as red
-     * while letting it move with whatever the page's own text colour is, the
-     * same trick --eventcrew-line uses for borders. It is the only place an
-     * absolute colour was being asked to be legible on an unknown background.
+     * There was a --eventcrew-stop-ink here: the stop red mixed toward the
+     * page's text colour, so a bare Delete link could be red and legible at
+     * once. It could not. Tinted enough to read on a dark page it was pink;
+     * red enough to mean danger it was invisible - two releases of adjusting a
+     * ratio between those. Delete now has a surface of its own and carries the
+     * red as a background under white, where the contrast is fixed and owes the
+     * page nothing.
      */
-    --eventcrew-stop-ink: color-mix(in srgb, var(--eventcrew-stop) 45%, currentColor);
     /* The pips are half a character wide, where the button's deep green reads
        as near-black. They get a vivid one of their own so a filled slot is
        obvious at a glance rather than a dark speck. */
@@ -269,9 +265,35 @@
 }
 
 /* Sign out is a quiet action, not a button - styled as a plain inline link. */
+/*
+ * Sign out, Sign out everywhere and Delete are small buttons with a surface of
+ * their own, not bare underlined text.
+ *
+ * As text they inherited the page's colour and sat directly on whatever the
+ * theme put behind them - which over a dark background image meant the one
+ * control somebody might urgently need was the hardest thing on the page to
+ * find. Two attempts to fix that by choosing a better colour both failed for
+ * the same reason: no colour is legible against a background nobody has
+ * declared.
+ *
+ * A surface settles it without knowing anything about the page. The tint and
+ * the border are mixed from currentColor, so they follow the theme's own text
+ * colour and keep their contrast with it on a light page or a dark one, and the
+ * label sits on that rather than on the wallpaper.
+ */
 .eventcrew-signup .eventcrew-linkbtn {
-    background: none; border: 0; padding: 0; font: inherit;
-    color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
+    font: inherit; cursor: pointer; opacity: 1;
+    color: inherit; text-decoration: none;
+    padding: .35em .8em;
+    border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+    border-radius: var(--eventcrew-radius);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    line-height: 1.4;
+}
+
+.eventcrew-signup .eventcrew-linkbtn:hover,
+.eventcrew-signup .eventcrew-linkbtn:focus-visible {
+    background: color-mix(in srgb, currentColor 16%, transparent);
 }
 /*
  * Delete reads in the page's own text colour, with the red moved to the rule
@@ -288,13 +310,25 @@
  * being dim costs nothing: nobody has to read a line. A thicker, offset rule in
  * the stop colour is visible as a red mark without the wording depending on it.
  */
+/*
+ * Delete carries the danger colour as its background, with white on top.
+ *
+ * This is the one arrangement where the deep red works: as a surface it is
+ * chosen against the white it carries, not against a page it has never seen,
+ * so the contrast is fixed no matter what is behind the widget. It is the same
+ * pairing .eventcrew-btn-stop already uses for Cancel, which keeps the two
+ * destructive controls reading alike.
+ */
 .eventcrew-signup .eventcrew-linkbtn-danger {
-    color: inherit;
-    opacity: 1;
+    background: var(--eventcrew-stop);
+    border-color: var(--eventcrew-stop);
+    color: #fff;
     font-weight: 600;
-    text-decoration-color: var(--eventcrew-stop-ink);
-    text-decoration-thickness: 2px;
-    text-underline-offset: .2em;
+}
+
+.eventcrew-signup .eventcrew-linkbtn-danger:hover,
+.eventcrew-signup .eventcrew-linkbtn-danger:focus-visible {
+    background: color-mix(in srgb, var(--eventcrew-stop) 85%, #000);
 }
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
 .eventcrew-signup .eventcrew-signout { margin: 0; display: inline; }

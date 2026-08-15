@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.23.4
+Stable tag: 1.24.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.24.0 =
+* **Sign out, Sign out everywhere and Delete my data are now proper buttons**, each with a surface of its own instead of bare underlined text. Three releases tried to make Delete legible by choosing a better colour for the text; none could, because no colour is legible against a background nobody has declared. A button carries its own background and settles it: the neutral two are tinted from the page's own text colour, and Delete carries the deep red under white — the same pairing Cancel already uses, so the two destructive controls now read alike.
+* Fixed: **"Resend link" reloaded the spam check and then sent nothing until pressed a second time.** A spent token has to be replaced before anything can go, and the page gave up waiting after four seconds — but a challenge solving from cold after a reset is slower than one that solved during page load, so the first press regularly ran out of patience. It now waits up to ten, and re-arms the widget quietly a second after a link is sent, so by the time you reach for Resend there is usually a token already waiting and it goes on the first press.
 
 = 1.23.4 =
 * Fixed, properly this time: **the "Delete my data" link was still nearly unreadable on a dark page.** 1.22.0 shifted it toward the page's text colour but kept too much of the deep red — enough to stay dark, and dark on dark is dark. No fixed red can be legible against a background nobody has declared, and every step toward making one legible is a step away from it being red at all. The wording now takes the page's own text colour, which the theme already chose to be readable against its own background, and the red moves to a thicker underline beneath it, where being dim costs nothing because nobody has to read a line.
@@ -409,6 +413,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.24.0 =
+Sign out and Delete my data are now buttons with their own background, readable on any theme or background image. Also fixes "Resend link" needing two presses. Clear any page cache after upgrading. No database change.
 
 = 1.23.4 =
 Makes the "Delete my data" link readable on dark pages; the previous attempt was still too dark. Clear any page cache after upgrading. No database change.
