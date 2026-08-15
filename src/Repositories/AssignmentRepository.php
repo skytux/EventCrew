@@ -511,49 +511,6 @@ final class AssignmentRepository
         return $out;
     }
 
-    /**
-     * Whether a person already holds a slot in any task overlapping the
-     * given one, used to stop someone signing up for two jobs at once.
-     */
-    public function hasOverlapping(int $personId, int $taskId): bool
-    {
-        global $wpdb;
-
-        $statuses = AssignmentStatus::occupying();
-        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
-
-        // Tasks with no times recorded cannot be proven to overlap, so they
-        // are treated as not overlapping rather than blocking a legitimate
-        // second signup on the same day.
-        //
-        // There is deliberately no task_date equality here any more. While
-        // starts_at and ends_at were bare times, comparing them was only
-        // meaningful within one day, so the date had to match; now that they
-        // are absolute datetimes the comparison stands on its own - and
-        // requiring equal dates would have missed the case this exists to
-        // catch, someone signed up for a Saturday task ending 01:00 Sunday
-        // and a Sunday task starting 00:30.
-        $count = (int) $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*)
-                FROM {$this->table()} a
-                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
-                INNER JOIN {$this->tasksTable()} target ON target.id = %d
-                WHERE a.person_id = %d
-                  AND a.task_id <> target.id
-                  AND a.status IN ({$statusPlaceholders})
-                  AND s.starts_at IS NOT NULL AND s.ends_at IS NOT NULL
-                  AND target.starts_at IS NOT NULL AND target.ends_at IS NOT NULL
-                  AND s.starts_at < target.ends_at
-                  AND target.starts_at < s.ends_at",
-                $taskId,
-                $personId,
-                ...$statuses
-            )
-        );
-
-        return $count > 0;
-    }
 
     public function deleteForPerson(int $personId): void
     {

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.17.1
+Stable tag: 1.19.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,9 +29,9 @@ person on one task. Nothing assumes the work is unpaid.
 * **Tasks & roles** — define roles with capacities and time offsets, then generate
   a whole evening's tasks for an event in one click. A task set to 0 people stays
   on the books but drops off the boards.
-* **A Telegram bot** — a shared board in your group with a Join button per open
-  task, private-chat onboarding that verifies an email, and atomic, capacity-safe
-  joins even under a double-tap.
+* **A Telegram bot** — a shared board in your group, grouped under event and date
+  headings with a Join button per open task, private-chat onboarding that verifies
+  an email, and atomic, capacity-safe joins even under a double-tap.
 * **Public web signup** — an `[eventcrew_signup]` shortcode (and matching block)
   showing the same board, with email magic-link sign-in and claim/drop that obey
   exactly the same rules as the bot. Installable as a mobile app (PWA).
@@ -46,6 +46,11 @@ person on one task. Nothing assumes the work is unpaid.
   `/notifications` menu. Signup confirmations and reminders always send.
 * **Scheduled sends** — 24h task reminders and a 48h open-task call on an hourly
   WP-Cron heartbeat, with a fallback for hosts where WP-Cron never fires.
+* **GDPR, answered** — say who the controller is (and a data protection officer, if
+  you have one) and the plugin writes the privacy notice: a public page via
+  `[eventcrew_privacy]`, suggested text for WordPress's own policy, and a line at
+  sign-up linking to it. Plus a retention period you can have enforced
+  automatically, and export and erase handlers on WordPress's own privacy tools.
 
 = Telegram commands =
 
@@ -124,6 +129,23 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.19.0 =
+* The Telegram board now reads as a programme rather than a list of buttons. Each event is introduced by two heading rows — its name, then its date — and its tasks follow underneath, so with several events open you can see at a glance where one ends and the next begins. The headings are inert: tapping one does nothing.
+* Task buttons lead with the time: "17:00–18:30 · Clean 1/3". The time is what you scan for when you are looking for a slot you can make, and the rows under one heading are in time order, so the evening's shape is readable down the column. The date is gone from the buttons — the heading two rows up carries it.
+* Headings appear even when only one event is open. The board used to drop them in that case, which meant it changed shape as soon as a second event opened.
+* Overlapping slots can now be booked. Two tasks whose times run into each other were refused; they are not any more, on the board, on the web page, and when covering for someone. Whether you can do both is your call — the plugin was answering it for you from the clock alone, and turning away crew who could have covered both.
+* A "Refresh the board" button under Settings ▸ Telegram bot. The board still redraws itself whenever anything on it changes, so this is for the times that cannot cover: after an upgrade that lays the board out differently, or to see a change land without waiting for the next hourly check. It edits the board where it sits, so nobody in the group is notified, and it tells you whether it worked — including when the board has been deleted from the group and needs a fresh /board.
+
+= 1.18.0 =
+* GDPR: a new Settings ▸ Privacy tab asks who is answerable for the crew's data — the organisation, a contact address, and a data protection officer if you have designated one — and writes the privacy notice for you from it. The notice describes what this install actually does: Telegram and Cloudflare appear in it only if you use them.
+* A public notice page: the new `[eventcrew_privacy]` shortcode and matching block, with a one-click button under the new tab that creates the page and selects it. The same text is offered to WordPress as suggested privacy-policy content under Settings ▸ Privacy.
+* Signing up now says what happens to your address, at the moment you hand it over: a line under the sign-in field linking to the notice, the same line in the bot's onboarding, and in the first sign-in email. No tick box — signing up is what makes the processing necessary, and a box consenting to something we would do anyway would describe the basis wrongly rather than strengthen it.
+* A retention period you can set, and optionally have enforced. Left off, it is a promise you keep by hand. Switched on, the hourly heartbeat anonymises records that have been dormant past it: email, name, notes and any Telegram link are erased for good, while the attendance rows stay, so "nine people worked that night" survives with nobody attached to it. Organizers and crew leaders are never touched while they hold the role.
+* EventCrew now answers WordPress's Tools ▸ Erase Personal Data as well as the export it already answered, so a request that arrives by email can be handled from the screen WordPress provides for it.
+* Fixed: opening anyone in the People editor was a fatal error — the screen called a method that does not exist. It also reported an "opted in" date from a column nothing has written since the opt-in model was replaced by per-type opt-outs in v0.6; it now shows the setting that actually governs the send.
+* Fixed: deleting a person left their sign-in tokens and their notification history behind, so an "erased" account kept a live magic link in any email they still had. Erasing is now one routine shared by the self-service Delete, the organizer's Delete, and the WordPress eraser.
+* Database: adds one column (`anonymized_at`), applied automatically on upgrade.
 
 = 1.17.1 =
 * Fixed: lead times were counted back from midnight of the task's day rather than from the task itself, so a "48 hours before" notice for a task at 17:00 went out 65 hours before it. Both the open-task call and the board re-post now count from when the day's work actually starts. A date whose tasks have no times recorded still counts from its midnight, which is the only thing it can mean.
@@ -329,6 +351,12 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.19.0 =
+The Telegram board is regrouped under event and date headings, with times leading each task button. Overlapping slots are now allowed to be booked. After upgrading, press "Refresh the board" under Settings ▸ Telegram bot to redraw it in the new layout. No database change.
+
+= 1.18.0 =
+Adds GDPR support: a Privacy settings tab, a public privacy notice page, the notice at sign-up, an optional retention purge, and a WordPress personal-data eraser. Also fixes a fatal error when opening a person in the People editor. Fill in Settings ▸ Privacy after upgrading — until you do, the notice stays unpublished. Adds one database column, applied automatically.
 
 = 1.14.2 =
 Fixes the signup page loading without its stylesheet on some sites, which left it looking unstyled. If 1.14.0 or 1.14.1 looked broken to you, this is why. No database change.

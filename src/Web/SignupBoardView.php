@@ -232,10 +232,9 @@ final class SignupBoardView
      * place and silently disagreed with in another, and a board that offers a
      * button the claim will refuse is worse than one that never offered it.
      *
-     * Only the two refusals that cost nothing per row. The third SignupService
-     * knows about - an overlapping task - needs a query each to answer, which
-     * is a lot of database work for a rare case, so it stays a message after
-     * the press.
+     * These are now the only two refusals there are - the third, an overlapping
+     * task, was dropped along with the rule itself - and both cost nothing per
+     * row to answer.
      */
     private function blockedReason(Task $task, ?Person $person, string $personRefusal): string
     {

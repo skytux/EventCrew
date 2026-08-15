@@ -28,7 +28,8 @@ final class Person
         public readonly bool $hasAtRiskPass = false,
         public readonly ?string $leaderEligibleNotifiedAt = null,
         /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
-        public readonly array $notifyPrefs = []
+        public readonly array $notifyPrefs = [],
+        public readonly ?string $anonymizedAt = null
     ) {
     }
 
@@ -54,8 +55,19 @@ final class Person
             1 === (int) ($row['can_lead'] ?? 0),
             1 === (int) ($row['at_risk_pass'] ?? 0),
             self::nullableString($row['leader_eligible_notified_at'] ?? null),
-            self::decodePrefs($row['notify_prefs'] ?? null)
+            self::decodePrefs($row['notify_prefs'] ?? null),
+            self::nullableString($row['anonymized_at'] ?? null)
         );
+    }
+
+    /**
+     * Whether the retention purge has already stripped this record. Such a row
+     * is no longer a person - it is an attendance count with a placeholder
+     * address - so nothing should mail it, gate on it, or offer it a slot.
+     */
+    public function isAnonymized(): bool
+    {
+        return null !== $this->anonymizedAt;
     }
 
     /**

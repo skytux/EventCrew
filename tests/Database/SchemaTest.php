@@ -106,6 +106,20 @@ final class SchemaTest extends TestCase
     }
 
     /**
+     * The retention purge's high-water mark. It must default to NULL, because
+     * "not yet stripped" is the state every existing row has to migrate into -
+     * a default of anything else would mark the whole table as already done and
+     * the purge would never touch any of it.
+     */
+    public function testTheAnonymisedStampDefaultsToNull(): void
+    {
+        self::assertStringContainsString(
+            'anonymized_at datetime DEFAULT NULL',
+            $this->statementFor(Schema::PEOPLE)
+        );
+    }
+
+    /**
      * The first real install came up MyISAM, because dbDelta never states an
      * engine and the host's default was not InnoDB. Declaring it explicitly
      * is what stops that happening on the next install; ensureInnoDb() repairs

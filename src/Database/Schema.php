@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '9';
+    public const DB_VERSION = '10';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -204,6 +204,11 @@ final class Schema
         $notifications = self::table(self::NOTIFICATIONS);
 
         return [
+            // anonymized_at is the retention purge's high-water mark. Without it
+            // the purge would have no way to tell a record it has already
+            // stripped from one that is merely old, and would rewrite the same
+            // rows every hour for ever.
+            //
             // email is varchar(191) rather than 255 so it still fits a unique
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
@@ -224,6 +229,7 @@ final class Schema
                 notify_prefs text DEFAULT NULL,
                 email_opt_in_at datetime DEFAULT NULL,
                 email_opt_in_source varchar(20) NOT NULL DEFAULT '',
+                anonymized_at datetime DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

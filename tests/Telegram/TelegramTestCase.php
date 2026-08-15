@@ -55,6 +55,17 @@ abstract class TelegramTestCase extends TestCase
     /** @var array<string, mixed> Per-method Telegram `result` payloads; true by default. */
     protected array $telegramResults = [];
 
+    /**
+     * Per-method Bot API error descriptions. A method named here answers
+     * `ok: false` with that description instead of succeeding, which is the
+     * only way to exercise the paths that care whether a call worked - a board
+     * deleted from the group, a bot removed. Empty by default: the overwhelming
+     * majority of tests want a working bot and should not have to say so.
+     *
+     * @var array<string, string>
+     */
+    protected array $telegramErrors = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -69,6 +80,7 @@ abstract class TelegramTestCase extends TestCase
             SignupService::GATE_OPTION => '0',
         ];
         $this->telegramResults = [];
+        $this->telegramErrors = [];
 
         Functions\when('get_option')->alias(
             fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
@@ -91,6 +103,13 @@ abstract class TelegramTestCase extends TestCase
                     'method' => $method,
                     'body' => (array) json_decode((string) $args['body'], true),
                 ];
+
+                if (isset($this->telegramErrors[$method])) {
+                    return (string) json_encode([
+                        'ok' => false,
+                        'description' => $this->telegramErrors[$method],
+                    ]);
+                }
 
                 return (string) json_encode([
                     'ok' => true,

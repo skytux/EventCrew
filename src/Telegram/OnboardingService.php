@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\PrivacyPolicy;
 
 /**
  * Turns a Telegram account into a verified person.
@@ -75,7 +76,27 @@ final class OnboardingService
             $chatId,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __("Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks.", 'eventcrew')
+            . "\n\n" . $this->privacyLine()
         );
+    }
+
+    /**
+     * The same privacy sentence the web form carries, appended to the one
+     * message that asks for an address.
+     *
+     * The bot asks for exactly what the web form asks for, so it owes the same
+     * answer at the same moment - a person onboarding through Telegram should
+     * not have to find the website to learn what happens to their address. The
+     * URL is appended bare rather than linked because Telegram autolinks it and
+     * this message is sent as plain text; with no notice published the sentence
+     * stands alone rather than trailing a broken link.
+     */
+    private function privacyLine(): string
+    {
+        $line = PrivacyPolicy::noticeLine();
+        $url = PrivacyPolicy::noticeUrl();
+
+        return '' === $url ? $line : $line . ' ' . PrivacyPolicy::noticeLinkLabel() . ': ' . $url;
     }
 
     public function isAwaitingEmail(int $telegramUserId): bool
@@ -195,6 +216,8 @@ final class OnboardingService
             $greeting,
             $link
         );
+
+        $body .= "\n\n" . $this->privacyLine();
 
         $sent = wp_mail(
             $email,

@@ -13,6 +13,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
+use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
@@ -119,7 +120,13 @@ final class BoardServiceTest extends TelegramTestCase
 
     // --- render -------------------------------------------------------------
 
-    public function testRenderShowsNoEventHeadingsForASingleEvent(): void
+    /**
+     * Each event is introduced by two heading rows in the keyboard - its name,
+     * then its date - and the task buttons follow. Headings appear for a single
+     * event too: a board that changes shape when a second event opens is one
+     * people have to re-learn.
+     */
+    public function testRenderHeadsEachEventWithItsNameAndDate(): void
     {
         $this->wpdb->nextResults[] = [
             $this->taskRow(1, 100, 'Party'),
@@ -129,12 +136,18 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        self::assertStringNotContainsString('📅', $rendered['text']);
-        // One button row per task, no deep-link row (no username cached).
-        self::assertCount(2, $rendered['keyboard']);
+        // Name, date, then one row per task. No deep-link row (no username).
+        self::assertCount(4, $rendered['keyboard']);
+        self::assertSame('Party', $rendered['keyboard'][0][0]['text']);
+        self::assertStringStartsWith('📅', $rendered['keyboard'][1][0]['text']);
+
+        // The headings are no-ops, and the tasks are not.
+        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][0][0]['callback_data']);
+        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][1][0]['callback_data']);
+        self::assertSame('t:1', $rendered['keyboard'][2][0]['callback_data']);
     }
 
-    public function testRenderGroupsByEventWhenMoreThanOneIsOpen(): void
+    public function testRenderHeadsEveryEventSeparately(): void
     {
         $this->wpdb->nextResults[] = [
             $this->taskRow(1, 100, 'Party A'),
@@ -144,7 +157,28 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        self::assertStringContainsString('📅', $rendered['text']);
+        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
+
+        // Two events, each two heading rows and one task: six rows.
+        self::assertCount(6, $rendered['keyboard']);
+        self::assertContains('Party A', $labels);
+        self::assertContains('Party B', $labels);
+    }
+
+    /**
+     * Tapping a heading must not be mistaken for a task: SPACER_DATA does not
+     * parse as an action, so it is answered and dropped without a write.
+     */
+    public function testTappingAHeadingDoesNothing(): void
+    {
+        $this->verifiedPerson(555);
+
+        $this->board()->onJoinLeave($this->callbackQuery(BoardRenderer::SPACER_DATA));
+
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+        self::assertNotContains('editMessageText', $this->calledMethods());
     }
 
     public function testRenderAddsTheDeepLinkButtonWhenTheUsernameIsKnown(): void
@@ -221,24 +255,28 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('answerCallbackQuery', $this->calledMethods());
     }
 
-    public function testJoinRefusesWhenItClashesWithAnExistingSlot(): void
+    /**
+     * A slot whose time runs into one the person already holds is no longer
+     * refused. Two jobs at once is their call to make, and the board's job is
+     * to get the slot filled.
+     */
+    public function testJoinAllowsASlotThatClashesWithAnExistingOne(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        $this->wpdb->nextVars[] = 1; // hasOverlapping count > 0
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert wrote one row
 
         $this->board()->onJoinLeave($this->callbackQuery('j:5'));
 
-        self::assertSame([], $this->wpdb->inserts);
-        // Nothing changed, so the board is not refreshed.
-        self::assertNotContains('editMessageText', $this->calledMethods());
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+        self::assertContains('editMessageText', $this->calledMethods());
     }
 
     public function testJoinClaimsTheSlotAndRefreshesTheBoard(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        $this->wpdb->nextVars[] = 0; // hasOverlapping: no clash
         $this->wpdb->nextVars[] = 2; // taskCapacity
         $this->wpdb->nextQueryResults[] = 1; // conditional insert wrote one row
 
@@ -292,7 +330,6 @@ final class BoardServiceTest extends TelegramTestCase
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
         $this->queueStandingHistory(4, 0); // rated, perfect score
-        $this->wpdb->nextVars[] = 0;        // hasOverlapping
         $this->wpdb->nextVars[] = 2;        // taskCapacity
         $this->wpdb->nextRows[] = null;     // join findFor
         $this->wpdb->nextQueryResults[] = 1; // conditional insert
@@ -308,7 +345,6 @@ final class BoardServiceTest extends TelegramTestCase
         // only the ordinary join queue is consumed.
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        $this->wpdb->nextVars[] = 0;         // hasOverlapping
         $this->wpdb->nextVars[] = 2;         // taskCapacity
         $this->wpdb->nextRows[] = null;      // join findFor
         $this->wpdb->nextQueryResults[] = 1; // conditional insert
@@ -338,7 +374,6 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
         // claim(): tasks->find for the leader-slot check (non-leader task)
         $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
@@ -362,7 +397,6 @@ final class BoardServiceTest extends TelegramTestCase
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
         // findFor (toggle) -> null (unqueued), then the join path:
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
         $this->wpdb->nextQueryResults[] = 1; // conditional insert
 
@@ -395,7 +429,6 @@ final class BoardServiceTest extends TelegramTestCase
         // Toggle occupancy check -> a cancelled (non-occupying) row, so it's a
         // join; join() then reactivates it.
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
         // claim(): tasks->find for the leader-slot check (non-leader task)
         $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
@@ -428,7 +461,7 @@ final class BoardServiceTest extends TelegramTestCase
         $this->telegramResults['sendMessage'] = ['message_id' => 77];
         $this->wpdb->nextResults[] = []; // no tasks
 
-        $this->board()->refresh();
+        self::assertTrue($this->board()->refresh());
 
         self::assertContains('sendMessage', $this->calledMethods());
         self::assertSame(77, $this->options[BoardService::BOARD_OPTION]['message_id']);
@@ -436,7 +469,7 @@ final class BoardServiceTest extends TelegramTestCase
 
     public function testRefreshIsInertWithoutABoardChat(): void
     {
-        $this->board()->refresh();
+        self::assertFalse($this->board()->refresh());
 
         self::assertSame([], $this->telegramCalls);
     }
@@ -446,9 +479,47 @@ final class BoardServiceTest extends TelegramTestCase
         $this->options[TelegramClient::TOKEN_OPTION] = '';
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
 
-        $this->board()->refresh();
+        self::assertFalse($this->board()->refresh());
 
         self::assertSame([], $this->telegramCalls);
+    }
+
+    /**
+     * The Settings button reports what happened, so a failed edit - a board
+     * deleted from the group, most likely - has to come back false rather than
+     * as a silent success.
+     */
+    public function testRefreshReportsAFailedEdit(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->telegramErrors['editMessageText'] = 'Bad Request: message to edit not found';
+        $this->wpdb->nextResults[] = []; // no tasks
+
+        self::assertFalse($this->board()->refresh());
+    }
+
+    /**
+     * An unchanged board is still a successful refresh. Telegram answers a
+     * no-op edit with an error, which TelegramClient already classes as benign;
+     * reporting that to the organizer as a failure would send them looking for
+     * a problem that does not exist.
+     */
+    public function testRefreshTreatsAnUnchangedBoardAsSuccess(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->telegramErrors['editMessageText'] = 'Bad Request: message is not modified';
+        $this->wpdb->nextResults[] = []; // no tasks
+
+        self::assertTrue($this->board()->refresh());
+    }
+
+    public function testHasHomeReportsWhetherTheBoardHasAChat(): void
+    {
+        self::assertFalse($this->board()->hasHome());
+
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+
+        self::assertTrue($this->board()->hasHome());
     }
 
     public function testSetBoardChatStoresTheChatAndClearsAnyMessageId(): void

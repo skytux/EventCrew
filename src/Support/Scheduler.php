@@ -36,7 +36,8 @@ final class Scheduler
         private readonly StandingNotice $standingNotices,
         private readonly BoardPush $boardPush,
         private readonly BoardService $board,
-        private readonly LeaderEligibilityNotifier $leaderCandidates
+        private readonly LeaderEligibilityNotifier $leaderCandidates,
+        private readonly RetentionPurge $retention
     ) {
     }
 
@@ -93,6 +94,13 @@ final class Scheduler
         // repository is newed inline like the other stateless helpers, so this
         // adds no constructor to the heartbeat.
         (new AuthTokenRepository())->purgeExpired();
+
+        // Enforce the published retention period. Not inside the send window:
+        // it notifies nobody, so there is no unsociable hour to protect anyone
+        // from, and a job that only runs half the day takes twice as long to
+        // work through a first backlog. A no-op unless the organizer switched
+        // it on, and a no-op thereafter on a database with nothing overdue.
+        $this->retention->run();
 
         update_option(self::LAST_RUN_OPTION, time());
     }

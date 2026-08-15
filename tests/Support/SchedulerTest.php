@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -19,7 +20,9 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\PersonEraser;
 use EventCrew\Support\ReminderCall;
+use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
@@ -56,7 +59,18 @@ final class SchedulerTest extends TestCase
             new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
             new BoardPush($tasks, $ledger, $board),
             $board,
-            new LeaderEligibilityNotifier(new LeaderEligibility($assignments, $people), $people, $mailer, $telegram)
+            new LeaderEligibilityNotifier(new LeaderEligibility($assignments, $people), $people, $mailer, $telegram),
+            new RetentionPurge(
+                $people,
+                new PersonEraser(
+                    $people,
+                    $assignments,
+                    new RedemptionRepository(),
+                    new CreditGrantRepository(),
+                    new AuthTokenRepository(),
+                    $ledger
+                )
+            )
         );
     }
 

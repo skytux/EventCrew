@@ -146,23 +146,56 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                                     ?>
                                 </td>
                             </tr>
+                            <?php
+                            /*
+                             * This row used to call an acceptsOpenTaskEmail()
+                             * that does not exist on Person, so opening anyone
+                             * here was a fatal error - and it reported an
+                             * "opted in" date from a column nothing has written
+                             * since the opt-in model was dropped in v0.6.
+                             *
+                             * What it shows now is the state that actually
+                             * governs the send: the per-type preference, which
+                             * defaults on and which only the person themselves
+                             * can change.
+                             */
+                            $eventcrew_prefs = new \EventCrew\Support\NotificationPreferences();
+                            $eventcrew_open_task = \EventCrew\Support\NotificationPreferences::OPEN_TASK;
+                            ?>
                             <tr>
-                                <td><?php esc_html_e('Open-task email', 'eventcrew'); ?></td>
+                                <td><?php esc_html_e('Open-task alerts', 'eventcrew'); ?></td>
                                 <td>
-                                    <?php if ($editing->acceptsOpenTaskEmail()) : ?>
-                                        <?php
-                                        printf(
-                                            /* translators: 1: date consent was given, 2: where it was given */
-                                            esc_html__('Opted in %1$s (%2$s)', 'eventcrew'),
-                                            esc_html($editing->emailOptInAt ?? ''),
-                                            esc_html($editing->emailOptInSource)
-                                        );
-                                        ?>
-                                    <?php else : ?>
-                                        <?php esc_html_e('Not opted in', 'eventcrew'); ?>
-                                    <?php endif; ?>
+                                    <?php
+                                    $eventcrew_channels = [];
+
+                                    if ($eventcrew_prefs->emailAllowed($editing, $eventcrew_open_task)) {
+                                        $eventcrew_channels[] = __('email', 'eventcrew');
+                                    }
+
+                                    if ($eventcrew_prefs->dmAllowed($editing, $eventcrew_open_task)) {
+                                        $eventcrew_channels[] = __('Telegram', 'eventcrew');
+                                    }
+
+                                    echo [] === $eventcrew_channels
+                                        ? esc_html__('Switched off', 'eventcrew')
+                                        : esc_html(implode(__(' and ', 'eventcrew'), $eventcrew_channels));
+                                    ?>
                                 </td>
                             </tr>
+                            <?php if ($editing->isAnonymized()) : ?>
+                                <tr>
+                                    <td><?php esc_html_e('Anonymised', 'eventcrew'); ?></td>
+                                    <td>
+                                        <?php
+                                        printf(
+                                            /* translators: %s: the date the record was stripped */
+                                            esc_html__('%s — retention period passed', 'eventcrew'),
+                                            esc_html($editing->anonymizedAt ?? '')
+                                        );
+                                        ?>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                             <?php if (null !== $editing_standing) : ?>
                                 <tr>
                                     <td><?php esc_html_e('Standing', 'eventcrew'); ?></td>
@@ -176,7 +209,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                         </tbody>
                     </table>
                     <p class="description">
-                        <?php esc_html_e('Verification and open-task consent can only be given by the person themselves, so neither can be set from this screen.', 'eventcrew'); ?>
+                        <?php esc_html_e('Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen.', 'eventcrew'); ?>
                     </p>
 
                     <h3><?php esc_html_e('Give a free-entry credit', 'eventcrew'); ?></h3>

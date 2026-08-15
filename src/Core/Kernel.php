@@ -34,8 +34,11 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\PersonEraser;
+use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
 use EventCrew\Support\ReminderCall;
+use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SlotFreedNotice;
@@ -62,6 +65,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SignupController;
 use Throwable;
@@ -123,10 +127,16 @@ final class Kernel
         // and icons, and injects the install tags. Front path, logged-out.
         $this->container->get(PwaController::class)->boot();
 
-        // The personal-data export hook. Registered on every request rather
-        // than gated to admin, because the filter it adds to is also read by
-        // the privacy request emails WordPress sends from the front end.
+        // The public privacy notice: its shortcode and block must exist for
+        // logged-out visitors, which is the entire audience for a privacy
+        // notice, so it boots on the front path with the signup page.
+        $this->container->get(PrivacyController::class)->boot();
+
+        // The personal-data export and erase hooks. Registered on every request
+        // rather than gated to admin, because the filters they add to are also
+        // read by the privacy request emails WordPress sends from the front end.
         $this->container->get(PrivacyExporter::class)->boot();
+        $this->container->get(PrivacyEraser::class)->boot();
 
         do_action('eventcrew/boot', $this->container);
     }
@@ -366,7 +376,8 @@ final class Kernel
                 $container->get(StandingNotice::class),
                 $container->get(BoardPush::class),
                 $container->get(BoardService::class),
-                $container->get(LeaderEligibilityNotifier::class)
+                $container->get(LeaderEligibilityNotifier::class),
+                $container->get(RetentionPurge::class)
             )
         );
 
@@ -406,6 +417,33 @@ final class Kernel
         );
 
         $this->container->singleton(
+            PrivacyController::class,
+            fn (Container $container) => new PrivacyController(
+                $container->get(SignupController::class)
+            )
+        );
+
+        $this->container->singleton(
+            PersonEraser::class,
+            fn (Container $container) => new PersonEraser(
+                $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(CreditGrantRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(NotificationsRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            RetentionPurge::class,
+            fn (Container $container) => new RetentionPurge(
+                $container->get(PersonRepository::class),
+                $container->get(PersonEraser::class)
+            )
+        );
+
+        $this->container->singleton(
             PrivacyExporter::class,
             fn (Container $container) => new PrivacyExporter(
                 $container->get(PersonRepository::class),
@@ -413,6 +451,14 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(CreditGrantRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            PrivacyEraser::class,
+            fn (Container $container) => new PrivacyEraser(
+                $container->get(PersonRepository::class),
+                $container->get(PersonEraser::class)
             )
         );
 
@@ -586,9 +632,7 @@ final class Kernel
             ManageController::class,
             fn (Container $container) => new ManageController(
                 $container->get(PersonRepository::class),
-                $container->get(AssignmentRepository::class),
-                $container->get(RedemptionRepository::class),
-                $container->get(CreditGrantRepository::class)
+                $container->get(PersonEraser::class)
             )
         );
 
@@ -653,12 +697,12 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(PersonRepository::class),
                 $container->get(AssignmentRepository::class),
-                $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(CreditGrantNotifier::class),
                 $container->get(LeaderEligibility::class),
-                $container->get(LeaderGate::class)
+                $container->get(LeaderGate::class),
+                $container->get(PersonEraser::class)
             )
         );
 

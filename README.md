@@ -22,9 +22,10 @@ only ones who ever need a wp-admin login.
 - **Tasks & roles** (wp-admin) — define roles with capacities and optional time
   offsets, then generate a whole evening's tasks for an event in one click. A task
   set to **0 people** stays on the books but drops off the boards.
-- **The Telegram bot** — a shared board in your group with a Join button per open
-  task; private-chat onboarding that verifies an email; atomic, capacity-safe
-  joins even under a double-tap; and a small, purposeful command set (below).
+- **The Telegram bot** — a shared board in your group, grouped under event and
+  date headings with a Join button per open task; private-chat onboarding that
+  verifies an email; atomic, capacity-safe joins even under a double-tap; and a
+  small, purposeful command set (below).
   Personal commands work from the group too — they answer in your DM and leave a
   short "📬 Sent you a DM" breadcrumb.
 - **Public web signup** — an `[eventcrew_signup]` shortcode (and matching block)
@@ -42,6 +43,15 @@ only ones who ever need a wp-admin login.
   `/notifications` menu. Signup confirmations and reminders always send.
 - **Scheduled sends** — 24h task reminders and a 48h open-task call on an hourly
   WP-Cron heartbeat, with an opt-in fallback for hosts where WP-Cron never fires.
+- **GDPR, answered** — name the controller (and a data protection officer, where
+  one is designated) in **Settings → Privacy** and the plugin writes the notice
+  from it: a public page via `[eventcrew_privacy]` or its block, the same text
+  offered to WordPress's own privacy policy, and a line under the sign-in field
+  linking to it. The notice describes *this* install — Telegram and Cloudflare
+  appear only when they are actually in use. A retention period can be left as a
+  stated promise or enforced by the heartbeat, which anonymises dormant records
+  while keeping the attendance counts. Export and erase both answer WordPress's
+  Tools → Personal Data screens.
 - **Diagnostics** (wp-admin) — a read-only health page: schema, bot, cron, signup
   page, icons and mail at a glance.
 
@@ -66,8 +76,19 @@ to the DM with a breadcrumb left behind.
 | `/allow` | organizers | Grant **leader** / a **one-time at-risk pass** / **admin** |
 | `/leaders` | organizers | Who is eligible and who has been allowed to lead |
 
-The board itself carries a Join/leave button per task, plus one-tap deep links to
-onboard a newcomer or open a member's summary.
+The board itself is grouped by event: two inert heading rows — the event's name,
+then its date — introduce each group, and its tasks follow as Join/leave buttons
+reading time first (`17:00–18:30 · Clean 1/3`). Below them sit one-tap deep links
+to onboard a newcomer or open a member's summary.
+
+Overlapping slots are allowed. Whether two jobs whose times run into each other
+are actually doable is the person's own call, and refusing it cost a filled slot
+to prevent something that was usually fine.
+
+The board redraws itself whenever anything on it changes, and **Settings →
+Telegram bot → Refresh the board** forces it now — for after an upgrade that
+changes the layout, or to watch a change land. It edits in place and notifies
+nobody; `/board` in the group posts a fresh copy at the bottom instead.
 
 ## Reputation, credits & leadership
 

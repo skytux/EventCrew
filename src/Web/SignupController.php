@@ -13,6 +13,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailBody;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -27,8 +28,8 @@ use EventCrew\Telegram\TicketRedemptionService;
  * Identity stays a verified email - clicking the magic link both signs the
  * person in (a stateless WebSession cookie) and verifies their address, so the
  * same person can move between the web and the bot. Claiming goes through the
- * shared SignupService, so the reputation gate, overlap and capacity rules are
- * exactly the bot's.
+ * shared SignupService, so the reputation gate, leader-slot and capacity rules
+ * are exactly the bot's.
  *
  * The actions run over admin-ajax rather than the REST API, because the target
  * host serves a JS challenge on /wp-json that a plain form post cannot pass -
@@ -177,8 +178,12 @@ final class SignupController
      * for a stylesheet that does not exist and get no stylesheet and no error.
      * That is precisely how a page ends up serving the new markup with none of
      * its CSS.
+     *
+     * Public because the privacy notice shares this sheet and is rendered by a
+     * controller that does not own it - and asking for an unregistered handle
+     * would fail there in exactly the silent way described above.
      */
-    private function registerStyle(): void
+    public function registerStyle(): void
     {
         if (wp_style_is(self::STYLE_HANDLE, 'registered')) {
             return;
@@ -280,7 +285,27 @@ final class SignupController
         }
 
         $person = $this->people->findByEmail($email);
-        $personId = null !== $person ? $person->id : $this->people->create(['email' => $email]);
+
+        // A first sign-in creates the record, so it is the moment the notice is
+        // owed - and the mail is the only thing an unverified stranger is
+        // certain to see, since the form that sent them here may have been on
+        // someone else's screen.
+        $isNew = null === $person;
+        $personId = $isNew ? $this->people->create(['email' => $email]) : $person->id;
+
+        $body = __(
+            "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
+            'eventcrew'
+        );
+
+        if ($isNew) {
+            $notice = PrivacyPolicy::noticeLine();
+            $url = PrivacyPolicy::noticeUrl();
+
+            $body .= "\n\n" . ('' === $url
+                ? $notice
+                : $notice . ' ' . PrivacyPolicy::noticeLinkLabel() . ': ' . $url);
+        }
 
         $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
 
@@ -288,10 +313,7 @@ final class SignupController
             $personId,
             $email,
             __('Your EventCrew sign-in link', 'eventcrew'),
-            __(
-                "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
-                'eventcrew'
-            ),
+            $body,
             [['label' => __('Sign in', 'eventcrew'), 'url' => $this->loginUrl($raw)]]
         );
 
@@ -324,7 +346,6 @@ final class SignupController
         return match ($this->signup->claim($personId, $taskId)) {
             SignupService::GATED => 'gated',
             SignupService::LEADER_ONLY => 'leader_only',
-            SignupService::OVERLAP => 'overlap',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
             AssignmentRepository::JOIN_FULL => 'full',
@@ -514,7 +535,6 @@ final class SignupController
             'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
             'already' => __('You were already signed up for that.', 'eventcrew'),
             'full' => __('That slot just filled up.', 'eventcrew'),
-            'overlap' => __('That clashes with another slot you hold.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
             'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),

@@ -124,6 +124,69 @@ final class PersonRepository
     }
 
     /**
+     * Ids of people whose last trace of activity is older than the cutoff -
+     * the retention purge's candidate list.
+     *
+     * "Activity" is exactly what the published notice says it is: the last task
+     * they were on, the last credit they were given, the last one they spent,
+     * or failing all three the day they joined. The three subqueries are folded
+     * into one GREATEST rather than checked in turn, so a person active in any
+     * one of them is safe from the other two.
+     *
+     * COALESCE guards every branch because GREATEST() is NULL if any argument
+     * is - a person with no assignments at all would otherwise compare as NULL,
+     * fail the < test, and quietly never be purged.
+     *
+     * Organizers and crew leaders are held back regardless of age: their record
+     * is what a running event is administered through, and anonymising the
+     * person who holds the door list is not a retention policy, it is an
+     * outage. Rows already stripped are skipped, which is what makes this
+     * idempotent on an hourly heartbeat.
+     *
+     * @return array<int, int>
+     */
+    public function idsInactiveSince(string $cutoff, int $limit): array
+    {
+        global $wpdb;
+
+        $assignments = Schema::table(Schema::ASSIGNMENTS);
+        $redemptions = Schema::table(Schema::REDEMPTIONS);
+        $grants = Schema::table(Schema::CREDIT_GRANTS);
+
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT p.id
+                 FROM {$this->table()} p
+                 LEFT JOIN (
+                     SELECT person_id, MAX(GREATEST(signed_up_at, COALESCE(status_changed_at, signed_up_at))) AS last_at
+                     FROM {$assignments} GROUP BY person_id
+                 ) a ON a.person_id = p.id
+                 LEFT JOIN (
+                     SELECT person_id, MAX(redeemed_at) AS last_at FROM {$redemptions} GROUP BY person_id
+                 ) r ON r.person_id = p.id
+                 LEFT JOIN (
+                     SELECT person_id, MAX(granted_at) AS last_at FROM {$grants} GROUP BY person_id
+                 ) g ON g.person_id = p.id
+                 WHERE p.anonymized_at IS NULL
+                   AND p.is_organizer = 0
+                   AND p.can_lead = 0
+                   AND GREATEST(
+                       p.created_at,
+                       COALESCE(a.last_at, p.created_at),
+                       COALESCE(r.last_at, p.created_at),
+                       COALESCE(g.last_at, p.created_at)
+                   ) < %s
+                 ORDER BY p.id
+                 LIMIT %d",
+                $cutoff,
+                $limit
+            )
+        );
+
+        return array_map('intval', is_array($ids) ? $ids : []);
+    }
+
+    /**
      * Records affirmative consent to the open-task mail, together with where
      * it was given. The source is kept because under GDPR the burden of
      * showing consent was given falls on us, and "the column was set" is a

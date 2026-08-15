@@ -56,7 +56,7 @@ final class TelegramClient
 
     public function isConfigured(): bool
     {
-        return '' !== $this->token();
+        return '' !== self::token();
     }
 
     /**
@@ -80,7 +80,7 @@ final class TelegramClient
     public function call(string $method, array $params = []): ?array
     {
         $this->lastError = '';
-        $token = $this->token();
+        $token = self::token();
 
         if ('' === $token) {
             $this->lastError = 'no bot token configured';
@@ -313,8 +313,13 @@ final class TelegramClient
      * The bot token, read from the EVENTCREW_TELEGRAM_TOKEN constant first so it
      * can live in wp-config.php and stay out of the database (and its backups and
      * exports), falling back to the option the Settings page writes.
+     *
+     * Static and public because "is the bot set up at all" is a question asked
+     * from outside a configured client - the privacy notice only lists Telegram
+     * as a recipient on installs that actually use it - and the constant-first
+     * rule is the sort of thing that goes wrong the moment it exists twice.
      */
-    private function token(): string
+    public static function token(): string
     {
         if (defined('EVENTCREW_TELEGRAM_TOKEN')) {
             $constant = trim((string) EVENTCREW_TELEGRAM_TOKEN);

@@ -15,10 +15,9 @@ use EventCrew\Repositories\TaskRepository;
  *
  * The Telegram board and the public web page both go through here, so the
  * question "may this person take this slot?" has a single answer - the
- * reputation gate, the one-time at-risk pass, the leader-only slot, the overlap
- * check and the atomic capacity race can never say one thing to the bot and
- * another to the web. Each surface keeps only its own wording; the decision
- * lives here.
+ * reputation gate, the one-time at-risk pass, the leader-only slot and the
+ * atomic capacity race can never say one thing to the bot and another to the
+ * web. Each surface keeps only its own wording; the decision lives here.
  */
 final class SignupService
 {
@@ -30,9 +29,6 @@ final class SignupService
 
     /** Refused: the person is at risk and the gate is on. */
     public const GATED = 'gated';
-
-    /** Refused: the person already holds a clashing slot. */
-    public const OVERLAP = 'overlap';
 
     /** Refused: the leader slot, and this person has no leader permission. */
     public const LEADER_ONLY = 'leader_only';
@@ -47,8 +43,7 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::LEADER_ONLY, self::OVERLAP, or an AssignmentRepository::JOIN_*
-     * outcome.
+     * self::LEADER_ONLY, or an AssignmentRepository::JOIN_* outcome.
      */
     public function claim(int $personId, int $taskId): string
     {
@@ -76,7 +71,7 @@ final class SignupService
      * someone holding an at-risk pass, because the pass would wave them
      * through; a refusal shown to them would simply be wrong.
      *
-     * Returns self::GATED, self::LEADER_ONLY, self::OVERLAP or ''.
+     * Returns self::GATED, self::LEADER_ONLY or ''.
      */
     public function refusalFor(int $personId, int $taskId): string
     {
@@ -112,11 +107,15 @@ final class SignupService
             return $gate;
         }
 
-        // Holding a slot across events is fine; a genuine time clash is not.
-        if ($this->assignments->hasOverlapping($personId, $taskId)) {
-            return ['refusal' => self::OVERLAP, 'pass' => false];
-        }
-
+        /*
+         * Overlapping slots used to be refused here. They are not any more:
+         * whether two jobs at once is possible is a question about the jobs and
+         * the person, and the plugin was answering it for them from the times
+         * alone. Someone welcoming at the door until 18:30 can perfectly well
+         * be down for a decorating slot that nominally runs to 19:00, and the
+         * refusal cost the organizer a filled slot to prevent something that
+         * was not a problem.
+         */
         return ['refusal' => '', 'pass' => $gate['pass']];
     }
 
