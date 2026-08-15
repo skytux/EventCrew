@@ -97,12 +97,27 @@ final class SchemaTest extends TestCase
         );
     }
 
-    public function testConsentColumnsDefaultToNoConsent(): void
+    public function testAnAddressStartsUnverified(): void
+    {
+        self::assertStringContainsString(
+            'email_verified_at datetime DEFAULT NULL',
+            $this->statementFor(Schema::PEOPLE)
+        );
+    }
+
+    /**
+     * The open-task opt-in was superseded by per-type opt-outs in v0.6 and
+     * nothing has written these since. They are gone from the table, and the
+     * migration drops them from installs that still carry them - a column that
+     * reads as consent evidence but is always empty is worse than none at all
+     * now the plugin publishes a privacy notice describing the real model.
+     */
+    public function testTheRetiredOptInColumnsAreGone(): void
     {
         $sql = $this->statementFor(Schema::PEOPLE);
 
-        self::assertStringContainsString('email_opt_in_at datetime DEFAULT NULL', $sql);
-        self::assertStringContainsString('email_verified_at datetime DEFAULT NULL', $sql);
+        self::assertStringNotContainsString('email_opt_in_at', $sql);
+        self::assertStringNotContainsString('email_opt_in_source', $sql);
     }
 
     /**

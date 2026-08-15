@@ -105,6 +105,7 @@ final class SettingsPage
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
                 'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
+                'orphan_signup_page' => $this->unselectedSignupPage(),
                 'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
                 'signature' => Signature::text(),
@@ -117,6 +118,35 @@ final class SettingsPage
                 'privacy' => $this->privacyView(),
             ]
         );
+    }
+
+    /**
+     * The title of a published page carrying the signup shortcode when none has
+     * been selected below, or '' when there is nothing to say.
+     *
+     * This option is presented as mobile-app configuration, but it decides more
+     * than that: Mailer::manageUrl() reads it to answer "is there a page to send
+     * people to", and when it says no, every email footer falls back to a
+     * standalone page reached by a link that never expires. So a site with a
+     * perfectly good signup page, whose organizer simply never picked it here,
+     * quietly mails out longer-lived links than one that did. Naming the page
+     * we found is the cheapest way to make that visible where the choice is.
+     *
+     * Runs on the settings screen only, and stops at the first match.
+     */
+    private function unselectedSignupPage(): string
+    {
+        if ((int) get_option(PwaController::PAGE_OPTION, 0) > 0) {
+            return '';
+        }
+
+        foreach (get_pages(['post_status' => 'publish']) ?: [] as $page) {
+            if (has_shortcode((string) $page->post_content, 'eventcrew_signup')) {
+                return (string) $page->post_title;
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -170,6 +200,20 @@ final class SettingsPage
         // screen - the same person who could read it from the database anyway.
         $testUrl = '' === $secret ? '' : WebhookController::webhookUrl($secret);
 
+        // The same request with the secret moved out of the URL and into the
+        // header. On the fallback door this is what the endpoint would receive
+        // once the URL copy is switched off, so it can be tried with curl
+        // before anything about the live webhook changes - which is the whole
+        // difference between a verified change and a hopeful one.
+        $headerOnlyUrl = '';
+
+        if ('' !== $secret && $useFallback) {
+            $headerOnlyUrl = add_query_arg(
+                ['action' => WebhookController::FALLBACK_ACTION],
+                admin_url('admin-ajax.php')
+            );
+        }
+
         // The informational URL (no secret) for the status line.
         $displayUrl = $useFallback
             ? admin_url('admin-ajax.php') . '?action=' . WebhookController::FALLBACK_ACTION
@@ -180,8 +224,10 @@ final class SettingsPage
             'configured' => $configured,
             'dns_bypass' => (bool) get_option(TelegramClient::DNS_BYPASS_OPTION, false),
             'use_fallback' => $useFallback,
+            'secret_in_url' => WebhookController::secretTravelsInUrl(),
             'webhook_url' => $displayUrl,
             'test_url' => $testUrl,
+            'header_only_url' => $headerOnlyUrl,
             'secret' => $secret,
             'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
@@ -234,7 +280,21 @@ final class SettingsPage
         update_option(TelegramClient::TOKEN_OPTION, $token);
 
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
+
+        // Both of these change the URL Telegram must post to, so the webhook has
+        // to be re-installed or the bot goes silent - and it goes silent with no
+        // error anywhere, because from WordPress's side nothing is wrong. The
+        // old URL is captured before the write and compared after, so the
+        // re-install happens only when something actually moved.
+        $urlBefore = WebhookController::webhookUrl('x');
+
         update_option(WebhookController::USE_FALLBACK_OPTION, isset($_POST['telegram_use_fallback']));
+        update_option(
+            WebhookController::SECRET_IN_URL_OPTION,
+            isset($_POST['telegram_secret_in_url']) ? '1' : '0'
+        );
+
+        $doorMoved = $urlBefore !== WebhookController::webhookUrl('x');
 
         $groupLink = isset($_POST['telegram_group_link'])
             ? esc_url_raw(wp_unslash($_POST['telegram_group_link']))
@@ -379,6 +439,27 @@ final class SettingsPage
         );
         $this->savePrivacy();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        // Telegram is still posting to the old URL until it is told otherwise,
+        // so a moved door is re-installed here rather than left to the organizer
+        // to remember. Only when a bot is configured - there is nothing to
+        // install otherwise - and a failure is reported rather than swallowed,
+        // since the alternative is a bot that has quietly stopped receiving.
+        if ($doorMoved && $this->telegram->isConfigured()) {
+            $result = $this->installWebhook();
+
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                $result['ok']
+                    ? __('Settings saved, and the webhook was re-installed on the new address.', 'eventcrew')
+                    : sprintf(
+                        /* translators: %s: the reason the webhook could not be installed */
+                        __('Settings saved, but the webhook could not be re-installed: %s', 'eventcrew'),
+                        $result['error']
+                    ),
+                $result['ok'] ? 'success' : 'error'
+            );
+        }
 
         Admin::redirectTo(
             self::PAGE_SLUG,
@@ -647,6 +728,51 @@ final class SettingsPage
             __('The board could not be redrawn — it may have been deleted from the group. Send /board there to post a fresh one. Diagnostics has the logged reason.', 'eventcrew'),
             'error'
         );
+    }
+
+    /**
+     * Replaces the webhook secret with a fresh one and re-installs.
+     *
+     * The secret is the bot's only authentication: anything that can post a
+     * valid update can claim to be any Telegram user, an organizer included.
+     * Until now it was generated once on first install and never changed, so a
+     * copy that had escaped - most likely into a server access log, which is
+     * where the fallback door's URL puts it - stayed valid for ever.
+     *
+     * Rotating is deleting and re-installing: installWebhook() already mints a
+     * new secret when it finds none and points Telegram at it, so this needs no
+     * generation code of its own and cannot drift from the install path. The
+     * order matters - the option is cleared first, so a failed setWebhook
+     * leaves a site whose stored secret no longer matches Telegram's, which is
+     * a visibly broken bot the button can fix, rather than a silently stale one.
+     */
+    public function rotateWebhookSecret(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        if (! $this->telegram->isConfigured()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Add a bot token first, then install the webhook.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        delete_option(WebhookController::SECRET_OPTION);
+
+        $result = $this->installWebhook();
+
+        if ($result['ok']) {
+            update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
+
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('A new webhook secret was generated and installed. Any copy of the old one — in a server log, for instance — is now useless.', 'eventcrew')
+            );
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, $result['error'], 'error');
     }
 
     /**

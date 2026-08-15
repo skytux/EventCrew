@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '10';
+    public const DB_VERSION = '11';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -83,11 +83,31 @@ final class Schema
     }
 
     /**
+     * Columns the plugin has retired, dropped from the people table if an older
+     * install still carries them.
+     *
+     * - disabled_at: the account "off" flag, replaced in v1.5 by the per-type
+     *   notification preferences.
+     * - email_opt_in_at / email_opt_in_source: the open-task mail opt-in,
+     *   superseded in v0.6 by per-type opt-outs. Nothing has written them
+     *   since, so the People screen was reporting consent that was never
+     *   recorded - and a column that looks like consent evidence but is always
+     *   empty is worse than no column at all now that the plugin publishes a
+     *   privacy notice describing the real, opt-out model.
+     *
+     * @var array<int, string>
+     */
+    private const RETIRED_PEOPLE_COLUMNS = [
+        'disabled_at',
+        'email_opt_in_at',
+        'email_opt_in_source',
+    ];
+
+    /**
      * dbDelta never drops a column - it only adds and widens - so a field the
-     * plugin has retired lingers on installs that once had it. The account
-     * "disabled" flag was removed in favour of the per-type notification
-     * preferences, so its column is dropped here if it is still present. Guarded
-     * by an information_schema check, so it runs once and is a no-op thereafter.
+     * plugin has retired lingers on installs that once had it. Each is dropped
+     * here if still present, guarded by an information_schema check so the whole
+     * thing runs once and is a no-op thereafter.
      */
     private static function dropRetiredColumns(): void
     {
@@ -95,18 +115,23 @@ final class Schema
 
         $table = self::table(self::PEOPLE);
 
-        $present = $wpdb->get_var(
-            $wpdb->prepare(
-                'SELECT COLUMN_NAME FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
-                $table,
-                'disabled_at'
-            )
-        );
+        foreach (self::RETIRED_PEOPLE_COLUMNS as $column) {
+            $present = $wpdb->get_var(
+                $wpdb->prepare(
+                    'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+                    $table,
+                    $column
+                )
+            );
 
-        if (null !== $present && '' !== (string) $present) {
-            // Table name is a constant joined to $wpdb->prefix; DROP takes no placeholders.
-            $wpdb->query("ALTER TABLE {$table} DROP COLUMN disabled_at"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            if (null === $present || '' === (string) $present) {
+                continue;
+            }
+
+            // Both names are constants here - the table from $wpdb->prefix, the
+            // column from the list above - and DROP takes no placeholders.
+            $wpdb->query("ALTER TABLE {$table} DROP COLUMN {$column}"); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         }
     }
 
@@ -209,6 +234,11 @@ final class Schema
             // stripped from one that is merely old, and would rewrite the same
             // rows every hour for ever.
             //
+            // sessions_valid_from is what makes a stateless session cookie
+            // revocable: any cookie issued before it is refused. NULL means
+            // "never revoked", which is every row until somebody presses the
+            // button, so the column costs nothing until it is used.
+            //
             // email is varchar(191) rather than 255 so it still fits a unique
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
@@ -227,9 +257,8 @@ final class Schema
                 leader_eligible_notified_at datetime DEFAULT NULL,
                 notify_muted tinyint(1) NOT NULL DEFAULT 0,
                 notify_prefs text DEFAULT NULL,
-                email_opt_in_at datetime DEFAULT NULL,
-                email_opt_in_source varchar(20) NOT NULL DEFAULT '',
                 anonymized_at datetime DEFAULT NULL,
+                sessions_valid_from datetime DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

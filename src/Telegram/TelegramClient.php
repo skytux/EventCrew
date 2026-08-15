@@ -360,8 +360,13 @@ final class TelegramClient
         };
 
         // http_api_curl hands over the cURL handle before the request runs.
+        // Matched on the host, not on the URL containing the host's name
+        // anywhere: https://example.test/?to=api.telegram.org is not a request
+        // to Telegram. The pin only ever supplies an address for API_HOST, so a
+        // loose match was harmless - but a filter that fires on other people's
+        // requests is not a thing to leave lying around.
         $filter = static function ($handle, $args2, $requestUrl) use ($pin): void {
-            if (str_contains((string) $requestUrl, self::API_HOST)) {
+            if (self::API_HOST === wp_parse_url((string) $requestUrl, PHP_URL_HOST)) {
                 $pin($handle);
             }
         };

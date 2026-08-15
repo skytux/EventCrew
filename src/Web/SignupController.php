@@ -43,6 +43,7 @@ final class SignupController
     public const LOGOUT_ACTION = 'eventcrew_web_logout';
     public const REDEEM_ACTION = 'eventcrew_web_redeem_ticket';
     public const PREFS_ACTION = 'eventcrew_web_prefs';
+    public const REVOKE_ACTION = 'eventcrew_web_revoke_sessions';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -76,7 +77,7 @@ final class SignupController
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
         add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION] as $action) {
+        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -268,6 +269,7 @@ final class SignupController
             'logout_action' => self::LOGOUT_ACTION,
             'redeem_action' => self::REDEEM_ACTION,
             'prefs_action' => self::PREFS_ACTION,
+            'revoke_action' => self::REVOKE_ACTION,
         ];
     }
 
@@ -437,18 +439,32 @@ final class SignupController
             $this->finish($redirect, $this->loginByEmail($email), $isAjax);
         }
 
-        if (self::LOGOUT_ACTION === $action) {
-            $this->setSessionCookie('', time() - DAY_IN_SECONDS);
-            $this->redirect($redirect, 'signed_out');
-        }
-
-        // Claim and drop need an authenticated, CSRF-checked person.
+        // Everything past here needs an authenticated, CSRF-checked person -
+        // logout included. It used to sit above this gate, which made signing
+        // somebody out a thing any other site could do to them by pointing a
+        // form here. Harmless next to the rest, but there is no reason for it.
         $person = $this->currentPerson();
         $csrf = isset($_POST['csrf']) ? sanitize_text_field(wp_unslash($_POST['csrf'])) : '';
         $taskId = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
 
         if (null === $person || ! WebSession::verifyCsrf($person->id, $csrf)) {
             $this->finish($redirect, 'please_sign_in', $isAjax);
+        }
+
+        if (self::LOGOUT_ACTION === $action) {
+            $this->setSessionCookie('', time() - DAY_IN_SECONDS);
+            $this->redirect($redirect, 'signed_out');
+        }
+
+        if (self::REVOKE_ACTION === $action) {
+            // Moves the line every session cookie is measured against, so the
+            // ones we cannot see - another browser, a phone left somewhere -
+            // stop working. This one included: clearing the cookie here just
+            // saves the person a redirect that would have found them signed out
+            // anyway.
+            $this->people->revokeSessions($person->id);
+            $this->setSessionCookie('', time() - DAY_IN_SECONDS);
+            $this->redirect($redirect, 'sessions_revoked');
         }
 
         if (self::CLAIM_ACTION === $action) {
@@ -538,6 +554,8 @@ final class SignupController
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
             'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'sessions_revoked' => __('Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),
@@ -600,6 +618,10 @@ final class SignupController
 
     /**
      * The person the session cookie identifies, or null.
+     *
+     * The revocation check rides on a row this already had to read, so "sign
+     * out everywhere" costs nothing per request - which is what made it worth
+     * having at all for a cookie whose whole design is to touch no storage.
      */
     private function currentPerson(): ?Person
     {
@@ -609,7 +631,19 @@ final class SignupController
 
         $personId = WebSession::read($cookie);
 
-        return null === $personId ? null : $this->people->find($personId);
+        if (null === $personId) {
+            return null;
+        }
+
+        $person = $this->people->find($personId);
+
+        if (null === $person) {
+            return null;
+        }
+
+        $issuedAt = WebSession::issuedAt($cookie);
+
+        return null !== $issuedAt && $person->acceptsSessionIssuedAt($issuedAt) ? $person : null;
     }
 
     private function loginUrl(string $rawToken): string

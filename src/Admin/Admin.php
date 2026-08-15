@@ -65,6 +65,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_rotate_webhook_secret',
+            [$this->container->get(SettingsPage::class), 'rotateWebhookSecret']
+        );
+
+        add_action(
             'admin_post_eventcrew_send_open_task',
             [$this->container->get(TasksPage::class), 'sendOpenTaskEmail']
         );

@@ -31,6 +31,23 @@ final class WebhookController
     /** When set, the webhook is installed on the fallback door, not REST. */
     public const USE_FALLBACK_OPTION = 'eventcrew_telegram_use_fallback';
 
+    /**
+     * Whether the fallback door's URL carries the secret as a query argument.
+     *
+     * Defaults on, which is what every existing install already does. That is a
+     * deliberate choice rather than a security preference: installOnUpdate()
+     * silently re-installs the webhook on every version change, so defaulting
+     * this off would move every fallback install to header-only on upgrade -
+     * and on the hosts this door exists for, the ones that strip custom
+     * headers, the bot would simply go quiet with nothing to point at.
+     *
+     * Off is the better setting wherever it works, because a secret in a query
+     * string is a secret in the server's access log. Settings offers a way to
+     * test the header before switching, so the change is verifiable rather than
+     * hopeful.
+     */
+    public const SECRET_IN_URL_OPTION = 'eventcrew_telegram_secret_in_url';
+
     public const ROUTE_NAMESPACE = 'eventcrew/v1';
     public const ROUTE = '/telegram/webhook';
 
@@ -54,18 +71,35 @@ final class WebhookController
 
     /**
      * The URL of whichever door is currently selected, for setWebhook and for
-     * display. The fallback URL carries the secret as a query argument.
+     * display.
+     *
+     * The REST door never carries the secret - it arrives in a header. The
+     * fallback door carries it too, unless SECRET_IN_URL_OPTION says otherwise,
+     * in which case it also relies on the header and the URL is clean.
      */
     public static function webhookUrl(string $secret): string
     {
-        if ((bool) get_option(self::USE_FALLBACK_OPTION, false)) {
-            return add_query_arg(
-                ['action' => self::FALLBACK_ACTION, 'token' => $secret],
-                admin_url('admin-ajax.php')
-            );
+        if (! (bool) get_option(self::USE_FALLBACK_OPTION, false)) {
+            return rest_url(self::ROUTE_NAMESPACE . self::ROUTE);
         }
 
-        return rest_url(self::ROUTE_NAMESPACE . self::ROUTE);
+        $args = ['action' => self::FALLBACK_ACTION];
+
+        if (self::secretTravelsInUrl()) {
+            $args['token'] = $secret;
+        }
+
+        return add_query_arg($args, admin_url('admin-ajax.php'));
+    }
+
+    /**
+     * Whether the fallback door's URL is currently built with the secret in it.
+     * Only meaningful on that door; the REST one never does.
+     */
+    public static function secretTravelsInUrl(): bool
+    {
+        return (bool) get_option(self::USE_FALLBACK_OPTION, false)
+            && (bool) get_option(self::SECRET_IN_URL_OPTION, true);
     }
 
     // --- REST door ----------------------------------------------------------

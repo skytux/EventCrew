@@ -70,6 +70,12 @@ final class ManageController
         }
 
         header('Content-Type: text/html; charset=utf-8');
+        // This page shows a person's email address and its URL carries a token
+        // that deletes their account, so it has no business in a shared cache
+        // or a search index. The ticket page already refuses to be stored; this
+        // is the same reasoning applied to the more dangerous of the two.
+        nocache_headers();
+        header('X-Robots-Tag: noindex, nofollow', true);
         // Built from literal markup and esc_html()'d values in the page builders.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo $html;

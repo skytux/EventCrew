@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.19.0
+Stable tag: 1.20.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,16 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.20.0 =
+* Security review of the whole plugin. It found no critical or high-severity holes — SQL is uniformly prepared, the signed-link and session tokens are sound, and every admin action already checked both permission and nonce. What it did find was recoverability: a few places where, if something did leak, there was no way to take it back. This release is those.
+* **The webhook secret can now be kept out of the URL.** On the admin-ajax fallback door the secret was always sent as a URL parameter as well as a header, which writes it into your server's access log on every update the bot receives. There is a new tick-box to send the header only, and — because the honest answer to "will my host pass the header through?" is "try it" — Settings ▸ Telegram bot now prints the exact header-only request so you can test it with curl before changing anything live. Saving re-installs the webhook for you.
+* **And it can be rotated.** A new "Rotate the webhook secret" button generates a fresh one and re-installs. Anything that can post a valid update to the webhook can claim to be any member of your crew, organizers included, so a secret that may have been seen — in a log, a screenshot, a support ticket — is worth replacing. Taking it out of the URL does not remove what is already in the logs; rotating does.
+* **"Sign out everywhere"**, on your crew page under Settings. Signing in leaves a browser signed in for 30 days, and until now signing out only cleared the cookie on the device in front of you. This retires every session at once — another browser, a shared computer, a phone left somewhere — including the one you press it from.
+* Fixed: signing out could be triggered by a form on another site. Harmless in effect, but it now requires the same token every other action does.
+* The Mobile app ▸ Signup page setting quietly decided something else: with no page picked, the "manage your data" link at the foot of every email fell back to one that never expires, instead of a one-time link good for 30 minutes. The field now says so, and warns if you have a signup page that has not been picked.
+* Also: the self-service manage page and the door-ticket page now tell caches and search engines not to store them; and the retired open-task opt-in columns, unwritten since v0.6 and unread by anything, are dropped from the database.
+* Database: adds one column (`sessions_valid_from`), drops two, applied automatically on upgrade.
 
 = 1.19.0 =
 * The Telegram board now reads as a programme rather than a list of buttons. Each event is introduced by two heading rows — its name, then its date — and its tasks follow underneath, so with several events open you can see at a glance where one ends and the next begins. The headings are inert: tapping one does nothing.
@@ -351,6 +361,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.20.0 =
+Security hardening from a full review: the webhook secret can be kept out of the URL and rotated, crew members can sign out everywhere at once, and the manage and ticket pages are no longer cacheable. If you use the admin-ajax webhook fallback, read Settings ▸ Telegram bot after upgrading — your secret is in your server logs and this is how to fix that. Adds one database column and drops two, automatically.
 
 = 1.19.0 =
 The Telegram board is regrouped under event and date headings, with times leading each task button. Overlapping slots are now allowed to be booked. After upgrading, press "Refresh the board" under Settings ▸ Telegram bot to redraw it in the new layout. No database change.

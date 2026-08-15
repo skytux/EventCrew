@@ -18,8 +18,6 @@ final class Person
         public readonly ?int $telegramUserId = null,
         public readonly ?int $telegramChatId = null,
         public readonly bool $isOrganizer = false,
-        public readonly ?string $emailOptInAt = null,
-        public readonly string $emailOptInSource = '',
         public readonly string $notes = '',
         public readonly string $createdAt = '',
         public readonly string $updatedAt = '',
@@ -29,7 +27,8 @@ final class Person
         public readonly ?string $leaderEligibleNotifiedAt = null,
         /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
         public readonly array $notifyPrefs = [],
-        public readonly ?string $anonymizedAt = null
+        public readonly ?string $anonymizedAt = null,
+        public readonly ?string $sessionsValidFrom = null
     ) {
     }
 
@@ -46,8 +45,6 @@ final class Person
             self::nullableInt($row['telegram_user_id'] ?? null),
             self::nullableInt($row['telegram_chat_id'] ?? null),
             1 === (int) ($row['is_organizer'] ?? 0),
-            self::nullableString($row['email_opt_in_at'] ?? null),
-            (string) ($row['email_opt_in_source'] ?? ''),
             (string) ($row['notes'] ?? ''),
             (string) ($row['created_at'] ?? ''),
             (string) ($row['updated_at'] ?? ''),
@@ -56,8 +53,28 @@ final class Person
             1 === (int) ($row['at_risk_pass'] ?? 0),
             self::nullableString($row['leader_eligible_notified_at'] ?? null),
             self::decodePrefs($row['notify_prefs'] ?? null),
-            self::nullableString($row['anonymized_at'] ?? null)
+            self::nullableString($row['anonymized_at'] ?? null),
+            self::nullableString($row['sessions_valid_from'] ?? null)
         );
+    }
+
+    /**
+     * Whether a web session issued at this time is still this person's.
+     *
+     * Sessions are stateless - nothing about them is stored - so revoking one
+     * cannot mean deleting a row. It means moving a line: every cookie issued
+     * before sessions_valid_from stops being accepted, which retires all of
+     * them at once without knowing how many there were or where.
+     */
+    public function acceptsSessionIssuedAt(int $issuedAt): bool
+    {
+        if (null === $this->sessionsValidFrom) {
+            return true;
+        }
+
+        $revokedAt = strtotime($this->sessionsValidFrom);
+
+        return false === $revokedAt || $issuedAt >= $revokedAt;
     }
 
     /**

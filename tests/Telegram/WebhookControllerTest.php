@@ -136,4 +136,54 @@ final class WebhookControllerTest extends TelegramTestCase
         self::assertStringContainsString('action=eventcrew_telegram_webhook', $url);
         self::assertStringContainsString('token=sekret', $url);
     }
+
+    /**
+     * The URL copy of the secret is what puts it in the server's access log, so
+     * it can be switched off wherever the host preserves the header. The door
+     * stays the fallback one; only the secret moves.
+     */
+    public function testTheFallbackUrlOmitsTheSecretWhenTheUrlCopyIsOff(): void
+    {
+        $this->options[WebhookController::USE_FALLBACK_OPTION] = true;
+        $this->options[WebhookController::SECRET_IN_URL_OPTION] = '0';
+        Functions\when('admin_url')->alias(static fn (string $path): string => 'https://example.test/wp-admin/' . $path);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+
+        $url = WebhookController::webhookUrl('sekret');
+
+        self::assertStringContainsString('action=eventcrew_telegram_webhook', $url);
+        self::assertStringNotContainsString('sekret', $url);
+    }
+
+    /**
+     * The whole switch rests on this: with no token in the URL, the header
+     * alone must still authenticate an update. Telegram always sends it; the
+     * question is only whether the host passes it through.
+     */
+    public function testTheFallbackDoorAcceptsAHeaderSuppliedSecret(): void
+    {
+        $this->options[WebhookController::SECRET_OPTION] = 'sekret';
+        $this->options[WebhookController::SECRET_IN_URL_OPTION] = '0';
+
+        $body = (string) json_encode(['callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'j:5']]);
+
+        self::assertSame(200, $this->controller()->processFallback('sekret', $body));
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+
+        // And an empty one - what arrives when the host has stripped the
+        // header and there is no URL copy to fall back on - is still refused.
+        self::assertSame(403, $this->controller()->processFallback('', $body));
+    }
+
+    /** The REST door never carries the secret, whatever the URL toggle says. */
+    public function testTheUrlToggleDoesNothingOnTheRestDoor(): void
+    {
+        $this->options[WebhookController::SECRET_IN_URL_OPTION] = '1';
+        Functions\when('rest_url')->alias(static fn (string $path): string => 'https://example.test/wp-json/' . $path);
+
+        self::assertStringNotContainsString('sekret', WebhookController::webhookUrl('sekret'));
+        self::assertFalse(WebhookController::secretTravelsInUrl());
+    }
 }
