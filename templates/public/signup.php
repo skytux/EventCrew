@@ -591,6 +591,12 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
      */
     var CHALLENGE_STEP = 200;
     var CHALLENGE_GIVE_UP = 15000;
+    // How long to wait for a token once somebody has pressed. Short, because
+    // they are watching: see refreshChallenge().
+    var REFRESH_WAIT = 4000;
+    var unsolvedNotice = <?php echo wp_json_encode(
+        __('The spam check hasn’t finished yet — give it a moment, then try again.', 'eventcrew')
+    ); ?>;
 
     var signinForm = root.querySelector('form[data-eventcrew-signin]');
     var signinButton = signinForm ? signinForm.querySelector('button') : null;
@@ -685,16 +691,33 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         return tokenSpent || (Date.now() - tokenSeenAt) > STALE_AFTER;
     }
 
-    /** Throws the current token away and calls `done` once a new one lands. */
+    /*
+     * Replaces the current token and hands the new one to `done`, or '' if none
+     * arrived in time.
+     *
+     * REFRESH_WAIT, not CHALLENGE_GIVE_UP: the fifteen seconds are the safety
+     * valve for the button on page load, where waiting costs nothing because
+     * nobody is watching yet. Here somebody has just pressed and is watching,
+     * and a challenge that has not answered in a few seconds is not going to.
+     * Waiting the full fifteen twice - once before sending, once on the retry -
+     * is what turned a refusal into half a minute of nothing followed by a
+     * toast.
+     *
+     * Resetting only when there is something to replace: a widget that has not
+     * produced a token yet may be mid-solve or waiting to be clicked, and
+     * resetting it throws away whatever progress it had.
+     */
     function refreshChallenge(form, done) {
         if (!hasChallenge(form) || !window.turnstile) {
-            done();
+            done('');
 
             return;
         }
 
-        try { window.turnstile.reset(); } catch (err) {}
-        noteToken('');
+        if (lastToken) {
+            try { window.turnstile.reset(); } catch (err) {}
+            noteToken('');
+        }
 
         var waited = 0;
 
@@ -703,15 +726,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
             if (token) {
                 noteToken(token);
-                done();
+                done(token);
 
                 return;
             }
 
-            // Same failing-open rule as everywhere else here: after the timeout
-            // it goes anyway and lets the server give a reason.
-            if (waited >= CHALLENGE_GIVE_UP) {
-                done();
+            if (waited >= REFRESH_WAIT) {
+                done('');
 
                 return;
             }
@@ -772,16 +793,54 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         // it cannot re-enable it or rewrite its label mid-flight.
         submitting = true;
 
-        // A token that has been sitting on screen for a while is replaced
-        // before it goes, rather than after Cloudflare has rejected it.
-        if (hasChallenge(form) && tokenIsStale()) {
-            refreshChallenge(form, function () { send(form, button, isSignin, false); });
+        /*
+         * A token that is spent or has sat on screen a while is replaced before
+         * it goes, rather than after Cloudflare has rejected it. And if there
+         * is no token at all - the widget has not solved, or is waiting to be
+         * clicked - the request is not sent.
+         *
+         * Sending it anyway was the old behaviour and it cannot succeed: the
+         * server refuses an empty token without even asking Cloudflare, so the
+         * round trip buys nothing but delay and a line in the log. Saying so
+         * here is immediate and tells somebody what to do about it, which
+         * "couldn't verify you're human" after half a minute did not.
+         */
+        if (hasChallenge(form) && (tokenIsStale() || !lastToken)) {
+            showWaitingOnButton();
+
+            refreshChallenge(form, function (token) {
+                if (!token) {
+                    giveUp(button, unsolvedNotice);
+
+                    return;
+                }
+
+                send(form, button, isSignin, false);
+            });
 
             return;
         }
 
         send(form, button, isSignin, false);
     });
+
+    /** Labels the sign-in button as waiting, past the submitting guard. */
+    function showWaitingOnButton() {
+        if (signinButton) {
+            signinButton.textContent = waitingLabel;
+        }
+    }
+
+    /** Abandons an attempt without sending it, saying why. */
+    function giveUp(button, message) {
+        submitting = false;
+        showToast(message);
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = signinLiveLabel;
+        }
+    }
 
     function send(form, button, isSignin, isRetry) {
         // The widget writes its token into a hidden field, so this is read now
@@ -809,7 +868,19 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
              * one and gets shown.
              */
             if (!isRetry && res && 'captcha_failed' === res.code && hasChallenge(form)) {
-                refreshChallenge(form, function () { send(form, button, isSignin, true); });
+                showWaitingOnButton();
+
+                refreshChallenge(form, function (token) {
+                    // No fresh token means the second attempt would be refused
+                    // for exactly the reason the first was. Say so instead.
+                    if (!token) {
+                        giveUp(button, unsolvedNotice);
+
+                        return;
+                    }
+
+                    send(form, button, isSignin, true);
+                });
 
                 return;
             }
@@ -883,6 +954,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
              * because the field it is gated on still holds a value.
              */
             tokenSpent = true;
+
+            // Whatever the label was during the wait, put the live one back.
+            if (button && signinButton === button) {
+                button.textContent = signinLiveLabel;
+            }
 
             submitting = false;
         }).catch(function () {
