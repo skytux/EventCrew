@@ -28,6 +28,7 @@
  * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
+ * @var string $orphan_signup_page Title of a published shortcode page when none is selected, else ''.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
@@ -36,7 +37,7 @@
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
@@ -594,6 +595,22 @@ if (! defined('ABSPATH')) {
         <p class="description">
             <?php esc_html_e('Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android).', 'eventcrew'); ?>
         </p>
+        <?php if ('' !== $orphan_signup_page) : ?>
+            <div class="notice notice-warning inline" style="margin:1em 0">
+                <p>
+                    <?php
+                    printf(
+                        /* translators: %s: the title of the page holding the signup shortcode */
+                        esc_html__('The page “%s” has the signup shortcode on it, but no page is picked below. Pick it: the setting does more than the mobile app.', 'eventcrew'),
+                        esc_html($orphan_signup_page)
+                    );
+                    ?>
+                </p>
+                <p>
+                    <?php esc_html_e('While it is unset, the “manage your data” link at the foot of every email cannot point at your signup page, so it falls back to a plain standalone page reached by a link that never expires. Picking the page below switches those links to one-time ones that stop working after 30 minutes.', 'eventcrew'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
         <table class="form-table" role="presentation">
             <tr>
                 <th scope="row">
@@ -609,6 +626,9 @@ if (! defined('ABSPATH')) {
                         'option_none_value' => '0',
                     ]);
                     ?>
+                    <p class="description">
+                        <?php esc_html_e('Also where the “manage your data” link in your emails sends people. With a page picked they get a one-time link good for 30 minutes; with none, a standalone page on a link that never expires.', 'eventcrew'); ?>
+                    </p>
                 </td>
             </tr>
             <tr>
@@ -1002,11 +1022,43 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('Receive updates through admin-ajax.php instead of the REST API', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Re-install the webhook after changing it. Leave off on a normal host.', 'eventcrew'); ?>
+                        <?php esc_html_e('Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Saving re-installs the webhook for you. Leave off on a normal host.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
+            <?php if ($telegram['use_fallback']) : ?>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Secret in the URL', 'eventcrew'); ?></th>
+                    <td>
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="telegram_secret_in_url"
+                                value="1"
+                                <?php checked($telegram['secret_in_url']); ?>>
+                            <?php esc_html_e('Also send the webhook secret as a URL parameter', 'eventcrew'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('Telegram always sends the secret as a header; this sends a second copy in the address as well. That is only needed on hosts or proxies that strip custom headers — and it means the secret is written into your server’s access log on every update the bot receives.', 'eventcrew'); ?>
+                        </p>
+                        <p class="description">
+                            <?php esc_html_e('Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save.', 'eventcrew'); ?>
+                        </p>
+                    </td>
+                </tr>
+            <?php endif; ?>
         </table>
+
+        <?php if ($telegram['secret_in_url']) : ?>
+            <div class="notice notice-warning inline" style="margin:1em 0">
+                <p>
+                    <?php esc_html_e('The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included.', 'eventcrew'); ?>
+                </p>
+                <p>
+                    <?php esc_html_e('Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs.', 'eventcrew'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
 
         <?php if ('' !== $telegram['test_url']) : ?>
             <details style="margin:1em 0">
@@ -1018,7 +1070,7 @@ if (! defined('ABSPATH')) {
                     <strong><?php esc_html_e('Telegram is posting to:', 'eventcrew'); ?></strong><br>
                     <code style="word-break:break-all"><?php echo esc_html($telegram['test_url']); ?></code>
                 </p>
-                <?php if (! $telegram['use_fallback']) : ?>
+                <?php if (! $telegram['secret_in_url']) : ?>
                     <p>
                         <strong><?php esc_html_e('With header:', 'eventcrew'); ?></strong><br>
                         <code>X-Telegram-Bot-Api-Secret-Token: <?php echo esc_html($telegram['secret']); ?></code>
@@ -1028,6 +1080,31 @@ if (! defined('ABSPATH')) {
                     <strong><?php esc_html_e('And this JSON body (Content-Type: application/json):', 'eventcrew'); ?></strong><br>
                     <code style="word-break:break-all">{"update_id":1,"message":{"message_id":1,"date":0,"chat":{"id":1,"type":"private"},"from":{"id":1},"text":"/start"}}</code>
                 </p>
+
+                <?php if ('' !== $telegram['header_only_url']) : ?>
+                    <?php
+                    /*
+                     * The same request with the secret moved out of the URL and
+                     * into the header - exactly what this endpoint would receive
+                     * once the box above is unticked. Trying it here answers the
+                     * only question that matters ("does this host keep the
+                     * header?") without changing anything Telegram is doing.
+                     */
+                    ?>
+                    <hr style="margin:1.2em 0">
+                    <p class="description">
+                        <strong><?php esc_html_e('Before turning off “Secret in the URL”, try this:', 'eventcrew'); ?></strong><br>
+                        <?php esc_html_e('The same request with the secret in the header instead of the address. A 200 means your host keeps the header, so the URL copy can be switched off safely. Anything else means leave it on.', 'eventcrew'); ?>
+                    </p>
+                    <p>
+                        <strong><?php esc_html_e('POST to:', 'eventcrew'); ?></strong><br>
+                        <code style="word-break:break-all"><?php echo esc_html($telegram['header_only_url']); ?></code>
+                    </p>
+                    <p>
+                        <strong><?php esc_html_e('With header:', 'eventcrew'); ?></strong><br>
+                        <code>X-Telegram-Bot-Api-Secret-Token: <?php echo esc_html($telegram['secret']); ?></code>
+                    </p>
+                <?php endif; ?>
             </details>
         <?php endif; ?>
 
@@ -1198,11 +1275,23 @@ if (! defined('ABSPATH')) {
             </p>
         <?php endif; ?>
 
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block">
             <input type="hidden" name="action" value="eventcrew_telegram_setup">
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
-            <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary'); ?>
+            <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary', 'submit', false); ?>
         </form>
+        <form
+            method="post"
+            action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+            style="display:inline-block;margin-left:.5em"
+            onsubmit="return confirm('<?php echo esc_js(__('Generate a new webhook secret and re-install? The bot is unreachable for the moment in between, and any old copy of the secret stops working.', 'eventcrew')); ?>');">
+            <input type="hidden" name="action" value="eventcrew_rotate_webhook_secret">
+            <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+            <?php submit_button(__('Rotate the webhook secret', 'eventcrew'), 'secondary', 'submit', false); ?>
+        </form>
+        <p class="description" style="margin-top:.6em">
+            <?php esc_html_e('The secret is what proves an incoming update really came from Telegram — it is the bot’s only authentication. Rotate it if it may have been seen: in a server log, a screenshot, or a support ticket. The bot keeps working; only the old secret stops.', 'eventcrew'); ?>
+        </p>
 
         <h2><?php esc_html_e('The board', 'eventcrew'); ?></h2>
         <p class="description">

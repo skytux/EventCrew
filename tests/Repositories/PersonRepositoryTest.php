@@ -53,42 +53,32 @@ final class PersonRepositoryTest extends TestCase
     }
 
     /**
-     * An organizer adding somebody by hand has not verified that address and
-     * cannot consent on their behalf, so a new row starts with neither.
+     * An organizer adding somebody by hand has not verified that address, so a
+     * new row starts unverified and stays out of every send that checks.
      */
-    public function testCreatesWithoutVerificationOrConsentByDefault(): void
+    public function testCreatesWithoutVerificationByDefault(): void
     {
         (new PersonRepository())->create(['email' => 'sam@example.test']);
 
         $data = $this->wpdb->inserts[0]['data'];
 
         self::assertNull($data['email_verified_at']);
-        self::assertNull($data['email_opt_in_at']);
-        self::assertSame('', $data['email_opt_in_source']);
-    }
-
-    public function testRecordsWhereConsentWasGivenAlongsideWhen(): void
-    {
-        (new PersonRepository())->recordEmailOptIn(4, 'telegram');
-
-        $data = $this->wpdb->updates[0]['data'];
-
-        self::assertNotEmpty($data['email_opt_in_at']);
-        self::assertSame('telegram', $data['email_opt_in_source']);
     }
 
     /**
-     * Unsubscribing has to clear the timestamp, not just the source - the
-     * timestamp is what every send checks.
+     * Revoking is one write moving one line: every cookie issued before this
+     * moment stops being accepted. There is no session list to delete from -
+     * that is the point of a stateless cookie - so the stamp is the whole
+     * mechanism.
      */
-    public function testWithdrawingConsentClearsTheTimestamp(): void
+    public function testRevokingSessionsStampsTheCutoff(): void
     {
-        (new PersonRepository())->withdrawEmailOptIn(4);
+        (new PersonRepository())->revokeSessions(4);
 
         $data = $this->wpdb->updates[0]['data'];
 
-        self::assertNull($data['email_opt_in_at']);
-        self::assertSame('', $data['email_opt_in_source']);
+        self::assertNotEmpty($data['sessions_valid_from']);
+        self::assertSame(['id' => 4], $this->wpdb->updates[0]['where']);
     }
 
     public function testTouchesTheUpdatedTimestampOnEveryWrite(): void

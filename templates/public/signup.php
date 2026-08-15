@@ -358,6 +358,24 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </form>
             <?php endif; ?>
 
+            <?php
+            $eventcrew_revoke_action = (string) ($view['revoke_action'] ?? '');
+
+            if ('' !== $eventcrew_revoke_action) :
+                ?>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Security', 'eventcrew'); ?></h3>
+                <p class="eventcrew-muted">
+                    <?php esc_html_e('Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again.', 'eventcrew'); ?>
+                </p>
+                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                    onsubmit="return confirm('<?php echo esc_js(__('Sign out everywhere, including here?', 'eventcrew')); ?>');">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_revoke_action); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
+
             <?php if ('' !== $eventcrew_manage_token) : ?>
                 <h3 class="eventcrew-subhead"><?php esc_html_e('Account', 'eventcrew'); ?></h3>
                 <p class="eventcrew-muted"><?php esc_html_e('To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone.', 'eventcrew'); ?></p>

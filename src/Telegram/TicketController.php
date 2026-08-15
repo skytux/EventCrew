@@ -64,6 +64,7 @@ final class TicketController
         // Not cacheable and not saveable as a shared file: a ticket is a live,
         // per-load view, never a static document to pass around.
         header('Cache-Control: no-store, max-age=0');
+        header('X-Robots-Tag: noindex, nofollow', true);
         // Built from literal markup and esc_html()'d values in renderPage().
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo $this->renderPage($ticket);

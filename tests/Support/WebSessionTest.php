@@ -49,4 +49,48 @@ final class WebSessionTest extends TestCase
         self::assertFalse(WebSession::verifyCsrf(43, $token));
         self::assertFalse(WebSession::verifyCsrf(42, 'wrong'));
     }
+
+    /**
+     * The issue time is what makes "sign out everywhere" possible: it is the
+     * only thing distinguishing a cookie minted before a revocation from one
+     * minted after.
+     */
+    public function testACookieCarriesWhenItWasIssued(): void
+    {
+        $cookie = WebSession::mint(42, 1_700_000_000);
+
+        self::assertSame(1_700_000_000, WebSession::issuedAt($cookie, 1_700_000_000));
+    }
+
+    /**
+     * Cookies minted before the issue time existed have to keep working, or
+     * upgrading would sign out every crew member at once to gain a button none
+     * of them has pressed. They answer 0, which is older than any revocation
+     * stamp - so the first revocation retires them, exactly as intended.
+     */
+    public function testALegacyTwoPartCookieStillReadsAndCountsAsAncient(): void
+    {
+        $body = rtrim(strtr(base64_encode('42|9999999999'), '+/', '-_'), '=');
+        $legacy = $body . '.' . hash_hmac('sha256', 'web_session|' . $body, 'eventcrew-test-key');
+
+        self::assertSame(42, WebSession::read($legacy));
+        self::assertSame(0, WebSession::issuedAt($legacy));
+    }
+
+    public function testAnExpiredLegacyCookieIsStillRejected(): void
+    {
+        $body = rtrim(strtr(base64_encode('42|1000'), '+/', '-_'), '=');
+        $legacy = $body . '.' . hash_hmac('sha256', 'web_session|' . $body, 'eventcrew-test-key');
+
+        self::assertNull(WebSession::read($legacy, 2_000));
+    }
+
+    /** A body with the wrong number of fields is not a cookie we minted. */
+    public function testACookieWithTooManyPartsIsRejected(): void
+    {
+        $body = rtrim(strtr(base64_encode('42|1|2|9999999999'), '+/', '-_'), '=');
+        $forged = $body . '.' . hash_hmac('sha256', 'web_session|' . $body, 'eventcrew-test-key');
+
+        self::assertNull(WebSession::read($forged));
+    }
 }

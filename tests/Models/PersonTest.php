@@ -19,8 +19,6 @@ final class PersonTest extends TestCase
             'telegram_user_id' => '123456',
             'telegram_chat_id' => '123456',
             'is_organizer' => '1',
-            'email_opt_in_at' => '2026-07-01 10:05:00',
-            'email_opt_in_source' => 'telegram',
             'notes' => 'Brings her own ladder',
             'created_at' => '2026-06-01 09:00:00',
             'updated_at' => '2026-07-01 10:05:00',
@@ -44,12 +42,12 @@ final class PersonTest extends TestCase
             'email' => 'sam@example.test',
             'email_verified_at' => '',
             'telegram_user_id' => '',
-            'email_opt_in_at' => '',
+            'sessions_valid_from' => '',
         ]);
 
         self::assertNull($person->emailVerifiedAt);
         self::assertNull($person->telegramUserId);
-        self::assertNull($person->emailOptInAt);
+        self::assertNull($person->sessionsValidFrom);
         self::assertFalse($person->isEmailVerified());
         self::assertFalse($person->hasTelegram());
     }
@@ -74,5 +72,35 @@ final class PersonTest extends TestCase
         ]);
 
         self::assertSame('Pat', $person->name());
+    }
+
+    /** Nobody has revoked anything, so every session is still theirs. */
+    public function testEverySessionIsAcceptedUntilOneIsRevoked(): void
+    {
+        $person = Person::fromRow(['id' => 1, 'email' => 'sam@example.test']);
+
+        self::assertTrue($person->acceptsSessionIssuedAt(0));
+        self::assertTrue($person->acceptsSessionIssuedAt(time()));
+    }
+
+    /**
+     * The line, once moved: cookies issued before it are refused, ones issued
+     * after are not. A legacy cookie's issue time of 0 falls on the refused
+     * side, which is what retires it.
+     */
+    public function testRevocationRefusesOnlyTheSessionsIssuedBeforeIt(): void
+    {
+        $person = Person::fromRow([
+            'id' => 1,
+            'email' => 'sam@example.test',
+            'sessions_valid_from' => '2026-07-20 12:00:00',
+        ]);
+
+        $revokedAt = (int) strtotime('2026-07-20 12:00:00');
+
+        self::assertFalse($person->acceptsSessionIssuedAt($revokedAt - 1));
+        self::assertFalse($person->acceptsSessionIssuedAt(0));
+        self::assertTrue($person->acceptsSessionIssuedAt($revokedAt));
+        self::assertTrue($person->acceptsSessionIssuedAt($revokedAt + 1));
     }
 }

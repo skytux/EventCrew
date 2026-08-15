@@ -89,8 +89,6 @@ final class PersonRepository
                 'can_lead' => ! empty($data['can_lead']) ? 1 : 0,
                 'at_risk_pass' => ! empty($data['at_risk_pass']) ? 1 : 0,
                 'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
-                'email_opt_in_at' => $data['email_opt_in_at'] ?? null,
-                'email_opt_in_source' => (string) ($data['email_opt_in_source'] ?? ''),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -186,31 +184,24 @@ final class PersonRepository
         return array_map('intval', is_array($ids) ? $ids : []);
     }
 
-    /**
-     * Records affirmative consent to the open-task mail, together with where
-     * it was given. The source is kept because under GDPR the burden of
-     * showing consent was given falls on us, and "the column was set" is a
-     * weaker answer than "set on this date, from the bot".
-     */
-    public function recordEmailOptIn(int $id, string $source): void
-    {
-        $this->update($id, [
-            'email_opt_in_at' => current_time('mysql'),
-            'email_opt_in_source' => $source,
-        ]);
-    }
-
-    public function withdrawEmailOptIn(int $id): void
-    {
-        $this->update($id, [
-            'email_opt_in_at' => null,
-            'email_opt_in_source' => '',
-        ]);
-    }
-
     public function markEmailVerified(int $id): void
     {
         $this->update($id, ['email_verified_at' => current_time('mysql')]);
+    }
+
+    /**
+     * Retires every web session this person currently holds, by moving the line
+     * a session's issue time has to be after.
+     *
+     * Covers the sessions we cannot see - a phone left behind, a shared
+     * computer, a cookie copied off a machine - which is the whole point: the
+     * cookie is stateless, so there is no list of sessions to revoke one by
+     * one. The person's own session goes with them, and that is correct; being
+     * signed out is the proof it worked.
+     */
+    public function revokeSessions(int $id): void
+    {
+        $this->update($id, ['sessions_valid_from' => current_time('mysql')]);
     }
 
     public function setOrganizer(int $id, bool $isOrganizer): void
@@ -375,32 +366,6 @@ final class PersonRepository
         );
     }
 
-    /**
-     * How many verified people have opted in to the open-task mail.
-     * Surfaced on the dashboard so the organizer can tell whether that channel
-     * is worth anything yet, rather than discovering it reaches nobody on the
-     * night it matters.
-     *
-     * @return array{opted_in: int, verified: int}
-     */
-    public function optInStats(): array
-    {
-        global $wpdb;
-
-        $row = $wpdb->get_row(
-            "SELECT
-                SUM(CASE WHEN email_opt_in_at IS NOT NULL THEN 1 ELSE 0 END) AS opted_in,
-                SUM(CASE WHEN email_verified_at IS NOT NULL THEN 1 ELSE 0 END) AS verified
-            FROM {$this->table()}",
-            ARRAY_A
-        );
-
-        return [
-            'opted_in' => (int) ($row['opted_in'] ?? 0),
-            'verified' => (int) ($row['verified'] ?? 0),
-        ];
-    }
-
     private function normalizeEmail(string $email): string
     {
         return strtolower(trim($email));
@@ -413,7 +378,7 @@ final class PersonRepository
      */
     private function safeOrderBy(string $column): string
     {
-        $allowed = ['id', 'email', 'display_name', 'created_at', 'email_opt_in_at'];
+        $allowed = ['id', 'email', 'display_name', 'created_at'];
 
         return in_array($column, $allowed, true) ? $column : 'display_name';
     }

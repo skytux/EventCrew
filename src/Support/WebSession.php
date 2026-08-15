@@ -24,46 +24,91 @@ final class WebSession
 
     /**
      * A signed cookie value for a person, good for TTL from now.
+     *
+     * The issue time is carried as well as the expiry, so a cookie can be
+     * compared against a person's revocation stamp. Without it "sign out
+     * everywhere" is impossible for a stateless cookie: there is nothing to
+     * distinguish one minted before the revocation from one minted after.
      */
     public static function mint(int $personId, ?int $now = null): string
     {
-        $expiry = ($now ?? time()) + self::TTL;
-        $body = self::encode($personId . '|' . $expiry);
+        $issued = $now ?? time();
+        $body = self::encode($personId . '|' . $issued . '|' . ($issued + self::TTL));
 
         return $body . '.' . self::mac('web_session', $body);
     }
 
     /**
      * The person id a cookie carries, or null when it is malformed, tampered
-     * with, or past its expiry.
+     * with, or past its expiry. Revocation is not checked here - that needs the
+     * person row, which the caller has; see issuedAt().
      */
     public static function read(string $cookie, ?int $now = null): ?int
     {
+        return self::parse($cookie, $now)['person_id'];
+    }
+
+    /**
+     * When the cookie was issued, as a timestamp, or null when it is not valid.
+     *
+     * A cookie minted before this version has no issue time and answers 0,
+     * which is older than any revocation stamp and so is revoked by the first
+     * "sign out everywhere" - but until then it keeps working. Upgrading must
+     * not sign out an entire crew to gain a button none of them has pressed.
+     */
+    public static function issuedAt(string $cookie, ?int $now = null): ?int
+    {
+        return self::parse($cookie, $now)['issued_at'];
+    }
+
+    /**
+     * @return array{person_id: int|null, issued_at: int|null}
+     */
+    private static function parse(string $cookie, ?int $now = null): array
+    {
+        $empty = ['person_id' => null, 'issued_at' => null];
+
         $cookie = trim($cookie);
         $dot = strrpos($cookie, '.');
 
         if (false === $dot) {
-            return null;
+            return $empty;
         }
 
         $body = substr($cookie, 0, $dot);
         $signature = substr($cookie, $dot + 1);
 
         if (! hash_equals(self::mac('web_session', $body), $signature)) {
-            return null;
+            return $empty;
         }
 
         $parts = explode('|', self::decode($body));
 
-        if (2 !== count($parts) || ! ctype_digit($parts[0]) || ! ctype_digit($parts[1])) {
-            return null;
+        foreach ($parts as $part) {
+            if (! ctype_digit($part)) {
+                return $empty;
+            }
         }
 
-        if ((int) $parts[1] < ($now ?? time())) {
-            return null;
+        // Two parts is the pre-revocation format: person and expiry, no issue
+        // time. Three is the current one.
+        $issued = match (count($parts)) {
+            2 => 0,
+            3 => (int) $parts[1],
+            default => null,
+        };
+
+        if (null === $issued) {
+            return $empty;
         }
 
-        return (int) $parts[0];
+        $expiry = (int) $parts[count($parts) - 1];
+
+        if ($expiry < ($now ?? time())) {
+            return $empty;
+        }
+
+        return ['person_id' => (int) $parts[0], 'issued_at' => $issued];
     }
 
     /**
