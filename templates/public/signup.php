@@ -591,9 +591,29 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
      */
     var CHALLENGE_STEP = 200;
     var CHALLENGE_GIVE_UP = 15000;
-    // How long to wait for a token once somebody has pressed. Short, because
-    // they are watching: see refreshChallenge().
-    var REFRESH_WAIT = 4000;
+    /*
+     * How long to wait for a token once somebody has pressed.
+     *
+     * Ten seconds, not the four this started at: a challenge solving from cold
+     * after a reset is slower than the one that solved during page load, and
+     * four seconds was short enough that pressing Resend gave up before the new
+     * token arrived - so the widget visibly reloaded, nothing was sent, and it
+     * took a second press. Still bounded, and the button says what it is doing
+     * throughout, so the wait is visible rather than dead.
+     */
+    var REFRESH_WAIT = 10000;
+
+    /*
+     * How long after a send before the widget is quietly re-armed.
+     *
+     * A spent token has to be replaced before anything can be sent again, and
+     * doing it here - while the "check your inbox" message is being read -
+     * means Resend usually has a fresh one waiting and sends on the first
+     * press. Doing it at the instant of success looked like the form reloading
+     * (v1.23.1), and not doing it at all made Resend take two presses. A beat
+     * later is neither.
+     */
+    var REARM_AFTER = 1200;
     var unsolvedNotice = <?php echo wp_json_encode(
         __('The spam check hasn’t finished yet — give it a moment, then try again.', 'eventcrew')
     ); ?>;
@@ -987,6 +1007,18 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             }
 
             submitting = false;
+
+            // Re-arm in the background so a Resend has a token ready. The
+            // watcher picks the new one up and clears the spent flag with it.
+            if (hasChallenge(form) && window.turnstile) {
+                setTimeout(function () {
+                    if (submitting) {
+                        return;
+                    }
+
+                    try { window.turnstile.reset(); } catch (err) {}
+                }, REARM_AFTER);
+            }
         }).catch(function () {
             if (button) {
                 button.disabled = false;
