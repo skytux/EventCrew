@@ -548,46 +548,79 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     var ajaxUrl = <?php echo wp_json_encode($eventcrew_ajax); ?>;
 
     /*
-     * Runs `go` once the Turnstile widget in this form has produced a token, or
-     * after a short wait if it never does.
+     * The sign-in button waits for the spam check.
      *
-     * The widget renders and solves asynchronously, and its token arrives in a
-     * hidden field this form only reads at submit time. Someone who types their
-     * address and presses the button straight away therefore used to submit an
-     * empty token, get refused, and see no email - while a second press, by
-     * which point the widget had finished, worked. That is the "it never sends
-     * the first time" everyone eventually stops reporting and starts working
-     * around.
+     * Turnstile renders and solves asynchronously and writes its token into a
+     * hidden field. Pressing before that lands submits an empty token, which is
+     * refused outright - so the press did nothing, and only a second one, by
+     * which point the widget had finished, actually sent the link. Rather than
+     * let someone spend a press finding that out, the button says what it is
+     * waiting for and only becomes live once there is a token to send.
      *
-     * Waiting rather than disabling the button: a blocked or failed challenge
-     * script would leave a disabled button and no way to sign in at all. After
-     * the timeout it submits regardless and lets the server refuse, which is a
-     * clear message instead of a dead form.
+     * The safety valve is the timeout below. Ad blockers and privacy extensions
+     * do block the challenge script outright, and a button that stays disabled
+     * for ever is a form nobody can sign in through at all. After GIVE_UP the
+     * button goes live regardless; the press then reaches the server, which
+     * refuses it and says why. A wasted press beats a dead page.
+     *
+     * None of this runs without the widget, and none of it runs with JavaScript
+     * off - the button ships enabled and the form posts normally.
      */
-    function whenChallengeReady(form, go) {
-        var widget = form.querySelector('.cf-turnstile');
+    var CHALLENGE_STEP = 200;
+    var CHALLENGE_GIVE_UP = 15000;
 
-        if (!widget || !window.turnstile || typeof window.turnstile.getResponse !== 'function') {
-            go();
+    var signinForm = root.querySelector('form[data-eventcrew-signin]');
+    var signinButton = signinForm ? signinForm.querySelector('button') : null;
+    // Whatever the button should say when it is live. Becomes "Resend link"
+    // after a link has gone, so it is read back rather than assumed.
+    var signinLiveLabel = signinButton ? signinButton.textContent : '';
+    var waitingLabel = <?php echo wp_json_encode(__('Checking you’re human…', 'eventcrew')); ?>;
+    var submitting = false;
+
+    function challengeToken() {
+        try {
+            return (window.turnstile && window.turnstile.getResponse()) || '';
+        } catch (err) {
+            return '';
+        }
+    }
+
+    function hasChallenge(form) {
+        return !!(form && form.querySelector('.cf-turnstile'));
+    }
+
+    function setSigninLive(live) {
+        if (!signinButton || submitting) {
             return;
         }
 
-        var waited = 0;
-        var step = 150;
-        var limit = 5000;
+        signinButton.disabled = !live;
+        signinButton.textContent = live ? signinLiveLabel : waitingLabel;
+    }
 
-        (function poll() {
-            var token = '';
-            try { token = window.turnstile.getResponse() || ''; } catch (err) { token = ''; }
+    if (hasChallenge(signinForm) && signinButton) {
+        setSigninLive(false);
 
-            if (token || waited >= limit) {
-                go();
+        var starved = 0;
+
+        setInterval(function () {
+            if (submitting) {
                 return;
             }
 
-            waited += step;
-            setTimeout(poll, step);
-        })();
+            if (challengeToken()) {
+                starved = 0;
+                setSigninLive(true);
+
+                return;
+            }
+
+            starved += CHALLENGE_STEP;
+
+            // Past the timeout the button stays live and empty-handed rather
+            // than dead; see the note above.
+            setSigninLive(starved >= CHALLENGE_GIVE_UP);
+        }, CHALLENGE_STEP);
     }
 
     root.addEventListener('submit', function (e) {
@@ -609,13 +642,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             try { localStorage.setItem(EMAIL_KEY, emailField.value || ''); } catch (e) {}
         }
 
-        whenChallengeReady(form, function () { send(form, button, isSignin); });
+        // Holds the watcher above off the button until the request is done, so
+        // it cannot re-enable it or rewrite its label mid-flight.
+        submitting = true;
+
+        send(form, button, isSignin);
     });
 
     function send(form, button, isSignin) {
-        // Built here, after any challenge has settled: the widget writes its
-        // token into a hidden field, so a FormData taken before that carries an
-        // empty one.
+        // The widget writes its token into a hidden field, so this is read now
+        // rather than when the button was pressed.
         var data = new FormData(form);
         data.append('eventcrew_ajax', '1');
 
@@ -662,7 +698,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (isSignin && res && 'check_email' === res.code) {
                 var sent = document.getElementById('eventcrew-signin-sent');
                 if (sent) { sent.hidden = false; }
-                if (button) { button.textContent = <?php echo wp_json_encode(__('Resend link', 'eventcrew')); ?>; }
+                // Remembered as the live label too, so the watcher restores
+                // "Resend link" rather than the original wording once the
+                // freshly reset widget has solved again.
+                signinLiveLabel = <?php echo wp_json_encode(__('Resend link', 'eventcrew')); ?>;
+                if (button) { button.textContent = signinLiveLabel; }
             }
             // A redeemed free-entry ticket: open it. Prefer a new tab; if the
             // browser blocks the popup, navigate this one to the ticket instead.
@@ -677,13 +717,19 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             }
             // A Turnstile token is single-use; reset the widget so a second
             // sign-in attempt (or a rejected one) can be solved afresh.
-            if (window.turnstile && form.querySelector('.cf-turnstile')) {
+            if (window.turnstile && hasChallenge(form)) {
                 try { window.turnstile.reset(); } catch (e) {}
             }
+
+            // Hand the button back to the watcher, which finds the reset widget
+            // has no token yet and returns it to "checking" until it has one.
+            submitting = false;
         }).catch(function () {
             if (button) {
                 button.disabled = false;
             }
+
+            submitting = false;
         });
     }
 })();

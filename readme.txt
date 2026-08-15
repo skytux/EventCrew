@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.21.2
+Stable tag: 1.22.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.22.0 =
+* The sign-in button now waits for the spam check instead of letting you press it too early. While Cloudflare is still working it reads "Checking you’re human…" and cannot be pressed; it becomes "Email me a sign-in link" the moment there is something to send. 1.21.2 made an early press work by waiting behind the scenes — this makes the wait visible, so nobody spends a press wondering whether anything happened.
+* If the challenge never arrives — an ad blocker or privacy extension stopping the script is the usual reason — the button goes live anyway after fifteen seconds rather than staying dead for ever. The press then reaches the server, which explains itself.
+* Fixed: **the "Delete my data" link was close to invisible on a dark page.** It was a deep red picked to carry white text on a filled button, which is the wrong colour for bare text on a dark background or over a dark background image. It now shifts with the page's own text colour, so it stays legible and still reads as a warning. Everything else on the page already worked this way; this was the one colour that did not.
 
 = 1.21.2 =
 * Fixed: **the sign-in email often did not send on the first press, then worked on the second.** With the Cloudflare captcha switched on, the widget takes a moment to render and solve, and the form read its token the instant the button was pressed — so anyone quick enough submitted an empty one and was refused. The page now waits for the token before sending, and gives up after five seconds and submits anyway, so a blocked or broken challenge script cannot leave you unable to sign in at all.
@@ -377,6 +382,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.22.0 =
+The sign-in button now says when it is waiting for the spam check and only becomes pressable once it can actually send, and the "Delete my data" link is legible on dark pages. Clear any page cache after upgrading, since the stylesheet changed. No database change.
 
 = 1.21.2 =
 Fixes the sign-in email not sending on the first press when the Cloudflare captcha is on, and the page claiming a link was sent when it was not. No database change.
