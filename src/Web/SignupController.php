@@ -586,11 +586,17 @@ final class SignupController
      * Ends a claim/drop request: on an AJAX call, the fresh board list plus the
      * notice text as JSON (the page shows it as a toast); otherwise the usual
      * redirect back to the page.
+     *
+     * The raw code goes out beside the human text because the page has to know
+     * what actually happened, not just what to say. It only had the wording
+     * before, which is why the sign-in form announced "check your inbox" after
+     * a refused captcha - it could not tell a sent link from a rejected one.
      */
     private function finish(string $url, string $notice, bool $ajax): never
     {
         if ($ajax) {
             wp_send_json([
+                'code' => $notice,
                 'notice' => self::noticeText($notice),
                 'board' => $this->renderBoard($url),
             ]);

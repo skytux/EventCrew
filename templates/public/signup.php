@@ -547,6 +547,49 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
     var ajaxUrl = <?php echo wp_json_encode($eventcrew_ajax); ?>;
 
+    /*
+     * Runs `go` once the Turnstile widget in this form has produced a token, or
+     * after a short wait if it never does.
+     *
+     * The widget renders and solves asynchronously, and its token arrives in a
+     * hidden field this form only reads at submit time. Someone who types their
+     * address and presses the button straight away therefore used to submit an
+     * empty token, get refused, and see no email - while a second press, by
+     * which point the widget had finished, worked. That is the "it never sends
+     * the first time" everyone eventually stops reporting and starts working
+     * around.
+     *
+     * Waiting rather than disabling the button: a blocked or failed challenge
+     * script would leave a disabled button and no way to sign in at all. After
+     * the timeout it submits regardless and lets the server refuse, which is a
+     * clear message instead of a dead form.
+     */
+    function whenChallengeReady(form, go) {
+        var widget = form.querySelector('.cf-turnstile');
+
+        if (!widget || !window.turnstile || typeof window.turnstile.getResponse !== 'function') {
+            go();
+            return;
+        }
+
+        var waited = 0;
+        var step = 150;
+        var limit = 5000;
+
+        (function poll() {
+            var token = '';
+            try { token = window.turnstile.getResponse() || ''; } catch (err) { token = ''; }
+
+            if (token || waited >= limit) {
+                go();
+                return;
+            }
+
+            waited += step;
+            setTimeout(poll, step);
+        })();
+    }
+
     root.addEventListener('submit', function (e) {
         var form = e.target.closest('form.eventcrew-action');
 
@@ -566,6 +609,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             try { localStorage.setItem(EMAIL_KEY, emailField.value || ''); } catch (e) {}
         }
 
+        whenChallengeReady(form, function () { send(form, button, isSignin); });
+    });
+
+    function send(form, button, isSignin) {
+        // Built here, after any challenge has settled: the widget writes its
+        // token into a hidden field, so a FormData taken before that carries an
+        // empty one.
         var data = new FormData(form);
         data.append('eventcrew_ajax', '1');
 
@@ -599,9 +649,17 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (res && res.notice) {
                 showToast(res.notice);
             }
-            // The sign-in link was just requested: reveal the "check your inbox"
-            // note in place and turn the button into a clear Resend.
-            if (isSignin) {
+            /*
+             * The sign-in link was actually sent: reveal the "check your inbox"
+             * note in place and turn the button into a clear Resend.
+             *
+             * Gated on the outcome, not on "this was the sign-in form". It used
+             * to fire on any response, so a refused captcha or a mistyped
+             * address told people to go and check an inbox nothing had been
+             * sent to - which is worse than saying nothing, because they then
+             * wait instead of pressing the button again.
+             */
+            if (isSignin && res && 'check_email' === res.code) {
                 var sent = document.getElementById('eventcrew-signin-sent');
                 if (sent) { sent.hidden = false; }
                 if (button) { button.textContent = <?php echo wp_json_encode(__('Resend link', 'eventcrew')); ?>; }
@@ -627,6 +685,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 button.disabled = false;
             }
         });
-    });
+    }
 })();
 </script>
