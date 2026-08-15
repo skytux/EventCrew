@@ -156,21 +156,23 @@ final class PrivacyPolicy
 
     /**
      * The sentence that sits under the sign-in field and in the bot's welcome.
-     * Deliberately short and deliberately true: an email address is the whole
-     * of what is being asked for at that moment, and the rest is a link away.
+     *
+     * Kept to one short clause. It shares a narrow, centred column with the
+     * sign-in hint, where a sentence long enough to wrap breaks into ragged
+     * halves and reads as a paragraph nobody asked for - and the detail it was
+     * trying to summarise is one tap away in the notice itself, which is the
+     * whole point of linking to it. Short enough to survive that column, true
+     * enough to stand alone.
      */
     public static function noticeLine(): string
     {
-        return __(
-            'We store your email address and your task history so we can run the crew.',
-            'eventcrew'
-        );
+        return __('We store your email to run the crew.', 'eventcrew');
     }
 
     /** The link text that follows it. */
     public static function noticeLinkLabel(): string
     {
-        return __('How we handle your data', 'eventcrew');
+        return __('Privacy', 'eventcrew');
     }
 
     /**

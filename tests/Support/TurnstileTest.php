@@ -55,6 +55,39 @@ final class TurnstileTest extends TestCase
         self::assertFalse($this->turnstile()->verify(''));
     }
 
+    /**
+     * The empty-token refusal has to say so.
+     *
+     * It is the likeliest of the lot - a form posted before the widget wrote
+     * its hidden field - and it used to return false without logging anything,
+     * so an install hitting it every time showed a completely empty
+     * Diagnostics. That reads as "the check never ran", which sent the last two
+     * releases chasing the wrong cause.
+     */
+    public function testAMissingTokenSaysSoInTheLog(): void
+    {
+        $logged = [];
+
+        Functions\when('update_option')->alias(
+            static function (string $name, mixed $value) use (&$logged): bool {
+                $logged = is_array($value) ? $value : [];
+
+                return true;
+            }
+        );
+
+        $this->withKeys(true);
+
+        self::assertFalse($this->turnstile()->verify(''));
+
+        $messages = implode(' ', array_map(
+            static fn (array $entry): string => (string) ($entry['message'] ?? ''),
+            $logged
+        ));
+
+        self::assertStringContainsString('no token', $messages);
+    }
+
     public function testASolvedTokenPasses(): void
     {
         $this->withKeys(true, ['success' => true]);

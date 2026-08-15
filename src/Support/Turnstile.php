@@ -67,6 +67,19 @@ final class Turnstile
         }
 
         if ('' === $token) {
+            /*
+             * Logged, not silent. This is the likeliest refusal of the lot -
+             * the form posted before the widget had written anything into its
+             * hidden field - and it was the one path that returned false
+             * without a word, so an install hitting it showed nothing in
+             * Diagnostics at all and looked like the check was never reached.
+             * An empty Diagnostics was itself the evidence, and unreadable.
+             */
+            $this->logger->warning(
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- one log line; wrapping it just splits the message.
+                'Turnstile refused a submission: the form arrived with no token, so the widget had not solved when it was sent.'
+            );
+
             return false;
         }
 
