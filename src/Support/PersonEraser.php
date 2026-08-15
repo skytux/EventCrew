@@ -101,6 +101,12 @@ final class PersonEraser
             'can_lead' => 0,
             'at_risk_pass' => 0,
             'anonymized_at' => current_time('mysql'),
+            // The row survives anonymising, so a live session cookie would go
+            // on resolving to it - leaving whoever holds it signed in and
+            // looking at the history of a record that no longer has a name.
+            // erase() needs no equivalent: it deletes the row, and the cookie
+            // then resolves to nobody.
+            'sessions_valid_from' => current_time('mysql'),
         ]);
     }
 }

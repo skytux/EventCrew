@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Models;
 
+use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Tests\TestCase;
 
@@ -87,20 +88,42 @@ final class PersonTest extends TestCase
      * The line, once moved: cookies issued before it are refused, ones issued
      * after are not. A legacy cookie's issue time of 0 falls on the refused
      * side, which is what retires it.
+     *
+     * Deliberately run on a site that is not on UTC, because that is the only
+     * way this can go wrong. The stored column is a naive local wall clock and
+     * a cookie's issue time is a real epoch; comparing them without converting
+     * puts the line the site's offset into the future, which refuses every
+     * freshly minted cookie for hours after a revocation. An earlier version of
+     * this test built both sides with strtotime() and so agreed with the bug.
      */
     public function testRevocationRefusesOnlyTheSessionsIssuedBeforeIt(): void
     {
+        $helsinki = new \DateTimeZone('Europe/Helsinki');
+
+        Functions\when('get_gmt_from_date')->alias(
+            static fn (string $local): string => (new \DateTimeImmutable($local, $helsinki))
+                ->setTimezone(new \DateTimeZone('UTC'))
+                ->format('Y-m-d H:i:s')
+        );
+
         $person = Person::fromRow([
             'id' => 1,
             'email' => 'sam@example.test',
+            // Local wall clock, as revokeSessions() writes it. In July that is
+            // UTC+3, so the real moment is 09:00 UTC.
             'sessions_valid_from' => '2026-07-20 12:00:00',
         ]);
 
-        $revokedAt = (int) strtotime('2026-07-20 12:00:00');
+        // The real epoch WebSession::mint() would stamp at that same moment.
+        $revokedAt = (int) strtotime('2026-07-20 09:00:00 UTC');
 
         self::assertFalse($person->acceptsSessionIssuedAt($revokedAt - 1));
         self::assertFalse($person->acceptsSessionIssuedAt(0));
         self::assertTrue($person->acceptsSessionIssuedAt($revokedAt));
+
+        // The assertion that failed before the conversion was added: a cookie
+        // minted a second after the revocation must be accepted, not held out
+        // until local time catches up.
         self::assertTrue($person->acceptsSessionIssuedAt($revokedAt + 1));
     }
 }
