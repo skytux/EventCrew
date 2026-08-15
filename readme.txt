@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.23.3
+Stable tag: 1.23.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.23.4 =
+* Fixed, properly this time: **the "Delete my data" link was still nearly unreadable on a dark page.** 1.22.0 shifted it toward the page's text colour but kept too much of the deep red — enough to stay dark, and dark on dark is dark. No fixed red can be legible against a background nobody has declared, and every step toward making one legible is a step away from it being red at all. The wording now takes the page's own text colour, which the theme already chose to be readable against its own background, and the red moves to a thicker underline beneath it, where being dim costs nothing because nobody has to read a line.
 
 = 1.23.3 =
 * **Root cause found, at last: the spam check keeps its answer in two places and fills them seconds apart.** Cloudflare hands its token to the page's script the moment the challenge is solved — the tick appears then — and only writes it into the hidden form field a few seconds later. The form submits the field, so a press inside that gap sent nothing at all, was refused for having no token, and showed a tick throughout insisting everything was fine. It also explains the one clue that never fitted: focusing the email box first "fixed" it, because typing spends exactly the seconds the field needed to catch up.
@@ -406,6 +409,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.23.4 =
+Makes the "Delete my data" link readable on dark pages; the previous attempt was still too dark. Clear any page cache after upgrading. No database change.
 
 = 1.23.3 =
 Fixes the sign-in link not sending on the first press. Cloudflare fills its token into the form a few seconds after the tick appears, and the form was submitting the empty field; the token is now sent explicitly. This is the release that actually fixes it. Clear any page cache after upgrading. No database change.

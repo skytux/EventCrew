@@ -52,7 +52,7 @@
      * same trick --eventcrew-line uses for borders. It is the only place an
      * absolute colour was being asked to be legible on an unknown background.
      */
-    --eventcrew-stop-ink: color-mix(in srgb, var(--eventcrew-stop) 60%, currentColor);
+    --eventcrew-stop-ink: color-mix(in srgb, var(--eventcrew-stop) 45%, currentColor);
     /* The pips are half a character wide, where the button's deep green reads
        as near-black. They get a vivid one of their own so a filled slot is
        obvious at a glance rather than a dark speck. */
@@ -273,10 +273,29 @@
     background: none; border: 0; padding: 0; font: inherit;
     color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
 }
-/* Falls back to plain currentColor where color-mix is unsupported: legible
-   everywhere, just without the red cast, which is the safe way round. */
-.eventcrew-signup .eventcrew-linkbtn-danger { color: currentColor; opacity: 1; }
-.eventcrew-signup .eventcrew-linkbtn-danger { color: var(--eventcrew-stop-ink); }
+/*
+ * Delete reads in the page's own text colour, with the red moved to the rule
+ * under it.
+ *
+ * Tinting the text itself was still wrong. A fixed red cannot be legible
+ * against a background nobody has declared - mixed 60% toward the page it was
+ * about rgb(163,89,89), which is fine on white and nearly invisible over a dark
+ * image - and every step toward legibility is a step away from the red being
+ * red at all. The only colour guaranteed to read here is the one the theme
+ * already uses for text, because the theme chose it against its own background.
+ *
+ * So the text takes that, and the danger signal moves to the underline, where
+ * being dim costs nothing: nobody has to read a line. A thicker, offset rule in
+ * the stop colour is visible as a red mark without the wording depending on it.
+ */
+.eventcrew-signup .eventcrew-linkbtn-danger {
+    color: inherit;
+    opacity: 1;
+    font-weight: 600;
+    text-decoration-color: var(--eventcrew-stop-ink);
+    text-decoration-thickness: 2px;
+    text-underline-offset: .2em;
+}
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
 .eventcrew-signup .eventcrew-signout { margin: 0; display: inline; }
 
