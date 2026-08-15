@@ -658,11 +658,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     var STALE_AFTER = 100000;
     var tokenSeenAt = 0;
     var lastToken = '';
+    var tokenSpent = false;
 
     function noteToken(token) {
         if (token !== lastToken) {
             lastToken = token;
             tokenSeenAt = token ? Date.now() : 0;
+            // A token we have not sent yet.
+            tokenSpent = false;
         }
     }
 
@@ -673,7 +676,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
      * which it now does out loud.
      */
     function tokenIsStale() {
-        return !!lastToken && (Date.now() - tokenSeenAt) > STALE_AFTER;
+        if (!lastToken) {
+            return false;
+        }
+
+        // Spent counts as stale: a token is good for one send, so the one
+        // already used is no more use than an expired one.
+        return tokenSpent || (Date.now() - tokenSeenAt) > STALE_AFTER;
     }
 
     /** Throws the current token away and calls `done` once a new one lands. */
@@ -857,14 +866,24 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (button) {
                 button.disabled = false;
             }
-            // A Turnstile token is single-use; reset the widget so a second
-            // sign-in attempt (or a rejected one) can be solved afresh.
-            if (window.turnstile && hasChallenge(form)) {
-                try { window.turnstile.reset(); } catch (e) {}
-            }
 
-            // Hand the button back to the watcher, which finds the reset widget
-            // has no token yet and returns it to "checking" until it has one.
+            /*
+             * The token is spent, but the widget is left alone.
+             *
+             * Resetting here re-ran the challenge the instant the link was
+             * sent: the tick vanished and the box visibly worked itself out
+             * again, directly under a message saying to go and check an inbox.
+             * It reads as the form reloading, and it is asking a question
+             * nobody has been posed - there is nothing to submit until they
+             * press Resend.
+             *
+             * Marking it spent instead defers that to the next press, where
+             * the refresh happens for a reason and the wait belongs. The
+             * button stays live and reading "Resend link" in the meantime,
+             * because the field it is gated on still holds a value.
+             */
+            tokenSpent = true;
+
             submitting = false;
         }).catch(function () {
             if (button) {
