@@ -121,12 +121,12 @@ final class BoardServiceTest extends TelegramTestCase
     // --- render -------------------------------------------------------------
 
     /**
-     * Each event is introduced by two heading rows in the keyboard - its name,
-     * then its date - and the task buttons follow. Headings appear for a single
-     * event too: a board that changes shape when a second event opens is one
-     * people have to re-learn.
+     * Each event is introduced by two heading rows in the keyboard - 📅 and the
+     * event's name, then the date under it - and the task buttons follow.
+     * Headings appear for a single event too: a board that changes shape when a
+     * second event opens is one people have to re-learn.
      */
-    public function testRenderHeadsEachEventWithItsNameAndDate(): void
+    public function testRenderHeadsEachEventWithItsNameThenItsDate(): void
     {
         $this->wpdb->nextResults[] = [
             $this->taskRow(1, 100, 'Party'),
@@ -138,13 +138,30 @@ final class BoardServiceTest extends TelegramTestCase
 
         // Name, date, then one row per task. No deep-link row (no username).
         self::assertCount(4, $rendered['keyboard']);
-        self::assertSame('Party', $rendered['keyboard'][0][0]['text']);
-        self::assertStringStartsWith('📅', $rendered['keyboard'][1][0]['text']);
+        self::assertSame('📅 Party', $rendered['keyboard'][0][0]['text']);
+        self::assertStringNotContainsString('📅', $rendered['keyboard'][1][0]['text']);
 
         // The headings are no-ops, and the tasks are not.
         self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][0][0]['callback_data']);
         self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][1][0]['callback_data']);
         self::assertSame('t:1', $rendered['keyboard'][2][0]['callback_data']);
+    }
+
+    /**
+     * The job's name is what a person chooses between, so it leads the row -
+     * the times under one heading are all the same evening. Its role emoji is
+     * also what tells the row apart from a heading, which carries 📅 or
+     * nothing.
+     */
+    public function testTaskButtonsLeadWithTheRoleThenTimeThenCount(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+
+        // Rows 0 and 1 are the headings; the task follows.
+        self::assertSame('🎈 Decorate · 0/2', $rendered['keyboard'][2][0]['text']);
     }
 
     public function testRenderHeadsEveryEventSeparately(): void
@@ -161,8 +178,8 @@ final class BoardServiceTest extends TelegramTestCase
 
         // Two events, each two heading rows and one task: six rows.
         self::assertCount(6, $rendered['keyboard']);
-        self::assertContains('Party A', $labels);
-        self::assertContains('Party B', $labels);
+        self::assertContains('📅 Party A', $labels);
+        self::assertContains('📅 Party B', $labels);
     }
 
     /**
@@ -179,6 +196,41 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->updates);
         self::assertContains('answerCallbackQuery', $this->calledMethods());
         self::assertNotContains('editMessageText', $this->calledMethods());
+    }
+
+    /**
+     * The links at the foot lead out of the board rather than into a slot, so a
+     * rule separates them from the last task. It is only drawn when there is
+     * something under it - otherwise a bot with no cached username would end
+     * the board on a divider followed by nothing.
+     */
+    public function testARuleSeparatesTheFootLinksFromTheTasks(): void
+    {
+        $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
+
+        // Name, date, task, rule, then the two links.
+        self::assertSame(BoardRenderer::DIVIDER, $labels[3]);
+        self::assertCount(6, $labels);
+        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][3][0]['callback_data']);
+    }
+
+    public function testNoRuleIsDrawnWhenThereAreNoFootLinks(): void
+    {
+        // No username cached, so both deep links are dropped.
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $labels = array_map(
+            static fn (array $row): string => $row[0]['text'],
+            $this->board()->render()['keyboard']
+        );
+
+        self::assertNotContains(BoardRenderer::DIVIDER, $labels);
     }
 
     public function testRenderAddsTheDeepLinkButtonWhenTheUsernameIsKnown(): void

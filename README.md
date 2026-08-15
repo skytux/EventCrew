@@ -76,10 +76,15 @@ to the DM with a breadcrumb left behind.
 | `/allow` | organizers | Grant **leader** / a **one-time at-risk pass** / **admin** |
 | `/leaders` | organizers | Who is eligible and who has been allowed to lead |
 
-The board itself is grouped by event: two inert heading rows — the event's name,
-then its date — introduce each group, and its tasks follow as Join/leave buttons
-reading time first (`17:00–18:30 · Clean 1/3`). Below them sit one-tap deep links
-to onboard a newcomer or open a member's summary.
+The board itself is grouped by event: two inert heading rows — `📅` and the
+event's name, then its date — introduce each group, and its tasks follow as
+Join/leave buttons leading with the job (`🎈 Decorate · 17:00–18:30 · 1/3`).
+Below them, under a rule, sit one-tap deep links to onboard a newcomer or open a
+member's summary.
+
+The headings are buttons only because Telegram has no inert row; tapping one
+does nothing. A task row is told apart from a heading by its role emoji, which
+no heading carries.
 
 Overlapping slots are allowed. Whether two jobs whose times run into each other
 are actually doable is the person's own call, and refusing it cost a filled slot

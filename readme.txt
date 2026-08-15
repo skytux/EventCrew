@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.20.0
+Stable tag: 1.21.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.21.0 =
+* The 📅 moved from an event's date row up to its name row, where it marks the start of each group. On the date row it was labelling something that already looked like a date; on the first row it is the thing the eye finds while scrolling.
+* Task rows now lead with the job — "🎈 Decorate · 17:00–18:30 · 1/3". The name is what you are choosing between; the times under one heading are all the same evening, so they separate the rows far less than the work does. Time and how full follow.
+* Which also means the role's own emoji starts every task row and no heading has one, so it is clear at a glance which rows do something when tapped and which are just labels.
+* A rule now separates the two links at the foot of the board from the tasks above them — they lead out of the board rather than into a slot, and ran on from the last task as though they were one.
 
 = 1.20.0 =
 * Security review of the whole plugin. It found no critical or high-severity holes — SQL is uniformly prepared, the signed-link and session tokens are sound, and every admin action already checked both permission and nonce. What it did find was recoverability: a few places where, if something did leak, there was no way to take it back. This release is those.
@@ -361,6 +367,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.21.0 =
+The Telegram board is easier to scan: the 📅 marks each event's name row, and task rows lead with the job rather than the time. Press "Refresh the board" under Settings ▸ Telegram bot after upgrading to redraw it. No database change.
 
 = 1.20.0 =
 Security hardening from a full review: the webhook secret can be kept out of the URL and rotated, crew members can sign out everywhere at once, and the manage and ticket pages are no longer cacheable. If you use the admin-ajax webhook fallback, read Settings ▸ Telegram bot after upgrading — your secret is in your server logs and this is how to fix that. Adds one database column and drops two, automatically.
