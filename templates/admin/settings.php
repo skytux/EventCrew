@@ -37,6 +37,7 @@
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, webhook_url: string, test_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
 declare(strict_types=1);
@@ -54,6 +55,7 @@ if (! defined('ABSPATH')) {
         <a href="#" class="nav-tab" data-ec-tab="web"><?php esc_html_e('Web page', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="email"><?php esc_html_e('Email', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="tuning"><?php esc_html_e('Reputation & alerts', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="privacy"><?php esc_html_e('Privacy', 'eventcrew'); ?></a>
     </h2>
 
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
@@ -640,6 +642,177 @@ if (! defined('ABSPATH')) {
         </table>
 
         </div>
+        <div class="ec-tab-panel" data-ec-tab="privacy">
+        <h2><?php esc_html_e('Who is responsible for the data', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('EventCrew holds real people’s email addresses and a record of what they did for you, which makes whoever runs these events the data controller for it. Fill this in and the plugin writes the privacy notice for you — the public page, and the suggested text for WordPress’s own privacy policy — describing what this install actually does, including whether the Telegram bot and the Cloudflare check are in use.', 'eventcrew'); ?>
+        </p>
+        <?php if (! $privacy['configured']) : ?>
+            <div class="notice notice-warning inline" style="margin:1em 0">
+                <p>
+                    <?php esc_html_e('The privacy notice is not published yet. Until an organisation and a contact address are filled in below, the public page stays blank and nothing is added to your site’s privacy policy — a notice that cannot say who is answerable would be worse than none.', 'eventcrew'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-controller"><?php esc_html_e('Organisation', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-privacy-controller"
+                        name="privacy_controller"
+                        value="<?php echo esc_attr($privacy['controller']); ?>"
+                        class="regular-text"
+                        placeholder="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                    <p class="description"><?php esc_html_e('The club, association or person answerable for these records. Required.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-contact"><?php esc_html_e('Contact address', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-privacy-contact"
+                        name="privacy_contact"
+                        value="<?php echo esc_attr($privacy['contact']); ?>"
+                        class="regular-text">
+                    <p class="description"><?php esc_html_e('Where people write about their data. Required, and it must be an address somebody actually reads — a request has to be answered within a month.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-address"><?php esc_html_e('Postal address', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <textarea
+                        id="eventcrew-privacy-address"
+                        name="privacy_address"
+                        rows="3"
+                        class="large-text code"><?php echo esc_textarea($privacy['address']); ?></textarea>
+                    <p class="description"><?php esc_html_e('Optional, and left out of the notice when blank.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Data protection officer', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful.', 'eventcrew'); ?>
+        </p>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-dpo-name"><?php esc_html_e('Officer’s name', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-privacy-dpo-name"
+                        name="privacy_dpo_name"
+                        value="<?php echo esc_attr($privacy['dpo_name']); ?>"
+                        class="regular-text">
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-dpo-contact"><?php esc_html_e('Officer’s contact', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-privacy-dpo-contact"
+                        name="privacy_dpo_contact"
+                        value="<?php echo esc_attr($privacy['dpo_contact']); ?>"
+                        class="regular-text">
+                    <p class="description"><?php esc_html_e('An address or phone number people can use directly. This is the field that decides whether a DPO is published at all.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('How long records are kept', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-retention"><?php esc_html_e('Retention period', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-privacy-retention"
+                        name="privacy_retention_years"
+                        value="<?php echo esc_attr((string) $privacy['retention_years']); ?>"
+                        min="<?php echo esc_attr((string) $privacy['retention_min']); ?>"
+                        max="<?php echo esc_attr((string) $privacy['retention_max']); ?>"
+                        step="1"
+                        style="width:6em">
+                    <?php esc_html_e('years after someone’s last activity', 'eventcrew'); ?>
+                    <p class="description"><?php esc_html_e('Counted from the last task they were on, credit they were given, or credit they spent — or from the day they joined if none of those ever happened. This is what the notice publishes.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Enforce it', 'eventcrew'); ?></th>
+                <td>
+                    <label for="eventcrew-privacy-purge">
+                        <input
+                            type="checkbox"
+                            id="eventcrew-privacy-purge"
+                            name="privacy_purge"
+                            value="1"
+                            <?php checked($privacy['purge']); ?>>
+                        <?php esc_html_e('Anonymise expired records automatically', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers and crew leaders are never touched while they hold the role.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <strong><?php esc_html_e('This cannot be undone.', 'eventcrew'); ?></strong>
+                        <?php esc_html_e('Leave it off and the period is a promise you keep by hand — which is a perfectly good answer, and the one to pick if you are unsure.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('The public notice', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-page"><?php esc_html_e('Privacy page', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    wp_dropdown_pages([
+                        'name' => 'privacy_page_id',
+                        'id' => 'eventcrew-privacy-page',
+                        'selected' => $privacy['page_id'],
+                        'show_option_none' => __('— None —', 'eventcrew'),
+                        'option_none_value' => '0',
+                    ]);
+                    ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: the shortcode, already wrapped in <code> */
+                            esc_html__('The page carrying the %s shortcode or the “EventCrew privacy notice” block. Signing-up links to it. If you have no such page yet, there is a button below that makes one.', 'eventcrew'),
+                            '<code>[eventcrew_privacy]</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
+                        );
+                        ?>
+                    </p>
+                    <?php if ('' !== $privacy['notice_url']) : ?>
+                        <p class="description">
+                            <a href="<?php echo esc_url($privacy['notice_url']); ?>" target="_blank" rel="noopener">
+                                <?php esc_html_e('View the notice people are shown', 'eventcrew'); ?>
+                            </a>
+                        </p>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        </table>
+
+        </div>
         <div class="ec-tab-panel" data-ec-tab="email">
         <h2><?php esc_html_e('Notification emails', 'eventcrew'); ?></h2>
         <p class="description">
@@ -889,6 +1062,53 @@ if (! defined('ABSPATH')) {
     </form>
     </div>
 
+    <div class="ec-tab-panel" data-ec-tab="privacy">
+    <h2><?php esc_html_e('Publish it', 'eventcrew'); ?></h2>
+    <?php if (0 === $privacy['page_id']) : ?>
+        <p class="description">
+            <?php esc_html_e('Creates a published page called “Crew privacy notice” holding the shortcode, and selects it above. Edit or rename it afterwards like any other page — the notice itself comes from the fields on this tab, not from the page’s text.', 'eventcrew'); ?>
+        </p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="eventcrew_create_privacy_page">
+            <?php wp_nonce_field($privacy['create_nonce_action']); ?>
+            <?php submit_button(__('Create the privacy page', 'eventcrew'), 'secondary', 'submit', false); ?>
+        </form>
+    <?php else : ?>
+        <p class="description">
+            <?php esc_html_e('A privacy page is chosen. Save any changes above and they appear on it immediately — there is nothing to re-publish.', 'eventcrew'); ?>
+        </p>
+    <?php endif; ?>
+
+    <h2><?php esc_html_e('Your site’s own privacy policy', 'eventcrew'); ?></h2>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: %s: link to the WordPress privacy settings screen, already wrapped in an anchor tag */
+            esc_html__('The same notice is offered to WordPress as suggested policy text, so the site’s main policy can cover the crew data too. Review and paste it in under %s. WordPress will tell you there whenever a new version of this plugin rewords it.', 'eventcrew'),
+            '<a href="' . esc_url($privacy['core_policy_url']) . '">'
+                . esc_html__('Settings → Privacy', 'eventcrew')
+                . '</a>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+        );
+        ?>
+    </p>
+
+    <h2><?php esc_html_e('Requests from people', 'eventcrew'); ?></h2>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: 1: link to the export tool, 2: link to the erase tool, both already wrapped in anchor tags */
+            esc_html__('Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own crew page has a Delete button, and every email links to it.', 'eventcrew'),
+            '<a href="' . esc_url(admin_url('export-personal-data.php')) . '">'
+                . esc_html__('Tools → Export Personal Data', 'eventcrew')
+                . '</a>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+            '<a href="' . esc_url(admin_url('erase-personal-data.php')) . '">'
+                . esc_html__('Tools → Erase Personal Data', 'eventcrew')
+                . '</a>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+        );
+        ?>
+    </p>
+    </div>
+
     <div class="ec-tab-panel" data-ec-tab="telegram">
     <h2><?php esc_html_e('Webhook', 'eventcrew'); ?></h2>
     <?php if (! $telegram['configured']) : ?>
@@ -983,6 +1203,34 @@ if (! defined('ABSPATH')) {
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
             <?php submit_button(__('Install / refresh webhook', 'eventcrew'), 'secondary'); ?>
         </form>
+
+        <h2><?php esc_html_e('The board', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there.', 'eventcrew'); ?>
+        </p>
+        <?php if (0 === $telegram['board_chat_id']) : ?>
+            <div class="notice notice-warning inline" style="margin:1em 0">
+                <p>
+                    <?php esc_html_e('There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it.', 'eventcrew'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="eventcrew_refresh_board">
+            <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+            <?php
+            submit_button(
+                __('Refresh the board', 'eventcrew'),
+                'secondary',
+                'submit',
+                true,
+                0 === $telegram['board_chat_id'] ? ['disabled' => 'disabled'] : []
+            );
+            ?>
+        </form>
     <?php endif; ?>
     </div>
 
@@ -1013,14 +1261,25 @@ if (! defined('ABSPATH')) {
             });
         });
 
-        // Reopen the tab last used (a Save reloads the page), else the first.
+        // A #hash wins over both, so a link can point at one tab from
+        // elsewhere - the unconfigured privacy notice sends an organizer
+        // straight to the fields that would fix it, and landing them on
+        // whichever tab they happened to use last would waste the link.
+        // Otherwise reopen the tab last used (a Save reloads the page), else
+        // the first.
         var initial = 'roles';
-        try {
-            var saved = localStorage.getItem('eventcrew_settings_tab');
-            if (saved && nav.querySelector('.nav-tab[data-ec-tab="' + saved + '"]')) {
-                initial = saved;
-            }
-        } catch (e) {}
+        var hash = (window.location.hash || '').replace(/^#/, '');
+
+        if (hash && nav.querySelector('.nav-tab[data-ec-tab="' + hash + '"]')) {
+            initial = hash;
+        } else {
+            try {
+                var saved = localStorage.getItem('eventcrew_settings_tab');
+                if (saved && nav.querySelector('.nav-tab[data-ec-tab="' + saved + '"]')) {
+                    initial = saved;
+                }
+            } catch (e) {}
+        }
         show(initial);
     })();
     </script>

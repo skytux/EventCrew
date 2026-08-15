@@ -172,10 +172,10 @@ final class ReplacementService
             return __('You’re already signed up for that one.', 'eventcrew');
         }
 
-        if ($this->assignments->hasOverlapping($cover->id, $taskId)) {
-            return __('That clashes with another slot you already hold.', 'eventcrew');
-        }
-
+        // No overlap check: covering someone is exactly the case where a
+        // clash on paper is somebody's own business, and it was refused here
+        // for the same reason it was refused on the board - which is no longer
+        // a reason. Taking the same task twice is still stopped, above.
         return null;
     }
 

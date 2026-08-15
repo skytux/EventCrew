@@ -55,6 +55,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_create_privacy_page',
+            [$this->container->get(SettingsPage::class), 'createPrivacyPage']
+        );
+
+        add_action(
+            'admin_post_eventcrew_refresh_board',
+            [$this->container->get(SettingsPage::class), 'refreshBoard']
+        );
+
+        add_action(
             'admin_post_eventcrew_send_open_task',
             [$this->container->get(TasksPage::class), 'sendOpenTaskEmail']
         );

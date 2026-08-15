@@ -146,8 +146,6 @@ final class ReplacementServiceTest extends TelegramTestCase
         $this->wpdb->nextRows[] = $this->taskRow(5);
         // refusalFor: findFor(5,7) -> null (not already on)
         $this->wpdb->nextRows[] = null;
-        // hasOverlapping -> 0
-        $this->wpdb->nextVars[] = 0;
         // swap: setStatus(replaced) [update], then join(): taskCapacity, findFor null, insert
         $this->wpdb->nextVars[] = 2;         // taskCapacity
         $this->wpdb->nextRows[] = null;      // join findFor

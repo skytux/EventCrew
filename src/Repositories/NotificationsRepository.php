@@ -101,4 +101,20 @@ final class NotificationsRepository
             )
         );
     }
+
+    /**
+     * Clears one person's send ledger.
+     *
+     * These rows are as personal as anything else here - "we emailed this
+     * address about this date" is a record of a person - so an erasure that
+     * left them behind would not be an erasure. Safe to drop: the ledger only
+     * exists to stop a second send of a notice whose recipient no longer has an
+     * address to send to.
+     */
+    public function deleteForPerson(int $personId): void
+    {
+        global $wpdb;
+
+        $wpdb->delete($this->table(), ['person_id' => $personId]);
+    }
 }

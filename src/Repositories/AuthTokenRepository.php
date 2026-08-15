@@ -107,6 +107,20 @@ final class AuthTokenRepository
         );
     }
 
+    /**
+     * Drops every token belonging to one person, spent or not.
+     *
+     * Erasing someone has to take their live sign-in links with it: an
+     * unexpired token in an email they still have would otherwise recreate a
+     * person row on next use, which is a deletion that undoes itself.
+     */
+    public function deleteForPerson(int $personId): void
+    {
+        global $wpdb;
+
+        $wpdb->delete($this->table(), ['person_id' => $personId]);
+    }
+
     private function hash(string $rawToken): string
     {
         return hash('sha256', $rawToken);

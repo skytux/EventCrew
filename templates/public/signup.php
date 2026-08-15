@@ -98,6 +98,30 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
                 </div>
                 <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
+                <?php
+                /*
+                 * The privacy line sits with the field it is about, not in a
+                 * footer: this is the moment someone hands over an address, and
+                 * a notice they have to go looking for afterwards is not a
+                 * notice. No tickbox - signing up is what makes the processing
+                 * necessary, so there is no consent here to collect, and a box
+                 * demanding consent for something we would do anyway would
+                 * misdescribe the basis rather than strengthen it.
+                 *
+                 * The link is dropped entirely when there is no notice to point
+                 * at, which is the unconfigured install: a dead link is worse
+                 * than the sentence on its own.
+                 */
+                $eventcrew_privacy_url = \EventCrew\Support\PrivacyPolicy::noticeUrl();
+                ?>
+                <p class="eventcrew-muted eventcrew-hint">
+                    <?php echo esc_html(\EventCrew\Support\PrivacyPolicy::noticeLine()); ?>
+                    <?php if ('' !== $eventcrew_privacy_url) : ?>
+                        <a href="<?php echo esc_url($eventcrew_privacy_url); ?>">
+                            <?php echo esc_html(\EventCrew\Support\PrivacyPolicy::noticeLinkLabel()); ?>
+                        </a>
+                    <?php endif; ?>
+                </p>
                 <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
                     <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
                 <?php endif; ?>

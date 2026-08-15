@@ -14,6 +14,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
+use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\Roles;
@@ -43,6 +44,7 @@ final class SettingsPage
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
     private const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
+    private const PRIVACY_NONCE_ACTION = 'eventcrew_privacy_page';
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
@@ -112,8 +114,40 @@ final class SettingsPage
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'email_test_to' => (string) wp_get_current_user()->user_email,
                 'telegram' => $this->telegramView(),
+                'privacy' => $this->privacyView(),
             ]
         );
+    }
+
+    /**
+     * The Privacy tab's state.
+     *
+     * `pages` is the same list the app-page picker uses, so the organizer picks
+     * an existing page rather than being handed a shortcode to paste; `configured`
+     * drives the warning that the public notice is refusing to publish, which is
+     * otherwise invisible from wp-admin - the page itself hides the reason from
+     * everyone but an administrator.
+     *
+     * @return array<string, mixed>
+     */
+    private function privacyView(): array
+    {
+        return [
+            'controller' => PrivacyPolicy::controller(),
+            'address' => PrivacyPolicy::address(),
+            'contact' => PrivacyPolicy::contact(),
+            'dpo_name' => PrivacyPolicy::dpoName(),
+            'dpo_contact' => PrivacyPolicy::dpoContact(),
+            'retention_years' => PrivacyPolicy::retentionYears(),
+            'retention_min' => PrivacyPolicy::RETENTION_MIN,
+            'retention_max' => PrivacyPolicy::RETENTION_MAX,
+            'purge' => PrivacyPolicy::purgeEnabled(),
+            'page_id' => PrivacyPolicy::pageId(),
+            'configured' => PrivacyPolicy::isConfigured(),
+            'notice_url' => PrivacyPolicy::noticeUrl(),
+            'core_policy_url' => admin_url('options-privacy.php'),
+            'create_nonce_action' => self::PRIVACY_NONCE_ACTION,
+        ];
     }
 
     /**
@@ -343,11 +377,139 @@ final class SettingsPage
             PwaController::COLOR_OPTION,
             '' === (string) $appColor ? PwaController::DEFAULT_COLOR : $appColor
         );
+        $this->savePrivacy();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Settings saved.', 'eventcrew')
+        );
+    }
+
+    /**
+     * The Privacy tab's fields.
+     *
+     * The controller's postal address is a textarea because addresses have
+     * lines, and sanitize_textarea_field is what keeps them. Everything is
+     * stamped with an "updated" time when any of it changes - the notice
+     * publishes that date, and a reader needs it to tell whether the terms have
+     * moved since they signed up, so it must not be touched when nothing has.
+     */
+    private function savePrivacy(): void
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- checked by save().
+        $before = [
+            PrivacyPolicy::controller(),
+            PrivacyPolicy::address(),
+            PrivacyPolicy::contact(),
+            PrivacyPolicy::dpoName(),
+            PrivacyPolicy::dpoContact(),
+            (string) PrivacyPolicy::retentionYears(),
+            PrivacyPolicy::purgeEnabled() ? '1' : '0',
+        ];
+
+        update_option(
+            PrivacyPolicy::CONTROLLER_OPTION,
+            isset($_POST['privacy_controller'])
+                ? sanitize_text_field(wp_unslash($_POST['privacy_controller']))
+                : ''
+        );
+        update_option(
+            PrivacyPolicy::ADDRESS_OPTION,
+            isset($_POST['privacy_address'])
+                ? sanitize_textarea_field(wp_unslash($_POST['privacy_address']))
+                : ''
+        );
+        update_option(
+            PrivacyPolicy::CONTACT_OPTION,
+            isset($_POST['privacy_contact'])
+                ? sanitize_text_field(wp_unslash($_POST['privacy_contact']))
+                : ''
+        );
+        update_option(
+            PrivacyPolicy::DPO_NAME_OPTION,
+            isset($_POST['privacy_dpo_name'])
+                ? sanitize_text_field(wp_unslash($_POST['privacy_dpo_name']))
+                : ''
+        );
+        update_option(
+            PrivacyPolicy::DPO_CONTACT_OPTION,
+            isset($_POST['privacy_dpo_contact'])
+                ? sanitize_text_field(wp_unslash($_POST['privacy_dpo_contact']))
+                : ''
+        );
+
+        $years = isset($_POST['privacy_retention_years'])
+            ? (int) $_POST['privacy_retention_years']
+            : PrivacyPolicy::RETENTION_DEFAULT;
+        update_option(
+            PrivacyPolicy::RETENTION_OPTION,
+            min(PrivacyPolicy::RETENTION_MAX, max(PrivacyPolicy::RETENTION_MIN, $years))
+        );
+
+        update_option(PrivacyPolicy::PURGE_OPTION, isset($_POST['privacy_purge']) ? '1' : '0');
+
+        update_option(
+            PrivacyPolicy::PAGE_OPTION,
+            isset($_POST['privacy_page_id']) ? max(0, (int) $_POST['privacy_page_id']) : 0
+        );
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $after = [
+            PrivacyPolicy::controller(),
+            PrivacyPolicy::address(),
+            PrivacyPolicy::contact(),
+            PrivacyPolicy::dpoName(),
+            PrivacyPolicy::dpoContact(),
+            (string) PrivacyPolicy::retentionYears(),
+            PrivacyPolicy::purgeEnabled() ? '1' : '0',
+        ];
+
+        if ($before !== $after) {
+            PrivacyPolicy::stampUpdated();
+        }
+    }
+
+    /**
+     * Creates a published page carrying the [eventcrew_privacy] shortcode and
+     * selects it, so the notice goes live without anyone learning what a
+     * shortcode is.
+     *
+     * Refuses when a page is already chosen: the button is meant to be the
+     * first step, not a way to litter the site with drafts on a double-click.
+     */
+    public function createPrivacyPage(): void
+    {
+        Admin::assertCanSave(self::PRIVACY_NONCE_ACTION);
+
+        if (PrivacyPolicy::pageId() > 0) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('A privacy page is already chosen.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $pageId = wp_insert_post([
+            'post_title' => __('Crew privacy notice', 'eventcrew'),
+            'post_content' => '[eventcrew_privacy]',
+            'post_status' => 'publish',
+            'post_type' => 'page',
+        ]);
+
+        if (is_wp_error($pageId) || 0 === (int) $pageId) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('The privacy page could not be created.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        update_option(PrivacyPolicy::PAGE_OPTION, (int) $pageId);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Privacy page created and selected.', 'eventcrew')
         );
     }
 
@@ -438,6 +600,53 @@ final class SettingsPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, $result['error'], 'error');
+    }
+
+    /**
+     * The Settings "Refresh the board" button: redraw the group's board now.
+     *
+     * The board already redraws itself whenever anything it shows changes - a
+     * join, a task edit, the hourly heartbeat - so this is not part of the
+     * normal loop. It is for the times that loop cannot cover: an upgrade that
+     * changes how the board is laid out, a message edited or removed in the
+     * group, or simply wanting to see the effect of a change without waiting
+     * for the next tick.
+     *
+     * The two ways it can be unavailable are reported separately, because they
+     * need different things doing: no token is a Settings problem, no board
+     * chat means the bot has never been asked to post one.
+     */
+    public function refreshBoard(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        if (! $this->telegram->isConfigured()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Add a bot token first, then install the webhook.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if (! $this->board->hasHome()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The board has no home yet. Add the bot to your group and send /board there once; after that this button redraws it.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if ($this->board->refresh()) {
+            Admin::redirectTo(self::PAGE_SLUG, __('The board has been redrawn.', 'eventcrew'));
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('The board could not be redrawn — it may have been deleted from the group. Send /board there to post a fresh one. Diagnostics has the logged reason.', 'eventcrew'),
+            'error'
+        );
     }
 
     /**

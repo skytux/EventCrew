@@ -221,18 +221,26 @@ final class BoardService
      * Posts the board, or edits the existing one in place when we already have
      * its message id. Inert until both a bot token and a board chat exist, so
      * task edits on an un-configured install do nothing.
+     *
+     * Returns whether the board is now up to date. Every automatic caller - a
+     * join, a task edit, the heartbeat - ignores that and should: there is
+     * nobody watching to tell, and a failed edit is already logged. It exists
+     * for the Settings button, which is pressed by a person waiting for an
+     * answer, and "nothing appeared to happen" is the one answer that helps
+     * nobody. An unchanged board counts as success: Telegram's "message is not
+     * modified" is a benign error TelegramClient already treats as one.
      */
-    public function refresh(): void
+    public function refresh(): bool
     {
         if (! $this->telegram->isConfigured()) {
-            return;
+            return false;
         }
 
         $board = $this->board();
         $chatId = (int) ($board['chat_id'] ?? 0);
 
         if (0 === $chatId) {
-            return;
+            return false;
         }
 
         $rendered = $this->render();
@@ -240,14 +248,20 @@ final class BoardService
         $messageId = (int) ($board['message_id'] ?? 0);
 
         if ($messageId > 0) {
-            $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
-
-            return;
+            return null !== $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
         }
 
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
 
         $this->storeBoard($chatId, $result);
+
+        return null !== $result;
+    }
+
+    /** Whether a board chat has been captured yet - the Settings button asks. */
+    public function hasHome(): bool
+    {
+        return 0 !== (int) ($this->board()['chat_id'] ?? 0);
     }
 
     /**
@@ -466,7 +480,7 @@ final class BoardService
 
     private function handleJoin(string $callbackId, int $taskId, Person $person): bool
     {
-        // The rules - the reputation gate, the overlap check, the capacity race -
+        // The rules - the reputation gate, the leader slot, the capacity race -
         // live in SignupService, shared with the web page; the bot keeps only the
         // wording of the reply.
         $outcome = $this->signup->claim($person->id, $taskId);
@@ -476,7 +490,6 @@ final class BoardService
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
             SignupService::LEADER_ONLY => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
-            SignupService::OVERLAP => __('That clashes with another slot you already hold.', 'eventcrew'),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),
@@ -516,6 +529,12 @@ final class BoardService
     }
 
     /**
+     * Anything that is not a recognised action on a task id comes back as the
+     * empty action, which onJoinLeave() answers and drops. That is what makes
+     * the board's heading rows inert: BoardRenderer::SPACER_DATA is deliberately
+     * not of this shape, so a tap on one lands here, matches nothing, and ends
+     * as a bare answerCallbackQuery - spinner stopped, nothing changed.
+     *
      * @return array{0: string, 1: int} action ('j'|'l'|'t'|''), task id
      */
     private function parseData(string $data): array

@@ -66,18 +66,24 @@ final class SignupServiceTest extends TestCase
         self::assertSame([], $this->wpdb->inserts);
     }
 
-    public function testClaimRefusesAnOverlappingSlot(): void
+    /**
+     * Two jobs whose times run into each other are now allowed. Whether a
+     * person can actually do both is theirs to judge, and refusing it cost the
+     * organizer a filled slot to prevent something that was often fine.
+     */
+    public function testClaimAllowsAnOverlappingSlot(): void
     {
         $this->options[SignupService::GATE_OPTION] = '0'; // skip the gate
-        $this->wpdb->nextVars[] = 1; // hasOverlapping count > 0
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextRows[] = null; // join findFor
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
 
-        self::assertSame(SignupService::OVERLAP, $this->service()->claim(9, 5));
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
     }
 
     public function testClaimJoinsWhenClear(): void
     {
         $this->options[SignupService::GATE_OPTION] = '0';
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
         $this->wpdb->nextRows[] = null; // join findFor
         $this->wpdb->nextQueryResults[] = 1; // conditional insert
@@ -145,7 +151,6 @@ final class SignupServiceTest extends TestCase
         $this->options[SignupService::GATE_OPTION] = '0';
         $this->wpdb->nextRows[] = $this->taskRow('leader');       // claim tasks->find
         $this->wpdb->nextRows[] = ['id' => 9, 'can_lead' => 1];   // people->find
-        $this->wpdb->nextVars[] = 0;                              // hasOverlapping
         $this->wpdb->nextVars[] = 1;                              // taskCapacity
         $this->wpdb->nextRows[] = null;                           // join findFor
         $this->wpdb->nextQueryResults[] = 1;                      // insert
@@ -168,7 +173,6 @@ final class SignupServiceTest extends TestCase
         $this->wpdb->nextVars[] = 0;                          // gate: countFor redemptions
         $this->wpdb->nextVars[] = 0;                          // gate: sumFor grants
         $this->wpdb->nextRows[] = ['id' => 9, 'at_risk_pass' => 1]; // people->find for the pass
-        $this->wpdb->nextVars[] = 0;                          // hasOverlapping
         $this->wpdb->nextVars[] = 2;                          // taskCapacity
         $this->wpdb->nextRows[] = null;                       // join findFor
         $this->wpdb->nextQueryResults[] = 1;                  // insert

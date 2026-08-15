@@ -7,10 +7,10 @@ namespace EventCrew\Admin;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
-use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
+use EventCrew\Support\PersonEraser;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 
@@ -23,12 +23,12 @@ final class PeoplePage
         private readonly View $view,
         private readonly PersonRepository $people,
         private readonly AssignmentRepository $assignments,
-        private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
         private readonly CreditGrantRepository $grants,
         private readonly CreditGrantNotifier $notifier,
         private readonly LeaderEligibility $eligibility,
-        private readonly LeaderGate $leaderGate
+        private readonly LeaderGate $leaderGate,
+        private readonly PersonEraser $eraser
     ) {
     }
 
@@ -283,10 +283,7 @@ final class PeoplePage
         check_admin_referer('eventcrew_delete_person_' . $id);
 
         if ($id > 0) {
-            $this->assignments->deleteForPerson($id);
-            $this->redemptions->deleteForPerson($id);
-            $this->grants->deleteForPerson($id);
-            $this->people->delete($id);
+            $this->eraser->erase($id);
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Person deleted.', 'eventcrew'));

@@ -249,7 +249,6 @@ final class SignupControllerTest extends TestCase
     public function testClaimForMapsAJoinToAClaimedNotice(): void
     {
         // Gate off, no overlap, capacity free, insert succeeds.
-        $this->wpdb->nextVars[] = 0; // hasOverlapping
         $this->wpdb->nextVars[] = 2; // taskCapacity
         $this->wpdb->nextRows[] = null; // join findFor
         $this->wpdb->nextQueryResults[] = 1; // insert
