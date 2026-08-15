@@ -607,16 +607,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     var submitting = false;
 
     /*
-     * The token as the form would actually send it.
+     * The best token available from either place Cloudflare keeps it.
      *
-     * Turnstile writes its result into a hidden cf-turnstile-response field
-     * inside the widget, and that field - not the API - is what FormData picks
-     * up. turnstile.getResponse() answers for whichever widget the script
-     * considers first, which is not guaranteed to be this form's, and can read
-     * empty while the field is populated. Gating the button on one thing and
-     * submitting another is how a form ends up refusing a press that would
-     * have worked, so both now read the same place, with the API only as a
-     * fallback for the field not existing yet.
+     * There are two, and they are not filled at the same moment: the hidden
+     * cf-turnstile-response field lags turnstile.getResponse() by a few
+     * seconds. Whichever is set, they hold the same token, so reading the field
+     * first and the API second returns a usable one as early as possible.
+     *
+     * This is only safe because send() now writes the result into the request
+     * explicitly. Gating on this while letting FormData take the field on its
+     * own is what let the button go live on a token the form did not send.
      */
     function challengeToken(form) {
         var scope = form || signinForm;
@@ -843,10 +843,36 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     }
 
     function send(form, button, isSignin, isRetry) {
-        // The widget writes its token into a hidden field, so this is read now
-        // rather than when the button was pressed.
         var data = new FormData(form);
         data.append('eventcrew_ajax', '1');
+
+        /*
+         * Carry the token explicitly, because the two places it lives are not
+         * filled at the same moment.
+         *
+         * Cloudflare hands turnstile.getResponse() the token as soon as the
+         * challenge is solved, and writes it into the hidden
+         * cf-turnstile-response field a few seconds later. Measured on a real
+         * page: getResponse() 645 characters while the field was still empty,
+         * then both 645 a moment after. FormData only sees the field - so a
+         * press inside that gap submitted nothing, the server refused it for
+         * having no token, and the tick was on screen the whole time saying
+         * otherwise.
+         *
+         * It also explains the one clue that made no sense: focusing the email
+         * box first "fixed" it, because typing spends exactly the few seconds
+         * the field needed to catch up.
+         *
+         * Setting it here means the request carries whichever copy exists, so
+         * what the button was enabled on and what is sent are finally the same
+         * value - which is what v1.23.0 set out to do and got backwards, by
+         * trusting the field that lags over the API that leads.
+         */
+        var token = challengeToken(form);
+
+        if (token) {
+            data.set('cf-turnstile-response', token);
+        }
 
         fetch(ajaxUrl, {
             method: 'POST',

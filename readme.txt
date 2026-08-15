@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.23.2
+Stable tag: 1.23.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.23.3 =
+* **Root cause found, at last: the spam check keeps its answer in two places and fills them seconds apart.** Cloudflare hands its token to the page's script the moment the challenge is solved — the tick appears then — and only writes it into the hidden form field a few seconds later. The form submits the field, so a press inside that gap sent nothing at all, was refused for having no token, and showed a tick throughout insisting everything was fine. It also explains the one clue that never fitted: focusing the email box first "fixed" it, because typing spends exactly the seconds the field needed to catch up.
+* The request now carries the token explicitly, taking whichever copy exists. So an immediate press works, with no wait and nothing to catch up on.
+* This is the bug 1.21.2, 1.22.0, 1.22.1 and 1.23.0 were all circling. 1.23.0 in particular made it likelier, by trusting the copy that lags over the one that leads.
 
 = 1.23.2 =
 * Fixed: **a refused spam check took about half a minute to say so.** The page waited fifteen seconds for a token, sent the request without one anyway — which the server refuses outright — then waited another fifteen and sent a second, before finally showing "couldn't verify you're human". Both waits are now four seconds, which is far longer than a challenge that is going to answer needs.
@@ -401,6 +406,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.23.3 =
+Fixes the sign-in link not sending on the first press. Cloudflare fills its token into the form a few seconds after the tick appears, and the form was submitting the empty field; the token is now sent explicitly. This is the release that actually fixes it. Clear any page cache after upgrading. No database change.
 
 = 1.23.2 =
 A refused spam check now says so in seconds instead of about half a minute, and no longer sends two requests it knows will be refused. Clear any page cache after upgrading. No database change.
