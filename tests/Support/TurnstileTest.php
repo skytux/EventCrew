@@ -68,4 +68,36 @@ final class TurnstileTest extends TestCase
 
         self::assertFalse($this->turnstile()->verify('bad-token'));
     }
+
+    /**
+     * Cloudflare says why it refused, and that reason has to reach Diagnostics.
+     *
+     * Without it the only evidence of a refusal is "couldn't verify you're
+     * human" on the visitor's screen, which is the same message whatever went
+     * wrong - so a stale token, a spent one and a mistyped secret key all look
+     * identical to the organizer trying to work out why nobody can sign in.
+     */
+    public function testARefusalLogsCloudflaresReason(): void
+    {
+        $logged = [];
+
+        Functions\when('update_option')->alias(
+            static function (string $name, mixed $value) use (&$logged): bool {
+                $logged = is_array($value) ? $value : [];
+
+                return true;
+            }
+        );
+
+        $this->withKeys(true, ['success' => false, 'error-codes' => ['timeout-or-duplicate']]);
+
+        self::assertFalse($this->turnstile()->verify('stale-token'));
+
+        $messages = implode(' ', array_map(
+            static fn (array $entry): string => (string) ($entry['message'] ?? ''),
+            $logged
+        ));
+
+        self::assertStringContainsString('timeout-or-duplicate', $messages);
+    }
 }

@@ -92,6 +92,34 @@ final class Turnstile
 
         $decoded = json_decode((string) wp_remote_retrieve_body($response), true);
 
-        return is_array($decoded) && true === ($decoded['success'] ?? false);
+        if (is_array($decoded) && true === ($decoded['success'] ?? false)) {
+            return true;
+        }
+
+        /*
+         * Cloudflare says why it refused, and until now we threw that away -
+         * which left "couldn't verify you're human" as the only evidence of a
+         * refusal whose cause was in the response all along. The codes that
+         * matter here are operational, not adversarial:
+         *
+         *   timeout-or-duplicate  the token is stale or already spent. A widget
+         *                         solves on page load and its token lasts about
+         *                         five minutes, so a page left open while
+         *                         somebody reads it produces exactly this - the
+         *                         widget still shows a tick, and the token
+         *                         behind it is no longer good.
+         *   invalid-input-secret  the secret key is wrong; every solve fails.
+         *   invalid-input-response  malformed or foreign token.
+         *
+         * Logged rather than shown: the visitor can do nothing with a code, and
+         * the organizer reading Diagnostics can.
+         */
+        $codes = is_array($decoded) && is_array($decoded['error-codes'] ?? null)
+            ? implode(', ', array_map('strval', $decoded['error-codes']))
+            : 'no reason given';
+
+        $this->logger->warning('Turnstile refused a submission: ' . $codes);
+
+        return false;
     }
 }
