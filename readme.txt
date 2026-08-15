@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.22.1
+Stable tag: 1.23.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.23.0 =
+* Fixed: the spam check read one thing and the form sent another. Turnstile writes its result into a hidden field, and that field is what gets submitted — but the page was asking Cloudflare's script instead, which answers for whichever widget it considers first and can come back empty while the field is perfectly well filled in. Both now read the field the form actually sends. This is the likeliest reason a press could fail while the widget showed a tick, and why focusing the email box first appeared to help.
+* A refusal with no token at all is now written to Diagnostics. It was the one refusal that returned silently, so an install failing this way showed **nothing**, which reads as "the check never ran" and sent the last two releases after the wrong cause.
+* The sign-in wording is shorter: "No password — we email you a link, good for 30 minutes." and "We store your email to run the crew." Both share a narrow centred column under the field, where a longer line breaks into ragged halves. Hints also wrap evenly now on browsers that support it.
+* The outcome message no longer sticks around. The redirect after an action put its result in the address bar, so a refresh — or a bookmark, or a shared link — announced "You're signed out" again days later to somebody who was not. Nothing was ever re-run by that; it was a message outliving what it described. It is now cleared from the URL once shown.
+* Note on Diagnostics: the recent-activity list holds the **last 20 entries** and nothing else. It is not a time-based log — a busy hour can push a message out within minutes, so read it soon after reproducing something. Everything also goes to your host's own PHP error log, which keeps whatever your host keeps.
 
 = 1.22.1 =
 * Fixed: **the spam check could fail on the first press even though the widget showed a tick.** Cloudflare's tokens last about five minutes and are good for one use only, but the widget keeps its tick on screen regardless — so a page left open while somebody reads it, or types their address slowly, sent a token that had quietly gone stale. That is the failure the previous two releases did not catch: the token was there, it was just too old. The page now replaces a token that has been sitting for more than a hundred seconds before sending it, and if the check is refused anyway it fetches a fresh one and retries once by itself, without bothering you.
@@ -386,6 +393,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.23.0 =
+Fixes the spam check reading a different value from the one the form submits, which is the likeliest cause of a sign-in being refused while the widget showed success. Also logs the previously silent "no token" refusal, shortens the sign-in wording, and stops a stale status message reappearing on refresh. Clear any page cache after upgrading. No database change.
 
 = 1.22.1 =
 Fixes the spam check failing on the first press despite the widget showing success — its token had expired on a page left open. Cloudflare's reason for any refusal now appears in Diagnostics. Clear any page cache after upgrading. No database change.

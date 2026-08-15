@@ -97,7 +97,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php endif; ?>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
                 </div>
-                <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a one-time link that signs you in. It’s good for 30 minutes.', 'eventcrew'); ?></p>
+                <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a link, good for 30 minutes.', 'eventcrew'); ?></p>
                 <?php
                 /*
                  * The privacy line sits with the field it is about, not in a
@@ -532,6 +532,29 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
     }
 
+    /*
+     * Take the notice out of the address bar once it has been shown.
+     *
+     * The redirect after an action carries its outcome in ?eventcrew_notice,
+     * which the page turns into a toast - but the parameter stays in the URL,
+     * so a refresh, a bookmark or a shared link says "You're signed out" again
+     * to somebody who is not, days later. Nothing is re-run by that: the toast
+     * is display only, and the action itself happened before the redirect. It
+     * is a message outliving the thing it described.
+     *
+     * replaceState rewrites the address without a reload and without adding a
+     * history entry, so the back button behaves and the refresh that follows
+     * asks for a clean URL. Wrapped because a URL the browser will not parse is
+     * not worth an exception over a cosmetic tidy-up.
+     */
+    if (window.history && window.history.replaceState && -1 !== window.location.search.indexOf('eventcrew_notice=')) {
+        try {
+            var tidy = new URL(window.location.href);
+            tidy.searchParams.delete('eventcrew_notice');
+            window.history.replaceState({}, '', tidy.toString());
+        } catch (e) {}
+    }
+
     // Remember the sign-in email so a return visit (or a resend) doesn't have to
     // retype it - the one bit of friction in a passwordless, leave-and-come-back
     // sign-in. Runs regardless of the fetch path below.
@@ -577,7 +600,26 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     var waitingLabel = <?php echo wp_json_encode(__('Checking you’re human…', 'eventcrew')); ?>;
     var submitting = false;
 
-    function challengeToken() {
+    /*
+     * The token as the form would actually send it.
+     *
+     * Turnstile writes its result into a hidden cf-turnstile-response field
+     * inside the widget, and that field - not the API - is what FormData picks
+     * up. turnstile.getResponse() answers for whichever widget the script
+     * considers first, which is not guaranteed to be this form's, and can read
+     * empty while the field is populated. Gating the button on one thing and
+     * submitting another is how a form ends up refusing a press that would
+     * have worked, so both now read the same place, with the API only as a
+     * fallback for the field not existing yet.
+     */
+    function challengeToken(form) {
+        var scope = form || signinForm;
+        var field = scope ? scope.querySelector('[name="cf-turnstile-response"]') : null;
+
+        if (field && field.value) {
+            return field.value;
+        }
+
         try {
             return (window.turnstile && window.turnstile.getResponse()) || '';
         } catch (err) {
@@ -624,8 +666,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         }
     }
 
+    /*
+     * Only a token we actually have can be stale. With none at all there is
+     * nothing to replace, and resetting to wait for one would spend the
+     * timeout achieving nothing - better to send and let the server say so,
+     * which it now does out loud.
+     */
     function tokenIsStale() {
-        return !lastToken || (Date.now() - tokenSeenAt) > STALE_AFTER;
+        return !!lastToken && (Date.now() - tokenSeenAt) > STALE_AFTER;
     }
 
     /** Throws the current token away and calls `done` once a new one lands. */
@@ -642,7 +690,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         var waited = 0;
 
         (function poll() {
-            var token = challengeToken();
+            var token = challengeToken(form);
 
             if (token) {
                 noteToken(token);
@@ -674,7 +722,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 return;
             }
 
-            var token = challengeToken();
+            var token = challengeToken(signinForm);
             noteToken(token);
 
             if (token) {
