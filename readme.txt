@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.23.1
+Stable tag: 1.23.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.23.2 =
+* Fixed: **a refused spam check took about half a minute to say so.** The page waited fifteen seconds for a token, sent the request without one anyway — which the server refuses outright — then waited another fifteen and sent a second, before finally showing "couldn't verify you're human". Both waits are now four seconds, which is far longer than a challenge that is going to answer needs.
+* And it no longer sends a request it knows will be refused. With no token there is nothing to verify, so instead of a round trip and a line in your log it says straight away: "The spam check hasn't finished yet — give it a moment, then try again." The button shows "Checking you're human…" during the wait, so the pause is visible rather than dead air.
+* The widget is also no longer reset when it has not produced a token yet — it may be mid-solve or waiting to be clicked, and resetting threw that progress away.
 
 = 1.23.1 =
 * Fixed: the spam check re-ran itself the moment the sign-in link was sent, so the tick vanished and the box visibly worked itself out again directly under a message telling you to go and check your inbox. It looked like the form reloading, and it was asking a question nobody had been posed — there is nothing to submit until you press Resend. The widget is now left alone and only refreshed on the next press, where the wait belongs.
@@ -396,6 +401,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.23.2 =
+A refused spam check now says so in seconds instead of about half a minute, and no longer sends two requests it knows will be refused. Clear any page cache after upgrading. No database change.
 
 = 1.23.1 =
 Stops the spam check re-running itself right after the sign-in link is sent, which made the form look like it was reloading. Clear any page cache after upgrading. No database change.
