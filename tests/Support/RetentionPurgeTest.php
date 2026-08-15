@@ -102,6 +102,11 @@ final class RetentionPurgeTest extends TestCase
         self::assertSame('', $first['notes']);
         self::assertNotEmpty($first['anonymized_at']);
 
+        // The row survives, so a live session cookie would keep resolving to it
+        // and leave whoever holds it signed in to a record with no name on it.
+        // Stamping the revocation line is what closes that.
+        self::assertNotEmpty($first['sessions_valid_from']);
+
         // The satellites cleared are the ones that are pure personal data: the
         // sign-in tokens and the send ledger. Assignments, redemptions and
         // credit grants survive, which is the whole point of anonymising

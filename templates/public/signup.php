@@ -151,6 +151,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             </span>
             <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
+                <?php
+                /*
+                 * Signing out is now checked like every other action, so this
+                 * has to carry the token. It did not when logout sat above the
+                 * gate, and the release that moved it forgot this form - which
+                 * left the button answering "please sign in" to someone who was
+                 * signed in and asking to stop being.
+                 */
+                ?>
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                 <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>

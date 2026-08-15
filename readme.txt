@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.21.0
+Stable tag: 1.21.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.21.1 =
+* Fixed: **signing out on the crew page did not work.** It answered "please sign in" to somebody who was already signed in and asking to stop being, and left them signed in. Introduced in 1.20.0, which started checking sign-out like every other action but did not give the button the token to pass that check. If you are on 1.20.0, this is the release you want.
+* Fixed: "Sign out everywhere" then locked you out for hours. It signed every session out correctly, but then refused new ones for as long as your site's distance from UTC — two or three hours on Finnish time — so a fresh sign-in link signed you in and bounced you straight back out. Two clocks were being compared without converting between them.
+* Fixed: a record anonymised by the retention purge kept its live sessions. Anyone still holding that person's cookie stayed signed in, looking at the history of a record that no longer had a name on it. Anonymising now retires those sessions along with everything else.
+* Added a check that every form on the crew page carries its token, so the sign-out failure — a form and its handler quietly ceasing to agree — cannot happen again unnoticed.
 
 = 1.21.0 =
 * The 📅 moved from an event's date row up to its name row, where it marks the start of each group. On the date row it was labelling something that already looked like a date; on the first row it is the thing the eye finds while scrolling.
@@ -367,6 +373,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.21.1 =
+Fixes sign-out, which has been broken since 1.20.0 — the button refused to sign anyone out. Also fixes "Sign out everywhere" locking people out for hours on sites not running on UTC. Upgrade if you are on 1.20.0. No database change.
 
 = 1.21.0 =
 The Telegram board is easier to scan: the 📅 marks each event's name row, and task rows lead with the job rather than the time. Press "Refresh the board" under Settings ▸ Telegram bot after upgrading to redraw it. No database change.

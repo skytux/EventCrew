@@ -72,7 +72,23 @@ final class Person
             return true;
         }
 
-        $revokedAt = strtotime($this->sessionsValidFrom);
+        /*
+         * The two sides are on different clocks and have to be brought onto one
+         * before they can be compared.
+         *
+         * A cookie's issue time is a real epoch, from time(). This column is a
+         * naive site-local wall clock, from current_time('mysql'), like every
+         * other datetime here. WordPress pins PHP's timezone to UTC, so reading
+         * the column with a bare strtotime() interprets local time as though it
+         * were UTC and lands the site's offset in the future - which refused
+         * every freshly minted cookie for hours after a revocation, on any site
+         * not actually running on UTC.
+         *
+         * get_gmt_from_date() converts the stored local string to GMT first, so
+         * strtotime() then reads it correctly. The column keeps its local
+         * convention, which is what the admin screens display.
+         */
+        $revokedAt = strtotime(get_gmt_from_date($this->sessionsValidFrom));
 
         return false === $revokedAt || $issuedAt >= $revokedAt;
     }

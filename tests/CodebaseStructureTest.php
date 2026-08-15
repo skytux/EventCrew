@@ -113,6 +113,55 @@ final class CodebaseStructureTest extends TestCase
     }
 
     /**
+     * Every form on the crew page that posts an action must carry the CSRF
+     * token, because every action behind the sign-in gate is checked for it.
+     *
+     * This exists because of a real regression: v1.20.0 moved sign-out behind
+     * that gate without adding the token to its form, so the button answered
+     * "please sign in" to somebody who was signed in and asking to stop being.
+     * Nothing caught it - the handler is the one path the unit tests skip, since
+     * it ends in exit() - and the shape of the mistake (a form and a handler
+     * that stopped agreeing) is exactly what a structural check can see.
+     *
+     * The sign-in form is the one exemption: it is posted by somebody who has
+     * no session yet, and its action is handled before the gate.
+     */
+    public function testEveryPostingFormOnTheCrewPageCarriesTheCsrfToken(): void
+    {
+        $template = (string) file_get_contents(
+            EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php'
+        );
+
+        // Split on the opening tag so each chunk is one form's markup.
+        $forms = array_slice(explode('<form', $template), 1);
+        $checked = 0;
+
+        foreach ($forms as $form) {
+            $form = explode('</form>', $form)[0];
+
+            // Only the ones posting to admin-ajax; the account-delete form goes
+            // to the signed manage endpoint and carries a token of its own.
+            if (! str_contains($form, '$eventcrew_ajax')) {
+                continue;
+            }
+
+            if (str_contains($form, 'data-eventcrew-signin')) {
+                continue;
+            }
+
+            ++$checked;
+
+            self::assertStringContainsString(
+                'name="csrf"',
+                $form,
+                'A form on the crew page posts an action without the CSRF token, so the handler will refuse it.'
+            );
+        }
+
+        self::assertGreaterThan(0, $checked, 'No posting forms were found to check; the pattern has drifted.');
+    }
+
+    /**
      * @return array<int, SplFileInfo>
      */
     private function sourceFiles(): array
