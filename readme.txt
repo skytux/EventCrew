@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.22.0
+Stable tag: 1.22.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.22.1 =
+* Fixed: **the spam check could fail on the first press even though the widget showed a tick.** Cloudflare's tokens last about five minutes and are good for one use only, but the widget keeps its tick on screen regardless — so a page left open while somebody reads it, or types their address slowly, sent a token that had quietly gone stale. That is the failure the previous two releases did not catch: the token was there, it was just too old. The page now replaces a token that has been sitting for more than a hundred seconds before sending it, and if the check is refused anyway it fetches a fresh one and retries once by itself, without bothering you.
+* Cloudflare's reason for a refusal is now written to Diagnostics. It was being discarded, which left "couldn't verify you're human" as the only evidence — the same message whether the token was stale, already used, or the secret key was simply wrong. **If sign-in is still refusing anyone, look at EventCrew ▸ Diagnostics: the reason is now there in plain words.**
 
 = 1.22.0 =
 * The sign-in button now waits for the spam check instead of letting you press it too early. While Cloudflare is still working it reads "Checking you’re human…" and cannot be pressed; it becomes "Email me a sign-in link" the moment there is something to send. 1.21.2 made an early press work by waiting behind the scenes — this makes the wait visible, so nobody spends a press wondering whether anything happened.
@@ -382,6 +386,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.22.1 =
+Fixes the spam check failing on the first press despite the widget showing success — its token had expired on a page left open. Cloudflare's reason for any refusal now appears in Diagnostics. Clear any page cache after upgrading. No database change.
 
 = 1.22.0 =
 The sign-in button now says when it is waiting for the spam check and only becomes pressable once it can actually send, and the "Delete my data" link is legible on dark pages. Clear any page cache after upgrading, since the stylesheet changed. No database change.

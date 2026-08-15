@@ -598,6 +598,72 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         signinButton.textContent = live ? signinLiveLabel : waitingLabel;
     }
 
+    /*
+     * A Turnstile token goes stale on its own, and the widget does not let on.
+     *
+     * It solves as soon as the page loads and the tick stays on screen, but the
+     * token behind it is only good for about five minutes and is single-use.
+     * Anyone who opens the page, reads it, types an address and then presses -
+     * or who leaves the tab sitting - sends a token Cloudflare answers with
+     * "timeout-or-duplicate", so the widget says success and the server says
+     * failure. Pressing again works, because the reset after a submit fetches a
+     * fresh one. That is the whole of "it fails the first time".
+     *
+     * So the age is tracked here and anything past STALE_AFTER is replaced
+     * before it is sent. Well under Cloudflare's own expiry, because the gap
+     * that matters is between the press and the check reaching them.
+     */
+    var STALE_AFTER = 100000;
+    var tokenSeenAt = 0;
+    var lastToken = '';
+
+    function noteToken(token) {
+        if (token !== lastToken) {
+            lastToken = token;
+            tokenSeenAt = token ? Date.now() : 0;
+        }
+    }
+
+    function tokenIsStale() {
+        return !lastToken || (Date.now() - tokenSeenAt) > STALE_AFTER;
+    }
+
+    /** Throws the current token away and calls `done` once a new one lands. */
+    function refreshChallenge(form, done) {
+        if (!hasChallenge(form) || !window.turnstile) {
+            done();
+
+            return;
+        }
+
+        try { window.turnstile.reset(); } catch (err) {}
+        noteToken('');
+
+        var waited = 0;
+
+        (function poll() {
+            var token = challengeToken();
+
+            if (token) {
+                noteToken(token);
+                done();
+
+                return;
+            }
+
+            // Same failing-open rule as everywhere else here: after the timeout
+            // it goes anyway and lets the server give a reason.
+            if (waited >= CHALLENGE_GIVE_UP) {
+                done();
+
+                return;
+            }
+
+            waited += CHALLENGE_STEP;
+            setTimeout(poll, CHALLENGE_STEP);
+        })();
+    }
+
     if (hasChallenge(signinForm) && signinButton) {
         setSigninLive(false);
 
@@ -608,7 +674,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 return;
             }
 
-            if (challengeToken()) {
+            var token = challengeToken();
+            noteToken(token);
+
+            if (token) {
                 starved = 0;
                 setSigninLive(true);
 
@@ -646,10 +715,18 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         // it cannot re-enable it or rewrite its label mid-flight.
         submitting = true;
 
-        send(form, button, isSignin);
+        // A token that has been sitting on screen for a while is replaced
+        // before it goes, rather than after Cloudflare has rejected it.
+        if (hasChallenge(form) && tokenIsStale()) {
+            refreshChallenge(form, function () { send(form, button, isSignin, false); });
+
+            return;
+        }
+
+        send(form, button, isSignin, false);
     });
 
-    function send(form, button, isSignin) {
+    function send(form, button, isSignin, isRetry) {
         // The widget writes its token into a hidden field, so this is read now
         // rather than when the button was pressed.
         var data = new FormData(form);
@@ -663,6 +740,23 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         }).then(function (r) {
             return r.json();
         }).then(function (res) {
+            /*
+             * A refused challenge is worth one silent second attempt with a
+             * fresh token before it becomes the visitor's problem. The common
+             * causes - a token that expired while the page sat open, or one
+             * already spent - are both cured by resetting and asking again, and
+             * telling somebody "couldn't verify you're human" for either is
+             * blaming them for a clock.
+             *
+             * Once only, and only for the captcha: a second refusal is a real
+             * one and gets shown.
+             */
+            if (!isRetry && res && 'captcha_failed' === res.code && hasChallenge(form)) {
+                refreshChallenge(form, function () { send(form, button, isSignin, true); });
+
+                return;
+            }
+
             if (res && typeof res.board === 'string') {
                 /*
              * Swapping the board's HTML destroys the button that was just
