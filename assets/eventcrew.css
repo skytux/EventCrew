@@ -40,6 +40,19 @@
        crew whose accent happens to be red would otherwise get a red Sign up. */
     --eventcrew-go: #1b5e20;
     --eventcrew-stop: #8e1616;
+    /*
+     * The same red, but as text rather than as a background.
+     *
+     * --eventcrew-stop is a deep red chosen to carry white on top of it, which
+     * is right for a filled button and wrong for a bare link: on a dark page -
+     * a dark theme, or a section over a dark background image - dark red on
+     * dark is barely there, and the Delete link was the one control nobody
+     * could find. Mixing it toward currentColor keeps the red reading as red
+     * while letting it move with whatever the page's own text colour is, the
+     * same trick --eventcrew-line uses for borders. It is the only place an
+     * absolute colour was being asked to be legible on an unknown background.
+     */
+    --eventcrew-stop-ink: color-mix(in srgb, var(--eventcrew-stop) 60%, currentColor);
     /* The pips are half a character wide, where the button's deep green reads
        as near-black. They get a vivid one of their own so a filled slot is
        obvious at a glance rather than a dark speck. */
@@ -247,7 +260,10 @@
     background: none; border: 0; padding: 0; font: inherit;
     color: inherit; text-decoration: underline; cursor: pointer; opacity: .8;
 }
-.eventcrew-signup .eventcrew-linkbtn-danger { color: var(--eventcrew-stop); opacity: 1; }
+/* Falls back to plain currentColor where color-mix is unsupported: legible
+   everywhere, just without the red cast, which is the safe way round. */
+.eventcrew-signup .eventcrew-linkbtn-danger { color: currentColor; opacity: 1; }
+.eventcrew-signup .eventcrew-linkbtn-danger { color: var(--eventcrew-stop-ink); }
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
 .eventcrew-signup .eventcrew-signout { margin: 0; display: inline; }
 
