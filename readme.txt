@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.21.1
+Stable tag: 1.21.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.21.2 =
+* Fixed: **the sign-in email often did not send on the first press, then worked on the second.** With the Cloudflare captcha switched on, the widget takes a moment to render and solve, and the form read its token the instant the button was pressed — so anyone quick enough submitted an empty one and was refused. The page now waits for the token before sending, and gives up after five seconds and submits anyway, so a blocked or broken challenge script cannot leave you unable to sign in at all.
+* Fixed: the page said "Check your inbox for the sign-in link" whether or not one had been sent. A refused captcha or a mistyped address got the same message, so the natural thing to do was go and wait for an email that was never coming, instead of pressing the button again. It now only says that when the link really went.
 
 = 1.21.1 =
 * Fixed: **signing out on the crew page did not work.** It answered "please sign in" to somebody who was already signed in and asking to stop being, and left them signed in. Introduced in 1.20.0, which started checking sign-out like every other action but did not give the button the token to pass that check. If you are on 1.20.0, this is the release you want.
@@ -373,6 +377,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.21.2 =
+Fixes the sign-in email not sending on the first press when the Cloudflare captcha is on, and the page claiming a link was sent when it was not. No database change.
 
 = 1.21.1 =
 Fixes sign-out, which has been broken since 1.20.0 — the button refused to sign anyone out. Also fixes "Sign out everywhere" locking people out for hours on sites not running on UTC. Upgrade if you are on 1.20.0. No database change.
