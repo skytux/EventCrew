@@ -14,15 +14,22 @@ use EventCrew\Support\Dates;
  * editing the message (the lifecycle) reads separately from composing it.
  *
  * Tasks are grouped by event, and each group is introduced by two heading rows
- * in the keyboard itself: the event's name, then its date. Those headings used
- * to live in the message text above the buttons, which read correctly and
- * scanned badly - Telegram renders the text and the keyboard as two separate
- * blocks, so a heading in the text sat several rows away from the buttons it
- * named, and with two events open there was no way to tell where one event's
- * buttons ended and the next began.
+ * in the keyboard itself: 📅 and the event's name, then the date under it.
+ * Those headings used to live in the message text above the buttons, which read
+ * correctly and scanned badly - Telegram renders the text and the keyboard as
+ * two separate blocks, so a heading in the text sat several rows away from the
+ * buttons it named, and with two events open there was no way to tell where one
+ * event's buttons ended and the next began.
  *
- * The headings are therefore buttons too. They carry SPACER_DATA, which no
- * handler acts on, so tapping one dismisses its own spinner and does nothing.
+ * The 📅 sits on the name rather than on the date, where it began. It is doing
+ * the work of marking where a group starts, and the first row of a group is
+ * where the eye needs that mark while scrolling; on the second row it labelled
+ * something that already said it was a date.
+ *
+ * The headings are buttons too, since Telegram has no inert row. They carry
+ * SPACER_DATA, which no handler acts on, so tapping one dismisses its own
+ * spinner and does nothing. Tasks are told apart from them by their own role
+ * emoji, which no heading carries.
  */
 final class BoardRenderer
 {
@@ -38,6 +45,18 @@ final class BoardRenderer
      * changes nothing.
      */
     public const SPACER_DATA = 'x';
+
+    /**
+     * The separator row's label.
+     *
+     * A rule rather than a genuinely blank row: Telegram requires an inline
+     * button to carry text, and a whitespace-only label is at best undefined -
+     * a rejected button means editMessageText fails and the board silently
+     * stops updating, which is a poor trade for a slightly quieter gap. Box
+     * drawing characters render identically on every client and read as a
+     * divider rather than as something to tap.
+     */
+    public const DIVIDER = '───────────';
 
     public function __construct(
         private readonly TaskRepository $tasks
@@ -70,8 +89,8 @@ final class BoardRenderer
         // re-learn, and the event's own name is worth having even when it is
         // the only one - the date alone never said which night it was.
         foreach ($groups as $group) {
-            $keyboard[] = [$this->spacerButton($group['title'])];
-            $keyboard[] = [$this->spacerButton('📅 ' . $group['date'])];
+            $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
+            $keyboard[] = [$this->spacerButton($group['date'])];
 
             foreach ($group['tasks'] as $task) {
                 $taken = $occupancy[$task->id] ?? 0;
@@ -79,16 +98,32 @@ final class BoardRenderer
             }
         }
 
-        $deepLinkOnboard = $this->deepLinkButton('onboard', __('New here? Sign up →', 'eventcrew'));
+        // The two links at the foot are not part of any event - they lead out of
+        // the board rather than into a slot - so a rule separates them from the
+        // last task above. Built first and only added if there is at least one,
+        // or an un-configured bot would end the board on a divider with nothing
+        // under it.
+        $deepLinks = [];
 
-        if (null !== $deepLinkOnboard) {
-            $keyboard[] = [$deepLinkOnboard];
+        foreach (
+            [
+                'onboard' => __('New here? Sign up →', 'eventcrew'),
+                'me' => __('See my info →', 'eventcrew'),
+            ] as $payload => $label
+        ) {
+            $button = $this->deepLinkButton((string) $payload, $label);
+
+            if (null !== $button) {
+                $deepLinks[] = [$button];
+            }
         }
 
-        $deepLinkMe = $this->deepLinkButton('me', __('See my info →', 'eventcrew'));
+        if ([] !== $deepLinks) {
+            $keyboard[] = [$this->spacerButton(self::DIVIDER)];
 
-        if (null !== $deepLinkMe) {
-            $keyboard[] = [$deepLinkMe];
+            foreach ($deepLinks as $row) {
+                $keyboard[] = $row;
+            }
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
@@ -132,37 +167,44 @@ final class BoardRenderer
     }
 
     /**
-     * One toggle button per task, reading time first: "17:00–18:30 · Clean 1/3".
+     * One toggle button per task: "🎨 Decorate · 17:00–18:30 · 1/3".
      *
-     * The time leads because it is what somebody scanning for a slot they can
-     * make is actually looking for, and because the rows under one heading are
-     * in time order - so a leading time column makes the evening's shape
-     * readable at a glance. The date is no longer repeated here: the heading
-     * two rows up carries it, and it used to be on every button only because
-     * there was nowhere else to put it.
+     * The job's name leads. It is the thing a person is choosing between - the
+     * times under one heading are all the same evening, so they separate the
+     * rows far less than the work does - and a name in a fixed left-hand column
+     * is what makes the list scannable rather than something to read through.
+     * What follows is when, then how full, which is the order the questions
+     * arrive in.
      *
-     * The task's own emoji and count come through roleDisplay(); no ✅, which
-     * reads as "done" rather than "taken".
+     * The role's own emoji, from roleDisplay(), is also what tells a task from
+     * a heading: headings carry 📅 or nothing, so a row opening with a role
+     * emoji is a row that does something. No ✅ among them, which reads as
+     * "done" rather than "taken".
+     *
+     * The date is not repeated here; the heading above carries it, and it used
+     * to be on every button only because there was nowhere else to put it.
      *
      * @return array<string, string>
      */
     private function taskButton(Task $task, int $taken): array
     {
-        $label = sprintf('%s %d/%d', $task->roleDisplay(), $taken, $task->capacity);
-
-        if ($taken >= $task->capacity) {
-            $label .= ' · ' . __('full', 'eventcrew');
-        }
+        $parts = [$task->roleDisplay()];
 
         // A task created from a role template has no times until someone
-        // decides them, and an empty time would leave a stray separator.
+        // decides them, and an empty one would leave a stray separator.
         $time = $task->timeRange();
 
         if ('' !== $time) {
-            $label = $time . ' · ' . $label;
+            $parts[] = $time;
         }
 
-        return ['text' => $label, 'callback_data' => 't:' . $task->id];
+        $parts[] = sprintf('%d/%d', $taken, $task->capacity);
+
+        if ($taken >= $task->capacity) {
+            $parts[] = __('full', 'eventcrew');
+        }
+
+        return ['text' => implode(' · ', $parts), 'callback_data' => 't:' . $task->id];
     }
 
     /**
