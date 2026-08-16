@@ -162,7 +162,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 ?>
                 <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+                <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
             </form>
         </div>
 
@@ -382,7 +382,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_revoke_action); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" class="eventcrew-linkbtn"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
+                    <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
                 </form>
             <?php endif; ?>
 
@@ -393,7 +393,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
                     <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
                     <input type="hidden" name="action" value="delete">
-                    <button type="submit" class="eventcrew-linkbtn eventcrew-linkbtn-danger"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
+                    <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-linkbtn-danger"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
                 </form>
             <?php endif; ?>
 

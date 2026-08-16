@@ -266,53 +266,27 @@
 
 /* Sign out is a quiet action, not a button - styled as a plain inline link. */
 /*
- * Sign out, Sign out everywhere and Delete are small buttons with a surface of
- * their own, not bare underlined text.
+ * Sign out, Sign out everywhere and Delete take the theme's own button styling
+ * and add only what makes them different.
  *
- * As text they inherited the page's colour and sat directly on whatever the
- * theme put behind them - which over a dark background image meant the one
- * control somebody might urgently need was the hardest thing on the page to
- * find. Two attempts to fix that by choosing a better colour both failed for
- * the same reason: no colour is legible against a background nobody has
- * declared.
+ * They began as bare underlined text, which inherited the page's colour and sat
+ * directly on whatever the theme put behind it - unreadable over a dark
+ * background image, and the one control somebody might urgently need. Two
+ * attempts to fix that by choosing a better text colour failed for the same
+ * reason (no colour is legible against a background nobody has declared), and
+ * the third invented a grey surface, which was legible and looked like nothing
+ * else on the page.
  *
- * A surface settles it without knowing anything about the page. The tint and
- * the border are mixed from currentColor, so they follow the theme's own text
- * colour and keep their contrast with it on a light page or a dark one, and the
- * label sits on that rather than on the wallpaper.
+ * wp-element-button is what every other button here already wears - Save
+ * preferences, Get my ticket, and the board's own Sign up and Cancel, which add
+ * a modifier on top of it exactly like this. Taking the theme's button means
+ * legibility is the theme's problem, solved once, in the place that knows what
+ * the background is; is-style-outline keeps the two harmless ones secondary.
+ * All that is left here is size and the danger colour.
  */
 .eventcrew-signup button.eventcrew-linkbtn {
-    font: inherit; font-size: .9em; font-weight: 600; cursor: pointer; opacity: 1;
-    color: inherit; text-decoration: none;
-    padding: .45em .9em;
-    border-radius: var(--eventcrew-radius);
-    line-height: 1.4;
-
-    /*
-     * Declared twice on purpose, plain value first.
-     *
-     * A declaration whose value the browser cannot parse is dropped whole - so
-     * a lone color-mix() border leaves no border at all, and a lone color-mix()
-     * background leaves the button looking exactly like the bare text this is
-     * replacing. That is a silent, total failure for a progressive nicety, and
-     * it is the failure that made an earlier attempt at this look like nothing
-     * had changed.
-     *
-     * The grey is deliberately neutral: at this alpha it lifts off a light page
-     * and a dark one alike without knowing which it is on. Where color-mix is
-     * understood, the second declaration wins and the tint follows the theme's
-     * own text colour instead.
-     */
-    background: rgba(127, 127, 127, .2);
-    background: color-mix(in srgb, currentColor 20%, transparent);
-    border: 1px solid rgba(127, 127, 127, .45);
-    border-color: color-mix(in srgb, currentColor 40%, transparent);
-}
-
-.eventcrew-signup button.eventcrew-linkbtn:hover,
-.eventcrew-signup button.eventcrew-linkbtn:focus-visible {
-    background: rgba(127, 127, 127, .32);
-    background: color-mix(in srgb, currentColor 32%, transparent);
+    cursor: pointer;
+    font-size: .85em;
 }
 /*
  * Delete reads in the page's own text colour, with the red moved to the rule
@@ -337,10 +311,13 @@
  * so the contrast is fixed no matter what is behind the widget. It is the same
  * pairing .eventcrew-btn-stop already uses for Cancel, which keeps the two
  * destructive controls reading alike.
+ *
+ * Specific enough to beat the theme's own .wp-element-button colours, which is
+ * the whole point of layering it on top of them.
  */
 .eventcrew-signup button.eventcrew-linkbtn-danger {
     background: var(--eventcrew-stop);
-    border: 1px solid var(--eventcrew-stop);
+    border-color: var(--eventcrew-stop);
     color: #fff;
 }
 
