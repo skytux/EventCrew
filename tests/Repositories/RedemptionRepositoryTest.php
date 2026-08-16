@@ -25,13 +25,46 @@ final class RedemptionRepositoryTest extends TestCase
 
     public function testRecordWritesTheDateItBuysEntryTo(): void
     {
-        $this->repository()->record(9, '2026-08-01', 55, 'Ecstatic Dance', 'at the door');
+        $this->wpdb->nextQueryResults[] = 1; // one row written
 
-        $insert = $this->wpdb->inserts[0];
-        self::assertSame(9, $insert['data']['person_id']);
-        self::assertSame('2026-08-01', $insert['data']['redeemed_for']);
-        self::assertSame(55, $insert['data']['event_post_id']);
-        self::assertSame('Ecstatic Dance', $insert['data']['event_label']);
+        $id = $this->repository()->record(9, '2026-08-01', 55, 'Ecstatic Dance', 'at the door');
+
+        $sql = $this->wpdb->lastQuery();
+
+        self::assertGreaterThan(0, $id);
+        self::assertStringContainsString("'2026-08-01'", $sql);
+        self::assertStringContainsString('55', $sql);
+        self::assertStringContainsString('Ecstatic Dance', $sql);
+    }
+
+    /**
+     * The guard is in the statement, not in front of it.
+     *
+     * Every caller checks "have they already redeemed this date?" before
+     * calling, and two requests can both be past that check at once - a
+     * double-tap, or the bot and the web page a moment apart. Two rows then
+     * spend two credits against a balance of one, and since the balance is
+     * derived from these rows it just goes negative and clamps at zero. The
+     * insert refuses the second one itself, and says so by writing nothing.
+     */
+    public function testRecordRefusesASecondRedemptionForTheSameDate(): void
+    {
+        $this->wpdb->nextQueryResults[] = 0; // the WHERE NOT EXISTS matched
+
+        $id = $this->repository()->record(9, '2026-08-01', 55, 'Ecstatic Dance');
+
+        self::assertSame(0, $id);
+        self::assertStringContainsString('NOT EXISTS', $this->wpdb->lastQuery());
+    }
+
+    /** A redemption with no linked event stores a real NULL, never a 0. */
+    public function testRecordKeepsTheEventColumnNullWhenThereIsNoEvent(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->repository()->record(9, '2026-08-01');
+
+        self::assertStringContainsString('NULL', $this->wpdb->lastQuery());
     }
 
     public function testForDateReturnsTheNightsRedemptions(): void

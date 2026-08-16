@@ -41,6 +41,29 @@ final class RedemptionRepository
      * row's id (which the self-service ticket signs its link with). The caller
      * re-checks the balance first; this is the write only.
      */
+    /**
+     * Spends a credit on one date, and refuses to spend a second on the same
+     * one. Returns the new redemption's id, or 0 when there already was one.
+     *
+     * The check has to live in the statement, not in front of it. Every caller
+     * asks "have they already redeemed this date, and do they have a credit?"
+     * before calling - and between that question and this write there is a gap
+     * two requests can both be inside. A double-tap on Get my ticket, or the
+     * bot and the web page a moment apart, then wrote two rows and spent two
+     * credits against a balance of one; the balance is derived from these rows,
+     * so it simply went negative and clamped at zero, leaving somebody free
+     * entry twice over and nothing to show it.
+     *
+     * This is the same guard the assignments table has carried since v0.5 for
+     * exactly the same reason, and the same derived-table trick: MySQL will not
+     * let a subquery name the table its INSERT targets, so the existing rows
+     * are read through a wrapper, which also forces materialisation.
+     *
+     * A conditional insert rather than a unique key on (person_id,
+     * redeemed_for) because the column is nullable and installs may already
+     * hold duplicate rows from before this - an index added by dbDelta over
+     * those would fail the migration on the sites that most need the fix.
+     */
     public function record(
         int $personId,
         string $date,
@@ -50,16 +73,35 @@ final class RedemptionRepository
     ): int {
         global $wpdb;
 
-        $wpdb->insert(
-            $this->table(),
-            [
-                'person_id' => $personId,
-                'redeemed_for' => $date,
-                'event_post_id' => $eventPostId,
-                'event_label' => $eventLabel,
-                'redeemed_at' => current_time('mysql'),
-                'note' => $note,
-            ]
+        // The event column stays genuinely NULL when there is no event, rather
+        // than becoming the 0 that prepare()'s %d would produce for null.
+        $eventValue = null === $eventPostId ? 'NULL' : '%d';
+        $arguments = [$personId, $date];
+
+        if (null !== $eventPostId) {
+            $arguments[] = $eventPostId;
+        }
+
+        $arguments[] = $eventLabel;
+        $arguments[] = current_time('mysql');
+        $arguments[] = $note;
+        $arguments[] = $personId;
+        $arguments[] = $date;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT INTO {$this->table()}
+                    (person_id, redeemed_for, event_post_id, event_label, redeemed_at, note)
+                 SELECT %d, %s, {$eventValue}, %s, %s, %s
+                 FROM (SELECT 1) AS placeholder
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM (
+                         SELECT person_id, redeemed_for FROM {$this->table()}
+                     ) AS existing
+                     WHERE existing.person_id = %d AND existing.redeemed_for = %s
+                 )",
+                $arguments
+            )
         );
 
         return (int) $wpdb->insert_id;

@@ -71,12 +71,31 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates (eligible)
         $this->wpdb->nextResults[] = [];          // forPerson -> not already redeemed
         $this->queueBalanceAndEvent(2);           // two completions -> one credit
+        $this->wpdb->nextQueryResults[] = 1;      // the conditional insert wrote a row
 
         $result = $this->service()->redeem(7, '2026-08-01');
 
         self::assertSame(TicketRedemptionService::TICKET_READY, $result['code']);
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $result['url']);
-        self::assertCount(1, $this->wpdb->inserts); // the redemption was recorded
+    }
+
+    /**
+     * The write is the guard, so a request that got past the "already
+     * redeemed?" check while another was in flight is turned away by the insert
+     * writing nothing - and must be reported as the duplicate it is, not as a
+     * ticket nobody was issued.
+     */
+    public function testRedeemReportsADuplicateTheInsertRefused(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->queueBalanceAndEvent(2);
+        $this->wpdb->nextQueryResults[] = 0;      // NOT EXISTS matched; nothing written
+
+        $result = $this->service()->redeem(7, '2026-08-01');
+
+        self::assertSame(TicketRedemptionService::ALREADY_REDEEMED, $result['code']);
+        self::assertSame('', $result['url']);
     }
 
     public function testRedeemEmailsAndDmsTheTicketLink(): void
@@ -93,6 +112,7 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates (eligible)
         $this->wpdb->nextResults[] = [];          // forPerson -> not already redeemed
         $this->queueBalanceAndEvent(2);           // two completions -> one credit
+        $this->wpdb->nextQueryResults[] = 1;      // the conditional insert wrote a row
         $this->wpdb->nextRows[] = [               // people->find(7) for the DM + email
             'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
             'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 999,

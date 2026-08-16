@@ -121,6 +121,18 @@ final class RosterPage
         [$eventPostId, $eventLabel] = $this->eventContext($date);
         $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel);
 
+        // 0 means they were already down for this date - two people working the
+        // door, or one double-click. Say so rather than reporting a second
+        // redemption that was not made, and send no second ticket.
+        if (0 === $redemptionId) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('They already have free entry for this date.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
         // Transactional: hand the person their door-ticket link on both channels,
         // the same as the self-service /ticket flow does.
         $this->tickets->notifyRedemption($personId, $date, $redemptionId);
