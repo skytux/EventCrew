@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.26.0
+Stable tag: 1.26.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.26.1 =
+* Fixed: **a free-entry credit could be spent twice.** Both places that redeem one — the /ticket flow and the organizer's Roster page — checked "have they already redeemed this date, and do they have a credit?" and then wrote the redemption as a separate step. Two requests could both be past that check at once: a double-tap, or the bot and the web page a moment apart. Two rows were written, two credits spent against a balance of one, and because the balance is worked out from those rows it simply went negative and clamped at zero — so somebody got in free twice with nothing to show it had happened. The check now lives inside the write itself, which is the same guard the task-signup table has used since v0.5 for exactly this reason.
+* The organizer's Roster page now says "They already have free entry for this date" instead of reporting a second redemption it did not make, and sends no second ticket.
 
 = 1.26.0 =
 * Sign out now sits at the right-hand end of the line it shares with your name, rather than trailing straight after it. It is also centred against the name instead of sharing a baseline with it, which stopped the button's padding hanging below the text now that it is a real button.
@@ -432,6 +436,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.26.1 =
+Fixes a free-entry credit being spendable twice by two requests arriving together — a double-tap, or the bot and web page at once. Worth taking if your crew earns credits. No database change.
 
 = 1.26.0 =
 Sign out moves to the right of your name, and section headings get a little breathing room above them. Clear any page cache after upgrading. No database change.

@@ -181,12 +181,26 @@ class FakeWpdb
         return addcslashes($text, '_%\\');
     }
 
+    /**
+     * Conditional inserts go through here rather than insert(), so an INSERT
+     * that reports a row also moves insert_id - the way MySQL does, and the way
+     * the repositories that use this pattern read their new row's id back.
+     */
     public function query(string $sql): int|bool
     {
         $this->queries[] = $sql;
 
-        return array_shift($this->nextQueryResults) ?? 0;
+        $result = array_shift($this->nextQueryResults) ?? 0;
+
+        if (is_int($result) && $result > 0 && 1 === preg_match('/^\s*INSERT\s/i', $sql)) {
+            $this->insert_id = ++$this->conditionalInserts + count($this->inserts);
+        }
+
+        return $result;
     }
+
+    /** How many conditional inserts have reported a row, for insert_id. */
+    private int $conditionalInserts = 0;
 
     public function get_row(string $sql, string $output = 'OBJECT'): mixed
     {

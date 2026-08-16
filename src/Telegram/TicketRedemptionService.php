@@ -176,6 +176,14 @@ final class TicketRedemptionService
 
         [$eventPostId, $eventLabel] = $this->eventContext($date);
         $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel, $note);
+
+        // 0 means the write found a redemption already there - a second request
+        // that got past the check above while this one was in flight. The
+        // answer is the same one the check would have given.
+        if (0 === $redemptionId) {
+            return ['code' => self::ALREADY_REDEEMED, 'url' => ''];
+        }
+
         $url = $this->ticketUrl($redemptionId);
 
         // The ticket link goes to both of the person's channels here, in the one
