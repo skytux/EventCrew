@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.24.0
+Stable tag: 1.25.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.25.0 =
+* **A one-minute wait before a sign-in link can be sent again, counted down in the button itself** — "Resend in 47s", then back to "Resend link". Mail takes a moment to arrive, and a second identical link helps nobody; showing the wait rather than silently refusing the press means the button always says what it is doing and when it will be ready. Only a link that actually went starts the clock, so a refused attempt leaves the button ready to try again immediately.
+* It is a courtesy, not a rate limit: it lives in the page, so a reload clears it. Cloudflare's check remains the actual guard against anyone hammering the form.
 
 = 1.24.0 =
 * **Sign out, Sign out everywhere and Delete my data are now proper buttons**, each with a surface of its own instead of bare underlined text. Three releases tried to make Delete legible by choosing a better colour for the text; none could, because no colour is legible against a background nobody has declared. A button carries its own background and settles it: the neutral two are tinted from the page's own text colour, and Delete carries the deep red under white — the same pairing Cancel already uses, so the two destructive controls now read alike.
@@ -413,6 +417,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.25.0 =
+Adds a one-minute countdown in the sign-in button before a link can be resent. Clear any page cache after upgrading. No database change.
 
 = 1.24.0 =
 Sign out and Delete my data are now buttons with their own background, readable on any theme or background image. Also fixes "Resend link" needing two presses. Clear any page cache after upgrading. No database change.

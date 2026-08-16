@@ -614,6 +614,25 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
      * later is neither.
      */
     var REARM_AFTER = 1200;
+
+    /*
+     * How long the button holds itself shut after a link has gone.
+     *
+     * A minute, counted down in the button itself, because the honest answer to
+     * "nothing has arrived yet" is almost always "give it a moment" - mail
+     * takes time, and a second identical link helps nobody. Showing the wait
+     * rather than refusing the press means the button is never a mystery: it
+     * says what it is doing and when it will be ready.
+     *
+     * Presentation, not a rate limit. It lives in the page, so a reload clears
+     * it; the actual guard against someone hammering the form is Turnstile.
+     */
+    var RESEND_COOLDOWN = 60000;
+    var resendReadyAt = 0;
+    var resendCountdown = <?php echo wp_json_encode(
+        /* translators: %s: whole seconds remaining before the link can be sent again */
+        __('Resend in %ss', 'eventcrew')
+    ); ?>;
     var unsolvedNotice = <?php echo wp_json_encode(
         __('The spam check hasn’t finished yet — give it a moment, then try again.', 'eventcrew')
     ); ?>;
@@ -762,32 +781,74 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         })();
     }
 
-    if (hasChallenge(signinForm) && signinButton) {
-        setSigninLive(false);
+    /*
+     * The one ticker that owns the sign-in button's state.
+     *
+     * Two things gate it and they have to agree on who wins: the resend
+     * cooldown, and whether the spam check has produced a token. The cooldown
+     * takes precedence, because a countdown that flickered back to "Checking
+     * you're human..." every time the widget re-armed would say nothing useful
+     * about either.
+     *
+     * It runs whenever there is a button, not only when there is a challenge -
+     * an install with no Turnstile keys has no widget to wait for but still
+     * has a cooldown to show.
+     */
+    var starved = 0;
 
-        var starved = 0;
+    function tickSigninButton() {
+        if (!signinButton || submitting) {
+            return;
+        }
 
-        setInterval(function () {
-            if (submitting) {
-                return;
-            }
+        var remaining = resendReadyAt - Date.now();
 
-            var token = challengeToken(signinForm);
-            noteToken(token);
+        if (remaining > 0) {
+            setSigninButton(true, resendCountdown.replace('%s', String(Math.ceil(remaining / 1000))));
 
-            if (token) {
-                starved = 0;
-                setSigninLive(true);
+            return;
+        }
 
-                return;
-            }
+        if (!hasChallenge(signinForm)) {
+            setSigninButton(false, signinLiveLabel);
 
-            starved += CHALLENGE_STEP;
+            return;
+        }
 
-            // Past the timeout the button stays live and empty-handed rather
-            // than dead; see the note above.
-            setSigninLive(starved >= CHALLENGE_GIVE_UP);
-        }, CHALLENGE_STEP);
+        var token = challengeToken(signinForm);
+        noteToken(token);
+
+        if (token) {
+            starved = 0;
+            setSigninLive(true);
+
+            return;
+        }
+
+        starved += CHALLENGE_STEP;
+
+        // Past the timeout the button stays live and empty-handed rather
+        // than dead; see the note above.
+        setSigninLive(starved >= CHALLENGE_GIVE_UP);
+    }
+
+    /** Sets the button's state, touching the DOM only when it changes. */
+    function setSigninButton(disabled, label) {
+        if (signinButton.disabled !== disabled) {
+            signinButton.disabled = disabled;
+        }
+
+        if (signinButton.textContent !== label) {
+            signinButton.textContent = label;
+        }
+    }
+
+    if (signinButton) {
+        if (hasChallenge(signinForm)) {
+            setSigninLive(false);
+        }
+
+        setInterval(tickSigninButton, CHALLENGE_STEP);
     }
 
     root.addEventListener('submit', function (e) {
@@ -856,9 +917,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         submitting = false;
         showToast(message);
 
+        if (button && signinButton === button) {
+            tickSigninButton();
+
+            return;
+        }
+
         if (button) {
             button.disabled = false;
-            button.textContent = signinLiveLabel;
         }
     }
 
@@ -966,11 +1032,14 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (isSignin && res && 'check_email' === res.code) {
                 var sent = document.getElementById('eventcrew-signin-sent');
                 if (sent) { sent.hidden = false; }
-                // Remembered as the live label too, so the watcher restores
+
+                // Only a link that actually went starts the clock. A refusal
+                // leaves the button ready, because there is nothing to wait for.
+                resendReadyAt = Date.now() + RESEND_COOLDOWN;
+                // Remembered as the live label too, so the ticker restores
                 // "Resend link" rather than the original wording once the
-                // freshly reset widget has solved again.
+                // cooldown is over and the widget has solved again.
                 signinLiveLabel = <?php echo wp_json_encode(__('Resend link', 'eventcrew')); ?>;
-                if (button) { button.textContent = signinLiveLabel; }
             }
             // A redeemed free-entry ticket: open it. Prefer a new tab; if the
             // browser blocks the popup, navigate this one to the ticket instead.
@@ -1000,13 +1069,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
              * because the field it is gated on still holds a value.
              */
             tokenSpent = true;
-
-            // Whatever the label was during the wait, put the live one back.
-            if (button && signinButton === button) {
-                button.textContent = signinLiveLabel;
-            }
-
             submitting = false;
+
+            // Hand the button straight back to the ticker rather than setting a
+            // label here that it would correct a fraction of a second later -
+            // which after a successful send would have flashed "Resend link"
+            // before the countdown replaced it.
+            tickSigninButton();
 
             // Re-arm in the background so a Resend has a token ready. The
             // watcher picks the new one up and clears the spent flag with it.
