@@ -72,15 +72,24 @@
 }
 .eventcrew-signup .eventcrew-turnstile { margin-top: .75em; }
 /*
- * Name and sign out on one line. The form is a block element, so without this
- * it drops to its own row and the link ends up nowhere near the name it
+ * Name on the left, Sign out on the right. The form is a block element, so
+ * without the flex it drops to its own row and ends up nowhere near the name it
  * belongs to.
+ *
+ * Centred rather than on a shared baseline now that Sign out is a real button:
+ * a baseline lines up the two pieces of text and leaves the button's padding
+ * hanging below the name, which reads as misalignment rather than as intent.
  */
 .eventcrew-signup .eventcrew-identity {
-    display: flex; align-items: baseline; gap: .5em; flex-wrap: wrap;
+    display: flex; align-items: center; gap: .5em; flex-wrap: wrap;
     margin: 0 0 .6em; font-size: .9em;
 }
-.eventcrew-signup .eventcrew-subhead { margin: 0 0 .5em; font-size: 1.05em; }
+/*
+ * A little air above each heading, so a section's title is not sitting on the
+ * button that ended the section before it. Margins between the two collapse, so
+ * this is the gap rather than an addition to one.
+ */
+.eventcrew-signup .eventcrew-subhead { margin: .5em 0 .5em; font-size: 1.05em; }
 .eventcrew-signup .eventcrew-me-section { margin: 0 0 1.5em; }
 .eventcrew-signup .eventcrew-me-section:last-child { margin-bottom: 0; }
 .eventcrew-signup .eventcrew-section { margin: 0 0 1.5em; }
@@ -317,7 +326,8 @@
     filter: brightness(.9);
 }
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
-.eventcrew-signup .eventcrew-signout { margin: 0; display: inline; }
+/* Pushed to the far end of the identity row, whatever the name's length. */
+.eventcrew-signup .eventcrew-signout { margin: 0 0 0 auto; }
 
 /*
  * Sign up reads go, Cancel reads stop. Go takes the crew's accent so the page
