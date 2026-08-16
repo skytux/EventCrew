@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.25.0
+Stable tag: 1.25.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.25.1 =
+* Fixed: the account buttons added in 1.24.0 could end up with **no background at all**, looking exactly like the bare text they were meant to replace. Their tint and border were written with `color-mix()`, and a value a browser cannot parse takes its whole declaration with it — so where that was unsupported or blocked, the buttons silently lost both. Each now has a plain colour first and the `color-mix()` version second, so there is always a surface and the nicer, theme-following tint applies wherever it is understood.
+* The neutral tint was also far too faint to see — 8% over the page's own text colour is close to nothing. It is 20% now, with a stronger border, and the labels are bolder.
 
 = 1.25.0 =
 * **A one-minute wait before a sign-in link can be sent again, counted down in the button itself** — "Resend in 47s", then back to "Resend link". Mail takes a moment to arrive, and a second identical link helps nobody; showing the wait rather than silently refusing the press means the button always says what it is doing and when it will be ready. Only a link that actually went starts the clock, so a refused attempt leaves the button ready to try again immediately.
@@ -417,6 +421,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.25.1 =
+Fixes the account buttons rendering with no background, and makes the neutral ones visible rather than a barely-there tint. Clear any page cache after upgrading. No database change.
 
 = 1.25.0 =
 Adds a one-minute countdown in the sign-in button before a link can be resent. Clear any page cache after upgrading. No database change.
