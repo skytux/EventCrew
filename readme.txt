@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.25.1
+Stable tag: 1.25.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.25.2 =
+* The account buttons now use your theme's own button styling, like every other button on the page already did — Save preferences, Get my ticket, and the board's Sign up and Cancel all wear it. 1.24.0 gave them a hand-made grey surface instead, which was legible but looked like nothing else on the panel. Sign out and Sign out everywhere take the theme's outline style, so they read as the secondary things they are; Delete my data keeps the deep red, layered on top of the theme's button exactly the way Cancel already is.
+* Which also settles the legibility problem properly: contrast against the page is the theme's business, decided once by the part that knows what the background is, rather than guessed at here.
 
 = 1.25.1 =
 * Fixed: the account buttons added in 1.24.0 could end up with **no background at all**, looking exactly like the bare text they were meant to replace. Their tint and border were written with `color-mix()`, and a value a browser cannot parse takes its whole declaration with it — so where that was unsupported or blocked, the buttons silently lost both. Each now has a plain colour first and the `color-mix()` version second, so there is always a surface and the nicer, theme-following tint applies wherever it is understood.
@@ -421,6 +425,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.25.2 =
+The account buttons now match the rest of the page by using your theme's own button styling. Clear any page cache after upgrading. No database change.
 
 = 1.25.1 =
 Fixes the account buttons rendering with no background, and makes the neutral ones visible rather than a barely-there tint. Clear any page cache after upgrading. No database change.
