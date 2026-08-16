@@ -264,53 +264,42 @@
     font-size: .8em; opacity: .7; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-/* Sign out is a quiet action, not a button - styled as a plain inline link. */
 /*
- * Sign out, Sign out everywhere and Delete take the theme's own button styling
- * and add only what makes them different.
+ * Sign out, Sign out everywhere and Delete are the theme's own buttons, and
+ * this sheet adds nothing to them but the danger colour.
  *
  * They began as bare underlined text, which inherited the page's colour and sat
- * directly on whatever the theme put behind it - unreadable over a dark
- * background image, and the one control somebody might urgently need. Two
- * attempts to fix that by choosing a better text colour failed for the same
- * reason (no colour is legible against a background nobody has declared), and
- * the third invented a grey surface, which was legible and looked like nothing
- * else on the page.
+ * on whatever the theme put behind it - unreadable over a dark background image,
+ * and the one control somebody might urgently need. Four releases tried to fix
+ * that here: two by choosing a better text colour, one by inventing a grey
+ * surface, one by stopping that surface silently vanishing. All of them were
+ * this stylesheet trying to decide contrast against a background it cannot see.
  *
- * wp-element-button is what every other button here already wears - Save
- * preferences, Get my ticket, and the board's own Sign up and Cancel, which add
- * a modifier on top of it exactly like this. Taking the theme's button means
- * legibility is the theme's problem, solved once, in the place that knows what
- * the background is; is-style-outline keeps the two harmless ones secondary.
- * All that is left here is size and the danger colour.
+ * wp-element-button is what every other button on the page already wears - Save
+ * preferences, Get my ticket, and the board's Sign up and Cancel, which add a
+ * modifier on top of it exactly as the danger rule below does. Wearing it hands
+ * contrast, padding, radius and border back to the theme, which decides them
+ * once for the whole site and knows what the background is.
+ *
+ * There is deliberately no font-size here. An earlier .85em shrank the label
+ * while the theme's padding - in px, as most themes write it - stayed put, so
+ * the button read as a slab of padding around small text and looked nothing
+ * like the ones beside it. Overriding one half of a size the theme sets in two
+ * places is how that happens.
  */
 .eventcrew-signup button.eventcrew-linkbtn {
     cursor: pointer;
-    font-size: .85em;
 }
-/*
- * Delete reads in the page's own text colour, with the red moved to the rule
- * under it.
- *
- * Tinting the text itself was still wrong. A fixed red cannot be legible
- * against a background nobody has declared - mixed 60% toward the page it was
- * about rgb(163,89,89), which is fine on white and nearly invisible over a dark
- * image - and every step toward legibility is a step away from the red being
- * red at all. The only colour guaranteed to read here is the one the theme
- * already uses for text, because the theme chose it against its own background.
- *
- * So the text takes that, and the danger signal moves to the underline, where
- * being dim costs nothing: nobody has to read a line. A thicker, offset rule in
- * the stop colour is visible as a red mark without the wording depending on it.
- */
+
 /*
  * Delete carries the danger colour as its background, with white on top.
  *
  * This is the one arrangement where the deep red works: as a surface it is
  * chosen against the white it carries, not against a page it has never seen,
- * so the contrast is fixed no matter what is behind the widget. It is the same
+ * so the contrast is fixed whatever is behind the widget. It is the same
  * pairing .eventcrew-btn-stop already uses for Cancel, which keeps the two
- * destructive controls reading alike.
+ * destructive controls reading alike. Only the colours are set, so the shape
+ * stays whatever the theme makes it.
  *
  * Specific enough to beat the theme's own .wp-element-button colours, which is
  * the whole point of layering it on top of them.
