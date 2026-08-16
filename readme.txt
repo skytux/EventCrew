@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.25.3
+Stable tag: 1.26.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.26.0 =
+* Sign out now sits at the right-hand end of the line it shares with your name, rather than trailing straight after it. It is also centred against the name instead of sharing a baseline with it, which stopped the button's padding hanging below the text now that it is a real button.
+* Section headings on the crew page have a little air above them, so a title is not sitting directly on the button that ended the section before it.
 
 = 1.25.3 =
 * Fixed: the account buttons still looked wrong next to the rest of the site — too much padding, the wrong shape. 1.25.2 handed them your theme's button styling but then shrank the label to 85%, and most themes set button padding in pixels: the text got smaller while the padding stayed exactly where it was, so the button became a slab of padding around small text. Overriding one half of a size the theme sets in two places is how that happens. The size override is gone, so they are now simply your theme's buttons — same border, same corners, same padding as every other button on the site.
@@ -428,6 +432,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.26.0 =
+Sign out moves to the right of your name, and section headings get a little breathing room above them. Clear any page cache after upgrading. No database change.
 
 = 1.25.3 =
 The account buttons now match your theme's buttons exactly — the previous release shrank their text but left the theme's padding, which made them look oversized. Clear any page cache after upgrading. No database change.
