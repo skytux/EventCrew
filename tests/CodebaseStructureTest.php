@@ -162,6 +162,111 @@ final class CodebaseStructureTest extends TestCase
     }
 
     /**
+     * A template may only call methods and read properties that exist on the
+     * class its own docblock says the variable holds.
+     *
+     * This is the check that was missing when the People screen called
+     * Person::acceptsOpenTaskEmail(): a method that had never existed, on the
+     * one page an organizer opens to edit somebody, fatal on every visit. No
+     * unit test caught it because templates are not rendered by the suite, and
+     * nothing else reads them - so the mistake survived from whenever it was
+     * written until somebody opened the page.
+     *
+     * Exact rather than heuristic, because the templates already annotate their
+     * inputs: "@var \EventCrew\Models\Person|null $editing" says precisely what
+     * $editing is, and reflection says precisely what that class has. The one
+     * cost is that the annotation has to be right, which is a good thing to be
+     * forced into anyway.
+     */
+    public function testTemplatesOnlyUseMembersTheirDeclaredTypesHave(): void
+    {
+        $checked = 0;
+
+        foreach ($this->templateFiles() as $file) {
+            $contents = (string) file_get_contents($file->getPathname());
+
+            // "@var \EventCrew\Models\Person|null $editing" - only plain,
+            // single-class annotations; arrays and shapes describe something
+            // this cannot follow and are skipped.
+            preg_match_all(
+                '/@var\s+\\\\?(EventCrew\\\\[\w\\\\]+)(?:\|null)?\s+\$(\w+)\b/',
+                $contents,
+                $declared,
+                PREG_SET_ORDER
+            );
+
+            foreach ($declared as [, $class, $variable]) {
+                /*
+                 * Skipped rather than failed when the class cannot be loaded at
+                 * all: the admin list tables extend WP_List_Table, which only
+                 * exists inside WordPress. Their absence says nothing about the
+                 * templates, and the value objects this is really about -
+                 * Person, Task, Standing - load fine.
+                 */
+                try {
+                    if (! class_exists($class)) {
+                        continue;
+                    }
+
+                    $reflection = new \ReflectionClass($class);
+                } catch (\Throwable) {
+                    continue;
+                }
+
+                preg_match_all(
+                    '/\$' . preg_quote($variable, '/') . '->(\w+)(\s*\()?/',
+                    $contents,
+                    $uses,
+                    PREG_SET_ORDER
+                );
+
+                foreach ($uses as $use) {
+                    $member = $use[1];
+                    $isCall = isset($use[2]) && str_contains($use[2], '(');
+                    ++$checked;
+
+                    self::assertTrue(
+                        $isCall ? $reflection->hasMethod($member) : $reflection->hasProperty($member),
+                        sprintf(
+                            '%s uses $%s->%s%s, which %s does not have.',
+                            $file->getFilename(),
+                            $variable,
+                            $member,
+                            $isCall ? '()' : '',
+                            $class
+                        )
+                    );
+                }
+            }
+        }
+
+        self::assertGreaterThan(0, $checked, 'No annotated template variables were checked; the pattern has drifted.');
+    }
+
+    /**
+     * @return array<int, SplFileInfo>
+     */
+    private function templateFiles(): array
+    {
+        $files = [];
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                EVENTCREW_PLUGIN_DIR . 'templates',
+                FilesystemIterator::SKIP_DOTS
+            )
+        );
+
+        foreach ($iterator as $file) {
+            if ($file instanceof SplFileInfo && 'php' === $file->getExtension()) {
+                $files[] = $file;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
      * @return array<int, SplFileInfo>
      */
     private function sourceFiles(): array
