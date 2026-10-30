@@ -113,8 +113,13 @@ final class ProfileServiceTest extends TelegramTestCase
 
         $this->service()->onWeb(555, 555);
 
-        $body = (string) $this->lastCallTo('sendMessage')['text'];
-        self::assertStringContainsString('https://site.test/signup/?eventcrew_login=', $body);
+        // The link is a named button, never a raw address in the text.
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertStringNotContainsString('eventcrew_login', (string) $dm['text']);
+        self::assertStringContainsString(
+            'https://site.test/signup/?eventcrew_login=',
+            (string) $dm['reply_markup']['inline_keyboard'][0][0]['url']
+        );
         // A single-use token was issued (a row written to auth_tokens).
         self::assertNotEmpty($this->wpdb->inserts);
     }
@@ -151,5 +156,41 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringContainsString('2026-07-18', (string) $dm['text']);
 
         self::assertSame(999, $this->telegramCalls[1]['body']['chat_id']);
+    }
+    public function testMyTicketsGivesEachUpcomingTicketANamedButtonAndNoRawLinks(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+        // One slot still ahead and one already worked (today is 2026-07-20).
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up'],
+            ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'completed'],
+        ];
+        $this->wpdb->nextRows[] = ['task_date' => '2026-07-25'] + $this->taskRow(1);
+        $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2);
+        $this->wpdb->nextResults[] = []; // no free-entry redemptions
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+
+        $this->service()->onMyTickets(555, 555);
+
+        $dm = $this->lastCallTo('sendMessage');
+        $text = (string) $dm['text'];
+        self::assertStringContainsString('2026-07-25', $text);
+        self::assertStringContainsString('2026-07-18', $text);
+        self::assertStringNotContainsString('token=', $text);
+
+        // Only the upcoming ticket gets a button; the past one is just listed.
+        $rows = $dm['reply_markup']['inline_keyboard'];
+        self::assertCount(1, $rows);
+        self::assertStringContainsString('2026-07-25', $rows[0][0]['text']);
+        self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
     }
 }

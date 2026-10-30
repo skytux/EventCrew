@@ -271,7 +271,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(AuthTokenRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(Mailer::class)
             )
         );
 

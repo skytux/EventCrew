@@ -47,23 +47,20 @@ final class ClaimNotifier
         }
 
         $standingLine = $this->standingLine($person);
-        $calendarLine = $this->calendarLine($task->id);
         $about = RoleGuide::aboutLine($task);
         $aboutBlock = '' === $about ? '' : "\n\n" . $about;
-        $guideButton = RoleGuide::button();
 
         $this->dm(
             $person,
             sprintf(
-                /* translators: 1: role, 2: event, 3: date/time, 4: door-ticket link */
+                /* translators: 1: role, 2: event, 3: date/time */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow this ticket at the door:\n%4\$s\n\nTap the task again to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTap the task again to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
                 $task->roleLabel(),
                 $task->eventName(),
-                $this->whenText($task),
-                $this->mailer->ticketUrl($assignment->id)
-            ) . $aboutBlock . "\n\n" . $calendarLine . "\n\n" . $standingLine,
-            null === $guideButton ? null : ['inline_keyboard' => [[$guideButton]]]
+                $this->whenText($task)
+            ) . $aboutBlock . "\n\n" . $standingLine,
+            ['inline_keyboard' => $this->signupKeyboard($task->id, $assignment->id)]
         );
 
         $this->mailer->toPerson(
@@ -99,16 +96,26 @@ final class ClaimNotifier
     }
 
     /**
-     * The "add to calendar" line: putting the task in a person's own calendar,
-     * with its own alarm, is the strongest nudge there is against a no-show.
+     * The confirmation DM's links, each a named button rather than a raw
+     * address: the ticket first, since it is what gets them in; then the
+     * calendar hold, the strongest nudge there is against a no-show; then the
+     * crew guide when one is set.
+     *
+     * @return list<list<array<string, string>>>
      */
-    private function calendarLine(int $taskId): string
+    private function signupKeyboard(int $taskId, int $assignmentId): array
     {
-        return sprintf(
-            /* translators: %s: a link that adds the task to the person's calendar */
-            __('📅 Add it to your calendar: %s', 'eventcrew'),
-            CalendarController::url($taskId)
-        );
+        $rows = [
+            [['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)]],
+            [['text' => __('📅 Add to calendar', 'eventcrew'), 'url' => CalendarController::url($taskId)]],
+        ];
+        $guide = RoleGuide::button();
+
+        if (null !== $guide) {
+            $rows[] = [$guide];
+        }
+
+        return $rows;
     }
 
     /**

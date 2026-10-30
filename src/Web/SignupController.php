@@ -300,23 +300,24 @@ final class SignupController
             'eventcrew'
         );
 
+        $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
+        $actions = [['label' => __('Sign in', 'eventcrew'), 'url' => $this->loginUrl($raw)]];
+
         if ($isNew) {
-            $notice = PrivacyPolicy::noticeLine();
+            $body .= "\n\n" . PrivacyPolicy::noticeLine();
             $url = PrivacyPolicy::noticeUrl();
 
-            $body .= "\n\n" . ('' === $url
-                ? $notice
-                : $notice . ' ' . PrivacyPolicy::noticeLinkLabel() . ': ' . $url);
+            if ('' !== $url) {
+                $actions[] = ['label' => PrivacyPolicy::noticeLinkLabel(), 'url' => $url];
+            }
         }
-
-        $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
 
         $this->mailer->toPerson(
             $personId,
             $email,
             __('Your EventCrew sign-in link', 'eventcrew'),
             $body,
-            [['label' => __('Sign in', 'eventcrew'), 'url' => $this->loginUrl($raw)]]
+            $actions
         );
 
         return 'check_email';
