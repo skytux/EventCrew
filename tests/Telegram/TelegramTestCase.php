@@ -152,7 +152,7 @@ abstract class TelegramTestCase extends TestCase
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
 
         return new UpdateRouter(
-            new OnboardingService(new PersonRepository(), new AuthTokenRepository(), $this->client(), new Logger()),
+            new OnboardingService(new PersonRepository(), new AuthTokenRepository(), $this->client(), new Logger(), $mailer),
             $this->boardService(),
             new RosterService(
                 new RosterAssembler(new TaskRepository(), new AssignmentRepository(), new PersonRepository(), $this->standing()),

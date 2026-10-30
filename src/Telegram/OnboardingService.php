@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\PrivacyPolicy;
 
 /**
@@ -33,7 +34,8 @@ final class OnboardingService
         private readonly PersonRepository $people,
         private readonly AuthTokenRepository $tokens,
         private readonly TelegramClient $telegram,
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly Mailer $mailer
     ) {
     }
 
@@ -76,27 +78,31 @@ final class OnboardingService
             $chatId,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __("Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks.", 'eventcrew')
-            . "\n\n" . $this->privacyLine()
+            . "\n\n" . PrivacyPolicy::noticeLine(),
+            '' === PrivacyPolicy::noticeUrl() ? null : ['inline_keyboard' => [[[
+                'text' => PrivacyPolicy::noticeLinkLabel(),
+                'url' => PrivacyPolicy::noticeUrl(),
+            ]]]]
         );
     }
 
     /**
-     * The same privacy sentence the web form carries, appended to the one
-     * message that asks for an address.
+     * The same privacy notice the web form carries, as a named link: a button
+     * in Telegram, an action in the email.
      *
      * The bot asks for exactly what the web form asks for, so it owes the same
      * answer at the same moment - a person onboarding through Telegram should
-     * not have to find the website to learn what happens to their address. The
-     * URL is appended bare rather than linked because Telegram autolinks it and
-     * this message is sent as plain text; with no notice published the sentence
-     * stands alone rather than trailing a broken link.
+     * not have to find the website to learn what happens to their address.
+     * With no notice published the sentence stands alone rather than trailing
+     * a broken link, so this is null.
+     *
+     * @return array{label: string, url: string}|null
      */
-    private function privacyLine(): string
+    private function privacyAction(): ?array
     {
-        $line = PrivacyPolicy::noticeLine();
         $url = PrivacyPolicy::noticeUrl();
 
-        return '' === $url ? $line : $line . ' ' . PrivacyPolicy::noticeLinkLabel() . ': ' . $url;
+        return '' === $url ? null : ['label' => PrivacyPolicy::noticeLinkLabel(), 'url' => $url];
     }
 
     public function isAwaitingEmail(int $telegramUserId): bool
@@ -178,7 +184,7 @@ final class OnboardingService
         $rawToken = $this->tokens->issue($personId, self::VERIFY_PURPOSE, self::TOKEN_TTL);
         delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
 
-        $this->sendVerificationEmail($email, $displayName, $rawToken);
+        $this->sendVerificationEmail($personId, $email, $displayName, $rawToken);
 
         $this->telegram->sendMessage(
             $chatId,
@@ -204,29 +210,32 @@ final class OnboardingService
         return $person->id;
     }
 
-    private function sendVerificationEmail(string $email, string $displayName, string $rawToken): void
+    /**
+     * Mails the confirmation link as a named button. Mailer logs a failed send,
+     * and the plain-text part still carries the full link for a reader whose
+     * mail client shows no HTML.
+     */
+    private function sendVerificationEmail(int $personId, string $email, string $displayName, string $rawToken): void
     {
         $link = add_query_arg(['token' => $rawToken], rest_url('eventcrew/v1/verify'));
         $greeting = '' !== $displayName ? $displayName : $email;
 
         $body = sprintf(
-            /* translators: 1: person's name, 2: confirmation link */
+            /* translators: 1: person's name */
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Hi %1\$s,\n\nConfirm your email to finish signing up for EventCrew tasks:\n\n%2\$s\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
-            $greeting,
-            $link
-        );
+            __("Hi %1\$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
+            $greeting
+        ) . "\n\n" . PrivacyPolicy::noticeLine();
 
-        $body .= "\n\n" . $this->privacyLine();
-
-        $sent = wp_mail(
+        $this->mailer->toPerson(
+            $personId,
             $email,
             __('Confirm your email for EventCrew', 'eventcrew'),
-            $body
+            $body,
+            array_values(array_filter([
+                ['label' => __('Confirm your email', 'eventcrew'), 'url' => $link],
+                $this->privacyAction(),
+            ]))
         );
-
-        if (! $sent) {
-            $this->logger->warning(sprintf('Verification email to %s could not be sent.', $email));
-        }
     }
 }

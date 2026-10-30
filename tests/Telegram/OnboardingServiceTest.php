@@ -7,7 +7,9 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Telegram\OnboardingService;
 
 final class OnboardingServiceTest extends TelegramTestCase
@@ -58,7 +60,8 @@ final class OnboardingServiceTest extends TelegramTestCase
             new PersonRepository(),
             new AuthTokenRepository(),
             $this->client(),
-            new Logger()
+            new Logger(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 
@@ -165,5 +168,29 @@ final class OnboardingServiceTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->inserts);
         self::assertSame([], $this->mails);
         self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+    }
+    public function testStartOffersThePrivacyNoticeAsANamedButton(): void
+    {
+        $this->options['wp_page_for_privacy_policy'] = 12;
+        Functions\when('get_post_status')->justReturn('publish');
+        Functions\when('get_permalink')->justReturn('https://example.test/privacy/');
+
+        $this->service()->start(555, 555, 'Sam');
+
+        $message = $this->lastCallTo('sendMessage');
+        self::assertStringNotContainsString('https://example.test/privacy/', (string) $message['text']);
+        self::assertSame('https://example.test/privacy/', $message['reply_markup']['inline_keyboard'][0][0]['url']);
+    }
+
+    public function testTheVerificationEmailNamesItsLink(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        // Sent through the Mailer as HTML, so the link sits behind a named
+        // button; the plain-text alternative alone carries the address.
+        self::assertStringContainsString('Confirm your email', $this->mails[0]['body']);
+        self::assertStringContainsString('<a ', $this->mails[0]['body']);
     }
 }

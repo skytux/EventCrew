@@ -123,7 +123,10 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertSame(TicketRedemptionService::TICKET_READY, $result['code']);
         // The link lands in the person's DM...
         self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
-        self::assertStringContainsString($result['url'], (string) $this->lastCallTo('sendMessage')['text']);
+        // ...as a named button, never a raw address in the text...
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertStringNotContainsString('token=', (string) $dm['text']);
+        self::assertSame($result['url'], $dm['reply_markup']['inline_keyboard'][0][0]['url']);
         // ...and in an email carrying the same link.
         self::assertNotEmpty($mails);
         self::assertStringContainsString($result['url'], $mails[0]['body']);

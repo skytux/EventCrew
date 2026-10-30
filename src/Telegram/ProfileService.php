@@ -148,6 +148,9 @@ final class ProfileService
 
         $tickets = (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id);
         $lines = ['🎟 ' . __('Your tickets', 'eventcrew')];
+        // Each upcoming ticket is a named button; a past one is only listed,
+        // since there is no door left to show it at.
+        $buttons = [];
 
         if ([] === $tickets['upcoming'] && [] === $tickets['past']) {
             $lines[] = __('No tickets yet — sign up for a task or spend a credit.', 'eventcrew');
@@ -156,6 +159,13 @@ final class ProfileService
                 $lines[] = '';
                 $lines[] = __('Upcoming:', 'eventcrew');
                 $lines = array_merge($lines, array_map([$this, 'ticketLine'], $tickets['upcoming']));
+
+                foreach ($tickets['upcoming'] as $ticket) {
+                    $buttons[] = [[
+                        'text' => '🎟 ' . $ticket['label'] . ' — ' . $ticket['when'],
+                        'url' => $ticket['url'],
+                    ]];
+                }
             }
 
             if ([] !== $tickets['past']) {
@@ -165,7 +175,13 @@ final class ProfileService
             }
         }
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines));
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            implode("\n", $lines),
+            [] === $buttons ? null : ['inline_keyboard' => $buttons]
+        );
     }
 
     /**
@@ -215,11 +231,8 @@ final class ProfileService
             $telegramUserId,
             $chatId,
             $isPrivate,
-            sprintf(
-                /* translators: %s: a one-time web sign-in link */
-                __("Here’s your sign-in link for the web board — good for 30 minutes, one use:\n\n%s", 'eventcrew'),
-                $url
-            )
+            __('Here’s your sign-in link for the web board — good for 30 minutes, one use.', 'eventcrew'),
+            ['inline_keyboard' => [[['text' => __('🔑 Sign in on the web', 'eventcrew'), 'url' => $url]]]]
         );
     }
 
@@ -228,17 +241,24 @@ final class ProfileService
      */
     private function ticketLine(array $ticket): string
     {
-        return sprintf("• %s — %s\n%s", $ticket['label'], $ticket['when'], $ticket['url']);
+        return sprintf('• %s — %s', $ticket['label'], $ticket['when']);
     }
 
     /**
      * Sends the personal summary to the DM. When the command came from the
      * group a short public line points the asker at it, so nobody's standing
      * or history is printed where the whole crew can read it.
+     *
+     * @param array<string, mixed>|null $replyMarkup
      */
-    private function deliver(int $telegramUserId, int $chatId, bool $isPrivate, string $body): void
-    {
-        $this->telegram->sendMessage($telegramUserId, $body);
+    private function deliver(
+        int $telegramUserId,
+        int $chatId,
+        bool $isPrivate,
+        string $body,
+        ?array $replyMarkup = null
+    ): void {
+        $this->telegram->sendMessage($telegramUserId, $body, $replyMarkup);
         $this->sentDmNote($chatId, $isPrivate);
     }
 

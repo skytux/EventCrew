@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.27.0
+Stable tag: 1.28.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.28.0 =
+* Changed: **links are named, not pasted.** Telegram messages no longer carry long raw addresses; each link is a button that says what it opens - "🎟 Show your ticket" and "📅 Add to calendar" on the signup confirmation, "🎟 Show your ticket" on a free-entry ticket, one button per upcoming ticket on /mytickets, "🔑 Sign in on the web" on /web, and "Privacy" on the welcome message.
+* Changed: the email-confirmation mail sent during Telegram setup now uses the same branded template as every other mail, with a "Confirm your email" button instead of the raw link. The privacy notice in it, and in the first web sign-in mail, is a named "Privacy" button too.
+* The plain-text version of each email still lists the full addresses, since a mail client that shows no HTML has nothing else to click.
 
 = 1.27.0 =
 * New: **each role says what the job involves.** A short description per role, edited in Settings ▸ Roles, is shown under the task on the web signup page and as an "About the task" line in the signup confirmation and the 24-hour reminder (Telegram and email). Decorate, Welcome and Clean ship with descriptions taken from the crew guide; roles saved before this version pick those up automatically, and a description you clear stays cleared.
@@ -443,6 +448,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.28.0 =
+Links in Telegram messages and emails are now named buttons instead of raw addresses. No database change.
 
 = 1.27.0 =
 Adds a short description per role and one shared crew guide link, both editable in Settings ▸ Roles. Paste your guide's link there after upgrading. Clear any page cache. No database change.

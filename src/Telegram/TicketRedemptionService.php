@@ -215,11 +215,11 @@ final class TicketRedemptionService
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 sprintf(
-                    /* translators: 1: event date, 2: the ticket link */
-                    __('🎟 Your free-entry ticket for %1$s — show this at the door:%2$s', 'eventcrew'),
-                    $when,
-                    "\n" . $url
-                )
+                    /* translators: %s: event date */
+                    __('🎟 Your free-entry ticket for %s — show it at the door.', 'eventcrew'),
+                    $when
+                ),
+                ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
             );
         }
 

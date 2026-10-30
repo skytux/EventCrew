@@ -189,9 +189,17 @@ final class ClaimNotifierTest extends TestCase
 
         $this->notifier()->confirmSignup($this->telegramPerson(), 5);
 
-        self::assertStringContainsString('About the task', (string) $sends[0]['text']);
-        self::assertStringNotContainsString('docs.example', (string) $sends[0]['text']);
-        self::assertSame('https://docs.example/guide', $sends[0]['reply_markup']['inline_keyboard'][0][0]['url']);
+        // Every link is a named button: ticket, calendar, then the guide. None
+        // of them appears as a raw address in the text.
+        $text = (string) $sends[0]['text'];
+        self::assertStringContainsString('About the task', $text);
+        self::assertStringNotContainsString('docs.example', $text);
+        self::assertStringNotContainsString('token=', $text);
+
+        $rows = $sends[0]['reply_markup']['inline_keyboard'];
+        self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
+        self::assertStringContainsString('eventcrew/v1/calendar?token=', $rows[1][0]['url']);
+        self::assertSame('https://docs.example/guide', $rows[2][0]['url']);
 
         self::assertStringContainsString('About the task', $this->mails[0]['body']);
         self::assertStringContainsString('Crew guide', $this->mails[0]['body']);
