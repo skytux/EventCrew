@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.28.0
+Stable tag: 1.29.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.29.0 =
+* New: **Arrived late.** A new attendance status for someone who did the task but turned up late. On the Telegram /roster each expected person now has three buttons: ✓ completed, ⏰ arrived late, ✗ no-show. It is also in the status list on the wp-admin Roster page.
+* Arriving late earns the free-entry credit and counts as a completed task for leader eligibility. In reputation it weighs 90%, between a completion (100%) and finding a replacement (80%); organizers can change the weight in Settings like the other outcomes.
 
 = 1.28.0 =
 * Changed: **links are named, not pasted.** Telegram messages no longer carry long raw addresses; each link is a button that says what it opens - "🎟 Show your ticket" and "📅 Add to calendar" on the signup confirmation, "🎟 Show your ticket" on a free-entry ticket, one button per upcoming ticket on /mytickets, "🔑 Sign in on the web" on /web, and "Privacy" on the welcome message.
@@ -448,6 +452,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.29.0 =
+Adds the "Arrived late" attendance status and a ⏰ button on the Telegram roster. No database change.
 
 = 1.28.0 =
 Links in Telegram messages and emails are now named buttons instead of raw addresses. No database change.

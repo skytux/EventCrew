@@ -22,6 +22,12 @@ final class AssignmentStatus
     /** Did the task. The only status that earns credit toward a reward. */
     public const COMPLETED = 'completed';
 
+    /**
+     * Did the task but turned up late. Earns the credit like a completion and
+     * scores a little below one.
+     */
+    public const ARRIVED_LATE = 'arrived_late';
+
     /** Couldn't make it but found someone to take the slot. Nearly as good. */
     public const REPLACED = 'replaced';
 
@@ -43,10 +49,25 @@ final class AssignmentStatus
             self::SIGNED_UP,
             self::ARRIVED,
             self::COMPLETED,
+            self::ARRIVED_LATE,
             self::REPLACED,
             self::LATE_CANCEL,
             self::NO_SHOW,
             self::CANCELLED,
+        ];
+    }
+
+    /**
+     * Statuses that count as a done task: toward credits, leader eligibility
+     * and the completed-task count. Arriving late still means the work was done.
+     *
+     * @return array<int, string>
+     */
+    public static function credited(): array
+    {
+        return [
+            self::COMPLETED,
+            self::ARRIVED_LATE,
         ];
     }
 
@@ -73,6 +94,7 @@ final class AssignmentStatus
             self::SIGNED_UP,
             self::ARRIVED,
             self::COMPLETED,
+            self::ARRIVED_LATE,
         ];
     }
 
@@ -82,6 +104,7 @@ final class AssignmentStatus
             self::SIGNED_UP => __('Signed up', 'eventcrew'),
             self::ARRIVED => __('Arrived', 'eventcrew'),
             self::COMPLETED => __('Completed', 'eventcrew'),
+            self::ARRIVED_LATE => __('Arrived late', 'eventcrew'),
             self::REPLACED => __('Found a replacement', 'eventcrew'),
             self::LATE_CANCEL => __('Late cancellation', 'eventcrew'),
             self::NO_SHOW => __('No-show', 'eventcrew'),

@@ -42,7 +42,7 @@ final class Assignment
 
     public function isCompleted(): bool
     {
-        return AssignmentStatus::COMPLETED === $this->status;
+        return in_array($this->status, AssignmentStatus::credited(), true);
     }
 
     /**

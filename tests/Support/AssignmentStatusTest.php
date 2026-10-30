@@ -30,6 +30,21 @@ final class AssignmentStatusTest extends TestCase
         self::assertNotContains(AssignmentStatus::REPLACED, $occupying);
     }
 
+    /**
+     * Arriving late is a done task: it keeps its slot and earns the credit,
+     * while the no-show and cancellation outcomes earn nothing.
+     */
+    public function testArrivingLateHoldsTheSlotAndEarnsTheCredit(): void
+    {
+        self::assertTrue(AssignmentStatus::isValid(AssignmentStatus::ARRIVED_LATE));
+        self::assertContains(AssignmentStatus::ARRIVED_LATE, AssignmentStatus::occupying());
+        self::assertSame(
+            [AssignmentStatus::COMPLETED, AssignmentStatus::ARRIVED_LATE],
+            AssignmentStatus::credited()
+        );
+        self::assertSame('Arrived late', AssignmentStatus::label(AssignmentStatus::ARRIVED_LATE));
+    }
+
     public function testEveryOccupyingStatusIsAKnownStatus(): void
     {
         foreach (AssignmentStatus::occupying() as $status) {

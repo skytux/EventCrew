@@ -128,9 +128,11 @@ final class RosterService
 
         $this->telegram->answerCallbackQuery(
             $callbackId,
-            AssignmentStatus::COMPLETED === $status
-                ? __('Marked completed.', 'eventcrew')
-                : __('Marked no-show.', 'eventcrew')
+            match ($status) {
+                AssignmentStatus::COMPLETED => __('Marked completed.', 'eventcrew'),
+                AssignmentStatus::ARRIVED_LATE => __('Marked arrived late.', 'eventcrew'),
+                default => __('Marked no-show.', 'eventcrew'),
+            }
         );
 
         $this->refreshRosterMessage($callbackQuery, $assignment->taskId);
@@ -204,20 +206,24 @@ final class RosterService
     }
 
     /**
-     * Splits "rm:<id>:<c|n>" into the assignment id and the status it maps to,
-     * or [0, ''] when the data is not a marking tap.
+     * Splits "rm:<id>:<c|l|n>" into the assignment id and the status it maps
+     * to, or [0, ''] when the data is not a marking tap.
      *
      * @return array{int, string}
      */
     private function parseMark(string $data): array
     {
-        if (1 !== preg_match('#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([cn])$#', $data, $matches)) {
+        if (1 !== preg_match('#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([cln])$#', $data, $matches)) {
             return [0, ''];
         }
 
         return [
             (int) $matches[1],
-            'c' === $matches[2] ? AssignmentStatus::COMPLETED : AssignmentStatus::NO_SHOW,
+            match ($matches[2]) {
+                'c' => AssignmentStatus::COMPLETED,
+                'l' => AssignmentStatus::ARRIVED_LATE,
+                default => AssignmentStatus::NO_SHOW,
+            },
         ];
     }
 
@@ -326,6 +332,11 @@ final class RosterService
                 /* translators: %s: person's name */
                 'text' => sprintf(__('✓ %s', 'eventcrew'), $name),
                 'callback_data' => self::MARK_PREFIX . $assignmentId . ':c',
+            ],
+            [
+                /* translators: %s: person's name */
+                'text' => sprintf(__('⏰ %s', 'eventcrew'), $name),
+                'callback_data' => self::MARK_PREFIX . $assignmentId . ':l',
             ],
             [
                 /* translators: %s: person's name */
