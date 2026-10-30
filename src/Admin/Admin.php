@@ -110,6 +110,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_save_guest',
+            [$this->container->get(RosterPage::class), 'saveGuest']
+        );
+
+        add_action(
+            'admin_post_eventcrew_remove_guest',
+            [$this->container->get(RosterPage::class), 'removeGuest']
+        );
+
+        add_action(
             'admin_post_eventcrew_toggle_ticket_closed',
             [$this->container->get(RosterPage::class), 'toggleTicketClosed']
         );

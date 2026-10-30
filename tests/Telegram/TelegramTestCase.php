@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -27,6 +28,7 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GiftService;
+use EventCrew\Telegram\GuestListService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\PermissionService;
@@ -202,7 +204,8 @@ abstract class TelegramTestCase extends TestCase
                 $mailer
             ),
             new NotificationSettingsService(new PersonRepository(), $this->client()),
-            $this->doorListService()
+            $this->doorListService(),
+            $this->guestListService()
         );
     }
 
@@ -216,6 +219,17 @@ abstract class TelegramTestCase extends TestCase
                 new RedemptionRepository(),
                 $this->standing()
             ),
+            new GuestRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            new PersonRepository(),
+            $this->client()
+        );
+    }
+
+    protected function guestListService(): GuestListService
+    {
+        return new GuestListService(
+            new GuestRepository(),
             new DoorAccess(new TaskRepository(), new AssignmentRepository()),
             new PersonRepository(),
             $this->client()

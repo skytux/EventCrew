@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Guest;
 use EventCrew\Models\Person;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorAccess;
@@ -13,7 +15,7 @@ use EventCrew\Support\DoorList;
 /**
  * /tickets: who has a ticket for one event night - everyone working it and
  * everyone who spent a free-entry credit on it, the same list as the wp-admin
- * door list.
+ * door list - followed by the night's guest list.
  *
  * Organizers can look at any night; the night's leader and Welcome crew can
  * look at their own night. The list always goes to the asker's DM. A date can
@@ -32,6 +34,7 @@ final class DoorListService
 
     public function __construct(
         private readonly DoorList $doorList,
+        private readonly GuestRepository $guests,
         private readonly DoorAccess $access,
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram
@@ -116,27 +119,43 @@ final class DoorListService
     private function render(string $date): string
     {
         $entrants = $this->doorList->entrantsFor($date);
+        $guests = $this->guests->forDate($date);
         $lines = ['🎟 ' . sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
             __('Tickets — %s', 'eventcrew'),
             Dates::dayLabel($date)
         )];
 
-        if ([] === $entrants) {
+        if ([] === $entrants && [] === $guests) {
             $lines[] = __('Nobody has a ticket yet.', 'eventcrew');
 
             return implode("\n", $lines);
         }
 
+        // Everyone let in: the people below plus each guest and their plus-ones.
+        $total = count($entrants)
+            + array_sum(array_map(static fn (Guest $guest): int => $guest->headcount(), $guests));
         $lines[] = sprintf(
             /* translators: %d: number of people */
-            _n('%d person', '%d people', count($entrants), 'eventcrew'),
-            count($entrants)
+            _n('%d person', '%d people', $total, 'eventcrew'),
+            $total
         );
         $lines[] = '';
 
         foreach ($entrants as $entrant) {
             $lines[] = sprintf('• %s — %s', $entrant['name'], $entrant['detail']);
+        }
+
+        if ([] !== $guests) {
+            if ([] !== $entrants) {
+                $lines[] = '';
+            }
+
+            $lines[] = '🎫 ' . __('Guests', 'eventcrew');
+
+            foreach ($guests as $guest) {
+                $lines[] = '• ' . $guest->line();
+            }
         }
 
         return implode("\n", $lines);

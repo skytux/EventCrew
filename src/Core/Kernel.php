@@ -15,6 +15,7 @@ use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -60,6 +61,7 @@ use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\DoorListService;
+use EventCrew\Telegram\GuestListService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
@@ -216,6 +218,11 @@ final class Kernel
         $this->container->singleton(
             RedemptionRepository::class,
             fn () => new RedemptionRepository()
+        );
+
+        $this->container->singleton(
+            GuestRepository::class,
+            fn () => new GuestRepository()
         );
 
         $this->container->singleton(
@@ -501,6 +508,17 @@ final class Kernel
             DoorListService::class,
             fn (Container $container) => new DoorListService(
                 $container->get(DoorList::class),
+                $container->get(GuestRepository::class),
+                $container->get(DoorAccess::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            GuestListService::class,
+            fn (Container $container) => new GuestListService(
+                $container->get(GuestRepository::class),
                 $container->get(DoorAccess::class),
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class)
@@ -613,7 +631,8 @@ final class Kernel
                 $container->get(GiftService::class),
                 $container->get(PermissionService::class),
                 $container->get(NotificationSettingsService::class),
-                $container->get(DoorListService::class)
+                $container->get(DoorListService::class),
+                $container->get(GuestListService::class)
             )
         );
 
@@ -740,7 +759,8 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
                 $container->get(LeaderGate::class),
-                $container->get(TicketRedemptionService::class)
+                $container->get(TicketRedemptionService::class),
+                $container->get(GuestRepository::class)
             )
         );
 

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.30.0
+Stable tag: 1.31.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.31.0 =
+* New: **guest list.** Each event night has a list of people let in free who are not crew members, with a number of plus-ones and a note for each guest.
+* Telegram: **/guest** shows the next night's list; /guest 1.8. shows another night. Organizers change it: /guest add Anna +2 ; DJ's partner, /guest edit 2 +3 (the number from the list; only the parts given change), /guest remove 2. A date can go before the name or number. The answer always goes to the DM.
+* Organizers can change the list. The night's leader and its Welcome crew can see their own night's list.
+* wp-admin: the Roster page has a Guest list section under the door list, to add, change and remove guests for the shown date.
+* /tickets now lists the night's guests under the crew and credit holders, and the total counts each guest's plus-ones.
 
 = 1.30.0 =
 * New: **/tickets** in Telegram shows who has a ticket for an event night: everyone working it and everyone who spent a free-entry credit on it, the same list as the door list on the wp-admin Roster page. The answer always goes to the DM.
@@ -457,6 +464,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.31.0 =
+Adds the guest list (/guest in Telegram, and a section on the wp-admin Roster page). Database change: a new guests table, created automatically on update.
 
 = 1.30.0 =
 Adds the /tickets command for organizers and door crew. No database change.
