@@ -8,7 +8,9 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BuyerImport;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderGate;
@@ -16,6 +18,7 @@ use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Web\BuyerImportController;
 
 /**
  * Attendance: who turned up for a given day's tasks, and marking how it went.
@@ -41,7 +44,9 @@ final class RosterPage
         private readonly FreeEntryGate $freeEntry,
         private readonly LeaderGate $leaderGate,
         private readonly TicketRedemptionService $tickets,
-        private readonly GuestRepository $guests
+        private readonly GuestRepository $guests,
+        private readonly TicketBuyerRepository $ticketBuyers,
+        private readonly BuyerImport $buyerImport
     ) {
     }
 
@@ -71,6 +76,8 @@ final class RosterPage
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
                 'guests' => '' === $selected ? [] : $this->guests->forDate($selected),
+                'ticket_buyers' => '' === $selected ? [] : $this->ticketBuyers->forDate($selected),
+                'import_mailbox' => BuyerImportController::MAILBOX,
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
                 'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),
                 'leader_enabled' => '' !== $selected && $this->leaderGate->isEnabled($selected),
@@ -473,6 +480,70 @@ final class RosterPage
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Guest removed.', 'eventcrew'),
+            'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * Imports a pasted list of Holvi ticket buyers to the roster's date. The
+     * list is parsed by BuyerListParser; a name already on the date is skipped.
+     */
+    public function importBuyers(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // The textarea variant, since sanitize_text_field would fold the lines
+        // into one and the list is one name per line.
+        $text = isset($_POST['buyer_names']) ? sanitize_textarea_field(wp_unslash($_POST['buyer_names'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if (! $this->isValidDate($date)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That list could not be imported.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $result = $this->buyerImport->import($date, $text, 'paste');
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            sprintf(
+                /* translators: 1: number of names added, 2: number of names skipped */
+                __('%1$d ticket buyers added, %2$d skipped (already on the list).', 'eventcrew'),
+                $result['added'],
+                $result['skipped']
+            ),
+            'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * Deletes every imported ticket buyer on the roster's date, pasted or
+     * mailed, so a corrected list can be imported from scratch.
+     */
+    public function resetBuyers(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $deleted = $this->isValidDate($date) ? $this->ticketBuyers->clearForDate($date) : 0;
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            sprintf(
+                /* translators: %d: number of ticket buyers deleted */
+                _n('%d ticket buyer deleted.', '%d ticket buyers deleted.', $deleted, 'eventcrew'),
+                $deleted
+            ),
             'success',
             $this->dateArg($date)
         );

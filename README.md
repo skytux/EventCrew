@@ -55,6 +55,28 @@ only ones who ever need a wp-admin login.
 - **Diagnostics** (wp-admin) — a read-only health page: schema, bot, cron, signup
   page, icons and mail at a glance.
 
+## Holvi ticket buyers
+
+The names of the people who bought a ticket in the Holvi shop can be put on the
+door list in two ways:
+
+- **Paste them in wp-admin.** Open EventCrew → Roster, pick the date, and paste
+  the names into "Paste names, one per line" under "Holvi ticket buyers". Press
+  Import. The names go to the date shown on the page.
+- **Email them.** Send the list from your organizer email address to
+  `import.edh@haissous.name`, one name per line in the message, or as a `.txt`
+  or `.csv` file (the first column is used). The names always go to the next
+  event. Mail from any other address is refused. You get an email back that
+  says how many names were added.
+
+A name that is already on the list for that date is skipped, so sending an
+updated list adds only the new buyers. "Reset import" on the Roster page deletes
+all imported ticket buyers for that date; the crew and the guest list are not
+affected.
+
+The email route needs a small mail poller running next to the mail server; see
+`tools/mail-import/README.md`.
+
 ## Telegram commands
 
 Everyone's commands answer in a private chat; asked in the group, the answer goes

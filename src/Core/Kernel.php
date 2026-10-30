@@ -23,6 +23,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\BoardPush;
+use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
@@ -75,6 +76,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
@@ -122,6 +124,10 @@ final class Kernel
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
         $this->container->get(SlotFreedNotice::class)->boot();
+
+        // The import-by-email endpoint: the mail poller posts to it with nobody
+        // logged in, so it boots on the front path with the bot's endpoints.
+        $this->container->get(BuyerImportController::class)->boot();
 
         // The notifications heartbeat: the hourly cron event self-schedules and
         // registers its run action here (front/cron path, since WP-Cron fires
@@ -584,6 +590,23 @@ final class Kernel
         );
 
         $this->container->singleton(
+            BuyerImport::class,
+            fn (Container $container) => new BuyerImport(
+                $container->get(TicketBuyerRepository::class),
+                $container->get(DoorAccess::class)
+            )
+        );
+
+        $this->container->singleton(
+            BuyerImportController::class,
+            fn (Container $container) => new BuyerImportController(
+                $container->get(PersonRepository::class),
+                $container->get(BuyerImport::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
             DoorListService::class,
             fn (Container $container) => new DoorListService(
                 $container->get(DoorList::class),
@@ -840,7 +863,9 @@ final class Kernel
                 $container->get(FreeEntryGate::class),
                 $container->get(LeaderGate::class),
                 $container->get(TicketRedemptionService::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(BuyerImport::class)
             )
         );
 

@@ -30,6 +30,7 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\PwaController;
 
 /**
@@ -119,6 +120,9 @@ final class SettingsPage
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'email_test_to' => (string) wp_get_current_user()->user_email,
+                'import_secret' => BuyerImportController::ensureSecret(),
+                'import_url' => BuyerImportController::endpointUrl(),
+                'import_mailbox' => BuyerImportController::MAILBOX,
                 'telegram' => $this->telegramView(),
                 'privacy' => $this->privacyView(),
             ]
@@ -797,6 +801,22 @@ final class SettingsPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, $result['error'], 'error');
+    }
+
+    /**
+     * The "Generate a new secret" button for the ticket buyer import. The mail
+     * poller's copy stops working until it is given the new one.
+     */
+    public function rotateImportSecret(): void
+    {
+        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        BuyerImportController::rotateSecret();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('A new import secret was generated. Copy it into the mail poller’s settings.', 'eventcrew')
+        );
     }
 
     /**

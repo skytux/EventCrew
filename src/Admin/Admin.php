@@ -120,6 +120,21 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_import_buyers',
+            [$this->container->get(RosterPage::class), 'importBuyers']
+        );
+
+        add_action(
+            'admin_post_eventcrew_reset_buyers',
+            [$this->container->get(RosterPage::class), 'resetBuyers']
+        );
+
+        add_action(
+            'admin_post_eventcrew_rotate_import_secret',
+            [$this->container->get(SettingsPage::class), 'rotateImportSecret']
+        );
+
+        add_action(
             'admin_post_eventcrew_toggle_ticket_closed',
             [$this->container->get(RosterPage::class), 'toggleTicketClosed']
         );

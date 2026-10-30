@@ -40,6 +40,9 @@
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
+ * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
+ * @var string $import_url The REST URL the mail poller posts buyer lists to.
+ * @var string $import_mailbox The address organizers mail buyer lists to.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1201,6 +1204,38 @@ if (! defined('ABSPATH')) {
         <input type="hidden" name="action" value="eventcrew_reset_email_template">
         <?php wp_nonce_field($email_nonce_action); ?>
         <?php submit_button(__('Reset the template', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+
+    <h2><?php esc_html_e('Ticket buyer import by email', 'eventcrew'); ?></h2>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: %s: the import email address */
+            esc_html__('Organizers can email a list of Holvi ticket buyers, one name per line, to %s. A mail poller on the mail server reads that mailbox and sends each list to this site, signed with the secret below. The list goes to the next event.', 'eventcrew'),
+            '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+        );
+        ?>
+    </p>
+    <table class="form-table" role="presentation">
+        <tr>
+            <th scope="row"><?php esc_html_e('Endpoint', 'eventcrew'); ?></th>
+            <td><code><?php echo esc_html($import_url); ?></code></td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="eventcrew-import-secret"><?php esc_html_e('Secret', 'eventcrew'); ?></label></th>
+            <td>
+                <input type="text" id="eventcrew-import-secret" class="large-text code" readonly value="<?php echo esc_attr($import_secret); ?>" onfocus="this.select()">
+                <p class="description"><?php esc_html_e('Put this in the mail poller’s settings as IMPORT_SECRET.', 'eventcrew'); ?></p>
+            </td>
+        </tr>
+    </table>
+    <form
+        method="post"
+        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+        onsubmit="return confirm('<?php echo esc_js(__('Generate a new import secret? The mail poller stops working until it is given the new one.', 'eventcrew')); ?>');">
+        <input type="hidden" name="action" value="eventcrew_rotate_import_secret">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <?php submit_button(__('Generate a new secret', 'eventcrew'), 'secondary', 'submit', false); ?>
     </form>
     </div>
 

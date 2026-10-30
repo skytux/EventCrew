@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.33.0
+Stable tag: 1.34.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.34.0 =
+* New: Holvi ticket buyers on the door list. An organizer can paste the buyer names for a night into the wp-admin Roster page; they appear under "Holvi tickets" on the sales desk.
+* New: an import endpoint for the same list by email. An organizer forwards the Holvi buyer list to the import mailbox, a small poller on the mail server checks the sender (DMARC) and sends the names to the site, signed with a secret from Settings. The organizer gets an email saying how many names were added, and to which night. The same email sent twice is not added twice.
+* The poller and its install steps are in tools/mail-import/ (not part of the plugin zip).
 
 = 1.33.0 =
 * New: the sales desk (door page). A one-time link opens a phone page for the night with four lists: Crew working, Free-entry credit, Guests and Holvi tickets. Each name has an "In" toggle and a +x count, and the page shows a running total and a name filter. "Give ticket" searches for a member and spends their credit, even when free entry is closed. The page refreshes itself every 4 seconds while it is open.
@@ -481,6 +486,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.34.0 =
+Adds the Holvi ticket buyer import (paste on the Roster page, or by email through the mail poller). No database change.
 
 = 1.33.0 =
 Adds the sales desk (door page), /sales and automatic sales desk links. Database version 13: two new tables, check-ins and ticket buyers, created automatically.
