@@ -26,7 +26,8 @@ final class UpdateRouter
         private readonly TicketRedemptionService $tickets,
         private readonly GiftService $gift,
         private readonly PermissionService $permissions,
-        private readonly NotificationSettingsService $notifications
+        private readonly NotificationSettingsService $notifications,
+        private readonly DoorListService $doorList
     ) {
     }
 
@@ -60,6 +61,8 @@ final class UpdateRouter
                 $this->permissions->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'np:')) {
                 $this->notifications->onToggle($callbackQuery);
+            } elseif (str_starts_with($data, 'dl:')) {
+                $this->doorList->onSelect($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -151,6 +154,14 @@ final class UpdateRouter
         // points them at it, the same way /me does.
         if ($this->isCommand($text, 'ticket')) {
             $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /tickets: who has a ticket for a night, for organizers and that
+        // night's door crew. Answered in the DM; an optional date picks the night.
+        if ($this->isCommand($text, 'tickets')) {
+            $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $this->commandPayload($text, 'tickets'));
 
             return;
         }

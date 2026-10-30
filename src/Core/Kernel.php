@@ -22,6 +22,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
+use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
@@ -58,6 +59,7 @@ use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
+use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
@@ -488,6 +490,24 @@ final class Kernel
         );
 
         $this->container->singleton(
+            DoorAccess::class,
+            fn (Container $container) => new DoorAccess(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorListService::class,
+            fn (Container $container) => new DoorListService(
+                $container->get(DoorList::class),
+                $container->get(DoorAccess::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             RosterAssembler::class,
             fn (Container $container) => new RosterAssembler(
                 $container->get(TaskRepository::class),
@@ -592,7 +612,8 @@ final class Kernel
                 $container->get(TicketRedemptionService::class),
                 $container->get(GiftService::class),
                 $container->get(PermissionService::class),
-                $container->get(NotificationSettingsService::class)
+                $container->get(NotificationSettingsService::class),
+                $container->get(DoorListService::class)
             )
         );
 

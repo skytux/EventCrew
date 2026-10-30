@@ -22,6 +22,26 @@ final class DatesTest extends TestCase
         self::assertSame('not a date', Dates::wallClock('not a date', 'H:i'));
     }
 
+    public function testParseUserDateReadsIsoAndFinnishStyleDates(): void
+    {
+        // "Today" in the tests is 2026-07-20.
+        self::assertSame('2026-08-01', Dates::parseUserDate('2026-08-01', '2026-07-20'));
+        self::assertSame('2026-08-01', Dates::parseUserDate('1.8.', '2026-07-20'));
+        self::assertSame('2026-08-01', Dates::parseUserDate('1.8', '2026-07-20'));
+        self::assertSame('2027-08-01', Dates::parseUserDate('1.8.2027', '2026-07-20'));
+        // A recent past night keeps this year...
+        self::assertSame('2026-07-10', Dates::parseUserDate('10.7.', '2026-07-20'));
+        // ...but a day more than six months back means next year's.
+        self::assertSame('2027-01-05', Dates::parseUserDate('5.1.', '2026-07-20'));
+    }
+
+    public function testParseUserDateRejectsWhatIsNotADate(): void
+    {
+        self::assertSame('', Dates::parseUserDate('30.2.', '2026-07-20'));
+        self::assertSame('', Dates::parseUserDate('friday', '2026-07-20'));
+        self::assertSame('', Dates::parseUserDate('2026-13-01', '2026-07-20'));
+    }
+
     public function testDayLabelFormatsABareDate(): void
     {
         // No wp_date in the unit environment, so the gmdate path renders it -

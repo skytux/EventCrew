@@ -902,6 +902,7 @@ final class SettingsPage
             ['command' => 'web', 'description' => __('DM — get a sign-in link for the web board', 'eventcrew')],
             ['command' => 'notifications', 'description' => __('DM — choose what reaches you, and how', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
+            ['command' => 'tickets', 'description' => __('DM — organizers & door crew: who has a ticket', 'eventcrew')],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
             ['command' => 'allow', 'description' => __('DM — organizers: set leader / pass / admin', 'eventcrew')],
             ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],

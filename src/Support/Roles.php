@@ -51,6 +51,9 @@ final class Roles
      */
     public const LEADER_SLUG = 'leader';
 
+    /** The shipped door role: its crew checks tickets, so it may see the door list. */
+    public const WELCOME_SLUG = 'welcome';
+
     /** One link to the crew's full guide, shared by every role. */
     public const GUIDE_URL_OPTION = 'eventcrew_guide_url';
 

@@ -13,6 +13,8 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\EmailTemplate;
@@ -23,6 +25,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\OnboardingService;
@@ -198,7 +201,24 @@ abstract class TelegramTestCase extends TestCase
                 new LeaderEligibility(new AssignmentRepository(), new PersonRepository()),
                 $mailer
             ),
-            new NotificationSettingsService(new PersonRepository(), $this->client())
+            new NotificationSettingsService(new PersonRepository(), $this->client()),
+            $this->doorListService()
+        );
+    }
+
+    protected function doorListService(): DoorListService
+    {
+        return new DoorListService(
+            new DoorList(
+                new TaskRepository(),
+                new AssignmentRepository(),
+                new PersonRepository(),
+                new RedemptionRepository(),
+                $this->standing()
+            ),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            new PersonRepository(),
+            $this->client()
         );
     }
 
