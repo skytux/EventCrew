@@ -9,6 +9,8 @@
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
+ * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
+ * @var string $import_mailbox The address organizers can mail a buyer list to.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
@@ -239,6 +241,53 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     </tr>
                 </tbody>
             </table>
+
+            <h2><?php esc_html_e('Holvi ticket buyers', 'eventcrew'); ?></h2>
+            <p class="description">
+                <?php
+                printf(
+                    /* translators: %d: number of imported ticket buyers */
+                    esc_html(_n('%d person bought a ticket in Holvi for this date.', '%d people bought a ticket in Holvi for this date.', count($ticket_buyers), 'eventcrew')),
+                    count($ticket_buyers)
+                );
+                ?>
+            </p>
+            <?php if ([] !== $ticket_buyers) : ?>
+                <ul style="columns:3 14em;max-width:820px;margin:.5em 0 1em">
+                    <?php foreach ($ticket_buyers as $eventcrew_buyer) : ?>
+                        <li><?php echo esc_html($eventcrew_buyer->name); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:820px">
+                <input type="hidden" name="action" value="eventcrew_import_buyers">
+                <?php wp_nonce_field($nonce_action); ?>
+                <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                <p>
+                    <label for="eventcrew-buyer-names"><?php esc_html_e('Paste names, one per line', 'eventcrew'); ?></label><br>
+                    <textarea name="buyer_names" id="eventcrew-buyer-names" rows="6" class="large-text"></textarea>
+                </p>
+                <button type="submit" class="button button-primary"><?php esc_html_e('Import', 'eventcrew'); ?></button>
+            </form>
+            <p class="description" style="max-width:820px">
+                <?php
+                printf(
+                    /* translators: %s: the import email address */
+                    esc_html__('The names go to the date shown above. A name already on the list is skipped. You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
+                    '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+                );
+                ?>
+            </p>
+            <form
+                method="post"
+                action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                style="margin:.5em 0 2em"
+                onsubmit="return confirm('<?php echo esc_js(__('Delete all imported ticket buyers for this date? Guests and the crew are not affected.', 'eventcrew')); ?>');">
+                <input type="hidden" name="action" value="eventcrew_reset_buyers">
+                <?php wp_nonce_field($nonce_action); ?>
+                <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                <button type="submit" class="button"><?php esc_html_e('Reset import', 'eventcrew'); ?></button>
+            </form>
         <?php endif; ?>
 
         <?php if ([] === $roster) : ?>

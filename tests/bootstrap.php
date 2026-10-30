@@ -63,6 +63,9 @@ if (! class_exists('WP_REST_Request')) {
 
         public string $method = 'GET';
 
+        /** The raw request body, as WordPress hands it to get_body(). */
+        public string $body = '';
+
         public function get_method(): string
         {
             return $this->method;
@@ -84,6 +87,11 @@ if (! class_exists('WP_REST_Request')) {
         public function get_json_params(): ?array
         {
             return $this->body_params;
+        }
+
+        public function get_body(): string
+        {
+            return $this->body;
         }
 
         public function get_param(string $key): mixed
