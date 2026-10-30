@@ -9,6 +9,7 @@ use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
+use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
@@ -17,6 +18,7 @@ use EventCrew\Support\LeaderGate;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
+use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
@@ -100,6 +102,8 @@ final class SettingsPage
                     0,
                     (int) get_option(OpenTaskCall::LEAD_SOON_OPTION, OpenTaskCall::LEAD_SOON_DEFAULT)
                 ),
+                'door_link_lead' => DoorLinkSender::leadMinutes(),
+                'door_link_crew' => SalesDeskGate::crewMinutes(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
@@ -398,6 +402,21 @@ final class SettingsPage
             isset($_POST['open_task_lead_soon'])
                 ? max(0, (int) $_POST['open_task_lead_soon'])
                 : OpenTaskCall::LEAD_SOON_DEFAULT
+        );
+
+        // The sales desk link's timing, in minutes. Zero is meaningful: the
+        // link goes out at the task's start itself.
+        update_option(
+            DoorLinkSender::LEAD_OPTION,
+            isset($_POST['door_link_lead'])
+                ? max(0, (int) $_POST['door_link_lead'])
+                : DoorLinkSender::DEFAULT_LEAD_MINUTES
+        );
+        update_option(
+            SalesDeskGate::CREW_MINUTES_OPTION,
+            isset($_POST['door_link_crew'])
+                ? max(0, (int) $_POST['door_link_crew'])
+                : SalesDeskGate::DEFAULT_CREW_MINUTES
         );
 
         update_option(
@@ -904,6 +923,10 @@ final class SettingsPage
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
             ['command' => 'tickets', 'description' => __('DM — organizers & door crew: who has a ticket', 'eventcrew')],
             ['command' => 'guest', 'description' => __('DM — organizers & door crew: the guest list', 'eventcrew')],
+            [
+                'command' => 'sales',
+                'description' => __('DM — organizers, leader & Welcome crew: the sales desk link', 'eventcrew'),
+            ],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
             ['command' => 'allow', 'description' => __('DM — organizers: set leader / pass / admin', 'eventcrew')],
             ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],

@@ -1,0 +1,311 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Support;
+
+use EventCrew\Models\Person;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\NotificationsRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\TelegramClient;
+
+/**
+ * Sends the sales desk's (door page's) login link on an event night, without
+ * anyone asking.
+ *
+ * Organizers get theirs a set number of minutes before the night's first task
+ * starts. The night's leader and Welcome crew get theirs under SalesDeskGate's
+ * rule: a few minutes before their own task starts, once they are marked
+ * arrived, and not after the event has ended. Someone marked arrived after
+ * that moment gets it there and then, through the status-changed hook every
+ * status write fires.
+ *
+ * Each person gets one link per night, recorded in the notifications ledger.
+ * These sends ignore the send window and the notification preferences: the
+ * link is a work tool for that evening, and a door crew member who had muted
+ * their reminders still needs it. /sales in Telegram, and the button on the
+ * member's web page, hand out another link whenever one is needed.
+ *
+ * The check runs at most every five minutes: from its own WP-Cron event, and
+ * from an ordinary request when that event has not fired, which costs one
+ * option read while nothing is due.
+ */
+final class DoorLinkSender
+{
+    /** The cron hook. Cleared on deactivation through Scheduler::unschedule(). */
+    public const HOOK = 'eventcrew_door_links';
+
+    /** The five-minute WP-Cron schedule this registers. */
+    public const SCHEDULE = 'eventcrew_five_minutes';
+
+    public const LAST_RUN_OPTION = 'eventcrew_door_links_last_run';
+
+    public const LEAD_OPTION = 'eventcrew_door_link_lead_minutes';
+    public const DEFAULT_LEAD_MINUTES = 30;
+
+    /** The ledger kind. One per person per night. */
+    public const KIND = 'door_link';
+
+    /** The start used for a night where no task has a start time. */
+    private const FALLBACK_START = '17:00:00';
+
+    private const INTERVAL_SECONDS = 5 * MINUTE_IN_SECONDS;
+
+    /** The MySQL lock name that keeps two runs from sending at once. */
+    private const LOCK = 'eventcrew_door_link';
+
+    public function __construct(
+        private readonly TaskRepository $tasks,
+        private readonly AssignmentRepository $assignments,
+        private readonly PersonRepository $people,
+        private readonly NotificationsRepository $ledger,
+        private readonly AuthTokenRepository $tokens,
+        private readonly SalesDeskGate $gate,
+        private readonly TelegramClient $telegram,
+        private readonly Mailer $mailer
+    ) {
+    }
+
+    public function boot(): void
+    {
+        add_filter('cron_schedules', [$this, 'addSchedule']);
+        add_action(self::HOOK, [$this, 'run']);
+        add_action('init', [$this, 'runIfDue'], 99);
+        add_action('eventcrew/assignment_status_changed', [$this, 'onStatusChanged'], 10, 2);
+
+        if (false === wp_next_scheduled(self::HOOK)) {
+            wp_schedule_event(time(), self::SCHEDULE, self::HOOK);
+        }
+    }
+
+    /**
+     * @param array<string, array{interval: int, display: string}> $schedules
+     * @return array<string, array{interval: int, display: string}>
+     */
+    public function addSchedule(array $schedules): array
+    {
+        $schedules[self::SCHEDULE] = [
+            'interval' => self::INTERVAL_SECONDS,
+            'display' => __('Every five minutes (EventCrew sales desk links)', 'eventcrew'),
+        ];
+
+        return $schedules;
+    }
+
+    public static function leadMinutes(): int
+    {
+        return max(0, (int) get_option(self::LEAD_OPTION, self::DEFAULT_LEAD_MINUTES));
+    }
+
+    /**
+     * Runs the check when the last run is five minutes old or more. Returns
+     * whether it ran.
+     */
+    public function runIfDue(): bool
+    {
+        if ((time() - (int) get_option(self::LAST_RUN_OPTION, 0)) < self::INTERVAL_SECONDS) {
+            return false;
+        }
+
+        $this->run();
+
+        return true;
+    }
+
+    /**
+     * Sends whatever is due tonight. The run is stamped first, so a second
+     * request arriving while this one is still sending does not start another.
+     */
+    public function run(): void
+    {
+        global $wpdb;
+
+        update_option(self::LAST_RUN_OPTION, time());
+
+        // The stamp alone does not stop WP-Cron and a visitor request that
+        // start in the same second: both would read the ledger before either
+        // writes to it and send the link twice. The second run gives up here.
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::LOCK))) {
+            return;
+        }
+
+        try {
+            $this->runLocked();
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
+        }
+    }
+
+    private function runLocked(): void
+    {
+        $date = (string) current_time('Y-m-d');
+        $tasks = $this->tasks->forDate($date);
+
+        if ([] === $tasks) {
+            return;
+        }
+
+        if ((string) current_time('mysql') >= $this->organizersFrom($date)) {
+            foreach ($this->people->organizers() as $organizer) {
+                $this->sendOnce($organizer, $date);
+            }
+        }
+
+        foreach ($tasks as $task) {
+            if (! SalesDeskGate::isDoorRole($task->roleSlug)) {
+                continue;
+            }
+
+            foreach ($this->assignments->forTask($task->id) as $assignment) {
+                if (! SalesDeskGate::hasArrived($assignment->status)) {
+                    continue;
+                }
+
+                $person = $this->people->find($assignment->personId);
+
+                if (null !== $person && SalesDeskGate::OK === $this->gate->check($person, $date)) {
+                    $this->sendOnce($person, $date);
+                }
+            }
+        }
+    }
+
+    /**
+     * The status-changed hook: a leader or Welcome crew member marked arrived
+     * after their link was due gets it now, instead of at the next check.
+     */
+    public function onStatusChanged(int $assignmentId, string $status): void
+    {
+        if (! SalesDeskGate::hasArrived($status)) {
+            return;
+        }
+
+        $assignment = $this->assignments->find($assignmentId);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        if (null === $assignment || null === $task || ! SalesDeskGate::isDoorRole($task->roleSlug)) {
+            return;
+        }
+
+        if ($task->taskDate < (string) current_time('Y-m-d')) {
+            return;
+        }
+
+        $person = $this->people->find($assignment->personId);
+
+        if (null !== $person && SalesDeskGate::OK === $this->gate->check($person, $task->taskDate)) {
+            $this->sendOnce($person, $task->taskDate);
+        }
+    }
+
+    /**
+     * Sends one person a fresh link for $date by email and, when they have a
+     * DM chat with the bot, by DM - with no ledger check and no access check;
+     * the caller has decided. /sales uses this for a link asked for by hand,
+     * DM only, to $dmChatId. Returns false when the link would already be dead
+     * (the night has closed for this person), and then sends nothing.
+     */
+    public function send(Person $person, string $date, bool $byEmail = true, ?int $dmChatId = null): bool
+    {
+        $url = $this->loginUrl($person, $date);
+
+        if ('' === $url) {
+            return false;
+        }
+
+        $body = self::messageBody($date);
+        $label = self::buttonLabel();
+
+        // The DM goes to the chat the person opened with the bot, or - for an
+        // answer to /sales - to the chat the command came from.
+        $chatId = $dmChatId ?? $person->telegramChatId;
+
+        if (null !== $chatId) {
+            $this->telegram->sendMessage(
+                $chatId,
+                DmBody::frame($person, $body),
+                ['inline_keyboard' => [[['text' => $label, 'url' => $url]]]]
+            );
+        }
+
+        // Only a verified address, the rule every other send here keeps: an
+        // unverified one may be somebody else's inbox.
+        if ($byEmail && $person->isEmailVerified() && ! $person->isAnonymized()) {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                sprintf(
+                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
+                    __('Sales desk for %s', 'eventcrew'),
+                    Dates::dayLabel($date)
+                ),
+                $body,
+                [['label' => $label, 'url' => $url]]
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * A fresh one-time login link for $person on $date, lasting as long as
+     * their session may, or '' when that is no time at all. The web page's
+     * "Sales desk" button redirects through one of these.
+     */
+    public function loginUrl(Person $person, string $date): string
+    {
+        $ttl = $this->gate->secondsLeft($person, $date);
+
+        if ($ttl <= 0) {
+            return '';
+        }
+
+        return DoorSession::loginUrl($this->tokens->issue($person->id, DoorSession::TOKEN_PURPOSE, $ttl), $date);
+    }
+
+    /**
+     * The message text. The link itself is the button under it.
+     */
+    public static function messageBody(string $date): string
+    {
+        return sprintf(
+            /* translators: %s: event day, e.g. "Sat 1 Aug" */
+            __(
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /sales to the bot.',
+                'eventcrew'
+            ),
+            Dates::dayLabel($date)
+        );
+    }
+
+    public static function buttonLabel(): string
+    {
+        return __('🚪 Open the sales desk', 'eventcrew');
+    }
+
+    private function sendOnce(Person $person, string $date): void
+    {
+        if ($this->ledger->hasSent(self::KIND, $person->id, $date)) {
+            return;
+        }
+
+        if ($this->send($person, $date)) {
+            $this->ledger->recordSent(self::KIND, $person->id, $date);
+        }
+    }
+
+    /**
+     * When organizers get their link: the set number of minutes before the
+     * night's first task starts, or before 17:00 when no task has a start.
+     */
+    private function organizersFrom(string $date): string
+    {
+        $first = $this->tasks->earliestStartOn($date) ?? $date . ' ' . self::FALLBACK_START;
+
+        return gmdate('Y-m-d H:i:s', (int) strtotime($first . ' UTC') - self::leadMinutes() * MINUTE_IN_SECONDS);
+    }
+}

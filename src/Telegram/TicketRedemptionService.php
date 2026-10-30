@@ -166,6 +166,30 @@ final class TicketRedemptionService
             return ['code' => self::ENTRY_CLOSED, 'url' => ''];
         }
 
+        return $this->spend($personId, $date, $note);
+    }
+
+    /**
+     * The door page's "Give ticket": the same spend as redeem(), for someone
+     * standing at the door. It skips two of redeem()'s gates on purpose. The
+     * free-entry closed gate is for people booking ahead, not for the door
+     * crew deciding on the night. The upcoming-date check would refuse the
+     * night itself once the clock passes midnight, while the door is still
+     * open; the date comes from a signed door session, so it is a real night.
+     * The credit balance and the one-per-night rule still apply.
+     *
+     * @return array{code: string, url: string}
+     */
+    public function redeemAtDoor(int $personId, string $date): array
+    {
+        return $this->spend($personId, $date, 'door');
+    }
+
+    /**
+     * @return array{code: string, url: string}
+     */
+    private function spend(int $personId, string $date, string $note): array
+    {
         if ($this->alreadyRedeemed($personId, $date)) {
             return ['code' => self::ALREADY_REDEEMED, 'url' => ''];
         }

@@ -10,10 +10,12 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailBody;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PrivacyPolicy;
+use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
@@ -44,6 +46,7 @@ final class SignupController
     public const REDEEM_ACTION = 'eventcrew_web_redeem_ticket';
     public const PREFS_ACTION = 'eventcrew_web_prefs';
     public const REVOKE_ACTION = 'eventcrew_web_revoke_sessions';
+    public const SALES_ACTION = 'eventcrew_web_sales';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -61,7 +64,11 @@ final class SignupController
         private readonly Mailer $mailer,
         private readonly ClaimNotifier $notifier,
         private readonly Turnstile $turnstile,
-        private readonly TicketRedemptionService $tickets
+        private readonly TicketRedemptionService $tickets,
+        // Optional so a board without the sales desk wired in (the older
+        // tests) simply never shows the button.
+        private readonly ?SalesDeskGate $salesDesk = null,
+        private readonly ?DoorLinkSender $doorLinks = null
     ) {
         $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup);
     }
@@ -77,7 +84,7 @@ final class SignupController
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
         add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION] as $action) {
+        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION, self::SALES_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -262,7 +269,9 @@ final class SignupController
      */
     public function viewModel(): array
     {
-        return $this->boardView->build($this->currentPerson()) + [
+        $person = $this->currentPerson();
+
+        return $this->boardView->build($person) + [
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
@@ -270,7 +279,46 @@ final class SignupController
             'redeem_action' => self::REDEEM_ACTION,
             'prefs_action' => self::PREFS_ACTION,
             'revoke_action' => self::REVOKE_ACTION,
+            'sales_action' => self::SALES_ACTION,
+            'sales_desk' => null !== $person && $this->canOpenSalesDesk($person),
         ];
+    }
+
+    /**
+     * Whether the "Sales desk" button shows for $person: organizers always,
+     * and the next night's leader and Welcome crew under SalesDeskGate's rule.
+     */
+    public function canOpenSalesDesk(Person $person): bool
+    {
+        if (null === $this->salesDesk) {
+            return false;
+        }
+
+        return SalesDeskGate::OK === $this->salesDesk->check($person, $this->salesDesk->nextNight());
+    }
+
+    /**
+     * The "Sales desk" button pressed: the rule is checked again, here on the
+     * server, and the answer is a fresh one-time login link for the sales desk
+     * to redirect to - or a notice code saying why not.
+     *
+     * @return array{url: string, notice: string}
+     */
+    public function salesDeskFor(Person $person): array
+    {
+        if (null === $this->salesDesk || null === $this->doorLinks) {
+            return ['url' => '', 'notice' => 'sales_' . SalesDeskGate::NOT_CREW];
+        }
+
+        $date = $this->salesDesk->nextNight();
+        $code = $this->salesDesk->check($person, $date);
+        $url = SalesDeskGate::OK === $code ? $this->doorLinks->loginUrl($person, $date) : '';
+
+        if ('' === $url) {
+            return ['url' => '', 'notice' => 'sales_' . (SalesDeskGate::OK === $code ? SalesDeskGate::CLOSED : $code)];
+        }
+
+        return ['url' => $url, 'notice' => ''];
     }
 
     /**
@@ -468,6 +516,18 @@ final class SignupController
             $this->redirect($redirect, 'sessions_revoked');
         }
 
+        if (self::SALES_ACTION === $action) {
+            $sales = $this->salesDeskFor($person);
+
+            if ('' === $sales['url']) {
+                $this->redirect($redirect, $sales['notice']);
+            }
+
+            wp_safe_redirect($sales['url']);
+
+            exit;
+        }
+
         if (self::CLAIM_ACTION === $action) {
             $notice = $this->claimFor($person->id, $taskId);
 
@@ -566,6 +626,11 @@ final class SignupController
             'ticket_already_redeemed' => __('You already have a free-entry ticket for that night.', 'eventcrew'),
             'ticket_not_eligible' => __('That event is no longer available.', 'eventcrew'),
         ];
+
+        // The sales desk refusals share SalesDeskGate's wording with /sales.
+        if (! isset($map[$code]) && str_starts_with($code, 'sales_')) {
+            return SalesDeskGate::message(substr($code, strlen('sales_')));
+        }
 
         return $map[$code] ?? '';
     }

@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '12';
+    public const DB_VERSION = '13';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -29,6 +29,8 @@ final class Schema
     public const AUTH_TOKENS = 'eventcrew_auth_tokens';
     public const NOTIFICATIONS = 'eventcrew_notifications';
     public const GUESTS = 'eventcrew_guests';
+    public const CHECKINS = 'eventcrew_checkins';
+    public const TICKET_BUYERS = 'eventcrew_ticket_buyers';
 
     /**
      * @return array<int, string>
@@ -44,6 +46,8 @@ final class Schema
             self::AUTH_TOKENS,
             self::NOTIFICATIONS,
             self::GUESTS,
+            self::CHECKINS,
+            self::TICKET_BUYERS,
         ];
     }
 
@@ -230,6 +234,8 @@ final class Schema
         $authTokens = self::table(self::AUTH_TOKENS);
         $notifications = self::table(self::NOTIFICATIONS);
         $guests = self::table(self::GUESTS);
+        $checkins = self::table(self::CHECKINS);
+        $ticketBuyers = self::table(self::TICKET_BUYERS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -393,6 +399,39 @@ final class Schema
                 plus_ones smallint(5) unsigned NOT NULL DEFAULT 0,
                 note varchar(191) NOT NULL DEFAULT '',
                 added_by bigint(20) unsigned DEFAULT NULL,
+                created_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                KEY event_date (event_date)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // Who has come through the door on one night. kind says which list
+            // the row belongs to (crew, credit, guest, buyer) and ref_id is the
+            // id in that list: the person id for crew and credit, the guest or
+            // ticket-buyer row id for the other two. The unique key is what
+            // keeps two door phones tapping "In" at once down to one row.
+            // Un-marking deletes the row; checked_by is the door session's
+            // person id.
+            "CREATE TABLE {$checkins} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                event_date date NOT NULL,
+                kind varchar(10) NOT NULL,
+                ref_id bigint(20) unsigned NOT NULL,
+                plus_ones smallint(5) unsigned NOT NULL DEFAULT 0,
+                checked_in_at datetime NOT NULL,
+                checked_by bigint(20) unsigned DEFAULT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY one_per_entry (event_date,kind,ref_id)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // Ticket buyers from the Holvi shop for one night: a name only,
+            // with where it came from (source) and which import added it
+            // (batch), so one import can be told apart from the next.
+            "CREATE TABLE {$ticketBuyers} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                event_date date NOT NULL,
+                name varchar(191) NOT NULL,
+                source varchar(20) NOT NULL DEFAULT 'paste',
+                batch varchar(64) NOT NULL DEFAULT '',
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 KEY event_date (event_date)

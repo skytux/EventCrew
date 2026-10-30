@@ -28,7 +28,8 @@ final class UpdateRouter
         private readonly PermissionService $permissions,
         private readonly NotificationSettingsService $notifications,
         private readonly DoorListService $doorList,
-        private readonly GuestListService $guestList
+        private readonly GuestListService $guestList,
+        private readonly SalesLinkService $salesLink
     ) {
     }
 
@@ -165,6 +166,14 @@ final class UpdateRouter
         // night's door crew. Answered in the DM; an optional date picks the night.
         if ($this->isCommand($text, 'tickets')) {
             $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $this->commandPayload($text, 'tickets'));
+
+            return;
+        }
+
+        // /sales: a fresh login link for the sales desk, in the DM. Organizers,
+        // and the night's leader and Welcome crew once they are marked arrived.
+        if ($this->isCommand($text, 'sales')) {
+            $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate);
 
             return;
         }
