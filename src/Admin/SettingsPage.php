@@ -66,6 +66,7 @@ final class SettingsPage
             'settings',
             [
                 'roles' => Roles::all(),
+                'guide_url' => Roles::guideUrl(),
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
@@ -267,6 +268,10 @@ final class SettingsPage
         Admin::assertCanSave(self::NONCE_ACTION);
 
         Roles::save($this->submittedRoles());
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $guideUrl = isset($_POST['guide_url']) ? esc_url_raw(wp_unslash($_POST['guide_url'])) : '';
+        update_option(Roles::GUIDE_URL_OPTION, $guideUrl);
 
         // Checkbox: absent means unticked, same reasoning as the role
         // archive checkboxes above - an absent field is a real "off", not
@@ -930,6 +935,10 @@ final class SettingsPage
             ? array_map('sanitize_text_field', wp_unslash($_POST['role_emoji']))
             : [];
 
+        $descriptions = isset($_POST['role_description']) && is_array($_POST['role_description'])
+            ? array_map('sanitize_textarea_field', wp_unslash($_POST['role_description']))
+            : [];
+
         $capacities = isset($_POST['role_capacity']) && is_array($_POST['role_capacity'])
             ? array_map('intval', wp_unslash($_POST['role_capacity']))
             : [];
@@ -971,6 +980,7 @@ final class SettingsPage
                 // being cast to an integer here.
                 'start_offset' => $this->offset($startOffsets[$index] ?? ''),
                 'end_offset' => $this->offset($endOffsets[$index] ?? ''),
+                'description' => $descriptions[$index] ?? '',
             ];
         }
 

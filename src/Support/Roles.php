@@ -19,6 +19,10 @@ namespace EventCrew\Support;
  * guest leaves. Roles whose timing genuinely varies leave the offsets unset
  * and produce tasks with no times, which is the same thing as before.
  *
+ * A role can also carry a short description of what the job involves, shown
+ * wherever someone decides whether to take it or is reminded of it, next to
+ * one shared link to the crew's full guide.
+ *
  * The shape is declared once here and imported by everything that handles a
  * role, so adding a key is a one-line change rather than a hunt through
  * eight identical docblocks.
@@ -31,7 +35,8 @@ namespace EventCrew\Support;
  *     archived: bool,
  *     anchor: string,
  *     start_offset: int|null,
- *     end_offset: int|null
+ *     end_offset: int|null,
+ *     description: string
  * }
  */
 final class Roles
@@ -45,6 +50,9 @@ final class Roles
      * save() refuses to let an organizer create or archive it by hand.
      */
     public const LEADER_SLUG = 'leader';
+
+    /** One link to the crew's full guide, shared by every role. */
+    public const GUIDE_URL_OPTION = 'eventcrew_guide_url';
 
     /** Offsets are measured from when the event starts. */
     public const ANCHOR_START = 'start';
@@ -68,6 +76,8 @@ final class Roles
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -120,
                 'end_offset' => 0,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'description' => __('Set up before the dance: close the curtains, check the bathrooms, place the LED candles, decorate the DJ table, prepare the water and fruit, and open the movable walls.', 'eventcrew'),
             ],
             // Welcome straddles the doors opening: a little before, an hour in.
             [
@@ -79,6 +89,8 @@ final class Roles
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -30,
                 'end_offset' => 60,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'description' => __('Welcome people at the door, check and sell tickets, and count how many people come in.', 'eventcrew'),
             ],
             // Cleaning starts when the event ends, which is the whole reason
             // an end anchor exists - it is the task that crosses midnight.
@@ -91,6 +103,8 @@ final class Roles
                 'anchor' => self::ANCHOR_END,
                 'start_offset' => 0,
                 'end_offset' => 60,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'description' => __('Pack up after the dance: collect the candles and decorations, clear away the water and snacks, empty full bins, close the movable walls, open the curtains, and do the final check.', 'eventcrew'),
             ],
         ];
     }
@@ -268,6 +282,22 @@ final class Roles
             : $role['emoji'] . ' ' . $role['label'];
     }
 
+    /**
+     * What the job involves, in a sentence or two; '' when none was written.
+     */
+    public static function description(string $slug): string
+    {
+        return self::find($slug)['description'] ?? '';
+    }
+
+    /**
+     * The crew's full guide, or '' when no link has been set.
+     */
+    public static function guideUrl(): string
+    {
+        return trim((string) get_option(self::GUIDE_URL_OPTION, ''));
+    }
+
     public static function defaultCapacity(string $slug): int
     {
         return self::find($slug)['capacity'] ?? 1;
@@ -314,7 +344,26 @@ final class Roles
             'anchor' => self::ANCHOR_END === $anchor ? self::ANCHOR_END : self::ANCHOR_START,
             'start_offset' => self::nullableOffset($role['start_offset'] ?? null),
             'end_offset' => self::nullableOffset($role['end_offset'] ?? null),
+            'description' => array_key_exists('description', $role)
+                ? trim((string) $role['description'])
+                : self::defaultDescription($slug),
         ];
+    }
+
+    /**
+     * A role saved before descriptions existed has no description key at all,
+     * which is not the same as one an organizer cleared: the first picks up the
+     * shipped text for its slug, the second stays blank.
+     */
+    private static function defaultDescription(string $slug): string
+    {
+        foreach (self::defaults() as $role) {
+            if ($role['slug'] === $slug) {
+                return $role['description'];
+            }
+        }
+
+        return '';
     }
 
     /**

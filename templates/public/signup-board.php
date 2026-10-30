@@ -62,6 +62,9 @@ endif; ?>
                 <span class="eventcrew-task-main">
                     <span class="eventcrew-task-role"><?php echo esc_html($eventcrew_task->roleDisplay()); ?></span>
                     <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
+                    <?php if ('' !== $eventcrew_task->roleDescription()) : ?>
+                        <span class="eventcrew-task-desc"><?php echo esc_html($eventcrew_task->roleDescription()); ?></span>
+                    <?php endif; ?>
                 </span>
                 <?php
                 /*
@@ -145,3 +148,15 @@ endif; ?>
     </ul>
     <?php
 endforeach; ?>
+
+<?php
+$eventcrew_guide = \EventCrew\Support\RoleGuide::emailAction();
+if (null !== $eventcrew_guide) :
+    ?>
+    <p class="eventcrew-guide">
+        <a href="<?php echo esc_url($eventcrew_guide['url']); ?>" target="_blank" rel="noopener">
+            <?php echo esc_html($eventcrew_guide['label']); ?>
+        </a>
+    </p>
+    <?php
+endif; ?>

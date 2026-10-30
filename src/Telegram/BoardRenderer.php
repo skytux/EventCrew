@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\RoleGuide;
 
 /**
  * Turns the open tasks into the board's text and inline keyboard - the pure
@@ -98,7 +99,7 @@ final class BoardRenderer
             }
         }
 
-        // The two links at the foot are not part of any event - they lead out of
+        // The links at the foot are not part of any event - they lead out of
         // the board rather than into a slot - so a rule separates them from the
         // last task above. Built first and only added if there is at least one,
         // or an un-configured bot would end the board on a divider with nothing
@@ -116,6 +117,13 @@ final class BoardRenderer
             if (null !== $button) {
                 $deepLinks[] = [$button];
             }
+        }
+
+        // The crew guide needs no bot username, only the link itself.
+        $guide = RoleGuide::button();
+
+        if (null !== $guide) {
+            $deepLinks[] = [$guide];
         }
 
         if ([] !== $deepLinks) {

@@ -99,6 +99,8 @@ final class ReminderCall
     private function remind(Person $person, Task $task, int $assignmentId): void
     {
         $when = $this->whenText($task);
+        $about = RoleGuide::aboutLine($task);
+        $aboutBlock = '' === $about ? '' : "\n\n" . $about;
 
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
@@ -111,20 +113,16 @@ final class ReminderCall
                         $task->roleLabel(),
                         $task->eventName(),
                         $when
-                    ),
+                    ) . $aboutBlock,
                     true
                 ),
                 // A one-tap out, so a "can't make it" turns into an early cancel
                 // someone else can cover rather than a silent no-show. It carries
                 // the board's own leave callback ('l:'), so tapping it runs the
                 // exact same drop - late-cancel classification, the slot-freed
-                // broadcast and the cancellation confirmation all included.
-                ['inline_keyboard' => [[
-                    [
-                        'text' => __('Can’t make it? Cancel', 'eventcrew'),
-                        'callback_data' => 'l:' . $task->id,
-                    ],
-                ]]]
+                // broadcast and the cancellation confirmation all included. The
+                // crew guide, when one is set, sits on its own row above it.
+                ['inline_keyboard' => $this->dmKeyboard($task)]
             );
         }
 
@@ -145,11 +143,34 @@ final class ReminderCall
                 $task->roleLabel(),
                 $task->eventName(),
                 $when
-            ),
+            ) . $aboutBlock,
             // The ticket again, a day out: the reminder is the message people
             // still have open when they arrive at the door.
-            [['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)]]
+            array_values(array_filter([
+                ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)],
+                RoleGuide::emailAction(),
+            ]))
         );
+    }
+
+    /**
+     * @return list<list<array<string, string>>>
+     */
+    private function dmKeyboard(Task $task): array
+    {
+        $rows = [];
+        $guide = RoleGuide::button();
+
+        if (null !== $guide) {
+            $rows[] = [$guide];
+        }
+
+        $rows[] = [[
+            'text' => __('Can’t make it? Cancel', 'eventcrew'),
+            'callback_data' => 'l:' . $task->id,
+        ]];
+
+        return $rows;
     }
 
     private function whenText(Task $task): string
