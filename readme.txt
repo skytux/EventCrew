@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.32.1
+Stable tag: 1.33.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.33.0 =
+* New: the sales desk (door page). A one-time link opens a phone page for the night with four lists: Crew working, Free-entry credit, Guests and Holvi tickets. Each name has an "In" toggle and a +x count, and the page shows a running total and a name filter. "Give ticket" searches for a member and spends their credit, even when free entry is closed. The page refreshes itself every 4 seconds while it is open.
+* New: /sales in Telegram sends a fresh sales desk link in a direct message. Organizers can use it at any time; their link works until 06:00 the next morning. The night's leader and Welcome crew can use it from 10 minutes before their task, once they are marked arrived; their link stops working when the event ends.
+* New: a "Sales desk" button on the member web page, for the same people.
+* New: sales desk links are sent automatically. Organizers get one 30 minutes before the night's first task (or before 17:00 when no task has a start time). The leader and Welcome crew get one when they are marked arrived and their task is near. Both times are set in Settings.
+* Marking a crew member "In" at the door also marks their task arrived.
+* Fixed: the five-minute link check takes a database lock, so two runs at once cannot send the same link twice.
 
 = 1.32.1 =
 * Fixed: the bot could answer the same command two or three times. When the site was slow, Telegram sent the message again before the first answer finished, and each copy was answered. Now only one copy is answered.
@@ -473,6 +481,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.33.0 =
+Adds the sales desk (door page), /sales and automatic sales desk links. Database version 13: two new tables, check-ins and ticket buyers, created automatically.
 
 = 1.32.1 =
 Stops duplicate bot answers and duplicate scheduled messages. No database change.

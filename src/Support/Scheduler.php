@@ -155,5 +155,9 @@ final class Scheduler
     public static function unschedule(): void
     {
         wp_clear_scheduled_hook(self::HOOK);
+
+        // The door-link check has its own five-minute event. Cleared here so
+        // the deactivation hook in the main plugin file covers it as well.
+        wp_clear_scheduled_hook(DoorLinkSender::HOOK);
     }
 }

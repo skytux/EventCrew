@@ -168,6 +168,23 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
         <?php
         /*
+         * The sales desk (door page), for organizers and - from a few minutes
+         * before their task, once marked arrived - the night's leader and
+         * Welcome crew. Pressing it checks that again on the server and opens
+         * the desk with a fresh one-time link.
+         */
+        ?>
+        <?php if (! empty($view['sales_desk'])) : ?>
+            <form class="eventcrew-sales-desk" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Sales desk', 'eventcrew'); ?></button>
+            </form>
+        <?php endif; ?>
+
+        <?php
+        /*
          * Standing and credits sit with the name, above the tabs, rather than
          * inside one of them: "how am I doing" and "what can I spend" are the
          * context you want while reading any tab, not a thing to go and look

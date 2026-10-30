@@ -305,6 +305,12 @@ final class AssignmentRepository
             ],
             ['id' => $id]
         );
+
+        // Every status write in the plugin comes through here - the wp-admin
+        // roster, the bot's /roster buttons, the door page - so this one hook
+        // is where something that reacts to a status change (the door link for
+        // a Welcome crew member who just arrived) can listen to all of them.
+        do_action('eventcrew/assignment_status_changed', $id, $status, $changedBy);
     }
 
     public function markReminded(int $id): void

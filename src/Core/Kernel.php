@@ -14,16 +14,20 @@ use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
@@ -42,6 +46,7 @@ use EventCrew\Support\PrivacyExporter;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\SignupService;
@@ -59,6 +64,7 @@ use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
+use EventCrew\Telegram\SalesLinkService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GuestListService;
@@ -69,6 +75,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SignupController;
@@ -126,6 +133,12 @@ final class Kernel
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
         $this->container->get(SignupController::class)->boot();
+
+        // The sales desk (door page) and the links that open it: admin-ajax
+        // handlers for logged-out door crew, and a five-minute cron plus an
+        // on-request check that send tonight's links without anyone asking.
+        $this->container->get(DoorController::class)->boot();
+        $this->container->get(DoorLinkSender::class)->boot();
 
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
@@ -228,6 +241,16 @@ final class Kernel
         $this->container->singleton(
             CreditGrantRepository::class,
             fn () => new CreditGrantRepository()
+        );
+
+        $this->container->singleton(
+            CheckinRepository::class,
+            fn () => new CheckinRepository()
+        );
+
+        $this->container->singleton(
+            TicketBuyerRepository::class,
+            fn () => new TicketBuyerRepository()
         );
 
         $this->container->singleton(
@@ -417,7 +440,63 @@ final class Kernel
                 $container->get(Mailer::class),
                 $container->get(ClaimNotifier::class),
                 $container->get(Turnstile::class),
-                $container->get(TicketRedemptionService::class)
+                $container->get(TicketRedemptionService::class),
+                $container->get(SalesDeskGate::class),
+                $container->get(DoorLinkSender::class)
+            )
+        );
+
+        $this->container->singleton(
+            SalesDeskGate::class,
+            fn (Container $container) => new SalesDeskGate(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorLinkSender::class,
+            fn (Container $container) => new DoorLinkSender(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NotificationsRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(SalesDeskGate::class),
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorDesk::class,
+            fn (Container $container) => new DoorDesk(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(GuestRepository::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(CheckinRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(TicketRedemptionService::class),
+                $container->get(SalesDeskGate::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorController::class,
+            fn (Container $container) => new DoorController($container->get(DoorDesk::class))
+        );
+
+        $this->container->singleton(
+            SalesLinkService::class,
+            fn (Container $container) => new SalesLinkService(
+                $container->get(SalesDeskGate::class),
+                $container->get(PersonRepository::class),
+                $container->get(DoorLinkSender::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -632,7 +711,8 @@ final class Kernel
                 $container->get(PermissionService::class),
                 $container->get(NotificationSettingsService::class),
                 $container->get(DoorListService::class),
-                $container->get(GuestListService::class)
+                $container->get(GuestListService::class),
+                $container->get(SalesLinkService::class)
             )
         );
 

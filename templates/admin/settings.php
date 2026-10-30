@@ -23,6 +23,8 @@
  * @var int $notify_hour Hour of day (0-23) the scheduled notification window opens.
  * @var int $open_task_lead_week Hours before an open date the heads-up open-task call goes out.
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
+ * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
+ * @var int $door_link_crew Minutes before their own task the leader and Welcome crew can get the link.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
  * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
@@ -387,6 +389,42 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Default 48. Set to 0 to skip it. A date that first appears inside both windows gets one message, not two.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-door-link-lead"><?php esc_html_e('Sales desk link, organizers (minutes before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-door-link-lead"
+                        name="door_link_lead"
+                        value="<?php echo esc_attr((string) $door_link_lead); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 30. Counted back from the night’s first task start, or from 17:00 when no task has a start time.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, leader & Welcome crew (minutes before)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-door-link-crew"
+                        name="door_link_crew"
+                        value="<?php echo esc_attr((string) $door_link_crew); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 10. Counted back from their own task’s start; the link comes only once they are marked arrived, and stops working when the event ends.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

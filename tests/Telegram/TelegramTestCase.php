@@ -9,12 +9,14 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderEligibility;
@@ -22,6 +24,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\BoardService;
@@ -35,6 +38,7 @@ use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\RosterService;
+use EventCrew\Telegram\SalesLinkService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
@@ -205,8 +209,33 @@ abstract class TelegramTestCase extends TestCase
             ),
             new NotificationSettingsService(new PersonRepository(), $this->client()),
             $this->doorListService(),
-            $this->guestListService()
+            $this->guestListService(),
+            $this->salesLinkService()
         );
+    }
+
+    protected function salesDeskGate(): SalesDeskGate
+    {
+        return new SalesDeskGate(new TaskRepository(), new AssignmentRepository());
+    }
+
+    protected function doorLinkSender(): DoorLinkSender
+    {
+        return new DoorLinkSender(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            new PersonRepository(),
+            new NotificationsRepository(),
+            new AuthTokenRepository(),
+            $this->salesDeskGate(),
+            $this->client(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+        );
+    }
+
+    protected function salesLinkService(): SalesLinkService
+    {
+        return new SalesLinkService($this->salesDeskGate(), new PersonRepository(), $this->doorLinkSender(), $this->client());
     }
 
     protected function doorListService(): DoorListService
