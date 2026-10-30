@@ -9,7 +9,8 @@
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
- * @var bool $free_entry_closed Whether free entry is closed for the shown date.
+ * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
+ * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
  * @var array<string, string> $statuses Status slug => label, for the pickers.
  * @var string $nonce_action Nonce action for the marking forms.
@@ -88,6 +89,23 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
             <p style="margin:.4em 0 1em">
                 <?php if ($free_entry_closed) : ?>
                     <strong style="color:#b32d2e"><?php esc_html_e('Free entry is closed for this date — no credits can be spent on it.', 'eventcrew'); ?></strong><br>
+                <?php endif; ?>
+                <?php if ('' !== $free_entry_event_reason) : ?>
+                    <?php
+                    $eventcrew_reasons = [
+                        'unpublished' => __('is not published (removed from the shop)', 'eventcrew'),
+                        'disabled' => __('is disabled', 'eventcrew'),
+                        'hidden' => __('is hidden', 'eventcrew'),
+                        'sold_out' => __('is sold out', 'eventcrew'),
+                    ];
+                    ?>
+                    <strong style="color:#b32d2e"><?php
+                        echo esc_html(sprintf(
+                            /* translators: %s: the reason, e.g. "is sold out". */
+                            __('No credits can be spent on this date: the linked event %s. Task sign-up stays open.', 'eventcrew'),
+                            $eventcrew_reasons[$free_entry_event_reason] ?? $free_entry_event_reason
+                        ));
+                    ?></strong><br>
                 <?php endif; ?>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
                     <input type="hidden" name="action" value="eventcrew_toggle_ticket_closed">

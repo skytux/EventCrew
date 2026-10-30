@@ -232,7 +232,7 @@ final class Kernel
 
         $this->container->singleton(
             FreeEntryGate::class,
-            fn () => new FreeEntryGate()
+            fn (Container $container) => new FreeEntryGate($container->get(TaskRepository::class))
         );
 
         $this->container->singleton(

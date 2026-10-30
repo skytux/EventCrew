@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.31.0
+Stable tag: 1.32.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.32.0 =
+* Credits can no longer be spent on a night whose linked EventMesh event stopped selling: the event is not published (for example removed from the Holvi shop), is disabled or hidden, or is sold out. This applies to /ticket, the web page and the wp-admin Roster page.
+* Signing up for a task on that night stays open, so crew can still join a sold-out night.
+* wp-admin: the Roster page says when the linked event closes a night to credits, and why. The "Close free entry" button still only changes the organizer's own closing.
 
 = 1.31.0 =
 * New: **guest list.** Each event night has a list of people let in free who are not crew members, with a number of plus-ones and a note for each guest.
@@ -464,6 +469,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.32.0 =
+Free-entry credits close automatically when the linked EventMesh event is unpublished, disabled, hidden or sold out. Task sign-up is unaffected. No database change.
 
 = 1.31.0 =
 Adds the guest list (/guest in Telegram, and a section on the wp-admin Roster page). Database change: a new guests table, created automatically on update.
