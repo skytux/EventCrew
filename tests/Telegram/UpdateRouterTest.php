@@ -364,6 +364,28 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
     }
 
+    /**
+     * The duplicate-reply bug: on a slow host Telegram re-sends an update
+     * before the first request has finished, and the second request reads the
+     * old stored id. The claim must still refuse it.
+     */
+    public function testDropsARedeliveryEvenWhenTheStoredIdReadsStale(): void
+    {
+        $update = [
+            'update_id' => 101,
+            'message' => ['text' => '/start', 'chat' => ['id' => 556, 'type' => 'private'], 'from' => ['id' => 556]],
+        ];
+
+        $this->router()->dispatch($update);
+        self::assertArrayHasKey('eventcrew_tg_await_email_556', $this->transients);
+
+        unset($this->transients['eventcrew_tg_await_email_556']);
+        $this->options[UpdateRouter::LAST_UPDATE_OPTION] = 0;
+        $this->router()->dispatch($update);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_556', $this->transients);
+    }
+
     public function testUnrecognisedUpdateDoesNothing(): void
     {
         $this->router()->dispatch(['edited_message' => ['text' => 'whatever']]);

@@ -99,6 +99,41 @@ final class SchedulerTest extends TestCase
         self::assertIsInt($captured);
     }
 
+    /**
+     * WP-Cron and the visitor fallback can start a run at the same moment; the
+     * second must not send anything, or every due message goes out twice.
+     */
+    public function testRunDoesNothingWhileAnotherRunHoldsTheLock(): void
+    {
+        $this->wpdb->heldLocks['eventcrew_heartbeat'] = true;
+        Functions\when('get_option')->returnArg(2);
+
+        $captured = null;
+        Functions\when('update_option')->alias(function (string $key, mixed $value) use (&$captured): bool {
+            if (Scheduler::LAST_RUN_OPTION === $key) {
+                $captured = $value;
+            }
+
+            return true;
+        });
+
+        $this->scheduler()->run();
+
+        self::assertNull($captured);
+        self::assertCount(1, $this->wpdb->queries);
+    }
+
+    public function testRunReleasesTheLockWhenItFinishes(): void
+    {
+        $this->wpdb->nextResults[] = [];
+        Functions\when('get_option')->returnArg(2);
+        Functions\when('update_option')->justReturn(true);
+
+        $this->scheduler()->run();
+
+        self::assertSame([], $this->wpdb->heldLocks);
+    }
+
     public function testBootSchedulesTheHourlyEventWhenNoneExists(): void
     {
         Functions\expect('add_action')->once()->with(Scheduler::HOOK, \Mockery::type('array'));
