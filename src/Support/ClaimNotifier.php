@@ -48,6 +48,9 @@ final class ClaimNotifier
 
         $standingLine = $this->standingLine($person);
         $calendarLine = $this->calendarLine($task->id);
+        $about = RoleGuide::aboutLine($task);
+        $aboutBlock = '' === $about ? '' : "\n\n" . $about;
+        $guideButton = RoleGuide::button();
 
         $this->dm(
             $person,
@@ -59,7 +62,8 @@ final class ClaimNotifier
                 $task->eventName(),
                 $this->whenText($task),
                 $this->mailer->ticketUrl($assignment->id)
-            ) . "\n\n" . $calendarLine . "\n\n" . $standingLine
+            ) . $aboutBlock . "\n\n" . $calendarLine . "\n\n" . $standingLine,
+            null === $guideButton ? null : ['inline_keyboard' => [[$guideButton]]]
         );
 
         $this->mailer->toPerson(
@@ -80,15 +84,17 @@ final class ClaimNotifier
                 $task->eventName(),
                 $this->whenText($task),
                 $standingLine
-            ),
+            ) . $aboutBlock,
             // The ticket first: it is the thing this email exists to hand over.
             // The calendar hold second, since a task in someone's own calendar,
             // with its own alarm, is the strongest nudge there is against a
             // no-show.
-            [
+            // The crew guide last, for anyone who wants the full detail.
+            array_values(array_filter([
                 ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignment->id)],
                 ['label' => __('Add to calendar', 'eventcrew'), 'url' => CalendarController::url($task->id)],
-            ]
+                RoleGuide::emailAction(),
+            ]))
         );
     }
 
@@ -174,8 +180,10 @@ final class ClaimNotifier
      * Sends a confirmation to the person's Telegram DM, when they have one. A
      * no-op for a web-only person, and swallowed by TelegramClient if the send
      * fails - a confirmation that doesn't arrive must never fail the signup.
+     *
+     * @param array<string, mixed>|null $replyMarkup
      */
-    private function dm(Person $person, string $text): void
+    private function dm(Person $person, string $text, ?array $replyMarkup = null): void
     {
         // Signup and cancellation are commitment confirmations - locked on, so a
         // muted account still gets word of what it just committed to (or dropped).
@@ -183,7 +191,7 @@ final class ClaimNotifier
             return;
         }
 
-        $this->telegram->sendMessage($person->telegramChatId, $text);
+        $this->telegram->sendMessage($person->telegramChatId, $text, $replyMarkup);
     }
 
     /**

@@ -227,6 +227,51 @@ final class RolesTest extends TestCase
         self::assertFalse($captured[0]['archived']);
     }
 
+    public function testEachShippedRoleDescribesTheJob(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        self::assertStringContainsString('LED candles', Roles::description('decorate'));
+        self::assertStringContainsString('tickets', Roles::description('welcome'));
+        self::assertStringContainsString('final check', Roles::description('clean'));
+        self::assertSame('', Roles::description('nonexistent'));
+    }
+
+    /**
+     * Roles saved before descriptions existed pick up the shipped text for
+     * their slug, while one the organizer deliberately cleared stays blank.
+     */
+    public function testAStoredRoleWithoutADescriptionGainsTheShippedOneButAClearedOneStaysBlank(): void
+    {
+        Functions\when('get_option')->justReturn([
+            ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈', 'capacity' => 2],
+            ['slug' => 'welcome', 'label' => 'Welcome', 'emoji' => '👋', 'capacity' => 1, 'description' => ''],
+            ['slug' => 'bar', 'label' => 'Bar', 'emoji' => '🍹', 'capacity' => 1],
+        ]);
+
+        self::assertStringContainsString('LED candles', Roles::description('decorate'));
+        self::assertSame('', Roles::description('welcome'));
+        self::assertSame('', Roles::description('bar'));
+    }
+
+    public function testADescriptionSurvivesASave(): void
+    {
+        $saved = $this->captureSavedRoles([
+            ['slug' => 'bar', 'label' => 'Bar', 'emoji' => '🍹', 'capacity' => 2, 'description' => '  Pour drinks.  '],
+        ]);
+
+        self::assertSame('Pour drinks.', $saved[0]['description']);
+    }
+
+    public function testTheGuideLinkIsTrimmedAndBlankByDefault(): void
+    {
+        Functions\when('get_option')->justReturn('');
+        self::assertSame('', Roles::guideUrl());
+
+        Functions\when('get_option')->justReturn('  https://docs.example/guide ');
+        self::assertSame('https://docs.example/guide', Roles::guideUrl());
+    }
+
     /**
      * @param array<int, array<string, mixed>> $input
      * @return array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}>

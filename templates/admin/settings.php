@@ -3,7 +3,8 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string}> $roles
+ * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
@@ -84,6 +85,7 @@ if (! defined('ABSPATH')) {
                     <th style="width:7em"><?php esc_html_e('Starts', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Ends', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Archived', 'eventcrew'); ?></th>
+                    <th style="min-width:16em"><?php esc_html_e('Description', 'eventcrew'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -100,6 +102,7 @@ if (! defined('ABSPATH')) {
                     'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
                     'start_offset' => null,
                     'end_offset' => null,
+                    'description' => '',
                 ];
 
                 $eventcrew_anchors = [
@@ -179,6 +182,12 @@ if (! defined('ABSPATH')) {
                                 </label>
                             <?php endif; ?>
                         </td>
+                        <td>
+                            <textarea
+                                name="role_description[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                rows="3"
+                                style="width:100%;min-width:16em"><?php echo esc_textarea($eventcrew_role['description']); ?></textarea>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -187,6 +196,24 @@ if (! defined('ABSPATH')) {
 
         <p class="description">
             <?php esc_html_e('Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder.', 'eventcrew'); ?>
+        </p>
+
+        <h2><?php esc_html_e('Crew guide', 'eventcrew'); ?></h2>
+        <p>
+            <label for="eventcrew-guide-url"><?php esc_html_e('Link to the full guide', 'eventcrew'); ?></label><br>
+            <input
+                type="url"
+                id="eventcrew-guide-url"
+                name="guide_url"
+                value="<?php echo esc_attr($guide_url); ?>"
+                class="large-text"
+                placeholder="https://">
+        </p>
+        <p class="description">
+            <?php esc_html_e('One link for every role, shown as a named "Crew guide" button or link - on the Telegram board, on the web page, and in the signup confirmation and the reminder. Leave blank to show no guide link. Make sure everyone with the link can open it.', 'eventcrew'); ?>
         </p>
 
         <h2><?php esc_html_e('EventMesh', 'eventcrew'); ?></h2>

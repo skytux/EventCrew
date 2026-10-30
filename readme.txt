@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.26.2
+Stable tag: 1.27.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.27.0 =
+* New: **each role says what the job involves.** A short description per role, edited in Settings ▸ Roles, is shown under the task on the web signup page and as an "About the task" line in the signup confirmation and the 24-hour reminder (Telegram and email). Decorate, Welcome and Clean ship with descriptions taken from the crew guide; roles saved before this version pick those up automatically, and a description you clear stays cleared.
+* New: **one shared crew guide link**, set in Settings ▸ Roles. It is never shown as a raw address: it is a "📋 Crew guide" button at the foot of the Telegram group board and in the signup confirmation and reminder DMs, a named button in those emails, and a named link under the web board. Leave it blank to show no guide link.
 
 = 1.26.2 =
 * Internal: a structural test now checks that every template only calls methods and reads properties that exist on the class its docblock declares. It is the guard that would have caught the People-page fatal fixed in 1.21.1 - a call to a method that never existed, invisible to a test suite that does not render templates. No change to how the plugin behaves.
@@ -439,6 +443,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.27.0 =
+Adds a short description per role and one shared crew guide link, both editable in Settings ▸ Roles. Paste your guide's link there after upgrading. Clear any page cache. No database change.
 
 = 1.26.2 =
 No functional change; adds a developer test guarding the admin and public templates. No database change.

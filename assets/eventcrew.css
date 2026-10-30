@@ -219,6 +219,8 @@
 }
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
+.eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
+.eventcrew-signup .eventcrew-guide { margin-top: 1em; }
 
 /* The count above the action, the pair as narrow as the button itself. */
 .eventcrew-signup .eventcrew-task-side {

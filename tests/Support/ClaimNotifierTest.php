@@ -14,6 +14,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -163,5 +164,37 @@ final class ClaimNotifierTest extends TestCase
             'telegram_chat_id' => 4242,
             'notify_muted' => $muted ? 1 : 0,
         ]);
+    }
+    public function testSignupConfirmationOffersTheGuideAsANamedButtonAndAction(): void
+    {
+        $sends = [];
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => match ($name) {
+                TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+                Roles::GUIDE_URL_OPTION => 'https://docs.example/guide',
+                default => false,
+            }
+        );
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args) use (&$sends): string {
+            $sends[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($this->telegramPerson(), 5);
+
+        self::assertStringContainsString('About the task', (string) $sends[0]['text']);
+        self::assertStringNotContainsString('docs.example', (string) $sends[0]['text']);
+        self::assertSame('https://docs.example/guide', $sends[0]['reply_markup']['inline_keyboard'][0][0]['url']);
+
+        self::assertStringContainsString('About the task', $this->mails[0]['body']);
+        self::assertStringContainsString('Crew guide', $this->mails[0]['body']);
+        self::assertStringContainsString('https://docs.example/guide', $this->mails[0]['body']);
     }
 }

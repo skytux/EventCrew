@@ -60,6 +60,11 @@ final class Task
         return Roles::display($this->roleSlug);
     }
 
+    public function roleDescription(): string
+    {
+        return Roles::description($this->roleSlug);
+    }
+
     /**
      * Prefers the linked EventMesh post's title, falling back to the label
      * typed by hand, then to the date - so this never renders as empty.

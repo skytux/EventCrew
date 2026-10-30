@@ -12,6 +12,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\ReminderCall;
+use EventCrew\Support\Roles;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
 /**
@@ -201,5 +202,39 @@ final class ReminderCallTest extends TelegramTestCase
         $sent = $this->call()->run(1);
 
         self::assertSame(1, $sent);
+    }
+    public function testReminderSaysWhatTheTaskInvolvesAndOffersTheGuideByName(): void
+    {
+        $this->options[Roles::GUIDE_URL_OPTION] = 'https://docs.example/guide';
+
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        $dm = (array) $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('About the task', (string) $dm['text']);
+        self::assertStringContainsString('LED candles', (string) $dm['text']);
+        // The link lives in a named button, never in the text itself.
+        self::assertStringNotContainsString('docs.example', (string) $dm['text']);
+
+        $rows = $dm['reply_markup']['inline_keyboard'];
+        self::assertSame('https://docs.example/guide', $rows[0][0]['url']);
+        self::assertStringContainsString('Crew guide', $rows[0][0]['text']);
+        self::assertSame('l:5', $rows[1][0]['callback_data']);
+    }
+
+    public function testWithoutAGuideLinkTheReminderKeepsOnlyTheCancelButton(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        $rows = ((array) $this->lastCallTo('sendMessage'))['reply_markup']['inline_keyboard'];
+        self::assertCount(1, $rows);
+        self::assertSame('l:5', $rows[0][0]['callback_data']);
     }
 }
