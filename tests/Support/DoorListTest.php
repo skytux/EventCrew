@@ -116,6 +116,24 @@ final class DoorListTest extends TestCase
         self::assertNull($door['entrants'][0]['redemption_id']);
     }
 
+    public function testEntrantsForSkipsTheCandidateScan(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];                          // tasks->forDate
+        $this->wpdb->nextResults[] = [['id' => 1, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up']]; // forTask
+        $this->wpdb->nextResults[] = [];                                           // standing(7) history
+        $this->wpdb->nextResults[] = [];                                           // redemptions->forDate
+        // Would be read by people->all if the scan ran.
+        $this->wpdb->nextResults[] = [$this->personRow(8)];
+
+        $this->wpdb->nextRows[] = $this->personRow(7);
+        $this->wpdb->nextVars[] = 0;
+
+        $entrants = $this->doorList()->entrantsFor('2026-08-01');
+
+        self::assertSame([7], array_column($entrants, 'person_id'));
+        self::assertCount(1, $this->wpdb->nextResults, 'the candidate scan must not run');
+    }
+
     public function testListsPeopleWithCreditsAsRedemptionCandidates(): void
     {
         $this->wpdb->nextResults[] = [];                    // tasks->forDate (no tasks)

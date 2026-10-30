@@ -34,11 +34,32 @@ final class DoorList
 
     /**
      * @return array{
-     *     entrants: array<int, array{name: string, detail: string, standing: Standing, redemption_id: ?int}>,
+     *     entrants: array<int, array{
+     *         person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int
+     *     }>,
      *     candidates: array<int, array{person_id: int, name: string, credit_balance: int}>
      * }
      */
     public function forDate(string $date): array
+    {
+        $entrants = $this->entrantsFor($date);
+
+        return [
+            'entrants' => $entrants,
+            'candidates' => $this->candidates(array_map(
+                static fn (array $entrant): int => $entrant['person_id'],
+                $entrants
+            )),
+        ];
+    }
+
+    /**
+     * Only the people who get in free on $date, sorted by name - without the
+     * redemption candidates, whose scan reads every person's standing.
+     *
+     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     */
+    public function entrantsFor(string $date): array
     {
         $entrants = $this->workers($date);
 
@@ -52,6 +73,7 @@ final class DoorList
             $person = $this->people->find($redemption->personId);
 
             $entrants[$redemption->personId] = [
+                'person_id' => $redemption->personId,
                 'name' => null === $person ? __('(deleted person)', 'eventcrew') : $person->name(),
                 'detail' => __('Free-entry credit', 'eventcrew'),
                 'standing' => $this->standing->for($redemption->personId),
@@ -59,17 +81,14 @@ final class DoorList
             ];
         }
 
-        return [
-            'entrants' => $this->sortedByName($entrants),
-            'candidates' => $this->candidates(array_keys($entrants)),
-        ];
+        return $this->sortedByName($entrants);
     }
 
     /**
      * People occupying a slot on $date, keyed by person id, each with the roles
      * they are covering rolled into one detail line.
      *
-     * @return array<int, array{name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
      */
     private function workers(string $date): array
     {
@@ -91,6 +110,7 @@ final class DoorList
             $person = $this->people->find($personId);
 
             $workers[$personId] = [
+                'person_id' => $personId,
                 'name' => null === $person ? __('(deleted person)', 'eventcrew') : $person->name(),
                 'detail' => sprintf(
                     /* translators: %s: comma-separated list of roles */
@@ -139,8 +159,10 @@ final class DoorList
     }
 
     /**
-     * @param array<int, array{name: string, detail: string, standing: Standing, redemption_id: ?int}> $entrants
-     * @return array<int, array{name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     * @param array<int, array{
+     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int
+     * }> $entrants
+     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
      */
     private function sortedByName(array $entrants): array
     {

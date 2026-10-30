@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.29.0
+Stable tag: 1.30.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.30.0 =
+* New: **/tickets** in Telegram shows who has a ticket for an event night: everyone working it and everyone who spent a free-entry credit on it, the same list as the door list on the wp-admin Roster page. The answer always goes to the DM.
+* Organizers can see every night. The night's leader and its Welcome crew can see their own night.
+* With no date it shows the next event. A date can be given: /tickets 1.8. or /tickets 2026-08-01. Buttons under the list switch to the last past night and the next few.
 
 = 1.29.0 =
 * New: **Arrived late.** A new attendance status for someone who did the task but turned up late. On the Telegram /roster each expected person now has three buttons: ✓ completed, ⏰ arrived late, ✗ no-show. It is also in the status list on the wp-admin Roster page.
@@ -452,6 +457,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.30.0 =
+Adds the /tickets command for organizers and door crew. No database change.
 
 = 1.29.0 =
 Adds the "Arrived late" attendance status and a ⏰ button on the Telegram roster. No database change.

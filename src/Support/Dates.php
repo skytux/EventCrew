@@ -36,6 +36,36 @@ final class Dates
     }
 
     /**
+     * A date typed in a chat - "2026-08-01", "1.8.2026" or "1.8." / "1.8" - as
+     * Y-m-d, or '' when it is not a real date. A day and month without a year
+     * take the year that puts it nearest ahead: the current year, unless that
+     * lands more than six months back, which means next year's.
+     */
+    public static function parseUserDate(string $input, string $today): string
+    {
+        $input = trim($input);
+
+        if (1 === preg_match('#^(\d{4})-(\d{1,2})-(\d{1,2})$#', $input, $m)) {
+            [$year, $month, $day] = [(int) $m[1], (int) $m[2], (int) $m[3]];
+        } elseif (1 === preg_match('#^(\d{1,2})\.(\d{1,2})\.?(\d{4})?$#', $input, $m)) {
+            [$day, $month] = [(int) $m[1], (int) $m[2]];
+            $year = isset($m[3]) && '' !== $m[3] ? (int) $m[3] : (int) substr($today, 0, 4);
+
+            if (! isset($m[3]) || '' === $m[3]) {
+                $sixMonthsBack = gmdate('Y-m-d', (int) strtotime($today . ' 12:00:00 UTC -6 months'));
+
+                if (checkdate($month, $day, $year) && sprintf('%04d-%02d-%02d', $year, $month, $day) < $sixMonthsBack) {
+                    ++$year;
+                }
+            }
+        } else {
+            return '';
+        }
+
+        return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : '';
+    }
+
+    /**
      * A stored wall-clock datetime (as written by current_time('mysql'))
      * reformatted as-is. The digits are already local, so they are never run
      * back through a timezone - doing that moves them by the site's offset.
