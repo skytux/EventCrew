@@ -125,6 +125,47 @@ final class EventSource
     }
 
     /**
+     * Why the linked event no longer takes free-entry credits, or '' while it
+     * still does: 'unpublished' (the sync sets an event removed from the shop
+     * back to draft), 'disabled', 'hidden' or 'sold_out'. '' too when nothing
+     * is linked or EventMesh is absent, so a standalone install is unaffected.
+     *
+     * The flags mirror EventMesh's own reads: hidden/disabled are manual
+     * checkboxes stored as '1', and a manual sold-out of '1' or '0' beats the
+     * synced value (EventMeta::isSoldOut()).
+     */
+    public static function closedReason(int $postId): string
+    {
+        if ($postId <= 0 || ! self::isAvailable()) {
+            return '';
+        }
+
+        $post = get_post($postId);
+
+        if (null === $post || self::POST_TYPE !== $post->post_type) {
+            return '';
+        }
+
+        if ('publish' !== $post->post_status) {
+            return 'unpublished';
+        }
+
+        foreach (['disabled', 'hidden'] as $flag) {
+            if ('1' === (string) get_post_meta($postId, self::MANUAL_PREFIX . $flag, true)) {
+                return $flag;
+            }
+        }
+
+        $soldOut = (string) get_post_meta($postId, self::MANUAL_PREFIX . 'sold_out', true);
+
+        if ('' === $soldOut) {
+            $soldOut = (string) get_post_meta($postId, self::SCRAPED_PREFIX . 'sold_out', true);
+        }
+
+        return '1' === $soldOut ? 'sold_out' : '';
+    }
+
+    /**
      * A manual override beats the synced value, and a blank override falls
      * back rather than blanking the field - mirroring EventMesh's own rule so
      * an organizer's correction on the event is what EventCrew schedules

@@ -71,7 +71,8 @@ final class RosterPage
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
                 'guests' => '' === $selected ? [] : $this->guests->forDate($selected),
-                'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosed($selected),
+                'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
+                'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),
                 'leader_enabled' => '' !== $selected && $this->leaderGate->isEnabled($selected),
                 'statuses' => $this->statusChoices(),
                 'nonce_action' => self::NONCE_ACTION,
@@ -194,7 +195,7 @@ final class RosterPage
             );
         }
 
-        if ($this->freeEntry->isClosed($date)) {
+        if ($this->freeEntry->isClosedByHand($date)) {
             $this->freeEntry->open($date);
             $message = __('Free entry reopened for this date.', 'eventcrew');
         } else {
