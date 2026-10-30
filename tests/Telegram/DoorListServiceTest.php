@@ -99,6 +99,25 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertSame(['dl:2026-07-10', 'dl:2026-08-08'], array_column($buttons, 'callback_data'));
     }
 
+    public function testGuestsAndTheirPlusOnesCountTowardTheTotal(): void
+    {
+        $this->asker(true);
+        $this->wpdb->nextResults[] = [];                                                             // tasks->forDate
+        $this->wpdb->nextResults[] = [['id' => 2, 'person_id' => 9, 'redeemed_for' => '2026-08-01']]; // redemptions
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'b@example.com', 'display_name' => 'Bo'];    // find(9)
+        $this->wpdb->nextResults[] = [];                                                             // standing(9)
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'plus_ones' => 2, 'note' => 'press'],
+        ];                                                                                           // guests
+        $this->wpdb->nextCols[] = [];                                                                // nearbyDates
+
+        $this->doorListService()->onTicketsCommand(555, 555, true, '1.8.');
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('4 people', $text);
+        self::assertStringContainsString("🎫 Guests\n• Anna +2 (press)", $text);
+    }
+
     public function testAnUnreadableDateIsExplained(): void
     {
         $this->asker(true);

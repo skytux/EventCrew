@@ -27,7 +27,8 @@ final class UpdateRouter
         private readonly GiftService $gift,
         private readonly PermissionService $permissions,
         private readonly NotificationSettingsService $notifications,
-        private readonly DoorListService $doorList
+        private readonly DoorListService $doorList,
+        private readonly GuestListService $guestList
     ) {
     }
 
@@ -63,6 +64,8 @@ final class UpdateRouter
                 $this->notifications->onToggle($callbackQuery);
             } elseif (str_starts_with($data, 'dl:')) {
                 $this->doorList->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, 'gl:')) {
+                $this->guestList->onSelect($callbackQuery);
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -166,6 +169,14 @@ final class UpdateRouter
             return;
         }
 
+        // /guest: show, add, edit or remove a night's guest list. Organizers
+        // change it; the night's door crew can look. Answered in the DM.
+        if ($this->isCommand($text, 'guest')) {
+            $this->guestList->onGuestCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'guest'));
+
+            return;
+        }
+
         // /me and /myhistory work from either the group or a private chat; the
         // service always answers in the asker's DM so a personal summary is
         // never printed in front of the whole crew.
@@ -264,6 +275,19 @@ final class UpdateRouter
     {
         if (1 === preg_match('#^/' . preg_quote($command, '#') . '(?:@\w+)?\s+(\S+)#i', $text, $matches)) {
             return $matches[1];
+        }
+
+        return '';
+    }
+
+    /**
+     * Everything after a command, e.g. "add Anna +1 ; DJ" from
+     * "/guest add Anna +1 ; DJ". Empty when the command carries no argument.
+     */
+    private function commandArguments(string $text, string $command): string
+    {
+        if (1 === preg_match('#^/' . preg_quote($command, '#') . '(?:@\w+)?\s+(.+)$#is', $text, $matches)) {
+            return trim($matches[1]);
         }
 
         return '';

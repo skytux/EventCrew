@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '11';
+    public const DB_VERSION = '12';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -28,6 +28,7 @@ final class Schema
     public const CREDIT_GRANTS = 'eventcrew_credit_grants';
     public const AUTH_TOKENS = 'eventcrew_auth_tokens';
     public const NOTIFICATIONS = 'eventcrew_notifications';
+    public const GUESTS = 'eventcrew_guests';
 
     /**
      * @return array<int, string>
@@ -42,6 +43,7 @@ final class Schema
             self::CREDIT_GRANTS,
             self::AUTH_TOKENS,
             self::NOTIFICATIONS,
+            self::GUESTS,
         ];
     }
 
@@ -227,6 +229,7 @@ final class Schema
         $creditGrants = self::table(self::CREDIT_GRANTS);
         $authTokens = self::table(self::AUTH_TOKENS);
         $notifications = self::table(self::NOTIFICATIONS);
+        $guests = self::table(self::GUESTS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -377,6 +380,22 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY kind_person_date (kind,person_id,task_date),
                 KEY task_date (task_date)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The guest list: people let in free on one night who are not
+            // crew members - a DJ's partner, a press guest. Just a name typed
+            // by an organizer, so no person row; plus_ones counts the people
+            // they bring. added_by is the organizer's person id, for the record.
+            "CREATE TABLE {$guests} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                event_date date NOT NULL,
+                name varchar(191) NOT NULL,
+                plus_ones smallint(5) unsigned NOT NULL DEFAULT 0,
+                note varchar(191) NOT NULL DEFAULT '',
+                added_by bigint(20) unsigned DEFAULT NULL,
+                created_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                KEY event_date (event_date)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

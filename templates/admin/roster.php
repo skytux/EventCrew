@@ -8,6 +8,7 @@
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
+ * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var bool $free_entry_closed Whether free entry is closed for the shown date.
  * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
  * @var array<string, string> $statuses Status slug => label, for the pickers.
@@ -164,6 +165,62 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <button type="submit" class="button"><?php esc_html_e('Redeem', 'eventcrew'); ?></button>
                 </form>
             <?php endif; ?>
+
+            <h2><?php esc_html_e('Guest list', 'eventcrew'); ?></h2>
+            <p class="description">
+                <?php esc_html_e('People let in free who are not crew members. The /guest bot command keeps the same list.', 'eventcrew'); ?>
+            </p>
+            <?php /* Each row's fields post into that row's own form by id, since a form cannot wrap a table row. */ ?>
+            <table class="widefat striped" style="max-width:820px;margin-bottom:2em">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Name', 'eventcrew'); ?></th>
+                        <th style="width:7em"><?php esc_html_e('Plus-ones', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Note', 'eventcrew'); ?></th>
+                        <th style="width:11em"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($guests as $eventcrew_guest) : ?>
+                        <?php $eventcrew_form = 'eventcrew-guest-' . $eventcrew_guest->id; ?>
+                        <tr>
+                            <td><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>"></td>
+                            <td><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr((string) $eventcrew_guest->plusOnes); ?>"></td>
+                            <td><input type="text" name="guest_note" maxlength="191" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->note); ?>"></td>
+                            <td style="white-space:nowrap">
+                                <form method="post" id="<?php echo esc_attr($eventcrew_form); ?>" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                                    <input type="hidden" name="action" value="eventcrew_save_guest">
+                                    <?php wp_nonce_field($nonce_action); ?>
+                                    <input type="hidden" name="guest_id" value="<?php echo esc_attr((string) $eventcrew_guest->id); ?>">
+                                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                                    <button type="submit" class="button"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                                </form>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                                    <input type="hidden" name="action" value="eventcrew_remove_guest">
+                                    <?php wp_nonce_field($nonce_action); ?>
+                                    <input type="hidden" name="guest_id" value="<?php echo esc_attr((string) $eventcrew_guest->id); ?>">
+                                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                                    <button type="submit" class="button-link delete"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <tr>
+                        <td><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="eventcrew-guest-new" placeholder="<?php esc_attr_e('New guest’s name', 'eventcrew'); ?>"></td>
+                        <td><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="eventcrew-guest-new" value="0"></td>
+                        <td><input type="text" name="guest_note" maxlength="191" style="width:100%" form="eventcrew-guest-new"></td>
+                        <td>
+                            <form method="post" id="eventcrew-guest-new" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                <input type="hidden" name="action" value="eventcrew_save_guest">
+                                <?php wp_nonce_field($nonce_action); ?>
+                                <input type="hidden" name="guest_id" value="0">
+                                <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                                <button type="submit" class="button button-primary"><?php esc_html_e('Add guest', 'eventcrew'); ?></button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         <?php endif; ?>
 
         <?php if ([] === $roster) : ?>

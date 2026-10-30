@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
@@ -39,7 +40,8 @@ final class RosterPage
         private readonly StandingCalculator $standing,
         private readonly FreeEntryGate $freeEntry,
         private readonly LeaderGate $leaderGate,
-        private readonly TicketRedemptionService $tickets
+        private readonly TicketRedemptionService $tickets,
+        private readonly GuestRepository $guests
     ) {
     }
 
@@ -68,6 +70,7 @@ final class RosterPage
                 'selected_date' => $selected,
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
+                'guests' => '' === $selected ? [] : $this->guests->forDate($selected),
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosed($selected),
                 'leader_enabled' => '' !== $selected && $this->leaderGate->isEnabled($selected),
                 'statuses' => $this->statusChoices(),
@@ -415,6 +418,63 @@ final class RosterPage
         }
 
         return $choices;
+    }
+
+    /**
+     * Adds a guest to the roster's date (guest_id 0) or saves the changes to
+     * an existing one - the same list the /guest bot command keeps.
+     */
+    public function saveGuest(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $guestId = isset($_POST['guest_id']) ? (int) $_POST['guest_id'] : 0;
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        $name = isset($_POST['guest_name']) ? sanitize_text_field(wp_unslash($_POST['guest_name'])) : '';
+        $plusOnes = isset($_POST['guest_plus_ones']) ? (int) $_POST['guest_plus_ones'] : 0;
+        $note = isset($_POST['guest_note']) ? sanitize_text_field(wp_unslash($_POST['guest_note'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ('' === $name || ! $this->isValidDate($date)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('A guest needs a name.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
+        if (0 === $guestId) {
+            $this->guests->add($date, $name, $plusOnes, $note, null);
+            $message = __('Guest added.', 'eventcrew');
+        } else {
+            $this->guests->update($guestId, $name, $plusOnes, $note);
+            $message = __('Guest saved.', 'eventcrew');
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, $message, 'success', $this->dateArg($date));
+    }
+
+    public function removeGuest(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $guestId = isset($_POST['guest_id']) ? (int) $_POST['guest_id'] : 0;
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($guestId > 0) {
+            $this->guests->delete($guestId);
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Guest removed.', 'eventcrew'),
+            'success',
+            $this->dateArg($date)
+        );
     }
 
     /**
