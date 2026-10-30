@@ -238,23 +238,47 @@ final class UpdateRouter
      * mark. An update with no id (which shouldn't happen) is let through rather
      * than blocked.
      *
+     * The check and the write are one UPDATE, so only one request can claim an
+     * id. A read followed by a write was not enough: on a slow host Telegram
+     * re-sends before the first request has written, every copy reads the old
+     * value, and the member gets the same answer two or three times.
+     *
      * @param array<string, mixed> $update
      */
     private function isFreshUpdate(array $update): bool
     {
+        global $wpdb;
+
         $id = (int) ($update['update_id'] ?? 0);
 
         if (0 === $id) {
             return true;
         }
 
-        if ($id <= (int) get_option(self::LAST_UPDATE_OPTION, 0)) {
-            return false;
-        }
+        // Make sure the row exists, so the UPDATE below has something to claim.
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload)"
+                . " VALUES (%s, '0', 'yes')",
+                self::LAST_UPDATE_OPTION
+            )
+        );
 
-        update_option(self::LAST_UPDATE_OPTION, $id);
+        $claimed = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->options} SET option_value = %d"
+                . ' WHERE option_name = %s AND CAST(option_value AS UNSIGNED) < %d',
+                $id,
+                self::LAST_UPDATE_OPTION,
+                $id
+            )
+        );
 
-        return true;
+        // The value was written behind WordPress's back, so drop the cached copy.
+        wp_cache_delete(self::LAST_UPDATE_OPTION, 'options');
+        wp_cache_delete('alloptions', 'options');
+
+        return 1 === $claimed;
     }
 
     /**

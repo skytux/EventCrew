@@ -124,7 +124,18 @@ class FakeWpdb
 {
     public string $prefix = 'wp_';
     public string $posts = 'wp_posts';
+    public string $options = 'wp_options';
     public int $insert_id = 0;
+
+    /**
+     * The stored Telegram update high-water mark, kept here so the webhook's
+     * one-statement claim behaves as it would in MySQL: an id at or below it
+     * claims nothing.
+     */
+    public int $lastUpdateId = 0;
+
+    /** @var array<string, true> MySQL named locks currently held. */
+    public array $heldLocks = [];
 
     /** @var array<int, string> */
     public array $queries = [];
@@ -190,6 +201,22 @@ class FakeWpdb
     {
         $this->queries[] = $sql;
 
+        // The webhook claim is answered here rather than from the queue, so
+        // every Telegram test does not have to queue results for it.
+        if (str_contains($sql, 'eventcrew_telegram_last_update_id')) {
+            if (1 === preg_match('/SET option_value = (\d+)/', $sql, $matches)) {
+                $id = (int) $matches[1];
+
+                if ($id > $this->lastUpdateId) {
+                    $this->lastUpdateId = $id;
+
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
+
         $result = array_shift($this->nextQueryResults) ?? 0;
 
         if (is_int($result) && $result > 0 && 1 === preg_match('/^\s*INSERT\s/i', $sql)) {
@@ -225,6 +252,24 @@ class FakeWpdb
     public function get_var(string $sql): mixed
     {
         $this->queries[] = $sql;
+
+        // Named locks are answered here rather than from the queue, as MySQL
+        // would: GET_LOCK fails while the name is held.
+        if (1 === preg_match("/SELECT (GET|RELEASE)_LOCK\('([^']+)'/", $sql, $matches)) {
+            if ('RELEASE' === $matches[1]) {
+                unset($this->heldLocks[$matches[2]]);
+
+                return '1';
+            }
+
+            if (isset($this->heldLocks[$matches[2]])) {
+                return '0';
+            }
+
+            $this->heldLocks[$matches[2]] = true;
+
+            return '1';
+        }
 
         return array_shift($this->nextVars);
     }

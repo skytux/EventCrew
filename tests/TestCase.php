@@ -72,6 +72,9 @@ abstract class TestCase extends PHPUnitTestCase
         // (e.g. eventcrew/board_stale) that most tests do not care about. A
         // test that does care re-stubs this with a capturing alias.
         Functions\when('do_action')->justReturn(null);
+        // The webhook claim writes its option in SQL and then drops the cached
+        // copy; there is no cache in the tests to drop.
+        Functions\when('wp_cache_delete')->justReturn(true);
 
         $this->stubEmailFunctions();
     }

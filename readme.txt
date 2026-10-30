@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.32.0
+Stable tag: 1.32.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.32.1 =
+* Fixed: the bot could answer the same command two or three times. When the site was slow, Telegram sent the message again before the first answer finished, and each copy was answered. Now only one copy is answered.
+* Fixed: two scheduled runs starting at the same moment (WP-Cron and the visitor fallback) could send the same reminder or notice twice. A second run now stops at once.
 
 = 1.32.0 =
 * Credits can no longer be spent on a night whose linked EventMesh event stopped selling: the event is not published (for example removed from the Holvi shop), is disabled or hidden, or is sold out. This applies to /ticket, the web page and the wp-admin Roster page.
@@ -469,6 +473,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.32.1 =
+Stops duplicate bot answers and duplicate scheduled messages. No database change.
 
 = 1.32.0 =
 Free-entry credits close automatically when the linked EventMesh event is unpublished, disabled, hidden or sold out. Task sign-up is unaffected. No database change.

@@ -27,6 +27,9 @@ final class Scheduler
     /** Most sends per run, so a shared-host request can't time out mid-batch. */
     private const BATCH = 25;
 
+    /** MySQL lock name that keeps two runs from overlapping. */
+    private const LOCK = 'eventcrew_heartbeat';
+
     /** The fallback only re-runs once the last run is this old. */
     private const DUE_AFTER_SECONDS = HOUR_IN_SECONDS;
 
@@ -59,6 +62,24 @@ final class Scheduler
      * reminded_at guarantee the next run resumes rather than repeats.
      */
     public function run(): void
+    {
+        global $wpdb;
+
+        // WP-Cron and the visitor fallback can start a run at the same moment.
+        // Two runs would read the same unsent rows and send each twice, so the
+        // second one gives up at once and leaves the work to the first.
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::LOCK))) {
+            return;
+        }
+
+        try {
+            $this->runLocked();
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
+        }
+    }
+
+    private function runLocked(): void
     {
         /*
          * Reminders run every tick and decide for themselves: they are the one
