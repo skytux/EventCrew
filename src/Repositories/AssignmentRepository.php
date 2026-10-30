@@ -470,11 +470,13 @@ final class AssignmentRepository
     {
         global $wpdb;
 
+        $statuses = AssignmentStatus::credited();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND status = %s",
-                $personId,
-                AssignmentStatus::COMPLETED
+                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND status IN ({$statusPlaceholders})",
+                array_merge([$personId], $statuses)
             )
         );
     }
@@ -489,15 +491,17 @@ final class AssignmentRepository
     {
         global $wpdb;
 
+        $statuses = AssignmentStatus::credited();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT s.role_slug AS role_slug, COUNT(*) AS n
                 FROM {$this->table()} a
                 INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
-                WHERE a.person_id = %d AND a.status = %s
+                WHERE a.person_id = %d AND a.status IN ({$statusPlaceholders})
                 GROUP BY s.role_slug",
-                $personId,
-                AssignmentStatus::COMPLETED
+                array_merge([$personId], $statuses)
             ),
             ARRAY_A
         );

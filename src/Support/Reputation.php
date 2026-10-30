@@ -47,6 +47,7 @@ final class Reputation
     {
         return [
             AssignmentStatus::COMPLETED => 1.0,
+            AssignmentStatus::ARRIVED_LATE => 0.9,
             AssignmentStatus::REPLACED => 0.8,
             AssignmentStatus::LATE_CANCEL => 0.4,
             AssignmentStatus::NO_SHOW => 0.0,
@@ -64,6 +65,7 @@ final class Reputation
     {
         return [
             AssignmentStatus::COMPLETED => __('Completed the task', 'eventcrew'),
+            AssignmentStatus::ARRIVED_LATE => __('Arrived late, did the task', 'eventcrew'),
             AssignmentStatus::REPLACED => __('Found a replacement', 'eventcrew'),
             AssignmentStatus::LATE_CANCEL => __('Cancelled late', 'eventcrew'),
             AssignmentStatus::NO_SHOW => __('No-show', 'eventcrew'),

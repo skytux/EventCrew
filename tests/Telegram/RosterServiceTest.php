@@ -155,6 +155,48 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
+    public function testOrganizerCanMarkSomeoneArrivedLate(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3];
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'arrived_late'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:11:l',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame('arrived_late', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame('Marked arrived late.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testTheRosterOffersALateButtonPerExpectedPerson(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $row = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0];
+        self::assertSame(['rm:11:c', 'rm:11:l', 'rm:11:n'], array_column($row, 'callback_data'));
+    }
+
     public function testANonOrganizerNonLeaderCannotMark(): void
     {
         $this->organizer(false); // a linked, non-organizer person (id 7)

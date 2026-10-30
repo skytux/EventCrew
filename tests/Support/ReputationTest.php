@@ -52,6 +52,17 @@ final class ReputationTest extends TestCase
         self::assertSame(1.0, Reputation::score($history, self::NOW));
     }
 
+    public function testArrivingLateScoresJustBelowACompletionAndCountsAsCompleted(): void
+    {
+        $late = $this->history([[AssignmentStatus::ARRIVED_LATE, $this->today()]]);
+        $replaced = $this->history([[AssignmentStatus::REPLACED, $this->today()]]);
+
+        self::assertLessThan(1.0, Reputation::score($late, self::NOW));
+        self::assertGreaterThan(Reputation::score($replaced, self::NOW), Reputation::score($late, self::NOW));
+        self::assertSame(1, Reputation::completedCount($late));
+        self::assertSame(1, Reputation::scoredCount($late));
+    }
+
     public function testPendingStatusesAreIgnored(): void
     {
         // Only the one no-show scores; signed_up and arrived are in progress.

@@ -81,6 +81,7 @@ final class TicketList
         AssignmentStatus::SIGNED_UP,
         AssignmentStatus::ARRIVED,
         AssignmentStatus::COMPLETED,
+        AssignmentStatus::ARRIVED_LATE,
         AssignmentStatus::NO_SHOW,
     ];
 
