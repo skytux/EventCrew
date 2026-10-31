@@ -143,7 +143,26 @@ final class DoorControllerTest extends SalesDeskTestCase
         $status = $this->post(DoorController::COUNT_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
 
         self::assertSame(200, $status);
-        self::assertSame(1, $this->options[$this->countOption()]);
+        self::assertSame(1, $this->countChange());
+    }
+
+    /**
+     * How much the last count statement adds inside the database.
+     */
+    private function countChange(): ?int
+    {
+        global $wpdb;
+
+        foreach (array_reverse($wpdb->queries) as $sql) {
+            if (
+                str_contains($sql, "'" . $this->countOption() . "'")
+                && 1 === preg_match('/GREATEST\(CAST\(option_value AS SIGNED\) \+ (-?\d+), 0\)/', $sql, $m)
+            ) {
+                return (int) $m[1];
+            }
+        }
+
+        return null;
     }
 
     public function testTakingOneOffWithTheTokenLowersTheCount(): void
@@ -156,7 +175,7 @@ final class DoorControllerTest extends SalesDeskTestCase
         );
 
         self::assertSame(200, $status);
-        self::assertSame(1, $this->options[$this->countOption()]);
+        self::assertSame(-1, $this->countChange());
     }
 
     public function testCountingWithABadTokenIsRefused(): void
@@ -164,7 +183,7 @@ final class DoorControllerTest extends SalesDeskTestCase
         $status = $this->post(DoorController::COUNT_ACTION, ['csrf' => 'not-the-token']);
 
         self::assertSame(403, $status);
-        self::assertArrayNotHasKey($this->countOption(), $this->options);
+        self::assertNull($this->countChange());
     }
 
     public function testAddingAHolviBuyerWithABadTokenIsRefused(): void

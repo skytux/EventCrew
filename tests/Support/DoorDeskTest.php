@@ -268,20 +268,35 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['Cy'], array_column($sections[4]['rows'], 'name'));
     }
 
-    public function testTheCountWithoutANameGoesUpAndDownAndNeverBelowZero(): void
+    public function testTheCountWithoutANameIsChangedInsideTheDatabaseInOneStatement(): void
     {
+        global $wpdb;
+        $name = DoorDesk::ANONYMOUS_OPTION_PREFIX . self::NIGHT;
         $desk = $this->desk();
 
-        self::assertSame(0, $desk->anonymousCount(self::NIGHT));
-        self::assertSame(1, $desk->countAnonymous(self::NIGHT, 1));
-        self::assertSame(2, $desk->countAnonymous(self::NIGHT, 1));
-        self::assertSame(1, $desk->countAnonymous(self::NIGHT, -1));
-        self::assertSame(0, $desk->countAnonymous(self::NIGHT, -1));
-        self::assertSame(0, $desk->countAnonymous(self::NIGHT, -1));
-        self::assertSame(0, $this->options[DoorDesk::ANONYMOUS_OPTION_PREFIX . self::NIGHT]);
-        // Another night has its own count.
-        self::assertSame(1, $desk->countAnonymous('2026-07-27', 1));
-        self::assertSame(0, $desk->anonymousCount(self::NIGHT));
+        $this->options[$name] = 4;
+        $wpdb->queries = [];
+        self::assertSame(4, $desk->countAnonymous(self::NIGHT, 1));
+
+        // One statement adds 1 inside the database: two phones pressing at
+        // once both count. The answer is what the database then holds.
+        self::assertCount(1, $wpdb->queries);
+        self::assertSame(
+            "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('{$name}', 1, 'no')"
+            . ' ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS SIGNED) + 1, 0)',
+            $wpdb->queries[0]
+        );
+        // Nothing was written from PHP, which would overwrite a press made meanwhile.
+        self::assertSame(4, $this->options[$name]);
+
+        $wpdb->queries = [];
+        $desk->countAnonymous(self::NIGHT, -1);
+        // Taking one off never goes below 0, and a first press of -1 stores 0.
+        self::assertSame(
+            "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('{$name}', 0, 'no')"
+            . ' ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS SIGNED) + -1, 0)',
+            $wpdb->queries[0]
+        );
     }
 
     public function testTheCountWithoutANameIsPartOfTheCheckedInTotal(): void

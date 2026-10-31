@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.38.0
+Stable tag: 1.38.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.38.1 =
+Sales desk: when two phones press +1 (or −1) at the same moment, both presses now count. Before, one could be lost.
 
 = 1.38.0 =
 * The crew web page has an Admin tab for organizers, with four actions: send me the sales desk link (or open it on this device), post a new board in the Telegram group, give a member 1 to 5 credits, and mark tonight's crew Arrived, Completed or No-show.
@@ -544,6 +547,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.38.1 =
+Fixes a lost +1 when two sales desk phones press at the same moment.
 
 = 1.38.0 =
 Admin tab for organizers on the crew page, and blocking of forged admin requests. Adds banned_at and ban_reason columns to the people table (database version 15).
