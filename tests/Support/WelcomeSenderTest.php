@@ -282,6 +282,32 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertSame([], $this->recorded());
     }
 
+    public function testBothEmailsLinkToTheGroupAndTheOrganizerOneToWpAdmin(): void
+    {
+        $this->options[\EventCrew\Telegram\BoardService::GROUP_LINK_OPTION] = 'https://t.me/+crew';
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+
+        self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[0]['body']);
+        self::assertStringNotContainsString('wp-admin/admin.php?page=eventcrew', $this->mails[0]['body']);
+        self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[1]['body']);
+        self::assertStringContainsString(
+            'Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew',
+            $this->mails[1]['body']
+        );
+    }
+
+    public function testNoGroupLinkMeansNoGroupButton(): void
+    {
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+
+        self::assertStringNotContainsString('Open our group in Telegram', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Open our group in Telegram', $this->mails[1]['body']);
+    }
+
     public function testTheTestSendMarksMessagesThatDoNotApply(): void
     {
         $this->queueOpenTasks();
