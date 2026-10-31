@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.38.1
+Stable tag: 1.38.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.38.2 =
+Sales desk: when the server refuses a member search, the task list or the Login as list, the page shows the error instead of "No member matches" or another empty-list message.
 
 = 1.38.1 =
 Sales desk: when two phones press +1 (or −1) at the same moment, both presses now count. Before, one could be lost.
@@ -547,6 +550,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.38.2 =
+The sales desk shows server errors instead of empty-list messages.
 
 = 1.38.1 =
 Fixes a lost +1 when two sales desk phones press at the same moment.

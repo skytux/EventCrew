@@ -448,6 +448,13 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             });
     }
 
+    // An answer without the list that was asked for (an error status such
+    // as 403, or ok:false) is not an empty list: the list says what the
+    // server said, or that the request did not go through.
+    function listError(list, data) {
+        list.appendChild(node('li', 'ec-muted', data && data.message ? data.message : text.failed));
+    }
+
     function searchMembers() {
         var query = el('ec-member').value.trim();
         var list = el('ec-members');
@@ -460,7 +467,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         post('search', { q: query }).then(function (data) {
             list.textContent = '';
 
-            if (!data.members || 0 === data.members.length) {
+            if (!data || !Array.isArray(data.members)) {
+                listError(list, data);
+                return;
+            }
+
+            if (0 === data.members.length) {
                 list.appendChild(node('li', 'ec-muted', text.noMatch));
                 return;
             }
@@ -551,7 +563,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             step('tasks');
             list.textContent = '';
 
-            if (!data.tasks || 0 === data.tasks.length) {
+            if (!data || !Array.isArray(data.tasks)) {
+                listError(list, data);
+                return;
+            }
+
+            if (0 === data.tasks.length) {
                 list.appendChild(node('li', 'ec-muted', text.noTasks));
                 return;
             }
@@ -673,7 +690,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             otherShow('people');
             list.textContent = '';
 
-            if (!data.people || 0 === data.people.length) {
+            if (!data || !Array.isArray(data.people)) {
+                listError(list, data);
+                return;
+            }
+
+            if (0 === data.people.length) {
                 list.appendChild(node('li', 'ec-muted', text.noPeople));
                 return;
             }
