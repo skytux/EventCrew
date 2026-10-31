@@ -71,6 +71,7 @@ $eventcrew_text = [
     'selected' => __('The link is selected. Copy it with the copy command of your phone.', 'eventcrew'),
     'noPeople' => __('Nobody else can run the sales desk tonight yet.', 'eventcrew'),
     'showQr' => __('Show QR code', 'eventcrew'),
+    'loading' => __('Loading…', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -107,6 +108,7 @@ button:disabled{opacity:.5}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
 .ec-anon-label{color:var(--muted);margin-right:auto}
+.ec-busy{margin-top:6px;padding:4px 10px;border-radius:10px;background:var(--card);color:var(--muted);font-size:14px}
 #ec-anon-count{min-width:2ch;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
 dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
@@ -152,6 +154,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <span id="ec-anon-count" aria-live="polite">0</span>
         <button type="button" id="ec-anon-more" aria-label="<?php esc_attr_e('Count one person in without a name', 'eventcrew'); ?>">+1</button>
     </div>
+    <div class="ec-busy" id="ec-busy" role="status" hidden><?php esc_html_e('⏳ Loading…', 'eventcrew'); ?></div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
 <main>
@@ -302,14 +305,74 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         return n;
     }
 
+    // While a request is out for more than a moment, "Loading…" shows: in
+    // the header, or inside the open popup, which covers the header.
+    var pending = 0;
+    var busyTimer = null;
+
+    function busy(change) {
+        var line = el('ec-busy');
+
+        pending = Math.max(0, pending + change);
+        clearTimeout(busyTimer);
+        busyTimer = null;
+
+        if (0 === pending) {
+            line.hidden = true;
+            return;
+        }
+
+        busyTimer = setTimeout(function () {
+            var open = document.querySelector('dialog[open]');
+            var head = open ? open.querySelector('.ec-dialog-head') : null;
+
+            if (head) {
+                head.after(line);
+            } else if (open) {
+                open.prepend(line);
+            } else {
+                document.querySelector('header').insertBefore(line, el('ec-filter'));
+            }
+
+            line.hidden = false;
+        }, 300);
+    }
+
+    // A list request that did not go through: the list stops saying
+    // "Loading…" and says that instead, then the usual handler runs.
+    function listFailed(list, handler) {
+        return function (error) {
+            if (!error || 'session' !== error.message) {
+                list.textContent = '';
+                listError(list, null);
+            }
+
+            handler(error);
+        };
+    }
+
+    // A list waiting for its answer says so.
+    function listLoading(list) {
+        list.textContent = '';
+        list.appendChild(node('li', 'ec-muted', text.loading));
+    }
+
     function post(action, fields) {
         var body = new URLSearchParams();
         body.append('action', config.actions[action]);
         body.append('csrf', config.csrf);
         Object.keys(fields).forEach(function (k) { body.append(k, fields[k]); });
 
+        busy(1);
+
         return fetch(config.ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' })
-            .then(answer);
+            .then(function (response) {
+                busy(-1);
+                return answer(response);
+            }, function (error) {
+                busy(-1);
+                throw error;
+            });
     }
 
     function answer(response) {
@@ -469,6 +532,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             return;
         }
 
+        listLoading(list);
+
         post('search', { q: query }).then(function (data) {
             list.textContent = '';
 
@@ -510,7 +575,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 pick.addEventListener('click', function () { showChoice(member); });
                 li.appendChild(pick);
             });
-        }, failed);
+        }, listFailed(list, failed));
     }
 
     function step(name) {
@@ -564,8 +629,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     function showTasks() {
         var list = el('ec-tasks');
 
+        step('tasks');
+        listLoading(list);
+
         post('tasks', { person: chosen.id }).then(function (data) {
-            step('tasks');
             list.textContent = '';
 
             if (!data || !Array.isArray(data.tasks)) {
@@ -597,7 +664,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 li.appendChild(join);
                 list.appendChild(li);
             });
-        }, failed);
+        }, listFailed(list, failed));
     }
 
     // The Other device popup: which step shows, and where Back goes from the
@@ -694,8 +761,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     function showPeople() {
         var list = el('ec-people');
 
+        otherShow('people');
+        listLoading(list);
+
         post('people', {}).then(function (data) {
-            otherShow('people');
             list.textContent = '';
 
             if (!data || !Array.isArray(data.people)) {
@@ -719,7 +788,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 li.appendChild(pick);
                 list.appendChild(li);
             });
-        }, otherFailed);
+        }, listFailed(list, otherFailed));
     }
 
     // The clipboard API needs a secure page and a permission; when it is not
