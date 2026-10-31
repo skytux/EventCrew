@@ -41,7 +41,7 @@ final class SlotFreedNotice
 
         // A cancelled organize slot frees nothing: it has no limit, and it is
         // not something to announce to people who may not take it.
-        if (null === $task || $task->hasNoLimit() || $task->isOrganizersOnly()) {
+        if (null === $task || $task->isRestricted()) {
             return;
         }
 

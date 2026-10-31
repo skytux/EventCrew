@@ -69,11 +69,12 @@ final class BoardRenderer
      */
     public function render(): array
     {
-        // The board is one message the whole group reads, so an organizers-only
-        // task cannot be on it at all; organizers take it on the crew page.
+        // The board is one message the whole group reads, so a restricted task
+        // (Organize, DJ, ...) cannot be on it at all; the people holding its
+        // role take it on the crew page or in a private chat with the bot.
         $tasks = array_values(array_filter(
             $this->tasks->upcoming(),
-            static fn (Task $task): bool => ! $task->isOrganizersOnly()
+            static fn (Task $task): bool => ! $task->isRestricted()
         ));
 
         if ([] === $tasks) {

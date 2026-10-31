@@ -465,9 +465,9 @@ final class OpenTaskCall
         foreach ($tasks as $task) {
             $taken = $occupancy[$task->id] ?? 0;
 
-            // The organize task has no limit and is for organizers only: it
-            // is never a place this call asks people to fill.
-            if ($task->hasNoLimit() || $task->isOrganizersOnly()) {
+            // A restricted task (Organize, DJ, ...) has no limit and is only for
+            // its role holders: it is never a place this call asks people to fill.
+            if ($task->isRestricted()) {
                 continue;
             }
 

@@ -91,15 +91,15 @@ final class ReplacementService
             foreach ($this->upcomingSlots($person->id) as $entry) {
                 $task = $entry['task'];
 
-                // Someone who may not take an organizers-only task is not
-                // offered it to cover either. The cover is only looked up when
-                // such a task is in the list.
-                if ($task->isOrganizersOnly()) {
+                // Someone who may not take a restricted task (Organize, DJ, ...)
+                // is not offered it to cover either. The cover is only looked
+                // up when such a task is in the list.
+                if ($task->isRestricted()) {
                     if (false === $cover) {
                         $cover = $this->people->findByTelegramUserId($telegramUserId);
                     }
 
-                    if (SignupService::blocksOrganizerSlot($task, $cover)) {
+                    if (SignupService::blocksRestrictedSlot($task, $cover)) {
                         continue;
                     }
                 }
@@ -167,8 +167,8 @@ final class ReplacementService
             return;
         }
 
-        // Worded like a task that is gone: a non-organizer is never offered it.
-        if (SignupService::blocksOrganizerSlot($task, $cover)) {
+        // Worded like a task that is gone: someone without the role is never offered it.
+        if (SignupService::blocksRestrictedSlot($task, $cover)) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
                 __('That task is no longer available.', 'eventcrew'),
@@ -186,7 +186,7 @@ final class ReplacementService
             return;
         }
 
-        $this->swap($callbackId, $original->id, $original->personId, $task->id, $cover);
+        $this->swap($callbackId, $original->id, $original->personId, $task->id, $cover, $original->countsCredit);
     }
 
     private function refusalFor(Person $cover, int $originalPersonId, int $taskId): ?string
@@ -213,13 +213,16 @@ final class ReplacementService
         int $originalAssignmentId,
         int $originalPersonId,
         int $taskId,
-        Person $cover
+        Person $cover,
+        bool $countsCredit = true
     ): void {
         // Free the original's slot as `replaced` (their credit for arranging
         // cover), then sign the cover up. If the freed slot is lost to a race
         // before the cover can take it, put the original back and say so.
         $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::REPLACED, $cover->id, MarkedBy::PERSON);
-        $outcome = $this->assignments->join($taskId, $cover->id);
+        // The cover steps into the same slot, so it keeps the slot's answer to
+        // "Count toward free-entry credit?".
+        $outcome = $this->assignments->join($taskId, $cover->id, $countsCredit);
 
         if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
             $this->assignments->setStatus(

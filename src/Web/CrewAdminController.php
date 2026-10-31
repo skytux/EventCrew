@@ -15,6 +15,8 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\RoleTaskService;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\WebSession;
@@ -36,7 +38,9 @@ use EventCrew\Telegram\TelegramClient;
  *
  * The actions reuse the services behind the bot's commands: the sales desk link
  * (/sales), the board repost (/board), the credit grant and its notice (/gift),
- * and the roster with its status write (/roster).
+ * and the roster with its status write (/roster), and /roles for the restricted
+ * roles. "Add a person to a role task" is the bot's "Add someone" button on a
+ * role task: it can add someone who is not a crew member yet.
  */
 final class CrewAdminController
 {
@@ -44,13 +48,22 @@ final class CrewAdminController
     public const BOARD_ACTION = 'eventcrew_web_admin_board';
     public const GIFT_ACTION = 'eventcrew_web_admin_gift';
     public const MARK_ACTION = 'eventcrew_web_admin_mark';
+    public const ROLES_ACTION = 'eventcrew_web_admin_roles';
+    public const ADD_ACTION = 'eventcrew_web_admin_add';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
      * boot() runs on plugins_loaded and the labels call __(), which WordPress
      * 6.7+ warns about before init.
      */
-    private const ACTIONS = [self::SALES_ACTION, self::BOARD_ACTION, self::GIFT_ACTION, self::MARK_ACTION];
+    private const ACTIONS = [
+        self::SALES_ACTION,
+        self::BOARD_ACTION,
+        self::GIFT_ACTION,
+        self::MARK_ACTION,
+        self::ROLES_ACTION,
+        self::ADD_ACTION,
+    ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
     public const OK = 'ok';
@@ -86,7 +99,8 @@ final class CrewAdminController
         private readonly AssignmentRepository $assignments,
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly RoleTaskService $roleTasks
     ) {
     }
 
@@ -112,6 +126,8 @@ final class CrewAdminController
             self::BOARD_ACTION => __('Post a new board in the Telegram group', 'eventcrew'),
             self::GIFT_ACTION => __('Give a credit', 'eventcrew'),
             self::MARK_ACTION => __('Mark attendance', 'eventcrew'),
+            self::ROLES_ACTION => __('Change a member’s roles', 'eventcrew'),
+            self::ADD_ACTION => __('Add a person to a role task', 'eventcrew'),
         ];
     }
 
@@ -183,6 +199,18 @@ final class CrewAdminController
                 (int) ($post['person_id'] ?? 0),
                 (int) ($post['credits'] ?? 0),
                 sanitize_text_field((string) ($post['reason'] ?? ''))
+            ),
+            self::ROLES_ACTION => $this->saveRoles(
+                (int) ($post['person_id'] ?? 0),
+                isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
+                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : []
+            ),
+            self::ADD_ACTION => $this->addPerson(
+                $organizer,
+                (int) ($post['task_id'] ?? 0),
+                (string) ($post['name'] ?? ''),
+                (string) ($post['email'] ?? ''),
+                '1' === (string) ($post['counts_credit'] ?? '')
             ),
             default => $this->markAttendance(
                 $organizer,
@@ -304,6 +332,47 @@ final class CrewAdminController
     }
 
     /**
+     * "Roles": $add holds one role to add to the member's roles (the "Give a
+     * role" form); null means $roles is the member's full new set of
+     * restricted roles (the checkboxes). Only active restricted roles are
+     * written; a role the member holds that is archived or no longer
+     * restricted is kept as it is, since the page did not show it.
+     *
+     * @param list<string>|null $add
+     * @param list<string> $roles
+     */
+    public function saveRoles(int $personId, ?array $add, array $roles): string
+    {
+        $member = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $member || $member->isAnonymized()) {
+            return 'admin_no_person';
+        }
+
+        $shown = array_keys(self::assignableRoles());
+        $kept = array_values(array_diff($member->roleSlugs, $shown));
+        $chosen = null === $add ? $roles : array_merge($member->roleSlugs, $add);
+
+        $this->people->setRoles($member->id, array_merge($kept, array_intersect($chosen, $shown)));
+
+        return 'admin_roles_saved';
+    }
+
+    /**
+     * "Add a person to a role task": see RoleTaskService::addPerson().
+     */
+    public function addPerson(Person $organizer, int $taskId, string $name, string $email, bool $countsCredit): string
+    {
+        $result = $this->roleTasks->addPerson($organizer, $taskId, $name, $email, $countsCredit);
+
+        if (RoleTaskService::ADDED === $result['code']) {
+            return $result['emailed'] ? 'admin_add_added_mail' : 'admin_add_added';
+        }
+
+        return 'admin_add_' . $result['code'];
+    }
+
+    /**
      * What the Admin tab shows, or null for anyone who is not an organizer -
      * the template draws no tab and no panel then.
      *
@@ -326,7 +395,70 @@ final class CrewAdminController
             'members' => $this->memberChoices(),
             'roster_label' => '' === $date ? '' : Dates::dayLabel($date),
             'roster' => '' === $date ? [] : $this->rosterRows($date),
+            'roles_action' => self::ROLES_ACTION,
+            'add_action' => self::ADD_ACTION,
+            'roles' => self::assignableRoles(),
+            'role_holders' => $this->roleHolders(),
+            'add_tasks' => $this->addTaskChoices(),
         ];
+    }
+
+    /**
+     * The restricted roles a member can be given here, slug => label. Organize
+     * is not one: it is the organizer flag, set in wp-admin or with /roles.
+     *
+     * @return array<string, string>
+     */
+    private static function assignableRoles(): array
+    {
+        $roles = [];
+
+        foreach (Roles::assignable() as $role) {
+            $roles[$role['slug']] = $role['label'];
+        }
+
+        return $roles;
+    }
+
+    /**
+     * Members who hold at least one restricted role, with those roles, by name.
+     *
+     * @return list<array{id: int, name: string, roles: list<string>}>
+     */
+    private function roleHolders(): array
+    {
+        $holders = [];
+
+        foreach ($this->people->all(['per_page' => 1000, 'orderby' => 'display_name']) as $member) {
+            if ([] === $member->roleSlugs || $member->isAnonymized()) {
+                continue;
+            }
+
+            $holders[] = ['id' => $member->id, 'name' => $member->name(), 'roles' => $member->roleSlugs];
+        }
+
+        return $holders;
+    }
+
+    /**
+     * The upcoming role tasks a person can be added to, id => "Role — event, day".
+     *
+     * @return array<int, string>
+     */
+    private function addTaskChoices(): array
+    {
+        $choices = [];
+
+        foreach ($this->roleTasks->addableTasks() as $task) {
+            $choices[$task->id] = sprintf(
+                '%s — %s, %s',
+                $task->roleDisplay(),
+                $task->eventName(),
+                Dates::dayLabel($task->taskDate)
+            );
+        }
+
+        return $choices;
     }
 
     /**
@@ -345,7 +477,16 @@ final class CrewAdminController
             'admin_no_person' => __('That member was not found.', 'eventcrew'),
             'admin_marked' => __('Attendance saved.', 'eventcrew'),
             'admin_no_entry' => __('That roster entry was not found.', 'eventcrew'),
+            'admin_roles_saved' => __('Roles saved.', 'eventcrew'),
         ];
+
+        if (! isset($map[$code]) && str_starts_with($code, 'admin_add_')) {
+            $add = substr($code, strlen('admin_add_'));
+
+            return 'added_mail' === $add
+                ? RoleTaskService::text(RoleTaskService::ADDED, true)
+                : RoleTaskService::text($add);
+        }
 
         if (! isset($map[$code]) && str_starts_with($code, 'admin_sales_')) {
             return SalesDeskGate::message(substr($code, strlen('admin_sales_')));

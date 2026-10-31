@@ -53,6 +53,9 @@ $eventcrew_text = [
     'free' => __('free', 'eventcrew'),
     'signUp' => __('Sign up', 'eventcrew'),
     'signedUp' => __('✓ Signed up', 'eventcrew'),
+    'askCredit' => __('Count toward free-entry credit?', 'eventcrew'),
+    'yes' => __('Yes', 'eventcrew'),
+    'no' => __('No', 'eventcrew'),
     'needName' => __('Give the guest’s name.', 'eventcrew'),
     'extra' => __('extra', 'eventcrew'),
     'empty' => __('Nobody on this list.', 'eventcrew'),
@@ -661,21 +664,42 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 // Close ends it.
                 var signed = node('span', 'ec-detail', text.signedUp);
 
-                join.addEventListener('click', function () {
-                    join.disabled = true;
-                    post('work', { person: chosen.id, task: task.id }).then(function (result) {
+                function work(button, fields) {
+                    button.disabled = true;
+                    post('work', fields).then(function (result) {
                         apply(result);
                         say(result ? result.message : text.failed);
 
                         if (result && result.ok) {
-                            li.replaceChild(signed, join);
+                            li.replaceChild(signed, button);
                         } else {
-                            join.disabled = false;
+                            button.disabled = false;
                         }
                     }, function (error) {
-                        join.disabled = false;
+                        button.disabled = false;
                         failed(error);
                     });
+                }
+
+                // A restricted task (Organize, DJ, ...) asks first whether it
+                // counts toward free-entry credit: Sign up turns into the
+                // question with a Yes and a No button.
+                join.addEventListener('click', function () {
+                    if (!task.ask_credit) {
+                        work(join, { person: chosen.id, task: task.id });
+                        return;
+                    }
+
+                    var ask = node('div', 'ec-ask');
+                    ask.appendChild(node('div', 'ec-detail', text.askCredit));
+                    [[text.yes, '1'], [text.no, '0']].forEach(function (pair) {
+                        var answer = node('button', 'ec-primary', pair[0]);
+                        answer.addEventListener('click', function () {
+                            work(ask, { person: chosen.id, task: task.id, counts_credit: pair[1] });
+                        });
+                        ask.appendChild(answer);
+                    });
+                    li.replaceChild(ask, join);
                 });
 
                 li.appendChild(who);

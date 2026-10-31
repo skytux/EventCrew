@@ -95,7 +95,8 @@ to the DM with a breadcrumb left behind.
 | `/board` | group | Post or refresh the board of open tasks |
 | `/roster` | organizers & the night's crew | The attendance roster; leaders can mark from it |
 | `/gift` | organizers | Give someone free-entry credit(s) |
-| `/allow` | organizers | Grant **leader** / a **one-time at-risk pass** / **admin** |
+| `/roletasks` | people with a restricted role | The tasks for their roles (never on the group board): sign up or cancel; organizers can also add someone, crew member or not |
+| `/roles` | organizers | Give or take away **leader** / a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, ...). `/allow` is the old name and still works |
 | `/leaders` | organizers | Who is eligible and who has been allowed to lead |
 
 The board itself is grouped by event: two inert heading rows — `📅` and the
@@ -132,10 +133,30 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   the recipient, and there's an audit log on the People screen.
 - **Crew leaders** are a reserved, auto-managed role: when enabled for an event
   (globally by default, per-event on the Roster page), a 🧭 Leader slot appears on
-  the board for crew the organizers have cleared with `/allow`. Its holder marks
+  the board for crew the organizers have cleared with `/roles`. Its holder marks
   that night's crew from Telegram, no wp-admin needed. A **Leadership** admin page
   and `/leaders` show who has earned eligibility (completed enough of every role),
   and organizers are alerted when someone newly qualifies.
+- **Restricted roles** (Organize, plus any role with **Only people with this
+  role** ticked in **Settings → Roles**, such as DJ, VJ or Ceremony leader) have
+  no limit on sign-ups and never count as places that need filling. Their tasks
+  are never on the Telegram group board: only people who hold the role see them,
+  on the crew page and with `/roletasks` in the bot, and the sales desk shows
+  them only to role holders. One person can hold several roles. Organizers give
+  roles on the People edit page, in the crew page's Admin tab, or with `/roles`
+  (Organize is the organizer permission itself). With **Add to every night**
+  (on by default) every upcoming night gets one task of that role, including
+  nights that already exist; switching it off deletes nothing.
+- Every sign-up to a restricted task asks **Count toward free-entry credit?**
+  (bot, crew page, sales desk, and an organizer adding someone). A No is stored
+  on the assignment (`counts_credit = 0`) and that task is left out of credits
+  and standing.
+- An organizer can put someone on a restricted task (not Organize) from the
+  crew page's Admin tab or `/roletasks`, even a person who is not a crew member:
+  a name and an optional email. The person is created if the email is new (or
+  there is none), given the role and signed up; with an email they get the
+  normal sign-up email with their ticket. A person with no email gets a
+  placeholder `@added.invalid` address, which is never mailed.
 
 ## Notifications
 

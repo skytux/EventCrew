@@ -151,12 +151,23 @@ final class Task
     }
 
     /**
+     * Whether only people holding this task's role may see it and sign up:
+     * Organize (organizers) and every role set to "Only people with this
+     * role" (DJ, VJ, ...). See Person::hasRole().
+     */
+    public function isRestricted(): bool
+    {
+        return Roles::isRestricted($this->roleSlug);
+    }
+
+    /**
      * Whether any number of people may take this task. Such a task is never
-     * full, and it never counts as a place that still needs people.
+     * full, and it never counts as a place that still needs people. True for
+     * every restricted task.
      */
     public function hasNoLimit(): bool
     {
-        return Roles::ORGANIZE_SLUG === $this->roleSlug;
+        return $this->isRestricted();
     }
 
     public function isPast(): bool

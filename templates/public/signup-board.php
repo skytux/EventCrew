@@ -132,6 +132,29 @@ endif; ?>
                     ?>
                     <button type="button" class="wp-element-button eventcrew-btn-full" disabled><?php esc_html_e('Full', 'eventcrew'); ?></button>
                     <?php
+                elseif ($eventcrew_task->isRestricted()) :
+                    /*
+                     * A restricted task (Organize, DJ, ...) asks first whether it
+                     * counts toward free-entry credit. Yes and No are two small
+                     * forms, so each sends its own answer without any script.
+                     */
+                    ?>
+                    <details class="eventcrew-credit-ask">
+                        <summary class="wp-element-button eventcrew-btn-go"><?php esc_html_e('Sign up', 'eventcrew'); ?></summary>
+                        <span class="eventcrew-muted"><?php esc_html_e('Count toward free-entry credit?', 'eventcrew'); ?></span>
+                        <?php foreach (['1' => __('Yes', 'eventcrew'), '0' => __('No', 'eventcrew')] as $eventcrew_answer => $eventcrew_answer_label) : ?>
+                            <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                <?php
+                                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder escapes each field.
+                                echo $eventcrew_hidden((string) $view['claim_action'], $eventcrew_csrf, $eventcrew_here);
+                                ?>
+                                <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
+                                <input type="hidden" name="counts_credit" value="<?php echo esc_attr((string) $eventcrew_answer); ?>">
+                                <button type="submit" class="wp-element-button eventcrew-btn-go"><?php echo esc_html($eventcrew_answer_label); ?></button>
+                            </form>
+                        <?php endforeach; ?>
+                    </details>
+                    <?php
                 else :
                     ?>
                     <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">

@@ -346,21 +346,23 @@ final class TaskRepository
      * from "we told them about this date, but a job has been added since" - the
      * second is worth mailing about again, the first is not.
      *
-     * The organize task does not count: it is not a place anyone is asked to
-     * fill, so adding one to a date is no reason to mail everyone again.
+     * Restricted tasks (Organize, DJ, ...) do not count: they are not places
+     * anyone is asked to fill, so adding one to a date is no reason to mail
+     * everyone again.
      */
     public function hasTaskCreatedSince(string $date, string $since): bool
     {
         global $wpdb;
 
+        $restricted = Roles::restrictedSlugs();
+        $rolePlaceholders = implode(',', array_fill(0, count($restricted), '%s'));
+
         return null !== $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT id FROM {$this->table()}
-                WHERE task_date = %s AND created_at > %s AND role_slug <> %s
+                WHERE task_date = %s AND created_at > %s AND role_slug NOT IN ({$rolePlaceholders})
                 LIMIT 1",
-                $date,
-                $since,
-                Roles::ORGANIZE_SLUG
+                array_merge([$date, $since], $restricted)
             )
         );
     }

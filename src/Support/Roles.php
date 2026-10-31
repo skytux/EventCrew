@@ -36,8 +36,17 @@ namespace EventCrew\Support;
  *     anchor: string,
  *     start_offset: int|null,
  *     end_offset: int|null,
- *     description: string
+ *     description: string,
+ *     restricted: bool,
+ *     every_night: bool
  * }
+ *
+ * A role can be restricted ("Only people with this role"): DJ, VJ, ceremony
+ * leader and the like. Only a person given that role may see or take its
+ * tasks, there is no limit on how many people take one, and such a task is
+ * never counted as a place that needs filling - the same rules the reserved
+ * Organize role has always had, with "is an organizer" replaced by "has this
+ * role". A restricted role with every_night on gets one task on every night.
  */
 final class Roles
 {
@@ -85,6 +94,8 @@ final class Roles
                 'emoji' => '🎈',
                 'capacity' => 2,
                 'archived' => false,
+                'restricted' => false,
+                'every_night' => true,
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -120,
                 'end_offset' => 0,
@@ -98,6 +109,8 @@ final class Roles
                 'emoji' => '🙋',
                 'capacity' => 3,
                 'archived' => false,
+                'restricted' => false,
+                'every_night' => true,
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -30,
                 'end_offset' => 60,
@@ -112,6 +125,8 @@ final class Roles
                 'emoji' => '🧹',
                 'capacity' => 3,
                 'archived' => false,
+                'restricted' => false,
+                'every_night' => true,
                 'anchor' => self::ANCHOR_END,
                 'start_offset' => 0,
                 'end_offset' => 60,
@@ -216,7 +231,29 @@ final class Roles
             $clean[] = self::normalize($role, $slug);
         }
 
+        $before = self::everyNightSlugs();
         update_option(self::OPTION_NAME, [] === $clean ? self::defaults() : $clean);
+        self::queueNewEveryNight($before);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function everyNightSlugs(): array
+    {
+        return array_map(static fn (array $role): string => $role['slug'], self::everyNight());
+    }
+
+    /**
+     * Hands every role that has just become an every-night restricted role
+     * (newly restricted, switched to every night, or restored from the archive)
+     * to the backfill, which adds its task to the upcoming nights.
+     *
+     * @param array<int, string> $before
+     */
+    private static function queueNewEveryNight(array $before): void
+    {
+        OrganizeTaskBackfill::queue(array_values(array_diff(self::everyNightSlugs(), $before)));
     }
 
     /**
@@ -240,6 +277,7 @@ final class Roles
 
     private static function setArchived(string $slug, bool $archived): void
     {
+        $before = self::everyNightSlugs();
         $roles = self::all();
 
         foreach ($roles as $index => $role) {
@@ -249,6 +287,7 @@ final class Roles
         }
 
         update_option(self::OPTION_NAME, $roles);
+        self::queueNewEveryNight($before);
     }
 
     /**
@@ -340,6 +379,82 @@ final class Roles
     }
 
     /**
+     * Whether only some people may see and take this role's tasks: Organize
+     * (organizers) and every role set to "Only people with this role".
+     * Archived restricted roles stay restricted, so their old tasks never
+     * open up to everyone.
+     */
+    public static function isRestricted(string $slug): bool
+    {
+        if (self::ORGANIZE_SLUG === $slug) {
+            return true;
+        }
+
+        return self::find($slug)['restricted'] ?? false;
+    }
+
+    /**
+     * The slugs of every restricted role, Organize first. Never empty.
+     *
+     * @return array<int, string>
+     */
+    public static function restrictedSlugs(): array
+    {
+        $slugs = [self::ORGANIZE_SLUG];
+
+        foreach (self::all() as $role) {
+            if ($role['restricted']) {
+                $slugs[] = $role['slug'];
+            }
+        }
+
+        return $slugs;
+    }
+
+    /**
+     * The roles a person can be given (restricted, editable ones; Organize is
+     * not here because it follows the organizer permission). Archived ones
+     * are left out: nobody new should be handed a role no longer offered.
+     *
+     * @return array<int, Role>
+     */
+    public static function assignable(): array
+    {
+        return array_values(array_filter(
+            self::active(),
+            static fn (array $role): bool => $role['restricted']
+        ));
+    }
+
+    /**
+     * The active roles a night's tasks are built from by the template: every
+     * active role except the restricted ones, which are added on their own
+     * (see everyNight()).
+     *
+     * @return array<int, Role>
+     */
+    public static function forTemplate(): array
+    {
+        return array_values(array_filter(
+            self::active(),
+            static fn (array $role): bool => ! $role['restricted']
+        ));
+    }
+
+    /**
+     * The active restricted roles set to "Add to every night".
+     *
+     * @return array<int, Role>
+     */
+    public static function everyNight(): array
+    {
+        return array_values(array_filter(
+            self::active(),
+            static fn (array $role): bool => $role['restricted'] && $role['every_night']
+        ));
+    }
+
+    /**
      * Fills in every key with a sane value, so no consumer has to guard
      * against a role stored before these fields existed.
      *
@@ -367,6 +482,10 @@ final class Roles
             'description' => array_key_exists('description', $role)
                 ? trim((string) $role['description'])
                 : self::defaultDescription($slug),
+            'restricted' => ! empty($role['restricted']),
+            // On unless switched off: a role stored before this key existed
+            // was never restricted, so the default only matters once it is.
+            'every_night' => ! array_key_exists('every_night', $role) || ! empty($role['every_night']),
         ];
     }
 

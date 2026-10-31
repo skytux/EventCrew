@@ -84,7 +84,8 @@ final class OrganizerGuide
                 '- 📈 ' . __('Standing: %d%% or higher is good standing. It comes from how each member\'s past tasks went.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 (int) round($settings->threshold() * 100)
             ),
-            '- 🔑 ' . __('Permissions: /allow makes someone a leader, gives a one-time pass past the sign-up gate, or makes someone an organizer.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🔑 ' . __('Roles: /roles makes someone a leader or an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🎧 ' . __('Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /roletasks and on the crew page. You can add someone there, even a person who is not a crew member.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00 */
                 '- 🔔 ' . __('Messages: reminders and calls go out by themselves, only between %1$s and %2$s.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -222,7 +223,7 @@ final class OrganizerGuide
         if ((bool) get_option(SignupService::GATE_OPTION, true)) {
             $lines[] = sprintf(
                 /* translators: %d: good-standing percentage */
-                __('The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /allow can give them a one-time pass.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /roles can give them a one-time pass.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $threshold
             );
         }
@@ -238,12 +239,12 @@ final class OrganizerGuide
         if ((bool) get_option(LeaderGate::ENABLED_OPTION, false)) {
             $lines[] = sprintf(
                 /* translators: %d: how many times each other task must be done first */
-                __('The 🧭 Leader task runs the crew for the night and can mark the crew from Telegram, without wp-admin. A member becomes eligible after doing each of the other tasks %d times. You are told when someone becomes eligible. They can take the Leader task once you allow it with /allow. /leaders lists who is eligible and who is allowed.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The 🧭 Leader task runs the crew for the night and can mark the crew from Telegram, without wp-admin. A member becomes eligible after doing each of the other tasks %d times. You are told when someone becomes eligible. They can take the Leader task once you give them 👑 Leader with /roles. /leaders lists who is eligible and who is allowed.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 max(1, (int) get_option(LeaderEligibility::THRESHOLD_OPTION, 2))
             );
         }
 
-        $lines[] = __('/allow, in a private chat with the bot, also gives a one-time pass past the sign-up gate, and makes someone an organizer (or stops them being one). The People page in wp-admin can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab on the crew page can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
         return $lines;
     }

@@ -455,10 +455,11 @@ final class SignupController
      * Claim for the signed-in person, returning a notice code. The rules are
      * SignupService's, shared with the bot.
      */
-    public function claimFor(int $personId, int $taskId): string
+    public function claimFor(int $personId, int $taskId, ?bool $countsCredit = null): string
     {
-        return match ($this->signup->claim($personId, $taskId)) {
+        return match ($this->signup->claim($personId, $taskId, $countsCredit)) {
             SignupService::GATED => 'gated',
+            SignupService::CREDIT_QUESTION => 'credit_question',
             SignupService::LEADER_ONLY => 'leader_only',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
@@ -622,7 +623,12 @@ final class SignupController
         }
 
         if (self::CLAIM_ACTION === $action) {
-            $notice = $this->claimFor($person->id, $taskId);
+            // Sent only by a restricted task's Yes / No buttons ("Count toward
+            // free-entry credit?"); every other task ignores it.
+            $countsCredit = isset($_POST['counts_credit'])
+                ? '1' === sanitize_key(wp_unslash($_POST['counts_credit']))
+                : null;
+            $notice = $this->claimFor($person->id, $taskId, $countsCredit);
 
             // The same confirmation the bot sends on a join, so a slot claimed
             // from the web arrives with its door ticket too.
@@ -712,6 +718,7 @@ final class SignupController
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'sessions_revoked' => __('Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
+            'credit_question' => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),
             'ticket_ticket_ready' => __('Your free-entry ticket is ready.', 'eventcrew'),

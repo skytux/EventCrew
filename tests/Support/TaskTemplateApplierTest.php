@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\LeaderGate;
+use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Tests\TestCase;
 
@@ -93,6 +94,30 @@ final class TaskTemplateApplierTest extends TestCase
         self::assertSame('organize', $this->wpdb->inserts[3]['data']['role_slug']);
         self::assertSame(12, $this->wpdb->inserts[3]['data']['event_post_id']);
         self::assertNull($this->wpdb->inserts[3]['data']['starts_at']);
+    }
+
+    /**
+     * A new night gets one task of each restricted role set to "Add to every
+     * night", and none of a restricted role with it switched off.
+     */
+    public function testANewNightGetsTheEveryNightRestrictedRolesOnly(): void
+    {
+        $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = null): mixed => Roles::OPTION_NAME === $name
+                ? [
+                    ['slug' => 'decorate', 'label' => 'Decorate'],
+                    ['slug' => 'dj', 'label' => 'DJ', 'restricted' => true, 'every_night' => true],
+                    ['slug' => 'vj', 'label' => 'VJ', 'restricted' => true, 'every_night' => false],
+                ]
+                : null
+        );
+        $this->wpdb->nextResults[] = [];
+
+        $this->applier()->apply(12);
+
+        $slugs = array_map(static fn (array $insert): string => $insert['data']['role_slug'], $this->wpdb->inserts);
+        self::assertSame(['decorate', 'dj', 'organize'], $slugs);
     }
 
     /**

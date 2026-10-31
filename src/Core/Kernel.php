@@ -25,6 +25,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorDesk;
@@ -67,6 +68,7 @@ use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\PermissionService;
+use EventCrew\Telegram\RoleTaskBot;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
 use EventCrew\Telegram\SalesLinkService;
@@ -495,7 +497,19 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(RoleTaskService::class)
+            )
+        );
+
+        $this->container->singleton(
+            RoleTaskService::class,
+            fn (Container $container) => new RoleTaskService(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(SignupService::class),
+                $container->get(ClaimNotifier::class)
             )
         );
 
@@ -819,7 +833,21 @@ final class Kernel
                 $container->get(DoorListService::class),
                 $container->get(GuestListService::class),
                 $container->get(SalesLinkService::class),
-                $container->get(LanguageService::class)
+                $container->get(LanguageService::class),
+                $container->get(RoleTaskBot::class)
+            )
+        );
+
+        $this->container->singleton(
+            RoleTaskBot::class,
+            fn (Container $container) => new RoleTaskBot(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(SignupService::class),
+                $container->get(RoleTaskService::class),
+                $container->get(ClaimNotifier::class),
+                $container->get(TelegramClient::class)
             )
         );
 

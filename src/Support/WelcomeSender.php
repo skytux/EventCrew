@@ -559,8 +559,8 @@ final class WelcomeSender
         $open = [];
 
         foreach ($tasks as $task) {
-            // Never offered to a newcomer: organizers only, and no places to count.
-            if ($task->hasNoLimit() || $task->isOrganizersOnly()) {
+            // Never offered to a newcomer: restricted to a role, and no places to count.
+            if ($task->isRestricted()) {
                 continue;
             }
 

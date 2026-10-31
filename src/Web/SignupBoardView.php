@@ -205,9 +205,9 @@ final class SignupBoardView
         $personRefusal = null === $person ? '' : $this->signup->personRefusal($person->id);
 
         foreach ($tasks as $task) {
-            // An organizers-only task is not shown to anyone else, signed in
-            // or not; SignupService refuses their claim on it too.
-            if (SignupService::blocksOrganizerSlot($task, $person)) {
+            // A restricted task is shown only to people holding its role,
+            // signed in; SignupService refuses anyone else's claim on it too.
+            if (SignupService::blocksRestrictedSlot($task, $person)) {
                 continue;
             }
 

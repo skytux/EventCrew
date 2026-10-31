@@ -67,6 +67,34 @@ final class StandingCalculatorTest extends TestCase
         self::assertSame(1.0, $standing->score);
     }
 
+    /**
+     * A task someone was put on with "Count toward free-entry credit?" answered
+     * No is left out of everything: completions, credit and rating.
+     */
+    public function testATaskThatDoesNotCountForCreditIsLeftOut(): void
+    {
+        $rows = [];
+
+        foreach ([1, 1, 0, 0] as $i => $counts) {
+            $rows[] = [
+                'id' => $i + 1,
+                'task_id' => $i + 1,
+                'person_id' => 9,
+                'status' => AssignmentStatus::COMPLETED,
+                'task_date' => '2026-07-20',
+                'counts_credit' => $counts,
+            ];
+        }
+
+        $this->wpdb->nextResults[] = $rows;
+        $this->wpdb->nextVars[] = 0; // countFor: nothing redeemed
+
+        $standing = $this->calculator()->for(9);
+
+        self::assertSame(2, $standing->completedCount);
+        self::assertSame(1, $standing->creditBalance); // floor(2/2), not floor(4/2)
+    }
+
     public function testRecentNoShowsPushARatedPersonToAtRisk(): void
     {
         // Three completions (enough to rate) but three no-shows drag the

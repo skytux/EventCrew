@@ -1055,7 +1055,14 @@ final class SettingsPage
                 'description' => __('DM — organizers, leader & Welcome crew: the sales desk link', 'eventcrew'),
             ],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
-            ['command' => 'allow', 'description' => __('DM — organizers: set leader / pass / admin', 'eventcrew')],
+            [
+                'command' => 'roletasks',
+                'description' => __('DM — tasks for your roles (DJ, VJ, ...): sign up or cancel', 'eventcrew'),
+            ],
+            [
+                'command' => 'roles',
+                'description' => __('DM — organizers: give or take away roles, leader, pass, organizer', 'eventcrew'),
+            ],
             ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],
         ]);
 
@@ -1113,9 +1120,17 @@ final class SettingsPage
         $archived = isset($_POST['role_archived']) && is_array($_POST['role_archived'])
             ? array_map('intval', array_keys(wp_unslash($_POST['role_archived'])))
             : [];
+        $restricted = isset($_POST['role_restricted']) && is_array($_POST['role_restricted'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_restricted'])))
+            : [];
+        $everyNight = isset($_POST['role_every_night']) && is_array($_POST['role_every_night'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_every_night'])))
+            : [];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $archivedIndexes = array_flip($archived);
+        $restrictedIndexes = array_flip($restricted);
+        $everyNightIndexes = array_flip($everyNight);
 
         $types = [];
 
@@ -1126,6 +1141,8 @@ final class SettingsPage
                 'emoji' => $emojis[$index] ?? '',
                 'capacity' => $capacities[$index] ?? 1,
                 'archived' => isset($archivedIndexes[$index]),
+                'restricted' => isset($restrictedIndexes[$index]),
+                'every_night' => isset($everyNightIndexes[$index]),
                 'anchor' => $anchors[$index] ?? Roles::ANCHOR_START,
                 // '' means "no offset", which is not the same as 0 ("exactly
                 // on the anchor"), so the blank is preserved rather than

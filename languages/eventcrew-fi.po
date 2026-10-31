@@ -105,8 +105,8 @@ msgstr "%s sai kertaluontoisen ilmoittautumisluvan."
 #. translators: %s: the candidate's name
 #: src/Support/LeaderEligibilityNotifier.php:62
 #, php-format
-msgid "%s has earned crew-leader eligibility — /allow them to lead."
-msgstr "%s voi nyt toimia tiiminvetäjänä — anna lupa komennolla /allow."
+msgid "%s has earned crew-leader eligibility. Give them 👑 Leader with /roles to let them lead."
+msgstr "%s voi nyt toimia tiiminvetäjänä. Anna hänelle 👑 Vetäjä komennolla /roles, niin hän voi toimia vetäjänä."
 
 #: src/Telegram/PermissionService.php:218
 #, php-format
@@ -423,8 +423,8 @@ msgid "Door tickets"
 msgstr "Oviliput"
 
 #: src/Telegram/PermissionService.php:93
-msgid "Eligible (you can /allow them):"
-msgstr "Voisivat toimia vetäjänä (anna lupa komennolla /allow):"
+msgid "Eligible (give them 👑 Leader with /roles):"
+msgstr "Voisivat toimia vetäjänä (anna 👑 Vetäjä komennolla /roles):"
 
 #: templates/public/door.php:220 templates/public/signup.php:89 templates/public/signup.php:392
 msgid "Email"
@@ -2240,3 +2240,112 @@ msgstr "kirjattu ulos klo %s"
 #: src/Support/MarkedBy.php:61
 msgid "signed out by %1$s at %2$s"
 msgstr "uloskirjannut %1$s klo %2$s"
+
+#, php-format
+msgid "%1$s no longer has the role %2$s."
+msgstr "Henkilöllä %1$s ei ole enää roolia %2$s."
+
+#, php-format
+msgid "%1$s now has the role %2$s."
+msgstr "Henkilöllä %1$s on nyt rooli %2$s."
+
+msgid "Add a person to a role task"
+msgstr "Lisää henkilö roolitehtävään"
+
+msgid "Add someone"
+msgstr "Lisää joku"
+
+msgid "Added to the task. No email was given, so nothing was sent."
+msgstr "Lisätty tehtävään. Sähköpostia ei annettu, joten mitään ei lähetetty."
+
+msgid "Added to the task. They got an email with their ticket."
+msgstr "Lisätty tehtävään. Hän sai lipun sähköpostiin."
+
+msgid "Change a member’s roles"
+msgstr "Muuta jäsenen rooleja"
+
+msgid "Choose whether this task counts toward free-entry credit."
+msgstr "Valitse, lasketaanko tämä tehtävä vapaalippuun."
+
+msgid "Count toward free-entry credit?"
+msgstr "Lasketaanko vapaalippuun?"
+
+msgid "For a member, or for someone who is not a crew member yet. They get the role too."
+msgstr "Jäsenelle tai henkilölle, joka ei vielä ole crew-jäsen. Hän saa myös roolin."
+
+msgid "Give the role"
+msgstr "Anna rooli"
+
+msgid "No"
+msgstr "Ei"
+
+msgid "Yes"
+msgstr "Kyllä"
+
+msgid "Nothing was added. Start again with /roletasks."
+msgstr "Mitään ei lisätty. Aloita uudelleen komennolla /roletasks."
+
+msgid "One-time pass"
+msgstr "Kertaluontoinen lupa"
+
+msgid "Only organizers can add people to a task."
+msgstr "Vain järjestäjät voivat lisätä henkilöitä tehtävään."
+
+msgid "Only organizers can change roles."
+msgstr "Vain järjestäjät voivat muuttaa rooleja."
+
+msgid "Only people with a role see its tasks and can sign up for them."
+msgstr "Vain roolin saaneet näkevät sen tehtävät ja voivat ilmoittautua niihin."
+
+msgid "Organizer"
+msgstr "Järjestäjä"
+
+msgid "Role"
+msgstr "Rooli"
+
+msgid "Roles"
+msgstr "Roolit"
+
+#, php-format
+msgid "Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk."
+msgstr "Henkilön %s roolit. Napauta roolia antaaksesi tai poistaaksesi sen. ✅ = hänellä on se.\n🎟 antaa kertaluontoisen luvan ilmoittautua riskitasolla."
+
+msgid "Roles saved."
+msgstr "Roolit tallennettu."
+
+msgid "Save"
+msgstr "Tallenna"
+
+msgid "Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member."
+msgstr "Lähetä henkilön nimi ja sen perään sähköposti, jos hänellä on.\nEsimerkki: Alex Smith alex@example.com\nSähköpostin kanssa hän saa lipun sähköpostiin. Hänen ei tarvitse olla crew-jäsen."
+
+msgid "Set yourself up first: send /start to the bot."
+msgstr "Aloita ensin: lähetä botille /start."
+
+msgid "Task"
+msgstr "Tehtävä"
+
+msgid "Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers)."
+msgstr "Roolejesi tehtävät. Ne eivät näy ryhmän taululla.\n✋ = ilmoittaudu · ❌ = peru · ➕ = lisää joku (järjestäjät)."
+
+msgid "That person is already on this task."
+msgstr "Henkilö on jo tässä tehtävässä."
+
+msgid "That role is no longer offered."
+msgstr "Tätä roolia ei enää tarjota."
+
+msgid "The person could not be added. Try again."
+msgstr "Henkilöä ei voitu lisätä. Yritä uudelleen."
+
+msgid "There are no upcoming tasks for your roles. An organizer gives roles with /roles."
+msgstr "Rooleillesi ei ole tulevia tehtäviä. Järjestäjä antaa rooleja komennolla /roles."
+
+msgid "Whose roles do you want to change? Send their name, or @mention them."
+msgstr "Kenen rooleja haluat muuttaa? Lähetä hänen nimensä tai @mainitse hänet."
+
+msgid "With an email, they get their ticket by email. An email that belongs to a member adds that member."
+msgstr "Sähköpostin kanssa hän saa lipun sähköpostiin. Jäsenen sähköposti lisää sen jäsenen."
+
+#, php-format
+msgid "You now have the role %s. Its tasks are shown to you with /roletasks in the bot and on the crew page, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /roletasks ja crew-sivulla, ja voit ilmoittautua niihin."

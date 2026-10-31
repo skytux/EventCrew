@@ -37,7 +37,8 @@ final class UpdateRouter
         private readonly DoorListService $doorList,
         private readonly GuestListService $guestList,
         private readonly SalesLinkService $salesLink,
-        private readonly ?LanguageService $language = null
+        private readonly ?LanguageService $language = null,
+        private readonly ?RoleTaskBot $roleTasks = null
     ) {
     }
 
@@ -89,6 +90,8 @@ final class UpdateRouter
                 $this->tickets->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gift:')) {
                 $this->gift->onSelect($callbackQuery);
+            } elseif (null !== $this->roleTasks && str_starts_with($data, RoleTaskBot::PREFIX)) {
+                $this->roleTasks->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'perm:')) {
                 $this->permissions->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'np:')) {
@@ -195,9 +198,19 @@ final class UpdateRouter
             return;
         }
 
-        // /allow (organizers only) sets leader / one-time-pass / admin.
-        if ($this->isCommand($text, 'allow')) {
+        // /roles (organizers only) gives and takes away roles: leader, the
+        // one-time pass, organizer, and the restricted roles (DJ, VJ, ...).
+        // /allow is its old name and still runs it.
+        if ($this->isCommand($text, 'roles') || $this->isCommand($text, 'allow')) {
             $this->permissions->start($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /roletasks: the restricted-role tasks this person may take, which are
+        // never on the group board; organizers can also add someone there.
+        if (null !== $this->roleTasks && $this->isCommand($text, 'roletasks')) {
+            $this->roleTasks->start($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -308,6 +321,8 @@ final class UpdateRouter
                 $this->gift->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->permissions->isAwaitingTarget($fromId)) {
                 $this->permissions->captureTarget($fromId, $chatId, $text, $entities);
+            } elseif (null !== $this->roleTasks && $this->roleTasks->isAwaitingPerson($fromId)) {
+                $this->roleTasks->capturePerson($fromId, $chatId, $text);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }

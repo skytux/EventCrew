@@ -22,11 +22,20 @@ use EventCrew\Repositories\TaskRepository;
  * A night is what the boards group by: the linked event, or for a task typed
  * without an event, its label and date. A night that already has an organize
  * task is skipped, so running this twice never adds a second one.
+ *
+ * The same pass adds the tasks of restricted roles set to "Add to every night"
+ * (DJ, VJ, ...). Roles::save() puts a role's slug on a pending list whenever it
+ * newly becomes an every-night restricted role; the next request adds one task
+ * of that role to every upcoming night that has none, then empties the list.
+ * Switching the setting off only stops new ones: nothing is deleted.
  */
 final class OrganizeTaskBackfill
 {
     /** Set to '1' once the backfill has run on this site. */
     public const DONE_OPTION = 'eventcrew_organize_backfill_done';
+
+    /** Restricted role slugs still waiting for their every-night backfill. */
+    public const PENDING_OPTION = 'eventcrew_restricted_backfill_pending';
 
     /** MySQL named lock, so two requests at once cannot both add the task. */
     private const LOCK = 'eventcrew_organize_backfill';
@@ -61,12 +70,49 @@ final class OrganizeTaskBackfill
     }
 
     /**
-     * Runs the backfill once per site. Called on every request; after the
-     * first run it costs one autoloaded option read.
+     * Puts restricted role slugs on the pending list, for the next request to
+     * backfill. Called by Roles when a role newly needs a task every night.
+     *
+     * @param array<int, string> $slugs
+     */
+    public static function queue(array $slugs): void
+    {
+        if ([] === $slugs) {
+            return;
+        }
+
+        $pending = self::pending();
+
+        foreach ($slugs as $slug) {
+            if (! in_array($slug, $pending, true)) {
+                $pending[] = $slug;
+            }
+        }
+
+        update_option(self::PENDING_OPTION, $pending);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function pending(): array
+    {
+        $stored = get_option(self::PENDING_OPTION, []);
+
+        return is_array($stored) ? array_values(array_map('strval', $stored)) : [];
+    }
+
+    /**
+     * Runs the organize backfill once per site, and the restricted-role
+     * backfill whenever a role is pending. Called on every request; when there
+     * is nothing to do it costs two autoloaded option reads.
      */
     public function maybeRun(): void
     {
-        if ('1' === (string) get_option(self::DONE_OPTION, '')) {
+        $organizeDone = '1' === (string) get_option(self::DONE_OPTION, '');
+        $pending = self::pending();
+
+        if ($organizeDone && [] === $pending) {
             return;
         }
 
@@ -78,18 +124,100 @@ final class OrganizeTaskBackfill
         }
 
         try {
-            $this->run();
-            update_option(self::DONE_OPTION, '1');
+            if (! $organizeDone) {
+                $this->run();
+                update_option(self::DONE_OPTION, '1');
+            }
+
+            if ([] !== $pending) {
+                // Only the roles still set to every night: one switched off
+                // again before this ran gets nothing.
+                $wanted = array_map(static fn (array $role): string => $role['slug'], Roles::everyNight());
+                $this->runRoles(array_values(array_intersect($pending, $wanted)));
+                update_option(self::PENDING_OPTION, []);
+            }
         } finally {
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
         }
     }
 
     /**
-     * Adds an organize task to every night from today on that has none.
-     * Returns how many were added.
+     * The row for one task of a restricted role on one night. Timed from the
+     * role's offsets when the night's event can be read, untimed otherwise.
+     * Capacity 1 for the same reason as taskData(): it is not a limit.
+     *
+     * @return array<string, mixed>
      */
-    public function run(): int
+    public static function roleTaskData(string $slug, string $date, ?int $eventPostId, string $eventLabel): array
+    {
+        $role = Roles::find($slug);
+        $event = null === $eventPostId ? null : EventSource::describe($eventPostId);
+        $startsAt = null === $event ? '' : $event['starts_at'];
+        $endsAt = null === $event ? '' : $event['ends_at'];
+        $planned = null === $role ? [] : TaskTemplate::build(
+            $date,
+            $startsAt,
+            $endsAt,
+            [['archived' => false] + $role],
+            $eventPostId,
+            null === $eventPostId ? $eventLabel : ''
+        );
+
+        $data = $planned[0] ?? self::taskData($date, $eventPostId, $eventLabel);
+        $data['role_slug'] = $slug;
+        $data['capacity'] = 1;
+
+        return $data;
+    }
+
+    /**
+     * Adds one task of each given restricted role to every night from today on
+     * that has none of that role. Returns how many were added.
+     *
+     * @param array<int, string> $slugs
+     */
+    public function runRoles(array $slugs): int
+    {
+        if ([] === $slugs) {
+            return 0;
+        }
+
+        $created = 0;
+
+        foreach ($this->nights() as $night) {
+            foreach ($slugs as $slug) {
+                if (isset($night['roles'][$slug])) {
+                    continue;
+                }
+
+                $this->tasks->create(self::roleTaskData(
+                    $slug,
+                    $night['date'],
+                    $night['event_post_id'],
+                    $night['event_label']
+                ));
+                ++$created;
+            }
+        }
+
+        if ($created > 0) {
+            do_action('eventcrew/board_stale');
+        }
+
+        return $created;
+    }
+
+    /**
+     * Every upcoming night, with the role slugs it already has tasks for.
+     *
+     * @return array<string, array{
+     *     date: string,
+     *     event_post_id: int|null,
+     *     event_label: string,
+     *     roles: array<string, bool>
+     * }>
+     */
+    private function nights(): array
     {
         $nights = [];
 
@@ -110,19 +238,26 @@ final class OrganizeTaskBackfill
                     'date' => $task->taskDate,
                     'event_post_id' => $task->eventPostId,
                     'event_label' => $task->eventLabel,
-                    'has_organize' => false,
+                    'roles' => [],
                 ];
             }
 
-            if (Roles::ORGANIZE_SLUG === $task->roleSlug) {
-                $nights[$key]['has_organize'] = true;
-            }
+            $nights[$key]['roles'][$task->roleSlug] = true;
         }
 
+        return $nights;
+    }
+
+    /**
+     * Adds an organize task to every night from today on that has none.
+     * Returns how many were added.
+     */
+    public function run(): int
+    {
         $created = 0;
 
-        foreach ($nights as $night) {
-            if ($night['has_organize']) {
+        foreach ($this->nights() as $night) {
+            if (isset($night['roles'][Roles::ORGANIZE_SLUG])) {
                 continue;
             }
 

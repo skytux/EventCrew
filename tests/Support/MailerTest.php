@@ -56,4 +56,23 @@ final class MailerTest extends TestCase
         self::assertStringStartsWith('https://site.test/wp-json/eventcrew/v1/manage?', $url);
         self::assertStringContainsString('token=', $url);
     }
+
+    /**
+     * A person added with no email has a ".invalid" placeholder address:
+     * nothing is ever sent to it.
+     */
+    public function testNothingIsSentToAPlaceholderAddress(): void
+    {
+        $sent = [];
+        Functions\when('wp_mail')->alias(static function (string $to) use (&$sent): bool {
+            $sent[] = $to;
+
+            return true;
+        });
+
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+
+        self::assertFalse($mailer->toPerson(7, 'added-abc@added.invalid', 'Subject', 'Body'));
+        self::assertSame([], $sent);
+    }
 }

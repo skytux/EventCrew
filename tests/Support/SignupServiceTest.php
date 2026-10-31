@@ -191,7 +191,7 @@ final class SignupServiceTest extends TestCase
         $this->wpdb->nextRows[] = null;                               // join findFor
         $this->wpdb->nextQueryResults[] = 1;                          // insert
 
-        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5, true));
     }
 
     public function testBlocksOrganizerSlotOnlyForTheOrganizeTask(): void
@@ -200,11 +200,11 @@ final class SignupServiceTest extends TestCase
         $member = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'is_organizer' => 0]);
         $organizer = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'is_organizer' => 1]);
 
-        self::assertTrue(SignupService::blocksOrganizerSlot($organize, $member));
-        self::assertTrue(SignupService::blocksOrganizerSlot($organize, null));
-        self::assertFalse(SignupService::blocksOrganizerSlot($organize, $organizer));
-        self::assertFalse(SignupService::blocksOrganizerSlot(Task::fromRow($this->taskRow('decorate')), $member));
-        self::assertFalse(SignupService::blocksOrganizerSlot(null, $member));
+        self::assertTrue(SignupService::blocksRestrictedSlot($organize, $member));
+        self::assertTrue(SignupService::blocksRestrictedSlot($organize, null));
+        self::assertFalse(SignupService::blocksRestrictedSlot($organize, $organizer));
+        self::assertFalse(SignupService::blocksRestrictedSlot(Task::fromRow($this->taskRow('decorate')), $member));
+        self::assertFalse(SignupService::blocksRestrictedSlot(null, $member));
     }
 
     public function testAnAtRiskPassWavesThroughOnceAndIsSpent(): void

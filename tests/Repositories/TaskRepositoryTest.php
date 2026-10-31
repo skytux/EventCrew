@@ -4,11 +4,23 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Repositories;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Tests\TestCase;
 
 final class TaskRepositoryTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Every option at its default: the restricted-role list is read from
+        // the roles option, and the default has only Organize restricted.
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $default
+        );
+    }
+
     public function testDatesWithTasksReturnsWhateverTheQueryYields(): void
     {
         $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-25'];
@@ -61,7 +73,7 @@ final class TaskRepositoryTest extends TestCase
     {
         (new TaskRepository())->hasTaskCreatedSince('2026-08-01', '2026-07-01 00:00:00');
 
-        self::assertStringContainsString("role_slug <> 'organize'", $this->wpdb->lastQuery());
+        self::assertStringContainsString("role_slug NOT IN ('organize')", $this->wpdb->lastQuery());
     }
 
     public function testStartingBetweenBoundsByStartTimeAndSkipsUntimedTasks(): void

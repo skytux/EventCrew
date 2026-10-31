@@ -11,9 +11,11 @@ use EventCrew\Repositories\PersonRepository;
 /**
  * Who has earned their way to being offered crew-leader: a person who has
  * completed at least N tasks in every active role, so they know every job.
+ * Restricted roles (DJ, VJ, ...) are not counted: only a few people may ever
+ * take them, so requiring them would leave nobody eligible.
  *
  * "Eligible" is only the suggestion - an organizer still grants the permission
- * with /allow (or the People page). This is what the Leaders admin page and the
+ * with /roles (or the People page). This is what the Leaders admin page and the
  * hourly notifier read to spot new candidates.
  */
 final class LeaderEligibility
@@ -35,7 +37,7 @@ final class LeaderEligibility
 
     public function isEligible(int $personId): bool
     {
-        $roles = Roles::active();
+        $roles = Roles::forTemplate();
 
         // With no active roles there is nothing to prove competence at, so no
         // one is eligible rather than everyone.
@@ -84,7 +86,7 @@ final class LeaderEligibility
         $byRole = $this->assignments->completedByRole($personId);
         $out = [];
 
-        foreach (Roles::active() as $role) {
+        foreach (Roles::forTemplate() as $role) {
             $out[$role['slug']] = $byRole[$role['slug']] ?? 0;
         }
 

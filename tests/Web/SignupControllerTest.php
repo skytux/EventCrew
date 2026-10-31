@@ -15,6 +15,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\FreeEntryGate;
@@ -302,6 +303,83 @@ final class SignupControllerTest extends TestCase
         $view = $this->controller()->viewModel();
 
         self::assertSame([5, 6], array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']));
+    }
+
+    /**
+     * Settings > Roles with a "DJ" role set to "Only people with this role".
+     * Every other option reads as unset, as in setUp().
+     */
+    private function withDjRole(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => Roles::OPTION_NAME === $name
+                ? [
+                    ['slug' => 'decorate', 'label' => 'Decorate'],
+                    ['slug' => 'dj', 'label' => 'DJ', 'emoji' => '🎧', 'restricted' => true],
+                ]
+                : false
+        );
+    }
+
+    /**
+     * The crew page board for person 7, with a decorate task (5) and a DJ
+     * task (6) already holding three people.
+     *
+     * @return array<int, int> The task ids on the board.
+     */
+    private function boardFor(string $roleSlugs): array
+    {
+        $this->withDjRole();
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'is_organizer' => 0, 'role_slugs' => $roleSlugs,
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(),
+            array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'dj', 'capacity' => 1]),
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 3]];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+
+        $view = $this->controller()->viewModel();
+
+        return array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']);
+    }
+
+    public function testTheBoardShowsARestrictedTaskOnlyToSomeoneWithItsRole(): void
+    {
+        self::assertSame([5], $this->boardFor(''));
+        self::assertSame([5, 6], $this->boardFor('dj'));
+    }
+
+    public function testClaimingARestrictedTaskNeedsTheRoleThenTheCreditAnswer(): void
+    {
+        $this->withDjRole();
+        $dj = array_merge($this->taskRow(), ['role_slug' => 'dj', 'capacity' => 1]);
+        $member = ['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 0];
+        $holder = array_merge($member, ['role_slugs' => 'dj']);
+
+        $this->wpdb->nextRows[] = $dj;
+        $this->wpdb->nextRows[] = $member;
+        self::assertSame('unavailable', $this->controller()->claimFor(7, 5, true));
+
+        $this->wpdb->nextRows[] = $dj;
+        $this->wpdb->nextRows[] = $holder;
+        self::assertSame('credit_question', $this->controller()->claimFor(7, 5));
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+
+        $this->wpdb->nextRows[] = $dj;
+        $this->wpdb->nextRows[] = $holder;
+        $this->wpdb->nextVars[] = 1;            // taskCapacity
+        $this->wpdb->nextRows[] = null;         // join findFor
+        $this->wpdb->nextQueryResults[] = 1;    // insert
+
+        self::assertSame('claimed', $this->controller()->claimFor(7, 5, false));
+        self::assertStringContainsString("SELECT 5, 7, 'signed_up', '2026-07-20 12:00:00', 0", $this->wpdb->lastQuery());
     }
 
     public function testDropForMapsACancellationToADroppedNotice(): void

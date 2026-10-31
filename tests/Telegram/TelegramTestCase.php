@@ -23,6 +23,7 @@ use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
@@ -38,6 +39,7 @@ use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
+use EventCrew\Telegram\RoleTaskBot;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\SalesLinkService;
 use EventCrew\Telegram\TelegramClient;
@@ -216,7 +218,38 @@ abstract class TelegramTestCase extends TestCase
             $this->doorListService(),
             $this->guestListService(),
             $this->salesLinkService(),
-            $language
+            $language,
+            $this->roleTaskBot()
+        );
+    }
+
+    protected function roleTaskService(): RoleTaskService
+    {
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $assignments = new AssignmentRepository();
+
+        return new RoleTaskService(
+            new PersonRepository(),
+            new TaskRepository(),
+            $assignments,
+            $this->signup(),
+            new ClaimNotifier(new TaskRepository(), $assignments, $mailer, $this->client(), $this->standing())
+        );
+    }
+
+    protected function roleTaskBot(): RoleTaskBot
+    {
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $assignments = new AssignmentRepository();
+
+        return new RoleTaskBot(
+            new PersonRepository(),
+            new TaskRepository(),
+            $assignments,
+            $this->signup(),
+            $this->roleTaskService(),
+            new ClaimNotifier(new TaskRepository(), $assignments, $mailer, $this->client(), $this->standing()),
+            $this->client()
         );
     }
 

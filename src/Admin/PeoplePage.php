@@ -56,7 +56,7 @@ final class PeoplePage
                 // earned crew-leader eligibility and who has been granted it.
                 'lead_roles' => array_map(
                     static fn (array $role): array => ['slug' => $role['slug'], 'label' => $role['label']],
-                    Roles::active()
+                    Roles::forTemplate()
                 ),
                 'lead_eligible' => $this->eligibleRows(),
                 'lead_allowed' => $this->allowedRows(),
@@ -165,6 +165,9 @@ final class PeoplePage
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         $isOrganizer = isset($_POST['is_organizer']) && '1' === (string) $_POST['is_organizer'];
         $canLead = isset($_POST['can_lead']) && '1' === (string) $_POST['can_lead'];
+        $ticked = isset($_POST['roles']) && is_array($_POST['roles'])
+            ? array_map('sanitize_key', wp_unslash($_POST['roles']))
+            : [];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ('' === $email || ! is_email($email)) {
@@ -191,6 +194,7 @@ final class PeoplePage
             'notes' => $notes,
             'is_organizer' => $isOrganizer,
             'can_lead' => $canLead ? 1 : 0,
+            'role_slugs' => PersonRepository::encodeRoles($this->rolesAfterSave($id, $ticked)),
         ];
 
         if ($id > 0) {
@@ -206,6 +210,23 @@ final class PeoplePage
         $this->people->create($data);
 
         Admin::redirectTo(self::PAGE_SLUG, __('Person added.', 'eventcrew'));
+    }
+
+    /**
+     * The person's roles once the form's role checkboxes are applied. Only the
+     * roles the form shows (the active "Only people with this role" roles) are
+     * changed; a role that is not shown, such as an archived one, is kept.
+     *
+     * @param array<int, string> $ticked
+     * @return array<int, string>
+     */
+    private function rolesAfterSave(int $id, array $ticked): array
+    {
+        $shown = array_column(Roles::assignable(), 'slug');
+        $person = $id > 0 ? $this->people->find($id) : null;
+        $kept = null === $person ? [] : array_diff($person->roleSlugs, $shown);
+
+        return array_values(array_merge($kept, array_intersect($shown, $ticked)));
     }
 
     /**
@@ -245,7 +266,7 @@ final class PeoplePage
 
     /**
      * Gives a person a one-time pass to sign up despite being at risk - the
-     * wp-admin mirror of the bot's /allow pass. Spent on their next successful
+     * wp-admin mirror of the bot's /roles pass. Spent on their next successful
      * signup (SignupService::claim).
      */
     public function grantPass(): void

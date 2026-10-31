@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Models;
 
 use EventCrew\Support\Language;
+use EventCrew\Support\Roles;
 
 /**
  * One person who people. Never a WordPress user - WP accounts belong to
@@ -34,7 +35,9 @@ final class Person
         public readonly ?string $bannedAt = null,
         public readonly string $banReason = '',
         /** 'en' or 'fi'; null until the person chooses, which reads as English */
-        public readonly ?string $language = null
+        public readonly ?string $language = null,
+        /** @var array<int, string> slugs of the restricted roles given to this person */
+        public readonly array $roleSlugs = []
     ) {
     }
 
@@ -63,7 +66,8 @@ final class Person
             self::nullableString($row['sessions_valid_from'] ?? null),
             self::nullableString($row['banned_at'] ?? null),
             (string) ($row['ban_reason'] ?? ''),
-            Language::normalize($row['language'] ?? null)
+            Language::normalize($row['language'] ?? null),
+            self::decodeRoles($row['role_slugs'] ?? null)
         );
     }
 
@@ -157,6 +161,60 @@ final class Person
     public function leaderNotified(): bool
     {
         return null !== $this->leaderEligibleNotifiedAt;
+    }
+
+    /**
+     * Whether this person was given a restricted role (DJ, VJ, ...) and so may
+     * see and take its tasks. Organize is not a stored role: it follows the
+     * organizer permission.
+     */
+    public function hasRole(string $slug): bool
+    {
+        if (Roles::ORGANIZE_SLUG === $slug) {
+            return $this->isOrganizer;
+        }
+
+        return in_array($slug, $this->roleSlugs, true);
+    }
+
+    /**
+     * Whether the address on file is a real one to write to. A person an
+     * organizer added without an email carries a placeholder ending in
+     * ".invalid" (the unique column needs something), which must never be
+     * mailed.
+     */
+    public function hasRealEmail(): bool
+    {
+        return ! self::isPlaceholderEmail($this->email);
+    }
+
+    public static function isPlaceholderEmail(string $email): bool
+    {
+        return '' === $email || str_ends_with(strtolower($email), '.invalid');
+    }
+
+    /**
+     * The stored comma-separated list, as slugs.
+     *
+     * @return array<int, string>
+     */
+    public static function decodeRoles(mixed $value): array
+    {
+        if (! is_string($value) || '' === $value) {
+            return [];
+        }
+
+        $slugs = [];
+
+        foreach (explode(',', $value) as $slug) {
+            $slug = sanitize_key($slug);
+
+            if ('' !== $slug && ! in_array($slug, $slugs, true)) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return $slugs;
     }
 
     public function isEmailVerified(): bool
