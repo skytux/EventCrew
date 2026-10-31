@@ -2232,3 +2232,11 @@ msgstr "ilmoittautuneita: %d"
 #: templates/public/door.php:55
 msgid "✓ Signed up"
 msgstr "✓ Ilmoittautunut"
+
+#: src/Support/MarkedBy.php:59
+msgid "signed out at %s"
+msgstr "kirjattu ulos klo %s"
+
+#: src/Support/MarkedBy.php:61
+msgid "signed out by %1$s at %2$s"
+msgstr "uloskirjannut %1$s klo %2$s"

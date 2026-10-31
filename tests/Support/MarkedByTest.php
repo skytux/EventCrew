@@ -109,9 +109,25 @@ final class MarkedByTest extends TestCase
         self::assertSame('', $this->line([
             'status' => 'signed_up',
             'status_changed_at' => '2026-07-20 21:42:00',
+        ]));
+        self::assertSame('', $this->line([
+            'status' => 'cancelled',
+            'status_changed_at' => '2026-07-20 21:42:00',
             'changed_by' => 7,
             'changed_by_kind' => MarkedBy::PERSON,
         ]));
         self::assertSame('', $this->line(['status' => 'arrived']));
+    }
+
+    public function testSignedUpAgainAfterAMarkSaysWhoSignedThemOut(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        self::assertSame('signed out by Sam at 21:42', $this->line([
+            'status' => 'signed_up',
+            'status_changed_at' => '2026-07-20 21:42:00',
+            'changed_by' => 7,
+            'changed_by_kind' => MarkedBy::PERSON,
+        ]));
     }
 }

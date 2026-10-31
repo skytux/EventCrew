@@ -589,6 +589,29 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(MarkedBy::PERSON, $update['data']['changed_by_kind']);
     }
 
+    public function testMarkingCrewOutPutsTheirArrivedAssignmentBackToSignedUp(): void
+    {
+        // findRow: the night's tasks, the task's crew, the crew member's name,
+        // and no redemptions.
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00')];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'arrived')];
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextQueryResults[] = 1; // the check-in delete
+        // markCrewSignedOut: the night's tasks and the member's assignment there.
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00')];
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'arrived');
+
+        self::assertTrue($this->desk()->mark(self::NIGHT, 1, CheckinRepository::KIND_CREW, 8, false, 0));
+
+        self::assertCount(1, $this->wpdb->updates);
+        $update = $this->wpdb->updates[0];
+        self::assertSame('signed_up', $update['data']['status']);
+        self::assertSame(['id' => 30], $update['where']);
+        self::assertSame(1, $update['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $update['data']['changed_by_kind']);
+    }
+
     public function testGiveTicketSpendsACreditEvenWhenFreeEntryIsClosed(): void
     {
         $this->options[FreeEntryGate::OPTION] = [self::NIGHT];
