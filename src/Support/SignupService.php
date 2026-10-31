@@ -92,16 +92,19 @@ final class SignupService
     {
         $task = $this->tasks->find($taskId);
 
-        // The person is only fetched when the slot is actually leader-only,
-        // which most are not: asking first would put a row read on every claim
-        // to answer a question that usually does not arise.
-        if (null !== $task && Roles::LEADER_SLUG === $task->roleSlug) {
-            if (self::blocksLeaderSlot($task, $this->people->find($personId))) {
-                return ['refusal' => self::LEADER_ONLY, 'pass' => false];
-            }
+        // Read once for every rule below: a blocked person is refused on any
+        // slot, so the row is needed on every claim now.
+        $person = $this->people->find($personId);
+
+        if (null !== $person && $person->isBanned()) {
+            return ['refusal' => self::GATED, 'pass' => false];
         }
 
-        $gate = $this->gateRefusal($personId);
+        if (self::blocksLeaderSlot($task, $person)) {
+            return ['refusal' => self::LEADER_ONLY, 'pass' => false];
+        }
+
+        $gate = $this->gateRefusal($personId, $person);
 
         if ('' !== $gate['refusal']) {
             return $gate;
@@ -141,7 +144,13 @@ final class SignupService
      */
     public function personRefusal(int $personId): string
     {
-        return $this->gateRefusal($personId)['refusal'];
+        $person = $this->people->find($personId);
+
+        if (null !== $person && $person->isBanned()) {
+            return self::GATED;
+        }
+
+        return $this->gateRefusal($personId, $person)['refusal'];
     }
 
     /**
@@ -149,7 +158,7 @@ final class SignupService
      *
      * @return array{refusal: string, pass: bool}
      */
-    private function gateRefusal(int $personId): array
+    private function gateRefusal(int $personId, ?Person $person): array
     {
         if (! $this->gateBlocks($personId)) {
             return ['refusal' => '', 'pass' => false];
@@ -157,8 +166,6 @@ final class SignupService
 
         // A blocked at-risk member may be waved through once by a pass, which
         // is then spent - but only if the join actually succeeds.
-        $person = $this->people->find($personId);
-
         return null !== $person && $person->hasAtRiskPass()
             ? ['refusal' => '', 'pass' => true]
             : ['refusal' => self::GATED, 'pass' => false];

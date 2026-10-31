@@ -270,6 +270,32 @@ final class PeoplePage
         );
     }
 
+    /**
+     * Lifts a block set after a forged admin request on the crew page. Their
+     * web sessions stay signed out; they sign in again with a fresh link.
+     */
+    public function unban(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if ($personId <= 0 || null === $this->people->find($personId)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That person could not be unbanned.', 'eventcrew'), 'error');
+        }
+
+        $this->people->unban($personId);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Unbanned. They can sign in and sign up again.', 'eventcrew'),
+            'success',
+            ['person' => (string) $personId]
+        );
+    }
+
     public function delete(): void
     {
         if (! current_user_can(Admin::CAPABILITY)) {

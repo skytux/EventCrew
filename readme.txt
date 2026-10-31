@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.37.0
+Stable tag: 1.38.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.38.0 =
+* The crew web page has an Admin tab for organizers, with four actions: send me the sales desk link (or open it on this device), post a new board in the Telegram group, give a member 1 to 5 credits, and mark tonight's crew Arrived, Completed or No-show.
+* Every Admin action is checked on the server against the signed-in person's organizer flag in the database. A request from someone not signed in does nothing. A signed-in member who is not an organizer and sends an Admin action is blocked: their web sessions end, they cannot sign in or sign up for tasks, and organizers get a Telegram DM and an email naming who, when, which action and the IP address.
+* wp-admin People: blocked people have a Blocked badge, and the edit panel has an Unban button.
 
 = 1.37.0 =
 * Sales desk: a new "📱 Other device" button. "Open on other device" shows a QR code and a Copy link button that log a second phone in to the sales desk as you. "Login as" does the same for another organizer, or for the leader or Welcome crew marked arrived tonight. Each link works once and stops working after 15 minutes. The person is checked again when the link is used.
@@ -539,6 +544,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.38.0 =
+Admin tab for organizers on the crew page, and blocking of forged admin requests. Adds banned_at and ban_reason columns to the people table (database version 15).
 
 = 1.37.0 =
 Other device button with QR login links at the sales desk. No database change.

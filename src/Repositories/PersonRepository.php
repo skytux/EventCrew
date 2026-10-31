@@ -211,6 +211,29 @@ final class PersonRepository
         $this->update($id, ['sessions_valid_from' => current_time('mysql')]);
     }
 
+    /**
+     * Blocks a person: stamps banned_at with the reason, and moves the session
+     * line in the same write, so every web session they hold stops working at
+     * once. SignupService refuses their sign-ups and the crew page refuses
+     * their sign-in while banned_at is set.
+     */
+    public function ban(int $id, string $reason): void
+    {
+        $now = current_time('mysql');
+
+        $this->update($id, [
+            'banned_at' => $now,
+            'ban_reason' => $reason,
+            'sessions_valid_from' => $now,
+        ]);
+    }
+
+    /** Lifts a block. The person signs in again with a fresh link. */
+    public function unban(int $id): void
+    {
+        $this->update($id, ['banned_at' => null, 'ban_reason' => null]);
+    }
+
     public function setOrganizer(int $id, bool $isOrganizer): void
     {
         $this->update($id, ['is_organizer' => $isOrganizer ? 1 : 0]);

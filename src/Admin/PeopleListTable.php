@@ -140,6 +140,11 @@ final class PeopleListTable extends WP_List_Table
                 esc_attr__('Organizer', 'eventcrew') . '"></span>'
             : '';
 
+        if ($item->isBanned()) {
+            $badge .= ' <span class="eventcrew-badge" style="color:#b32d2e">'
+                . esc_html__('Blocked', 'eventcrew') . '</span>';
+        }
+
         return sprintf(
             '<strong><a href="%s">%s</a></strong>%s%s',
             esc_url($editUrl),
