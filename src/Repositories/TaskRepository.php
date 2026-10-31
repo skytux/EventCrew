@@ -7,6 +7,7 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Task;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\Roles;
 
 /**
  * All reads and writes of the tasks table, plus the occupancy counts that
@@ -344,6 +345,9 @@ final class TaskRepository
      * timestamp). This is what separates "we already told them about this date"
      * from "we told them about this date, but a job has been added since" - the
      * second is worth mailing about again, the first is not.
+     *
+     * The organize task does not count: it is not a place anyone is asked to
+     * fill, so adding one to a date is no reason to mail everyone again.
      */
     public function hasTaskCreatedSince(string $date, string $since): bool
     {
@@ -351,9 +355,12 @@ final class TaskRepository
 
         return null !== $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT id FROM {$this->table()} WHERE task_date = %s AND created_at > %s LIMIT 1",
+                "SELECT id FROM {$this->table()}
+                WHERE task_date = %s AND created_at > %s AND role_slug <> %s
+                LIMIT 1",
                 $date,
-                $since
+                $since,
+                Roles::ORGANIZE_SLUG
             )
         );
     }
@@ -372,6 +379,12 @@ final class TaskRepository
         ));
 
         foreach ($tasks as $task) {
+            // A task with no limit always has room, so it never makes a date
+            // look as if it still needs people.
+            if ($task->hasNoLimit()) {
+                continue;
+            }
+
             if (($occupancy[$task->id] ?? 0) < $task->capacity) {
                 return true;
             }

@@ -460,6 +460,12 @@ final class OpenTaskCall
         foreach ($tasks as $task) {
             $taken = $occupancy[$task->id] ?? 0;
 
+            // The organize task has no limit and is for organizers only: it
+            // is never a place this call asks people to fill.
+            if ($task->hasNoLimit() || $task->isOrganizersOnly()) {
+                continue;
+            }
+
             if ($taken < $task->capacity) {
                 $lines[] = sprintf(
                     '- %s at %s (%d/%d)',

@@ -33,6 +33,13 @@ final class SignupService
     /** Refused: the leader slot, and this person has no leader permission. */
     public const LEADER_ONLY = 'leader_only';
 
+    /**
+     * Refused: an organizers-only task, and this person is not an organizer.
+     * The channels word it as "no longer available", because a non-organizer
+     * is never shown the task in the first place.
+     */
+    public const ORGANIZERS_ONLY = 'organizers_only';
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly StandingCalculator $standing,
@@ -43,7 +50,8 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::LEADER_ONLY, or an AssignmentRepository::JOIN_* outcome.
+     * self::LEADER_ONLY, self::ORGANIZERS_ONLY, or an AssignmentRepository::JOIN_*
+     * outcome.
      */
     public function claim(int $personId, int $taskId): string
     {
@@ -71,7 +79,7 @@ final class SignupService
      * someone holding an at-risk pass, because the pass would wave them
      * through; a refusal shown to them would simply be wrong.
      *
-     * Returns self::GATED, self::LEADER_ONLY or ''.
+     * Returns self::GATED, self::LEADER_ONLY, self::ORGANIZERS_ONLY or ''.
      */
     public function refusalFor(int $personId, int $taskId): string
     {
@@ -102,6 +110,10 @@ final class SignupService
 
         if (self::blocksLeaderSlot($task, $person)) {
             return ['refusal' => self::LEADER_ONLY, 'pass' => false];
+        }
+
+        if (self::blocksOrganizerSlot($task, $person)) {
+            return ['refusal' => self::ORGANIZERS_ONLY, 'pass' => false];
         }
 
         $gate = $this->gateRefusal($personId, $person);
@@ -135,6 +147,20 @@ final class SignupService
         }
 
         return null === $person || ! $person->canLead();
+    }
+
+    /**
+     * Whether this task is for organizers only and this person is not one.
+     * Static and pure for the same reason as blocksLeaderSlot(): every list
+     * that shows tasks asks it to leave the task out for everyone else.
+     */
+    public static function blocksOrganizerSlot(?Task $task, ?Person $person): bool
+    {
+        if (null === $task || ! $task->isOrganizersOnly()) {
+            return false;
+        }
+
+        return null === $person || ! $person->isOrganizer;
     }
 
     /**

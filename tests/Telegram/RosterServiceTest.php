@@ -89,6 +89,56 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertStringContainsString('Arrived', $text);
     }
 
+    /**
+     * An organizer sees the organize task on the roster with a plain count,
+     * since it has no limit to count against.
+     */
+    public function testAnOrganizerSeesTheOrganizeTaskWithNoLimit(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 6, 'task_date' => '2026-07-20', 'role_slug' => 'organize', 'capacity' => 1],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 12, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up'],
+            ['id' => 13, 'task_id' => 6, 'person_id' => 9, 'status' => 'signed_up'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('Organize', $text);
+        self::assertStringContainsString('(2)', $text);
+        self::assertStringNotContainsString('2/1', $text);
+    }
+
+    /**
+     * Someone rostered on the day who is not an organizer gets the roster, but
+     * without the organize task.
+     */
+    public function testSomeoneWhoIsNotAnOrganizerDoesNotSeeTheOrganizeTask(): void
+    {
+        $this->organizer(false);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+        $this->wpdb->nextCols[] = [7];            // personIdsAssignedOn() -> they are rostered
+        $this->wpdb->nextResults[] = [];          // leader check: no leader slot held
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+            ['id' => 6, 'task_date' => '2026-07-20', 'role_slug' => 'organize', 'capacity' => 1],
+        ];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('Clean', $text);
+        self::assertStringNotContainsString('Organize', $text);
+    }
+
     public function testTheRosterSaysWhoMarkedEachPersonAndWhen(): void
     {
         Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));

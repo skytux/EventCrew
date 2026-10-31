@@ -8,6 +8,7 @@ use EventCrew\Database\Schema;
 use EventCrew\Models\Assignment;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\Roles;
 
 /**
  * All reads and writes of the assignments table.
@@ -85,6 +86,8 @@ final class AssignmentRepository
         // into. MySQL rejects that when the subquery is uncorrelated and
         // directly names the target, so it is wrapped in a derived table -
         // which also forces materialisation, giving a stable count.
+        // A task with no limit (the organize task) skips the count: the second
+        // condition lets the insert through whatever the first one says.
         $sql = "INSERT INTO {$this->table()} (task_id, person_id, status, signed_up_at)
             SELECT %d, %d, %s, %s
             FROM (SELECT 1) AS placeholder
@@ -93,12 +96,13 @@ final class AssignmentRepository
                 FROM (SELECT task_id, status FROM {$this->table()}) AS existing
                 WHERE existing.task_id = %d
                   AND existing.status IN ({$statusPlaceholders})
-            ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)";
+            ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
+            OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug = %s)";
 
         $params = array_merge(
             [$taskId, $personId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $taskId],
             $statuses,
-            [$taskId]
+            [$taskId, $taskId, Roles::ORGANIZE_SLUG]
         );
 
         // The statement is assembled above from table-name constants and
@@ -145,16 +149,19 @@ final class AssignmentRepository
             SET target.status = %s, target.signed_up_at = %s, target.status_changed_at = %s
             WHERE target.id = %d
               AND (
-                SELECT COUNT(*)
-                FROM (SELECT task_id, status FROM {$this->table()}) AS existing
-                WHERE existing.task_id = %d
-                  AND existing.status IN ({$statusPlaceholders})
-              ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)";
+                (
+                  SELECT COUNT(*)
+                  FROM (SELECT task_id, status FROM {$this->table()}) AS existing
+                  WHERE existing.task_id = %d
+                    AND existing.status IN ({$statusPlaceholders})
+                ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
+                OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug = %s)
+              )";
 
         $params = array_merge(
             [AssignmentStatus::SIGNED_UP, $now, $now, $assignmentId, $taskId],
             $statuses,
-            [$taskId]
+            [$taskId, $taskId, Roles::ORGANIZE_SLUG]
         );
 
         // Assembled from table-name constants and generated placeholders, then

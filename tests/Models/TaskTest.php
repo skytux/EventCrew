@@ -28,6 +28,17 @@ final class TaskTest extends TestCase
         self::assertNull($task->eventPostId);
     }
 
+    public function testOnlyTheOrganizeTaskIsForOrganizersOnlyAndHasNoLimit(): void
+    {
+        $organize = Task::fromRow(['role_slug' => 'organize', 'capacity' => '1']);
+        $decorate = Task::fromRow(['role_slug' => 'decorate', 'capacity' => '2']);
+
+        self::assertTrue($organize->isOrganizersOnly());
+        self::assertTrue($organize->hasNoLimit());
+        self::assertFalse($decorate->isOrganizersOnly());
+        self::assertFalse($decorate->hasNoLimit());
+    }
+
     public function testRendersATimeRangeWithoutSeconds(): void
     {
         $task = Task::fromRow([

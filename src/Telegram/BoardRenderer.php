@@ -69,7 +69,12 @@ final class BoardRenderer
      */
     public function render(): array
     {
-        $tasks = $this->tasks->upcoming();
+        // The board is one message the whole group reads, so an organizers-only
+        // task cannot be on it at all; organizers take it on the crew page.
+        $tasks = array_values(array_filter(
+            $this->tasks->upcoming(),
+            static fn (Task $task): bool => ! $task->isOrganizersOnly()
+        ));
 
         if ([] === $tasks) {
             return [

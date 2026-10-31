@@ -239,6 +239,34 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertStringContainsString('2 of 3 places free', $this->lastCallTo('sendMessage')['text']);
     }
 
+    /**
+     * The organize task is for organizers only, so a newcomer's welcome never
+     * offers it - not even to an organizer, since it has no places to count.
+     */
+    public function testTheDmNeverOffersTheOrganizeTask(): void
+    {
+        $this->options[WelcomeSender::ENABLED_OPTION] = '1';
+
+        // The four ledger lists, all empty.
+        array_push($this->wpdb->nextCols, [], [], [], []);
+
+        $this->wpdb->nextResults[] = [$this->memberRow(1)];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(5, 'decorate', '13:00', '14:00'),
+            array_merge($this->taskRow(7, 'organize', '13:00', '14:00'), ['capacity' => 1, 'starts_at' => null, 'ends_at' => null]),
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1]];
+
+        $this->welcomeSender()->sendDue(25);
+
+        $callbacks = array_values(array_filter(array_map(
+            static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
+            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+        )));
+
+        self::assertSame(['j:5'], $callbacks);
+    }
+
     public function testTheNumbersComeFromTheLiveSettings(): void
     {
         $this->options[WelcomeSender::ENABLED_OPTION] = '1';

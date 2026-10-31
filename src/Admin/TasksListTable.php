@@ -177,6 +177,11 @@ final class TasksListTable extends WP_List_Table
     {
         $taken = $this->occupancy[$item->id] ?? 0;
 
+        if ($item->hasNoLimit()) {
+            /* translators: %d: people signed up so far, for a task with no limit on people */
+            return esc_html(sprintf(__('%d / no limit', 'eventcrew'), $taken));
+        }
+
         $text = sprintf('%d / %d', $taken, $item->capacity);
 
         if ($taken >= $item->capacity) {

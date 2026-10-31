@@ -144,6 +144,21 @@ final class Task
         return (int) round(($to - $from) / 86400);
     }
 
+    /** Whether only organizers may see this task and sign up for it. */
+    public function isOrganizersOnly(): bool
+    {
+        return Roles::ORGANIZE_SLUG === $this->roleSlug;
+    }
+
+    /**
+     * Whether any number of people may take this task. Such a task is never
+     * full, and it never counts as a place that still needs people.
+     */
+    public function hasNoLimit(): bool
+    {
+        return Roles::ORGANIZE_SLUG === $this->roleSlug;
+    }
+
     public function isPast(): bool
     {
         return $this->taskDate < current_time('Y-m-d');

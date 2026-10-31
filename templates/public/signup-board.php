@@ -52,11 +52,17 @@ endif; ?>
             <?php
             $eventcrew_task = $eventcrew_row['task'];
             $eventcrew_time = $eventcrew_task->timeRange();
-            $eventcrew_full = $eventcrew_row['taken'] >= $eventcrew_task->capacity;
+            $eventcrew_no_limit = $eventcrew_task->hasNoLimit();
+            $eventcrew_full = ! $eventcrew_no_limit && $eventcrew_row['taken'] >= $eventcrew_task->capacity;
             $eventcrew_when = date_i18n('j M', strtotime($eventcrew_task->taskDate))
                 . ('' === $eventcrew_time ? '' : ' · ' . $eventcrew_time);
             /* translators: 1: people signed up so far, 2: people needed in total */
             $eventcrew_fill = sprintf(__('%1$d of %2$d', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);
+
+            if ($eventcrew_no_limit) {
+                /* translators: %d: people signed up so far, for a task with no limit on people */
+                $eventcrew_fill = sprintf(__('%d signed up', 'eventcrew'), $eventcrew_row['taken']);
+            }
             ?>
             <li class="eventcrew-task-row" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
                 <span class="eventcrew-task-main">
@@ -79,7 +85,7 @@ endif; ?>
                 ?>
                 <span class="eventcrew-task-side">
                 <span class="eventcrew-capacity">
-                    <?php if ($eventcrew_task->capacity <= 6) : ?>
+                    <?php if (! $eventcrew_no_limit && $eventcrew_task->capacity <= 6) : ?>
                         <span class="eventcrew-pips" aria-hidden="true">
                             <?php for ($eventcrew_pip = 1; $eventcrew_pip <= $eventcrew_task->capacity; $eventcrew_pip++) : ?>
                                 <span class="eventcrew-pip<?php echo $eventcrew_pip <= $eventcrew_row['taken'] ? ' is-filled' : ''; ?>"></span>

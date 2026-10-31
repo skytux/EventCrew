@@ -51,6 +51,15 @@ final class Roles
      */
     public const LEADER_SLUG = 'leader';
 
+    /**
+     * The reserved role for organizing the night. Like the leader slot it is
+     * not in the editable role list: the plugin adds one per event. Only
+     * organizers see it or may take it, and it has no limit on how many people
+     * take it, so it is never full and never counted as a place that needs
+     * filling. See Task::isOrganizersOnly() and Task::hasNoLimit().
+     */
+    public const ORGANIZE_SLUG = 'organize';
+
     /** The shipped door role: its crew checks tickets, so it may see the door list. */
     public const WELCOME_SLUG = 'welcome';
 
@@ -196,9 +205,9 @@ final class Roles
                 $slug = sanitize_key($label);
             }
 
-            // The leader slug is reserved and auto-managed; never let a hand-typed
-            // role take it over.
-            if ('' === $slug || self::LEADER_SLUG === $slug || isset($seen[$slug])) {
+            // The leader and organize slugs are reserved and auto-managed; never
+            // let a hand-typed role take one over.
+            if ('' === $slug || self::LEADER_SLUG === $slug || self::ORGANIZE_SLUG === $slug || isset($seen[$slug])) {
                 continue;
             }
 
@@ -262,6 +271,10 @@ final class Roles
             return __('Leader', 'eventcrew');
         }
 
+        if (self::ORGANIZE_SLUG === $slug) {
+            return __('Organize', 'eventcrew');
+        }
+
         return self::find($slug)['label'] ?? $slug;
     }
 
@@ -272,6 +285,10 @@ final class Roles
     {
         if (self::LEADER_SLUG === $slug) {
             return __('🧭 Leader', 'eventcrew');
+        }
+
+        if (self::ORGANIZE_SLUG === $slug) {
+            return __('⭐ Organize', 'eventcrew');
         }
 
         $role = self::find($slug);
@@ -314,7 +331,7 @@ final class Roles
      */
     public static function exists(string $slug): bool
     {
-        return self::LEADER_SLUG === $slug || null !== self::find($slug);
+        return self::LEADER_SLUG === $slug || self::ORGANIZE_SLUG === $slug || null !== self::find($slug);
     }
 
     public static function isArchived(string $slug): bool

@@ -321,7 +321,13 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 <span style="font-weight:normal;color:#666">
                     — <?php echo esc_html($eventcrew_task->eventName()); ?><?php
                     echo '' === $eventcrew_time ? '' : ' · ' . esc_html($eventcrew_time); ?>
-                    (<?php echo esc_html(sprintf('%d/%d', $eventcrew_taken, $eventcrew_task->capacity)); ?>)
+                    (<?php
+                    echo esc_html(
+                        $eventcrew_task->hasNoLimit()
+                            ? (string) $eventcrew_taken
+                            : sprintf('%d/%d', $eventcrew_taken, $eventcrew_task->capacity)
+                    );
+                    ?>)
                 </span>
             </h2>
 

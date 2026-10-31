@@ -171,6 +171,58 @@ final class ReplacementServiceTest extends TelegramTestCase
         self::assertContains('sendMessage', $this->calledMethods());
     }
 
+    /**
+     * The organize task is not offered to a cover who is not an organizer;
+     * their other tasks still are.
+     */
+    public function testCaptureTargetLeavesOutTheOrganizeTaskForACoverWhoIsNotAnOrganizer(): void
+    {
+        $this->wpdb->nextResults[] = [$this->verifiedPersonRow(9, 999)]; // name search
+        $this->wpdb->nextResults[] = [                                    // forPerson(9)
+            ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = $this->taskRow(5);                                      // tasks->find(5)
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(6), ['role_slug' => 'organize']); // tasks->find(6)
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);                       // the cover, not an organizer
+
+        $this->service()->captureTarget(555, 555, 'Person 9', []);
+
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame(['rep:3'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
+    }
+
+    public function testCaptureTargetOffersTheOrganizeTaskToACoverWhoIsAnOrganizer(): void
+    {
+        $this->wpdb->nextResults[] = [$this->verifiedPersonRow(9, 999)];
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(6), ['role_slug' => 'organize']);
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['is_organizer' => 1]);
+
+        $this->service()->captureTarget(555, 555, 'Person 9', []);
+
+        self::assertSame('rep:4', $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+    }
+
+    public function testSelectRefusesTheOrganizeTaskToACoverWhoIsNotAnOrganizer(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(6), ['role_slug' => 'organize']);
+
+        $this->service()->onSelect([
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => 'rep:4',
+        ]);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertStringNotContainsString('INSERT INTO', implode("\n", $this->wpdb->queries));
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertTrue((bool) $answer['show_alert']);
+        self::assertSame('That task is no longer available.', $answer['text']);
+    }
+
     public function testSelectRefusesCoveringYourOwnTask(): void
     {
         // The original slot belongs to person 7, and the cover is also 7.

@@ -164,6 +164,25 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame('🎈 Decorate · 0/2', $rendered['keyboard'][2][0]['text']);
     }
 
+    /**
+     * The group board is read by everyone in the group, so the organizers-only
+     * task is never on it.
+     */
+    public function testTheGroupBoardLeavesOutTheOrganizeTask(): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party'),
+            array_merge($this->taskRow(2, 100, 'Party'), ['role_slug' => 'organize', 'capacity' => 1]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+
+        $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
+        self::assertContains('t:1', $callbacks);
+        self::assertNotContains('t:2', $callbacks);
+    }
+
     public function testRenderHeadsEveryEventSeparately(): void
     {
         $this->wpdb->nextResults[] = [
@@ -323,6 +342,28 @@ final class BoardServiceTest extends TelegramTestCase
 
         self::assertContains('answerCallbackQuery', $this->calledMethods());
         self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    /**
+     * The organize task is not on the group board, but a join button for it
+     * could still arrive (a forged or old callback). The claim is refused.
+     */
+    public function testJoinRefusesTheOrganizeTaskToSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);                                                                    // findByTelegramUserId
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(5, 100, 'Party'), ['role_slug' => 'organize']); // claim: tasks->find
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 0];     // claim: people->find
+        // What a join would read if it got that far, so only the check stops it.
+        $this->wpdb->nextVars[] = 1;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+        self::assertSame('That task is no longer available.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertNotContains('editMessageText', $this->calledMethods());
     }
 
     public function testJoinClaimsTheSlotAndRefreshesTheBoard(): void

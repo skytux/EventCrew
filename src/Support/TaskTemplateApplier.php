@@ -85,6 +85,13 @@ final class TaskTemplateApplier
             ++$created;
         }
 
+        // One organize task per event, for organizers only and with no limit on
+        // people. Untimed, like the leader slot: it covers the whole night.
+        if (! isset($existing[Roles::ORGANIZE_SLUG])) {
+            $this->tasks->create(OrganizeTaskBackfill::taskData($event['date'], $eventPostId, ''));
+            ++$created;
+        }
+
         // A new batch of tasks makes the Telegram board out of date. The hook
         // covers both callers (the manual button and the EventMesh listener)
         // in one place; when the bot is not configured the listener no-ops.
