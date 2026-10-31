@@ -153,6 +153,33 @@ final class TicketControllerTest extends TestCase
         ];
     }
 
+    public function testRenderPageShowsTheTicketNote(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => TicketController::NOTE_OPTION === $name
+                ? "Door code: 7302\nSome street 1 <b>"
+                : null
+        );
+        Functions\when('get_site_icon_url')->justReturn('');
+        Functions\when('esc_html')->alias(static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES));
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString(
+            "<p style=\"white-space:pre-line\">Door code: 7302\nSome street 1 &lt;b&gt;</p>",
+            $html
+        );
+    }
+
+    public function testRenderPageHasNoNoteWhenNoneIsSet(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringNotContainsString('pre-line', $html);
+    }
+
     public function testRenderPageShowsNotFoundForANullTicket(): void
     {
         $html = $this->controller()->renderPage(null);

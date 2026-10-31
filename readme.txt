@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.44.0
+Stable tag: 1.45.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.45.0 =
+Ticket note: free text (door code, address, ...) shown on every ticket, set in Settings > Web page > Ticket page.
 
 = 1.44.0 =
 Restricted roles: tasks for DJ, VJ, Ceremony Leader, Organize and other roles that only the people holding that role can sign up for, by bot (/roletasks), the crew page or the sales desk. Not on the group board. Organizers can add someone who is not a crew member, with an optional email, and choose whether the task counts toward free-entry credit. /roles replaces /allow (which still works) and manages each person's roles.
@@ -599,6 +602,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.45.0 =
+Adds an optional ticket note setting.
 
 = 1.44.0 =
 Database update to version 18 (adds a credit flag to assignments). /allow is now /roles.

@@ -40,6 +40,7 @@
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
+ * @var string $ticket_note Free text shown on every ticket; blank shows nothing.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
@@ -789,6 +790,19 @@ if (! defined('ABSPATH')) {
                         autocomplete="off"
                         spellcheck="false">
                     <p class="description"><?php esc_html_e('The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-ticket-note"><?php esc_html_e('Ticket note', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <textarea
+                        id="eventcrew-ticket-note"
+                        name="ticket_note"
+                        rows="3"
+                        class="large-text"><?php echo esc_textarea($ticket_note); ?></textarea>
+                    <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>
