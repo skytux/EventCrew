@@ -351,14 +351,35 @@ final class DoorDesk
      * Adds one to the count of people let in without a name on $date, or
      * takes one off when $step is negative. The count never goes below 0.
      * Answers the new count.
+     *
+     * The change is one SQL statement that adds to the stored number inside
+     * the database. Reading the number in PHP and writing it back would lose
+     * a press when two phones press at the same moment: both would read 4
+     * and both would write 5.
      */
     public function countAnonymous(string $date, int $step): int
     {
-        $count = max(0, $this->anonymousCount($date) + ($step < 0 ? -1 : 1));
+        global $wpdb;
 
-        update_option(self::ANONYMOUS_OPTION_PREFIX . $date, $count, false);
+        $name = self::ANONYMOUS_OPTION_PREFIX . $date;
+        $delta = $step < 0 ? -1 : 1;
 
-        return $count;
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, 'no')"
+                . ' ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS SIGNED) + %d, 0)',
+                $name,
+                max(0, $delta),
+                $delta
+            )
+        );
+
+        // The value was written behind WordPress's back, so drop the cached copy.
+        wp_cache_delete($name, 'options');
+        wp_cache_delete('notoptions', 'options');
+        wp_cache_delete('alloptions', 'options');
+
+        return $this->anonymousCount($date);
     }
 
     /**
