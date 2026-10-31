@@ -306,11 +306,46 @@ final class AssignmentRepository
             ['id' => $id]
         );
 
+        $turnedUp = [AssignmentStatus::ARRIVED, AssignmentStatus::ARRIVED_LATE, AssignmentStatus::COMPLETED];
+
+        if (in_array($status, $turnedUp, true)) {
+            $this->clearLateCancelsSameNight($id);
+        }
+
         // Every status write in the plugin comes through here - the wp-admin
         // roster, the bot's /roster buttons, the door page - so this one hook
         // is where something that reacts to a status change (the door link for
         // a Welcome crew member who just arrived) can listen to all of them.
         do_action('eventcrew/assignment_status_changed', $id, $status, $changedBy);
+    }
+
+    /**
+     * Someone who cancelled late and then turned up for another task on the
+     * same date did come and work that night, so the late cancellation is
+     * changed to a plain `cancelled` (no penalty). Only on turning up, not on
+     * signing up, so signing up and cancelling again cannot wash it out.
+     */
+    private function clearLateCancelsSameNight(int $assignmentId): void
+    {
+        global $wpdb;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} AS other
+                    INNER JOIN {$this->tasksTable()} AS other_task ON other_task.id = other.task_id
+                    INNER JOIN {$this->table()} AS this_one ON this_one.person_id = other.person_id
+                    INNER JOIN {$this->tasksTable()} AS this_task ON this_task.id = this_one.task_id
+                SET other.status = %s, other.status_changed_at = %s
+                WHERE this_one.id = %d
+                  AND other.id <> this_one.id
+                  AND other.status = %s
+                  AND other_task.task_date = this_task.task_date",
+                AssignmentStatus::CANCELLED,
+                current_time('mysql'),
+                $assignmentId,
+                AssignmentStatus::LATE_CANCEL
+            )
+        );
     }
 
     public function markReminded(int $id): void

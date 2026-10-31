@@ -212,5 +212,18 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertSame(42, $update['data']['changed_by']);
         self::assertNotEmpty($update['data']['status_changed_at']);
         self::assertSame(['id' => 5], $update['where']);
+        self::assertSame([], $this->wpdb->queries, 'a no-show clears no late cancellation');
+    }
+
+    public function testTurningUpClearsALateCancellationOnTheSameDate(): void
+    {
+        (new AssignmentRepository())->setStatus(5, AssignmentStatus::ARRIVED, 42);
+
+        $sql = $this->wpdb->lastQuery();
+
+        self::assertStringContainsString("SET other.status = 'cancelled'", $sql);
+        self::assertStringContainsString('WHERE this_one.id = 5', $sql);
+        self::assertStringContainsString("other.status = 'late_cancel'", $sql);
+        self::assertStringContainsString('other_task.task_date = this_task.task_date', $sql);
     }
 }
