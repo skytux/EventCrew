@@ -14,7 +14,7 @@ use EventCrew\Telegram\TelegramClient;
  *
  * The one-shot guard is the person's own leader_eligible_notified_at column, so
  * a candidate is announced the first hour they qualify and never again - the
- * organizer decides whether to /allow them.
+ * organizer decides whether to give them 👑 Leader with /roles.
  */
 final class LeaderEligibilityNotifier
 {
@@ -59,7 +59,7 @@ final class LeaderEligibilityNotifier
     {
         $line = sprintf(
             /* translators: %s: the candidate's name */
-            __('%s has earned crew-leader eligibility — /allow them to lead.', 'eventcrew'),
+            __('%s has earned crew-leader eligibility. Give them 👑 Leader with /roles to let them lead.', 'eventcrew'),
             $person->name()
         );
 

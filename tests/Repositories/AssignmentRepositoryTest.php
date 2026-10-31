@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Repositories;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\MarkedBy;
@@ -19,6 +20,28 @@ use EventCrew\Tests\TestCase;
  */
 final class AssignmentRepositoryTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Every option at its default: the restricted-role list is read from
+        // the roles option, and the default has only Organize restricted.
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $default
+        );
+    }
+
+    public function testCompletedCountsSkipTasksThatDoNotCountForCredit(): void
+    {
+        $repository = new AssignmentRepository();
+
+        $repository->countCompletedFor(9);
+        self::assertStringContainsString('counts_credit = 1', $this->wpdb->lastQuery());
+
+        $repository->completedByRole(9);
+        self::assertStringContainsString('a.counts_credit = 1', $this->wpdb->lastQuery());
+    }
+
     public function testReportsAnUnknownTaskWithoutAttemptingAWrite(): void
     {
         $this->wpdb->nextVars = [null];
@@ -162,7 +185,7 @@ final class AssignmentRepositoryTest extends TestCase
         $sql = $this->wpdb->lastQuery();
 
         self::assertStringContainsString('SELECT COUNT(*)', $sql);
-        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug = 'organize'\)/", $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug IN \('organize'\)\)/", $sql);
     }
 
     public function testReactivationLetsTheOrganizeTaskThroughWhateverTheCount(): void
@@ -178,7 +201,7 @@ final class AssignmentRepositoryTest extends TestCase
         $sql = $this->wpdb->lastQuery();
 
         self::assertStringContainsString('UPDATE', $sql);
-        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug = 'organize'\)/", $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug IN \('organize'\)\)/", $sql);
     }
 
     public function testReactivationRefusesWhenTheTaskIsNowFull(): void

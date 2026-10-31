@@ -33,7 +33,12 @@ final class StandingCalculator
 
     public function for(int $personId): Standing
     {
-        $history = $this->assignments->historyFor($personId);
+        // A task someone was put on with "does not count toward free-entry
+        // credit" counts for nothing here: not credit, not score, not rating.
+        $history = array_values(array_filter(
+            $this->assignments->historyFor($personId),
+            static fn (array $entry): bool => $entry['assignment']->countsCredit
+        ));
         $now = (int) strtotime((string) current_time('mysql'));
 
         $settings = new ReputationSettings();

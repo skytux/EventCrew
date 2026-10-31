@@ -231,7 +231,12 @@ final class DoorController
 
             case self::WORK_ACTION:
                 $task = isset($_POST['task']) ? (int) $_POST['task'] : 0;
-                $code = $this->desk->workTonight($date, $doorPersonId, $personId, $task);
+                // Only sent for a restricted task, after the desk asked "Count
+                // toward free-entry credit?".
+                $countsCredit = isset($_POST['counts_credit'])
+                    ? '1' === sanitize_key(wp_unslash($_POST['counts_credit']))
+                    : null;
+                $code = $this->desk->workTonight($date, $doorPersonId, $personId, $task, $countsCredit);
                 $this->json([
                     'ok' => in_array($code, [DoorDesk::WORK_OK, DoorDesk::WORK_SWAPPED], true),
                     'message' => $this->desk->workTonightText($code),

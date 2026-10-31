@@ -34,11 +34,21 @@ final class SignupService
     public const LEADER_ONLY = 'leader_only';
 
     /**
-     * Refused: an organizers-only task, and this person is not an organizer.
-     * The channels word it as "no longer available", because a non-organizer
-     * is never shown the task in the first place.
+     * Refused: a restricted task (Organize, or a role set to "Only people with
+     * this role") and this person does not hold the role. The channels word it
+     * as "no longer available", because such a person is never shown the task
+     * in the first place. The value keeps its old name so stored notice codes
+     * and callers written for Organize alone still match.
      */
     public const ORGANIZERS_ONLY = 'organizers_only';
+
+    /**
+     * Refused: a restricted task, and nobody said whether it counts toward
+     * free-entry credit. Every channel asks "Count toward free-entry credit?"
+     * before it claims such a task, so this only shows up from a stale or
+     * hand-made request.
+     */
+    public const CREDIT_QUESTION = 'credit_question';
 
     public function __construct(
         private readonly AssignmentRepository $assignments,
@@ -50,18 +60,28 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::LEADER_ONLY, self::ORGANIZERS_ONLY, or an AssignmentRepository::JOIN_*
-     * outcome.
+     * self::LEADER_ONLY, self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
+     * AssignmentRepository::JOIN_* outcome.
+     *
+     * $countsCredit is the answer to "Count toward free-entry credit?". It is
+     * only asked for restricted tasks, which need it (null refuses with
+     * CREDIT_QUESTION); every other task always counts and ignores it.
      */
-    public function claim(int $personId, int $taskId): string
+    public function claim(int $personId, int $taskId, ?bool $countsCredit = null): string
     {
-        ['refusal' => $refusal, 'pass' => $usePass] = $this->evaluate($personId, $taskId);
+        ['refusal' => $refusal, 'pass' => $usePass, 'task' => $task] = $this->evaluate($personId, $taskId);
 
         if ('' !== $refusal) {
             return $refusal;
         }
 
-        $outcome = $this->assignments->join($taskId, $personId);
+        $restricted = null !== $task && $task->isRestricted();
+
+        if ($restricted && null === $countsCredit) {
+            return self::CREDIT_QUESTION;
+        }
+
+        $outcome = $this->assignments->join($taskId, $personId, $restricted ? (bool) $countsCredit : true);
 
         if ($usePass && in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
             $this->people->clearAtRiskPass($personId);
@@ -94,7 +114,7 @@ final class SignupService
      * both answers, and asking twice would both cost a second standing
      * calculation and open a gap between the two reads.
      *
-     * @return array{refusal: string, pass: bool}
+     * @return array{refusal: string, pass: bool, task: Task|null}
      */
     private function evaluate(int $personId, int $taskId): array
     {
@@ -105,21 +125,21 @@ final class SignupService
         $person = $this->people->find($personId);
 
         if (null !== $person && $person->isBanned()) {
-            return ['refusal' => self::GATED, 'pass' => false];
+            return ['refusal' => self::GATED, 'pass' => false, 'task' => $task];
         }
 
         if (self::blocksLeaderSlot($task, $person)) {
-            return ['refusal' => self::LEADER_ONLY, 'pass' => false];
+            return ['refusal' => self::LEADER_ONLY, 'pass' => false, 'task' => $task];
         }
 
-        if (self::blocksOrganizerSlot($task, $person)) {
-            return ['refusal' => self::ORGANIZERS_ONLY, 'pass' => false];
+        if (self::blocksRestrictedSlot($task, $person)) {
+            return ['refusal' => self::ORGANIZERS_ONLY, 'pass' => false, 'task' => $task];
         }
 
         $gate = $this->gateRefusal($personId, $person);
 
         if ('' !== $gate['refusal']) {
-            return $gate;
+            return $gate + ['task' => $task];
         }
 
         /*
@@ -131,7 +151,7 @@ final class SignupService
          * refusal cost the organizer a filled slot to prevent something that
          * was not a problem.
          */
-        return ['refusal' => '', 'pass' => $gate['pass']];
+        return ['refusal' => '', 'pass' => $gate['pass'], 'task' => $task];
     }
 
     /**
@@ -150,17 +170,18 @@ final class SignupService
     }
 
     /**
-     * Whether this task is for organizers only and this person is not one.
-     * Static and pure for the same reason as blocksLeaderSlot(): every list
-     * that shows tasks asks it to leave the task out for everyone else.
+     * Whether this task is restricted (Organize, or a role set to "Only people
+     * with this role") and this person does not hold its role. Static and pure
+     * for the same reason as blocksLeaderSlot(): every list that shows tasks
+     * asks it to leave the task out for everyone else.
      */
-    public static function blocksOrganizerSlot(?Task $task, ?Person $person): bool
+    public static function blocksRestrictedSlot(?Task $task, ?Person $person): bool
     {
-        if (null === $task || ! $task->isOrganizersOnly()) {
+        if (null === $task || ! $task->isRestricted()) {
             return false;
         }
 
-        return null === $person || ! $person->isOrganizer;
+        return null === $person || ! $person->hasRole($task->roleSlug);
     }
 
     /**

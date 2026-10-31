@@ -112,7 +112,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         $this->wpdb->nextRows[] = $this->taskRow(9, $role);        // confirmation: tasks->find
         $this->wpdb->nextRows[] = $this->assignmentRow(30, 9, 8, 'arrived'); // confirmation: findFor
 
-        self::assertSame(DoorDesk::WORK_OK, $this->desk($this->notifier())->workTonight(self::NIGHT, 1, 8, 9));
+        self::assertSame(DoorDesk::WORK_OK, $this->desk($this->notifier())->workTonight(self::NIGHT, 1, 8, 9, true));
 
         return $mails;
     }
@@ -498,6 +498,77 @@ final class DoorDeskTest extends SalesDeskTestCase
 
         self::assertSame([9], array_column($tasks, 'id'));
         self::assertNull($tasks[0]['free']);
+    }
+
+    /**
+     * Settings > Roles with a "DJ" role set to "Only people with this role".
+     */
+    private function withDjRole(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'emoji' => '🎧', 'restricted' => true],
+        ];
+    }
+
+    public function testOpenTasksShowsARestrictedTaskOnlyToSomeoneWithItsRole(): void
+    {
+        $this->withDjRole();
+        $dj = $this->taskRow(9, 'dj');
+        $dj['capacity'] = 1;
+
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate'), $dj];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertSame([5], array_column($this->desk()->openTasks(self::NIGHT, 8), 'id'));
+
+        $holder = $this->personRow(8);
+        $holder['role_slugs'] = 'dj';
+        $this->wpdb->nextRows[] = $holder;
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate'), $dj];
+        $this->wpdb->nextResults[] = [['task_id' => 9, 'taken' => 4]];
+
+        $tasks = $this->desk()->openTasks(self::NIGHT, 8);
+
+        self::assertSame([5, 9], array_column($tasks, 'id'));
+        // No limit: shown with no free-place count although 4 > capacity 1,
+        // and the desk asks the credit question for it.
+        self::assertNull($tasks[1]['free']);
+        self::assertSame([false, true], array_column($tasks, 'ask_credit'));
+    }
+
+    public function testWorkingTonightOnARestrictedTaskNeedsTheRoleAndTheCreditAnswer(): void
+    {
+        $this->withDjRole();
+
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $this->taskRow(9, 'dj');
+
+        self::assertSame(DoorDesk::WORK_UNAVAILABLE, $this->desk()->workTonight(self::NIGHT, 1, 8, 9));
+
+        $holder = $this->personRow(8);
+        $holder['role_slugs'] = 'dj';
+        $this->wpdb->nextRows[] = $holder;
+        $this->wpdb->nextRows[] = $this->taskRow(9, 'dj');
+
+        self::assertSame(DoorDesk::WORK_CREDIT_QUESTION, $this->desk()->workTonight(self::NIGHT, 1, 8, 9));
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+
+        $this->wpdb->nextRows[] = $holder;
+        $this->wpdb->nextRows[] = $this->taskRow(9, 'dj');
+        $this->wpdb->nextVars[] = 3;            // join: capacity
+        $this->wpdb->nextRows[] = null;         // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;    // join: inserted
+        $this->wpdb->nextQueryResults[] = 1;    // the check-in
+
+        $this->desk()->workTonight(self::NIGHT, 1, 8, 9, false);
+
+        $insert = (string) current(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'counts_credit)')
+        ));
+        self::assertStringContainsString("SELECT 9, 8, 'signed_up', '2026-07-20 12:00:00', 0", $insert);
     }
 
     public function testWorkingTonightRefusesTheOrganizeTaskToSomeoneWhoIsNotAnOrganizer(): void

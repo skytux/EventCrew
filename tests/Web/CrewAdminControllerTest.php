@@ -25,6 +25,8 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\PersonEraser;
+use EventCrew\Support\RoleTaskService;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\Turnstile;
@@ -98,7 +100,21 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             new AssignmentRepository(),
             $this->client(),
             $this->mailer(),
-            new Logger()
+            new Logger(),
+            $this->roleTasks()
+        );
+    }
+
+    private function roleTasks(): RoleTaskService
+    {
+        $assignments = new AssignmentRepository();
+
+        return new RoleTaskService(
+            new PersonRepository(),
+            new TaskRepository(),
+            $assignments,
+            $this->signup(),
+            new ClaimNotifier(new TaskRepository(), $assignments, $this->mailer(), $this->client(), $this->standing())
         );
     }
 
@@ -281,6 +297,136 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertSame('admin_no_entry', $result['notice']);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    // --- restricted roles: adding a person to a role task ------------------
+
+    /**
+     * Settings > Roles with a "DJ" role set to "Only people with this role",
+     * and task 9 a DJ task tonight.
+     *
+     * @return array<string, mixed> The DJ task row.
+     */
+    private function djTask(): array
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'emoji' => '🎧', 'restricted' => true],
+        ];
+        Functions\when('wp_generate_password')->justReturn('AbCdEf123456');
+
+        return ['capacity' => 1] + $this->taskRow(9, 'dj');
+    }
+
+    /**
+     * Queues what adding a new person (id 40) to the DJ task reads after the
+     * task and the email lookup: the new row, the signup, the confirmation.
+     *
+     * @param array<string, mixed> $task
+     * @param array<string, mixed> $created
+     */
+    private function queueNewPersonSignup(array $task, array $created): void
+    {
+        $this->wpdb->insert_id = 40;
+        $this->wpdb->nextRows[] = $created;                                  // people->find (new)
+        $this->wpdb->nextRows[] = $task;                                     // claim: tasks->find
+        $this->wpdb->nextRows[] = ['role_slugs' => 'dj'] + $created;        // claim: people->find
+        $this->wpdb->nextVars[] = 1;                                         // join: capacity
+        $this->wpdb->nextRows[] = null;                                      // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                                 // join: inserted
+        $this->wpdb->nextRows[] = $task;                                     // confirmation: task
+        $this->wpdb->nextRows[] = $this->assignmentRow(50, 9, 40, 'signed_up');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function personInserts(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->inserts,
+            static fn (array $i): bool => str_ends_with($i['table'], 'people')
+        ));
+    }
+
+    public function testAnOrganizerAddsANonMemberWithAnEmailAndTheyGetTheirTicket(): void
+    {
+        $task = $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $task;   // addPerson: tasks->find
+        $this->wpdb->nextRows[] = null;    // findByEmail: nobody yet
+        $created = ['id' => 40, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
+        $this->queueNewPersonSignup($task, $created);
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_id' => '9', 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '0']
+        );
+
+        self::assertSame('admin_add_added_mail', $result['notice']);
+        $people = $this->personInserts();
+        self::assertCount(1, $people);
+        self::assertSame('kim@example.com', $people[0]['data']['email']);
+        self::assertSame('Kim', $people[0]['data']['display_name']);
+        // Given the role, then signed up with the answer "No".
+        self::assertSame('dj', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertStringContainsString("SELECT 9, 40, 'signed_up', '2026-07-20 12:00:00', 0", implode("\n", $this->wpdb->queries));
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+    }
+
+    public function testAnOrganizerAddsANonMemberWithNoEmailAndNothingIsSent(): void
+    {
+        $task = $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $task;   // addPerson: tasks->find
+        $created = ['id' => 40, 'email' => 'added-abcdef123456@added.invalid', 'display_name' => 'Kim'];
+        $this->queueNewPersonSignup($task, $created);
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_id' => '9', 'name' => 'Kim', 'email' => '', 'counts_credit' => '1']
+        );
+
+        self::assertSame('admin_add_added', $result['notice']);
+        self::assertSame('added-abcdef123456@added.invalid', $this->personInserts()[0]['data']['email']);
+        self::assertStringContainsString("SELECT 9, 40, 'signed_up', '2026-07-20 12:00:00', 1", implode("\n", $this->wpdb->queries));
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAMemberCannotAddAPersonToARoleTask(): void
+    {
+        $this->djTask();
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_id' => '9', 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '1'],
+            8
+        );
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertSame([], $this->personInserts());
+        self::assertStringNotContainsString('counts_credit)', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testAnOrganizerGivesAndTakesAwayARole(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $result = $this->post(CrewAdminController::ROLES_ACTION, ['person_id' => '8', 'add_role' => 'dj']);
+
+        self::assertSame('admin_roles_saved', $result['notice']);
+        self::assertSame('dj', $this->wpdb->updates[0]['data']['role_slugs']);
+
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['role_slugs' => 'dj'] + $this->personRow(8);
+
+        $this->post(CrewAdminController::ROLES_ACTION, ['person_id' => '8', 'roles' => []]);
+
+        self::assertSame('', $this->wpdb->updates[1]['data']['role_slugs']);
     }
 
     // --- a forged request from a signed-in member -------------------------

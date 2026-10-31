@@ -13,6 +13,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
@@ -182,6 +183,26 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
+    }
+
+    public function testTheGroupBoardLeavesOutEveryRestrictedRoleTask(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'emoji' => '🎧', 'restricted' => true],
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party'),
+            array_merge($this->taskRow(2, 100, 'Party'), ['role_slug' => 'dj', 'capacity' => 1]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+
+        $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
+        self::assertContains('t:1', $callbacks);
+        self::assertNotContains('t:2', $callbacks);
+        self::assertStringNotContainsString('DJ', $rendered['text']);
     }
 
     /**

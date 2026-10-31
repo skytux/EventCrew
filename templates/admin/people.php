@@ -97,6 +97,24 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                         <p><?php esc_html_e('May take the reserved 🧭 Leader slot and mark that night’s crew from the bot, without being an organizer.', 'eventcrew'); ?></p>
                     </div>
 
+                    <?php $eventcrew_restricted_roles = \EventCrew\Support\Roles::assignable(); ?>
+                    <?php if ([] !== $eventcrew_restricted_roles) : ?>
+                        <div class="form-field">
+                            <p><strong><?php esc_html_e('Roles', 'eventcrew'); ?></strong></p>
+                            <?php foreach ($eventcrew_restricted_roles as $eventcrew_restricted_role) : ?>
+                                <label style="display:block">
+                                    <input
+                                        name="roles[]"
+                                        type="checkbox"
+                                        value="<?php echo esc_attr($eventcrew_restricted_role['slug']); ?>"
+                                        <?php checked($eventcrew_is_edit && $editing->hasRole($eventcrew_restricted_role['slug'])); ?>>
+                                    <?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_restricted_role['slug'])); ?>
+                                </label>
+                            <?php endforeach; ?>
+                            <p><?php esc_html_e('Only people with a role see its tasks and can sign up for them.', 'eventcrew'); ?></p>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="form-field">
                         <label for="eventcrew-person-notes"><?php esc_html_e('Notes', 'eventcrew'); ?></label>
                         <textarea name="notes" id="eventcrew-person-notes" rows="3"><?php
@@ -311,7 +329,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
         <p class="description">
             <?php echo esc_html(sprintf(
                 /* translators: %d: completions required in each role */
-                __('Eligible = has completed at least %d tasks in every active role. Eligibility is only a suggestion; grant leader by editing a person, or with the bot’s /allow.', 'eventcrew'),
+                __('Eligible = has completed at least %d tasks in every active role. Eligibility is only a suggestion; grant leader by editing a person, or with the bot’s /roles.', 'eventcrew'),
                 $lead_threshold
             )); ?>
             <br>

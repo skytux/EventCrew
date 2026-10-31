@@ -391,6 +391,14 @@
     min-height: 44px; min-width: 7.5em; text-align: center;
 }
 .eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
+/* A role task: Sign up opens "Count toward free-entry credit?" with Yes / No. */
+.eventcrew-signup .eventcrew-credit-ask summary { list-style: none; display: inline-block; }
+.eventcrew-signup .eventcrew-credit-ask summary::-webkit-details-marker { display: none; }
+.eventcrew-signup .eventcrew-credit-ask[open] summary { display: none; }
+.eventcrew-signup .eventcrew-credit-ask form { display: inline-block; margin: .25em .25em 0 0; }
+.eventcrew-signup .eventcrew-credit-ask .eventcrew-btn-go { min-width: 4em; }
+.eventcrew-signup .eventcrew-admin-roles { margin: .5em 0; }
+.eventcrew-signup .eventcrew-admin-roles label { margin-right: .75em; white-space: nowrap; }
 .eventcrew-signup .eventcrew-btn-go { background: var(--eventcrew-go); color: var(--eventcrew-on-accent); }
 .eventcrew-signup .eventcrew-btn-go:hover { filter: brightness(.92); color: var(--eventcrew-on-accent); }
 .eventcrew-signup .eventcrew-btn-stop { background: var(--eventcrew-stop); color: #fff; }

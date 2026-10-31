@@ -44,6 +44,7 @@ final class DoorDesk
     public const WORK_FULL = 'full';
     public const WORK_LEADER_ONLY = 'leader_only';
     public const WORK_UNAVAILABLE = 'unavailable';
+    public const WORK_CREDIT_QUESTION = 'credit_question';
 
     /** addHolviBuyer() answers. */
     public const HOLVI_OK = 'ok';
@@ -483,10 +484,12 @@ final class DoorDesk
 
     /**
      * Tonight's tasks this member could be signed up for at the door: those
-     * with a free place, leaving out leader-only and organizers-only ones they
-     * cannot take. A task with no limit has free null: it is never full.
+     * with a free place, leaving out leader-only ones and restricted ones
+     * (Organize, DJ, ...) whose role they do not hold. A task with no limit
+     * has free null: it is never full. ask_credit is true for a restricted
+     * task, where the desk asks whether it counts toward free-entry credit.
      *
-     * @return array<int, array{id: int, label: string, free: int|null}>
+     * @return array<int, array{id: int, label: string, free: int|null, mine: bool, ask_credit: bool}>
      */
     public function openTasks(string $date, int $personId): array
     {
@@ -502,7 +505,7 @@ final class DoorDesk
         $open = [];
 
         foreach ($tasks as $task) {
-            if (SignupService::blocksOrganizerSlot($task, $person)) {
+            if (SignupService::blocksRestrictedSlot($task, $person)) {
                 continue;
             }
 
@@ -521,6 +524,9 @@ final class DoorDesk
                 'label' => '' === $time ? $task->roleLabel() : $task->roleLabel() . ' · ' . $time,
                 'free' => $free,
                 'mine' => $held,
+                // The desk asks "Count toward free-entry credit?" before it
+                // signs someone up for a restricted task.
+                'ask_credit' => $task->isRestricted(),
             ];
         }
 
@@ -555,8 +561,13 @@ final class DoorDesk
      * their ticket is cancelled, which gives the credit back, and the grant
      * log gets a line saying why (WORK_SWAPPED).
      */
-    public function workTonight(string $date, int $doorPersonId, int $personId, int $taskId): string
-    {
+    public function workTonight(
+        string $date,
+        int $doorPersonId,
+        int $personId,
+        int $taskId,
+        ?bool $countsCredit = null
+    ): string {
         $person = $this->people->find($personId);
         $task = $this->tasks->find($taskId);
 
@@ -568,13 +579,19 @@ final class DoorDesk
             return self::WORK_LEADER_ONLY;
         }
 
-        // Worded like a task that is not there: a non-organizer is never
-        // offered this task, so there is nothing more to say about it.
-        if (SignupService::blocksOrganizerSlot($task, $person)) {
+        // Worded like a task that is not there: someone without the task's
+        // role is never offered it, so there is nothing more to say about it.
+        if (SignupService::blocksRestrictedSlot($task, $person)) {
             return self::WORK_UNAVAILABLE;
         }
 
-        $outcome = $this->assignments->join($taskId, $personId);
+        // A restricted task needs the answer to "Count toward free-entry
+        // credit?"; every other task always counts.
+        if ($task->isRestricted() && null === $countsCredit) {
+            return self::WORK_CREDIT_QUESTION;
+        }
+
+        $outcome = $this->assignments->join($taskId, $personId, $task->isRestricted() ? (bool) $countsCredit : true);
 
         if (AssignmentRepository::JOIN_FULL === $outcome) {
             return self::WORK_FULL;
@@ -642,6 +659,7 @@ final class DoorDesk
             self::WORK_SWAPPED => __('Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back.', 'eventcrew'),
             self::WORK_FULL => __('That task has just filled up. Pick another one.', 'eventcrew'),
             self::WORK_LEADER_ONLY => __('That task is for crew leaders only.', 'eventcrew'),
+            self::WORK_CREDIT_QUESTION => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             default => __('They could not be signed up for that task.', 'eventcrew'),
         };
     }

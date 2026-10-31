@@ -58,9 +58,13 @@ final class AssignmentRepository
      * same person double-tapping. That one surfaces as an insert failure
      * rather than a duplicate row.
      *
+     * $countsCredit false records that this task should not count toward the
+     * person's free-entry credit or standing (asked for restricted-role
+     * tasks only); a rejoin overwrites it with the new answer.
+     *
      * @return self::JOIN_*
      */
-    public function join(int $taskId, int $personId): string
+    public function join(int $taskId, int $personId, bool $countsCredit = true): string
     {
         global $wpdb;
 
@@ -76,7 +80,7 @@ final class AssignmentRepository
             // cannot insert a second row for this person and task.
             return $existing->isOccupying()
                 ? self::JOIN_DUPLICATE
-                : $this->reactivate($existing->id, $taskId);
+                : $this->reactivate($existing->id, $taskId, $countsCredit);
         }
 
         $statuses = AssignmentStatus::occupying();
@@ -86,10 +90,14 @@ final class AssignmentRepository
         // into. MySQL rejects that when the subquery is uncorrelated and
         // directly names the target, so it is wrapped in a derived table -
         // which also forces materialisation, giving a stable count.
-        // A task with no limit (the organize task) skips the count: the second
-        // condition lets the insert through whatever the first one says.
-        $sql = "INSERT INTO {$this->table()} (task_id, person_id, status, signed_up_at)
-            SELECT %d, %d, %s, %s
+        // A task with no limit (any restricted role's task, Organize included)
+        // skips the count: the second condition lets the insert through
+        // whatever the first one says.
+        $restricted = Roles::restrictedSlugs();
+        $rolePlaceholders = implode(',', array_fill(0, count($restricted), '%s'));
+
+        $sql = "INSERT INTO {$this->table()} (task_id, person_id, status, signed_up_at, counts_credit)
+            SELECT %d, %d, %s, %s, %d
             FROM (SELECT 1) AS placeholder
             WHERE (
                 SELECT COUNT(*)
@@ -97,12 +105,13 @@ final class AssignmentRepository
                 WHERE existing.task_id = %d
                   AND existing.status IN ({$statusPlaceholders})
             ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
-            OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug = %s)";
+            OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug IN ({$rolePlaceholders}))";
 
         $params = array_merge(
-            [$taskId, $personId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $taskId],
+            [$taskId, $personId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $countsCredit ? 1 : 0, $taskId],
             $statuses,
-            [$taskId, $taskId, Roles::ORGANIZE_SLUG]
+            [$taskId, $taskId],
+            $restricted
         );
 
         // The statement is assembled above from table-name constants and
@@ -137,16 +146,20 @@ final class AssignmentRepository
      *
      * @return self::JOIN_REJOINED|self::JOIN_FULL
      */
-    private function reactivate(int $assignmentId, int $taskId): string
+    private function reactivate(int $assignmentId, int $taskId, bool $countsCredit = true): string
     {
         global $wpdb;
+
+        $restricted = Roles::restrictedSlugs();
+        $rolePlaceholders = implode(',', array_fill(0, count($restricted), '%s'));
 
         $statuses = AssignmentStatus::occupying();
         $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
         $now = current_time('mysql');
 
         $sql = "UPDATE {$this->table()} AS target
-            SET target.status = %s, target.signed_up_at = %s, target.status_changed_at = %s
+            SET target.status = %s, target.signed_up_at = %s, target.status_changed_at = %s,
+                target.counts_credit = %d
             WHERE target.id = %d
               AND (
                 (
@@ -155,13 +168,14 @@ final class AssignmentRepository
                   WHERE existing.task_id = %d
                     AND existing.status IN ({$statusPlaceholders})
                 ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
-                OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug = %s)
+                OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug IN ({$rolePlaceholders}))
               )";
 
         $params = array_merge(
-            [AssignmentStatus::SIGNED_UP, $now, $now, $assignmentId, $taskId],
+            [AssignmentStatus::SIGNED_UP, $now, $now, $countsCredit ? 1 : 0, $assignmentId, $taskId],
             $statuses,
-            [$taskId, $taskId, Roles::ORGANIZE_SLUG]
+            [$taskId, $taskId],
+            $restricted
         );
 
         // Assembled from table-name constants and generated placeholders, then
@@ -533,7 +547,8 @@ final class AssignmentRepository
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND status IN ({$statusPlaceholders})",
+                "SELECT COUNT(*) FROM {$this->table()}
+                WHERE person_id = %d AND counts_credit = 1 AND status IN ({$statusPlaceholders})",
                 array_merge([$personId], $statuses)
             )
         );
@@ -557,7 +572,7 @@ final class AssignmentRepository
                 "SELECT s.role_slug AS role_slug, COUNT(*) AS n
                 FROM {$this->table()} a
                 INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
-                WHERE a.person_id = %d AND a.status IN ({$statusPlaceholders})
+                WHERE a.person_id = %d AND a.counts_credit = 1 AND a.status IN ({$statusPlaceholders})
                 GROUP BY s.role_slug",
                 array_merge([$personId], $statuses)
             ),

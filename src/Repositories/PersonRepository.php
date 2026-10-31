@@ -7,6 +7,7 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Person;
 use EventCrew\Support\Language;
+use EventCrew\Support\Roles;
 
 /**
  * All reads and writes of the people table.
@@ -90,6 +91,7 @@ final class PersonRepository
                 'can_lead' => ! empty($data['can_lead']) ? 1 : 0,
                 'at_risk_pass' => ! empty($data['at_risk_pass']) ? 1 : 0,
                 'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
+                'role_slugs' => self::encodeRoles((array) ($data['role_slugs'] ?? [])),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -243,6 +245,39 @@ final class PersonRepository
     public function setCanLead(int $id, bool $canLead): void
     {
         $this->update($id, ['can_lead' => $canLead ? 1 : 0]);
+    }
+
+    /**
+     * Replaces the restricted roles a person holds (DJ, VJ, ...). Unknown
+     * slugs and Organize are dropped: Organize follows is_organizer.
+     *
+     * @param array<int, string> $slugs
+     */
+    public function setRoles(int $id, array $slugs): void
+    {
+        $this->update($id, ['role_slugs' => self::encodeRoles($slugs)]);
+    }
+
+    /**
+     * The comma-separated column value for a list of role slugs.
+     *
+     * @param array<int, mixed> $slugs
+     */
+    public static function encodeRoles(array $slugs): string
+    {
+        $clean = [];
+
+        foreach ($slugs as $slug) {
+            $slug = sanitize_key((string) $slug);
+
+            if ('' === $slug || Roles::ORGANIZE_SLUG === $slug || Roles::LEADER_SLUG === $slug) {
+                continue;
+            }
+
+            $clean[$slug] = $slug;
+        }
+
+        return implode(',', array_values($clean));
     }
 
     /**

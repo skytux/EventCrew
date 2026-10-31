@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 
 /**
@@ -35,6 +36,12 @@ final class Mailer
      */
     public function toPerson(int $personId, string $to, string $subject, string $body, array $actions = []): bool
     {
+        // A person added without an email (or erased) has a ".invalid"
+        // placeholder address, which can never receive mail. Nothing is sent.
+        if (Person::isPlaceholderEmail($to)) {
+            return false;
+        }
+
         $manageUrl = $this->manageUrl($personId);
         $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
 

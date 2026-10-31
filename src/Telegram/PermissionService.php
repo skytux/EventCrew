@@ -11,15 +11,20 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\Roles;
 
 /**
- * /allow and /leaders - the organizer's permission tools from Telegram.
+ * /roles and /leaders - the organizer's permission tools from Telegram.
  *
- * /allow grants leader (may take the reserved leader slot), a one-time at-risk
- * pass (sign up once despite being at risk), or admin (full organizer). The flow
- * mirrors /gift and /replace: ask who, send a name or @mention, tap a toggle.
- * /leaders lists who is eligible and who has been allowed. Both are admin-only,
- * answered in the DM with a breadcrumb when asked in a group.
+ * /roles (its old name /allow still works) manages one person's roles: leader
+ * (may take the reserved leader slot), a one-time at-risk pass (sign up once
+ * despite being at risk), organizer, and each role set to "Only people with
+ * this role" in Settings > Roles (DJ, VJ, ...). The flow mirrors /gift and
+ * /replace: ask who, send a name or @mention, then one message per match with
+ * a button per role; a check mark shows what the person has, and a tap
+ * switches it on or off. /leaders lists who is eligible and who has been
+ * allowed. Both are admin-only, answered in the DM with a breadcrumb when
+ * asked in a group.
  */
 final class PermissionService
 {
@@ -43,7 +48,7 @@ final class PermissionService
         $organizer = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $organizer || ! $organizer->isOrganizer) {
-            $this->telegram->sendMessage($chatId, __('Only organizers can set permissions.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, __('Only organizers can change roles.', 'eventcrew'));
 
             return;
         }
@@ -51,7 +56,7 @@ final class PermissionService
         set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
             $telegramUserId,
-            __('Who should this apply to? Send their name, or @mention them.', 'eventcrew')
+            __('Whose roles do you want to change? Send their name, or @mention them.', 'eventcrew')
         );
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -90,7 +95,7 @@ final class PermissionService
 
         $none = __('— none yet', 'eventcrew');
         $lines = ['🧭 ' . __('Crew leaders', 'eventcrew'), ''];
-        $lines[] = __('Eligible (you can /allow them):', 'eventcrew');
+        $lines[] = __('Eligible (give them 👑 Leader with /roles):', 'eventcrew');
         $lines = array_merge($lines, [] === $eligible ? [$none] : $eligible);
         $lines[] = '';
         $lines[] = __('Allowed to lead:', 'eventcrew');
@@ -101,7 +106,8 @@ final class PermissionService
     }
 
     /**
-     * The reply naming who to allow. Offers each match a row of toggle buttons.
+     * The reply naming whose roles to change. Each match gets its own message:
+     * their name, and a button per role with ✅ on the ones they have.
      *
      * @param array<int, array<string, mixed>> $entities
      */
@@ -109,17 +115,9 @@ final class PermissionService
     {
         delete_transient(self::AWAIT_PREFIX . $telegramUserId);
 
-        $buttons = [];
+        $matches = PersonResolver::matching($this->people, $text, $entities);
 
-        foreach (PersonResolver::matching($this->people, $text, $entities) as $person) {
-            $buttons[] = [
-                ['text' => $person->name() . ' 👑', 'callback_data' => self::PICK_PREFIX . 'leader:' . $person->id],
-                ['text' => $person->name() . ' 🎟', 'callback_data' => self::PICK_PREFIX . 'pass:' . $person->id],
-                ['text' => $person->name() . ' ⭐', 'callback_data' => self::PICK_PREFIX . 'admin:' . $person->id],
-            ];
-        }
-
-        if ([] === $buttons) {
+        if ([] === $matches) {
             $this->telegram->sendMessage(
                 $chatId,
                 __('I couldn’t find anyone by that name. Try their exact name or @mention them.', 'eventcrew')
@@ -128,11 +126,56 @@ final class PermissionService
             return;
         }
 
-        $this->telegram->sendMessage(
-            $chatId,
-            __('Tap to toggle: 👑 leader · 🎟 one-time at-risk pass · ⭐ admin.', 'eventcrew'),
-            ['inline_keyboard' => $buttons]
+        foreach ($matches as $person) {
+            $this->telegram->sendMessage($chatId, $this->menuText($person), $this->menuKeyboard($person));
+        }
+    }
+
+    /**
+     * The text over one person's role buttons.
+     */
+    private function menuText(Person $person): string
+    {
+        return sprintf(
+            /* translators: %s: person's name */
+            __("Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk.", 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $person->name()
         );
+    }
+
+    /**
+     * One person's role buttons, two to a row: leader, the one-time pass,
+     * organizer, then every active restricted role.
+     *
+     * @return array<string, mixed>
+     */
+    private function menuKeyboard(Person $person): array
+    {
+        $mark = static fn (bool $on): string => $on ? '✅ ' : '';
+        $prefix = self::PICK_PREFIX;
+        $buttons = [
+            [
+                'text' => $mark($person->canLead()) . '👑 ' . __('Leader', 'eventcrew'),
+                'callback_data' => $prefix . 'leader:' . $person->id,
+            ],
+            [
+                'text' => $mark($person->hasAtRiskPass) . '🎟 ' . __('One-time pass', 'eventcrew'),
+                'callback_data' => $prefix . 'pass:' . $person->id,
+            ],
+            [
+                'text' => $mark($person->isOrganizer) . '⭐ ' . __('Organizer', 'eventcrew'),
+                'callback_data' => $prefix . 'admin:' . $person->id,
+            ],
+        ];
+
+        foreach (Roles::assignable() as $role) {
+            $buttons[] = [
+                'text' => $mark($person->hasRole($role['slug'])) . Roles::display($role['slug']),
+                'callback_data' => $prefix . 'role:' . $role['slug'] . ':' . $person->id,
+            ];
+        }
+
+        return ['inline_keyboard' => array_chunk($buttons, 2)];
     }
 
     /**
@@ -145,14 +188,18 @@ final class PermissionService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $organizerTelegramId = (int) ($callbackQuery['from']['id'] ?? 0);
-        [$action, $personId] = $this->parse((string) ($callbackQuery['data'] ?? ''));
+        [$action, $personId, $slug] = $this->parse((string) ($callbackQuery['data'] ?? ''));
 
         $organizer = 0 === $organizerTelegramId
             ? null
             : $this->people->findByTelegramUserId($organizerTelegramId);
 
         if (null === $organizer || ! $organizer->isOrganizer) {
-            $this->telegram->answerCallbackQuery($callbackId, __('Only organizers can set permissions.', 'eventcrew'), true);
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('Only organizers can change roles.', 'eventcrew'),
+                true
+            );
 
             return;
         }
@@ -165,14 +212,67 @@ final class PermissionService
             return;
         }
 
-        [$answer, $dmKind] = $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
+        [$answer, $dmKind] = 'role' === $action
+            ? $this->toggleRole($person, $slug)
+            : $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
         $this->telegram->answerCallbackQuery($callbackId, $answer);
+        $this->refreshMenu($callbackQuery, $person->id);
 
         // Tell the affected person on both channels they allow, in their own
         // language rather than the organizer's.
         if ('' !== $dmKind) {
             Language::forPerson($person, fn () => $this->tellPerson($person, $dmKind));
         }
+    }
+
+    /**
+     * Redraws the tapped message's buttons, so the ✅ marks show the change.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function refreshMenu(array $callbackQuery, int $personId): void
+    {
+        $chatId = $callbackQuery['message']['chat']['id'] ?? null;
+        $messageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
+
+        if (null === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $person = $this->people->find($personId);
+
+        if (null === $person) {
+            return;
+        }
+
+        $this->telegram->editMessageText($chatId, $messageId, $this->menuText($person), $this->menuKeyboard($person));
+    }
+
+    /**
+     * Gives or takes away one restricted role (DJ, VJ, ...). Only active
+     * restricted roles are accepted, the ones the buttons offer.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function toggleRole(Person $person, string $slug): array
+    {
+        if (! in_array($slug, array_column(Roles::assignable(), 'slug'), true)) {
+            return [__('That role is no longer offered.', 'eventcrew'), ''];
+        }
+
+        $label = Roles::label($slug);
+
+        if ($person->hasRole($slug)) {
+            $this->people->setRoles($person->id, array_values(array_diff($person->roleSlugs, [$slug])));
+
+            /* translators: 1: person's name, 2: role name */
+            return [sprintf(__('%1$s no longer has the role %2$s.', 'eventcrew'), $person->name(), $label), ''];
+        }
+
+        $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]));
+
+        /* translators: 1: person's name, 2: role name */
+        return [sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label), 'role:' . $slug];
     }
 
     private function tellPerson(Person $person, string $dmKind): void
@@ -238,6 +338,14 @@ final class PermissionService
      */
     private function dmText(string $dmKind): string
     {
+        if (str_starts_with($dmKind, 'role:')) {
+            return sprintf(
+                /* translators: %s: role name, such as DJ */
+                __('You now have the role %s. Its tasks are shown to you with /roletasks in the bot and on the crew page, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                Roles::label(substr($dmKind, strlen('role:')))
+            );
+        }
+
         return match ($dmKind) {
             'leader' => __('👑 You can now lead an event — tap the 🧭 Leader slot on the board to take it.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -248,16 +356,23 @@ final class PermissionService
     }
 
     /**
-     * Splits "perm:<action>:<person_id>" into the action and person id.
+     * Splits "perm:<action>:<person_id>" or "perm:role:<slug>:<person_id>"
+     * into the action, the person id and the role slug ('' for the others).
      *
-     * @return array{0: string, 1: int}
+     * @return array{0: string, 1: int, 2: string}
      */
     private function parse(string $data): array
     {
-        if (1 !== preg_match('#^' . preg_quote(self::PICK_PREFIX, '#') . '(leader|pass|admin):(\d+)$#', $data, $m)) {
-            return ['', 0];
+        $prefix = preg_quote(self::PICK_PREFIX, '#');
+
+        if (1 === preg_match('#^' . $prefix . 'role:([a-z0-9_\-]+):(\d+)$#', $data, $m)) {
+            return ['role', (int) $m[2], $m[1]];
         }
 
-        return [$m[1], (int) $m[2]];
+        if (1 !== preg_match('#^' . $prefix . '(leader|pass|admin):(\d+)$#', $data, $m)) {
+            return ['', 0, ''];
+        }
+
+        return [$m[1], (int) $m[2], ''];
     }
 }

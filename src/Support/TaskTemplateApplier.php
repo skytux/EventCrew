@@ -47,17 +47,25 @@ final class TaskTemplateApplier
         $created = 0;
         $untimed = 0;
 
+        // The ordinary roles, plus the restricted roles set to "Add to every
+        // night" (DJ, VJ, ...). A restricted role switched off is left out.
         $planned = TaskTemplate::build(
             $event['date'],
             $event['starts_at'],
             $event['ends_at'],
-            Roles::active(),
+            array_merge(Roles::forTemplate(), Roles::everyNight()),
             $eventPostId
         );
 
         foreach ($planned as $task) {
             if (isset($existing[$task['role_slug']])) {
                 continue;
+            }
+
+            // A restricted task has no limit; capacity 1 only keeps it on the
+            // boards (they leave out capacity 0), it is not a limit.
+            if (Roles::isRestricted((string) $task['role_slug'])) {
+                $task['capacity'] = 1;
             }
 
             $this->tasks->create($task);

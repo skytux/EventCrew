@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool}>}>}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool}>}>, roles_action: string, add_action: string, roles: array<string, string>, role_holders: list<array{id: int, name: string, roles: list<string>}>, add_tasks: array<int, string>}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -526,6 +526,80 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </p>
                 <button type="submit" class="wp-element-button"><?php esc_html_e('Give credit', 'eventcrew'); ?></button>
             </form>
+
+            <?php if ([] !== $eventcrew_admin['roles']) : ?>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Roles', 'eventcrew'); ?></h3>
+                <p class="eventcrew-muted"><?php esc_html_e('Only people with a role see its tasks and can sign up for them.', 'eventcrew'); ?></p>
+                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['roles_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <p>
+                        <label for="eventcrew-admin-role-member"><?php esc_html_e('Member', 'eventcrew'); ?></label><br>
+                        <select id="eventcrew-admin-role-member" name="person_id" required>
+                            <option value=""><?php esc_html_e('Choose a member', 'eventcrew'); ?></option>
+                            <?php foreach ($eventcrew_admin['members'] as $eventcrew_member_id => $eventcrew_member_label) : ?>
+                                <option value="<?php echo esc_attr((string) $eventcrew_member_id); ?>"><?php echo esc_html($eventcrew_member_label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-role"><?php esc_html_e('Role', 'eventcrew'); ?></label><br>
+                        <select id="eventcrew-admin-role" name="add_role" required>
+                            <?php foreach ($eventcrew_admin['roles'] as $eventcrew_role_slug => $eventcrew_role_label) : ?>
+                                <option value="<?php echo esc_attr($eventcrew_role_slug); ?>"><?php echo esc_html($eventcrew_role_label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Give the role', 'eventcrew'); ?></button>
+                </form>
+                <?php foreach ($eventcrew_admin['role_holders'] as $eventcrew_holder) : ?>
+                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-admin-roles">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['roles_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                        <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_holder['id']); ?>">
+                        <strong><?php echo esc_html($eventcrew_holder['name']); ?></strong>
+                        <?php foreach ($eventcrew_admin['roles'] as $eventcrew_role_slug => $eventcrew_role_label) : ?>
+                            <label>
+                                <input type="checkbox" name="roles[]" value="<?php echo esc_attr($eventcrew_role_slug); ?>" <?php checked(in_array($eventcrew_role_slug, $eventcrew_holder['roles'], true)); ?>>
+                                <?php echo esc_html($eventcrew_role_label); ?>
+                            </label>
+                        <?php endforeach; ?>
+                        <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                    </form>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if ([] !== $eventcrew_admin['add_tasks']) : ?>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Add a person to a role task', 'eventcrew'); ?></h3>
+                <p class="eventcrew-muted"><?php esc_html_e('For a member, or for someone who is not a crew member yet. They get the role too.', 'eventcrew'); ?></p>
+                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['add_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <p>
+                        <label for="eventcrew-admin-add-task"><?php esc_html_e('Task', 'eventcrew'); ?></label><br>
+                        <select id="eventcrew-admin-add-task" name="task_id" required>
+                            <?php foreach ($eventcrew_admin['add_tasks'] as $eventcrew_add_task_id => $eventcrew_add_task_label) : ?>
+                                <option value="<?php echo esc_attr((string) $eventcrew_add_task_id); ?>"><?php echo esc_html($eventcrew_add_task_label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-add-name"><?php esc_html_e('Name', 'eventcrew'); ?></label><br>
+                        <input id="eventcrew-admin-add-name" type="text" name="name" maxlength="100">
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-add-email"><?php esc_html_e('Email (optional)', 'eventcrew'); ?></label><br>
+                        <input id="eventcrew-admin-add-email" type="email" name="email" maxlength="191">
+                        <br><span class="eventcrew-muted"><?php esc_html_e('With an email, they get their ticket by email. An email that belongs to a member adds that member.', 'eventcrew'); ?></span>
+                    </p>
+                    <p><?php esc_html_e('Count toward free-entry credit?', 'eventcrew'); ?></p>
+                    <button type="submit" name="counts_credit" value="1" class="wp-element-button"><?php esc_html_e('Yes', 'eventcrew'); ?></button>
+                    <button type="submit" name="counts_credit" value="0" class="wp-element-button is-style-outline"><?php esc_html_e('No', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
 
             <h3 class="eventcrew-subhead"><?php esc_html_e('Tonight’s crew', 'eventcrew'); ?></h3>
             <?php if ('' !== $eventcrew_admin['roster_label']) : ?>

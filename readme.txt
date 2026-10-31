@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.43.3
+Stable tag: 1.44.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,7 +64,8 @@ the DM with a short breadcrumb left behind.
 * `/notifications` — choose what reaches you, and on which channel
 * `/board` — post or refresh the group board of open tasks
 * `/roster` — the attendance roster (organizers, and the night's crew leader)
-* `/gift`, `/allow`, `/leaders` — organizer tools: credits, permissions, leadership
+* `/roletasks` — tasks for your roles (DJ, VJ, ...): sign up, cancel, and (organizers) add someone
+* `/gift`, `/roles`, `/leaders` — organizer tools: credits, roles and permissions (`/allow` is the old name of `/roles`), leadership
 
 == External services ==
 
@@ -129,6 +130,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.44.0 =
+Restricted roles: tasks for DJ, VJ, Ceremony Leader, Organize and other roles that only the people holding that role can sign up for, by bot (/roletasks), the crew page or the sales desk. Not on the group board. Organizers can add someone who is not a crew member, with an optional email, and choose whether the task counts toward free-entry credit. /roles replaces /allow (which still works) and manages each person's roles.
 
 = 1.43.3 =
 The ticket page shows a background image chosen in Settings > Web page > Ticket background (such as the site's background picture) instead of the Site Icon watermark.
@@ -595,6 +599,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.44.0 =
+Database update to version 18 (adds a credit flag to assignments). /allow is now /roles.
 
 = 1.43.3 =
 The ticket background is now a setting: Settings > Web page > Ticket background.

@@ -30,6 +30,7 @@ final class TaskTest extends TestCase
 
     public function testOnlyTheOrganizeTaskIsForOrganizersOnlyAndHasNoLimit(): void
     {
+        Functions\when('get_option')->justReturn(null);
         $organize = Task::fromRow(['role_slug' => 'organize', 'capacity' => '1']);
         $decorate = Task::fromRow(['role_slug' => 'decorate', 'capacity' => '2']);
 

@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '17';
+    public const DB_VERSION = '18';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -280,6 +280,7 @@ final class Schema
                 banned_at datetime DEFAULT NULL,
                 ban_reason text DEFAULT NULL,
                 language varchar(5) DEFAULT NULL,
+                role_slugs varchar(255) NOT NULL DEFAULT '',
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,
@@ -324,6 +325,10 @@ final class Schema
             // 'person' (an EventCrew person id) or 'wp_user' (a WordPress user
             // id). NULL means it is not known - every row written before
             // schema 16, and every change with nobody recorded.
+            //
+            // counts_credit (schema 18) is 0 when whoever signed someone up to
+            // a restricted-role task said it should not count toward
+            // free-entry credit; every credit and standing count skips those.
             "CREATE TABLE {$assignments} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 task_id bigint(20) unsigned NOT NULL,
@@ -334,6 +339,7 @@ final class Schema
                 changed_by bigint(20) unsigned DEFAULT NULL,
                 changed_by_kind varchar(10) DEFAULT NULL,
                 reminded_at datetime DEFAULT NULL,
+                counts_credit tinyint(1) NOT NULL DEFAULT 1,
                 PRIMARY KEY  (id),
                 UNIQUE KEY task_person (task_id,person_id),
                 KEY person_id (person_id),

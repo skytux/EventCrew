@@ -93,6 +93,7 @@ if (! defined('ABSPATH')) {
                     <th style="width:7em"><?php esc_html_e('Starts', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Ends', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Archived', 'eventcrew'); ?></th>
+                    <th style="width:11em"><?php esc_html_e('Restricted', 'eventcrew'); ?></th>
                     <th style="min-width:16em"><?php esc_html_e('Description', 'eventcrew'); ?></th>
                 </tr>
             </thead>
@@ -107,6 +108,8 @@ if (! defined('ABSPATH')) {
                     'emoji' => '',
                     'capacity' => 1,
                     'archived' => false,
+                    'restricted' => false,
+                    'every_night' => true,
                     'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
                     'start_offset' => null,
                     'end_offset' => null,
@@ -191,6 +194,24 @@ if (! defined('ABSPATH')) {
                             <?php endif; ?>
                         </td>
                         <td>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_restricted[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['restricted']); ?>>
+                                <?php esc_html_e('Only people with this role', 'eventcrew'); ?>
+                            </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_every_night[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['every_night']); ?>>
+                                <?php esc_html_e('Add to every night', 'eventcrew'); ?>
+                            </label>
+                        </td>
+                        <td>
                             <textarea
                                 name="role_description[<?php echo esc_attr((string) $eventcrew_index); ?>]"
                                 rows="3"
@@ -204,6 +225,9 @@ if (! defined('ABSPATH')) {
 
         <p class="description">
             <?php esc_html_e('Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
             <?php esc_html_e('The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder.', 'eventcrew'); ?>

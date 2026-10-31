@@ -11,11 +11,13 @@ use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Roles;
 use EventCrew\Telegram\PermissionService;
 
 /**
- * The organizer-only /allow grant. The tap (onSelect) is where a permission is
- * actually written; routing and the name prompt are covered in UpdateRouterTest.
+ * The organizer-only /roles grant (old name /allow). The tap (onSelect) is
+ * where a permission is actually written; routing and the name prompt are
+ * covered in UpdateRouterTest.
  */
 final class PermissionServiceTest extends TelegramTestCase
 {
@@ -104,5 +106,82 @@ final class PermissionServiceTest extends TelegramTestCase
 
         self::assertSame([], $this->wpdb->updates);
         self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    private function withDjRole(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'restricted' => true],
+        ];
+    }
+
+    public function testRolesGivesARestrictedRoleAndTellsThePerson(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999, 'role_slugs' => ''];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
+
+        self::assertSame('dj', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame('Sam now has the role DJ.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertStringContainsString('You now have the role DJ.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testRolesTakesAwayARoleThePersonHas(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'telegram_chat_id' => 999, 'role_slugs' => 'dj'];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
+
+        self::assertSame('', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame('Sam no longer has the role DJ.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertNull($this->lastCallTo('sendMessage'));
+    }
+
+    public function testRolesRefusesARoleThatIsNotRestricted(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'role_slugs' => ''];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:decorate:8']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('That role is no longer offered.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testANonOrganizerCannotChangeARole(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 0, 'telegram_user_id' => 555];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('Only organizers can change roles.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testTheMenuForAPersonHasAButtonPerRoleWithMarks(): void
+    {
+        $this->withDjRole();
+        Functions\when('delete_transient')->justReturn(true);
+        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Sam', 'role_slugs' => 'dj', 'can_lead' => 0]];
+
+        $this->service()->captureTarget(555, 555, 'Sam', []);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringStartsWith('Roles for Sam.', $sent['text']);
+        $buttons = array_merge(...$sent['reply_markup']['inline_keyboard']);
+        self::assertSame(
+            ['perm:leader:8', 'perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
+            array_column($buttons, 'callback_data')
+        );
+        self::assertStringStartsWith('✅ ', $buttons[3]['text']);
+        self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 }

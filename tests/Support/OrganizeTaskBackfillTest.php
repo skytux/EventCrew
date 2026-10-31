@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\OrganizeTaskBackfill;
+use EventCrew\Support\Roles;
 use EventCrew\Tests\TestCase;
 
 final class OrganizeTaskBackfillTest extends TestCase
@@ -160,5 +161,93 @@ final class OrganizeTaskBackfillTest extends TestCase
 
         self::assertSame([], $this->wpdb->inserts);
         self::assertArrayNotHasKey(OrganizeTaskBackfill::DONE_OPTION, $this->options);
+    }
+
+    /**
+     * Saves Settings > Roles with a DJ role set to "Only people with this
+     * role", with "Add to every night" on or off.
+     */
+    private function saveDjRole(bool $everyNight): void
+    {
+        Roles::save([
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'restricted' => true, 'every_night' => $everyNight],
+        ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function djInserts(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->inserts,
+            static fn (array $insert): bool => 'dj' === $insert['data']['role_slug']
+        ));
+    }
+
+    /**
+     * Ticking "Add to every night" on a restricted role adds one task of it to
+     * every upcoming night that exists already, once: a night that has one
+     * gets no second, and a later request adds nothing more.
+     */
+    public function testANewEveryNightRoleIsAddedToTheExistingNightsOnce(): void
+    {
+        $this->options[OrganizeTaskBackfill::DONE_OPTION] = '1';
+        $this->saveDjRole(true);
+
+        self::assertSame(['dj'], $this->options[OrganizeTaskBackfill::PENDING_OPTION]);
+
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, null, 'decorate', '2026-11-07', 'Party'),
+            $this->taskRow(2, null, 'decorate', '2026-11-14', 'Party'),
+            $this->taskRow(3, null, 'dj', '2026-11-14', 'Party'),
+        ];
+
+        $this->backfill()->maybeRun();
+
+        $inserts = $this->djInserts();
+        self::assertCount(1, $inserts);
+        self::assertSame('2026-11-07', $inserts[0]['data']['task_date']);
+        self::assertSame([], $this->options[OrganizeTaskBackfill::PENDING_OPTION]);
+
+        // Saving the settings again with nothing changed queues nothing, so
+        // the next request reads no tasks and adds none.
+        $this->saveDjRole(true);
+        $queriesBefore = count($this->wpdb->queries);
+        $this->backfill()->maybeRun();
+
+        self::assertCount(1, $this->djInserts());
+        self::assertCount($queriesBefore, $this->wpdb->queries);
+    }
+
+    public function testARestrictedRoleWithEveryNightOffIsNotAdded(): void
+    {
+        $this->options[OrganizeTaskBackfill::DONE_OPTION] = '1';
+        $this->saveDjRole(false);
+
+        self::assertSame([], $this->options[OrganizeTaskBackfill::PENDING_OPTION] ?? []);
+
+        // Switched on, then off again before the next request ran it.
+        $this->saveDjRole(true);
+        $this->saveDjRole(false);
+        $this->wpdb->nextResults[] = [$this->taskRow(1, null, 'decorate', '2026-11-07', 'Party')];
+
+        $this->backfill()->maybeRun();
+
+        self::assertSame([], $this->djInserts());
+    }
+
+    /**
+     * Unticking "Add to every night" deletes nothing: the tasks already made
+     * stay.
+     */
+    public function testSwitchingEveryNightOffDeletesNothing(): void
+    {
+        $this->saveDjRole(true);
+        $this->saveDjRole(false);
+
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertStringNotContainsString('DELETE', implode("\n", $this->wpdb->queries));
     }
 }

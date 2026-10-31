@@ -168,7 +168,8 @@ final class UpdateRouterTest extends TelegramTestCase
 
     public function testAllowCommandReachesThePermissionService(): void
     {
-        // Unlinked sender -> refused as not an organizer, proof /allow routed.
+        // The old name /allow still works: an unlinked sender is refused as
+        // not an organizer, proof it routed.
         $this->router()->dispatch([
             'message' => [
                 'text' => '/allow',
@@ -178,6 +179,20 @@ final class UpdateRouterTest extends TelegramTestCase
         ]);
 
         self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testRolesCommandReachesThePermissionService(): void
+    {
+        // Unlinked sender -> refused as not an organizer, proof /roles routed.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/roles',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame('Only organizers can change roles.', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testPermCallbackReachesThePermissionService(): void
