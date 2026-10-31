@@ -386,6 +386,51 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(2, $tasks[0]['free']);
     }
 
+    public function testOpenTasksLeavesOutTheOrganizeTaskForSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $organize = $this->taskRow(9, Roles::ORGANIZE_SLUG);
+        $organize['capacity'] = 1;
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate'), $organize];
+        $this->wpdb->nextResults[] = [];
+
+        $tasks = $this->desk()->openTasks(self::NIGHT, 8);
+
+        self::assertSame([5], array_column($tasks, 'id'));
+    }
+
+    /**
+     * An organizer sees the organize task, with no free-place count, even when
+     * more people are on it than its stored capacity.
+     */
+    public function testOpenTasksShowsTheOrganizeTaskToAnOrganizerWithNoLimit(): void
+    {
+        $organize = $this->taskRow(9, Roles::ORGANIZE_SLUG);
+        $organize['capacity'] = 1;
+        $this->wpdb->nextRows[] = $this->personRow(8, true);
+        $this->wpdb->nextResults[] = [$organize];
+        $this->wpdb->nextResults[] = [['task_id' => 9, 'taken' => 4]];
+
+        $tasks = $this->desk()->openTasks(self::NIGHT, 8);
+
+        self::assertSame([9], array_column($tasks, 'id'));
+        self::assertNull($tasks[0]['free']);
+    }
+
+    public function testWorkingTonightRefusesTheOrganizeTaskToSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $this->taskRow(9, Roles::ORGANIZE_SLUG);
+        // What a join would read if it got that far, so only the check stops it.
+        $this->wpdb->nextVars[] = 3;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(DoorDesk::WORK_UNAVAILABLE, $this->desk()->workTonight(self::NIGHT, 1, 8, 9));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
     public function testWorkingTonightSignsUpChecksInAndMarksArrived(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(8);                              // people->find

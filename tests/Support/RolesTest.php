@@ -39,6 +39,30 @@ final class RolesTest extends TestCase
         self::assertCount(3, Roles::all());
     }
 
+    /**
+     * The organize role is reserved like the leader slot: named by the plugin,
+     * known to exist, and never in the editable list.
+     */
+    public function testTheOrganizeRoleIsReservedAndNamed(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+
+        self::assertSame('Organize', Roles::label(Roles::ORGANIZE_SLUG));
+        self::assertSame('⭐ Organize', Roles::display(Roles::ORGANIZE_SLUG));
+        self::assertTrue(Roles::exists(Roles::ORGANIZE_SLUG));
+        self::assertNotContains(Roles::ORGANIZE_SLUG, array_column(Roles::all(), 'slug'));
+    }
+
+    public function testAHandTypedRoleCannotTakeTheOrganizeSlug(): void
+    {
+        $saved = $this->captureSavedRoles([
+            ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈', 'capacity' => 2],
+            ['slug' => 'organize', 'label' => 'Organize', 'emoji' => '⭐', 'capacity' => 5],
+        ]);
+
+        self::assertSame(['decorate'], array_column($saved, 'slug'));
+    }
+
     public function testDropsRowsTheOrganizerLeftCompletelyBlank(): void
     {
         $saved = $this->captureSavedRoles([

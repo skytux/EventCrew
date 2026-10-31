@@ -158,6 +158,55 @@ final class SignupServiceTest extends TestCase
         self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
     }
 
+    /**
+     * The organize task is for organizers only. Both the web crew page and the
+     * Telegram board claim through here, so this refusal covers both.
+     */
+    public function testOrganizeTaskRefusesSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = $this->taskRow('organize');         // claim tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'is_organizer' => 0];   // people->find
+
+        self::assertSame(SignupService::ORGANIZERS_ONLY, $this->service()->claim(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_starts_with(ltrim($sql), 'INSERT')));
+    }
+
+    public function testOrganizeTaskRefusesAnUnknownPerson(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = $this->taskRow('organize'); // claim tasks->find
+        $this->wpdb->nextRows[] = null;                       // people->find
+
+        self::assertSame(SignupService::ORGANIZERS_ONLY, $this->service()->claim(9, 5));
+    }
+
+    public function testOrganizeTaskAcceptsAnOrganizer(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = $this->taskRow('organize');         // claim tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'is_organizer' => 1];   // people->find
+        $this->wpdb->nextVars[] = 1;                                  // taskCapacity
+        $this->wpdb->nextRows[] = null;                               // join findFor
+        $this->wpdb->nextQueryResults[] = 1;                          // insert
+
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
+    }
+
+    public function testBlocksOrganizerSlotOnlyForTheOrganizeTask(): void
+    {
+        $organize = Task::fromRow($this->taskRow('organize'));
+        $member = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'is_organizer' => 0]);
+        $organizer = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'is_organizer' => 1]);
+
+        self::assertTrue(SignupService::blocksOrganizerSlot($organize, $member));
+        self::assertTrue(SignupService::blocksOrganizerSlot($organize, null));
+        self::assertFalse(SignupService::blocksOrganizerSlot($organize, $organizer));
+        self::assertFalse(SignupService::blocksOrganizerSlot(Task::fromRow($this->taskRow('decorate')), $member));
+        self::assertFalse(SignupService::blocksOrganizerSlot(null, $member));
+    }
+
     public function testAnAtRiskPassWavesThroughOnceAndIsSpent(): void
     {
         // Gate on (setUp), the member is at risk, but holds a one-time pass.

@@ -66,8 +66,8 @@ final class EventMeshSyncListenerTest extends TestCase
 
         $this->listener()->onEventSynced(42, true);
 
-        // Three shipped roles, no existing tasks: three inserts.
-        self::assertCount(3, $this->wpdb->inserts);
+        // Three shipped roles, no existing tasks: three inserts plus the organize task.
+        self::assertCount(4, $this->wpdb->inserts);
     }
 
     public function testIgnoresAReSyncEvenWhenTheSettingIsOn(): void

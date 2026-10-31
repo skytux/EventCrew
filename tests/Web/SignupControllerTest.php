@@ -256,6 +256,54 @@ final class SignupControllerTest extends TestCase
         self::assertSame('claimed', $this->controller()->claimFor(7, 5));
     }
 
+    public function testClaimForRefusesTheOrganizeTaskToSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(), ['role_slug' => 'organize', 'capacity' => 1]); // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 0];              // people->find
+        // What a join would read if it got that far, so only the check stops it.
+        $this->wpdb->nextVars[] = 1;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame('unavailable', $this->controller()->claimFor(7, 5));
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testTheBoardHidesTheOrganizeTaskFromALoggedOutVisitor(): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(),
+            array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'organize', 'capacity' => 1]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $view = $this->controller()->viewModel();
+
+        self::assertSame([5], array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']));
+    }
+
+    public function testTheBoardShowsTheOrganizeTaskToAnOrganizer(): void
+    {
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'is_organizer' => 1,
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(),
+            array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'organize', 'capacity' => 1]),
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 3]];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+
+        $view = $this->controller()->viewModel();
+
+        self::assertSame([5, 6], array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']));
+    }
+
     public function testDropForMapsACancellationToADroppedNotice(): void
     {
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];

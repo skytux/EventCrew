@@ -12,6 +12,7 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\SignupService;
 
 /**
  * "I'll cover for someone" - the person stepping in drives it, and it completes
@@ -83,10 +84,25 @@ final class ReplacementService
         delete_transient(self::AWAIT_PREFIX . $telegramUserId);
 
         $buttons = [];
+        $cover = false;
 
         foreach (PersonResolver::matching($this->people, $text, $entities) as $person) {
             foreach ($this->upcomingSlots($person->id) as $entry) {
                 $task = $entry['task'];
+
+                // Someone who may not take an organizers-only task is not
+                // offered it to cover either. The cover is only looked up when
+                // such a task is in the list.
+                if ($task->isOrganizersOnly()) {
+                    if (false === $cover) {
+                        $cover = $this->people->findByTelegramUserId($telegramUserId);
+                    }
+
+                    if (SignupService::blocksOrganizerSlot($task, $cover)) {
+                        continue;
+                    }
+                }
+
                 $buttons[] = [[
                     // Name · date · task · event, so the button says exactly whose
                     // slot on which day you are stepping into before you tap.
@@ -141,6 +157,17 @@ final class ReplacementService
         $task = null === $original ? null : $this->tasks->find($original->taskId);
 
         if (null === $original || null === $task || ! $original->isOccupying() || $task->isPast()) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That task is no longer available.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        // Worded like a task that is gone: a non-organizer is never offered it.
+        if (SignupService::blocksOrganizerSlot($task, $cover)) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
                 __('That task is no longer available.', 'eventcrew'),

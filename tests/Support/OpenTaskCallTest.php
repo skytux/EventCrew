@@ -158,6 +158,35 @@ final class OpenTaskCallTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
+    /**
+     * The organize task has no limit and is for organizers only: an empty one
+     * is no reason to mail anyone.
+     */
+    public function testAnEmptyOrganizeTaskIsNoReasonToMail(): void
+    {
+        $organize = array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'organize', 'capacity' => 1, 'starts_at' => null]);
+        $this->wpdb->nextResults[] = [$this->taskRow(), $organize];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]]; // decorate full, organize empty
+
+        self::assertSame(0, $this->call()->sendForDate('2026-08-01'));
+        self::assertSame([], $this->mails);
+    }
+
+    public function testTheMailDoesNotListTheOrganizeTask(): void
+    {
+        $organize = array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'organize', 'capacity' => 1, 'starts_at' => null]);
+        $this->wpdb->nextResults[] = [$this->taskRow(), $organize];
+        $this->wpdb->nextResults[] = [];                        // nobody on either
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
+        $this->wpdb->nextCols[] = ['2026-08-01'];               // upcomingDates, for the list
+        $this->queueRecap();
+
+        self::assertSame(1, $this->call()->sendForDate('2026-08-01'));
+        self::assertStringContainsString('Decorate', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Organize', $this->mails[0]['body']);
+    }
+
     public function testSkipsAnyoneAlreadyMailedForThatDate(): void
     {
         $this->queueOpenDate();

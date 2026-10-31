@@ -205,6 +205,12 @@ final class SignupBoardView
         $personRefusal = null === $person ? '' : $this->signup->personRefusal($person->id);
 
         foreach ($tasks as $task) {
+            // An organizers-only task is not shown to anyone else, signed in
+            // or not; SignupService refuses their claim on it too.
+            if (SignupService::blocksOrganizerSlot($task, $person)) {
+                continue;
+            }
+
             $key = null !== $task->eventPostId
                 ? 'e:' . $task->eventPostId
                 : 'l:' . $task->eventLabel . '|' . $task->taskDate;

@@ -43,6 +43,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
@@ -103,6 +104,10 @@ final class Kernel
 
         $this->registerServices();
         $this->validateServicesWhenDebugging();
+
+        // Adds the organize task to nights created before it existed. Runs
+        // once per site, on the first request of any kind after the update.
+        $this->container->get(OrganizeTaskBackfill::class)->maybeRun();
 
         $admin = $this->container->get(Admin::class);
         $admin->boot();
@@ -883,6 +888,13 @@ final class Kernel
             fn (Container $container) => new TaskTemplateApplier(
                 $container->get(TaskRepository::class),
                 $container->get(LeaderGate::class)
+            )
+        );
+
+        $this->container->singleton(
+            OrganizeTaskBackfill::class,
+            fn (Container $container) => new OrganizeTaskBackfill(
+                $container->get(TaskRepository::class)
             )
         );
 

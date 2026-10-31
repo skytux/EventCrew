@@ -70,7 +70,7 @@ final class RosterService
         }
 
         $canMark = $person->isOrganizer || $this->isLeaderOn($person->id, $date);
-        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark);
+        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer);
         $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -136,7 +136,7 @@ final class RosterService
             }
         );
 
-        $this->refreshRosterMessage($callbackQuery, $assignment->taskId);
+        $this->refreshRosterMessage($callbackQuery, $assignment->taskId, $person->isOrganizer);
     }
 
     private function deniedMessage(): string
@@ -178,7 +178,7 @@ final class RosterService
      *
      * @param array<string, mixed> $callbackQuery
      */
-    private function refreshRosterMessage(array $callbackQuery, int $taskId): void
+    private function refreshRosterMessage(array $callbackQuery, int $taskId, bool $isOrganizer): void
     {
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
@@ -195,7 +195,7 @@ final class RosterService
             return;
         }
 
-        $rendered = $this->render($date, $this->assembler->forDate($date), true);
+        $rendered = $this->render($date, $this->assembler->forDate($date), true, $isOrganizer);
         // An empty inline_keyboard clears the buttons when nobody is left to
         // mark, rather than leaving stale taps on an already-closed event.
         $this->telegram->editMessageText(
@@ -268,24 +268,32 @@ final class RosterService
 
     /**
      * The roster as a message: the text everyone rostered sees, and - for an
-     * organizer ($canMark) - a keyboard of per-person mark buttons.
+     * organizer ($canMark) - a keyboard of per-person mark buttons. Organizers-
+     * only tasks are left out unless the viewer is an organizer ($isOrganizer).
      *
      * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
      *     status_label: string, occupying: bool, marked_by: string}>}> $roster
      * @return array{text: string, keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    private function render(string $date, array $roster, bool $canMark): array
+    private function render(string $date, array $roster, bool $canMark, bool $isOrganizer): array
     {
         $lines = ['📋 ' . $this->dateLabel($date)];
         $keyboard = [];
 
         foreach ($roster as $row) {
             $task = $row['task'];
+
+            if (! $isOrganizer && $task->isOrganizersOnly()) {
+                continue;
+            }
+
             $taken = count(array_filter($row['people'], static fn (array $p): bool => $p['occupying']));
 
             $lines[] = '';
-            $lines[] = sprintf('%s — %s (%d/%d)', $task->roleDisplay(), $task->eventName(), $taken, $task->capacity);
+            $lines[] = $task->hasNoLimit()
+                ? sprintf('%s — %s (%d)', $task->roleDisplay(), $task->eventName(), $taken)
+                : sprintf('%s — %s (%d/%d)', $task->roleDisplay(), $task->eventName(), $taken, $task->capacity);
 
             if ([] === $row['people']) {
                 $lines[] = '  ' . __('— nobody yet', 'eventcrew');

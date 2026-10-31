@@ -146,6 +146,41 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
     }
 
+    /**
+     * The organize task has no limit: the insert lets a row through when the
+     * task is the organize task, whatever the count says. The check is inside
+     * the same statement, read from the task row itself.
+     */
+    public function testTheInsertLetsTheOrganizeTaskThroughWhateverTheCount(): void
+    {
+        $this->wpdb->nextVars = [1];
+        $this->wpdb->nextRows = [null];
+        $this->wpdb->nextQueryResults = [1];
+
+        (new AssignmentRepository())->join(3, 1);
+
+        $sql = $this->wpdb->lastQuery();
+
+        self::assertStringContainsString('SELECT COUNT(*)', $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug = 'organize'\)/", $sql);
+    }
+
+    public function testReactivationLetsTheOrganizeTaskThroughWhateverTheCount(): void
+    {
+        $this->wpdb->nextVars = [1];
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::CANCELLED],
+        ];
+        $this->wpdb->nextQueryResults = [1];
+
+        (new AssignmentRepository())->join(3, 1);
+
+        $sql = $this->wpdb->lastQuery();
+
+        self::assertStringContainsString('UPDATE', $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug = 'organize'\)/", $sql);
+    }
+
     public function testReactivationRefusesWhenTheTaskIsNowFull(): void
     {
         $this->wpdb->nextVars = [2];

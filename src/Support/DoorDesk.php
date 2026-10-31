@@ -478,9 +478,10 @@ final class DoorDesk
 
     /**
      * Tonight's tasks this member could be signed up for at the door: those
-     * with a free place, leaving out leader-only ones they cannot take.
+     * with a free place, leaving out leader-only and organizers-only ones they
+     * cannot take. A task with no limit has free null: it is never full.
      *
-     * @return array<int, array{id: int, label: string, free: int}>
+     * @return array<int, array{id: int, label: string, free: int|null}>
      */
     public function openTasks(string $date, int $personId): array
     {
@@ -495,9 +496,13 @@ final class DoorDesk
         $open = [];
 
         foreach ($tasks as $task) {
-            $free = $task->capacity - ($taken[$task->id] ?? 0);
+            if (SignupService::blocksOrganizerSlot($task, $person)) {
+                continue;
+            }
 
-            if ($free <= 0 || SignupService::blocksLeaderSlot($task, $person)) {
+            $free = $task->hasNoLimit() ? null : $task->capacity - ($taken[$task->id] ?? 0);
+
+            if ((null !== $free && $free <= 0) || SignupService::blocksLeaderSlot($task, $person)) {
                 continue;
             }
 
@@ -533,6 +538,12 @@ final class DoorDesk
 
         if (SignupService::blocksLeaderSlot($task, $person)) {
             return self::WORK_LEADER_ONLY;
+        }
+
+        // Worded like a task that is not there: a non-organizer is never
+        // offered this task, so there is nothing more to say about it.
+        if (SignupService::blocksOrganizerSlot($task, $person)) {
+            return self::WORK_UNAVAILABLE;
         }
 
         $outcome = $this->assignments->join($taskId, $personId);

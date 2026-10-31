@@ -551,6 +551,11 @@ final class WelcomeSender
         $open = [];
 
         foreach ($tasks as $task) {
+            // Never offered to a newcomer: organizers only, and no places to count.
+            if ($task->hasNoLimit() || $task->isOrganizersOnly()) {
+                continue;
+            }
+
             $free = $task->capacity - ($occupancy[$task->id] ?? 0);
 
             if ($free > 0) {

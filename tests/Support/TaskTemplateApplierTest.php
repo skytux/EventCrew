@@ -75,7 +75,7 @@ final class TaskTemplateApplierTest extends TestCase
 
     /**
      * The happy path: three shipped roles, no existing tasks, so three are
-     * created - one per role.
+     * created - one per role - plus the organize task.
      */
     public function testCreatesOneTaskPerActiveRoleForANewEvent(): void
     {
@@ -87,9 +87,37 @@ final class TaskTemplateApplierTest extends TestCase
         $result = $this->applier()->apply(12);
 
         self::assertNotNull($result);
-        self::assertSame(3, $result['created']);
+        self::assertSame(4, $result['created']);
         self::assertSame(0, $result['untimed']);
-        self::assertCount(3, $this->wpdb->inserts);
+        self::assertCount(4, $this->wpdb->inserts);
+        self::assertSame('organize', $this->wpdb->inserts[3]['data']['role_slug']);
+        self::assertSame(12, $this->wpdb->inserts[3]['data']['event_post_id']);
+        self::assertNull($this->wpdb->inserts[3]['data']['starts_at']);
+    }
+
+    /**
+     * Applying again to an event that already has its organize task adds no
+     * second one.
+     */
+    public function testDoesNotAddASecondOrganizeTask(): void
+    {
+        $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
+
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'event_post_id' => 12, 'role_slug' => 'organize', 'task_date' => '2026-08-01'],
+        ];
+
+        $result = $this->applier()->apply(12);
+
+        self::assertNotNull($result);
+        self::assertSame(3, $result['created']);
+        self::assertSame(
+            [],
+            array_values(array_filter(
+                $this->wpdb->inserts,
+                static fn (array $insert): bool => 'organize' === $insert['data']['role_slug']
+            ))
+        );
     }
 
     /**
@@ -108,9 +136,10 @@ final class TaskTemplateApplierTest extends TestCase
         $result = $this->applier()->apply(12);
 
         self::assertNotNull($result);
-        self::assertSame(1, $result['created']);
-        self::assertCount(1, $this->wpdb->inserts);
+        self::assertSame(2, $result['created']);
+        self::assertCount(2, $this->wpdb->inserts);
         self::assertSame('clean', $this->wpdb->inserts[0]['data']['role_slug']);
+        self::assertSame('organize', $this->wpdb->inserts[1]['data']['role_slug']);
     }
 
     /**
@@ -128,7 +157,7 @@ final class TaskTemplateApplierTest extends TestCase
         $result = $this->applier()->apply(12);
 
         self::assertNotNull($result);
-        self::assertSame(3, $result['created']);
+        self::assertSame(4, $result['created']);
     }
 
     /**
@@ -157,11 +186,12 @@ final class TaskTemplateApplierTest extends TestCase
     {
         $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
 
-        // All three shipped roles already have a task for this event.
+        // All three shipped roles and the organize task already exist for this event.
         $this->wpdb->nextResults[] = [
             ['id' => 1, 'event_post_id' => 12, 'role_slug' => 'decorate', 'task_date' => '2026-08-01'],
             ['id' => 2, 'event_post_id' => 12, 'role_slug' => 'welcome', 'task_date' => '2026-08-01'],
             ['id' => 3, 'event_post_id' => 12, 'role_slug' => 'clean', 'task_date' => '2026-08-01'],
+            ['id' => 4, 'event_post_id' => 12, 'role_slug' => 'organize', 'task_date' => '2026-08-01'],
         ];
 
         $fired = [];

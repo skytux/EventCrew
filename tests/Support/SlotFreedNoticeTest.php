@@ -70,4 +70,19 @@ final class SlotFreedNoticeTest extends TestCase
         self::assertContains('free@example.com', $recipients);
         self::assertNotContains('canceller@example.com', $recipients);
     }
+
+    public function testACancelledOrganizeSlotIsNotAnnounced(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'organize', 'capacity' => 1,
+            'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => null, 'ends_at' => null,
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'email' => 'member@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+        ];
+
+        $this->notice()->announce(5, 7);
+
+        self::assertSame([], $this->mails);
+    }
 }

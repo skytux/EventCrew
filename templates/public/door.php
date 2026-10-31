@@ -584,7 +584,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 var join = node('button', 'ec-primary', text.signUp);
 
                 who.appendChild(node('div', 'ec-name', task.label));
-                who.appendChild(node('div', 'ec-detail', task.free + ' ' + text.free));
+                // free is null for a task with no limit: there is no count to show.
+                if (null !== task.free) {
+                    who.appendChild(node('div', 'ec-detail', task.free + ' ' + text.free));
+                }
                 join.addEventListener('click', function () {
                     join.disabled = true;
                     post('work', { person: chosen.id, task: task.id }).then(done, failed);

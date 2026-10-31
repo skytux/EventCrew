@@ -322,6 +322,24 @@ final class TasksPage
             }
         }
 
+        // The organize task's role is reserved and not in the role list. Without
+        // it here, saving the edit form would quietly change the task's role.
+        if (Roles::ORGANIZE_SLUG === $editing->roleSlug) {
+            $roles[] = [
+                'slug' => Roles::ORGANIZE_SLUG,
+                'label' => Roles::label(Roles::ORGANIZE_SLUG),
+                'emoji' => '',
+                'capacity' => $editing->capacity,
+                'archived' => false,
+                'anchor' => Roles::ANCHOR_START,
+                'start_offset' => null,
+                'end_offset' => null,
+                'description' => '',
+            ];
+
+            return $roles;
+        }
+
         $archived = Roles::find($editing->roleSlug);
 
         if (null !== $archived) {
