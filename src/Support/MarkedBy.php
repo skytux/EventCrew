@@ -44,7 +44,24 @@ final class MarkedBy
      */
     public static function line(Assignment $assignment, PersonRepository $people): string
     {
-        if (! in_array($assignment->status, self::MARKS, true) || null === $assignment->statusChangedAt) {
+        if (null === $assignment->statusChangedAt) {
+            return '';
+        }
+
+        // Signed up with someone recorded as the changer: an attendance mark
+        // was taken back (the desk marked them out, or the roster reset them).
+        if (AssignmentStatus::SIGNED_UP === $assignment->status && null !== $assignment->changedBy) {
+            $time = self::time($assignment->statusChangedAt);
+            $name = self::name($assignment, $people);
+
+            return '' === $name
+                /* translators: %s: time, or date and time, the person was signed out */
+                ? sprintf(__('signed out at %s', 'eventcrew'), $time)
+                /* translators: 1: name of who signed the person out, 2: time, or date and time, it happened */
+                : sprintf(__('signed out by %1$s at %2$s', 'eventcrew'), $name, $time);
+        }
+
+        if (! in_array($assignment->status, self::MARKS, true)) {
             return '';
         }
 

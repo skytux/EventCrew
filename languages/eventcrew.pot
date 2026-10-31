@@ -188,7 +188,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:122 src/Admin/PeoplePage.php:143 src/Admin/TasksPage.php:385 src/Support/DoorDesk.php:869
+#: src/Admin/PeoplePage.php:122 src/Admin/PeoplePage.php:143 src/Admin/TasksPage.php:385 src/Support/DoorDesk.php:895
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50
 msgid "(deleted person)"
 msgstr ""
@@ -760,7 +760,7 @@ msgstr ""
 msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
 msgstr ""
 
-#: src/Support/DoorDesk.php:715
+#: src/Support/DoorDesk.php:719
 msgid "Credit"
 msgstr ""
 
@@ -826,7 +826,7 @@ msgstr ""
 msgid "Crew privacy notice"
 msgstr ""
 
-#: src/Support/DoorDesk.php:194 src/Support/DoorDesk.php:432
+#: src/Support/DoorDesk.php:194 src/Support/DoorDesk.php:436
 msgid "Crew working"
 msgstr ""
 
@@ -995,7 +995,7 @@ msgstr ""
 msgid "Done — you’re covering %1$s’s %2$s."
 msgstr ""
 
-#: src/Support/DoorDesk.php:761
+#: src/Support/DoorDesk.php:765
 msgid "Door"
 msgstr ""
 
@@ -1274,7 +1274,7 @@ msgstr ""
 msgid "Free entry reopened for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:195 src/Support/DoorDesk.php:436 src/Support/DoorList.php:78
+#: src/Support/DoorDesk.php:195 src/Support/DoorDesk.php:440 src/Support/DoorList.php:78
 msgid "Free-entry credit"
 msgstr ""
 
@@ -1477,15 +1477,15 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
-#: src/Support/DoorDesk.php:767
+#: src/Support/DoorDesk.php:771
 msgid "Holvi"
 msgstr ""
 
-#: src/Support/DoorDesk.php:317
+#: src/Support/DoorDesk.php:321
 msgid "Holvi buyer (no name)"
 msgstr ""
 
-#: src/Support/DoorDesk.php:337
+#: src/Support/DoorDesk.php:341
 msgid "Holvi buyer added and checked in."
 msgstr ""
 
@@ -1921,7 +1921,7 @@ msgstr ""
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
-#: src/Support/DoorDesk.php:760
+#: src/Support/DoorDesk.php:764
 msgid "No name"
 msgstr ""
 
@@ -2918,11 +2918,11 @@ msgstr ""
 msgid "Signed up"
 msgstr ""
 
-#: src/Support/DoorDesk.php:638
+#: src/Support/DoorDesk.php:642
 msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
 msgstr ""
 
-#: src/Support/DoorDesk.php:636
+#: src/Support/DoorDesk.php:640
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr ""
 
@@ -3164,7 +3164,7 @@ msgstr ""
 msgid "That email address does not look right."
 msgstr ""
 
-#: src/Support/DoorDesk.php:338
+#: src/Support/DoorDesk.php:342
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
 
@@ -3220,11 +3220,11 @@ msgstr ""
 msgid "That slot just filled up."
 msgstr ""
 
-#: src/Support/DoorDesk.php:639
+#: src/Support/DoorDesk.php:643
 msgid "That task has just filled up. Pick another one."
 msgstr ""
 
-#: src/Support/DoorDesk.php:640
+#: src/Support/DoorDesk.php:644
 msgid "That task is for crew leaders only."
 msgstr ""
 
@@ -3232,7 +3232,7 @@ msgstr ""
 msgid "That task is no longer available."
 msgstr ""
 
-#: src/Support/DoorDesk.php:667
+#: src/Support/DoorDesk.php:671
 msgid "That ticket could not be given."
 msgstr ""
 
@@ -3240,7 +3240,7 @@ msgstr ""
 msgid "That’s your own task."
 msgstr ""
 
-#: src/Support/DoorDesk.php:339
+#: src/Support/DoorDesk.php:343
 msgid "The Holvi buyer could not be added. Try again."
 msgstr ""
 
@@ -3546,11 +3546,11 @@ msgstr ""
 msgid "They already have free entry for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:666
+#: src/Support/DoorDesk.php:670
 msgid "They already have free entry tonight."
 msgstr ""
 
-#: src/Support/DoorDesk.php:641
+#: src/Support/DoorDesk.php:645
 msgid "They could not be signed up for that task."
 msgstr ""
 
@@ -3562,7 +3562,7 @@ msgstr ""
 msgid "They have no credit left to redeem."
 msgstr ""
 
-#: src/Support/DoorDesk.php:665
+#: src/Support/DoorDesk.php:669
 msgid "They have no credit left."
 msgstr ""
 
@@ -3641,11 +3641,11 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/DoorDesk.php:622
+#: src/Support/DoorDesk.php:626
 msgid "Ticket exchanged against taking a task"
 msgstr ""
 
-#: src/Support/DoorDesk.php:664
+#: src/Support/DoorDesk.php:668
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
@@ -4256,7 +4256,7 @@ msgstr ""
 msgid "add the bot to your Telegram group (the board appears on its own), or share your signup page link."
 msgstr ""
 
-#: src/Support/DoorDesk.php:733
+#: src/Support/DoorDesk.php:737
 msgid "allowed +%d"
 msgstr ""
 
@@ -4320,11 +4320,11 @@ msgstr ""
 msgid "is sold out"
 msgstr ""
 
-#: src/Support/MarkedBy.php:56
+#: src/Support/MarkedBy.php:73
 msgid "marked at %s"
 msgstr ""
 
-#: src/Support/MarkedBy.php:60
+#: src/Support/MarkedBy.php:77
 msgid "marked by %1$s at %2$s"
 msgstr ""
 
@@ -4362,6 +4362,14 @@ msgstr ""
 
 #: templates/public/signup-board.php:102
 msgid "sign in first"
+msgstr ""
+
+#: src/Support/MarkedBy.php:59
+msgid "signed out at %s"
+msgstr ""
+
+#: src/Support/MarkedBy.php:61
+msgid "signed out by %1$s at %2$s"
 msgstr ""
 
 #: src/Telegram/ReplacementService.php:242 src/Telegram/ReplacementService.php:269

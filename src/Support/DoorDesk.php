@@ -246,6 +246,10 @@ final class DoorDesk
         if (! $in) {
             $this->checkins->unmark($date, $kind, $refId);
 
+            if (CheckinRepository::KIND_CREW === $kind) {
+                $this->markCrewSignedOut($date, $refId, $doorPersonId);
+            }
+
             return true;
         }
 
@@ -855,6 +859,28 @@ final class DoorDesk
                 $this->assignments->setStatus(
                     $assignment->id,
                     AssignmentStatus::ARRIVED,
+                    $doorPersonId,
+                    MarkedBy::PERSON
+                );
+            }
+        }
+    }
+
+    /**
+     * Undoes markCrewArrived when the desk marks a crew member out: their
+     * arrived tasks that night go back to signed up (expected), recording who
+     * at the desk did it, so the roster shows "signed out by X at HH:MM".
+     * Only `arrived`: a late or completed mark was set on the roster itself.
+     */
+    private function markCrewSignedOut(string $date, int $personId, int $doorPersonId): void
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            $assignment = $this->assignments->findFor($task->id, $personId);
+
+            if (null !== $assignment && AssignmentStatus::ARRIVED === $assignment->status) {
+                $this->assignments->setStatus(
+                    $assignment->id,
+                    AssignmentStatus::SIGNED_UP,
                     $doorPersonId,
                     MarkedBy::PERSON
                 );
