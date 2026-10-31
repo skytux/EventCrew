@@ -44,7 +44,7 @@
  * @var string $email_test_to The address a test email would go to (the current user's).
  * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
  * @var string $import_url The REST URL the mail poller posts buyer lists to.
- * @var string $import_mailbox The address organizers mail buyer lists to.
+ * @var string $import_mailbox The address organizers mail buyer lists to; '' when none is set.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1244,14 +1244,22 @@ if (! defined('ABSPATH')) {
 
     <h2><?php esc_html_e('Ticket buyer import by email', 'eventcrew'); ?></h2>
     <p class="description">
-        <?php
-        printf(
-            /* translators: %s: the import email address */
-            esc_html__('Organizers can email a list of Holvi ticket buyers, one name per line, to %s. A mail poller on the mail server reads that mailbox and sends each list to this site, signed with the secret below. The list goes to the next event.', 'eventcrew'),
-            '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
-        );
-        ?>
+        <?php esc_html_e('Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. A mail poller on the mail server reads that mailbox and sends each list to this site, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
     </p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="eventcrew_save_import_mailbox">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><label for="eventcrew-import-mailbox"><?php esc_html_e('Import mailbox', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="email" name="import_mailbox" id="eventcrew-import-mailbox" class="regular-text" value="<?php echo esc_attr($import_mailbox); ?>">
+                    <p class="description"><?php esc_html_e('The address organizers send their lists to. Leave it empty if this site has no import mailbox.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button(__('Save the import mailbox', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
     <table class="form-table" role="presentation">
         <tr>
             <th scope="row"><?php esc_html_e('Endpoint', 'eventcrew'); ?></th>

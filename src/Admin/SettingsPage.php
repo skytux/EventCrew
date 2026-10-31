@@ -130,7 +130,7 @@ final class SettingsPage
                 'email_test_to' => (string) wp_get_current_user()->user_email,
                 'import_secret' => BuyerImportController::ensureSecret(),
                 'import_url' => BuyerImportController::endpointUrl(),
-                'import_mailbox' => BuyerImportController::MAILBOX,
+                'import_mailbox' => BuyerImportController::mailbox(),
                 'telegram' => $this->telegramView(),
                 'privacy' => $this->privacyView(),
             ]
@@ -870,6 +870,37 @@ final class SettingsPage
         }
 
         Admin::redirectTo(self::PAGE_SLUG, $result['error'], 'error');
+    }
+
+    /**
+     * Saves the address organizers mail ticket buyer lists to. Empty removes
+     * it, and the guide and the Roster page then leave the email import out.
+     */
+    public function saveImportMailbox(): void
+    {
+        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked by assertCanSave().
+        $posted = wp_unslash((string) ($_POST['import_mailbox'] ?? ''));
+        $address = trim(sanitize_text_field($posted));
+
+        if ('' === $address) {
+            delete_option(BuyerImportController::MAILBOX_OPTION);
+            Admin::redirectTo(self::PAGE_SLUG, __('The import mailbox was removed.', 'eventcrew'));
+            return;
+        }
+
+        if (false === filter_var($address, FILTER_VALIDATE_EMAIL)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That is not an email address. The import mailbox was not changed.', 'eventcrew'),
+                'error'
+            );
+            return;
+        }
+
+        update_option(BuyerImportController::MAILBOX_OPTION, $address, false);
+        Admin::redirectTo(self::PAGE_SLUG, __('The import mailbox was saved.', 'eventcrew'));
     }
 
     /**

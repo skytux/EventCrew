@@ -82,7 +82,7 @@ final class RosterPage
                     $this->ticketBuyers->forDate($selected),
                     static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()
                 )),
-                'import_mailbox' => BuyerImportController::MAILBOX,
+                'import_mailbox' => BuyerImportController::mailbox(),
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
                 'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),
                 'leader_enabled' => '' !== $selected && $this->leaderGate->isEnabled($selected),

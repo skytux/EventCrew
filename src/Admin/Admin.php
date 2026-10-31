@@ -135,6 +135,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_save_import_mailbox',
+            [$this->container->get(SettingsPage::class), 'saveImportMailbox']
+        );
+
+        add_action(
             'admin_post_eventcrew_rotate_import_secret',
             [$this->container->get(SettingsPage::class), 'rotateImportSecret']
         );

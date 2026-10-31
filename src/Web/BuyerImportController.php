@@ -29,8 +29,8 @@ final class BuyerImportController
     public const ROUTE_NAMESPACE = 'eventcrew/v1';
     public const ROUTE = '/buyers-import';
 
-    /** The address organizers mail their lists to; the poller reads it. */
-    public const MAILBOX = 'import.edh@haissous.name';
+    /** The address organizers mail their lists to, set in Settings → Email. */
+    public const MAILBOX_OPTION = 'eventcrew_import_mailbox';
 
     /** Carries "sha256=<hex HMAC-SHA256 of the raw body>". */
     private const SIGNATURE_HEADER = 'X-EventCrew-Signature';
@@ -45,6 +45,17 @@ final class BuyerImportController
     public function boot(): void
     {
         add_action('rest_api_init', [$this, 'registerRoutes']);
+    }
+
+    /**
+     * The address organizers mail their lists to; the poller reads it. Empty
+     * when the site has no import mailbox, and then nothing mentions it.
+     */
+    public static function mailbox(): string
+    {
+        $address = trim((string) get_option(self::MAILBOX_OPTION, ''));
+
+        return false === filter_var($address, FILTER_VALIDATE_EMAIL) ? '' : $address;
     }
 
     /**
