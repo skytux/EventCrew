@@ -62,9 +62,6 @@ endif; ?>
                 <span class="eventcrew-task-main">
                     <span class="eventcrew-task-role"><?php echo esc_html($eventcrew_task->roleDisplay()); ?></span>
                     <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
-                    <?php if ('' !== $eventcrew_task->roleDescription()) : ?>
-                        <span class="eventcrew-task-desc"><?php echo esc_html($eventcrew_task->roleDescription()); ?></span>
-                    <?php endif; ?>
                 </span>
                 <?php
                 /*
