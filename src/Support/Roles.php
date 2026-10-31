@@ -40,6 +40,7 @@ namespace EventCrew\Support;
  *     restricted: bool,
  *     every_night: bool,
  *     sales_desk: bool,
+ *     on_board: bool,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
@@ -465,6 +466,15 @@ final class Roles
     }
 
     /**
+     * Whether this role's tasks are listed on the Telegram group board. On
+     * unless switched off; a task of an unknown role is listed.
+     */
+    public static function onBoard(string $slug): bool
+    {
+        return self::find($slug)['on_board'] ?? true;
+    }
+
+    /**
      * The conditions set on a role; all zero when none are set or the role
      * does not exist.
      *
@@ -531,6 +541,9 @@ final class Roles
                 ? ! empty($role['sales_desk'])
                 : self::WELCOME_SLUG === $slug,
             'conditions' => self::normalizeConditions($role['conditions'] ?? null, $slug),
+            // On unless switched off: every role stored before this key
+            // existed was on the board.
+            'on_board' => ! array_key_exists('on_board', $role) || ! empty($role['on_board']),
         ];
     }
 

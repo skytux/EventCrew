@@ -205,6 +205,28 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertStringNotContainsString('DJ', $rendered['text']);
     }
 
+    public function testTheGroupBoardLeavesOutARoleSwitchedOffTheBoard(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'random', 'label' => 'Random', 'emoji' => '🎲', 'on_board' => false],
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party'),
+            array_merge($this->taskRow(2, 100, 'Party'), ['role_slug' => 'random', 'capacity' => 2]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+
+        $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
+        self::assertContains('t:1', $callbacks);
+        self::assertNotContains('t:2', $callbacks);
+        self::assertStringNotContainsString('Random', $rendered['text']);
+        self::assertTrue(Roles::onBoard('decorate'));
+        self::assertFalse(Roles::onBoard('random'));
+    }
+
     /**
      * The board is one message the whole group reads, so it stays English even
      * when it is re-rendered inside a tap from someone who chose Finnish.
