@@ -28,6 +28,16 @@ final class DoorSession
     /** The auth token purpose a door link is issued under. */
     public const TOKEN_PURPOSE = 'door';
 
+    /**
+     * The auth token purpose of a link made on the sales desk page itself
+     * ("Other device"): shown as a QR code, it works once and only for
+     * HANDOFF_SECONDS. See DoorHandoff.
+     */
+    public const HANDOFF_PURPOSE = 'door_handoff';
+
+    /** How long a link made on the sales desk page works: 15 minutes. */
+    public const HANDOFF_SECONDS = 15 * 60;
+
     /** The admin-ajax action that serves the page and consumes a link. */
     public const PAGE_ACTION = 'eventcrew_door';
 

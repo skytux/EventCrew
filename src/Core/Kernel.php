@@ -28,6 +28,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
@@ -514,7 +515,20 @@ final class Kernel
             DoorController::class,
             fn (Container $container) => new DoorController(
                 $container->get(DoorDesk::class),
-                $container->get(DoorNewMember::class)
+                $container->get(DoorNewMember::class),
+                $container->get(DoorHandoff::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorHandoff::class,
+            fn (Container $container) => new DoorHandoff(
+                $container->get(DoorDesk::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(SalesDeskGate::class)
             )
         );
 

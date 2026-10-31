@@ -19,6 +19,13 @@
  * The "+1" and "−1" buttons at the top count people in without a name, such
  * as the organizers themselves. That count is part of the "checked in" total.
  *
+ * The "Other device" button opens a popup that shows a one-time login link as
+ * a QR code: for this person on a second phone, or ("Login as") for another
+ * organizer, leader or Welcome crew member (Support\DoorHandoff). The QR code
+ * is drawn here as SVG by the bundled qrcode-generator library
+ * (assets/vendor/qrcode-generator), the one file this page loads besides
+ * itself.
+ *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
  * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, pollMs, searchMin, maxPlus, actions
  */
@@ -53,6 +60,19 @@ $eventcrew_text = [
     'more' => __('One guest more', 'eventcrew'),
     /* translators: %d: how many people were counted in without a name tonight */
     'anonymous' => __('Counted without a name: %d', 'eventcrew'),
+    'ownTitle' => __('Open on other device', 'eventcrew'),
+    /* translators: %s: the name of the person the link logs in */
+    'asTitle' => __('Login as %s', 'eventcrew'),
+    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+    'scan' => __('Scan this QR code with the camera of the other phone. The link works once and stops working after 15 minutes.', 'eventcrew'),
+    /* translators: %s: the name of the person the link logs in */
+    'asWho' => __('The other phone opens the sales desk as %s.', 'eventcrew'),
+    'qrLabel' => __('QR code of the login link', 'eventcrew'),
+    'noQr' => __('The QR code could not be drawn. Use Copy link instead.', 'eventcrew'),
+    'copied' => __('Link copied.', 'eventcrew'),
+    'selected' => __('The link is selected. Copy it with the copy command of your phone.', 'eventcrew'),
+    'noPeople' => __('Nobody else can run the sales desk tonight yet.', 'eventcrew'),
+    'showQr' => __('Show QR code', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -101,6 +121,11 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 .ec-stack button{width:100%}
 #ec-members,#ec-tasks{max-height:45vh;overflow-y:auto}
 .ec-muted{color:var(--muted)}
+.ec-buttons{display:flex;gap:8px}
+#ec-people{max-height:45vh;overflow-y:auto}
+#ec-qr{margin:12px auto;max-width:280px}
+#ec-qr svg{display:block;width:100%;height:auto}
+#ec-qr-link{width:100%;font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -112,7 +137,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         /* translators: %s: the number of people expected tonight. */
         printf(esc_html__('of %s checked in', 'eventcrew'), '<span id="ec-expected">0</span>');
     ?></small></div>
+    <div class="ec-buttons">
+    <button type="button" id="ec-other-open"><?php esc_html_e('📱 Other device', 'eventcrew'); ?></button>
     <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
+    </div>
     </div>
     <div class="ec-anon">
         <button type="button" id="ec-anon-less" aria-label="<?php esc_attr_e('Take one person off the count without a name', 'eventcrew'); ?>">−1</button>
@@ -204,6 +232,36 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <ul id="ec-tasks"></ul>
     </div>
 </dialog>
+<dialog id="ec-other" aria-labelledby="ec-other-title">
+    <div class="ec-dialog-head">
+        <button type="button" id="ec-other-back"><?php esc_html_e('‹ Back', 'eventcrew'); ?></button>
+        <h2 id="ec-other-title"><?php esc_html_e('Other device', 'eventcrew'); ?></h2>
+        <button type="button" id="ec-other-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
+    </div>
+    <p class="ec-msg" id="ec-other-msg" role="status"></p>
+
+    <div id="ec-other-choose" class="ec-stack">
+        <button type="button" id="ec-pick-own"><?php esc_html_e('Open on other device', 'eventcrew'); ?></button>
+        <button type="button" id="ec-pick-as"><?php esc_html_e('Login as', 'eventcrew'); ?></button>
+    </div>
+
+    <div id="ec-other-people" hidden>
+        <h3><?php esc_html_e('Login as', 'eventcrew'); ?></h3>
+        <p class="ec-muted"><?php esc_html_e('Organizers, and the leader and Welcome crew marked arrived tonight.', 'eventcrew'); ?></p>
+        <ul id="ec-people"></ul>
+    </div>
+
+    <div id="ec-other-qr" hidden>
+        <h3 id="ec-qr-title"></h3>
+        <p id="ec-qr-text"></p>
+        <div id="ec-qr"></div>
+        <input type="text" id="ec-qr-link" readonly aria-label="<?php esc_attr_e('Login link', 'eventcrew'); ?>">
+        <div class="ec-stack">
+            <button type="button" id="ec-qr-copy"><?php esc_html_e('Copy link', 'eventcrew'); ?></button>
+        </div>
+    </div>
+</dialog>
+<script src="<?php echo esc_url(EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION); ?>"></script>
 <script>
 (function () {
     'use strict';
@@ -517,7 +575,163 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         }, failed);
     }
 
+    // The Other device popup: which step shows, and where Back goes from the
+    // QR code (the people list after "Login as", else the first step).
+    var otherStep = 'choose';
+    var qrFrom = 'choose';
+
+    function sayOther(message) {
+        el('ec-other-msg').textContent = message || '';
+    }
+
+    function otherShow(name) {
+        otherStep = name;
+        ['choose', 'people', 'qr'].forEach(function (s) { el('ec-other-' + s).hidden = s !== name; });
+        el('ec-other-back').hidden = 'choose' === name;
+        sayOther('');
+
+        // A login link stays on screen only while its step shows.
+        if ('qr' !== name) {
+            el('ec-qr').textContent = '';
+            el('ec-qr-link').value = '';
+        }
+    }
+
+    function otherFailed(error) {
+        if (!error || 'session' !== error.message) {
+            sayOther(text.failed);
+        }
+    }
+
+    // The QR code as an SVG: one 1x1 square per dark module, on white with
+    // a 4-module quiet zone, so a phone camera reads it in dark mode too.
+    function drawQr(url) {
+        var holder = el('ec-qr');
+        var ns = 'http://www.w3.org/2000/svg';
+        var qr, count, size, svg, back, path, d = '', r, c;
+
+        holder.textContent = '';
+
+        if ('function' !== typeof window.qrcode) {
+            holder.appendChild(node('p', 'ec-muted', text.noQr));
+            return;
+        }
+
+        qr = window.qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        count = qr.getModuleCount();
+        size = count + 8;
+
+        for (r = 0; r < count; r += 1) {
+            for (c = 0; c < count; c += 1) {
+                if (qr.isDark(r, c)) {
+                    d += 'M' + (c + 4) + ',' + (r + 4) + 'h1v1h-1z';
+                }
+            }
+        }
+
+        svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', text.qrLabel);
+        svg.setAttribute('shape-rendering', 'crispEdges');
+        back = document.createElementNS(ns, 'rect');
+        back.setAttribute('width', size);
+        back.setAttribute('height', size);
+        back.setAttribute('fill', '#fff');
+        path = document.createElementNS(ns, 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('fill', '#000');
+        svg.appendChild(back);
+        svg.appendChild(path);
+        holder.appendChild(svg);
+    }
+
+    // Asks the server for a one-time login link - for this person when
+    // person is 0 - and shows it as a QR code and as text.
+    function showLink(person, from) {
+        post('handoff', { person: person }).then(function (data) {
+            if (!data || !data.ok) {
+                sayOther(data && data.message ? data.message : text.failed);
+                return;
+            }
+
+            qrFrom = from;
+            otherShow('qr');
+            el('ec-qr-title').textContent = 0 === person ? text.ownTitle : text.asTitle.replace('%s', data.name);
+            el('ec-qr-text').textContent = 0 === person ? text.scan : text.scan + ' ' + text.asWho.replace('%s', data.name);
+            el('ec-qr-link').value = data.url;
+            drawQr(data.url);
+        }, otherFailed);
+    }
+
+    function showPeople() {
+        var list = el('ec-people');
+
+        post('people', {}).then(function (data) {
+            otherShow('people');
+            list.textContent = '';
+
+            if (!data.people || 0 === data.people.length) {
+                list.appendChild(node('li', 'ec-muted', text.noPeople));
+                return;
+            }
+
+            data.people.forEach(function (person) {
+                var li = node('li');
+                var who = node('div', 'ec-who');
+                var pick = node('button', '', text.showQr);
+
+                who.appendChild(node('div', 'ec-name', person.name));
+                pick.addEventListener('click', function () { showLink(person.id, 'people'); });
+                li.appendChild(who);
+                li.appendChild(pick);
+                list.appendChild(li);
+            });
+        }, otherFailed);
+    }
+
+    // The clipboard API needs a secure page and a permission; when it is not
+    // there or says no, the link text is selected for the phone's own copy.
+    function copyLink() {
+        var input = el('ec-qr-link');
+
+        function select() {
+            input.focus();
+            input.select();
+            input.setSelectionRange(0, input.value.length);
+            sayOther(text.selected);
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(input.value).then(function () { sayOther(text.copied); }, select);
+            return;
+        }
+
+        select();
+    }
+
     var searchTimer = null;
+
+    el('ec-other-open').addEventListener('click', function () {
+        otherShow('choose');
+        el('ec-other').showModal();
+    });
+    el('ec-other-close').addEventListener('click', function () { el('ec-other').close(); });
+    el('ec-other-back').addEventListener('click', function () {
+        otherShow('qr' === otherStep ? qrFrom : 'choose');
+    });
+    el('ec-other').addEventListener('click', function (event) {
+        if (event.target === el('ec-other')) {
+            el('ec-other').close();
+        }
+    });
+    // Closing the popup in any way removes the link from the page.
+    el('ec-other').addEventListener('close', function () { otherShow('choose'); });
+    el('ec-pick-own').addEventListener('click', function () { showLink(0, 'choose'); });
+    el('ec-pick-as').addEventListener('click', showPeople);
+    el('ec-qr-copy').addEventListener('click', copyLink);
 
     el('ec-filter').addEventListener('input', draw);
 
