@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '19';
+    public const DB_VERSION = '20';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -83,6 +83,11 @@ final class Schema
         }
 
         self::ensureInnoDb();
+
+        // Schema 20: Crew leader is an ordinary role. Copies can_lead into
+        // role_slugs; it has to run before dropRetiredColumns() drops can_lead.
+        self::moveCanLeadToRole();
+
         self::dropRetiredColumns();
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
@@ -100,6 +105,10 @@ final class Schema
      *   recorded - and a column that looks like consent evidence but is always
      *   empty is worse than no column at all now that the plugin publishes a
      *   privacy notice describing the real, opt-out model.
+     * - can_lead / leader_eligible_notified_at: the crew-leader permission and
+     *   its one-time notice, retired in schema 20 when Crew leader became an
+     *   ordinary role. can_lead is copied into role_slugs first (see
+     *   moveCanLeadToRole()); the notice record moved to role_notices.
      *
      * @var array<int, string>
      */
@@ -107,7 +116,59 @@ final class Schema
         'disabled_at',
         'email_opt_in_at',
         'email_opt_in_source',
+        'can_lead',
+        'leader_eligible_notified_at',
     ];
+
+    /** The role slug a can_lead person is given when that column is retired. */
+    private const CREW_LEADER_SLUG = 'leader';
+
+    /**
+     * Gives everyone who had the old crew-leader permission (can_lead = 1) the
+     * role "leader" instead, so they stay in the Crew leader role group. Runs
+     * only while the can_lead column still exists, just before it is dropped,
+     * and skips anyone who already holds the role, so it is safe to run twice.
+     * It does not create the Crew leader role itself; that is a setting.
+     */
+    private static function moveCanLeadToRole(): void
+    {
+        global $wpdb;
+
+        $table = self::table(self::PEOPLE);
+
+        if (! self::hasColumn($table, 'can_lead')) {
+            return;
+        }
+
+        $slug = self::CREW_LEADER_SLUG;
+
+        $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->prepare(
+                "UPDATE {$table}
+                 SET role_slugs = IF(role_slugs = '', %s, CONCAT(role_slugs, ',', %s))
+                 WHERE can_lead = 1 AND FIND_IN_SET(%s, role_slugs) = 0",
+                $slug,
+                $slug,
+                $slug
+            )
+        );
+    }
+
+    private static function hasColumn(string $table, string $column): bool
+    {
+        global $wpdb;
+
+        $present = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
+                $table,
+                $column
+            )
+        );
+
+        return null !== $present && '' !== (string) $present;
+    }
 
     /**
      * dbDelta never drops a column - it only adds and widens - so a field the
@@ -122,16 +183,7 @@ final class Schema
         $table = self::table(self::PEOPLE);
 
         foreach (self::RETIRED_PEOPLE_COLUMNS as $column) {
-            $present = $wpdb->get_var(
-                $wpdb->prepare(
-                    'SELECT COLUMN_NAME FROM information_schema.COLUMNS
-                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
-                    $table,
-                    $column
-                )
-            );
-
-            if (null === $present || '' === (string) $present) {
+            if (! self::hasColumn($table, $column)) {
                 continue;
             }
 
@@ -257,6 +309,11 @@ final class Schema
             // 'en' or 'fi'. NULL means they have not chosen yet, which reads as
             // English; the bot asks at their next private command.
             //
+            // role_notices is JSON: which role notices the organizers have
+            // already been sent about this person ("met:<slug>" for meeting a
+            // role's conditions, "given:<slug>" for being given the role), each
+            // with when. NULL until the first one, so each is sent only once.
+            //
             // email is varchar(191) rather than 255 so it still fits a unique
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
@@ -270,9 +327,7 @@ final class Schema
                 telegram_user_id bigint(20) unsigned DEFAULT NULL,
                 telegram_chat_id bigint(20) DEFAULT NULL,
                 is_organizer tinyint(1) NOT NULL DEFAULT 0,
-                can_lead tinyint(1) NOT NULL DEFAULT 0,
                 at_risk_pass tinyint(1) NOT NULL DEFAULT 0,
-                leader_eligible_notified_at datetime DEFAULT NULL,
                 notify_muted tinyint(1) NOT NULL DEFAULT 0,
                 notify_prefs text DEFAULT NULL,
                 anonymized_at datetime DEFAULT NULL,
@@ -281,6 +336,7 @@ final class Schema
                 ban_reason text DEFAULT NULL,
                 language varchar(5) DEFAULT NULL,
                 role_slugs varchar(255) NOT NULL DEFAULT '',
+                role_notices text DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

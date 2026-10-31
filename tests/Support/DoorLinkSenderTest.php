@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use EventCrew\Support\DoorLinkSender;
+use EventCrew\Support\Roles;
 
 /**
  * The automatic sales desk links. The clock reads 12:00 on the night.
  * Organizers get theirs 30 minutes (the default) before the night's first
- * task starts; the leader and Welcome crew get theirs once they are marked
+ * task starts; crew on a role that opens the sales desk (Welcome by default)
+ * get theirs once they are marked
  * arrived and it is 10 minutes or less before their task. Nobody gets the
  * same night's link twice.
  */
@@ -138,8 +140,12 @@ final class DoorLinkSenderTest extends SalesDeskTestCase
         self::assertSame(508, $this->lastCallTo('sendMessage')['chat_id']);
     }
 
-    public function testTheLeaderGetsItUnderTheSameRule(): void
+    public function testCrewOnAnyRoleMarkedAsOpeningTheSalesDeskGetItUnderTheSameRule(): void
     {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'welcome', 'label' => 'Welcome'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
         $this->queueCrewRun('leader', '12:05', 'arrived_late');
 
         $this->doorLinkSender()->run();

@@ -42,7 +42,6 @@ final class DoorDesk
     public const WORK_OK = 'ok';
     public const WORK_SWAPPED = 'swapped';
     public const WORK_FULL = 'full';
-    public const WORK_LEADER_ONLY = 'leader_only';
     public const WORK_UNAVAILABLE = 'unavailable';
     public const WORK_CREDIT_QUESTION = 'credit_question';
 
@@ -135,8 +134,8 @@ final class DoorDesk
      * The person and night a door cookie stands for, or null when the cookie
      * is not valid or the person has since been deleted. 'open' says whether
      * the session still works right now: the person is read fresh on every
-     * request, so an organizer keeps the night until 06:00 while a leader or
-     * Welcome crew member loses it when the event ends. Whether they are
+     * request, so an organizer keeps the night until 06:00 while a crew member
+     * on a sales-desk role loses it when the event ends. Whether they are
      * still on the night's crew is not re-checked: that was decided when the
      * link was given, and re-checking it on every poll would cost a query per
      * task.
@@ -484,14 +483,16 @@ final class DoorDesk
 
     /**
      * Tonight's tasks this member could be signed up for at the door: those
-     * with a free place, leaving out leader-only ones and restricted ones
-     * (Organize, DJ, ...) whose role they do not hold. A task with no limit
-     * has free null: it is never full. ask_credit is true for a restricted
-     * task, where the desk asks whether it counts toward free-entry credit.
+     * with a free place, leaving out restricted ones (Organize, DJ, ...) whose
+     * role they do not hold. When the person at the desk ($doorPersonId) is an
+     * organizer, restricted tasks are listed whatever roles the member holds:
+     * an organizer can sign anyone up to any task. A task with no limit has
+     * free null: it is never full. ask_credit is true for a restricted task,
+     * where the desk asks whether it counts toward free-entry credit.
      *
      * @return array<int, array{id: int, label: string, free: int|null, mine: bool, ask_credit: bool}>
      */
-    public function openTasks(string $date, int $personId): array
+    public function openTasks(string $date, int $personId, int $doorPersonId = 0): array
     {
         $person = $this->people->find($personId);
 
@@ -502,10 +503,11 @@ final class DoorDesk
         $tasks = $this->tasks->forDate($date);
         $taken = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
         $mine = $this->heldTaskIds($personId);
+        $bypass = $this->isOrganizer($doorPersonId);
         $open = [];
 
         foreach ($tasks as $task) {
-            if (SignupService::blocksRestrictedSlot($task, $person)) {
+            if (! $bypass && SignupService::blocksRestrictedSlot($task, $person)) {
                 continue;
             }
 
@@ -514,7 +516,7 @@ final class DoorDesk
 
             // A task they already hold stays on the list, marked, even when
             // it is full, so the desk sees everything they are signed up for.
-            if (! $held && ((null !== $free && $free <= 0) || SignupService::blocksLeaderSlot($task, $person))) {
+            if (! $held && null !== $free && $free <= 0) {
                 continue;
             }
 
@@ -531,6 +533,14 @@ final class DoorDesk
         }
 
         return $open;
+    }
+
+    /** Whether the person running the desk is an organizer. */
+    private function isOrganizer(int $doorPersonId): bool
+    {
+        $doorPerson = $doorPersonId > 0 ? $this->people->find($doorPersonId) : null;
+
+        return null !== $doorPerson && $doorPerson->isOrganizer;
     }
 
     /**
@@ -555,7 +565,8 @@ final class DoorDesk
      * Signs a member up for one of tonight's tasks from the door and marks
      * them in, which also marks the task arrived. The standing gate is not
      * asked: the person signing them up is at the door with them. The place
-     * limit and the leader-only rule still hold. Answers a WORK_* code.
+     * limit still holds. A restricted task needs its role, unless the person
+     * at the desk is an organizer. Answers a WORK_* code.
      *
      * Someone who already spent a credit on tonight is counted once, as crew:
      * their ticket is cancelled, which gives the credit back, and the grant
@@ -575,13 +586,9 @@ final class DoorDesk
             return self::WORK_UNAVAILABLE;
         }
 
-        if (SignupService::blocksLeaderSlot($task, $person)) {
-            return self::WORK_LEADER_ONLY;
-        }
-
         // Worded like a task that is not there: someone without the task's
         // role is never offered it, so there is nothing more to say about it.
-        if (SignupService::blocksRestrictedSlot($task, $person)) {
+        if (SignupService::blocksRestrictedSlot($task, $person) && ! $this->isOrganizer($doorPersonId)) {
             return self::WORK_UNAVAILABLE;
         }
 
@@ -659,7 +666,6 @@ final class DoorDesk
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             self::WORK_SWAPPED => __('Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back.', 'eventcrew'),
             self::WORK_FULL => __('That task has just filled up. Pick another one.', 'eventcrew'),
-            self::WORK_LEADER_ONLY => __('That task is for crew leaders only.', 'eventcrew'),
             self::WORK_CREDIT_QUESTION => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             default => __('They could not be signed up for that task.', 'eventcrew'),
         };

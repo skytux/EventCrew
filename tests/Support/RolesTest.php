@@ -40,7 +40,7 @@ final class RolesTest extends TestCase
     }
 
     /**
-     * The organize role is reserved like the leader slot: named by the plugin,
+     * The organize role is reserved: named by the plugin,
      * known to exist, and never in the editable list.
      */
     public function testTheOrganizeRoleIsReservedAndNamed(): void
@@ -294,6 +294,60 @@ final class RolesTest extends TestCase
 
         Functions\when('get_option')->justReturn('  https://docs.example/guide ');
         self::assertSame('https://docs.example/guide', Roles::guideUrl());
+    }
+
+    /**
+     * A role saved before the sales desk flag existed opens the desk only if
+     * it is the shipped door role, Welcome; a saved flag wins either way.
+     */
+    public function testTheSalesDeskFlagDefaultsToWelcomeOnlyAndASavedFlagWins(): void
+    {
+        Functions\when('get_option')->justReturn([
+            ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈', 'capacity' => 2],
+            ['slug' => 'welcome', 'label' => 'Welcome', 'emoji' => '👋', 'capacity' => 1],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'emoji' => '🧭', 'capacity' => 1, 'sales_desk' => true],
+            ['slug' => 'clean', 'label' => 'Clean', 'emoji' => '🧹', 'capacity' => 3, 'sales_desk' => false],
+        ]);
+
+        self::assertFalse(Roles::opensSalesDesk('decorate'));
+        self::assertTrue(Roles::opensSalesDesk('welcome'));
+        self::assertTrue(Roles::opensSalesDesk('leader'));
+        self::assertFalse(Roles::opensSalesDesk('clean'));
+        self::assertFalse(Roles::opensSalesDesk('nonexistent'));
+    }
+
+    public function testConditionsAreNormalizedAndSurviveASave(): void
+    {
+        $saved = $this->captureSavedRoles([
+            ['slug' => 'welcome', 'label' => 'Welcome', 'emoji' => '', 'capacity' => 1],
+            [
+                'slug' => 'leader',
+                'label' => 'Crew leader',
+                'emoji' => '🧭',
+                'capacity' => 1,
+                'restricted' => true,
+                'conditions' => [
+                    'counts' => ['welcome' => '2', 'clean' => 0, 'leader' => 4],
+                    'min_roles' => '3',
+                    'times_each' => '2',
+                ],
+            ],
+            [
+                'slug' => 'dj',
+                'label' => 'DJ',
+                'emoji' => '',
+                'capacity' => 1,
+                'conditions' => ['min_roles' => 3, 'times_each' => 0],
+            ],
+        ]);
+
+        // No conditions at all; a role cannot ask for its own tasks; zero
+        // counts are dropped; and one of n / x at zero clears both.
+        self::assertSame(['counts' => [], 'min_roles' => 0, 'times_each' => 0], $saved[0]['conditions']);
+        self::assertSame(['counts' => ['welcome' => 2], 'min_roles' => 3, 'times_each' => 2], $saved[1]['conditions']);
+        self::assertSame(['counts' => [], 'min_roles' => 0, 'times_each' => 0], $saved[2]['conditions']);
+        self::assertTrue(Roles::hasConditions($saved[1]['conditions']));
+        self::assertFalse(Roles::hasConditions($saved[0]['conditions']));
     }
 
     /**

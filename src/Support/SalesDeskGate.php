@@ -12,10 +12,10 @@ use EventCrew\Repositories\TaskRepository;
 /**
  * Who may open the sales desk (the door page) for a night, and until when.
  *
- * Organizers may, for any night, until 06:00 the morning after it. The
- * night's leader and Welcome crew may from a few minutes before their own task
- * starts, once they are marked arrived, and only until the event ends. The
- * same rule decides the automatic link, the /sales command, the button on the
+ * Organizers may, for any night, until 06:00 the morning after it. People on
+ * that night's task of a role with "Sales desk" ticked in Settings (Welcome
+ * ships with it) may from a few minutes before their own task starts, once
+ * they are marked arrived, and only until the event ends. The same rule decides the automatic link, the /sales command, the button on the
  * member's web page, and - for the end time - every request the page makes.
  */
 final class SalesDeskGate
@@ -27,15 +27,12 @@ final class SalesDeskGate
     public const CLOSED = 'closed';
     public const NO_NIGHT = 'no_night';
 
-    /** Option and default for "minutes before their task" (leader and Welcome crew). */
+    /** Option and default for "minutes before their task" (sales-desk roles). */
     public const CREW_MINUTES_OPTION = 'eventcrew_door_link_welcome_minutes';
     public const DEFAULT_CREW_MINUTES = 10;
 
     /** The start used for a night where no task has a start time. */
     private const FALLBACK_START = '17:00:00';
-
-    /** The roles that work the door. */
-    private const DOOR_ROLES = [Roles::LEADER_SLUG, Roles::WELCOME_SLUG];
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -80,7 +77,7 @@ final class SalesDeskGate
         $onDoor = false;
 
         foreach ($tasks as $task) {
-            if (! in_array($task->roleSlug, self::DOOR_ROLES, true)) {
+            if (! self::isDoorRole($task->roleSlug)) {
                 continue;
             }
 
@@ -211,15 +208,19 @@ final class SalesDeskGate
             self::CLOSED => __('The sales desk for this night has closed.', 'eventcrew'),
             self::NO_NIGHT => __('There is no upcoming event night yet.', 'eventcrew'),
             default => __(
-                'Only organizers, the night’s leader and the Welcome crew can open the sales desk.',
+                'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
                 'eventcrew'
             ),
         };
     }
 
+    /**
+     * Whether people on a task of this role open the sales desk: the role's
+     * "Sales desk" setting.
+     */
     public static function isDoorRole(string $slug): bool
     {
-        return in_array($slug, self::DOOR_ROLES, true);
+        return Roles::opensSalesDesk($slug);
     }
 
     public static function hasArrived(string $status): bool

@@ -193,8 +193,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         <?php
         /*
          * The sales desk (door page), for organizers and - from a few minutes
-         * before their task, once marked arrived - the night's leader and
-         * Welcome crew. Pressing it checks that again on the server and opens
+         * before their task, once marked arrived - the crew on the night's
+         * tasks of a sales-desk role. Pressing it checks that again on the server and opens
          * the desk with a fresh one-time link.
          */
         ?>
@@ -572,8 +572,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <?php endif; ?>
 
             <?php if ([] !== $eventcrew_admin['add_tasks']) : ?>
-                <h3 class="eventcrew-subhead"><?php esc_html_e('Add a person to a role task', 'eventcrew'); ?></h3>
-                <p class="eventcrew-muted"><?php esc_html_e('For a member, or for someone who is not a crew member yet. They get the role too.', 'eventcrew'); ?></p>
+                <h3 class="eventcrew-subhead"><?php esc_html_e('Add a person to a task', 'eventcrew'); ?></h3>
+                <p class="eventcrew-muted"><?php esc_html_e('For a member, or for someone who is not a crew member yet. On a task of a role marked "Only people with this role", they get the role too.', 'eventcrew'); ?></p>
                 <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['add_action']); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
@@ -595,7 +595,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <input id="eventcrew-admin-add-email" type="email" name="email" maxlength="191">
                         <br><span class="eventcrew-muted"><?php esc_html_e('With an email, they get their ticket by email. An email that belongs to a member adds that member.', 'eventcrew'); ?></span>
                     </p>
-                    <p><?php esc_html_e('Count toward free-entry credit?', 'eventcrew'); ?></p>
+                    <p><?php esc_html_e('Count toward free-entry credit?', 'eventcrew'); ?>
+                        <br><span class="eventcrew-muted"><?php esc_html_e('Asked only for a role task; every other task always counts.', 'eventcrew'); ?></span></p>
                     <button type="submit" name="counts_credit" value="1" class="wp-element-button"><?php esc_html_e('Yes', 'eventcrew'); ?></button>
                     <button type="submit" name="counts_credit" value="0" class="wp-element-button is-style-outline"><?php esc_html_e('No', 'eventcrew'); ?></button>
                 </form>

@@ -226,7 +226,7 @@ final class DoorController
                 // No break: json() exits.
 
             case self::TASKS_ACTION:
-                $this->json(['tasks' => $this->desk->openTasks($date, $personId)]);
+                $this->json(['tasks' => $this->desk->openTasks($date, $personId, $doorPersonId)]);
                 // No break: json() exits.
 
             case self::WORK_ACTION:

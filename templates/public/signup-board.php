@@ -109,11 +109,7 @@ endif; ?>
                     ?>
                     <span class="eventcrew-blocked">
                         <?php
-                        echo esc_html(
-                            \EventCrew\Support\SignupService::LEADER_ONLY === $eventcrew_blocked
-                                ? __('Crew leaders only', 'eventcrew')
-                                : __('On hold — talk to an organizer', 'eventcrew')
-                        );
+                        echo esc_html(__('On hold — talk to an organizer', 'eventcrew'));
                         ?>
                     </span>
                     <?php

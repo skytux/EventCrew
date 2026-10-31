@@ -25,9 +25,7 @@ final class Person
         public readonly string $createdAt = '',
         public readonly string $updatedAt = '',
         public readonly bool $notifyMuted = false,
-        public readonly bool $canLead = false,
         public readonly bool $hasAtRiskPass = false,
-        public readonly ?string $leaderEligibleNotifiedAt = null,
         /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
         public readonly array $notifyPrefs = [],
         public readonly ?string $anonymizedAt = null,
@@ -37,7 +35,12 @@ final class Person
         /** 'en' or 'fi'; null until the person chooses, which reads as English */
         public readonly ?string $language = null,
         /** @var array<int, string> slugs of the restricted roles given to this person */
-        public readonly array $roleSlugs = []
+        public readonly array $roleSlugs = [],
+        /**
+         * @var array<string, string> the role notices already sent to the
+         * organizers about this person: "met:<slug>" or "given:<slug>" => when
+         */
+        public readonly array $roleNotices = []
     ) {
     }
 
@@ -58,16 +61,15 @@ final class Person
             (string) ($row['created_at'] ?? ''),
             (string) ($row['updated_at'] ?? ''),
             1 === (int) ($row['notify_muted'] ?? 0),
-            1 === (int) ($row['can_lead'] ?? 0),
             1 === (int) ($row['at_risk_pass'] ?? 0),
-            self::nullableString($row['leader_eligible_notified_at'] ?? null),
             self::decodePrefs($row['notify_prefs'] ?? null),
             self::nullableString($row['anonymized_at'] ?? null),
             self::nullableString($row['sessions_valid_from'] ?? null),
             self::nullableString($row['banned_at'] ?? null),
             (string) ($row['ban_reason'] ?? ''),
             Language::normalize($row['language'] ?? null),
-            self::decodeRoles($row['role_slugs'] ?? null)
+            self::decodeRoles($row['role_slugs'] ?? null),
+            self::decodeNotices($row['role_notices'] ?? null)
         );
     }
 
@@ -140,15 +142,6 @@ final class Person
     }
 
     /**
-     * Whether this person may hold the reserved Leader slot - trusted to run a
-     * night and mark attendance from Telegram, without being a full organizer.
-     */
-    public function canLead(): bool
-    {
-        return $this->canLead;
-    }
-
-    /**
      * Whether this person holds a one-time pass to sign up despite being at
      * risk. Consumed on their next successful signup.
      */
@@ -157,10 +150,41 @@ final class Person
         return $this->hasAtRiskPass;
     }
 
-    /** Whether the organizers have already been told this person is leader-eligible. */
-    public function leaderNotified(): bool
+    /**
+     * Whether the organizers have already been sent this role notice about
+     * this person. $key is "met:<slug>" or "given:<slug>".
+     */
+    public function hasRoleNotice(string $key): bool
     {
-        return null !== $this->leaderEligibleNotifiedAt;
+        return isset($this->roleNotices[$key]);
+    }
+
+    /**
+     * The stored JSON of sent role notices, as key => when.
+     *
+     * @return array<string, string>
+     */
+    public static function decodeNotices(mixed $value): array
+    {
+        if (! is_string($value) || '' === $value) {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $notices = [];
+
+        foreach ($decoded as $key => $when) {
+            if (is_string($key) && '' !== $key) {
+                $notices[$key] = (string) $when;
+            }
+        }
+
+        return $notices;
     }
 
     /**

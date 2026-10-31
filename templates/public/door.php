@@ -21,7 +21,7 @@
  *
  * The "Other device" button opens a popup that shows a one-time login link as
  * a QR code: for this person on a second phone, or ("Login as") for another
- * organizer, leader or Welcome crew member (Support\DoorHandoff). The QR code
+ * organizer or sales-desk crew member (Support\DoorHandoff). The QR code
  * is drawn here as SVG by the bundled qrcode-generator library
  * (assets/vendor/qrcode-generator), the one file this page loads besides
  * itself.
@@ -259,7 +259,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     <div id="ec-other-people" hidden>
         <h3><?php esc_html_e('Login as', 'eventcrew'); ?></h3>
-        <p class="ec-muted"><?php esc_html_e('Organizers, and the leader and Welcome crew marked arrived tonight.', 'eventcrew'); ?></p>
+        <p class="ec-muted"><?php esc_html_e('Organizers, and the crew marked arrived on tonight’s tasks that open the sales desk.', 'eventcrew'); ?></p>
         <ul id="ec-people"></ul>
     </div>
 

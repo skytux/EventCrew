@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.46.0
+Stable tag: 1.47.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,10 +37,11 @@ person on one task. Nothing assumes the work is unpaid.
   exactly the same rules as the bot. Installable as a mobile app (PWA).
 * **Roster, attendance & a door list** — mark who arrived / completed / no-showed,
   per person or a whole crew at once, and see everyone who gets in free tonight.
-* **Reputation, credits & a crew-leader role** — a recency-weighted read of each
+* **Reputation, credits & role conditions** — a recency-weighted read of each
   person's history (never a stored score), earned free-entry credits, an optional
-  gate for at-risk members, and a trusted leader who can run a night without being
-  an admin. All tunable in Settings.
+  gate for at-risk members, and per-role conditions that tell the organizers when
+  someone has done enough to be given a role such as Crew leader. All tunable in
+  Settings.
 * **Notifications on both channels** — every notice can reach a person by Telegram
   DM and email, each type toggleable per channel from a web tab or the
   `/notifications` menu. Signup confirmations and reminders always send.
@@ -63,9 +64,9 @@ the DM with a short breadcrumb left behind.
 * `/replace` — arrange cover for a task
 * `/notifications` — choose what reaches you, and on which channel
 * `/board` — post or refresh the group board of open tasks
-* `/roster` — the attendance roster (organizers, and the night's crew leader)
-* `/roletasks` — tasks for your roles (DJ, VJ, ...): sign up, cancel, and (organizers) add someone
-* `/gift`, `/roles`, `/leaders` — organizer tools: credits, roles and permissions (`/allow` is the old name of `/roles`), leadership
+* `/roster` — the attendance roster (organizers, and the night's crew on roles that open the sales desk)
+* `/roletasks` — tasks for your roles (DJ, VJ, ...): sign up, cancel, and (organizers) add someone to any upcoming task
+* `/gift`, `/roles`, `/eligible` — organizer tools: credits, roles and permissions (`/allow` is the old name of `/roles`), who meets each role's conditions (`/leaders` is the old name of `/eligible`)
 
 == External services ==
 
@@ -130,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.47.0 =
+Crew leader is an ordinary role. The leader switch, leader slot and leadership settings are gone: Crew leader is a restricted role that only role holders can sign up for. Each role can have conditions (a count per role, or at least N roles done X times each); organizers are told by Telegram and email the first time someone meets them, and the first time someone is given a role. A per-role setting decides who opens the sales desk, gets the door link and marks the roster. /eligible lists who meets the conditions (/leaders still works). Organizers can sign anyone up to any task.
 
 = 1.46.0 =
 Tickets are never deleted any more. Undoing a free entry, or swapping it for a task at the door, cancels the redemption instead of removing it. Deleting a task in wp-admin hides it everywhere and takes everyone off it instead of removing the rows. In both cases the ticket link keeps working and shows DISABLED.
@@ -605,6 +609,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.47.0 =
+Database update (version 20): moves can_lead into role holders, drops can_lead and leader_eligible_notified_at, adds people.role_notices.
 
 = 1.46.0 =
 Database update (version 19): adds tasks.deleted_at and redemptions.cancelled_at.

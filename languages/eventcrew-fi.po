@@ -92,26 +92,10 @@ msgid_plural "%d people"
 msgstr[0] "%d henkilö"
 msgstr[1] "%d henkilöä"
 
-#: src/Telegram/PermissionService.php:219
-#, php-format
-msgid "%s can now lead an event."
-msgstr "%s voi nyt vetää tapahtuman."
-
 #: src/Telegram/PermissionService.php:223
 #, php-format
 msgid "%s has a one-time sign-up pass."
 msgstr "%s sai kertaluontoisen ilmoittautumisluvan."
-
-#. translators: %s: the candidate's name
-#: src/Support/LeaderEligibilityNotifier.php:62
-#, php-format
-msgid "%s has earned crew-leader eligibility. Give them 👑 Leader with /roles to let them lead."
-msgstr "%s voi nyt toimia tiiminvetäjänä. Anna hänelle 👑 Vetäjä komennolla /roles, niin hän voi toimia vetäjänä."
-
-#: src/Telegram/PermissionService.php:218
-#, php-format
-msgid "%s is no longer a leader."
-msgstr "%s ei ole enää tiiminvetäjä."
 
 #: src/Telegram/PermissionService.php:228
 #, php-format
@@ -172,10 +156,6 @@ msgstr "Lisää: /guest add Nimi ; huomautus  (pelkkä vieras)"
 #: templates/public/signup.php:259 templates/public/signup.php:479
 msgid "Admin"
 msgstr "Ylläpito"
-
-#: src/Telegram/PermissionService.php:96
-msgid "Allowed to lead:"
-msgstr "Saa toimia vetäjänä:"
 
 #: templates/public/door.php:47
 #, php-format
@@ -364,14 +344,6 @@ msgstr "Vapaalippu käytetty — lippu on yksityisviesteissäsi."
 msgid "Credits"
 msgstr "Vapaaliput"
 
-#: src/Telegram/PermissionService.php:92
-msgid "Crew leaders"
-msgstr "Tiiminvetäjät"
-
-#: templates/public/signup-board.php:108
-msgid "Crew leaders only"
-msgstr "Vain tiiminvetäjille"
-
 #: templates/public/door.php:173 templates/public/door.php:213
 msgid "Crew member"
 msgstr "Crew-jäsen"
@@ -421,10 +393,6 @@ msgstr "Ovilippu lisätty ja kirjattu sisään."
 #: src/Support/DoorDesk.php:197
 msgid "Door tickets"
 msgstr "Oviliput"
-
-#: src/Telegram/PermissionService.php:93
-msgid "Eligible (give them 👑 Leader with /roles):"
-msgstr "Voisivat toimia vetäjänä (anna 👑 Vetäjä komennolla /roles):"
 
 #: templates/public/door.php:220 templates/public/signup.php:89 templates/public/signup.php:392
 msgid "Email"
@@ -772,10 +740,6 @@ msgstr "Liity Telegram-ryhmään"
 msgid "Late cancellation"
 msgstr "Myöhäinen peruutus"
 
-#: src/Support/Roles.php:262
-msgid "Leader"
-msgstr "Vetäjä"
-
 #: src/Telegram/OnboardingService.php:135
 msgid "Let’s set you up in a private chat — tap below to open the bot."
 msgstr "Tehdään asetukset yksityisessä keskustelussa — avaa botti napauttamalla alta."
@@ -852,10 +816,6 @@ msgstr "Nimi"
 #: templates/public/door.php:178 templates/public/door.php:187
 msgid "Name (optional)"
 msgstr "Nimi (vapaaehtoinen)"
-
-#: src/Support/LeaderEligibilityNotifier.php:76
-msgid "New crew-leader candidate"
-msgstr "Uusi tiiminvetäjäehdokas"
 
 #: src/Telegram/BoardRenderer.php:111
 msgid "New here? Sign up →"
@@ -993,9 +953,37 @@ msgstr "Vain järjestäjät voivat muuttaa vieraslistaa."
 msgid "Only organizers can give out free-entry credits."
 msgstr "Vain järjestäjät voivat antaa vapaalippuja."
 
-#: src/Telegram/PermissionService.php:73
-msgid "Only organizers can see the leaders list."
-msgstr "Vain järjestäjät näkevät vetäjälistan."
+#: src/Telegram/PermissionService.php:81
+msgid "Only organizers can see who meets the role conditions."
+msgstr "Vain järjestäjät näkevät, kuka täyttää roolien ehdot."
+
+#: src/Telegram/PermissionService.php:90
+msgid "No role has conditions set. Organizers set them in wp-admin, under Settings, Roles."
+msgstr "Millekään roolille ei ole asetettu ehtoja. Järjestäjät asettavat ne wp-adminissa kohdassa Settings, Roles."
+
+#: src/Telegram/PermissionService.php:92
+msgid "Who meets the conditions for each role. ✅ = they have the role. Give a role with /roles."
+msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rooli komennolla /roles."
+
+#. translators: 1: the person's name, 2: the role
+#: src/Support/RoleNotifier.php:110
+#, php-format
+msgid "%1$s now meets the conditions for the role %2$s. You can give them the role with /roles."
+msgstr "%1$s täyttää nyt roolin %2$s ehdot. Voit antaa hänelle roolin komennolla /roles."
+
+#: src/Support/RoleNotifier.php:114
+msgid "Someone meets the conditions for a role"
+msgstr "Joku täyttää roolin ehdot"
+
+#. translators: 1: the person's name, 2: the role
+#: src/Support/RoleNotifier.php:118
+#, php-format
+msgid "%1$s was given the role %2$s."
+msgstr "%1$s sai roolin %2$s."
+
+#: src/Support/RoleNotifier.php:122
+msgid "Someone was given a role"
+msgstr "Joku sai roolin"
 
 #: src/Telegram/PermissionService.php:46 src/Telegram/PermissionService.php:155
 msgid "Only organizers can set permissions."
@@ -1005,21 +993,21 @@ msgstr "Vain järjestäjät voivat asettaa oikeuksia."
 msgid "Only organizers or people rostered on the day can see the roster."
 msgstr "Vain järjestäjät tai päivän tehtäviin merkityt näkevät vuorolistan."
 
-#: src/Telegram/RosterService.php:149
-msgid "Only organizers or the night’s leader can mark attendance."
-msgstr "Vain järjestäjät tai illan vetäjä voivat merkitä läsnäolon."
+#: src/Telegram/RosterService.php:150
+msgid "Only organizers, and the crew on that night’s tasks that open the sales desk, can mark attendance."
+msgstr "Vain järjestäjät ja sen illan myyntipisteen avaavien tehtävien crew voivat merkitä läsnäolon."
 
 #: src/Telegram/GuestListService.php:285
-msgid "Only organizers, and that night’s leader and Welcome crew, can see the guest list."
-msgstr "Vain järjestäjät sekä illan vetäjä ja vastaanottotiimi näkevät vieraslistan."
+msgid "Only organizers, and the crew on that night’s tasks that open the sales desk, can see the guest list."
+msgstr "Vain järjestäjät ja sen illan myyntipisteen avaavien tehtävien crew näkevät vieraslistan."
 
 #: src/Telegram/DoorListService.php:187
-msgid "Only organizers, and that night’s leader and Welcome crew, can see who has a ticket."
-msgstr "Vain järjestäjät sekä illan vetäjä ja vastaanottotiimi näkevät, kenellä on lippu."
+msgid "Only organizers, and the crew on that night’s tasks that open the sales desk, can see who has a ticket."
+msgstr "Vain järjestäjät ja sen illan myyntipisteen avaavien tehtävien crew näkevät, kenellä on lippu."
 
-#: src/Support/SalesDeskGate.php:213
-msgid "Only organizers, the night’s leader and the Welcome crew can open the sales desk."
-msgstr "Vain järjestäjät, illan vetäjä ja vastaanottotiimi voivat avata myyntipisteen."
+#: src/Support/SalesDeskGate.php:210
+msgid "Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it."
+msgstr "Vain järjestäjät ja tämän illan myyntipisteen avaavien tehtävien crew voivat avata sen."
 
 #: src/Support/WelcomeSender.php:326
 msgid "Open EventCrew in wp-admin"
@@ -1066,8 +1054,8 @@ msgid "Organizer guide"
 msgstr "Järjestäjän opas"
 
 #: templates/public/door.php:255
-msgid "Organizers, and the leader and Welcome crew marked arrived tonight."
-msgstr "Järjestäjät sekä vetäjä ja vastaanottotiimi, jotka on merkitty tänä iltana saapuneiksi."
+msgid "Organizers, and the crew marked arrived on tonight’s tasks that open the sales desk."
+msgstr "Järjestäjät sekä tämän illan myyntipisteen avaavien tehtävien crew, joka on merkitty saapuneeksi."
 
 #: templates/public/door.php:243
 msgid "Other device"
@@ -1136,12 +1124,6 @@ msgstr "Lähetä uudelleen %s s:n päästä"
 #: templates/public/signup.php:1222
 msgid "Resend link"
 msgstr "Lähetä linkki uudelleen"
-
-#. translators: %d: how many times each other task must be done first
-#: src/Support/RoleGuide.php:105
-#, php-format
-msgid "Runs the crew for the night. It opens to you after you have done each of the other tasks %d times."
-msgstr "Vetää crew’n illan ajan. Tehtävä aukeaa sinulle, kun olet tehnyt jokaista muuta tehtävää %d kertaa."
 
 #: src/Web/DoorController.php:347 templates/public/door.php:81 templates/public/signup.php:206 templates/public/signup.php:481
 msgid "Sales desk"
@@ -1423,9 +1405,9 @@ msgstr "Paikka täyttyi juuri."
 msgid "That task has just filled up. Pick another one."
 msgstr "Tehtävä täyttyi juuri. Valitse toinen."
 
-#: src/Support/DoorDesk.php:598
-msgid "That task is for crew leaders only."
-msgstr "Tehtävä on vain tiiminvetäjille."
+#: src/Support/RoleTaskService.php:184
+msgid "That task is full."
+msgstr "Tehtävä on täynnä."
 
 #: src/Telegram/BoardService.php:501 src/Telegram/ReplacementService.php:147 src/Web/SignupController.php:703
 msgid "That task is no longer available."
@@ -1458,10 +1440,6 @@ msgstr "Sähköposti näkyy vain listalla. Siihen ei lähetetä mitään."
 #: src/Support/WelcomeSender.php:345
 msgid "The full guide, with the details, is in your email."
 msgstr "Koko opas yksityiskohtineen on sähköpostissasi."
-
-#: src/Telegram/BoardService.php:496 src/Web/SignupController.php:698
-msgid "The leader slot is for crew the organizers have cleared to lead."
-msgstr "Vetäjän paikka on crew-jäsenille, joille järjestäjät ovat antaneet luvan vetää."
 
 #: templates/public/door.php:71
 msgid "The link is selected. Copy it with the copy command of your phone."
@@ -1567,8 +1545,8 @@ msgid "This link was already used — ask an organizer for a new one (/sales in 
 msgstr "Linkki on jo käytetty — pyydä järjestäjältä uusi (/sales Telegramissa)."
 
 #: src/Support/DoorHandoff.php:118
-msgid "This person cannot run the sales desk tonight. Only organizers, the leader and the Welcome crew marked arrived can."
-msgstr "Tämä henkilö ei voi hoitaa myyntipistettä tänä iltana. Vain järjestäjät sekä saapuneiksi merkityt vetäjä ja vastaanottotiimi voivat."
+msgid "This person cannot run the sales desk tonight. Only organizers, and the crew marked arrived on tonight’s tasks that open the sales desk, can."
+msgstr "Tämä henkilö ei voi hoitaa myyntipistettä tänä iltana. Vain järjestäjät ja tämän illan myyntipisteen avaavien tehtävien saapuneeksi merkitty crew voivat."
 
 #: src/Telegram/TicketController.php:187
 msgid "This ticket link is not valid."
@@ -2032,9 +2010,11 @@ msgstr ""
 msgid "— nobody yet"
 msgstr "— ei vielä ketään"
 
-#: src/Telegram/PermissionService.php:91
-msgid "— none yet"
-msgstr "— ei vielä ketään"
+#. translators: 1: number of different roles, 2: times in each
+#: src/Support/RoleConditions.php:154
+#, php-format
+msgid "at least %1$d different roles, %2$d times each"
+msgstr "vähintään %1$d eri roolia, kutakin %2$d kertaa"
 
 #. translators: 1: outcome name, 2: its score percentage
 #: src/Support/StandingExplainer.php:42
@@ -2142,10 +2122,6 @@ msgstr "🎟 Vapaalippusi tapahtumaan %s — näytä se ovella."
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr "🎟 Sinulla on kertaluontoinen lupa ilmoittautua seuraavaan tehtävääsi, vaikka luotettavuutesi on matala."
 
-#: src/Telegram/PermissionService.php:242
-msgid "👑 You can now lead an event — tap the 🧭 Leader slot on the board to take it."
-msgstr "👑 Voit nyt vetää tapahtuman — ota se napauttamalla taululla 🧭 Leader -paikkaa."
-
 #: src/Support/ClaimNotifier.php:115
 msgid "📅 Add to calendar"
 msgstr "📅 Lisää kalenteriin"
@@ -2201,10 +2177,6 @@ msgstr "🗑 %s poistettu."
 msgid "🚪 Open the sales desk"
 msgstr "🚪 Avaa myyntipiste"
 
-#: src/Support/Roles.php:274
-msgid "🧭 Leader"
-msgstr "🧭 Vetäjä"
-
 #: templates/public/signup.php:457
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Järjestäjän opas ↓"
@@ -2249,8 +2221,8 @@ msgstr "Henkilöllä %1$s ei ole enää roolia %2$s."
 msgid "%1$s now has the role %2$s."
 msgstr "Henkilöllä %1$s on nyt rooli %2$s."
 
-msgid "Add a person to a role task"
-msgstr "Lisää henkilö roolitehtävään"
+msgid "Add a person to a task"
+msgstr "Lisää henkilö tehtävään"
 
 msgid "Add someone"
 msgstr "Lisää joku"
@@ -2270,8 +2242,11 @@ msgstr "Valitse, lasketaanko tämä tehtävä vapaalippuun."
 msgid "Count toward free-entry credit?"
 msgstr "Lasketaanko vapaalippuun?"
 
-msgid "For a member, or for someone who is not a crew member yet. They get the role too."
-msgstr "Jäsenelle tai henkilölle, joka ei vielä ole crew-jäsen. Hän saa myös roolin."
+msgid "For a member, or for someone who is not a crew member yet. On a task of a role marked \"Only people with this role\", they get the role too."
+msgstr "Jäsenelle tai henkilölle, joka ei vielä ole crew-jäsen. Kun roolin asetus on \"Only people with this role\", hän saa myös roolin."
+
+msgid "Asked only for a role task; every other task always counts."
+msgstr "Kysytään vain roolitehtävässä; kaikki muut tehtävät lasketaan aina."
 
 msgid "Give the role"
 msgstr "Anna rooli"
@@ -2327,6 +2302,9 @@ msgstr "Tehtävä"
 
 msgid "Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers)."
 msgstr "Roolejesi tehtävät. Ne eivät näy ryhmän taululla.\n✋ = ilmoittaudu · ❌ = peru · ➕ = lisää joku (järjestäjät)."
+
+msgid "Tasks for your roles, and every upcoming task you can add someone to.\n✋ = sign up · ❌ = cancel · ➕ = add someone."
+msgstr "Roolejesi tehtävät ja kaikki tulevat tehtävät, joihin voit lisätä jonkun.\n✋ = ilmoittaudu · ❌ = peru · ➕ = lisää joku."
 
 msgid "That person is already on this task."
 msgstr "Henkilö on jo tässä tehtävässä."

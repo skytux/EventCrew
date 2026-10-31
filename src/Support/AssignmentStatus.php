@@ -58,7 +58,7 @@ final class AssignmentStatus
     }
 
     /**
-     * Statuses that count as a done task: toward credits, leader eligibility
+     * Statuses that count as a done task: toward credits, role conditions
      * and the completed-task count. Arriving late still means the work was done.
      *
      * @return array<int, string>

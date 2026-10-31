@@ -7,7 +7,6 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EventSource;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Tests\TestCase;
@@ -27,7 +26,7 @@ final class TaskTemplateApplierTest extends TestCase
 
     private function applier(): TaskTemplateApplier
     {
-        return new TaskTemplateApplier(new TaskRepository(), new LeaderGate());
+        return new TaskTemplateApplier(new TaskRepository());
     }
 
     /**

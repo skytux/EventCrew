@@ -14,8 +14,6 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
-use EventCrew\Support\LeaderEligibility;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
@@ -90,8 +88,6 @@ final class SettingsPage
                 'min_rated_tasks' => $reputation->minRatedTasks(),
                 'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
-                'leader_enabled' => (bool) get_option(LeaderGate::ENABLED_OPTION, false),
-                'leader_experience' => max(1, (int) get_option(LeaderEligibility::THRESHOLD_OPTION, 2)),
                 'board_push_enabled' => (bool) get_option(BoardPush::ENABLED_OPTION, true),
                 'board_push_lead_week' => max(
                     0,
@@ -378,12 +374,6 @@ final class SettingsPage
         update_option(ReputationSettings::HALF_LIFE_OPTION, $halfLife);
 
         update_option(SignupService::GATE_OPTION, isset($_POST['reputation_gate']) ? '1' : '0');
-
-        update_option(LeaderGate::ENABLED_OPTION, isset($_POST['leader_enabled']));
-        $leaderExperience = isset($_POST['leader_experience'])
-            ? max(1, (int) $_POST['leader_experience'])
-            : 2;
-        update_option(LeaderEligibility::THRESHOLD_OPTION, $leaderExperience);
 
         update_option(BoardPush::ENABLED_OPTION, isset($_POST['board_push_enabled']) ? '1' : '0');
         $leadWeek = isset($_POST['board_push_lead_week'])
@@ -1057,7 +1047,7 @@ final class SettingsPage
             ['command' => 'guest', 'description' => __('DM — organizers & door crew: the guest list', 'eventcrew')],
             [
                 'command' => 'sales',
-                'description' => __('DM — organizers, leader & Welcome crew: the sales desk link', 'eventcrew'),
+                'description' => __('DM — organizers & sales desk crew: the sales desk link', 'eventcrew'),
             ],
             ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
             [
@@ -1066,9 +1056,12 @@ final class SettingsPage
             ],
             [
                 'command' => 'roles',
-                'description' => __('DM — organizers: give or take away roles, leader, pass, organizer', 'eventcrew'),
+                'description' => __('DM — organizers: give or take away roles, pass, organizer', 'eventcrew'),
             ],
-            ['command' => 'leaders', 'description' => __('DM — organizers: who is eligible and allowed to lead', 'eventcrew')],
+            [
+                'command' => 'eligible',
+                'description' => __('DM — organizers: who meets the role conditions', 'eventcrew'),
+            ],
         ]);
 
         return ['ok' => true, 'error' => ''];
@@ -1131,11 +1124,28 @@ final class SettingsPage
         $everyNight = isset($_POST['role_every_night']) && is_array($_POST['role_every_night'])
             ? array_map('intval', array_keys(wp_unslash($_POST['role_every_night'])))
             : [];
+        $salesDesk = isset($_POST['role_sales_desk']) && is_array($_POST['role_sales_desk'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_sales_desk'])))
+            : [];
+
+        // Conditions: role_count[index][slug], role_min_roles[index] and
+        // role_times_each[index]. Roles::normalize() drops blanks and zeros.
+        $counts = isset($_POST['role_count']) && is_array($_POST['role_count'])
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value is cast to int below.
+            ? wp_unslash($_POST['role_count'])
+            : [];
+        $minRoles = isset($_POST['role_min_roles']) && is_array($_POST['role_min_roles'])
+            ? array_map('intval', wp_unslash($_POST['role_min_roles']))
+            : [];
+        $timesEach = isset($_POST['role_times_each']) && is_array($_POST['role_times_each'])
+            ? array_map('intval', wp_unslash($_POST['role_times_each']))
+            : [];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $archivedIndexes = array_flip($archived);
         $restrictedIndexes = array_flip($restricted);
         $everyNightIndexes = array_flip($everyNight);
+        $salesDeskIndexes = array_flip($salesDesk);
 
         $types = [];
 
@@ -1148,6 +1158,14 @@ final class SettingsPage
                 'archived' => isset($archivedIndexes[$index]),
                 'restricted' => isset($restrictedIndexes[$index]),
                 'every_night' => isset($everyNightIndexes[$index]),
+                'sales_desk' => isset($salesDeskIndexes[$index]),
+                'conditions' => [
+                    'counts' => is_array($counts[$index] ?? null)
+                        ? array_map('intval', $counts[$index])
+                        : [],
+                    'min_roles' => $minRoles[$index] ?? 0,
+                    'times_each' => $timesEach[$index] ?? 0,
+                ],
                 'anchor' => $anchors[$index] ?? Roles::ANCHOR_START,
                 // '' means "no offset", which is not the same as 0 ("exactly
                 // on the anchor"), so the blank is preserved rather than

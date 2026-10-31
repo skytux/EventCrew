@@ -16,9 +16,9 @@ use EventCrew\Support\GuestCommand;
  * /guest: the guest list of one event night - people let in free who are not
  * crew members.
  *
- * Organizers add, edit and remove guests; the night's leader and Welcome crew
- * can see the list for their night. Every answer goes to the asker's DM. See
- * GuestCommand for the syntax.
+ * Organizers add, edit and remove guests; people on a night's task of a
+ * sales-desk role can see the list for their night. Every answer goes to the
+ * asker's DM. See GuestCommand for the syntax.
  */
 final class GuestListService
 {
@@ -282,6 +282,6 @@ final class GuestListService
 
     private function deniedViewMessage(): string
     {
-        return __('Only organizers, and that night’s leader and Welcome crew, can see the guest list.', 'eventcrew');
+        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can see the guest list.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     }
 }

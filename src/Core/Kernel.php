@@ -35,9 +35,6 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
-use EventCrew\Support\LeaderEligibility;
-use EventCrew\Support\LeaderEligibilityNotifier;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\Logger;
@@ -50,6 +47,8 @@ use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RetentionPurge;
+use EventCrew\Support\RoleConditions;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Scheduler;
@@ -163,6 +162,15 @@ final class Kernel
         // The welcome message: sent the moment a member confirms their email,
         // which happens on the front path (web sign-in, the bot's webhook).
         $this->container->get(WelcomeSender::class)->boot();
+
+        // The organizers' notice when someone is given a role. Roles are given
+        // from the bot, the crew page and wp-admin, so it listens everywhere.
+        add_action(
+            RoleNotifier::GIVEN_HOOK,
+            fn (int $personId, string $slug) => $this->container->get(RoleNotifier::class)->roleGiven($personId, $slug),
+            10,
+            2
+        );
 
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
@@ -280,11 +288,6 @@ final class Kernel
         $this->container->singleton(
             FreeEntryGate::class,
             fn (Container $container) => new FreeEntryGate($container->get(TaskRepository::class))
-        );
-
-        $this->container->singleton(
-            LeaderGate::class,
-            fn () => new LeaderGate()
         );
 
         $this->container->singleton(
@@ -408,17 +411,17 @@ final class Kernel
         );
 
         $this->container->singleton(
-            LeaderEligibility::class,
-            fn (Container $container) => new LeaderEligibility(
+            RoleConditions::class,
+            fn (Container $container) => new RoleConditions(
                 $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class)
             )
         );
 
         $this->container->singleton(
-            LeaderEligibilityNotifier::class,
-            fn (Container $container) => new LeaderEligibilityNotifier(
-                $container->get(LeaderEligibility::class),
+            RoleNotifier::class,
+            fn (Container $container) => new RoleNotifier(
+                $container->get(RoleConditions::class),
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class)
@@ -433,7 +436,7 @@ final class Kernel
                 $container->get(StandingNotice::class),
                 $container->get(BoardPush::class),
                 $container->get(BoardService::class),
-                $container->get(LeaderEligibilityNotifier::class),
+                $container->get(RoleNotifier::class),
                 $container->get(RetentionPurge::class),
                 $container->get(WelcomeSender::class)
             )
@@ -797,7 +800,7 @@ final class Kernel
             fn (Container $container) => new PermissionService(
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(LeaderEligibility::class),
+                $container->get(RoleConditions::class),
                 $container->get(Mailer::class)
             )
         );
@@ -925,8 +928,7 @@ final class Kernel
         $this->container->singleton(
             TaskTemplateApplier::class,
             fn (Container $container) => new TaskTemplateApplier(
-                $container->get(TaskRepository::class),
-                $container->get(LeaderGate::class)
+                $container->get(TaskRepository::class)
             )
         );
 
@@ -965,8 +967,7 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(CreditGrantNotifier::class),
-                $container->get(LeaderEligibility::class),
-                $container->get(LeaderGate::class),
+                $container->get(RoleConditions::class),
                 $container->get(PersonEraser::class)
             )
         );
@@ -982,7 +983,6 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
-                $container->get(LeaderGate::class),
                 $container->get(TicketRedemptionService::class),
                 $container->get(GuestRepository::class),
                 $container->get(TicketBuyerRepository::class),

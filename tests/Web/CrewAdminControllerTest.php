@@ -19,12 +19,11 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
-use EventCrew\Support\LeaderEligibility;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\PersonEraser;
+use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
@@ -727,8 +726,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $this->standing(),
             new CreditGrantRepository(),
             new CreditGrantNotifier($this->mailer(), $this->client()),
-            new LeaderEligibility($assignments, new PersonRepository()),
-            new LeaderGate(),
+            new RoleConditions($assignments, new PersonRepository()),
             new PersonEraser(
                 new PersonRepository(),
                 $assignments,

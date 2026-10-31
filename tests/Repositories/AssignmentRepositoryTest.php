@@ -38,8 +38,15 @@ final class AssignmentRepositoryTest extends TestCase
         $repository->countCompletedFor(9);
         self::assertStringContainsString('counts_credit = 1', $this->wpdb->lastQuery());
 
-        $repository->completedByRole(9);
-        self::assertStringContainsString('a.counts_credit = 1', $this->wpdb->lastQuery());
+    }
+
+    public function testCompletedByRoleCountsEveryCompletedTaskWhateverTheCredit(): void
+    {
+        (new AssignmentRepository())->completedByRole(9);
+
+        self::assertStringNotContainsString('counts_credit', $this->wpdb->lastQuery());
+        self::assertStringContainsString('s.deleted_at IS NULL', $this->wpdb->lastQuery());
+        self::assertStringContainsString('GROUP BY s.role_slug', $this->wpdb->lastQuery());
     }
 
     public function testReportsAnUnknownTaskWithoutAttemptingAWrite(): void

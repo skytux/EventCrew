@@ -38,7 +38,9 @@ namespace EventCrew\Support;
  *     end_offset: int|null,
  *     description: string,
  *     restricted: bool,
- *     every_night: bool
+ *     every_night: bool,
+ *     sales_desk: bool,
+ *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
  * A role can be restricted ("Only people with this role"): DJ, VJ, ceremony
@@ -47,29 +49,29 @@ namespace EventCrew\Support;
  * never counted as a place that needs filling - the same rules the reserved
  * Organize role has always had, with "is an organizer" replaced by "has this
  * role". A restricted role with every_night on gets one task on every night.
+ *
+ * Two more settings ride on every role. sales_desk: people on that night's
+ * task of this role may open the sales desk and get its link (Welcome ships
+ * with it on). conditions: how much someone has done before the organizers
+ * are told they could be given this role - a count of completed tasks in named
+ * roles, and/or a number of different roles done a number of times each. The
+ * conditions never let anyone sign up; they only drive a notice to the
+ * organizers and a list in wp-admin and the bot's /eligible. See RoleConditions.
  */
 final class Roles
 {
     public const OPTION_NAME = 'eventcrew_roles';
 
     /**
-     * The reserved role for the crew leader. It is never in the editable role
-     * list - the plugin auto-manages a single leader task per event - but tasks
-     * still carry the slug, so display()/label()/exists() recognise it and
-     * save() refuses to let an organizer create or archive it by hand.
-     */
-    public const LEADER_SLUG = 'leader';
-
-    /**
-     * The reserved role for organizing the night. Like the leader slot it is
-     * not in the editable role list: the plugin adds one per event. Only
+     * The reserved role for organizing the night. It is not in the editable
+     * role list: the plugin adds one per event. Only
      * organizers see it or may take it, and it has no limit on how many people
      * take it, so it is never full and never counted as a place that needs
      * filling. See Task::isOrganizersOnly() and Task::hasNoLimit().
      */
     public const ORGANIZE_SLUG = 'organize';
 
-    /** The shipped door role: its crew checks tickets, so it may see the door list. */
+    /** The shipped door role: its crew checks tickets, so it ships with sales_desk on. */
     public const WELCOME_SLUG = 'welcome';
 
     /** One link to the crew's full guide, shared by every role. */
@@ -96,6 +98,8 @@ final class Roles
                 'archived' => false,
                 'restricted' => false,
                 'every_night' => true,
+                'sales_desk' => false,
+                'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -120,
                 'end_offset' => 0,
@@ -111,6 +115,8 @@ final class Roles
                 'archived' => false,
                 'restricted' => false,
                 'every_night' => true,
+                'sales_desk' => true,
+                'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -30,
                 'end_offset' => 60,
@@ -127,6 +133,8 @@ final class Roles
                 'archived' => false,
                 'restricted' => false,
                 'every_night' => true,
+                'sales_desk' => false,
+                'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_END,
                 'start_offset' => 0,
                 'end_offset' => 60,
@@ -220,9 +228,9 @@ final class Roles
                 $slug = sanitize_key($label);
             }
 
-            // The leader and organize slugs are reserved and auto-managed; never
-            // let a hand-typed role take one over.
-            if ('' === $slug || self::LEADER_SLUG === $slug || self::ORGANIZE_SLUG === $slug || isset($seen[$slug])) {
+            // The organize slug is reserved and auto-managed; never let a
+            // hand-typed role take it over.
+            if ('' === $slug || self::ORGANIZE_SLUG === $slug || isset($seen[$slug])) {
                 continue;
             }
 
@@ -306,10 +314,6 @@ final class Roles
 
     public static function label(string $slug): string
     {
-        if (self::LEADER_SLUG === $slug) {
-            return __('Leader', 'eventcrew');
-        }
-
         if (self::ORGANIZE_SLUG === $slug) {
             return __('Organize', 'eventcrew');
         }
@@ -322,10 +326,6 @@ final class Roles
      */
     public static function display(string $slug): string
     {
-        if (self::LEADER_SLUG === $slug) {
-            return __('🧭 Leader', 'eventcrew');
-        }
-
         if (self::ORGANIZE_SLUG === $slug) {
             return __('⭐ Organize', 'eventcrew');
         }
@@ -370,7 +370,7 @@ final class Roles
      */
     public static function exists(string $slug): bool
     {
-        return self::LEADER_SLUG === $slug || self::ORGANIZE_SLUG === $slug || null !== self::find($slug);
+        return self::ORGANIZE_SLUG === $slug || null !== self::find($slug);
     }
 
     public static function isArchived(string $slug): bool
@@ -455,6 +455,45 @@ final class Roles
     }
 
     /**
+     * Whether people on a night's task of this role may open the sales desk.
+     * Archived roles keep their setting, so an old night's crew is judged the
+     * same way it was on the night.
+     */
+    public static function opensSalesDesk(string $slug): bool
+    {
+        return self::find($slug)['sales_desk'] ?? false;
+    }
+
+    /**
+     * The conditions set on a role; all zero when none are set or the role
+     * does not exist.
+     *
+     * @return array{counts: array<string, int>, min_roles: int, times_each: int}
+     */
+    public static function conditions(string $slug): array
+    {
+        return self::find($slug)['conditions'] ?? self::noConditions();
+    }
+
+    /**
+     * Whether a conditions array asks for anything at all.
+     *
+     * @param array{counts: array<string, int>, min_roles: int, times_each: int} $conditions
+     */
+    public static function hasConditions(array $conditions): bool
+    {
+        return [] !== $conditions['counts'] || $conditions['min_roles'] > 0;
+    }
+
+    /**
+     * @return array{counts: array<string, int>, min_roles: int, times_each: int}
+     */
+    public static function noConditions(): array
+    {
+        return ['counts' => [], 'min_roles' => 0, 'times_each' => 0];
+    }
+
+    /**
      * Fills in every key with a sane value, so no consumer has to guard
      * against a role stored before these fields existed.
      *
@@ -486,7 +525,48 @@ final class Roles
             // On unless switched off: a role stored before this key existed
             // was never restricted, so the default only matters once it is.
             'every_night' => ! array_key_exists('every_night', $role) || ! empty($role['every_night']),
+            // A role stored before this key existed: only Welcome opened the
+            // sales desk then, so it keeps doing so until the setting is saved.
+            'sales_desk' => array_key_exists('sales_desk', $role)
+                ? ! empty($role['sales_desk'])
+                : self::WELCOME_SLUG === $slug,
+            'conditions' => self::normalizeConditions($role['conditions'] ?? null, $slug),
         ];
+    }
+
+    /**
+     * Counts are whole numbers above zero; a count for the role itself or for
+     * an empty slug is dropped. "At least n roles, x times each" needs both
+     * numbers, so either one at zero clears both.
+     *
+     * @return array{counts: array<string, int>, min_roles: int, times_each: int}
+     */
+    private static function normalizeConditions(mixed $conditions, string $slug): array
+    {
+        if (! is_array($conditions)) {
+            return self::noConditions();
+        }
+
+        $counts = [];
+
+        foreach ((array) ($conditions['counts'] ?? []) as $countSlug => $count) {
+            $countSlug = sanitize_key((string) $countSlug);
+            $count = (int) $count;
+
+            if ('' !== $countSlug && $countSlug !== $slug && $count > 0) {
+                $counts[$countSlug] = $count;
+            }
+        }
+
+        $minRoles = max(0, (int) ($conditions['min_roles'] ?? 0));
+        $timesEach = max(0, (int) ($conditions['times_each'] ?? 0));
+
+        if (0 === $minRoles || 0 === $timesEach) {
+            $minRoles = 0;
+            $timesEach = 0;
+        }
+
+        return ['counts' => $counts, 'min_roles' => $minRoles, 'times_each' => $timesEach];
     }
 
     /**

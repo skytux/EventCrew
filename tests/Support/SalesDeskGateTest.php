@@ -7,11 +7,13 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SalesDeskGate;
 
 /**
  * Who may open the sales desk, and until when. The clock reads 12:00 on the
- * night; the leader and Welcome crew may open it 10 minutes (the default)
+ * night; crew on a role that opens the sales desk (Welcome by default) may
+ * open it 10 minutes (the default)
  * before their task, once marked arrived, until the event ends. Organizers may
  * at any time until 06:00 the next morning.
  */
@@ -64,11 +66,31 @@ final class SalesDeskGateTest extends SalesDeskTestCase
         self::assertSame(SalesDeskGate::OK, $this->gate()->check($this->person(8), self::NIGHT));
     }
 
-    public function testTheLeaderIsAllowedUnderTheSameRule(): void
+    public function testAnyRoleMarkedAsOpeningTheSalesDeskIsAllowedUnderTheSameRule(): void
     {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'welcome', 'label' => 'Welcome'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
         $this->queueDoorTask('leader', '12:05', 'arrived');
 
         self::assertSame(SalesDeskGate::OK, $this->gate()->check($this->person(8), self::NIGHT));
+    }
+
+    public function testARoleWithTheSalesDeskFlagOffIsRefused(): void
+    {
+        // Welcome with the flag switched off in Settings: its crew is not
+        // let in, even though Welcome opens the sales desk by default.
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'welcome', 'label' => 'Welcome', 'sales_desk' => false],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(5, 'decorate', '10:00', '11:00'),
+            $this->taskRow(6, 'welcome', '12:05', '14:00'),
+        ];
+
+        self::assertSame(SalesDeskGate::NOT_CREW, $this->gate()->check($this->person(8), self::NIGHT));
     }
 
     public function testMoreThanTenMinutesBeforeTheTaskIsNotYet(): void

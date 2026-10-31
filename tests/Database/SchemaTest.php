@@ -191,6 +191,55 @@ final class SchemaTest extends TestCase
         self::assertTrue(true);
     }
 
+    public function testThePeopleTableHasTheRoleNoticesColumn(): void
+    {
+        self::assertStringContainsString('role_notices text', $this->statementFor(Schema::PEOPLE));
+    }
+
+    /**
+     * Schema 20: everyone with the old crew-leader permission is given the
+     * role "leader" before can_lead is dropped, without doubling it for
+     * someone who already holds it.
+     */
+    public function testCanLeadIsCopiedIntoTheLeaderRoleWhileTheColumnExists(): void
+    {
+        $this->wpdb->nextVars[] = 'can_lead';
+
+        $this->moveCanLeadToRole();
+
+        $sql = $this->wpdb->lastQuery();
+        self::assertStringStartsWith('UPDATE wp_eventcrew_people', trim($sql));
+        self::assertStringContainsString("CONCAT(role_slugs, ',', 'leader')", $sql);
+        self::assertStringContainsString('WHERE can_lead = 1', $sql);
+        self::assertStringContainsString("FIND_IN_SET('leader', role_slugs) = 0", $sql);
+    }
+
+    public function testNothingIsCopiedOnceTheCanLeadColumnIsGone(): void
+    {
+        $this->wpdb->nextVars[] = null;
+
+        $this->moveCanLeadToRole();
+
+        self::assertCount(1, $this->wpdb->queries);
+        self::assertStringContainsString('information_schema.COLUMNS', $this->wpdb->lastQuery());
+    }
+
+    public function testCanLeadAndItsNoticeColumnAreRetired(): void
+    {
+        $retired = (new \ReflectionClassConstant(Schema::class, 'RETIRED_PEOPLE_COLUMNS'))->getValue();
+
+        self::assertContains('can_lead', $retired);
+        self::assertContains('leader_eligible_notified_at', $retired);
+        self::assertSame('20', Schema::DB_VERSION);
+    }
+
+    private function moveCanLeadToRole(): void
+    {
+        $method = new ReflectionMethod(Schema::class, 'moveCanLeadToRole');
+        $method->setAccessible(true);
+        $method->invoke(null);
+    }
+
     private function statementFor(string $table): string
     {
         $needle = 'CREATE TABLE ' . Schema::table($table) . ' ';

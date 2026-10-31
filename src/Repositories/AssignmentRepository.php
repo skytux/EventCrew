@@ -542,8 +542,10 @@ final class AssignmentRepository
     }
 
     /**
-     * Completed tasks per role for one person - what leader eligibility reads to
-     * check they have proven themselves at every job. Keyed by role slug.
+     * Completed tasks per role for one person - what a role's conditions are
+     * checked against (see RoleConditions). Keyed by role slug. Every completed
+     * task counts, including one marked as not counting toward free-entry
+     * credit: the conditions ask what someone has done, not what they earned.
      *
      * @return array<string, int>
      */
@@ -559,7 +561,7 @@ final class AssignmentRepository
                 "SELECT s.role_slug AS role_slug, COUNT(*) AS n
                 FROM {$this->table()} a
                 INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
-                WHERE a.person_id = %d AND a.counts_credit = 1 AND a.status IN ({$statusPlaceholders})
+                WHERE a.person_id = %d AND s.deleted_at IS NULL AND a.status IN ({$statusPlaceholders})
                 GROUP BY s.role_slug",
                 array_merge([$personId], $statuses)
             ),

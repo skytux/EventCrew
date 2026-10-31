@@ -21,9 +21,10 @@ use EventCrew\Support\SignupService;
  * These tasks are never on the group board. A person who holds the role gets
  * them here, in the DM: one button per task to sign up or cancel. Signing up
  * asks "Count toward free-entry credit?" first. An organizer also gets "Add
- * someone" on each task (Organize excepted): they send a name and an optional
- * email, answer the same credit question, and the person - a member, or
- * someone who is not a crew member yet - is given the role and put on the task.
+ * someone" on every upcoming task (Organize excepted): they send a name and an
+ * optional email, answer the same credit question on a restricted task, and
+ * the person - a member, or someone who is not a crew member yet - is put on
+ * the task, and given the role when the task is restricted.
  *
  * Callback data, all "rt:<kind>:<task_id>": s = sign up (asks the question),
  * y / n = the answer, c = cancel, a = add someone, ay / an = the answer for
@@ -92,6 +93,19 @@ final class RoleTaskBot
         if (0 === $taskId || ('' === $name && '' === $email)) {
             delete_transient(self::AWAIT_PREFIX . $telegramUserId);
             $this->telegram->sendMessage($chatId, __('Nothing was added. Start again with /roletasks.', 'eventcrew'));
+
+            return;
+        }
+
+        $task = $this->tasks->find($taskId);
+        $organizer = $this->people->findByTelegramUserId($telegramUserId);
+
+        // Only a restricted task asks "Count toward free-entry credit?"; every
+        // other task always counts, so the person is added straight away.
+        if (null !== $task && ! $task->isRestricted() && null !== $organizer) {
+            delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+            $result = $this->roleTasks->addPerson($organizer, $taskId, $name, $email, true);
+            $this->telegram->sendMessage($chatId, RoleTaskService::text($result['code'], $result['emailed']));
 
             return;
         }
@@ -201,8 +215,11 @@ final class RoleTaskBot
 
         $this->telegram->sendMessage(
             $chatId,
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers).", 'eventcrew'),
+            $person->isOrganizer
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                ? __("Tasks for your roles, and every upcoming task you can add someone to.\n✋ = sign up · ❌ = cancel · ➕ = add someone.", 'eventcrew')
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                : __("Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers).", 'eventcrew'),
             ['inline_keyboard' => $rows]
         );
     }

@@ -375,7 +375,7 @@ final class PrivacyPolicy
     {
         $paragraphs = [
             __(
-                'The organizers of our events, and the crew leader running a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom.',
+                'The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom.',
                 'eventcrew'
             ),
             __(
@@ -447,7 +447,7 @@ final class PrivacyPolicy
         }
 
         $paragraphs[] = __(
-            'Two exceptions. Organizers and crew leaders keep their record for as long as they hold the role, because it is what our events are administered through; it follows the schedule above once they no longer do. And sign-in links are not kept at all — they are deleted within the hour of being used or expiring, whichever comes first.',
+            'Two exceptions. Organizers keep their record for as long as they hold the role, because it is what our events are administered through; it follows the schedule above once they no longer do. And sign-in links are not kept at all — they are deleted within the hour of being used or expiring, whichever comes first.',
             'eventcrew'
         );
 

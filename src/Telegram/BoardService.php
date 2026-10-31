@@ -527,7 +527,7 @@ final class BoardService
 
     private function handleJoin(string $callbackId, int $taskId, Person $person): bool
     {
-        // The rules - the reputation gate, the leader slot, the capacity race -
+        // The rules - the reputation gate, the restricted roles, the capacity race -
         // live in SignupService, shared with the web page; the bot keeps only the
         // wording of the reply.
         $outcome = $this->signup->claim($person->id, $taskId);
@@ -536,7 +536,6 @@ final class BoardService
         $message = match ($outcome) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
-            SignupService::LEADER_ONLY => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),

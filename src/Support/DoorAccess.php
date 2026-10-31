@@ -12,8 +12,9 @@ use EventCrew\Repositories\TaskRepository;
  * Who may see the door side of an event night - who has a ticket, and later the
  * guest list - and which nights to offer.
  *
- * Organizers see every night. The night's leader and its Welcome crew see that
- * one night, because they are the people standing at the door checking names.
+ * Organizers see every night. People on that night's task of a role with
+ * "Sales desk" ticked (Welcome ships with it) see that one night, because they
+ * are the people standing at the door checking names.
  */
 final class DoorAccess
 {
@@ -33,7 +34,7 @@ final class DoorAccess
         }
 
         foreach ($this->tasks->forDate($date) as $task) {
-            if (! in_array($task->roleSlug, [Roles::LEADER_SLUG, Roles::WELCOME_SLUG], true)) {
+            if (! Roles::opensSalesDesk($task->roleSlug)) {
                 continue;
             }
 

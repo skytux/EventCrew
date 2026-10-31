@@ -7,7 +7,6 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EventMeshSyncListener;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Tests\TestCase;
 
@@ -21,7 +20,7 @@ final class EventMeshSyncListenerTest extends TestCase
 {
     private function listener(): EventMeshSyncListener
     {
-        return new EventMeshSyncListener(new TaskTemplateApplier(new TaskRepository(), new LeaderGate()));
+        return new EventMeshSyncListener(new TaskTemplateApplier(new TaskRepository()));
     }
 
     /**

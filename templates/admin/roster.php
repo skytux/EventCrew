@@ -13,7 +13,6 @@
  * @var string $import_mailbox The address organizers can mail a buyer list to; '' when none is set.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
- * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
  * @var array<string, string> $statuses Status slug => label, for the pickers.
  * @var string $nonce_action Nonce action for the marking forms.
  * @var string $page_slug Admin page slug, for form targets.
@@ -117,16 +116,6 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <?php echo $free_entry_closed
                             ? esc_html__('Reopen free entry', 'eventcrew')
                             : esc_html__('Close free entry (sold out)', 'eventcrew'); ?>
-                    </button>
-                </form>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
-                    <input type="hidden" name="action" value="eventcrew_toggle_leader">
-                    <?php wp_nonce_field($nonce_action); ?>
-                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
-                    <button type="submit" class="button">
-                        <?php echo $leader_enabled
-                            ? esc_html__('Turn off crew leader', 'eventcrew')
-                            : esc_html__('Turn on crew leader', 'eventcrew'); ?>
                     </button>
                 </form>
             </p>

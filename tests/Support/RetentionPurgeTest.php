@@ -139,7 +139,7 @@ final class RetentionPurgeTest extends TestCase
 
         self::assertStringContainsString('anonymized_at IS NULL', $sql);
         self::assertStringContainsString('is_organizer = 0', $sql);
-        self::assertStringContainsString('can_lead = 0', $sql);
+        self::assertStringNotContainsString('can_lead', $sql);
         self::assertStringContainsString('2023-07-20 12:00:00', $sql);
     }
 }

@@ -31,7 +31,7 @@ use EventCrew\Telegram\TicketRedemptionService;
  * Identity stays a verified email - clicking the magic link both signs the
  * person in (a stateless WebSession cookie) and verifies their address, so the
  * same person can move between the web and the bot. Claiming goes through the
- * shared SignupService, so the reputation gate, leader-slot and capacity rules
+ * shared SignupService, so the reputation gate, role and capacity rules
  * are exactly the bot's.
  *
  * The actions run over admin-ajax rather than the REST API, because the target
@@ -319,7 +319,7 @@ final class SignupController
 
     /**
      * Whether the "Sales desk" button shows for $person: organizers always,
-     * and the next night's leader and Welcome crew under SalesDeskGate's rule.
+     * and the next night's sales-desk crew under SalesDeskGate's rule.
      */
     public function canOpenSalesDesk(Person $person): bool
     {
@@ -460,7 +460,6 @@ final class SignupController
         return match ($this->signup->claim($personId, $taskId, $countsCredit)) {
             SignupService::GATED => 'gated',
             SignupService::CREDIT_QUESTION => 'credit_question',
-            SignupService::LEADER_ONLY => 'leader_only',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
             AssignmentRepository::JOIN_FULL => 'full',
@@ -712,7 +711,6 @@ final class SignupController
             'already' => __('You were already signed up for that.', 'eventcrew'),
             'full' => __('That slot just filled up.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
-            'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
             'language_saved' => __('Your language is saved.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
