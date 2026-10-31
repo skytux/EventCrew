@@ -566,10 +566,10 @@ final class DoorDesk
         $this->checkins->mark($date, CheckinRepository::KIND_CREW, $personId, 0, $doorPersonId);
         $this->markCrewArrived($date, $personId, $doorPersonId);
 
-        // An organizer put on the Organize task at the desk gets the same
-        // confirmation, with the ticket, as a signup on the web or in the bot.
-        // A signup they already held already sent one.
-        if ($task->isOrganizersOnly() && AssignmentRepository::JOIN_DUPLICATE !== $outcome) {
+        // Someone signed up at the desk gets the same confirmation, with the
+        // ticket, as a signup on the web or in the bot. A signup they already
+        // held already sent one.
+        if (AssignmentRepository::JOIN_DUPLICATE !== $outcome) {
             $this->notifier?->confirmSignup($person, $taskId);
         }
 

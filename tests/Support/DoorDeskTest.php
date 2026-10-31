@@ -126,9 +126,12 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $mails[0]);
     }
 
-    public function testAnotherTaskSignedUpAtTheDeskSendsNothing(): void
+    public function testAnyTaskSignedUpAtTheDeskSendsTheTicket(): void
     {
-        self::assertSame([], $this->workTonightMails('decorate', false));
+        $mails = $this->workTonightMails('decorate', false);
+
+        self::assertCount(1, $mails);
+        self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $mails[0]);
     }
 
     /**
