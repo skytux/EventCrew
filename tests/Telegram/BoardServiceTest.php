@@ -524,6 +524,24 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
+    public function testATapOnAPrivateCopyRedrawsThatCopyToo(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+
+        $query = $this->callbackQuery('t:5');
+        $query['message'] = ['message_id' => 42, 'chat' => ['id' => 555, 'type' => 'private']];
+        $this->board()->onJoinLeave($query);
+
+        $edited = array_map(
+            static fn (array $call): array => [$call['body']['chat_id'], $call['body']['message_id']],
+            array_values(array_filter($this->telegramCalls,static fn (array $c): bool => 'editMessageText' === $c['method']))
+        );
+        self::assertSame([[100, 5], [555, 42]], $edited);
+    }
+
     public function testToggleCancelsWhenAlreadySignedUp(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];

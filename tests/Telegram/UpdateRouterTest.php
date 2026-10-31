@@ -132,6 +132,25 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame(999, $this->lastCallTo('deleteMessage')['chat_id']);
     }
 
+    public function testPrivateBoardCommandSendsTheBoardToThatChat(): void
+    {
+        // The group's board lives in 999; asking in a DM must not move it.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 999, 'message_id' => 7];
+        $this->wpdb->nextResults[] = []; // render: no tasks
+
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/board',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertNotContains('deleteMessage', $this->calledMethods());
+        self::assertSame(['chat_id' => 999, 'message_id' => 7], $this->options[BoardService::BOARD_OPTION]);
+    }
+
     public function testPrivateTicketCommandReachesTheTicketService(): void
     {
         // Unlinked sender -> the ticket service answers with the set-up nudge,
