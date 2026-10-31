@@ -37,6 +37,13 @@ $eventcrew_my_upcoming = is_array($view['my_upcoming'] ?? null) ? $view['my_upco
 $eventcrew_my_history = is_array($view['my_history'] ?? null) ? $view['my_history'] : [];
 $eventcrew_manage_endpoint = (string) ($view['manage_endpoint'] ?? '');
 $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
+/*
+ * The Admin tab's content, or null. Null for everyone who is not an organizer:
+ * the tab and its panel are then not in the page at all. Hiding them is only
+ * tidiness - every admin action checks the organizer flag again on the server.
+ */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, markable: bool}>}>}|null $eventcrew_admin */
+$eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
 // the clean canonical URL of the page the shortcode sits on - unlike
@@ -232,6 +239,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 'settings' => __('Settings', 'eventcrew'),
                 'help' => __('Help', 'eventcrew'),
             ];
+            $eventcrew_tabs += null !== $eventcrew_admin ? ['admin' => __('Admin', 'eventcrew')] : [];
             foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
                 ?>
                 <a
@@ -448,6 +456,94 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </div>
             <?php endif; ?>
         </section>
+
+        <?php if (null !== $eventcrew_admin) : ?>
+        <section class="eventcrew-panel eventcrew-admin" id="eventcrew-panel-admin" data-eventcrew-panel="admin" aria-labelledby="eventcrew-tab-admin">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Admin', 'eventcrew'); ?></h2>
+
+            <h3 class="eventcrew-subhead"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
+            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['sales_action']); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Send me the sales desk link', 'eventcrew'); ?></button>
+            </form>
+            <?php if ('' !== (string) ($view['sales_action'] ?? '')) : ?>
+                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
+
+            <h3 class="eventcrew-subhead"><?php esc_html_e('Telegram board', 'eventcrew'); ?></h3>
+            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['board_action']); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Post a new board in the Telegram group', 'eventcrew'); ?></button>
+            </form>
+
+            <h3 class="eventcrew-subhead"><?php esc_html_e('Give a credit', 'eventcrew'); ?></h3>
+            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['gift_action']); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <p>
+                    <label for="eventcrew-admin-member"><?php esc_html_e('Member', 'eventcrew'); ?></label><br>
+                    <select id="eventcrew-admin-member" name="person_id" required>
+                        <option value=""><?php esc_html_e('Choose a member', 'eventcrew'); ?></option>
+                        <?php foreach ($eventcrew_admin['members'] as $eventcrew_member_id => $eventcrew_member_label) : ?>
+                            <option value="<?php echo esc_attr((string) $eventcrew_member_id); ?>"><?php echo esc_html($eventcrew_member_label); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </p>
+                <p>
+                    <label for="eventcrew-admin-credits"><?php esc_html_e('Credits', 'eventcrew'); ?></label><br>
+                    <input id="eventcrew-admin-credits" type="number" name="credits" min="1" max="<?php echo esc_attr((string) $eventcrew_admin['max_credits']); ?>" value="1" required>
+                </p>
+                <p>
+                    <label for="eventcrew-admin-reason"><?php esc_html_e('Reason (optional)', 'eventcrew'); ?></label><br>
+                    <input id="eventcrew-admin-reason" type="text" name="reason" maxlength="200">
+                </p>
+                <button type="submit" class="wp-element-button"><?php esc_html_e('Give credit', 'eventcrew'); ?></button>
+            </form>
+
+            <h3 class="eventcrew-subhead"><?php esc_html_e('Tonight’s crew', 'eventcrew'); ?></h3>
+            <?php if ('' !== $eventcrew_admin['roster_label']) : ?>
+                <p class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></p>
+            <?php endif; ?>
+            <?php if ([] === $eventcrew_admin['roster']) : ?>
+                <p class="eventcrew-muted"><?php esc_html_e('No tasks on the next event night.', 'eventcrew'); ?></p>
+            <?php endif; ?>
+            <?php foreach ($eventcrew_admin['roster'] as $eventcrew_roster_task) : ?>
+                <h4><?php echo esc_html($eventcrew_roster_task['title']); ?></h4>
+                <?php if ([] === $eventcrew_roster_task['people']) : ?>
+                    <p class="eventcrew-muted"><?php esc_html_e('Nobody signed up.', 'eventcrew'); ?></p>
+                <?php endif; ?>
+                <ul class="eventcrew-admin-roster">
+                    <?php foreach ($eventcrew_roster_task['people'] as $eventcrew_roster_entry) : ?>
+                        <li>
+                            <?php echo esc_html($eventcrew_roster_entry['name']); ?>
+                            <span class="eventcrew-muted">(<?php echo esc_html($eventcrew_roster_entry['status_label']); ?>)</span>
+                            <?php if ($eventcrew_roster_entry['markable']) : ?>
+                                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['mark_action']); ?>">
+                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                    <input type="hidden" name="assignment_id" value="<?php echo esc_attr((string) $eventcrew_roster_entry['assignment_id']); ?>">
+                                    <button type="submit" name="mark" value="arrived" class="wp-element-button is-style-outline"><?php esc_html_e('Arrived', 'eventcrew'); ?></button>
+                                    <button type="submit" name="mark" value="completed" class="wp-element-button is-style-outline"><?php esc_html_e('Completed', 'eventcrew'); ?></button>
+                                    <button type="submit" name="mark" value="no_show" class="wp-element-button is-style-outline"><?php esc_html_e('No-show', 'eventcrew'); ?></button>
+                                </form>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endforeach; ?>
+        </section>
+        <?php endif; ?>
         <?php
     endif; ?>
 </div>
@@ -553,6 +649,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         var notice = (window.location.search.match(/[?&]eventcrew_notice=([a-z_]+)/) || [])[1] || '';
         if (notice === 'prefs_saved' && panelFor('settings')) { return 'settings'; }
         if (notice.indexOf('ticket_') === 0 && panelFor('me')) { return 'me'; }
+        if (notice.indexOf('admin_') === 0 && panelFor('admin')) { return 'admin'; }
 
         return 'board';
     }

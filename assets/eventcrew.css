@@ -90,6 +90,9 @@
  * this is the gap rather than an addition to one.
  */
 .eventcrew-signup .eventcrew-subhead { margin: .5em 0 .5em; font-size: 1.05em; }
+.eventcrew-signup .eventcrew-admin form { margin: 0 0 .75em; }
+.eventcrew-signup .eventcrew-admin-roster li { margin: 0 0 .75em; }
+.eventcrew-signup .eventcrew-admin-roster form { margin: .25em 0 0; display: flex; flex-wrap: wrap; gap: .5em; }
 .eventcrew-signup .eventcrew-me-section { margin: 0 0 1.5em; }
 .eventcrew-signup .eventcrew-me-section:last-child { margin-bottom: 0; }
 .eventcrew-signup .eventcrew-section { margin: 0 0 1.5em; }

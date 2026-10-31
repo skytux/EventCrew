@@ -243,6 +243,30 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                         </p>
                         <p class="description"><?php esc_html_e('Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup.', 'eventcrew'); ?></p>
                     </form>
+
+                    <?php if ($editing->isBanned()) : ?>
+                        <h3><?php esc_html_e('Blocked', 'eventcrew'); ?></h3>
+                        <p>
+                            <?php
+                            printf(
+                                /* translators: %s: date and time the block was set */
+                                esc_html__('Blocked since %s. They cannot sign up for tasks or sign in on the web.', 'eventcrew'),
+                                esc_html((string) $editing->bannedAt)
+                            );
+                            ?>
+                        </p>
+                        <?php if ('' !== $editing->banReason) : ?>
+                            <p class="description"><?php echo esc_html($editing->banReason); ?></p>
+                        <?php endif; ?>
+                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                            <input type="hidden" name="action" value="eventcrew_unban_person">
+                            <?php wp_nonce_field($nonce_action); ?>
+                            <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $editing->id); ?>">
+                            <p class="submit">
+                                <button type="submit" class="button"><?php esc_html_e('Unban', 'eventcrew'); ?></button>
+                            </p>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

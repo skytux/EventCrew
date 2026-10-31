@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '14';
+    public const DB_VERSION = '15';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -248,6 +248,11 @@ final class Schema
             // "never revoked", which is every row until somebody presses the
             // button, so the column costs nothing until it is used.
             //
+            // banned_at blocks a person: no task sign-up, no web sign-in. It is
+            // set when a signed-in member sends a forged admin request from the
+            // crew page, and an organizer clears it on the People page.
+            // ban_reason says why, for the organizer who reads it there.
+            //
             // email is varchar(191) rather than 255 so it still fits a unique
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
@@ -268,6 +273,8 @@ final class Schema
                 notify_prefs text DEFAULT NULL,
                 anonymized_at datetime DEFAULT NULL,
                 sessions_valid_from datetime DEFAULT NULL,
+                banned_at datetime DEFAULT NULL,
+                ban_reason text DEFAULT NULL,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

@@ -80,9 +80,11 @@ use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
+use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
+use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
 use Throwable;
 
@@ -142,6 +144,7 @@ final class Kernel
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
         $this->container->get(SignupController::class)->boot();
+        $this->container->get(CrewAdminController::class)->boot();
 
         // The sales desk (door page) and the links that open it: admin-ajax
         // handlers for logged-out door crew, and a five-minute cron plus an
@@ -467,7 +470,26 @@ final class Kernel
                 $container->get(Turnstile::class),
                 $container->get(TicketRedemptionService::class),
                 $container->get(SalesDeskGate::class),
-                $container->get(DoorLinkSender::class)
+                $container->get(DoorLinkSender::class),
+                $container->get(CrewAdminController::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminController::class,
+            fn (Container $container) => new CrewAdminController(
+                $container->get(PersonRepository::class),
+                new SessionPerson($container->get(PersonRepository::class)),
+                $container->get(SalesDeskGate::class),
+                $container->get(DoorLinkSender::class),
+                $container->get(BoardService::class),
+                $container->get(CreditGrantRepository::class),
+                $container->get(CreditGrantNotifier::class),
+                $container->get(RosterAssembler::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class),
+                $container->get(Logger::class)
             )
         );
 

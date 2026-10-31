@@ -168,6 +168,11 @@ final class Admin
             'admin_post_eventcrew_grant_pass',
             [$this->container->get(PeoplePage::class), 'grantPass']
         );
+
+        add_action(
+            'admin_post_eventcrew_unban_person',
+            [$this->container->get(PeoplePage::class), 'unban']
+        );
     }
 
     public function registerMenus(): void

@@ -68,7 +68,9 @@ final class SignupController
         // Optional so a board without the sales desk wired in (the older
         // tests) simply never shows the button.
         private readonly ?SalesDeskGate $salesDesk = null,
-        private readonly ?DoorLinkSender $doorLinks = null
+        private readonly ?DoorLinkSender $doorLinks = null,
+        // Optional for the same reason: without it no Admin tab is drawn.
+        private readonly ?CrewAdminController $admin = null
     ) {
         $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup);
     }
@@ -253,6 +255,7 @@ final class SignupController
         wp_enqueue_style(self::STYLE_HANDLE);
 
         $view = $this->viewModel();
+        $view['admin'] = $this->adminView($view['person'] ?? null);
 
         ob_start();
         include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
@@ -282,6 +285,22 @@ final class SignupController
             'sales_action' => self::SALES_ACTION,
             'sales_desk' => null !== $person && $this->canOpenSalesDesk($person),
         ];
+    }
+
+    /**
+     * The Admin tab's content for the signed-in person, or null - and null
+     * means the template draws neither the tab nor its panel. Only the full
+     * page asks; the in-place board refresh does not draw tabs.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function adminView(mixed $person): ?array
+    {
+        if (null === $this->admin || ! $person instanceof Person) {
+            return null;
+        }
+
+        return $this->admin->viewFor($person);
     }
 
     /**
@@ -336,6 +355,11 @@ final class SignupController
 
         $person = $this->people->findByEmail($email);
 
+        // A blocked account gets no sign-in link at all.
+        if (null !== $person && $person->isBanned()) {
+            return 'blocked';
+        }
+
         // A first sign-in creates the record, so it is the moment the notice is
         // owed - and the mail is the only thing an unverified stranger is
         // certain to see, since the form that sent them here may have been on
@@ -377,15 +401,33 @@ final class SignupController
      */
     public function consumeMagicLink(string $token): ?int
     {
+        return $this->magicLinkSignIn($token)['person_id'];
+    }
+
+    /**
+     * consumeMagicLink() with the notice to show: 'signed_in', 'bad_link', or
+     * 'blocked' for a link that was good but belongs to a blocked account -
+     * which starts no session, even from a link mailed before the block.
+     *
+     * @return array{person_id: ?int, notice: string}
+     */
+    public function magicLinkSignIn(string $token): array
+    {
         $personId = $this->tokens->consume($token, self::LOGIN_PURPOSE);
 
         if (null === $personId) {
-            return null;
+            return ['person_id' => null, 'notice' => 'bad_link'];
+        }
+
+        $person = $this->people->find($personId);
+
+        if (null !== $person && $person->isBanned()) {
+            return ['person_id' => null, 'notice' => 'blocked'];
         }
 
         $this->people->markEmailVerified($personId);
 
-        return $personId;
+        return ['person_id' => $personId, 'notice' => 'signed_in'];
     }
 
     /**
@@ -428,7 +470,7 @@ final class SignupController
         $token = sanitize_text_field(wp_unslash($_GET['eventcrew_login']));
         // phpcs:enable WordPress.Security.NonceVerification
 
-        $personId = $this->consumeMagicLink($token);
+        ['person_id' => $personId, 'notice' => $notice] = $this->magicLinkSignIn($token);
 
         if (null !== $personId) {
             $this->setSessionCookie(WebSession::mint($personId));
@@ -437,7 +479,7 @@ final class SignupController
         // Strip the token and reload so it never lingers in history or a shared
         // link; the reload renders signed in, or shows the sign-in form on a bad
         // or expired link.
-        $this->redirect(remove_query_arg('eventcrew_login'), null !== $personId ? 'signed_in' : 'bad_link');
+        $this->redirect(remove_query_arg('eventcrew_login'), $notice);
     }
 
     /**
@@ -463,13 +505,15 @@ final class SignupController
         $isAjax = isset($_POST['eventcrew_ajax']);
 
         if (self::LOGIN_ACTION === $action && isset($_GET['token'])) {
-            $personId = $this->consumeMagicLink(sanitize_text_field(wp_unslash($_GET['token'])));
+            ['person_id' => $personId, 'notice' => $notice] = $this->magicLinkSignIn(
+                sanitize_text_field(wp_unslash($_GET['token']))
+            );
 
             if (null !== $personId) {
                 $this->setSessionCookie(WebSession::mint($personId));
             }
 
-            $this->redirect($redirect, null !== $personId ? 'signed_in' : 'bad_link');
+            $this->redirect($redirect, $notice);
         }
 
         if (self::LOGIN_ACTION === $action) {
@@ -625,7 +669,13 @@ final class SignupController
             'ticket_entry_closed' => __('Free entry is closed for that date.', 'eventcrew'),
             'ticket_already_redeemed' => __('You already have a free-entry ticket for that night.', 'eventcrew'),
             'ticket_not_eligible' => __('That event is no longer available.', 'eventcrew'),
+            'blocked' => __('Your account is blocked. Talk to an organizer.', 'eventcrew'),
         ];
+
+        // The Admin tab's outcomes are worded by its own controller.
+        if (! isset($map[$code]) && str_starts_with($code, 'admin_')) {
+            return CrewAdminController::noticeText($code);
+        }
 
         // The sales desk refusals share SalesDeskGate's wording with /sales.
         if (! isset($map[$code]) && str_starts_with($code, 'sales_')) {
@@ -689,33 +739,12 @@ final class SignupController
     }
 
     /**
-     * The person the session cookie identifies, or null.
-     *
-     * The revocation check rides on a row this already had to read, so "sign
-     * out everywhere" costs nothing per request - which is what made it worth
-     * having at all for a cookie whose whole design is to touch no storage.
+     * The person the session cookie identifies, or null - also null for a
+     * blocked account. The same reading the Admin tab's guard uses.
      */
     private function currentPerson(): ?Person
     {
-        $cookie = isset($_COOKIE[WebSession::COOKIE])
-            ? (string) $_COOKIE[WebSession::COOKIE]
-            : '';
-
-        $personId = WebSession::read($cookie);
-
-        if (null === $personId) {
-            return null;
-        }
-
-        $person = $this->people->find($personId);
-
-        if (null === $person) {
-            return null;
-        }
-
-        $issuedAt = WebSession::issuedAt($cookie);
-
-        return null !== $issuedAt && $person->acceptsSessionIssuedAt($issuedAt) ? $person : null;
+        return (new SessionPerson($this->people))->current();
     }
 
     private function loginUrl(string $rawToken): string

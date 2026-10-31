@@ -28,7 +28,9 @@ final class Person
         /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
         public readonly array $notifyPrefs = [],
         public readonly ?string $anonymizedAt = null,
-        public readonly ?string $sessionsValidFrom = null
+        public readonly ?string $sessionsValidFrom = null,
+        public readonly ?string $bannedAt = null,
+        public readonly string $banReason = ''
     ) {
     }
 
@@ -54,7 +56,9 @@ final class Person
             self::nullableString($row['leader_eligible_notified_at'] ?? null),
             self::decodePrefs($row['notify_prefs'] ?? null),
             self::nullableString($row['anonymized_at'] ?? null),
-            self::nullableString($row['sessions_valid_from'] ?? null)
+            self::nullableString($row['sessions_valid_from'] ?? null),
+            self::nullableString($row['banned_at'] ?? null),
+            (string) ($row['ban_reason'] ?? '')
         );
     }
 
@@ -101,6 +105,15 @@ final class Person
     public function isAnonymized(): bool
     {
         return null !== $this->anonymizedAt;
+    }
+
+    /**
+     * Whether this person is blocked: no task sign-up and no web sign-in until
+     * an organizer lifts it on the People page.
+     */
+    public function isBanned(): bool
+    {
+        return null !== $this->bannedAt;
     }
 
     /**
