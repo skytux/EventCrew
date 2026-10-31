@@ -46,6 +46,7 @@ $eventcrew_text = [
     /* translators: %s: the list name, "Crew working" or "Free-entry credit" */
     'onList' => __('Already on tonight’s list: %s', 'eventcrew'),
     'swap' => __('Take a task instead', 'eventcrew'),
+    'addTask' => __('Add a task', 'eventcrew'),
     /* translators: %d: how many free-entry credits the member has */
     'useCredit' => __('Use a credit (%d left)', 'eventcrew'),
     'noCredit' => __('No credit to use', 'eventcrew'),
@@ -561,16 +562,13 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 list.appendChild(li);
 
                 // Already in tonight's lists: shown so the door knows. Crew
-                // have nothing to add; a free-entry credit holder can still
-                // take a task, which gives their credit back.
+                // can take another task; a free-entry credit holder can take
+                // a task, which gives their credit back.
                 if (member.list) {
                     who.appendChild(node('div', 'ec-detail', text.onList.replace('%s', member.list)));
-
-                    if ('credit' === member.kind) {
-                        pick.textContent = text.swap;
-                        pick.addEventListener('click', function () { chosen = member; showTasks(); });
-                        li.appendChild(pick);
-                    }
+                    pick.textContent = 'credit' === member.kind ? text.swap : text.addTask;
+                    pick.addEventListener('click', function () { chosen = member; showTasks(); });
+                    li.appendChild(pick);
 
                     return;
                 }
@@ -879,9 +877,11 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     el('ec-add-open').addEventListener('click', openAdd);
     el('ec-add-close').addEventListener('click', function () { el('ec-add').close(); });
     el('ec-add-back').addEventListener('click', function () {
-        var swapping = chosen && 'credit' === chosen.kind;
+        // Someone already on a list came straight from the search to the
+        // tasks, so Back goes to the search.
+        var onList = chosen && chosen.list;
 
-        step({ choice: 'member', tasks: swapping ? 'member' : 'choice' }[current] || 'choose');
+        step({ choice: 'member', tasks: onList ? 'member' : 'choice' }[current] || 'choose');
     });
     // A tap on the dimmed area outside the popup lands on the dialog itself.
     el('ec-add').addEventListener('click', function (event) {

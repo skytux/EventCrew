@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.48.0
+Stable tag: 1.48.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.48.1 =
+Sales desk: a member already on tonight's crew list now has an Add a task button in the member search, so they can be given another task. Before, they showed with no button.
 
 = 1.48.0 =
 Crew page Admin, Add a person to a task: pick an existing member from a list (name and email are now only for a new person), and tick several tasks in one go. The person is found or created once and put on every ticked task; the message says how many of the ticked tasks they were added to.
@@ -612,6 +615,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.48.1 =
+The sales desk can give another task to someone already on tonight's crew.
 
 = 1.48.0 =
 Add a person to a task now has a member picker and takes several tasks at once.

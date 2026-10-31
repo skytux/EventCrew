@@ -2357,3 +2357,6 @@ msgstr "Henkilöllä ei ole täällä sähköpostiosoitetta, joten mitään ei l
 
 msgid "Added to %1$d of %2$d tasks."
 msgstr "Lisätty %1$d/%2$d tehtävään."
+
+msgid "Add a task"
+msgstr "Lisää tehtävä"
