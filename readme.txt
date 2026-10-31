@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.34.0
+Stable tag: 1.34.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.34.1 =
+* Sales desk: clearer check-in. The row button now says "Check in", and "✓ In" once tapped. The top line says "0 of 12 checked in".
+* Sales desk: the − / + count is labelled "guests", so it reads as extra people brought along, not the person. Crew rows no longer have it.
 
 = 1.34.0 =
 * New: Holvi ticket buyers on the door list. An organizer can paste the buyer names for a night into the wp-admin Roster page; they appear under "Holvi tickets" on the sales desk.
@@ -486,6 +490,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.34.1 =
+Sales desk wording: "Check in" button, guest count label, no guest count on crew rows. No database change.
 
 = 1.34.0 =
 Adds the Holvi ticket buyer import (paste on the Roster page, or by email through the mail poller). No database change.

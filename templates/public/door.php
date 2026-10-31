@@ -21,15 +21,16 @@ if (! defined('ABSPATH')) {
 }
 
 $eventcrew_text = [
-    'in' => __('In', 'eventcrew'),
-    'out' => __('Not in', 'eventcrew'),
+    'in' => __('✓ In', 'eventcrew'),
+    'out' => __('Check in', 'eventcrew'),
+    'guests' => __('guests', 'eventcrew'),
     'give' => __('Give ticket', 'eventcrew'),
     'credits' => __('credits', 'eventcrew'),
     'noMatch' => __('No member with credit matches.', 'eventcrew'),
     'empty' => __('Nobody on this list.', 'eventcrew'),
     'failed' => __('That did not go through. Check the connection and try again.', 'eventcrew'),
-    'fewer' => __('One fewer', 'eventcrew'),
-    'more' => __('One more', 'eventcrew'),
+    'fewer' => __('One guest fewer', 'eventcrew'),
+    'more' => __('One guest more', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -59,7 +60,7 @@ li.is-in .ec-name{color:var(--in)}
 button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;min-height:44px;min-width:44px;padding:0 12px;cursor:pointer}
 button:disabled{opacity:.5}
 .ec-plus{display:flex;align-items:center;gap:4px}
-.ec-plus span{min-width:2.2em;text-align:center;font-variant-numeric:tabular-nums}
+.ec-plus span{min-width:4.5em;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
 .ec-toggle.is-in{background:var(--in-bg);border-color:var(--in);color:var(--in);font-weight:700}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
@@ -70,7 +71,10 @@ button:disabled{opacity:.5}
 <body>
 <header>
     <h1 id="ec-day"></h1>
-    <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small>/ <span id="ec-expected">0</span> <?php esc_html_e('in', 'eventcrew'); ?></small></div>
+    <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small><?php
+        /* translators: %s: the number of people expected tonight. */
+        printf(esc_html__('of %s checked in', 'eventcrew'), '<span id="ec-expected">0</span>');
+    ?></small></div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
 <main>
@@ -181,15 +185,18 @@ button:disabled{opacity:.5}
         who.appendChild(node('div', 'ec-name', row.name));
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }
 
-        less.setAttribute('aria-label', text.fewer);
-        more.setAttribute('aria-label', text.more);
-        less.disabled = count <= 0;
-        more.disabled = count >= config.maxPlus;
-        less.addEventListener('click', function () { setPlus(row, count - 1); });
-        more.addEventListener('click', function () { setPlus(row, count + 1); });
-        plus.appendChild(less);
-        plus.appendChild(node('span', '', '+' + count));
-        plus.appendChild(more);
+        // Crew members bring no guests, so their rows have no guest count.
+        if ('crew' !== row.kind) {
+            less.setAttribute('aria-label', text.fewer);
+            more.setAttribute('aria-label', text.more);
+            less.disabled = count <= 0;
+            more.disabled = count >= config.maxPlus;
+            less.addEventListener('click', function () { setPlus(row, count - 1); });
+            more.addEventListener('click', function () { setPlus(row, count + 1); });
+            plus.appendChild(less);
+            plus.appendChild(node('span', '', '+' + count + ' ' + text.guests));
+            plus.appendChild(more);
+        }
 
         toggle.setAttribute('aria-pressed', row.in ? 'true' : 'false');
         toggle.addEventListener('click', function () {
