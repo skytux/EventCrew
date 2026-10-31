@@ -2228,3 +2228,7 @@ msgstr "⭐ Järjestelyt"
 #: templates/public/signup-board.php:64
 msgid "%d signed up"
 msgstr "ilmoittautuneita: %d"
+
+#: templates/public/door.php:55
+msgid "✓ Signed up"
+msgstr "✓ Ilmoittautunut"

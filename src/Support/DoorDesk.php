@@ -494,6 +494,7 @@ final class DoorDesk
 
         $tasks = $this->tasks->forDate($date);
         $taken = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
+        $mine = $this->heldTaskIds($personId);
         $open = [];
 
         foreach ($tasks as $task) {
@@ -502,8 +503,11 @@ final class DoorDesk
             }
 
             $free = $task->hasNoLimit() ? null : $task->capacity - ($taken[$task->id] ?? 0);
+            $held = isset($mine[$task->id]);
 
-            if ((null !== $free && $free <= 0) || SignupService::blocksLeaderSlot($task, $person)) {
+            // A task they already hold stays on the list, marked, even when
+            // it is full, so the desk sees everything they are signed up for.
+            if (! $held && ((null !== $free && $free <= 0) || SignupService::blocksLeaderSlot($task, $person))) {
                 continue;
             }
 
@@ -512,10 +516,29 @@ final class DoorDesk
                 'id' => $task->id,
                 'label' => '' === $time ? $task->roleLabel() : $task->roleLabel() . ' · ' . $time,
                 'free' => $free,
+                'mine' => $held,
             ];
         }
 
         return $open;
+    }
+
+    /**
+     * The ids of the tasks $personId holds a place on, as keys.
+     *
+     * @return array<int, true>
+     */
+    private function heldTaskIds(int $personId): array
+    {
+        $held = [];
+
+        foreach ($this->assignments->forPerson($personId) as $assignment) {
+            if ($assignment->isOccupying()) {
+                $held[$assignment->taskId] = true;
+            }
+        }
+
+        return $held;
     }
 
     /**
