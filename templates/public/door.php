@@ -106,7 +106,7 @@ button:disabled{opacity:.5}
 .ec-msg:empty{display:none}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
-.ec-anon-label{color:var(--muted)}
+.ec-anon-label{color:var(--muted);margin-right:auto}
 #ec-anon-count{min-width:2ch;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
 dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
