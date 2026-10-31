@@ -112,21 +112,28 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('Issued', $html);
     }
 
-    public function testRenderPageShowsTheSiteIconAsAWatermark(): void
+    public function testRenderPageShowsTheTicketBackground(): void
     {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => TicketController::BACKGROUND_OPTION === $name
+                ? 'https://site.test/team-background.png'
+                : null
+        );
+        // The Site Icon is no longer drawn: only the chosen background.
         Functions\when('get_site_icon_url')->justReturn('https://site.test/icon-512.png');
 
         $html = $this->controller()->renderPage($this->sampleTicket());
 
-        self::assertStringContainsString('url(&quot;https://site.test/icon-512.png&quot;) center/contain no-repeat', $html);
+        self::assertStringContainsString('url(&quot;https://site.test/team-background.png&quot;) center/cover no-repeat', $html);
+        self::assertStringNotContainsString('icon-512', $html);
         self::assertStringContainsString('linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.8))', $html);
         // The card's own background stays inside the card.
         self::assertStringContainsString('<html lang="en" style="background:#fff">', $html);
     }
 
-    public function testRenderPageHasNoWatermarkWithoutASiteIcon(): void
+    public function testRenderPageHasNoBackgroundWhenNoneIsSet(): void
     {
-        Functions\when('get_site_icon_url')->justReturn('');
+        Functions\when('get_site_icon_url')->justReturn('https://site.test/icon-512.png');
 
         $html = $this->controller()->renderPage($this->sampleTicket());
 

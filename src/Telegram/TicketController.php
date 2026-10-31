@@ -30,6 +30,9 @@ use WP_REST_Request;
  */
 final class TicketController
 {
+    /** The image URL drawn behind the ticket card; '' or unset draws none. */
+    public const BACKGROUND_OPTION = 'eventcrew_ticket_background';
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
@@ -260,8 +263,9 @@ final class TicketController
     }
 
     /**
-     * The site's logo (the WordPress Site Icon, as-is, background and all) as a
-     * faint watermark filling the ticket card, or '' when the site has none.
+     * The ticket background image set in Settings > Web page (the site's own
+     * background picture, typically), covering the ticket card, or '' when
+     * none is set.
      *
      * A white layer at 80% sits over the image so every line of text, and the
      * VALID / DISABLED colours, read exactly as on a plain card. The html
@@ -277,13 +281,13 @@ final class TicketController
      */
     private function watermarkStyle(): string
     {
-        $icon = (string) get_site_icon_url(512);
+        $image = trim((string) get_option(self::BACKGROUND_OPTION, ''));
 
-        if ('' === $icon) {
+        if ('' === $image) {
             return '';
         }
 
         return ';background:linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.8)),'
-            . 'url(&quot;' . esc_url($icon) . '&quot;) center/contain no-repeat #fff';
+            . 'url(&quot;' . esc_url($image) . '&quot;) center/cover no-repeat #fff';
     }
 }

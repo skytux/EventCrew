@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.43.2
+Stable tag: 1.43.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.43.3 =
+The ticket page shows a background image chosen in Settings > Web page > Ticket background (such as the site's background picture) instead of the Site Icon watermark.
 
 = 1.43.2 =
 /board sent to the bot in a private chat now answers there with a copy of the board. Its buttons work, and a tap redraws that copy as well as the group board.
@@ -592,6 +595,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.43.3 =
+The ticket background is now a setting: Settings > Web page > Ticket background.
 
 = 1.43.2 =
 /board now also works in a private chat with the bot.
