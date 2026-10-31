@@ -1872,10 +1872,6 @@ msgstr ""
 msgid "New guest’s name"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:119
-msgid "New here? Sign up →"
-msgstr ""
-
 #: templates/public/door.php:224
 msgid "New member"
 msgstr ""
@@ -2759,10 +2755,6 @@ msgstr ""
 
 #: templates/public/signup.php:419
 msgid "Security"
-msgstr ""
-
-#: src/Telegram/BoardRenderer.php:120
-msgid "See my info →"
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:90
@@ -4670,6 +4662,14 @@ msgstr ""
 
 #: src/Telegram/PermissionService.php:351
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php:119
+msgid "👋 New here? Sign up →"
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php:120
+msgid "👤 See my info →"
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:115

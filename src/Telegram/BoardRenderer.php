@@ -116,8 +116,8 @@ final class BoardRenderer
 
         foreach (
             [
-                'onboard' => __('New here? Sign up →', 'eventcrew'),
-                'me' => __('See my info →', 'eventcrew'),
+                'onboard' => __('👋 New here? Sign up →', 'eventcrew'),
+                'me' => __('👤 See my info →', 'eventcrew'),
             ] as $payload => $label
         ) {
             $button = $this->deepLinkButton((string) $payload, $label);

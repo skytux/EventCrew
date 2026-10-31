@@ -329,6 +329,11 @@ final class BoardServiceTest extends TelegramTestCase
 
         $urls = array_map(static fn (array $row): string => $row[0]['url'] ?? '', $rendered['keyboard']);
         self::assertContains('https://t.me/eventcrew_bot?start=onboard', $urls);
+
+        // Both deep links open with an emoji, like the buttons under them.
+        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
+        self::assertContains('👋 New here? Sign up →', $labels);
+        self::assertContains('👤 See my info →', $labels);
     }
 
     public function testRenderReportsAnEmptyBoard(): void
