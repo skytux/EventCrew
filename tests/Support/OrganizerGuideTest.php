@@ -48,6 +48,13 @@ final class OrganizerGuideTest extends TelegramTestCase
         self::assertStringContainsString('Open EventCrew in wp-admin: ' . $url, OrganizerGuide::details());
     }
 
+    public function testTheGuideExplainsTheTicketBuyerImportByEmail(): void
+    {
+        self::assertStringContainsString('email the list of names to import.edh@haissous.name', OrganizerGuide::short());
+        self::assertStringContainsString('Or email the list to import.edh@haissous.name', OrganizerGuide::full());
+        self::assertStringContainsString('how many names were added and how many were skipped', OrganizerGuide::full());
+    }
+
     public function testTheShortPartUsesTheLiveCreditSetting(): void
     {
         $this->options[ReputationSettings::TASKS_PER_CREDIT_OPTION] = 6;

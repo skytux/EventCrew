@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.39.1
+Stable tag: 1.39.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.39.2 =
+Organizer guide and organizer welcome email explain the Holvi ticket buyer import by email (import.edh@haissous.name): who can send, the list format, which event it goes to, and the reply email.
 
 = 1.39.1 =
 Fixes the WordPress notice "Translation loading for the eventcrew domain was triggered too early": nothing is translated before init any more.
@@ -559,6 +562,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.39.2 =
+The organizer guide now explains the ticket buyer import by email.
 
 = 1.39.1 =
 Removes the early translation loading notice.
