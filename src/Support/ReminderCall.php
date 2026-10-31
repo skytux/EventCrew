@@ -98,6 +98,11 @@ final class ReminderCall
 
     private function remind(Person $person, Task $task, int $assignmentId): void
     {
+        Language::forPerson($person, fn () => $this->remindInLanguage($person, $task, $assignmentId));
+    }
+
+    private function remindInLanguage(Person $person, Task $task, int $assignmentId): void
+    {
         $when = $this->whenText($task);
         $about = RoleGuide::aboutLine($task);
         $aboutBlock = '' === $about ? '' : "\n\n" . $about;

@@ -218,6 +218,14 @@ final class DoorLinkSender
      */
     public function send(Person $person, string $date, bool $byEmail = true, ?int $dmChatId = null): bool
     {
+        return Language::forPerson(
+            $person,
+            fn (): bool => $this->sendInLanguage($person, $date, $byEmail, $dmChatId)
+        );
+    }
+
+    private function sendInLanguage(Person $person, string $date, bool $byEmail, ?int $dmChatId): bool
+    {
         $url = $this->loginUrl($person, $date);
 
         if ('' === $url) {

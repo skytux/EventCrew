@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
@@ -19,6 +20,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
+use stdClass;
 
 /**
  * The shared confirmation emails both channels send. Light coverage: a signup
@@ -204,5 +206,75 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('About the task', $this->mails[0]['body']);
         self::assertStringContainsString('Crew guide', $this->mails[0]['body']);
         self::assertStringContainsString('https://docs.example/guide', $this->mails[0]['body']);
+    }
+
+    /**
+     * A person who chose Finnish gets the DM and the email in Finnish, read
+     * from the shipped .mo.
+     */
+    public function testAPersonWhoChoseFinnishGetsTheDmAndEmailInFinnish(): void
+    {
+        $sends = $this->captureDms();
+
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($this->personInLanguage('fi'), 5);
+
+        self::assertCount(1, $sends->items);
+        self::assertStringContainsString('✅ Ilmoittauduttu:', (string) $sends->items[0]['text']);
+        self::assertStringNotContainsString('Signed up', (string) $sends->items[0]['text']);
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('olet ilmoittautunut tehtävään', $this->mails[0]['body']);
+        // The language was the person's for this message only.
+        self::assertNull(Language::current());
+    }
+
+    public function testAPersonWhoHasNotChosenGetsEnglish(): void
+    {
+        $sends = $this->captureDms();
+
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($this->personInLanguage(null), 5);
+
+        self::assertStringContainsString('✅ Signed up:', (string) $sends->items[0]['text']);
+        self::assertStringContainsString('signed up for', $this->mails[0]['body']);
+        self::assertStringNotContainsString('ilmoittautunut', $this->mails[0]['body']);
+    }
+
+    private function personInLanguage(?string $language): Person
+    {
+        return Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 4242,
+            'language' => $language,
+        ]);
+    }
+
+    /**
+     * A bot token and a captured transport, so the DM becomes an assertion.
+     */
+    private function captureDms(): stdClass
+    {
+        $sends = new stdClass();
+        $sends->items = [];
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => TelegramClient::TOKEN_OPTION === $name ? 'BOT:TOKEN' : false
+        );
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(static function (string $url, array $args) use ($sends): string {
+            $sends->items[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        return $sends;
     }
 }

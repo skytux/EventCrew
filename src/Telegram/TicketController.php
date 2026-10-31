@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
 use WP_REST_Request;
 
@@ -66,8 +67,10 @@ final class TicketController
         header('Cache-Control: no-store, max-age=0');
         header('X-Robots-Tag: noindex, nofollow', true);
         // Built from literal markup and esc_html()'d values in renderPage().
+        // The page is in the ticket holder's language; a bad link, which names
+        // nobody, is English.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $this->renderPage($ticket);
+        echo Language::run($ticket['language'] ?? null, fn (): string => $this->renderPage($ticket));
         exit;
     }
 
@@ -76,7 +79,7 @@ final class TicketController
      * (assignment or redemption), or its task or person, is gone. A token is
      * tried as a rostered-slot ticket first, then as a free-entry-credit one.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
      */
     public function ticketFor(string $token): ?array
     {
@@ -86,7 +89,7 @@ final class TicketController
     /**
      * A ticket for a rostered slot - the assignment's own signed link.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
      */
     private function assignmentTicket(string $token): ?array
     {
@@ -114,9 +117,10 @@ final class TicketController
             'name' => $person->name(),
             'event' => $task->eventName(),
             'date' => $task->taskDate,
-            'role' => $task->roleDisplay(),
+            'role' => Language::forPerson($person, static fn (): string => $task->roleDisplay()),
             'time' => $task->timeRange(),
             'issued' => $assignment->signedUpAt,
+            'language' => $person->language,
         ];
     }
 
@@ -125,7 +129,7 @@ final class TicketController
      * while the redemption exists; once handed back the row is gone and the link
      * no longer resolves.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
      */
     private function creditTicket(string $token): ?array
     {
@@ -152,9 +156,10 @@ final class TicketController
             'name' => $person->name(),
             'event' => $this->redemptionEvent($redemption),
             'date' => $redemption->redeemedFor,
-            'role' => __('Free entry', 'eventcrew'),
+            'role' => Language::forPerson($person, static fn (): string => __('Free entry', 'eventcrew')),
             'time' => '',
             'issued' => $redemption->redeemedAt,
+            'language' => $person->language,
         ];
     }
 
@@ -172,7 +177,7 @@ final class TicketController
     }
 
     /**
-     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}|null $ticket
+     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null $ticket
      */
     public function renderPage(?array $ticket): string
     {

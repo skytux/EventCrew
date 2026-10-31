@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Language;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\SignedLink;
 use WP_REST_Request;
@@ -63,10 +64,11 @@ final class ManageController
         } elseif ('POST' === $request->get_method()) {
             $outcome = $this->apply($person->id, (string) $request->get_param('action'));
             status_header(200);
-            $html = $this->confirmationPage($outcome);
+            $html = Language::forPerson($person, fn (): string => $this->confirmationPage($outcome));
         } else {
             status_header(200);
-            $html = $this->accountPage($person, (string) $request->get_param('token'));
+            $token = (string) $request->get_param('token');
+            $html = Language::forPerson($person, fn (): string => $this->accountPage($person, $token));
         }
 
         header('Content-Type: text/html; charset=utf-8');

@@ -49,26 +49,32 @@ final class LeaderEligibilityNotifier
      */
     private function announce(array $organizers, Person $person): void
     {
+        foreach ($organizers as $organizer) {
+            Language::forPerson($organizer, fn () => $this->tell($organizer, $person));
+        }
+    }
+
+    /** One organizer, in the language they chose. */
+    private function tell(Person $organizer, Person $person): void
+    {
         $line = sprintf(
             /* translators: %s: the candidate's name */
             __('%s has earned crew-leader eligibility — /allow them to lead.', 'eventcrew'),
             $person->name()
         );
 
-        foreach ($organizers as $organizer) {
-            if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
-                $this->telegram->sendMessage(
-                    $organizer->telegramChatId,
-                    DmBody::frame($organizer, '🧭 ' . $line)
-                );
-            }
-
-            $this->mailer->toPerson(
-                $organizer->id,
-                $organizer->email,
-                __('New crew-leader candidate', 'eventcrew'),
-                $line
+        if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
+            $this->telegram->sendMessage(
+                $organizer->telegramChatId,
+                DmBody::frame($organizer, '🧭 ' . $line)
             );
         }
+
+        $this->mailer->toPerson(
+            $organizer->id,
+            $organizer->email,
+            __('New crew-leader candidate', 'eventcrew'),
+            $line
+        );
     }
 }

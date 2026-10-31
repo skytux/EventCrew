@@ -9,6 +9,7 @@ use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorSession;
+use EventCrew\Support\Language;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -109,6 +110,13 @@ final class DoorController
             ? sanitize_text_field(wp_unslash($_COOKIE[DoorSession::COOKIE]))
             : '';
         $session = $this->desk->session($cookie);
+
+        // The desk, and every answer it polls for, is in the language of the
+        // person this device is logged in as. Every branch below exits, which
+        // is where the language is left.
+        if (null !== $session) {
+            Language::enter($session['person']->language);
+        }
 
         if (DoorSession::PAGE_ACTION === $action) {
             if (null === $session) {

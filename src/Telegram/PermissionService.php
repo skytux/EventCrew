@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\DmBody;
+use EventCrew\Support\Language;
 use EventCrew\Support\NotificationPreferences;
 
 /**
@@ -163,38 +165,46 @@ final class PermissionService
             return;
         }
 
-        [$answer, $dm] = $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
+        [$answer, $dmKind] = $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
         $this->telegram->answerCallbackQuery($callbackId, $answer);
 
-        // Tell the affected person on both channels they allow.
-        if ('' !== $dm) {
-            $prefs = new NotificationPreferences();
+        // Tell the affected person on both channels they allow, in their own
+        // language rather than the organizer's.
+        if ('' !== $dmKind) {
+            Language::forPerson($person, fn () => $this->tellPerson($person, $dmKind));
+        }
+    }
 
-            if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
-                // Unprompted from the affected person's side: an organizer, not
-                // they, pressed the button that caused this.
-                $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $dm));
-            }
+    private function tellPerson(Person $person, string $dmKind): void
+    {
+        $dm = $this->dmText($dmKind);
+        $prefs = new NotificationPreferences();
 
-            if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
-                $this->mailer->toPerson(
-                    $person->id,
-                    $person->email,
-                    __('Your EventCrew access changed', 'eventcrew'),
-                    sprintf(
-                        /* translators: 1: name, 2: what changed */
-                        __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                        $person->name(),
-                        $dm
-                    )
-                );
-            }
+        if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
+            // Unprompted from the affected person's side: an organizer, not
+            // they, pressed the button that caused this.
+            $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $dm));
+        }
+
+        if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                __('Your EventCrew access changed', 'eventcrew'),
+                sprintf(
+                    /* translators: 1: name, 2: what changed */
+                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                    $person->name(),
+                    $dm
+                )
+            );
         }
     }
 
     /**
      * Applies one permission action, returning the organizer's confirmation and
-     * the (optional) DM to the affected person.
+     * which message the affected person gets ('leader', 'pass', 'admin', or ''
+     * for none; dmText() words it).
      *
      * @return array{0: string, 1: string}
      */
@@ -206,29 +216,35 @@ final class PermissionService
 
                 return $canLead
                     ? [sprintf(__('%s is no longer a leader.', 'eventcrew'), $name), '']
-                    : [
-                        sprintf(__('%s can now lead an event.', 'eventcrew'), $name),
-                        __('👑 You can now lead an event — tap the 🧭 Leader slot on the board to take it.', 'eventcrew'),
-                    ];
+                    : [sprintf(__('%s can now lead an event.', 'eventcrew'), $name), 'leader'];
             case 'pass':
                 $this->people->grantAtRiskPass($personId);
 
-                return [
-                    sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name),
-                    __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew'),
-                ];
+                return [sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name), 'pass'];
             case 'admin':
                 $this->people->setOrganizer($personId, ! $isOrganizer);
 
                 return $isOrganizer
                     ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']
-                    : [
-                        sprintf(__('%s is now an organizer.', 'eventcrew'), $name),
-                        __('⭐ You’re now an EventCrew organizer.', 'eventcrew'),
-                    ];
+                    : [sprintf(__('%s is now an organizer.', 'eventcrew'), $name), 'admin'];
             default:
                 return [__('Nothing to do.', 'eventcrew'), ''];
         }
+    }
+
+    /**
+     * The message to the affected person for a permission they were given, in
+     * whatever language is current; '' for none.
+     */
+    private function dmText(string $dmKind): string
+    {
+        return match ($dmKind) {
+            'leader' => __('👑 You can now lead an event — tap the 🧭 Leader slot on the board to take it.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'pass' => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew'),
+            'admin' => __('⭐ You’re now an EventCrew organizer.', 'eventcrew'),
+            default => '',
+        };
     }
 
     /**

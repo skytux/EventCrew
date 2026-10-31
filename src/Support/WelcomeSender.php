@@ -173,12 +173,12 @@ final class WelcomeSender
 
     private function send(string $kind, Person $person): bool
     {
-        return match ($kind) {
+        return Language::forPerson($person, fn (): bool => match ($kind) {
             self::KIND_EMAIL => $this->sendEmail($person),
             self::KIND_DM => $this->sendDm($person),
             self::KIND_ORG_EMAIL => $this->sendOrganizerEmail($person),
             default => $this->sendOrganizerDm($person),
-        };
+        });
     }
 
     /**
@@ -190,6 +190,14 @@ final class WelcomeSender
      *     does not apply to them (no DM chat, or not an organizer).
      */
     public function sendTest(Person $person): array
+    {
+        return Language::forPerson($person, fn (): array => $this->sendTestInLanguage($person));
+    }
+
+    /**
+     * @return array<string, bool|null>
+     */
+    private function sendTestInLanguage(Person $person): array
     {
         $hasChat = null !== $person->telegramChatId;
 

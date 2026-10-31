@@ -39,6 +39,11 @@ final class ClaimNotifier
      */
     public function confirmSignup(Person $person, int $taskId): void
     {
+        Language::forPerson($person, fn () => $this->sendSignup($person, $taskId));
+    }
+
+    private function sendSignup(Person $person, int $taskId): void
+    {
         $task = $this->tasks->find($taskId);
         $assignment = $this->assignments->findFor($taskId, $person->id);
 
@@ -123,6 +128,11 @@ final class ClaimNotifier
      * notice it gave. The caller passes the status the drop resolved to.
      */
     public function confirmCancellation(Person $person, int $taskId, string $status): void
+    {
+        Language::forPerson($person, fn () => $this->sendCancellation($person, $taskId, $status));
+    }
+
+    private function sendCancellation(Person $person, int $taskId, string $status): void
     {
         $task = $this->tasks->find($taskId);
 

@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -181,6 +182,29 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
+    }
+
+    /**
+     * The board is one message the whole group reads, so it stays English even
+     * when it is re-rendered inside a tap from someone who chose Finnish.
+     */
+    public function testTheBoardStaysEnglishInsideAFinnishTap(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $after = '';
+        $rendered = Language::run(Language::FINNISH, function () use (&$after): array {
+            $rendered = $this->board()->render();
+            $after = __('Saved.', 'eventcrew');
+
+            return $rendered;
+        });
+
+        self::assertStringContainsString('Open tasks', $rendered['text']);
+        self::assertSame('🎈 Decorate · 0/2', $rendered['keyboard'][2][0]['text']);
+        // The rest of the tap (its popup) is Finnish again once the board is built.
+        self::assertSame('Tallennettu.', $after);
     }
 
     public function testRenderHeadsEveryEventSeparately(): void

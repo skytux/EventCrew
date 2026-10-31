@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SignupService;
 
@@ -374,11 +375,14 @@ final class BoardService
      * Builds the board text and its inline keyboard. Delegated to BoardRenderer;
      * kept here so the lifecycle methods (and the tests) call it as before.
      *
+     * Always English: the board is one message the whole group reads, and it
+     * is often re-rendered inside a tap by someone who chose Finnish.
+     *
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
     public function render(): array
     {
-        return $this->renderer->render();
+        return Language::run(Language::ENGLISH, fn (): array => $this->renderer->render());
     }
 
     /**

@@ -1040,6 +1040,7 @@ final class SettingsPage
             ['command' => 'mytickets', 'description' => __('DM — your upcoming and past tickets', 'eventcrew')],
             ['command' => 'web', 'description' => __('DM — get a sign-in link for the web board', 'eventcrew')],
             ['command' => 'notifications', 'description' => __('DM — choose what reaches you, and how', 'eventcrew')],
+            ['command' => 'language', 'description' => __('DM — Suomi / English', 'eventcrew')],
             ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
             ['command' => 'tickets', 'description' => __('DM — organizers & door crew: who has a ticket', 'eventcrew')],
             ['command' => 'guest', 'description' => __('DM — organizers & door crew: the guest list', 'eventcrew')],
