@@ -428,7 +428,13 @@ final class DoorDeskTest extends SalesDeskTestCase
         $desk = $this->desk();
 
         self::assertSame(DoorDesk::WORK_SWAPPED, $desk->workTonight(self::NIGHT, 1, 8, 5));
-        self::assertSame([['id' => 44]], array_column($this->wpdb->deletes, 'where'));
+        // The ticket is cancelled, never deleted: its link shows DISABLED.
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertNotEmpty(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'SET cancelled_at')
+                && str_contains($sql, 'WHERE id = 44 AND cancelled_at IS NULL')
+        ));
         $grant = end($this->wpdb->inserts)['data'];
         self::assertSame(8, $grant['person_id']);
         self::assertSame(0, $grant['credits']);

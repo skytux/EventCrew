@@ -92,7 +92,7 @@ msgstr ""
 msgid "%1$s: %2$s at %3$s. %4$s"
 msgstr ""
 
-#: src/Admin/TasksListTable.php:182
+#: src/Admin/TasksListTable.php:185
 msgid "%d / no limit"
 msgstr ""
 
@@ -196,7 +196,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:122 src/Admin/PeoplePage.php:143 src/Admin/TasksPage.php:385 src/Support/DoorDesk.php:913
+#: src/Admin/PeoplePage.php:122 src/Admin/PeoplePage.php:143 src/Admin/TasksPage.php:385 src/Support/DoorDesk.php:914
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50
 msgid "(deleted person)"
 msgstr ""
@@ -667,7 +667,7 @@ msgstr ""
 msgid "Choose a member"
 msgstr ""
 
-#: src/Support/DoorDesk.php:662 src/Web/SignupController.php:721
+#: src/Support/DoorDesk.php:663 src/Web/SignupController.php:721
 msgid "Choose whether this task counts toward free-entry credit."
 msgstr ""
 
@@ -805,7 +805,7 @@ msgstr ""
 msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
 msgstr ""
 
-#: src/Support/DoorDesk.php:737
+#: src/Support/DoorDesk.php:738
 msgid "Credit"
 msgstr ""
 
@@ -987,7 +987,7 @@ msgstr ""
 msgid "Defaults come from the role in Settings. Set to 0 to take a task off the board without deleting it."
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:134 src/Admin/TasksListTable.php:135
+#: src/Admin/PeopleListTable.php:134 src/Admin/TasksListTable.php:138
 msgid "Delete"
 msgstr ""
 
@@ -1004,7 +1004,7 @@ msgid "Delete this person and their whole task history?"
 msgstr ""
 
 #: src/Admin/TasksListTable.php:133
-msgid "Delete this task and everyone signed up for it?"
+msgid "Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED."
 msgstr ""
 
 #: templates/public/signup.php:436
@@ -1044,7 +1044,7 @@ msgstr ""
 msgid "Done — you’re covering %1$s’s %2$s."
 msgstr ""
 
-#: src/Support/DoorDesk.php:783
+#: src/Support/DoorDesk.php:784
 msgid "Door"
 msgstr ""
 
@@ -1534,7 +1534,7 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
-#: src/Support/DoorDesk.php:789
+#: src/Support/DoorDesk.php:790
 msgid "Holvi"
 msgstr ""
 
@@ -1979,7 +1979,7 @@ msgstr ""
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
-#: src/Support/DoorDesk.php:782
+#: src/Support/DoorDesk.php:783
 msgid "No name"
 msgstr ""
 
@@ -3021,11 +3021,11 @@ msgstr ""
 msgid "Signed up"
 msgstr ""
 
-#: src/Support/DoorDesk.php:659
+#: src/Support/DoorDesk.php:660
 msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
 msgstr ""
 
-#: src/Support/DoorDesk.php:657
+#: src/Support/DoorDesk.php:658
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr ""
 
@@ -3335,11 +3335,11 @@ msgstr ""
 msgid "That slot just filled up."
 msgstr ""
 
-#: src/Support/DoorDesk.php:660
+#: src/Support/DoorDesk.php:661
 msgid "That task has just filled up. Pick another one."
 msgstr ""
 
-#: src/Support/DoorDesk.php:661
+#: src/Support/DoorDesk.php:662
 msgid "That task is for crew leaders only."
 msgstr ""
 
@@ -3348,7 +3348,7 @@ msgstr ""
 msgid "That task is no longer available."
 msgstr ""
 
-#: src/Support/DoorDesk.php:689
+#: src/Support/DoorDesk.php:690
 msgid "That ticket could not be given."
 msgstr ""
 
@@ -3674,11 +3674,11 @@ msgstr ""
 msgid "They already have free entry for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:688
+#: src/Support/DoorDesk.php:689
 msgid "They already have free entry tonight."
 msgstr ""
 
-#: src/Support/DoorDesk.php:663
+#: src/Support/DoorDesk.php:664
 msgid "They could not be signed up for that task."
 msgstr ""
 
@@ -3690,7 +3690,7 @@ msgstr ""
 msgid "They have no credit left to redeem."
 msgstr ""
 
-#: src/Support/DoorDesk.php:687
+#: src/Support/DoorDesk.php:688
 msgid "They have no credit left."
 msgstr ""
 
@@ -3773,11 +3773,11 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/DoorDesk.php:643
+#: src/Support/DoorDesk.php:644
 msgid "Ticket exchanged against taking a task"
 msgstr ""
 
-#: src/Support/DoorDesk.php:686
+#: src/Support/DoorDesk.php:687
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
@@ -4406,7 +4406,7 @@ msgstr ""
 msgid "add the bot to your Telegram group (the board appears on its own), or share your signup page link."
 msgstr ""
 
-#: src/Support/DoorDesk.php:755
+#: src/Support/DoorDesk.php:756
 msgid "allowed +%d"
 msgstr ""
 

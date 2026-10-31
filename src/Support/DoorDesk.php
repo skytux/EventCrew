@@ -622,7 +622,8 @@ final class DoorDesk
 
     /**
      * Cancels $personId's free-entry ticket for $date, if they hold one, and
-     * logs why. Deleting the redemption is what gives the credit back.
+     * logs why. Cancelling the redemption is what gives the credit back; its
+     * ticket link stays and shows DISABLED.
      */
     private function returnTicket(string $date, int $personId, int $doorPersonId): bool
     {
@@ -633,7 +634,7 @@ final class DoorDesk
                 continue;
             }
 
-            $this->redemptions->delete($redemption->id);
+            $this->redemptions->cancel($redemption->id);
             $returned = true;
         }
 

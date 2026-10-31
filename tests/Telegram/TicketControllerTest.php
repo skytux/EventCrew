@@ -93,6 +93,21 @@ final class TicketControllerTest extends TestCase
         self::assertSame('2026-07-24 20:00:00', $ticket['issued']);
     }
 
+    public function testACancelledCreditTicketReadsAsDisabled(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 3, 'person_id' => 7, 'redeemed_for' => '2026-08-01',
+            'event_post_id' => null, 'event_label' => 'Party', 'redeemed_at' => '2026-07-24 20:00:00',
+            'cancelled_at' => '2026-07-25 10:00:00',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('credit_ticket', 3));
+
+        self::assertNotNull($ticket);
+        self::assertFalse($ticket['valid']);
+    }
+
     public function testACreditTicketWhoseRedemptionIsGoneIsNotFound(): void
     {
         // No redemption row queued -> find() returns null -> the link no longer resolves.

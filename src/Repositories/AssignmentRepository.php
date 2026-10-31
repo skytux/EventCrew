@@ -104,8 +104,9 @@ final class AssignmentRepository
                 FROM (SELECT task_id, status FROM {$this->table()}) AS existing
                 WHERE existing.task_id = %d
                   AND existing.status IN ({$statusPlaceholders})
-            ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
-            OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug IN ({$rolePlaceholders}))";
+            ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d AND deleted_at IS NULL), 0)
+            OR EXISTS (SELECT 1 FROM {$this->tasksTable()}
+                WHERE id = %d AND deleted_at IS NULL AND role_slug IN ({$rolePlaceholders}))";
 
         $params = array_merge(
             [$taskId, $personId, AssignmentStatus::SIGNED_UP, current_time('mysql'), $countsCredit ? 1 : 0, $taskId],
@@ -167,8 +168,9 @@ final class AssignmentRepository
                   FROM (SELECT task_id, status FROM {$this->table()}) AS existing
                   WHERE existing.task_id = %d
                     AND existing.status IN ({$statusPlaceholders})
-                ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d), 0)
-                OR EXISTS (SELECT 1 FROM {$this->tasksTable()} WHERE id = %d AND role_slug IN ({$rolePlaceholders}))
+                ) < COALESCE((SELECT capacity FROM {$this->tasksTable()} WHERE id = %d AND deleted_at IS NULL), 0)
+                OR EXISTS (SELECT 1 FROM {$this->tasksTable()}
+                    WHERE id = %d AND deleted_at IS NULL AND role_slug IN ({$rolePlaceholders}))
               )";
 
         $params = array_merge(
@@ -269,21 +271,6 @@ final class AssignmentRepository
         return ($start - $now) < $noticeHours * HOUR_IN_SECONDS
             ? AssignmentStatus::LATE_CANCEL
             : AssignmentStatus::CANCELLED;
-    }
-
-    /**
-     * Hard-deletes a slot. Retained for the rare case a row must truly vanish
-     * (e.g. a mistake), but the bot cancels rather than deletes so the history
-     * survives - see cancel().
-     */
-    public function leave(int $taskId, int $personId): bool
-    {
-        global $wpdb;
-
-        return 1 === $wpdb->delete(
-            $this->table(),
-            ['task_id' => $taskId, 'person_id' => $personId]
-        );
     }
 
     public function find(int $id): ?Assignment

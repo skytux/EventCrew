@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '18';
+    public const DB_VERSION = '19';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -301,6 +301,11 @@ final class Schema
             // is why they are datetimes rather than the times they used to be.
             // Both stay nullable - a task created from a role template has no
             // times until someone decides them.
+            //
+            // deleted_at: a task is never deleted, because the tickets of the
+            // people on it must keep working and show DISABLED. Deleting it in
+            // wp-admin sets this, which hides it everywhere, and cancels its
+            // sign-ups.
             "CREATE TABLE {$tasks} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_post_id bigint(20) unsigned DEFAULT NULL,
@@ -312,6 +317,7 @@ final class Schema
                 capacity smallint(5) unsigned NOT NULL DEFAULT 1,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
+                deleted_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 KEY task_date (task_date),
                 KEY event_post_id (event_post_id)
@@ -352,6 +358,11 @@ final class Schema
             // pressed the button), so a credit booked earlier still lands on the
             // right night. event_post_id/event_label carry the event's identity
             // for the record; the date is what the door reads.
+            //
+            // cancelled_at: a redemption is never deleted, because its ticket
+            // link must keep working and show DISABLED. Undoing one (credit
+            // handed back, or swapped for a task at the desk) sets this, and
+            // a cancelled row no longer uses up a credit or lets anyone in.
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 person_id bigint(20) unsigned NOT NULL,
@@ -360,6 +371,7 @@ final class Schema
                 event_label varchar(191) NOT NULL DEFAULT '',
                 redeemed_at datetime NOT NULL,
                 note varchar(191) NOT NULL DEFAULT '',
+                cancelled_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 KEY person_id (person_id),
                 KEY redeemed_for (redeemed_for)

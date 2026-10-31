@@ -158,7 +158,7 @@ final class TicketController
         }
 
         return [
-            'valid' => true,
+            'valid' => ! $redemption->isCancelled(),
             'name' => $person->name(),
             'event' => $this->redemptionEvent($redemption),
             'date' => $redemption->redeemedFor,
