@@ -87,9 +87,17 @@ final class DoorLinkSender
      */
     public function addSchedule(array $schedules): array
     {
+        // WordPress applies this filter whenever anything asks for the cron
+        // schedules, including boot() itself on plugins_loaded. Translating
+        // before init makes WordPress 6.7+ warn, so until then the label stays
+        // in English. Only the interval matters for scheduling.
+        $display = did_action('init')
+            ? __('Every five minutes (EventCrew sales desk links)', 'eventcrew')
+            : 'Every five minutes (EventCrew sales desk links)';
+
         $schedules[self::SCHEDULE] = [
             'interval' => self::INTERVAL_SECONDS,
-            'display' => __('Every five minutes (EventCrew sales desk links)', 'eventcrew'),
+            'display' => $display,
         ];
 
         return $schedules;
