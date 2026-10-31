@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.35.1
+Stable tag: 1.35.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.35.2 =
+* A late cancellation no longer counts against someone who then turns up for another task on the same date. When they are marked arrived, arrived late or completed on that task (Telegram /roster, wp-admin roster or the sales desk), their late cancellations for that date become a plain "cancelled", with no penalty. Signing up alone does not clear it, so signing up and cancelling again does not wash it out. Signing back up to the same task already cleared it. The late-cancellation message sent at cancel time cannot be taken back.
 
 = 1.35.1 =
 * Sales desk, Add > Crew member: the search now also lists members who are already on tonight's "Crew working" or "Free-entry credit" list, marked "Already on tonight's list: ..." and without a Choose button. Before, they were left out, so the search said "No member matches" and looked broken.
@@ -505,6 +508,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.35.2 =
+A late cancellation is cleared when the person turns up for another task on the same date. No database change.
 
 = 1.35.1 =
 Sales desk member search shows members already on tonight's lists, and a free-entry credit holder can swap their ticket for a task (credit given back). The Add popup's first buttons hide after a choice. No database change.
