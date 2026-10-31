@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Models\TicketBuyer;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -76,7 +77,10 @@ final class RosterPage
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
                 'guests' => '' === $selected ? [] : $this->guests->forDate($selected),
-                'ticket_buyers' => '' === $selected ? [] : $this->ticketBuyers->forDate($selected),
+                'ticket_buyers' => '' === $selected ? [] : array_values(array_filter(
+                    $this->ticketBuyers->forDate($selected),
+                    static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()
+                )),
                 'import_mailbox' => BuyerImportController::MAILBOX,
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
                 'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),

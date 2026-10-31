@@ -19,6 +19,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Roles;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -139,9 +140,18 @@ final class DoorDeskTest extends SalesDeskTestCase
         $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')]; // guests->forDate
         $this->wpdb->nextQueryResults[] = 1;
 
-        self::assertTrue($this->desk()->mark(self::NIGHT, 1, CheckinRepository::KIND_GUEST, 4, true, 2));
+        self::assertTrue($this->desk()->mark(self::NIGHT, 1, CheckinRepository::KIND_GUEST, 4, true, 1));
         self::assertStringContainsString('INSERT INTO wp_eventcrew_checkins', $this->wpdb->lastQuery());
-        self::assertStringContainsString("'guest', 4, 2,", $this->wpdb->lastQuery());
+        self::assertStringContainsString("'guest', 4, 1,", $this->wpdb->lastQuery());
+    }
+
+    public function testAGuestIsMarkedInWithNoMoreThanTheyMayBring(): void
+    {
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')]; // allowed +1
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertTrue($this->desk()->mark(self::NIGHT, 1, CheckinRepository::KIND_GUEST, 4, true, 2));
+        self::assertStringContainsString("'guest', 4, 1,", $this->wpdb->lastQuery());
     }
 
     public function testMarkingAGuestOutDeletesTheCheckin(): void
@@ -164,12 +174,110 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertStringNotContainsString('INSERT', $this->wpdb->lastQuery());
     }
 
-    public function testThePlusOnesOfAnEntryCanBeChanged(): void
+    public function testThePlusOnesOfAGuestStopAtWhatTheyMayBring(): void
     {
-        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')]; // allowed +1
 
         self::assertTrue($this->desk()->setPlusOnes(self::NIGHT, CheckinRepository::KIND_GUEST, 4, 3));
+        self::assertSame(['plus_ones' => 1], $this->wpdb->updates[0]['data']);
+    }
+
+    public function testThePlusOnesOfATicketBuyerCanBeChanged(): void
+    {
+        $this->wpdb->nextResults[] = [['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'paste']];
+
+        self::assertTrue($this->desk()->setPlusOnes(self::NIGHT, CheckinRepository::KIND_BUYER, 9, 3));
         self::assertSame(['plus_ones' => 3], $this->wpdb->updates[0]['data']);
+    }
+
+    public function testADoorTicketIsRecordedAndCheckedIn(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertTrue($this->desk()->addDoorSale(self::NIGHT, 1, ''));
+        self::assertSame('door', $this->wpdb->inserts[0]['data']['source']);
+        self::assertStringContainsString("'buyer', 1, 0,", $this->wpdb->lastQuery());
+    }
+
+    public function testAGuestAddedAtTheDoorIsCheckedInWithNoExtraPeopleYet(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertTrue($this->desk()->addGuest(self::NIGHT, 1, ' Ann ', 2));
+        self::assertSame('Ann', $this->wpdb->inserts[0]['data']['name']);
+        self::assertSame(2, $this->wpdb->inserts[0]['data']['plus_ones']);
+        self::assertStringContainsString("'guest', 1, 0,", $this->wpdb->lastQuery());
+    }
+
+    public function testAGuestNeedsAName(): void
+    {
+        self::assertFalse($this->desk()->addGuest(self::NIGHT, 1, '  ', 0));
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testOpenTasksListsTonightsTasksWithAFreePlace(): void
+    {
+        $full = $this->taskRow(6, 'bar');
+        $leader = $this->taskRow(7, Roles::LEADER_SLUG);
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00'), $full, $leader];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1], ['task_id' => 6, 'taken' => 3]];
+
+        $tasks = $this->desk()->openTasks(self::NIGHT, 8);
+
+        self::assertCount(1, $tasks);
+        self::assertSame(5, $tasks[0]['id']);
+        self::assertSame(2, $tasks[0]['free']);
+    }
+
+    public function testWorkingTonightSignsUpChecksInAndMarksArrived(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);                              // people->find
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate', '10:00', '11:00');  // tasks->find
+        $this->wpdb->nextVars[] = 3;                                                // join: capacity
+        $this->wpdb->nextRows[] = null;                                             // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                                        // join: inserted
+        $this->wpdb->nextQueryResults[] = 1;                                        // the check-in
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00')];
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+
+        self::assertSame(DoorDesk::WORK_OK, $this->desk()->workTonight(self::NIGHT, 1, 8, 5));
+        self::assertStringContainsString("'crew', 8, 0,", implode("\n", $this->wpdb->queries));
+        self::assertSame('arrived', $this->wpdb->updates[0]['data']['status']);
+    }
+
+    public function testWorkingTonightOnAFullTaskChecksNobodyIn(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextVars[] = 3;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 0;
+
+        $desk = $this->desk();
+
+        self::assertSame(DoorDesk::WORK_FULL, $desk->workTonight(self::NIGHT, 1, 8, 5));
+        self::assertStringNotContainsString('wp_eventcrew_checkins', implode("\n", $this->wpdb->queries));
+        self::assertSame(
+            'That task has just filled up. Pick another one.',
+            $desk->workTonightText(DoorDesk::WORK_FULL)
+        );
+    }
+
+    public function testWorkingTonightRefusesALeaderTaskAndAnotherNightsTask(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $this->taskRow(7, Roles::LEADER_SLUG);
+
+        self::assertSame(DoorDesk::WORK_LEADER_ONLY, $this->desk()->workTonight(self::NIGHT, 1, 8, 7));
+
+        $elsewhere = $this->taskRow(5, 'decorate');
+        $elsewhere['task_date'] = '2026-07-27';
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $elsewhere;
+
+        self::assertSame(DoorDesk::WORK_UNAVAILABLE, $this->desk()->workTonight(self::NIGHT, 1, 8, 5));
+        self::assertSame([], $this->wpdb->inserts);
     }
 
     public function testMarkingCrewInSetsTheirAssignmentToArrived(): void
@@ -258,5 +366,37 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(0, $before['in']);
         self::assertSame(2, $after['in']);
         self::assertSame(2, $after['expected']);
+    }
+
+    public function testAGuestRowStartsAtNoExtraPeopleAndSaysHowManyAreAllowed(): void
+    {
+        $this->queueState([]);
+
+        $state = $this->desk()->state(self::NIGHT);
+        $row = $state['sections'][2]['rows'][0];
+
+        self::assertSame(0, $row['plus']);
+        self::assertSame(1, $row['max']);
+        self::assertSame('allowed +1', $row['detail']);
+        // Ann and the one person she may bring.
+        self::assertSame(2, $state['expected']);
+    }
+
+    public function testDoorTicketsHaveTheirOwnList(): void
+    {
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'paste'],
+            ['id' => 10, 'event_date' => self::NIGHT, 'name' => '', 'source' => 'door'],
+        ];
+
+        $sections = $this->desk()->state(self::NIGHT)['sections'];
+
+        self::assertSame(['crew', 'credit', 'guest', 'buyer', 'door'], array_column($sections, 'key'));
+        self::assertSame(['Bea'], array_column($sections[3]['rows'], 'name'));
+        self::assertSame(['No name'], array_column($sections[4]['rows'], 'name'));
     }
 }

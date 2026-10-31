@@ -227,7 +227,9 @@ final class GuestListService
 
         if ($person->isOrganizer) {
             $lines[] = '';
-            $lines[] = __('Add: /guest add Name +1 ; note', 'eventcrew');
+            $lines[] = __('Add: /guest add Name ; note  (just the guest)', 'eventcrew');
+            $lines[] = __('Add with extra people: /guest add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
+            $lines[] = __('No +N, or +0, means no extra people.', 'eventcrew');
             $lines[] = __('Change: /guest edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
             $lines[] = __('Remove: /guest remove 2', 'eventcrew');
             $lines[] = __('Another night: put the date first, e.g. /guest add 1.8. Name', 'eventcrew');
@@ -261,7 +263,8 @@ final class GuestListService
         return match ($error) {
             'date' => __('I could not read that date. Try 1.8. or 2026-08-01.', 'eventcrew'),
             'number' => __('Give the guest’s number from the list, e.g. /guest remove 2', 'eventcrew'),
-            'name' => __('Give the guest’s name, e.g. /guest add Anna Virtanen +1 ; DJ’s partner', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'name' => __('Give the guest’s name, e.g. /guest add Anna Virtanen ; DJ’s partner (no extra people), or /guest add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)', 'eventcrew'),
             'nothing' => __('Say what to change, e.g. /guest edit 2 +3 or /guest edit 2 ; new note', 'eventcrew'),
             default => __('To see the list send /guest, or /guest 1.8. for another night.', 'eventcrew'),
         };
