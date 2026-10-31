@@ -39,6 +39,7 @@
  * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
+ * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
@@ -743,6 +744,27 @@ if (! defined('ABSPATH')) {
                         name="app_theme_color"
                         value="<?php echo esc_attr($app_theme_color); ?>">
                     <p class="description"><?php esc_html_e('The app’s accent colour, and the fallback icon’s background.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Ticket page', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-ticket-background"><?php esc_html_e('Ticket background', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="url"
+                        id="eventcrew-ticket-background"
+                        name="ticket_background"
+                        value="<?php echo esc_attr($ticket_background); ?>"
+                        class="large-text"
+                        placeholder="https://…"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description"><?php esc_html_e('The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>

@@ -30,6 +30,7 @@ use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
@@ -124,6 +125,7 @@ final class SettingsPage
                 'signature' => Signature::text(),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
+                'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
@@ -458,6 +460,10 @@ final class SettingsPage
         update_option(
             EmailTemplate::LOGO_OPTION,
             isset($_POST['email_logo']) ? esc_url_raw(wp_unslash($_POST['email_logo'])) : ''
+        );
+        update_option(
+            TicketController::BACKGROUND_OPTION,
+            isset($_POST['ticket_background']) ? esc_url_raw(wp_unslash($_POST['ticket_background'])) : ''
         );
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
