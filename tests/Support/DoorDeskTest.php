@@ -452,6 +452,23 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(2, $tasks[0]['free']);
     }
 
+    public function testOpenTasksMarksTheTasksTheyHoldEvenAFullOne(): void
+    {
+        $full = $this->taskRow(6, 'bar');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00'), $full];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1], ['task_id' => 6, 'taken' => 3]];
+        $this->wpdb->nextResults[] = [
+            $this->assignmentRow(30, 6, 8, 'signed_up'),
+            $this->assignmentRow(31, 5, 8, 'cancelled'),
+        ];
+
+        $tasks = $this->desk()->openTasks(self::NIGHT, 8);
+
+        self::assertSame([5, 6], array_column($tasks, 'id'));
+        self::assertSame([false, true], array_column($tasks, 'mine'));
+    }
+
     public function testOpenTasksLeavesOutTheOrganizeTaskForSomeoneWhoIsNotAnOrganizer(): void
     {
         $organize = $this->taskRow(9, Roles::ORGANIZE_SLUG);

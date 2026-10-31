@@ -52,6 +52,7 @@ $eventcrew_text = [
     'noTasks' => __('No task tonight has a free place.', 'eventcrew'),
     'free' => __('free', 'eventcrew'),
     'signUp' => __('Sign up', 'eventcrew'),
+    'signedUp' => __('✓ Signed up', 'eventcrew'),
     'needName' => __('Give the guest’s name.', 'eventcrew'),
     'extra' => __('extra', 'eventcrew'),
     'empty' => __('Nobody on this list.', 'eventcrew'),
@@ -655,13 +656,30 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 if (null !== task.free) {
                     who.appendChild(node('div', 'ec-detail', task.free + ' ' + text.free));
                 }
+                // A task they hold shows as signed up. After a signup the
+                // popup stays open, so the same person can take another task;
+                // Close ends it.
+                var signed = node('span', 'ec-detail', text.signedUp);
+
                 join.addEventListener('click', function () {
                     join.disabled = true;
-                    post('work', { person: chosen.id, task: task.id }).then(done, failed);
+                    post('work', { person: chosen.id, task: task.id }).then(function (result) {
+                        apply(result);
+                        say(result ? result.message : text.failed);
+
+                        if (result && result.ok) {
+                            li.replaceChild(signed, join);
+                        } else {
+                            join.disabled = false;
+                        }
+                    }, function (error) {
+                        join.disabled = false;
+                        failed(error);
+                    });
                 });
 
                 li.appendChild(who);
-                li.appendChild(join);
+                li.appendChild(task.mine ? signed : join);
                 list.appendChild(li);
             });
         }, listFailed(list, failed));
