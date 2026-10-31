@@ -534,7 +534,8 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(TicketRedemptionService::class),
                 $container->get(SalesDeskGate::class),
-                $container->get(CreditGrantRepository::class)
+                $container->get(CreditGrantRepository::class),
+                $container->get(ClaimNotifier::class)
             )
         );
 
