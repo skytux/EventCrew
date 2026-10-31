@@ -58,8 +58,6 @@ $eventcrew_text = [
     'failed' => __('That did not go through. Check the connection and try again.', 'eventcrew'),
     'fewer' => __('One guest fewer', 'eventcrew'),
     'more' => __('One guest more', 'eventcrew'),
-    /* translators: %d: how many people were counted in without a name tonight */
-    'anonymous' => __('Counted without a name: %d', 'eventcrew'),
     'ownTitle' => __('Open on other device', 'eventcrew'),
     /* translators: %s: the name of the person the link logs in */
     'asTitle' => __('Login as %s', 'eventcrew'),
@@ -86,11 +84,11 @@ $eventcrew_text = [
 @media (prefers-color-scheme:dark){:root{--fg:#f5f5f7;--muted:#a1a1a6;--bg:#111;--card:#1c1c1e;--line:#38383a;--in:#4ac26b;--in-bg:#12361e;--accent:#8ab4f8}}
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg)}
-header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px}
-h1{font-size:18px;margin:0}
-.ec-count{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 12px 8px}
+h1{font-size:14px;font-weight:600;color:var(--muted);margin:0}
+.ec-count{font-size:24px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
 .ec-count small{font-size:16px;font-weight:400;color:var(--muted)}
-input[type=search]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);margin-top:8px}
+input[type=search]{width:100%;font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);margin-top:6px}
 main{padding:8px 16px 40px}
 h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 0 6px}
 ul{list-style:none;margin:0;padding:0}
@@ -107,8 +105,9 @@ button:disabled{opacity:.5}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ec-anon{display:flex;align-items:center;gap:8px;margin-top:8px}
-.ec-anon span{color:var(--muted);font-variant-numeric:tabular-nums}
+.ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
+.ec-anon-label{color:var(--muted)}
+#ec-anon-count{min-width:2ch;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
 dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -131,21 +130,27 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 </head>
 <body>
 <header>
-    <h1 id="ec-day"></h1>
     <div class="ec-top">
+    <div>
+    <h1 id="ec-day"></h1>
     <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small><?php
         /* translators: %s: the number of people expected tonight. */
         printf(esc_html__('of %s checked in', 'eventcrew'), '<span id="ec-expected">0</span>');
     ?></small></div>
+    </div>
     <div class="ec-buttons">
     <button type="button" id="ec-other-open"><?php esc_html_e('📱 Other device', 'eventcrew'); ?></button>
     <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
     </div>
     </div>
     <div class="ec-anon">
+        <span class="ec-anon-label"><?php
+            /* translators: label before the count of people let in without a name, and its -1 and +1 buttons. */
+            esc_html_e('Without a name:', 'eventcrew');
+        ?></span>
         <button type="button" id="ec-anon-less" aria-label="<?php esc_attr_e('Take one person off the count without a name', 'eventcrew'); ?>">−1</button>
+        <span id="ec-anon-count" aria-live="polite">0</span>
         <button type="button" id="ec-anon-more" aria-label="<?php esc_attr_e('Count one person in without a name', 'eventcrew'); ?>">+1</button>
-        <span id="ec-anon-count"></span>
     </div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
@@ -334,7 +339,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-day').textContent = state.day;
         el('ec-in').textContent = state.in;
         el('ec-expected').textContent = state.expected;
-        el('ec-anon-count').textContent = text.anonymous.replace('%d', state.anonymous);
+        el('ec-anon-count').textContent = state.anonymous;
         el('ec-anon-less').disabled = state.anonymous <= 0;
         holder.textContent = '';
 

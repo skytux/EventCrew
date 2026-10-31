@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.38.2
+Stable tag: 1.38.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.38.3 =
+Sales desk: the top part that stays on screen is shorter. The date sits above the count next to the buttons, and the count without a name reads "Without a name: −1 3 +1".
 
 = 1.38.2 =
 Sales desk: when the server refuses a member search, the task list or the Login as list, the page shows the error instead of "No member matches" or another empty-list message.
@@ -550,6 +553,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.38.3 =
+Shorter, clearer top part on the sales desk.
 
 = 1.38.2 =
 The sales desk shows server errors instead of empty-list messages.
