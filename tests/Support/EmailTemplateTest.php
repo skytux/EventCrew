@@ -190,6 +190,16 @@ final class EmailTemplateTest extends TestCase
         self::assertStringNotContainsString('<img', EmailTemplate::logoHtml());
     }
 
+    public function testAHeadingLineBecomesAHeadingAndLosesItsMarks(): void
+    {
+        $html = EmailBody::toHtml("Intro.\n\n## Tickets\n\nShow it at the door.");
+
+        self::assertStringContainsString('font-weight:700', $html);
+        self::assertStringContainsString('>Tickets</p>', $html);
+        self::assertStringNotContainsString('##', $html);
+        self::assertSame("Intro.\n\nTickets\n\nShow it at the door.", EmailBody::toText("Intro.\n\n## Tickets\n\nShow it at the door."));
+    }
+
     public function testRunsOfDashedLinesBecomeAList(): void
     {
         // The open-task roll-up and the recent-task recap both write these.

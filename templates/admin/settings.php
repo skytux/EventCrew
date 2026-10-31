@@ -24,6 +24,8 @@
  * @var int $open_task_lead_week Hours before an open date the heads-up open-task call goes out.
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
+ * @var bool $welcome_enabled Whether the welcome message goes out.
+ * @var string $welcome_nonce_action Nonce action for the welcome test send.
  * @var int $door_link_crew Minutes before their own task the leader and Welcome crew can get the link.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
  * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
@@ -428,6 +430,22 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Default 10. Counted back from their own task’s start; the link comes only once they are marked arrived, and stops working when the event ends.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Welcome message', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Send the welcome message', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="welcome_enabled" value="1" <?php checked($welcome_enabled); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use "Send me the welcome message" below to check it first.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
@@ -1179,6 +1197,24 @@ if (! defined('ABSPATH')) {
         </div>
         <?php submit_button(__('Save settings', 'eventcrew')); ?>
     </form>
+
+    <div class="ec-tab-panel" data-ec-tab="tuning">
+    <h2><?php esc_html_e('Check the welcome message', 'eventcrew'); ?></h2>
+    <p class="description">
+        <?php
+        printf(
+            /* translators: %s: the current administrator's email address */
+            esc_html__('Sends every welcome message to the member with your address, %s, by email and Telegram, with the live settings and open tasks. It works while the welcome message is off, and nobody else gets anything.', 'eventcrew'),
+            '<code>' . esc_html($email_test_to) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+        );
+        ?>
+    </p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="eventcrew_send_welcome_test">
+        <?php wp_nonce_field($welcome_nonce_action); ?>
+        <?php submit_button(__('Send me the welcome message', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+    </div>
 
     <div class="ec-tab-panel" data-ec-tab="email">
     <h2><?php esc_html_e('Check it', 'eventcrew'); ?></h2>

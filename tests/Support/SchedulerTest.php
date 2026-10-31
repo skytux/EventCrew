@@ -70,7 +70,8 @@ final class SchedulerTest extends TestCase
                     new AuthTokenRepository(),
                     $ledger
                 )
-            )
+            ),
+            new \EventCrew\Support\WelcomeSender($tasks, $people, $ledger, $mailer, $telegram)
         );
     }
 

@@ -30,7 +30,9 @@ final class SettingsPageTest extends TelegramTestCase
             $this->client(),
             new Mailer($logger, new EmailTemplate($logger)),
             new EmailTemplate($logger),
-            $this->boardService()
+            $this->boardService(),
+            $this->welcomeSender(),
+            new \EventCrew\Repositories\PersonRepository()
         );
     }
 

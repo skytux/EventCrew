@@ -119,6 +119,14 @@ final class BoardRenderer
             }
         }
 
+        // What each task involves: the descriptions section on the web board.
+        // Needs only the sign-up page, not the bot username.
+        $descriptions = RoleGuide::descriptionsButton();
+
+        if (null !== $descriptions) {
+            $deepLinks[] = [$descriptions];
+        }
+
         // The crew guide needs no bot username, only the link itself.
         $guide = RoleGuide::button();
 

@@ -11,7 +11,8 @@ namespace EventCrew\Support;
  * Notifiers keep writing plain text - one translated string per message, the
  * same one the Telegram DM is built from - and this is the single place that
  * knows how text becomes email HTML. Blank lines separate paragraphs, runs of
- * "- " lines become a list, and each named action becomes a button. Every style
+ * "- " lines become a list, a paragraph of one "## " line becomes a section
+ * heading, and each named action becomes a button. Every style
  * is inline: an email client is not a browser, and a stylesheet in the head is
  * the first thing Gmail throws away.
  */
@@ -48,6 +49,7 @@ final class EmailBody
      */
     public static function toText(string $text, array $actions = []): string
     {
+        $text = self::plainHeadings($text);
         $lines = [];
 
         foreach ($actions as $action) {
@@ -57,6 +59,16 @@ final class EmailBody
         }
 
         return [] === $lines ? $text : $text . "\n\n" . implode("\n", $lines);
+    }
+
+    /**
+     * The text with each "## " heading marker removed, for the places that
+     * cannot draw a heading: the plain-text email part and a Telegram DM. The
+     * heading stays as its own paragraph, which still reads as one.
+     */
+    public static function plainHeadings(string $text): string
+    {
+        return (string) preg_replace('/^## /m', '', $text);
     }
 
     /**
@@ -76,10 +88,32 @@ final class EmailBody
                 continue;
             }
 
+            if (self::isHeading($block)) {
+                $html .= self::heading(substr(trim($block), 3));
+
+                continue;
+            }
+
             $html .= self::isList($block) ? self::list($block) : self::paragraph($block);
         }
 
         return $html;
+    }
+
+    private static function isHeading(string $block): bool
+    {
+        return str_starts_with(trim($block), '## ') && ! str_contains(trim($block), "\n");
+    }
+
+    private static function heading(string $text): string
+    {
+        return sprintf(
+            '<p style="margin:24px 0 8px;font-family:%s;font-size:18px;font-weight:700;'
+                . 'line-height:1.3;color:%s">%s</p>',
+            self::FONT,
+            self::TEXT_COLOR,
+            esc_html($text)
+        );
     }
 
     private static function isList(string $block): bool

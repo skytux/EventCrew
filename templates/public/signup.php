@@ -501,9 +501,21 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
      * rule saving your preferences would dump you back on the board with no
      * sign it had worked.
      */
+    // An element named in the address that lives inside a panel, such as the
+    // board's task descriptions: its panel opens, then the page scrolls to it.
+    var hashTarget = null;
+
     function initialKey() {
-        var fromHash = (window.location.hash || '').replace('#eventcrew-panel-', '');
+        var hash = (window.location.hash || '').slice(1);
+        var fromHash = hash.replace('eventcrew-panel-', '');
         if (fromHash && panelFor(fromHash)) { return fromHash; }
+
+        var element = hash ? document.getElementById(hash) : null;
+        var holder = element && element.closest ? element.closest('[data-eventcrew-panel]') : null;
+        if (holder) {
+            hashTarget = element;
+            return holder.getAttribute('data-eventcrew-panel');
+        }
 
         var notice = (window.location.search.match(/[?&]eventcrew_notice=([a-z_]+)/) || [])[1] || '';
         if (notice === 'prefs_saved' && panelFor('settings')) { return 'settings'; }
@@ -514,6 +526,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
     root.classList.add('is-tabbed');
     show(initialKey(), false);
+    if (hashTarget) { hashTarget.scrollIntoView(); }
 })();
 
 /*

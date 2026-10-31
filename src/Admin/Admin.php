@@ -50,6 +50,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_send_welcome_test',
+            [$this->container->get(SettingsPage::class), 'sendWelcomeTest']
+        );
+
+        add_action(
             'admin_post_eventcrew_reset_email_template',
             [$this->container->get(SettingsPage::class), 'resetEmailTemplate']
         );

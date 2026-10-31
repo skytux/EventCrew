@@ -150,6 +150,23 @@ endif; ?>
 endforeach; ?>
 
 <?php
+$eventcrew_roles = \EventCrew\Support\RoleGuide::descriptions();
+if ([] !== $eventcrew_roles) :
+    ?>
+    <section class="eventcrew-tasks-info" id="<?php echo esc_attr(\EventCrew\Support\RoleGuide::DESCRIPTIONS_ANCHOR); ?>">
+        <h3><?php esc_html_e('What each task involves', 'eventcrew'); ?></h3>
+        <dl>
+            <?php foreach ($eventcrew_roles as $eventcrew_role) : ?>
+                <dt><?php echo esc_html($eventcrew_role['name']); ?></dt>
+                <?php if ('' !== $eventcrew_role['description']) : ?>
+                    <dd><?php echo esc_html($eventcrew_role['description']); ?></dd>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </dl>
+    </section>
+    <?php
+endif;
+
 $eventcrew_guide = \EventCrew\Support\RoleGuide::emailAction();
 if (null !== $eventcrew_guide) :
     ?>

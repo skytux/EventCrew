@@ -222,6 +222,13 @@
 .eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
 .eventcrew-signup .eventcrew-guide { margin-top: 1em; }
 
+/* What each task involves: role name in bold, its description under it. */
+.eventcrew-signup .eventcrew-tasks-info { margin-top: 1.5em; scroll-margin-top: 1em; }
+.eventcrew-signup .eventcrew-tasks-info h3 { margin: 0 0 .5em; font-size: 1.1em; }
+.eventcrew-signup .eventcrew-tasks-info dl { margin: 0; }
+.eventcrew-signup .eventcrew-tasks-info dt { font-weight: 600; margin-top: .75em; }
+.eventcrew-signup .eventcrew-tasks-info dd { margin: .2em 0 0; font-size: .9em; }
+
 /* The count above the action, the pair as narrow as the button itself. */
 .eventcrew-signup .eventcrew-task-side {
     display: flex; flex-direction: column; align-items: center; gap: .35em;

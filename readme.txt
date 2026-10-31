@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.35.2
+Stable tag: 1.36.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.36.0 =
+* New: a welcome message for every member, by email and by Telegram DM, sent once. It explains the tasks (with each role's description), tickets, credits and standing, using the live settings, and lists the open tasks. The DM has a sign-up button for each open task. New members get it when they confirm their email; everyone else gets it from the hourly run, inside the notification hours, 25 people per hour.
+* New: an organizer guide for organizers, sent once in addition to the member welcome. The email has an "In short" part and then the details; the DM has the "In short" part. Someone made an organizer later gets it then.
+* The welcome message is off until it is switched on in Settings > Reputation & alerts. "Send me the welcome message" on the same tab sends every message to the member with the administrator's email address, without recording it, so it can be checked first.
+* New: a "What each task involves" section on the web sign-up board. The Telegram group board, the welcome email and the welcome DM link to it.
+* Emails can now have headings (lines starting with "## ").
 
 = 1.35.2 =
 * A late cancellation no longer counts against someone who then turns up for another task on the same date. When they are marked arrived, arrived late or completed on that task (Telegram /roster, wp-admin roster or the sales desk), their late cancellations for that date become a plain "cancelled", with no penalty. Signing up alone does not clear it, so signing up and cancelling again does not wash it out. Signing back up to the same task already cleared it. The late-cancellation message sent at cancel time cannot be taken back.
@@ -508,6 +515,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.36.0 =
+Welcome message for members and organizer guide for organizers (off until switched on in Settings), and a "What each task involves" section on the sign-up board. No database change.
 
 = 1.35.2 =
 A late cancellation is cleared when the person turns up for another task on the same date. No database change.

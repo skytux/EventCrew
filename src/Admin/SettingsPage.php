@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
@@ -26,6 +27,7 @@ use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
+use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\UpdateRouter;
@@ -47,6 +49,8 @@ final class SettingsPage
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
     private const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
+
+    private const WELCOME_NONCE_ACTION = 'eventcrew_welcome_test';
     private const PRIVACY_NONCE_ACTION = 'eventcrew_privacy_page';
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
@@ -57,7 +61,9 @@ final class SettingsPage
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
         private readonly EmailTemplate $emailTemplate,
-        private readonly BoardService $board
+        private readonly BoardService $board,
+        private readonly WelcomeSender $welcome,
+        private readonly PersonRepository $people
     ) {
     }
 
@@ -105,6 +111,7 @@ final class SettingsPage
                 ),
                 'door_link_lead' => DoorLinkSender::leadMinutes(),
                 'door_link_crew' => SalesDeskGate::crewMinutes(),
+                'welcome_enabled' => WelcomeSender::enabled(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
@@ -119,6 +126,7 @@ final class SettingsPage
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
+                'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
                 'email_test_to' => (string) wp_get_current_user()->user_email,
                 'import_secret' => BuyerImportController::ensureSecret(),
                 'import_url' => BuyerImportController::endpointUrl(),
@@ -422,6 +430,7 @@ final class SettingsPage
                 ? max(0, (int) $_POST['door_link_crew'])
                 : SalesDeskGate::DEFAULT_CREW_MINUTES
         );
+        update_option(WelcomeSender::ENABLED_OPTION, isset($_POST['welcome_enabled']) ? '1' : '0');
 
         update_option(
             Turnstile::SITE_KEY_OPTION,
@@ -658,6 +667,66 @@ final class SettingsPage
             __('The test email could not be sent. Check the site’s mail configuration, then look at Diagnostics for the logged reason.', 'eventcrew'),
             'error'
         );
+    }
+
+    /**
+     * The "Send me the welcome message" button: every welcome message the
+     * member with this administrator's email address would get, to that member
+     * only, recorded nowhere. Works while the feature is still switched off.
+     */
+    public function sendWelcomeTest(): void
+    {
+        Admin::assertCanSave(self::WELCOME_NONCE_ACTION);
+
+        $email = (string) wp_get_current_user()->user_email;
+        $person = '' === $email ? null : $this->people->findByEmail($email);
+
+        if (null === $person || $person->isAnonymized()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the administrator's email address */
+                    __('No member has the email address %s. Sign up as a member with this address first.', 'eventcrew'),
+                    '' === $email ? '-' : $email
+                ),
+                'error'
+            );
+        }
+
+        $results = $this->welcome->sendTest($person);
+        $names = [
+            WelcomeSender::KIND_EMAIL => __('member email', 'eventcrew'),
+            WelcomeSender::KIND_DM => __('member Telegram message', 'eventcrew'),
+            WelcomeSender::KIND_ORG_EMAIL => __('organizer email', 'eventcrew'),
+            WelcomeSender::KIND_ORG_DM => __('organizer Telegram message', 'eventcrew'),
+        ];
+        $sent = [];
+        $failed = [];
+
+        foreach ($results as $kind => $ok) {
+            if (true === $ok) {
+                $sent[] = $names[$kind];
+            } elseif (false === $ok) {
+                $failed[] = $names[$kind];
+            }
+        }
+
+        $message = sprintf(
+            /* translators: 1: list of messages sent, 2: the member's email address */
+            __('Sent to %2$s: %1$s.', 'eventcrew'),
+            [] === $sent ? __('nothing', 'eventcrew') : implode(', ', $sent),
+            $person->email
+        );
+
+        if ([] !== $failed) {
+            $message .= ' ' . sprintf(
+                /* translators: %s: list of messages that failed */
+                __('Failed: %s. Diagnostics shows the logged reason.', 'eventcrew'),
+                implode(', ', $failed)
+            );
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, $message, [] === $failed ? 'success' : 'error');
     }
 
     /**

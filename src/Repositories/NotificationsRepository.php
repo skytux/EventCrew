@@ -49,6 +49,28 @@ final class NotificationsRepository
     }
 
     /**
+     * Everyone who has been sent this kind for this date, as a set of person
+     * ids. One query, for a run that would otherwise ask hasSent() once per
+     * person.
+     *
+     * @return array<int, true>
+     */
+    public function personIdsSent(string $kind, string $date): array
+    {
+        global $wpdb;
+
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT person_id FROM {$this->table()} WHERE kind = %s AND task_date = %s",
+                $kind,
+                $date
+            )
+        );
+
+        return array_fill_keys(array_map('intval', is_array($ids) ? $ids : []), true);
+    }
+
+    /**
      * Whether this person has had any notification whose kind starts with
      * $prefix on the given day. This is what a per-day cap is asked, so one
      * person cannot collect a separate email for every date that happens to
