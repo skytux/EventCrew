@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.36.1
+Stable tag: 1.36.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.36.2 =
+* The welcome email and the organizer guide email have a button to the crew's Telegram group (when its link is known). The organizer guide email also has a button to EventCrew in wp-admin.
 
 = 1.36.1 =
 * Web sign-up board: the task rows no longer repeat each role's description under every event. The descriptions are shown once, in the "What each task involves" section at the bottom.
@@ -518,6 +521,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.36.2 =
+Telegram group button in both welcome emails, and a wp-admin button in the organizer guide email. No database change.
 
 = 1.36.1 =
 Role descriptions on the web board appear only once, at the bottom. No database change.

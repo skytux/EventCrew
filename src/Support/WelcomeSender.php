@@ -9,6 +9,7 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -221,6 +222,12 @@ final class WelcomeSender
             $actions[] = $guide;
         }
 
+        $group = self::groupAction();
+
+        if (null !== $group) {
+            $actions[] = $group;
+        }
+
         return $this->mailer->toPerson(
             $person->id,
             $person->email,
@@ -273,6 +280,20 @@ final class WelcomeSender
 
     private function sendOrganizerEmail(Person $person): bool
     {
+        $actions = [];
+        $group = self::groupAction();
+
+        if (null !== $group) {
+            $actions[] = $group;
+        }
+
+        // The EventCrew menu in wp-admin. The slug is Admin::MENU_SLUG, kept
+        // literal so this Support class does not reach up into the Admin layer.
+        $actions[] = [
+            'label' => __('Open EventCrew in wp-admin', 'eventcrew'),
+            'url' => admin_url('admin.php?page=eventcrew'),
+        ];
+
         return $this->mailer->toPerson(
             $person->id,
             $person->email,
@@ -281,8 +302,23 @@ final class WelcomeSender
                 /* translators: %s: the person's first name */
                 __('Hi %s,', 'eventcrew'),
                 $person->name()
-            ) . "\n\n" . $this->organizerIntro() . "\n\n" . OrganizerGuide::short() . "\n\n" . OrganizerGuide::details()
+            ) . "\n\n" . $this->organizerIntro()
+                . "\n\n" . OrganizerGuide::short() . "\n\n" . OrganizerGuide::details(),
+            $actions
         );
+    }
+
+    /**
+     * The button to the crew's Telegram group, or null when no group link is
+     * known.
+     *
+     * @return array{label: string, url: string}|null
+     */
+    private static function groupAction(): ?array
+    {
+        $url = BoardService::groupLink();
+
+        return '' === $url ? null : ['label' => __('Open our group in Telegram', 'eventcrew'), 'url' => $url];
     }
 
     private function sendOrganizerDm(Person $person): bool
