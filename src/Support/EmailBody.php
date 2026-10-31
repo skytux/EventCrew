@@ -12,7 +12,11 @@ namespace EventCrew\Support;
  * same one the Telegram DM is built from - and this is the single place that
  * knows how text becomes email HTML. Blank lines separate paragraphs, runs of
  * "- " lines become a list, a paragraph of one "## " line becomes a section
- * heading, and each named action becomes a button. Every style
+ * heading, and each named action becomes a button. A list whose every line
+ * starts with an emoji ("- 🎟️ ...") draws the emoji as its bullet, with more
+ * room between the lines; only the welcome message and the organizer guide
+ * write those. "[text](#anchor)" links to a heading in the same message (the
+ * organizer guide's contents list). Every style
  * is inline: an email client is not a browser, and a stylesheet in the head is
  * the first thing Gmail throws away.
  */
@@ -23,6 +27,12 @@ final class EmailBody
 
     private const TEXT_COLOR = '#1f2328';
     private const MUTED_COLOR = '#5b6470';
+
+    /** An emoji at the start of a line: the symbol and pictograph blocks. */
+    private const EMOJI_START = '/^[\x{2190}-\x{2BFF}\x{1F000}-\x{1FAFF}]/u';
+
+    /** "[text](#anchor)": a link to a heading in the same message. */
+    private const ANCHOR_LINK = '/\[([^\]\n]+)\]\(#([a-z0-9-]+)\)/';
 
     /**
      * @param array<int, array{label: string, url: string}> $actions Buttons to
@@ -68,7 +78,57 @@ final class EmailBody
      */
     public static function plainHeadings(string $text): string
     {
-        return (string) preg_replace('/^## /m', '', $text);
+        $text = (string) preg_replace('/^## /m', '', $text);
+
+        // A contents link cannot jump anywhere in plain text: keep its words.
+        return (string) preg_replace(self::ANCHOR_LINK, '$1', $text);
+    }
+
+    /**
+     * The text for a Telegram DM: headings and links as plainHeadings() makes
+     * them, and each emoji list line without its "- " and with a blank line
+     * after it, so the lines do not run together on a phone screen.
+     */
+    public static function forDm(string $text): string
+    {
+        $lines = explode("\n", self::plainHeadings(str_replace(["\r\n", "\r"], "\n", $text)));
+        $out = [];
+
+        foreach ($lines as $index => $line) {
+            if (! self::isEmojiLine($line)) {
+                $out[] = $line;
+
+                continue;
+            }
+
+            $out[] = substr(trim($line), 2);
+
+            if (self::isEmojiLine($lines[$index + 1] ?? '')) {
+                $out[] = '';
+            }
+        }
+
+        return implode("\n", $out);
+    }
+
+    /**
+     * The id a "## " heading gets, from its words: lower case, ASCII letters
+     * and digits, joined by "-". The emoji in front drops out. A heading with
+     * no ASCII letters at all (a translation) gets a short hash instead.
+     */
+    public static function anchor(string $heading): string
+    {
+        $slug = trim((string) preg_replace('/[^a-z0-9]+/', '-', strtolower($heading)), '-');
+
+        return 'ec-' . ('' === $slug ? substr(md5($heading), 0, 8) : $slug);
+    }
+
+    /** A "- " line whose text starts with an emoji. */
+    public static function isEmojiLine(string $line): bool
+    {
+        $line = trim($line);
+
+        return str_starts_with($line, '- ') && 1 === preg_match(self::EMOJI_START, substr($line, 2));
     }
 
     /**
@@ -108,8 +168,9 @@ final class EmailBody
     private static function heading(string $text): string
     {
         return sprintf(
-            '<p style="margin:24px 0 8px;font-family:%s;font-size:18px;font-weight:700;'
+            '<p id="%s" style="margin:32px 0 12px;font-family:%s;font-size:18px;font-weight:700;'
                 . 'line-height:1.3;color:%s">%s</p>',
+            esc_attr(self::anchor($text)),
             self::FONT,
             self::TEXT_COLOR,
             esc_html($text)
@@ -129,20 +190,26 @@ final class EmailBody
 
     private static function list(string $block): string
     {
+        $lines = explode("\n", $block);
+        $emoji = [] === array_filter($lines, static fn (string $line): bool => ! self::isEmojiLine($line));
         $items = '';
 
-        foreach (explode("\n", $block) as $line) {
+        foreach ($lines as $line) {
             $items .= sprintf(
-                '<li style="margin:0 0 6px">%s</li>',
+                '<li style="margin:0 0 %s">%s</li>',
+                $emoji ? '12px' : '6px',
                 self::inline(substr(trim($line), 2))
             );
         }
 
+        // An emoji list: the emoji is the bullet, so no dot and no indent.
         return sprintf(
-            '<ul style="margin:0 0 16px;padding:0 0 0 20px;font-family:%s;font-size:16px;'
-                . 'line-height:1.6;color:%s">%s</ul>',
+            '<ul style="margin:0 0 20px;padding:%s;font-family:%s;font-size:16px;'
+                . 'line-height:1.6;color:%s%s">%s</ul>',
+            $emoji ? '0' : '0 0 0 20px',
             self::FONT,
             self::TEXT_COLOR,
+            $emoji ? ';list-style:none' : '',
             $items
         );
     }
@@ -163,9 +230,15 @@ final class EmailBody
      * is what HTML wants in an attribute anyway - no second pass can double-
      * encode it.
      */
-    private static function inline(string $text): string
+    public static function inline(string $text): string
     {
         $escaped = esc_html($text);
+
+        $escaped = (string) preg_replace(
+            self::ANCHOR_LINK,
+            '<a href="#$2" style="color:inherit;text-decoration:underline">$1</a>',
+            $escaped
+        );
 
         return (string) preg_replace_callback(
             '~https?://[^\s<>"\']+~',

@@ -230,6 +230,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 'board' => __('Board', 'eventcrew'),
                 'me' => __('Me', 'eventcrew'),
                 'settings' => __('Settings', 'eventcrew'),
+                'help' => __('Help', 'eventcrew'),
             ];
             foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
                 ?>
@@ -414,6 +415,38 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </form>
             <?php endif; ?>
 
+        </section>
+
+        <?php
+        /*
+         * Help: the welcome text for everyone. An organizer also gets the
+         * organizer guide lower down, with a link to it at the top. Both are
+         * the same text the welcome message and the organizer guide send.
+         */
+        ?>
+        <section class="eventcrew-panel eventcrew-help" id="<?php echo esc_attr(\EventCrew\Support\HelpPage::PANEL_ANCHOR); ?>" data-eventcrew-panel="help" aria-labelledby="eventcrew-tab-help">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Help', 'eventcrew'); ?></h2>
+
+            <?php if ($eventcrew_person->isOrganizer) : ?>
+                <p class="eventcrew-help-orglink">
+                    <a href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
+                </p>
+            <?php endif; ?>
+
+            <?php
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
+            echo \EventCrew\Support\HelpPage::html(\EventCrew\Support\WelcomeSender::helpText());
+            ?>
+
+            <?php if ($eventcrew_person->isOrganizer) : ?>
+                <div class="eventcrew-help-organizer" id="<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>">
+                    <h2><?php esc_html_e('Organizer guide', 'eventcrew'); ?></h2>
+                    <?php
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
+                    echo \EventCrew\Support\HelpPage::html(\EventCrew\Support\OrganizerGuide::full());
+                    ?>
+                </div>
+            <?php endif; ?>
         </section>
         <?php
     endif; ?>

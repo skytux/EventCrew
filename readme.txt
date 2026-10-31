@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.36.2
+Stable tag: 1.36.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.36.3 =
+* The crew web page has a new Help tab. It shows the welcome text (how tasks, tickets, credits and standing work) without the open tasks. Organizers also see the organizer guide lower in the same tab, with a link to it at the top.
+* The welcome message and the organizer guide are easier to read: emoji headings, emoji bullets and more space between lines. The organizer guide starts with a contents list; in the email each entry links to its section.
+* The welcome email and DM, and the organizer guide email and DM, say that the guide is also in the Help tab of the crew web page after sign-in, with the link.
+* The organizer guide has a link to EventCrew in wp-admin. The member welcome email has the wp-admin button only when the member is an organizer.
 
 = 1.36.2 =
 * The welcome email and the organizer guide email have a button to the crew's Telegram group (when its link is known). The organizer guide email also has a button to EventCrew in wp-admin.
@@ -521,6 +527,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.36.3 =
+Help tab on the crew web page, easier-to-read welcome message and organizer guide, wp-admin links. No database change.
 
 = 1.36.2 =
 Telegram group button in both welcome emails, and a wp-admin button in the organizer guide email. No database change.

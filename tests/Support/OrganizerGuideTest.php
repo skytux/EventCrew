@@ -15,9 +15,37 @@ use EventCrew\Tests\Telegram\TelegramTestCase;
  */
 final class OrganizerGuideTest extends TelegramTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        \Brain\Monkey\Functions\when('admin_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path
+        );
+    }
+
     public function testTheShortPartComesFirstUnderItsHeading(): void
     {
-        self::assertStringStartsWith('## In short', OrganizerGuide::short());
+        self::assertStringStartsWith('## ⚡ In short', OrganizerGuide::short());
+    }
+
+    public function testEveryContentsLinkPointsAtAHeadingOfTheGuide(): void
+    {
+        preg_match_all('/\(#(ec-[a-z0-9-]+)\)/', OrganizerGuide::contents(), $links);
+        preg_match_all('/^## (.+)$/m', OrganizerGuide::short() . "\n\n" . OrganizerGuide::details(), $headings);
+        $anchors = array_map([\EventCrew\Support\EmailBody::class, 'anchor'], $headings[1]);
+
+        self::assertCount(8, $links[1]);
+        self::assertSame($anchors, $links[1]);
+        self::assertStringStartsWith('## 📑 Contents', OrganizerGuide::full());
+    }
+
+    public function testTheGuideLinksToWpAdmin(): void
+    {
+        $url = 'https://site.test/wp-admin/admin.php?page=eventcrew';
+
+        self::assertStringContainsString('Open EventCrew in wp-admin: ' . $url, OrganizerGuide::short());
+        self::assertStringContainsString('Open EventCrew in wp-admin: ' . $url, OrganizerGuide::details());
     }
 
     public function testTheShortPartUsesTheLiveCreditSetting(): void
