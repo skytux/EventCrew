@@ -33,6 +33,9 @@ final class TicketController
     /** The image URL drawn behind the ticket card; '' or unset draws none. */
     public const BACKGROUND_OPTION = 'eventcrew_ticket_background';
 
+    /** Free text shown on every ticket (door code, address, ...); '' shows nothing. */
+    public const NOTE_OPTION = 'eventcrew_ticket_note';
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
@@ -206,8 +209,23 @@ final class TicketController
 
         return $this->document(
             __('Your EventCrew ticket', 'eventcrew'),
-            $rows . '<p>' . $badge . '</p>' . $this->antiFraudBlock($ticket['issued'])
+            $rows . '<p>' . $badge . '</p>' . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
         );
+    }
+
+    /**
+     * The free text set in Settings > Web page > Ticket note, as plain text
+     * with its line breaks kept, or '' when none is set.
+     */
+    private function noteBlock(): string
+    {
+        $note = trim((string) get_option(self::NOTE_OPTION, ''));
+
+        if ('' === $note) {
+            return '';
+        }
+
+        return '<p style="white-space:pre-line">' . esc_html($note) . '</p>';
     }
 
     /**

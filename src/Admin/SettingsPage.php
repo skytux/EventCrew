@@ -126,6 +126,7 @@ final class SettingsPage
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
+                'ticket_note' => (string) get_option(TicketController::NOTE_OPTION, ''),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
@@ -464,6 +465,10 @@ final class SettingsPage
         update_option(
             TicketController::BACKGROUND_OPTION,
             isset($_POST['ticket_background']) ? esc_url_raw(wp_unslash($_POST['ticket_background'])) : ''
+        );
+        update_option(
+            TicketController::NOTE_OPTION,
+            isset($_POST['ticket_note']) ? sanitize_textarea_field(wp_unslash($_POST['ticket_note'])) : ''
         );
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
