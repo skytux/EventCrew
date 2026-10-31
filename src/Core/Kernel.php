@@ -83,6 +83,7 @@ use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
+use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
@@ -140,6 +141,10 @@ final class Kernel
         // The import-by-email endpoint: the mail poller posts to it with nobody
         // logged in, so it boots on the front path with the bot's endpoints.
         $this->container->get(BuyerImportController::class)->boot();
+
+        // The site's own reader for the import mailbox (IMAP or JMAP): a
+        // five-minute cron event, a no-op while switched off in Settings.
+        $this->container->get(MailImporter::class)->boot();
 
         // The notifications heartbeat: the hourly cron event self-schedules and
         // registers its run action here (front/cron path, since WP-Cron fires
@@ -686,6 +691,14 @@ final class Kernel
             fn (Container $container) => new BuyerImport(
                 $container->get(TicketBuyerRepository::class),
                 $container->get(DoorAccess::class)
+            )
+        );
+
+        $this->container->singleton(
+            MailImporter::class,
+            fn (Container $container) => new MailImporter(
+                $container->get(BuyerImportController::class),
+                $container->get(Logger::class)
             )
         );
 

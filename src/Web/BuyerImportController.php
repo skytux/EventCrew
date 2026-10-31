@@ -124,27 +124,42 @@ final class BuyerImportController
             return new WP_REST_Response(['ok' => false, 'error' => 'bad_request'], 400);
         }
 
-        $from = strtolower(trim((string) ($data['from'] ?? '')));
-        $text = (string) ($data['text'] ?? '');
-        $messageId = (string) ($data['message_id'] ?? '');
+        $answer = $this->importList(
+            (string) ($data['from'] ?? ''),
+            (string) ($data['text'] ?? ''),
+            (string) ($data['message_id'] ?? '')
+        );
 
+        return new WP_REST_Response($answer['body'], $answer['status']);
+    }
+
+    /**
+     * Takes one mailed list: checks the sender is an organizer, adds the names
+     * to the next event and mails the organizer a confirmation. Shared by the
+     * signed endpoint and the site's own mailbox reader (MailImporter).
+     *
+     * @return array{status: int, body: array<string, mixed>}
+     */
+    public function importList(string $from, string $text, string $messageId): array
+    {
+        $from = strtolower(trim($from));
         $person = '' === $from ? null : $this->people->findByEmail($from);
 
         if (null === $person || ! $person->isOrganizer) {
-            return new WP_REST_Response(['ok' => false, 'error' => 'not_organizer'], 403);
+            return ['status' => 403, 'body' => ['ok' => false, 'error' => 'not_organizer']];
         }
 
         $date = $this->import->nextDate();
 
         if ('' === $date) {
-            return new WP_REST_Response(
-                [
+            return [
+                'status' => 409,
+                'body' => [
                     'ok' => false,
                     'error' => 'no_upcoming_event',
                     'message' => 'There is no upcoming event to add the ticket buyers to. Create its tasks first.',
                 ],
-                409
-            );
+            ];
         }
 
         $result = $this->import->import($date, $text, 'email', BuyerImport::batchFor($messageId, $text));
@@ -154,16 +169,16 @@ final class BuyerImportController
             $this->confirm($person->id, $person->email, $date, $result['added'], $result['skipped']);
         }
 
-        return new WP_REST_Response(
-            [
+        return [
+            'status' => 200,
+            'body' => [
                 'ok' => true,
                 'added' => $result['added'],
                 'skipped' => $result['skipped'],
                 'date' => $date,
                 'duplicate' => $result['duplicate'],
             ],
-            200
-        );
+        ];
     }
 
     /**

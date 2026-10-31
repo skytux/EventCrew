@@ -7,6 +7,11 @@ EventCrew site. The site puts the names on the door list of the next event.
 It runs on the mail server (or any machine that can reach the mailbox over
 IMAP and the site over HTTPS), every 5 minutes, from a systemd timer.
 
+Since EventCrew 1.50.0 the site can read the mailbox itself (Settings > Email >
+"Read the mailbox from this site", over IMAP or JMAP), and then this poller is
+not needed. It makes the same sender and list checks. Run one of the two, not
+both.
+
 ## What one run does
 
 1. If `PING_URL` is set, it fetches that URL.

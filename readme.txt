@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.49.1
+Stable tag: 1.50.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.50.0 =
+New: the site can read the ticket buyer import mailbox itself, every five minutes, instead of a mail poller on the mail server (Settings > Email > Read the mailbox from this site). It speaks IMAP, or JMAP over HTTPS for hosts that block the IMAP ports, such as InfinityFree; no PHP imap extension is needed. It makes the same sender check (DMARC, or SPF without DMARC) and list checks as the poller, files each message in Imported or Rejected, and shows the last check in Settings. "Check the mailbox now" runs one check at once. It has its own five-minute cron schedule, cleared on deactivation.
 
 = 1.49.1 =
 The Telegram board's "New here? Sign up" and "See my info" buttons now start with an emoji (👋 and 👤), like the buttons under them.
@@ -621,6 +624,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.50.0 =
+The site can now read the import mailbox itself over IMAP or JMAP (Settings > Email). Use it or the mail poller, not both.
 
 = 1.49.1 =
 Emojis on the board's sign-up and my-info buttons.

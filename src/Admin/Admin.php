@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Core\Container;
+use EventCrew\MailImport\MailImporter;
 use EventCrew\Support\EmailTemplate;
 
 /**
@@ -137,6 +138,16 @@ final class Admin
         add_action(
             'admin_post_eventcrew_save_import_mailbox',
             [$this->container->get(SettingsPage::class), 'saveImportMailbox']
+        );
+
+        add_action(
+            'admin_post_eventcrew_save_mail_fetch',
+            [$this->container->get(SettingsPage::class), 'saveMailFetch']
+        );
+
+        add_action(
+            'admin_post_eventcrew_fetch_mail_now',
+            [$this->container->get(MailImporter::class), 'runFromAdmin']
         );
 
         add_action(

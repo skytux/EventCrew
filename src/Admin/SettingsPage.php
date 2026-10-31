@@ -32,6 +32,7 @@ use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
+use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\Web\PwaController;
 
 /**
@@ -47,7 +48,7 @@ final class SettingsPage
     public const PAGE_SLUG = 'eventcrew-settings';
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
-    private const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
+    public const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
 
     private const WELCOME_NONCE_ACTION = 'eventcrew_welcome_test';
     private const PRIVACY_NONCE_ACTION = 'eventcrew_privacy_page';
@@ -130,6 +131,8 @@ final class SettingsPage
                 'import_secret' => BuyerImportController::ensureSecret(),
                 'import_url' => BuyerImportController::endpointUrl(),
                 'import_mailbox' => BuyerImportController::mailbox(),
+                'mail_fetch' => MailFetchSettings::get(),
+                'mail_fetch_status' => MailFetchSettings::status(),
                 'telegram' => $this->telegramView(),
                 'privacy' => $this->privacyView(),
             ]
@@ -902,6 +905,37 @@ final class SettingsPage
 
         update_option(BuyerImportController::MAILBOX_OPTION, $address, false);
         Admin::redirectTo(self::PAGE_SLUG, __('The import mailbox was saved.', 'eventcrew'));
+    }
+
+    /**
+     * Saves how the site reads the import mailbox itself. An empty password
+     * keeps the saved one, so the page never has to show it.
+     */
+    public function saveMailFetch(): void
+    {
+        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- checked by assertCanSave().
+        $field = static fn (string $name): string => sanitize_text_field(wp_unslash((string) ($_POST[$name] ?? '')));
+        $password = (string) wp_unslash((string) ($_POST['mail_fetch_password'] ?? ''));
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $current = MailFetchSettings::get();
+
+        MailFetchSettings::save([
+            'protocol' => $field('mail_fetch_protocol'),
+            'server' => $field('mail_fetch_server'),
+            'port' => (int) $field('mail_fetch_port'),
+            'security' => $field('mail_fetch_security'),
+            'username' => $field('mail_fetch_username'),
+            'password' => '' === $password ? $current['password'] : $password,
+            'folder' => $field('mail_fetch_folder'),
+            'imported_folder' => $field('mail_fetch_imported_folder'),
+            'rejected_folder' => $field('mail_fetch_rejected_folder'),
+            'authserv_id' => $field('mail_fetch_authserv_id'),
+        ]);
+
+        Admin::redirectTo(self::PAGE_SLUG, __('The mailbox settings were saved.', 'eventcrew'));
     }
 
     /**

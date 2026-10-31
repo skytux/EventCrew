@@ -75,8 +75,16 @@ updated list adds only the new buyers. "Reset import" on the Roster page deletes
 all imported ticket buyers for that date; the crew and the guest list are not
 affected.
 
-The email route needs a small mail poller running next to the mail server; see
-`tools/mail-import/README.md`.
+For the email route, something has to read the import mailbox. Either:
+
+- the site reads it itself, every five minutes: Settings > Email > "Read the
+  mailbox from this site". It speaks IMAP, or JMAP over HTTPS for hosts that
+  block the IMAP ports (InfinityFree does). No PHP imap extension is needed.
+  "Check the mailbox now" runs one check at once and shows the result; or
+- a small mail poller runs next to the mail server; see
+  `tools/mail-import/README.md`.
+
+Use one of the two, not both.
 
 ## Telegram commands
 

@@ -6,3 +6,4 @@ composer.phar
 *.zip
 /ideas
 /tmp/
+/.live-mail.json

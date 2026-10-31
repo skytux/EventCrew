@@ -45,6 +45,8 @@
  * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
  * @var string $import_url The REST URL the mail poller posts buyer lists to.
  * @var string $import_mailbox The address organizers mail buyer lists to; '' when none is set.
+ * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
+ * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1341,7 +1343,7 @@ if (! defined('ABSPATH')) {
 
     <h2><?php esc_html_e('Ticket buyer import by email', 'eventcrew'); ?></h2>
     <p class="description">
-        <?php esc_html_e('Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. A mail poller on the mail server reads that mailbox and sends each list to this site, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        <?php esc_html_e('Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
     </p>
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="eventcrew_save_import_mailbox">
@@ -1357,6 +1359,100 @@ if (! defined('ABSPATH')) {
         </table>
         <?php submit_button(__('Save the import mailbox', 'eventcrew'), 'secondary', 'submit', false); ?>
     </form>
+
+    <h3><?php esc_html_e('Read the mailbox from this site', 'eventcrew'); ?></h3>
+    <p class="description">
+        <?php esc_html_e('The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+    </p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="eventcrew_save_mail_fetch">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-protocol"><?php esc_html_e('Read the mailbox', 'eventcrew'); ?></label></th>
+                <td>
+                    <select name="mail_fetch_protocol" id="eventcrew-mail-fetch-protocol">
+                        <option value="" <?php selected($mail_fetch['protocol'], ''); ?>><?php esc_html_e('Off', 'eventcrew'); ?></option>
+                        <option value="jmap" <?php selected($mail_fetch['protocol'], 'jmap'); ?>><?php esc_html_e('JMAP (over HTTPS)', 'eventcrew'); ?></option>
+                        <option value="imap" <?php selected($mail_fetch['protocol'], 'imap'); ?>><?php esc_html_e('IMAP', 'eventcrew'); ?></option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-server"><?php esc_html_e('Server', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="text" name="mail_fetch_server" id="eventcrew-mail-fetch-server" class="regular-text" value="<?php echo esc_attr($mail_fetch['server']); ?>">
+                    <p class="description"><?php esc_html_e('IMAP: the host name, for example imap.example.org. JMAP: the host name, or the full session URL if it is not at /.well-known/jmap.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-port"><?php esc_html_e('IMAP port and security', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="number" name="mail_fetch_port" id="eventcrew-mail-fetch-port" class="small-text" min="1" max="65535" value="<?php echo esc_attr((string) $mail_fetch['port']); ?>">
+                    <select name="mail_fetch_security" aria-label="<?php esc_attr_e('Security', 'eventcrew'); ?>">
+                        <option value="ssl" <?php selected($mail_fetch['security'], 'ssl'); ?>><?php esc_html_e('SSL/TLS (usually port 993)', 'eventcrew'); ?></option>
+                        <option value="starttls" <?php selected($mail_fetch['security'], 'starttls'); ?>><?php esc_html_e('STARTTLS (usually port 143)', 'eventcrew'); ?></option>
+                    </select>
+                    <p class="description"><?php esc_html_e('Not used for JMAP.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-username"><?php esc_html_e('User name', 'eventcrew'); ?></label></th>
+                <td><input type="text" name="mail_fetch_username" id="eventcrew-mail-fetch-username" class="regular-text" autocomplete="off" value="<?php echo esc_attr($mail_fetch['username']); ?>"></td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-password"><?php esc_html_e('Password', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="password" name="mail_fetch_password" id="eventcrew-mail-fetch-password" class="regular-text" autocomplete="new-password" value="">
+                    <p class="description">
+                        <?php
+                        '' === $mail_fetch['password']
+                            ? esc_html_e('No password is saved.', 'eventcrew')
+                            : esc_html_e('A password is saved. Leave this empty to keep it.', 'eventcrew');
+                        ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-folder"><?php esc_html_e('Folders', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="text" name="mail_fetch_folder" id="eventcrew-mail-fetch-folder" class="regular-text" value="<?php echo esc_attr($mail_fetch['folder']); ?>">
+                    <p class="description"><?php esc_html_e('The folder to read. INBOX is the inbox.', 'eventcrew'); ?></p>
+                    <input type="text" name="mail_fetch_imported_folder" class="regular-text" aria-label="<?php esc_attr_e('Imported folder', 'eventcrew'); ?>" value="<?php echo esc_attr($mail_fetch['imported_folder']); ?>">
+                    <p class="description"><?php esc_html_e('Where imported lists go. Created if missing.', 'eventcrew'); ?></p>
+                    <input type="text" name="mail_fetch_rejected_folder" class="regular-text" aria-label="<?php esc_attr_e('Rejected folder', 'eventcrew'); ?>" value="<?php echo esc_attr($mail_fetch['rejected_folder']); ?>">
+                    <p class="description"><?php esc_html_e('Where refused messages go. Created if missing.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-mail-fetch-authserv"><?php esc_html_e('Trusted mail server', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="text" name="mail_fetch_authserv_id" id="eventcrew-mail-fetch-authserv" class="regular-text" value="<?php echo esc_attr($mail_fetch['authserv_id']); ?>">
+                    <p class="description"><?php esc_html_e('The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+        </table>
+        <?php submit_button(__('Save the mailbox settings', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+    <?php if (0 !== $mail_fetch_status['time']) : ?>
+        <p>
+            <?php
+            printf(
+                /* translators: 1: date and time of the last check, 2: what it found or the error */
+                esc_html__('Last check %1$s: %2$s', 'eventcrew'),
+                esc_html(wp_date('j M Y H:i', $mail_fetch_status['time'])),
+                esc_html($mail_fetch_status['message'])
+            );
+            ?>
+        </p>
+    <?php endif; ?>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <input type="hidden" name="action" value="eventcrew_fetch_mail_now">
+        <?php wp_nonce_field($email_nonce_action); ?>
+        <?php submit_button(__('Check the mailbox now', 'eventcrew'), 'secondary', 'submit', false); ?>
+    </form>
+
+    <h3><?php esc_html_e('Or: a mail poller on the mail server', 'eventcrew'); ?></h3>
     <table class="form-table" role="presentation">
         <tr>
             <th scope="row"><?php esc_html_e('Endpoint', 'eventcrew'); ?></th>
