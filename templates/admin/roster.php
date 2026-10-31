@@ -10,7 +10,7 @@
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
- * @var string $import_mailbox The address organizers can mail a buyer list to.
+ * @var string $import_mailbox The address organizers can mail a buyer list to; '' when none is set.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var bool $leader_enabled Whether the crew-leader slot is on for the shown date.
@@ -270,12 +270,15 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 <button type="submit" class="button button-primary"><?php esc_html_e('Import', 'eventcrew'); ?></button>
             </form>
             <p class="description" style="max-width:820px">
+                <?php esc_html_e('The names go to the date shown above. A name already on the list is skipped.', 'eventcrew'); ?>
                 <?php
-                printf(
-                    /* translators: %s: the import email address */
-                    esc_html__('The names go to the date shown above. A name already on the list is skipped. You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
-                    '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
-                );
+                if ('' !== $import_mailbox) {
+                    printf(
+                        /* translators: %s: the import email address */
+                        esc_html__('You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
+                        '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+                    );
+                }
                 ?>
             </p>
             <form

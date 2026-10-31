@@ -50,9 +50,20 @@ final class OrganizerGuideTest extends TelegramTestCase
 
     public function testTheGuideExplainsTheTicketBuyerImportByEmail(): void
     {
+        $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION] = 'import@example.org';
+
         self::assertStringContainsString('email the list of names to import@example.org', OrganizerGuide::short());
         self::assertStringContainsString('Or email the list to import@example.org', OrganizerGuide::full());
         self::assertStringContainsString('how many names were added and how many were skipped', OrganizerGuide::full());
+    }
+
+    public function testWithoutAnImportMailboxTheGuideLeavesTheEmailImportOut(): void
+    {
+        unset($this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION]);
+
+        self::assertStringNotContainsString('📧', OrganizerGuide::short());
+        self::assertStringNotContainsString('Or email the list', OrganizerGuide::full());
+        self::assertStringContainsString('paste the names, one per line', OrganizerGuide::full());
     }
 
     public function testTheShortPartUsesTheLiveCreditSetting(): void

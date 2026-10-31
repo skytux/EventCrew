@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.40.2
+Stable tag: 1.41.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.41.0 =
+The ticket buyer import mailbox is a setting (Settings > Email > Ticket buyer import by email) instead of an address fixed in the code. While it is empty, the organizer guide, the organizer welcome email and the Roster page leave the email import out.
 
 = 1.40.2 =
 Sales desk shows "⏳ Loading…" while it waits for the server (after 0.3 seconds, in the header or inside the open popup), and the member search, task list and Login as list say "Loading…" at once instead of staying blank. The task list and the Login as list open as soon as they are tapped; a failed request replaces "Loading…" with the failure text.
@@ -571,6 +574,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.41.0 =
+The import mailbox is now set in Settings > Email; set it once after updating.
 
 = 1.40.2 =
 Sales desk: shows when it is loading.

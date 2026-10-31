@@ -73,11 +73,7 @@ final class OrganizerGuide
             '- 🗓️ ' . __('Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             '- ✋ ' . __('Sign-up: members tap Join on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             '- 🌙 ' . __('On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /sales sends you the link.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            sprintf(
-                /* translators: %s: the import email address */
-                '- 📧 ' . __('Holvi ticket buyers: email the list of names to %s from your EventCrew email address. The names go on the sales desk list of the next event.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                BuyerImportController::MAILBOX
-            ),
+            ...self::mailImportShort(),
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
                 '- 🎁 ' . __('Credits: members earn 1 free-entry credit per %d completed tasks. /gift gives credits by hand.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -156,12 +152,50 @@ final class OrganizerGuide
                 DoorLinkSender::leadMinutes()
             ),
             __('Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under "Holvi ticket buyers". A name already on the list is skipped.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            sprintf(
-                /* translators: %s: the import email address */
-                __('Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                BuyerImportController::MAILBOX
-            ),
+            ...self::mailImportDetails(),
         ];
+    }
+
+    /**
+     * The "In short" line about mailing a buyer list, or nothing when the site
+     * has no import mailbox (Settings → Email).
+     *
+     * @return array<int, string>
+     */
+    private static function mailImportShort(): array
+    {
+        $mailbox = BuyerImportController::mailbox();
+
+        if ('' === $mailbox) {
+            return [];
+        }
+
+        return [sprintf(
+            /* translators: %s: the import email address */
+            '- 📧 ' . __('Holvi ticket buyers: email the list of names to %s from your EventCrew email address. The names go on the sales desk list of the next event.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $mailbox
+        )];
+    }
+
+    /**
+     * The details about mailing a buyer list, or nothing when the site has no
+     * import mailbox.
+     *
+     * @return array<int, string>
+     */
+    private static function mailImportDetails(): array
+    {
+        $mailbox = BuyerImportController::mailbox();
+
+        if ('' === $mailbox) {
+            return [];
+        }
+
+        return [sprintf(
+            /* translators: %s: the import email address */
+            __('Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $mailbox
+        )];
     }
 
     /** @return array<int, string> */
