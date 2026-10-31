@@ -14,6 +14,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorSession;
 use EventCrew\Support\EmailTemplate;
@@ -42,7 +43,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         Functions\when('sanitize_email')->returnArg(1);
     }
 
-    private function desk(): DoorDesk
+    private function desk(?ClaimNotifier $notifier = null): DoorDesk
     {
         return new DoorDesk(
             new TaskRepository(),
@@ -64,8 +65,70 @@ final class DoorDeskTest extends SalesDeskTestCase
                 new Mailer(new Logger(), new EmailTemplate(new Logger()))
             ),
             $this->salesDeskGate(),
-            new CreditGrantRepository()
+            new CreditGrantRepository(),
+            $notifier
         );
+    }
+
+    private function notifier(): ClaimNotifier
+    {
+        return new ClaimNotifier(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            $this->client(),
+            $this->standing()
+        );
+    }
+
+    /**
+     * Signs person 8 up for task 9 at the desk and answers the emails sent.
+     *
+     * @return list<string>
+     */
+    private function workTonightMails(string $role, bool $organizer): array
+    {
+        $mails = [];
+        Functions\when('get_the_title')->justReturn('');
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body) use (&$mails): bool {
+            $mails[] = $to . "\n" . $body;
+
+            return true;
+        });
+
+        $person = $this->personRow(8, $organizer);
+        $person['email_verified_at'] = '2026-07-01 00:00:00';
+        $this->wpdb->nextRows[] = $person;                         // people->find
+        $this->wpdb->nextRows[] = $this->taskRow(9, $role);        // tasks->find
+        $this->wpdb->nextVars[] = 3;                               // join: capacity
+        $this->wpdb->nextRows[] = null;                            // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                       // join: inserted
+        $this->wpdb->nextQueryResults[] = 1;                       // the check-in
+        $this->wpdb->nextResults[] = [$this->taskRow(9, $role)];
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 9, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(9, $role);        // confirmation: tasks->find
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 9, 8, 'arrived'); // confirmation: findFor
+
+        self::assertSame(DoorDesk::WORK_OK, $this->desk($this->notifier())->workTonight(self::NIGHT, 1, 8, 9));
+
+        return $mails;
+    }
+
+    public function testAnOrganizerSignedUpForOrganizeAtTheDeskGetsTheTicket(): void
+    {
+        $mails = $this->workTonightMails(Roles::ORGANIZE_SLUG, true);
+
+        self::assertCount(1, $mails);
+        self::assertStringStartsWith('p8@example.com', $mails[0]);
+        self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $mails[0]);
+    }
+
+    public function testAnotherTaskSignedUpAtTheDeskSendsNothing(): void
+    {
+        self::assertSame([], $this->workTonightMails('decorate', false));
     }
 
     /**
