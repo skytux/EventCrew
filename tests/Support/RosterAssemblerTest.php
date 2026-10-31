@@ -65,6 +65,30 @@ final class RosterAssemblerTest extends TestCase
         self::assertFalse($roster[0]['people'][1]['occupying']);
     }
 
+    public function testForDateSaysWhoMarkedEachPersonAndWhen(): void
+    {
+        Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));
+        Functions\when('get_userdata')->justReturn((object) ['display_name' => 'Owner']);
+
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 11, 'task_id' => 5, 'person_id' => 7, 'status' => 'completed',
+                'status_changed_at' => '2026-07-20 23:05:00', 'changed_by' => 1, 'changed_by_kind' => 'wp_user',
+            ],
+            ['id' => 12, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'jo@example.com', 'display_name' => 'Jo'];
+
+        $roster = $this->assembler()->forDate('2026-07-20');
+
+        self::assertSame('marked by Owner at 23:05', $roster[0]['people'][0]['marked_by']);
+        self::assertSame('', $roster[0]['people'][1]['marked_by'], 'signed up is not an attendance mark');
+    }
+
     public function testForDateFallsBackForADeletedPerson(): void
     {
         $this->wpdb->nextResults[] = [

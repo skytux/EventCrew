@@ -23,6 +23,7 @@ use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\LeaderGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SignupService;
@@ -267,6 +268,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('admin_marked', $result['notice']);
         self::assertSame('no_show', $this->wpdb->updates[0]['data']['status']);
         self::assertSame(['id' => 30], $this->wpdb->updates[0]['where']);
+        // Recorded as the organizer's EventCrew person id.
+        self::assertSame(1, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
     }
 
     public function testAnUnknownMarkWritesNothing(): void
@@ -494,6 +498,28 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([8 => 'Person 8 (p8@example.com)', 1 => 'Person 1 (p1@example.com)'], $view['members']);
         self::assertSame(30, $view['roster'][0]['people'][0]['assignment_id']);
         self::assertTrue($view['roster'][0]['people'][0]['markable']);
+        self::assertSame('', $view['roster'][0]['people'][0]['marked_by']);
+    }
+
+    public function testTheAdminRosterSaysWhoMarkedEachPersonAndWhen(): void
+    {
+        Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));
+
+        $this->wpdb->nextResults[] = [];                                // members
+        $this->wpdb->nextCols[] = [self::NIGHT];                        // nextNight
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // roster tasks
+        $this->wpdb->nextResults[] = [[                                 // its people
+            'status_changed_at' => self::NIGHT . ' 21:42:00',
+            'changed_by' => 1,
+            'changed_by_kind' => MarkedBy::PERSON,
+        ] + $this->assignmentRow(30, 6, 8, 'arrived')];
+        $this->wpdb->nextRows[] = $this->personRow(8);                  // the crew member
+        $this->wpdb->nextRows[] = $this->organizerRow(1);               // who marked them
+
+        $view = $this->admin()->viewFor(Person::fromRow($this->organizerRow(1)));
+
+        self::assertNotNull($view);
+        self::assertSame('marked by Person 1 at 21:42', $view['roster'][0]['people'][0]['marked_by']);
     }
 
     public function testTheTabIsNotInThePageForAMember(): void

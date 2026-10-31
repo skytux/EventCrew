@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '15';
+    public const DB_VERSION = '16';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -314,6 +314,11 @@ final class Schema
             // The unique key on (task_id, person_id) is load-bearing: it
             // is what stops a duplicate join when the same person taps the
             // group button twice before the first request has committed.
+            //
+            // changed_by_kind says which table changed_by points into:
+            // 'person' (an EventCrew person id) or 'wp_user' (a WordPress user
+            // id). NULL means it is not known - every row written before
+            // schema 16, and every change with nobody recorded.
             "CREATE TABLE {$assignments} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 task_id bigint(20) unsigned NOT NULL,
@@ -322,6 +327,7 @@ final class Schema
                 signed_up_at datetime NOT NULL,
                 status_changed_at datetime DEFAULT NULL,
                 changed_by bigint(20) unsigned DEFAULT NULL,
+                changed_by_kind varchar(10) DEFAULT NULL,
                 reminded_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 UNIQUE KEY task_person (task_id,person_id),

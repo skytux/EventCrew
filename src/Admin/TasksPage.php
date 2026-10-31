@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
@@ -346,7 +347,7 @@ final class TasksPage
      * Who is signed up for the task currently open in the editor, so the
      * organizer can see the consequences of changing or deleting it.
      *
-     * @return array<int, array{name: string, status: string}>
+     * @return array<int, array{name: string, status: string, marked_by: string}>
      */
     private function rosterForEditedTask(): array
     {
@@ -366,6 +367,7 @@ final class TasksPage
                     ? __('(deleted person)', 'eventcrew')
                     : $person->name(),
                 'status' => $assignment->statusLabel(),
+                'marked_by' => MarkedBy::line($assignment, $this->people),
             ];
         }
 

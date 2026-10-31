@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\RosterService;
 
@@ -88,6 +89,37 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertStringContainsString('Arrived', $text);
     }
 
+    public function testTheRosterSaysWhoMarkedEachPersonAndWhen(): void
+    {
+        Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));
+
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // datesWithTasks()
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'arrived',
+                'status_changed_at' => '2026-07-20 21:42:00', 'changed_by' => 7, 'changed_by_kind' => 'person',
+            ],
+            [
+                'id' => 12, 'task_id' => 5, 'person_id' => 9, 'status' => 'no_show',
+                'status_changed_at' => '2026-07-20 22:15:00', 'changed_by' => 3,
+            ],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'boss@example.com', 'display_name' => 'Boss'];
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'jo@example.com', 'display_name' => 'Jo'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString("Sam (Arrived) — Beginner\n    marked by Boss at 21:42", $text);
+        // An old row whose id kind is not known gives only the time.
+        self::assertStringContainsString("Jo (No-show) — Beginner\n    marked at 22:15", $text);
+    }
+
     public function testFromAGroupTheRosterGoesToTheDmWithABreadcrumb(): void
     {
         $this->organizer(true);
@@ -148,8 +180,10 @@ final class RosterServiceTest extends TelegramTestCase
             'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
         ]);
 
-        // The completed status was written...
+        // The completed status was written, recorded as the organizer's person id...
         self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame(7, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
         // ...the tap was acknowledged, and the roster message edited in place.
         self::assertSame('Marked completed.', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertContains('editMessageText', $this->calledMethods());

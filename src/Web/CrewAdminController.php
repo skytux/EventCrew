@@ -14,6 +14,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\WebSession;
@@ -177,6 +178,7 @@ final class CrewAdminController
                 sanitize_text_field((string) ($post['reason'] ?? ''))
             ),
             default => $this->markAttendance(
+                $organizer,
                 (int) ($post['assignment_id'] ?? 0),
                 sanitize_key((string) ($post['mark'] ?? ''))
             ),
@@ -274,9 +276,10 @@ final class CrewAdminController
 
     /**
      * One roster button: Arrived, Completed or No-show, written through the
-     * same status write the bot's /roster buttons and the wp-admin roster use.
+     * same status write the bot's /roster buttons and the wp-admin roster use,
+     * recorded with the organizer's person id.
      */
-    public function markAttendance(int $assignmentId, string $mark): string
+    public function markAttendance(Person $organizer, int $assignmentId, string $mark): string
     {
         if (! isset(self::MARKS[$mark])) {
             return 'admin_no_entry';
@@ -288,7 +291,7 @@ final class CrewAdminController
             return 'admin_no_entry';
         }
 
-        $this->assignments->setStatus($assignment->id, self::MARKS[$mark]);
+        $this->assignments->setStatus($assignment->id, self::MARKS[$mark], $organizer->id, MarkedBy::PERSON);
 
         return 'admin_marked';
     }
@@ -432,7 +435,7 @@ final class CrewAdminController
      *
      * @return array<int, array{title: string, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, markable: bool}>}>
+     *     status_label: string, marked_by: string, markable: bool}>}>
      */
     private function rosterRows(string $date): array
     {
@@ -448,6 +451,7 @@ final class CrewAdminController
                     'name' => $entry['name'],
                     'status' => $entry['status'],
                     'status_label' => $entry['status_label'],
+                    'marked_by' => $entry['marked_by'],
                     'markable' => in_array($entry['status'], self::MARKABLE, true),
                 ];
             }

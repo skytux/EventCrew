@@ -13,6 +13,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\ReplacementService;
 
@@ -160,6 +161,9 @@ final class ReplacementServiceTest extends TelegramTestCase
 
         // The original was marked replaced (an update to status).
         self::assertSame(AssignmentStatus::REPLACED, $this->wpdb->updates[0]['data']['status']);
+        // ...recorded as the cover's person id.
+        self::assertSame(7, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
         // The cover was signed up (a conditional insert ran).
         self::assertStringContainsString('INSERT INTO', implode("\n", $this->wpdb->queries));
         // The group was told, and the original DMed.

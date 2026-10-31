@@ -15,6 +15,7 @@ use EventCrew\Support\BuyerImport;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LeaderGate;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
@@ -331,7 +332,7 @@ final class RosterPage
                 continue;
             }
 
-            $this->assignments->setStatus($assignmentId, $status, $changedBy);
+            $this->assignments->setStatus($assignmentId, $status, $changedBy, MarkedBy::WP_USER);
             ++$updated;
         }
 
@@ -378,7 +379,7 @@ final class RosterPage
             // is about the crew who turned up, not overwriting a recorded
             // absence.
             if (in_array($assignment->status, [AssignmentStatus::SIGNED_UP, AssignmentStatus::ARRIVED], true)) {
-                $this->assignments->setStatus($assignment->id, $status, $changedBy);
+                $this->assignments->setStatus($assignment->id, $status, $changedBy, MarkedBy::WP_USER);
                 ++$updated;
             }
         }

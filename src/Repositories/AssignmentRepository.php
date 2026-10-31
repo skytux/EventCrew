@@ -7,6 +7,7 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Assignment;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\MarkedBy;
 
 /**
  * All reads and writes of the assignments table.
@@ -292,9 +293,17 @@ final class AssignmentRepository
         return is_array($row) ? Assignment::fromRow($row) : null;
     }
 
-    public function setStatus(int $id, string $status, ?int $changedBy = null): void
+    /**
+     * @param ?string $changedByKind Which id $changedBy is: MarkedBy::PERSON or
+     *                               MarkedBy::WP_USER. Stored as NULL (not
+     *                               known) when there is no $changedBy or the
+     *                               kind is not one of the two.
+     */
+    public function setStatus(int $id, string $status, ?int $changedBy = null, ?string $changedByKind = null): void
     {
         global $wpdb;
+
+        $changedByKind = null !== $changedBy && MarkedBy::isKind($changedByKind) ? $changedByKind : null;
 
         $wpdb->update(
             $this->table(),
@@ -302,6 +311,7 @@ final class AssignmentRepository
                 'status' => $status,
                 'status_changed_at' => current_time('mysql'),
                 'changed_by' => $changedBy,
+                'changed_by_kind' => $changedByKind,
             ],
             ['id' => $id]
         );
@@ -316,7 +326,7 @@ final class AssignmentRepository
         // roster, the bot's /roster buttons, the door page - so this one hook
         // is where something that reacts to a status change (the door link for
         // a Welcome crew member who just arrived) can listen to all of them.
-        do_action('eventcrew/assignment_status_changed', $id, $status, $changedBy);
+        do_action('eventcrew/assignment_status_changed', $id, $status, $changedBy, $changedByKind);
     }
 
     /**
