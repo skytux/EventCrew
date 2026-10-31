@@ -3,7 +3,7 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -111,6 +111,7 @@ if (! defined('ABSPATH')) {
                     'restricted' => false,
                     'every_night' => true,
                     'sales_desk' => false,
+                    'on_board' => true,
                     'conditions' => \EventCrew\Support\Roles::noConditions(),
                     'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
                     'start_offset' => null,
@@ -219,6 +220,14 @@ if (! defined('ABSPATH')) {
                                     value="1"
                                     <?php checked($eventcrew_role['sales_desk']); ?>>
                                 <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?>
+                            </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_on_board[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['on_board']); ?>>
+                                <?php esc_html_e('Show on the Telegram board', 'eventcrew'); ?>
                             </label>
                         </td>
                         <td>

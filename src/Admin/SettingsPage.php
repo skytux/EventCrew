@@ -1127,6 +1127,9 @@ final class SettingsPage
         $salesDesk = isset($_POST['role_sales_desk']) && is_array($_POST['role_sales_desk'])
             ? array_map('intval', array_keys(wp_unslash($_POST['role_sales_desk'])))
             : [];
+        $onBoard = isset($_POST['role_on_board']) && is_array($_POST['role_on_board'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_on_board'])))
+            : [];
 
         // Conditions: role_count[index][slug], role_min_roles[index] and
         // role_times_each[index]. Roles::normalize() drops blanks and zeros.
@@ -1146,6 +1149,7 @@ final class SettingsPage
         $restrictedIndexes = array_flip($restricted);
         $everyNightIndexes = array_flip($everyNight);
         $salesDeskIndexes = array_flip($salesDesk);
+        $onBoardIndexes = array_flip($onBoard);
 
         $types = [];
 
@@ -1159,6 +1163,7 @@ final class SettingsPage
                 'restricted' => isset($restrictedIndexes[$index]),
                 'every_night' => isset($everyNightIndexes[$index]),
                 'sales_desk' => isset($salesDeskIndexes[$index]),
+                'on_board' => isset($onBoardIndexes[$index]),
                 'conditions' => [
                     'counts' => is_array($counts[$index] ?? null)
                         ? array_map('intval', $counts[$index])
