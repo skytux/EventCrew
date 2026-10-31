@@ -180,7 +180,7 @@ final class PrivacyExporter
     {
         $items = [];
 
-        foreach ($this->redemptions->forPerson($personId) as $index => $redemption) {
+        foreach ($this->redemptions->allForPerson($personId) as $index => $redemption) {
             $items[] = [
                 'group_id' => self::GROUP . '-tickets',
                 'group_label' => __('EventCrew free entry', 'eventcrew'),

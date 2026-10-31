@@ -185,7 +185,7 @@ final class AssignmentRepositoryTest extends TestCase
         $sql = $this->wpdb->lastQuery();
 
         self::assertStringContainsString('SELECT COUNT(*)', $sql);
-        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug IN \('organize'\)\)/", $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+\s+WHERE id = 3 AND deleted_at IS NULL AND role_slug IN \('organize'\)\)/", $sql);
     }
 
     public function testReactivationLetsTheOrganizeTaskThroughWhateverTheCount(): void
@@ -201,7 +201,7 @@ final class AssignmentRepositoryTest extends TestCase
         $sql = $this->wpdb->lastQuery();
 
         self::assertStringContainsString('UPDATE', $sql);
-        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+ WHERE id = 3 AND role_slug IN \('organize'\)\)/", $sql);
+        self::assertMatchesRegularExpression("/OR EXISTS \(SELECT 1 FROM \S+\s+WHERE id = 3 AND deleted_at IS NULL AND role_slug IN \('organize'\)\)/", $sql);
     }
 
     public function testReactivationRefusesWhenTheTaskIsNowFull(): void
@@ -250,14 +250,22 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertSame([], $this->wpdb->updates);
     }
 
-    public function testLeavingDeletesThePeopleRowForThatTask(): void
+    public function testADeletedTaskTakesNoNewSignUps(): void
     {
-        (new AssignmentRepository())->leave(3, 1);
+        $this->wpdb->nextVars = [2];
+        $this->wpdb->nextRows = [null];
+        $this->wpdb->nextQueryResults = [0];
 
-        self::assertCount(1, $this->wpdb->deletes);
-        self::assertSame(
-            ['task_id' => 3, 'person_id' => 1],
-            $this->wpdb->deletes[0]['where']
+        (new AssignmentRepository())->join(3, 1);
+
+        $inserts = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'INSERT INTO')
+        ));
+        self::assertCount(1, $inserts);
+        self::assertStringContainsString(
+            'COALESCE((SELECT capacity FROM wp_eventcrew_tasks WHERE id = 3 AND deleted_at IS NULL), 0)',
+            $inserts[0]
         );
     }
 

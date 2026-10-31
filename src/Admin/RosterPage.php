@@ -174,7 +174,7 @@ final class RosterPage
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ($redemptionId > 0) {
-            $this->redemptions->delete($redemptionId);
+            $this->redemptions->cancel($redemptionId);
         }
 
         Admin::redirectTo(

@@ -73,16 +73,34 @@ final class TaskRepository
     }
 
     /**
-     * Deleting a task takes its assignments with it. There is no foreign key
-     * to cascade, since WordPress installs cannot be relied on to have InnoDB
-     * everywhere, so the cleanup is explicit.
+     * "Deletes" a task without removing any row: the task is hidden
+     * everywhere (deleted_at) and the sign-ups still holding a place on it are
+     * cancelled, so their tickets keep working and show DISABLED. Finished
+     * history (completed, no-show, ...) stays as it was.
      */
     public function delete(int $id): void
     {
         global $wpdb;
 
-        $wpdb->delete($this->assignmentsTable(), ['task_id' => $id]);
-        $wpdb->delete($this->table(), ['id' => $id]);
+        $now = current_time('mysql');
+        $statuses = AssignmentStatus::occupying();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->assignmentsTable()}
+                SET status = %s, status_changed_at = %s
+                WHERE task_id = %d AND status IN ({$statusPlaceholders})",
+                ...array_merge([AssignmentStatus::CANCELLED, $now, $id], $statuses)
+            )
+        );
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET deleted_at = %s WHERE id = %d AND deleted_at IS NULL",
+                $now,
+                $id
+            )
+        );
     }
 
     /**
@@ -94,7 +112,8 @@ final class TaskRepository
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE task_date = %s ORDER BY starts_at ASC, id ASC",
+                "SELECT * FROM {$this->table()} WHERE task_date = %s AND deleted_at IS NULL
+                ORDER BY starts_at ASC, id ASC",
                 $date
             ),
             ARRAY_A
@@ -123,6 +142,7 @@ final class TaskRepository
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()}
                 WHERE capacity > 0
+                  AND deleted_at IS NULL
                   AND (
                     (ends_at IS NULL AND task_date >= %s)
                     OR (ends_at IS NOT NULL AND ends_at >= %s)
@@ -154,6 +174,7 @@ final class TaskRepository
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()}
                 WHERE starts_at IS NOT NULL
+                  AND deleted_at IS NULL
                   AND starts_at >= %s
                   AND starts_at <= %s
                 ORDER BY starts_at ASC, id ASC",
@@ -179,7 +200,7 @@ final class TaskRepository
         $rows = $wpdb->get_col(
             $wpdb->prepare(
                 "SELECT DISTINCT task_date FROM {$this->table()}
-                WHERE task_date >= %s
+                WHERE task_date >= %s AND deleted_at IS NULL
                 ORDER BY task_date ASC
                 LIMIT %d",
                 current_time('Y-m-d'),
@@ -205,6 +226,7 @@ final class TaskRepository
         $rows = $wpdb->get_col(
             $wpdb->prepare(
                 "SELECT DISTINCT task_date FROM {$this->table()}
+                WHERE deleted_at IS NULL
                 ORDER BY task_date DESC
                 LIMIT %d",
                 $limit
@@ -223,7 +245,7 @@ final class TaskRepository
         global $wpdb;
 
         $params = [];
-        $where = '1=1';
+        $where = 'deleted_at IS NULL';
 
         if (! empty($args['upcoming_only'])) {
             $where .= ' AND task_date >= %s';
@@ -257,12 +279,12 @@ final class TaskRepository
         global $wpdb;
 
         if (! $upcomingOnly) {
-            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table()}");
+            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table()} WHERE deleted_at IS NULL");
         }
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE task_date >= %s",
+                "SELECT COUNT(*) FROM {$this->table()} WHERE task_date >= %s AND deleted_at IS NULL",
                 current_time('Y-m-d')
             )
         );
@@ -332,7 +354,7 @@ final class TaskRepository
         $earliest = $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT MIN(starts_at) FROM {$this->table()}
-                WHERE task_date = %s AND starts_at IS NOT NULL",
+                WHERE task_date = %s AND starts_at IS NOT NULL AND deleted_at IS NULL",
                 $date
             )
         );
@@ -360,7 +382,8 @@ final class TaskRepository
         return null !== $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT id FROM {$this->table()}
-                WHERE task_date = %s AND created_at > %s AND role_slug NOT IN ({$rolePlaceholders})
+                WHERE task_date = %s AND created_at > %s AND deleted_at IS NULL
+                  AND role_slug NOT IN ({$rolePlaceholders})
                 LIMIT 1",
                 array_merge([$date, $since], $restricted)
             )

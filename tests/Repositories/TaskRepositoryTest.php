@@ -21,6 +21,32 @@ final class TaskRepositoryTest extends TestCase
         );
     }
 
+    public function testDeletingATaskKeepsItsRowAndCancelsItsSignUps(): void
+    {
+        Functions\when('current_time')->justReturn('2026-08-01 12:00:00');
+
+        (new TaskRepository())->delete(5);
+
+        // Nothing is removed: the tickets on it must keep working, as DISABLED.
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertCount(2, $this->wpdb->queries);
+        self::assertStringContainsString("SET status = 'cancelled'", $this->wpdb->queries[0]);
+        self::assertStringContainsString('WHERE task_id = 5 AND status IN', $this->wpdb->queries[0]);
+        self::assertStringContainsString(
+            "SET deleted_at = '2026-08-01 12:00:00' WHERE id = 5 AND deleted_at IS NULL",
+            $this->wpdb->queries[1]
+        );
+    }
+
+    public function testADeletedTaskIsLeftOutOfTheNight(): void
+    {
+        $this->wpdb->nextResults[] = [];
+
+        (new TaskRepository())->forDate('2026-08-01');
+
+        self::assertStringContainsString("task_date = '2026-08-01' AND deleted_at IS NULL", $this->wpdb->lastQuery());
+    }
+
     public function testDatesWithTasksReturnsWhateverTheQueryYields(): void
     {
         $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-25'];

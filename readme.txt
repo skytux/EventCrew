@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.45.0
+Stable tag: 1.46.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.46.0 =
+Tickets are never deleted any more. Undoing a free entry, or swapping it for a task at the door, cancels the redemption instead of removing it. Deleting a task in wp-admin hides it everywhere and takes everyone off it instead of removing the rows. In both cases the ticket link keeps working and shows DISABLED.
 
 = 1.45.0 =
 Ticket note: free text (door code, address, ...) shown on every ticket, set in Settings > Web page > Ticket page.
@@ -602,6 +605,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.46.0 =
+Database update (version 19): adds tasks.deleted_at and redemptions.cancelled_at.
 
 = 1.45.0 =
 Adds an optional ticket note setting.

@@ -30,7 +30,7 @@ final class RedemptionRepository
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d",
+                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND cancelled_at IS NULL",
                 $personId
             )
         );
@@ -96,7 +96,7 @@ final class RedemptionRepository
                  FROM (SELECT 1) AS placeholder
                  WHERE NOT EXISTS (
                      SELECT 1 FROM (
-                         SELECT person_id, redeemed_for FROM {$this->table()}
+                         SELECT person_id, redeemed_for FROM {$this->table()} WHERE cancelled_at IS NULL
                      ) AS existing
                      WHERE existing.person_id = %d AND existing.redeemed_for = %s
                  )",
@@ -136,7 +136,7 @@ final class RedemptionRepository
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table()} WHERE redeemed_for = %s ORDER BY id ASC",
+                "SELECT * FROM {$this->table()} WHERE redeemed_for = %s AND cancelled_at IS NULL ORDER BY id ASC",
                 $date
             ),
             ARRAY_A
@@ -157,6 +157,31 @@ final class RedemptionRepository
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE person_id = %d AND cancelled_at IS NULL
+                ORDER BY redeemed_at DESC",
+                $personId
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Redemption => Redemption::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
+    }
+
+    /**
+     * Every redemption of a person, cancelled ones included, for the privacy
+     * export.
+     *
+     * @return array<int, Redemption>
+     */
+    public function allForPerson(int $personId): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
                 "SELECT * FROM {$this->table()} WHERE person_id = %d ORDER BY redeemed_at DESC",
                 $personId
             ),
@@ -169,11 +194,21 @@ final class RedemptionRepository
         );
     }
 
-    public function delete(int $id): void
+    /**
+     * Undoes a redemption without deleting it: the credit is handed back and
+     * the ticket link stays, showing DISABLED.
+     */
+    public function cancel(int $id): void
     {
         global $wpdb;
 
-        $wpdb->delete($this->table(), ['id' => $id]);
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET cancelled_at = %s WHERE id = %d AND cancelled_at IS NULL",
+                current_time('mysql'),
+                $id
+            )
+        );
     }
 
     public function deleteForPerson(int $personId): void

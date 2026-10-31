@@ -94,6 +94,38 @@ final class RedemptionRepositoryTest extends TestCase
         self::assertSame('Dance', $redemptions[0]->eventLabel);
     }
 
+    public function testCancelMarksTheRedemptionInsteadOfDeletingIt(): void
+    {
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2026-08-01 12:00:00');
+
+        $this->repository()->cancel(44);
+
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertStringContainsString(
+            "SET cancelled_at = '2026-08-01 12:00:00' WHERE id = 44 AND cancelled_at IS NULL",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    public function testACancelledRedemptionNoLongerCountsOrBlocksANewOne(): void
+    {
+        $this->wpdb->nextVars[] = 0;
+        $this->repository()->countFor(9);
+        self::assertStringContainsString('person_id = 9 AND cancelled_at IS NULL', $this->wpdb->lastQuery());
+
+        $this->wpdb->nextResults[] = [];
+        $this->repository()->forDate('2026-08-01');
+        self::assertStringContainsString("redeemed_for = '2026-08-01' AND cancelled_at IS NULL", $this->wpdb->lastQuery());
+
+        $this->wpdb->nextResults[] = [];
+        $this->repository()->forPerson(9);
+        self::assertStringContainsString('person_id = 9 AND cancelled_at IS NULL', $this->wpdb->lastQuery());
+
+        \Brain\Monkey\Functions\when('current_time')->justReturn('2026-08-01 12:00:00');
+        $this->repository()->record(9, '2026-08-01');
+        self::assertStringContainsString('WHERE cancelled_at IS NULL', $this->wpdb->lastQuery());
+    }
+
     public function testDeleteForPersonRemovesEveryRow(): void
     {
         $this->repository()->deleteForPerson(9);

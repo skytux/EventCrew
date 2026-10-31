@@ -130,7 +130,10 @@ final class TasksListTable extends WP_List_Table
                 '<a href="%s" onclick="return confirm(%s)" class="submitdelete">%s</a>',
                 esc_url($deleteUrl),
                 esc_attr(wp_json_encode(
-                    __('Delete this task and everyone signed up for it?', 'eventcrew')
+                    __(
+                        'Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED.',
+                        'eventcrew'
+                    )
                 )),
                 esc_html__('Delete', 'eventcrew')
             ),

@@ -19,8 +19,15 @@ final class Redemption
         public readonly ?int $eventPostId = null,
         public readonly string $eventLabel = '',
         public readonly string $redeemedAt = '',
-        public readonly string $note = ''
+        public readonly string $note = '',
+        public readonly ?string $cancelledAt = null
     ) {
+    }
+
+    /** Whether this redemption was undone; its ticket then shows DISABLED. */
+    public function isCancelled(): bool
+    {
+        return null !== $this->cancelledAt;
     }
 
     /**
@@ -35,7 +42,8 @@ final class Redemption
             self::nullableInt($row['event_post_id'] ?? null),
             (string) ($row['event_label'] ?? ''),
             (string) ($row['redeemed_at'] ?? ''),
-            (string) ($row['note'] ?? '')
+            (string) ($row['note'] ?? ''),
+            self::nullableString($row['cancelled_at'] ?? null)
         );
     }
 
