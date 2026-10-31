@@ -10,6 +10,11 @@
  * after that the script asks for fresh state every few seconds while the tab is
  * visible and redraws only when the state's version has changed.
  *
+ * The "Add" button opens a popup for someone not on the lists yet: a ticket
+ * sold at the door, a guest, or a crew member, who either spends a credit or
+ * signs up for one of tonight's tasks. A member who has no record yet can be
+ * added there with a name and an email.
+ *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
  * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, pollMs, searchMin, maxPlus, actions
  */
@@ -24,9 +29,17 @@ $eventcrew_text = [
     'in' => __('✓ In', 'eventcrew'),
     'out' => __('Check in', 'eventcrew'),
     'guests' => __('guests', 'eventcrew'),
-    'give' => __('Give ticket', 'eventcrew'),
     'credits' => __('credits', 'eventcrew'),
-    'noMatch' => __('No member with credit matches.', 'eventcrew'),
+    'noMatch' => __('No member matches. Add them below as a new member.', 'eventcrew'),
+    'choose' => __('Choose', 'eventcrew'),
+    /* translators: %d: how many free-entry credits the member has */
+    'useCredit' => __('Use a credit (%d left)', 'eventcrew'),
+    'noCredit' => __('No credit to use', 'eventcrew'),
+    'noTasks' => __('No task tonight has a free place.', 'eventcrew'),
+    'free' => __('free', 'eventcrew'),
+    'signUp' => __('Sign up', 'eventcrew'),
+    'needName' => __('Give the guest’s name.', 'eventcrew'),
+    'extra' => __('extra', 'eventcrew'),
     'empty' => __('Nobody on this list.', 'eventcrew'),
     'failed' => __('That did not go through. Check the connection and try again.', 'eventcrew'),
     'fewer' => __('One guest fewer', 'eventcrew'),
@@ -64,30 +77,103 @@ button:disabled{opacity:.5}
 .ec-toggle.is-in{background:var(--in-bg);border-color:var(--in);color:var(--in);font-weight:700}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
-.ec-give{margin-top:28px;padding-top:4px;border-top:2px solid var(--line)}
+.ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
+dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h3{font-size:17px;margin:12px 0 8px}
+dialog label{display:block;margin-top:10px}
+dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);margin-top:4px}
+.ec-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ec-dialog-head h2{margin:0}
+.ec-stack{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.ec-stack button{width:100%}
+#ec-members,#ec-tasks{max-height:45vh;overflow-y:auto}
 .ec-muted{color:var(--muted)}
 </style>
 </head>
 <body>
 <header>
     <h1 id="ec-day"></h1>
+    <div class="ec-top">
     <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small><?php
         /* translators: %s: the number of people expected tonight. */
         printf(esc_html__('of %s checked in', 'eventcrew'), '<span id="ec-expected">0</span>');
     ?></small></div>
+    <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
+    </div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
 <main>
     <p class="ec-msg" id="ec-msg" role="status"></p>
     <div id="ec-sections"></div>
+</main>
+<dialog id="ec-add" aria-labelledby="ec-add-title">
+    <div class="ec-dialog-head">
+        <button type="button" id="ec-add-back"><?php esc_html_e('‹ Back', 'eventcrew'); ?></button>
+        <h2 id="ec-add-title"><?php esc_html_e('Add', 'eventcrew'); ?></h2>
+        <button type="button" id="ec-add-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
+    </div>
+    <p class="ec-msg" id="ec-add-msg" role="status"></p>
 
-    <section class="ec-give">
-        <h2><?php esc_html_e('Give ticket', 'eventcrew'); ?></h2>
-        <p class="ec-muted"><?php esc_html_e('Spend one of a member’s credits on tonight. Search by name or email.', 'eventcrew'); ?></p>
+    <div id="ec-step-choose" class="ec-stack">
+        <button type="button" id="ec-pick-ticket"><?php esc_html_e('Ticket', 'eventcrew'); ?></button>
+        <button type="button" id="ec-pick-guest"><?php esc_html_e('Guest', 'eventcrew'); ?></button>
+        <button type="button" id="ec-pick-member"><?php esc_html_e('Crew member', 'eventcrew'); ?></button>
+    </div>
+
+    <div id="ec-step-ticket" hidden>
+        <h3><?php esc_html_e('Ticket sold at the door', 'eventcrew'); ?></h3>
+        <label><?php esc_html_e('Name (optional)', 'eventcrew'); ?>
+            <input type="text" id="ec-ticket-name" autocomplete="off"></label>
+        <div class="ec-stack">
+            <button type="button" class="ec-primary" id="ec-ticket-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
+        </div>
+    </div>
+
+    <div id="ec-step-guest" hidden>
+        <h3><?php esc_html_e('Guest', 'eventcrew'); ?></h3>
+        <label><?php esc_html_e('Name', 'eventcrew'); ?>
+            <input type="text" id="ec-guest-name" autocomplete="off"></label>
+        <p><?php esc_html_e('Extra people they may bring (0 = just the guest):', 'eventcrew'); ?></p>
+        <div class="ec-plus">
+            <button type="button" id="ec-guest-less" aria-label="<?php esc_attr_e('One fewer', 'eventcrew'); ?>">−</button>
+            <span id="ec-guest-count">+0</span>
+            <button type="button" id="ec-guest-more" aria-label="<?php esc_attr_e('One more', 'eventcrew'); ?>">+</button>
+        </div>
+        <div class="ec-stack">
+            <button type="button" class="ec-primary" id="ec-guest-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
+        </div>
+    </div>
+
+    <div id="ec-step-member" hidden>
+        <h3><?php esc_html_e('Crew member', 'eventcrew'); ?></h3>
         <input type="search" id="ec-member" placeholder="<?php esc_attr_e('Member name or email', 'eventcrew'); ?>" autocomplete="off">
         <ul id="ec-members"></ul>
-    </section>
-</main>
+        <h3><?php esc_html_e('New member', 'eventcrew'); ?></h3>
+        <p class="ec-muted"><?php esc_html_e('They get an email to confirm their address and join the Telegram group.', 'eventcrew'); ?></p>
+        <label><?php esc_html_e('Name', 'eventcrew'); ?>
+            <input type="text" id="ec-new-name" autocomplete="off"></label>
+        <label><?php esc_html_e('Email', 'eventcrew'); ?>
+            <input type="email" id="ec-new-email" autocomplete="off"></label>
+        <div class="ec-stack">
+            <button type="button" id="ec-new-add"><?php esc_html_e('Add new member', 'eventcrew'); ?></button>
+        </div>
+    </div>
+
+    <div id="ec-step-choice" hidden>
+        <h3 id="ec-choice-name"></h3>
+        <div class="ec-stack">
+            <button type="button" id="ec-choice-credit"></button>
+            <button type="button" id="ec-choice-work"><?php esc_html_e('Working tonight: pick a task', 'eventcrew'); ?></button>
+        </div>
+    </div>
+
+    <div id="ec-step-tasks" hidden>
+        <h3><?php esc_html_e('Which task?', 'eventcrew'); ?></h3>
+        <ul id="ec-tasks"></ul>
+    </div>
+</dialog>
 <script>
 (function () {
     'use strict';
@@ -107,6 +193,12 @@ button:disabled{opacity:.5}
     // row is marked in; a redraw from the server keeps them.
     var localPlus = {};
     var timer = null;
+
+    // The Add popup: which step shows, the member picked, the guest's count.
+    var steps = ['choose', 'ticket', 'guest', 'member', 'choice', 'tasks'];
+    var current = 'choose';
+    var chosen = null;
+    var guestPlus = 0;
 
     var el = function (id) { return document.getElementById(id); };
 
@@ -138,8 +230,9 @@ button:disabled{opacity:.5}
         return response.json();
     }
 
+    // While the Add popup is open, messages show inside it.
     function say(message) {
-        el('ec-msg').textContent = message || '';
+        el(el('ec-add').open ? 'ec-add-msg' : 'ec-msg').textContent = message || '';
     }
 
     function plusOf(row) {
@@ -185,12 +278,13 @@ button:disabled{opacity:.5}
         who.appendChild(node('div', 'ec-name', row.name));
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }
 
-        // Crew members bring no guests, so their rows have no guest count.
-        if ('crew' !== row.kind) {
+        // Crew and free-entry credit rows have no guest count at all (their
+        // max is 0); a guest can bring as many as they are allowed.
+        if (row.max > 0) {
             less.setAttribute('aria-label', text.fewer);
             more.setAttribute('aria-label', text.more);
             less.disabled = count <= 0;
-            more.disabled = count >= config.maxPlus;
+            more.disabled = count >= row.max;
             less.addEventListener('click', function () { setPlus(row, count - 1); });
             more.addEventListener('click', function () { setPlus(row, count + 1); });
             plus.appendChild(less);
@@ -213,7 +307,7 @@ button:disabled{opacity:.5}
     }
 
     function setPlus(row, value) {
-        value = Math.max(0, Math.min(config.maxPlus, value));
+        value = Math.max(0, Math.min(row.max, value));
 
         if (!row.in) {
             localPlus[row.key] = value;
@@ -284,21 +378,93 @@ button:disabled{opacity:.5}
             data.members.forEach(function (member) {
                 var li = node('li');
                 var who = node('div', 'ec-who');
-                var give = node('button', '', text.give);
+                var pick = node('button', '', text.choose);
 
                 who.appendChild(node('div', 'ec-name', member.name));
                 who.appendChild(node('div', 'ec-detail', member.credits + ' ' + text.credits));
-                give.addEventListener('click', function () {
-                    give.disabled = true;
-                    post('give', { person: member.id }).then(function (result) {
-                        apply(result);
-                        say(result.message);
-                        searchMembers();
-                    }, failed);
+                pick.addEventListener('click', function () { showChoice(member); });
+
+                li.appendChild(who);
+                li.appendChild(pick);
+                list.appendChild(li);
+            });
+        }, failed);
+    }
+
+    function step(name) {
+        current = name;
+        steps.forEach(function (s) { el('ec-step-' + s).hidden = s !== name; });
+        el('ec-add-back').hidden = 'choose' === name;
+        el('ec-add-msg').textContent = '';
+    }
+
+    function openAdd() {
+        ['ec-ticket-name', 'ec-guest-name', 'ec-member', 'ec-new-name', 'ec-new-email'].forEach(function (id) {
+            el(id).value = '';
+        });
+        el('ec-members').textContent = '';
+        chosen = null;
+        setGuestPlus(0);
+        step('choose');
+        el('ec-add').showModal();
+    }
+
+    function setGuestPlus(value) {
+        guestPlus = Math.max(0, Math.min(config.maxPlus, value));
+        el('ec-guest-count').textContent = '+' + guestPlus + ' ' + text.extra;
+        el('ec-guest-less').disabled = guestPlus <= 0;
+        el('ec-guest-more').disabled = guestPlus >= config.maxPlus;
+    }
+
+    // An answer that ends the Add: on success the popup closes and the
+    // message shows on the page; otherwise it stays open and says why.
+    function done(result) {
+        apply(result);
+
+        if (result && result.ok) {
+            el('ec-add').close();
+        }
+
+        say(result ? result.message : text.failed);
+    }
+
+    function showChoice(member, message) {
+        var credit = el('ec-choice-credit');
+
+        chosen = member;
+        step('choice');
+        el('ec-choice-name').textContent = member.name;
+        credit.textContent = member.credits > 0 ? text.useCredit.replace('%d', member.credits) : text.noCredit;
+        credit.disabled = member.credits <= 0;
+        say(message);
+    }
+
+    function showTasks() {
+        var list = el('ec-tasks');
+
+        post('tasks', { person: chosen.id }).then(function (data) {
+            step('tasks');
+            list.textContent = '';
+
+            if (!data.tasks || 0 === data.tasks.length) {
+                list.appendChild(node('li', 'ec-muted', text.noTasks));
+                return;
+            }
+
+            data.tasks.forEach(function (task) {
+                var li = node('li');
+                var who = node('div', 'ec-who');
+                var join = node('button', 'ec-primary', text.signUp);
+
+                who.appendChild(node('div', 'ec-name', task.label));
+                who.appendChild(node('div', 'ec-detail', task.free + ' ' + text.free));
+                join.addEventListener('click', function () {
+                    join.disabled = true;
+                    post('work', { person: chosen.id, task: task.id }).then(done, failed);
                 });
 
                 li.appendChild(who);
-                li.appendChild(give);
+                li.appendChild(join);
                 list.appendChild(li);
             });
         }, failed);
@@ -307,6 +473,56 @@ button:disabled{opacity:.5}
     var searchTimer = null;
 
     el('ec-filter').addEventListener('input', draw);
+
+    el('ec-add-open').addEventListener('click', openAdd);
+    el('ec-add-close').addEventListener('click', function () { el('ec-add').close(); });
+    el('ec-add-back').addEventListener('click', function () {
+        step({ choice: 'member', tasks: 'choice' }[current] || 'choose');
+    });
+    // A tap on the dimmed area outside the popup lands on the dialog itself.
+    el('ec-add').addEventListener('click', function (event) {
+        if (event.target === el('ec-add')) {
+            el('ec-add').close();
+        }
+    });
+    el('ec-pick-ticket').addEventListener('click', function () { step('ticket'); el('ec-ticket-name').focus(); });
+    el('ec-pick-guest').addEventListener('click', function () { step('guest'); el('ec-guest-name').focus(); });
+    el('ec-pick-member').addEventListener('click', function () { step('member'); el('ec-member').focus(); });
+
+    el('ec-ticket-add').addEventListener('click', function () {
+        post('ticket', { name: el('ec-ticket-name').value.trim() }).then(done, failed);
+    });
+
+    el('ec-guest-less').addEventListener('click', function () { setGuestPlus(guestPlus - 1); });
+    el('ec-guest-more').addEventListener('click', function () { setGuestPlus(guestPlus + 1); });
+    el('ec-guest-add').addEventListener('click', function () {
+        var name = el('ec-guest-name').value.trim();
+
+        if ('' === name) {
+            say(text.needName);
+            return;
+        }
+
+        post('guest', { name: name, plus: guestPlus }).then(done, failed);
+    });
+
+    el('ec-new-add').addEventListener('click', function () {
+        post('newMember', { name: el('ec-new-name').value.trim(), email: el('ec-new-email').value.trim() })
+            .then(function (data) {
+                if (data && data.ok && data.member) {
+                    showChoice(data.member, data.message);
+                    return;
+                }
+
+                say(data ? data.message : text.failed);
+            }, failed);
+    });
+
+    el('ec-choice-credit').addEventListener('click', function () {
+        post('give', { person: chosen.id }).then(done, failed);
+    });
+    el('ec-choice-work').addEventListener('click', showTasks);
+
     el('ec-member').addEventListener('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(searchMembers, 300);

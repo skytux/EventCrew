@@ -6,12 +6,13 @@ namespace EventCrew\Web;
 
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorSession;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
  * The sales desk (the door page) over HTTP: the login link, the page itself, its JSON state
- * and the four actions the page posts.
+ * and the actions the page posts.
  *
  * Everything goes through admin-ajax.php rather than a REST route or a page on
  * the site. admin-ajax is never cached by W3 Total Cache, and InfinityFree
@@ -31,12 +32,19 @@ final class DoorController
     public const PLUS_ACTION = 'eventcrew_door_plus';
     public const SEARCH_ACTION = 'eventcrew_door_search';
     public const GIVE_ACTION = 'eventcrew_door_give';
+    public const TICKET_ACTION = 'eventcrew_door_ticket';
+    public const GUEST_ACTION = 'eventcrew_door_guest';
+    public const TASKS_ACTION = 'eventcrew_door_tasks';
+    public const WORK_ACTION = 'eventcrew_door_work';
+    public const NEW_MEMBER_ACTION = 'eventcrew_door_new_member';
 
     /** How often the page asks for fresh state, in milliseconds. */
     public const POLL_MS = 4000;
 
-    public function __construct(private readonly DoorDesk $desk)
-    {
+    public function __construct(
+        private readonly DoorDesk $desk,
+        private readonly DoorNewMember $newMember
+    ) {
     }
 
     public function boot(): void
@@ -48,6 +56,11 @@ final class DoorController
             self::PLUS_ACTION,
             self::SEARCH_ACTION,
             self::GIVE_ACTION,
+            self::TICKET_ACTION,
+            self::GUEST_ACTION,
+            self::TASKS_ACTION,
+            self::WORK_ACTION,
+            self::NEW_MEMBER_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -123,6 +136,9 @@ final class DoorController
         $kind = isset($_POST['kind']) ? sanitize_key(wp_unslash($_POST['kind'])) : '';
         $ref = isset($_POST['ref']) ? (int) $_POST['ref'] : 0;
         $plus = isset($_POST['plus']) ? (int) $_POST['plus'] : 0;
+        $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+        $personId = isset($_POST['person']) ? (int) $_POST['person'] : 0;
+        $doorPersonId = $session['person']->id;
 
         switch ($action) {
             case self::MARK_ACTION:
@@ -142,11 +158,58 @@ final class DoorController
                 // No break: json() exits.
 
             case self::GIVE_ACTION:
-                $code = $this->desk->giveTicket($date, isset($_POST['person']) ? (int) $_POST['person'] : 0);
+                $code = $this->desk->giveTicket($date, $personId);
                 $this->json([
                     'ok' => TicketRedemptionService::TICKET_READY === $code,
                     'message' => $this->desk->giveTicketText($code),
                     'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::TICKET_ACTION:
+                $ok = $this->desk->addDoorSale($date, $doorPersonId, $name);
+                $this->json([
+                    'ok' => $ok,
+                    'message' => $ok
+                        ? __('Door ticket added and checked in.', 'eventcrew')
+                        : __('The ticket could not be added. Try again.', 'eventcrew'),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::GUEST_ACTION:
+                $ok = $this->desk->addGuest($date, $doorPersonId, $name, $plus);
+                $this->json([
+                    'ok' => $ok,
+                    'message' => $ok
+                        ? __('Guest added and checked in.', 'eventcrew')
+                        : __('Give the guest’s name.', 'eventcrew'),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::TASKS_ACTION:
+                $this->json(['tasks' => $this->desk->openTasks($date, $personId)]);
+                // No break: json() exits.
+
+            case self::WORK_ACTION:
+                $task = isset($_POST['task']) ? (int) $_POST['task'] : 0;
+                $code = $this->desk->workTonight($date, $doorPersonId, $personId, $task);
+                $this->json([
+                    'ok' => DoorDesk::WORK_OK === $code,
+                    'message' => $this->desk->workTonightText($code),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::NEW_MEMBER_ACTION:
+                $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+                $created = $this->newMember->create($name, $email);
+                $member = null === $created['person'] ? null : $this->desk->member($created['person']->id);
+                $this->json([
+                    'ok' => null !== $member,
+                    'message' => $this->newMember->text($created['code']),
+                    'member' => $member,
                 ]);
                 // No break: json() exits.
         }
@@ -200,6 +263,11 @@ final class DoorController
                 'plus' => self::PLUS_ACTION,
                 'search' => self::SEARCH_ACTION,
                 'give' => self::GIVE_ACTION,
+                'ticket' => self::TICKET_ACTION,
+                'guest' => self::GUEST_ACTION,
+                'tasks' => self::TASKS_ACTION,
+                'work' => self::WORK_ACTION,
+                'newMember' => self::NEW_MEMBER_ACTION,
             ],
         ];
 

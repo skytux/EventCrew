@@ -28,6 +28,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
@@ -493,7 +494,20 @@ final class Kernel
 
         $this->container->singleton(
             DoorController::class,
-            fn (Container $container) => new DoorController($container->get(DoorDesk::class))
+            fn (Container $container) => new DoorController(
+                $container->get(DoorDesk::class),
+                $container->get(DoorNewMember::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorNewMember::class,
+            fn (Container $container) => new DoorNewMember(
+                $container->get(PersonRepository::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
+            )
         );
 
         $this->container->singleton(

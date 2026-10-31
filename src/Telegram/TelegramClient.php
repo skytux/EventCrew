@@ -280,9 +280,14 @@ final class TelegramClient
      *
      * @return array<string, mixed>|null
      */
-    public function createChatInviteLink(int|string $chatId, string $name = ''): ?array
+    public function createChatInviteLink(int|string $chatId, string $name = '', int $memberLimit = 0): ?array
     {
         $params = ['chat_id' => $chatId];
+
+        if ($memberLimit > 0) {
+            // The link stops working once this many people have joined by it.
+            $params['member_limit'] = $memberLimit;
+        }
 
         if ('' !== $name) {
             // Shown to admins in Telegram's invite-link list, so it is obvious

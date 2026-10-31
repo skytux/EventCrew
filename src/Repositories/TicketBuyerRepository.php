@@ -9,12 +9,14 @@ use EventCrew\Models\TicketBuyer;
 
 /**
  * All reads and writes of the ticket buyers table: the names imported from the
- * Holvi web shop for one night's door list.
+ * Holvi web shop for one night's door list, and the tickets sold at the door.
  */
 final class TicketBuyerRepository
 {
     /** The name column's width; a longer name is cut to fit. */
     public const MAX_NAME_LENGTH = 191;
+
+    public const SOURCE_DOOR = TicketBuyer::SOURCE_DOOR;
 
     private function table(): string
     {
@@ -60,8 +62,12 @@ final class TicketBuyerRepository
 
         $seen = [];
 
+        // Door sales are not compared: a name sold at the door can still be
+        // a Holvi buyer, and the import must not drop it.
         foreach ($this->forDate($date) as $buyer) {
-            $seen[self::key($buyer->name)] = true;
+            if (! $buyer->isDoorSale()) {
+                $seen[self::key($buyer->name)] = true;
+            }
         }
 
         $createdAt = current_time('mysql');
@@ -98,6 +104,30 @@ final class TicketBuyerRepository
     }
 
     /**
+     * Records one ticket sold at the door on $date and returns its id, or 0
+     * when the write failed. The name may be empty, and two tickets may carry
+     * the same name: each one is a person paying at the door.
+     */
+    public function addDoorSale(string $date, string $name): int
+    {
+        global $wpdb;
+
+        $inserted = $wpdb->insert(
+            $this->table(),
+            [
+                'event_date' => $date,
+                'name' => self::clean($name),
+                'source' => self::SOURCE_DOOR,
+                'batch' => '',
+                'created_at' => current_time('mysql'),
+            ],
+            ['%s', '%s', '%s', '%s', '%s']
+        );
+
+        return false !== $inserted && (int) $inserted > 0 ? (int) $wpdb->insert_id : 0;
+    }
+
+    /**
      * Whether a mail with this batch id has already been imported for $date.
      */
     public function hasBatch(string $date, string $batch): bool
@@ -121,13 +151,19 @@ final class TicketBuyerRepository
 
     /**
      * Deletes every imported buyer on $date - the "Reset import" button - and
-     * returns how many rows went.
+     * returns how many rows went. Tickets sold at the door stay.
      */
     public function clearForDate(string $date): int
     {
         global $wpdb;
 
-        $deleted = $wpdb->delete($this->table(), ['event_date' => $date], ['%s']);
+        $deleted = $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$this->table()} WHERE event_date = %s AND source <> %s",
+                $date,
+                self::SOURCE_DOOR
+            )
+        );
 
         return false === $deleted ? 0 : (int) $deleted;
     }

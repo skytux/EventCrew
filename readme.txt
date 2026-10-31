@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.34.1
+Stable tag: 1.35.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,16 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.35.0 =
+* Sales desk: an "Add" button in the top bar, next to the count. It opens a popup that asks what to add: Ticket, Guest or Crew member.
+* Ticket: a ticket sold at the door, with an optional name. It is checked in at once and listed under the new "Door tickets" list. "Reset import" for Holvi buyers leaves door tickets alone, and the roster page's Holvi list does not show them.
+* Guest: a name and how many extra people they may bring, 0 by default. The guest is checked in at once.
+* Crew member: search by name or email (members with no credit are listed too), or add a new member with a name and an email. A new member gets one email with a button that confirms the address and signs them in, and a one-person invite link to the crew's Telegram group. Then choose "Use a credit" or "Working tonight", which lists tonight's tasks with a free place; signing up there checks them in and marks them arrived.
+* Sales desk: the "Give ticket" search at the bottom of the page is gone; it lives in the Add popup now.
+* Sales desk: a guest's count starts at +0, not at the number on the guest list. Each guest row says how many extra people they are allowed ("allowed +2"), the + button stops there, and the expected total counts that allowance.
+* Sales desk: free-entry credit rows have no guest buttons any more, like crew rows: a credit lets in one person.
+* Telegram /guest help: the examples now say that no +N (or +0) means just the guest, and +N means N extra people.
 
 = 1.34.1 =
 * Sales desk: clearer check-in. The row button now says "Check in", and "✓ In" once tapped. The top line says "0 of 12 checked in".
@@ -490,6 +500,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.35.0 =
+Sales desk "Add" popup: door tickets, guests, and crew members (credit, a task tonight, or a new member). Guest counts start at +0. No database change.
 
 = 1.34.1 =
 Sales desk wording: "Check in" button, guest count label, no guest count on crew rows. No database change.

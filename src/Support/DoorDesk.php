@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
@@ -16,20 +17,27 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
- * The door page's logic: who is on tonight's list, who has come in, and the
- * three things the door crew can do - mark someone in or out, change how many
- * people they brought, and give a member a ticket from their credit.
+ * The door page's logic: who is on tonight's list, who has come in, and what
+ * the door crew can do - mark someone in or out, change how many people they
+ * brought, and "Add": a ticket sold at the door, a guest, or a member, who
+ * either spends a credit or is signed up for one of tonight's tasks.
  *
  * Everything here takes plain values and returns plain arrays, so it is
  * testable without a request; Web\DoorController is the thin HTTP layer on top.
  */
 final class DoorDesk
 {
-    /** Most members the "Give ticket" search lists. */
+    /** Most members the member search lists. */
     private const SEARCH_LIMIT = 20;
 
-    /** Shortest search the "Give ticket" box answers. */
+    /** Shortest search the member search answers. */
     public const SEARCH_MIN = 2;
+
+    /** workTonight() answers. */
+    public const WORK_OK = 'ok';
+    public const WORK_FULL = 'full';
+    public const WORK_LEADER_ONLY = 'leader_only';
+    public const WORK_UNAVAILABLE = 'unavailable';
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -126,13 +134,15 @@ final class DoorDesk
     }
 
     /**
-     * The whole page state for one night: the four sections, the counter, and
-     * a version hash the page compares to decide whether to redraw.
+     * The whole page state for one night: the five sections, the counter, and
+     * a version hash the page compares to decide whether to redraw. A guest
+     * counts as expected with all the people they are allowed to bring, since
+     * those may still come; the "in" side counts only who did.
      *
      * @return array{
      *     date: string, day: string, in: int, expected: int, version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
-     *         key: string, kind: string, ref: int, name: string, detail: string, plus: int, in: bool
+     *         key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
      *     }>}>
      * }
      */
@@ -140,12 +150,15 @@ final class DoorDesk
     {
         $checkins = $this->checkins->forDate($date);
         [$crew, $credit] = $this->entrants($date);
+        $guests = $this->guestRows($date);
+        [$holvi, $door] = $this->ticketRows($date);
 
         $sections = [
             $this->section('crew', __('Crew working', 'eventcrew'), $crew, $checkins),
             $this->section('credit', __('Free-entry credit', 'eventcrew'), $credit, $checkins),
-            $this->section('guest', __('Guests', 'eventcrew'), $this->guestRows($date), $checkins),
-            $this->section('buyer', __('Holvi tickets', 'eventcrew'), $this->buyerRows($date), $checkins),
+            $this->section('guest', __('Guests', 'eventcrew'), $guests, $checkins),
+            $this->section('buyer', __('Holvi tickets', 'eventcrew'), $holvi, $checkins),
+            $this->section('door', __('Door tickets', 'eventcrew'), $door, $checkins),
         ];
 
         $in = 0;
@@ -153,7 +166,8 @@ final class DoorDesk
 
         foreach ($sections as $section) {
             foreach ($section['rows'] as $row) {
-                $expected += 1 + $row['plus'];
+                $allowed = CheckinRepository::KIND_GUEST === $row['kind'] ? $row['max'] : 0;
+                $expected += 1 + max($row['plus'], $allowed);
                 $in += $row['in'] ? 1 + $row['plus'] : 0;
             }
         }
@@ -176,13 +190,18 @@ final class DoorDesk
      * signed-up assignments that night into "arrived", recorded as changed by
      * the person holding the door session; marking them out again does not
      * undo that, since attendance is its own record. Returns false when the
-     * entry is not on tonight's list.
+     * entry is not on tonight's list. The plus-ones are capped at what the
+     * entry may bring.
      */
     public function mark(string $date, int $doorPersonId, string $kind, int $refId, bool $in, int $plusOnes): bool
     {
-        if (! $this->isOnList($date, $kind, $refId)) {
+        $row = $this->findRow($date, $kind, $refId);
+
+        if (null === $row) {
             return false;
         }
+
+        $plusOnes = min($plusOnes, $row['max']);
 
         if (! $in) {
             $this->checkins->unmark($date, $kind, $refId);
@@ -205,18 +224,62 @@ final class DoorDesk
      */
     public function setPlusOnes(string $date, string $kind, int $refId, int $plusOnes): bool
     {
-        if (! $this->isOnList($date, $kind, $refId)) {
+        $row = $this->findRow($date, $kind, $refId);
+
+        if (null === $row) {
             return false;
         }
 
-        $this->checkins->setPlusOnes($date, $kind, $refId, $plusOnes);
+        $this->checkins->setPlusOnes($date, $kind, $refId, min($plusOnes, $row['max']));
 
         return true;
     }
 
     /**
-     * Members matching $query by name or email who have a credit to spend and
-     * are not already free tonight - the "Give ticket" pick-list.
+     * Records a ticket sold at the door, already marked in. The name may be
+     * empty. Returns false when the write failed.
+     */
+    public function addDoorSale(string $date, int $doorPersonId, string $name): bool
+    {
+        $id = $this->buyers->addDoorSale($date, $name);
+
+        if ($id <= 0) {
+            return false;
+        }
+
+        $this->checkins->mark($date, CheckinRepository::KIND_BUYER, $id, 0, $doorPersonId);
+
+        return true;
+    }
+
+    /**
+     * Adds a guest at the door, already marked in with none of their extra
+     * people yet: the door crew counts those in as they come. Returns false
+     * for an empty name or a failed write.
+     */
+    public function addGuest(string $date, int $doorPersonId, string $name, int $allowed): bool
+    {
+        $name = trim($name);
+
+        if ('' === $name) {
+            return false;
+        }
+
+        $id = $this->guests->add($date, $name, max(0, $allowed), '', $doorPersonId);
+
+        if ($id <= 0) {
+            return false;
+        }
+
+        $this->checkins->mark($date, CheckinRepository::KIND_GUEST, $id, 0, $doorPersonId);
+
+        return true;
+    }
+
+    /**
+     * Members matching $query by name or email who are not on tonight's crew
+     * or credit list yet, with their credit balance - the "Add" member search.
+     * A member with no credit is listed too: they can still work tonight.
      *
      * @return array<int, array{id: int, name: string, credits: int}>
      */
@@ -242,14 +305,125 @@ final class DoorDesk
                 continue;
             }
 
-            $balance = $this->standing->for($person->id)->creditBalance;
-
-            if ($balance > 0) {
-                $matches[] = ['id' => $person->id, 'name' => $person->name(), 'credits' => $balance];
-            }
+            $matches[] = [
+                'id' => $person->id,
+                'name' => $person->name(),
+                'credits' => max(0, $this->standing->for($person->id)->creditBalance),
+            ];
         }
 
         return $matches;
+    }
+
+    /**
+     * One member as the member search lists them, or null when there is no
+     * such member.
+     *
+     * @return array{id: int, name: string, credits: int}|null
+     */
+    public function member(int $personId): ?array
+    {
+        $person = $this->people->find($personId);
+
+        if (null === $person || $person->isAnonymized()) {
+            return null;
+        }
+
+        return [
+            'id' => $person->id,
+            'name' => $person->name(),
+            'credits' => max(0, $this->standing->for($person->id)->creditBalance),
+        ];
+    }
+
+    /**
+     * Tonight's tasks this member could be signed up for at the door: those
+     * with a free place, leaving out leader-only ones they cannot take.
+     *
+     * @return array<int, array{id: int, label: string, free: int}>
+     */
+    public function openTasks(string $date, int $personId): array
+    {
+        $person = $this->people->find($personId);
+
+        if (null === $person) {
+            return [];
+        }
+
+        $tasks = $this->tasks->forDate($date);
+        $taken = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
+        $open = [];
+
+        foreach ($tasks as $task) {
+            $free = $task->capacity - ($taken[$task->id] ?? 0);
+
+            if ($free <= 0 || SignupService::blocksLeaderSlot($task, $person)) {
+                continue;
+            }
+
+            $time = $task->timeRange();
+            $open[] = [
+                'id' => $task->id,
+                'label' => '' === $time ? $task->roleLabel() : $task->roleLabel() . ' · ' . $time,
+                'free' => $free,
+            ];
+        }
+
+        return $open;
+    }
+
+    /**
+     * Signs a member up for one of tonight's tasks from the door and marks
+     * them in, which also marks the task arrived. The standing gate is not
+     * asked: the person signing them up is at the door with them. The place
+     * limit and the leader-only rule still hold. Answers a WORK_* code.
+     */
+    public function workTonight(string $date, int $doorPersonId, int $personId, int $taskId): string
+    {
+        $person = $this->people->find($personId);
+        $task = $this->tasks->find($taskId);
+
+        if (null === $person || $person->isAnonymized() || null === $task || $task->taskDate !== $date) {
+            return self::WORK_UNAVAILABLE;
+        }
+
+        if (SignupService::blocksLeaderSlot($task, $person)) {
+            return self::WORK_LEADER_ONLY;
+        }
+
+        $outcome = $this->assignments->join($taskId, $personId);
+
+        if (AssignmentRepository::JOIN_FULL === $outcome) {
+            return self::WORK_FULL;
+        }
+
+        $joined = [
+            AssignmentRepository::JOIN_OK,
+            AssignmentRepository::JOIN_REJOINED,
+            AssignmentRepository::JOIN_DUPLICATE,
+        ];
+
+        if (! in_array($outcome, $joined, true)) {
+            return self::WORK_UNAVAILABLE;
+        }
+
+        $this->checkins->mark($date, CheckinRepository::KIND_CREW, $personId, 0, $doorPersonId);
+        $this->markCrewArrived($date, $personId, $doorPersonId);
+
+        return self::WORK_OK;
+    }
+
+    /**
+     * A plain sentence for a workTonight() answer.
+     */
+    public function workTonightText(string $code): string
+    {
+        return match ($code) {
+            self::WORK_OK => __('Signed up and checked in. They are on the crew list now.', 'eventcrew'),
+            self::WORK_FULL => __('That task has just filled up. Pick another one.', 'eventcrew'),
+            self::WORK_LEADER_ONLY => __('That task is for crew leaders only.', 'eventcrew'),
+            default => __('They could not be signed up for that task.', 'eventcrew'),
+        };
     }
 
     /**
@@ -285,8 +459,8 @@ final class DoorDesk
      * entrant's standing, which the door page does not show and which would
      * be a dozen queries per person on every 4-second poll.
      *
-     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}>,
-     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}>}
+     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>,
+     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>}
      */
     private function entrants(string $date): array
     {
@@ -330,18 +504,23 @@ final class DoorDesk
     }
 
     /**
-     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}>
+     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>
      */
     private function guestRows(string $date): array
     {
         $rows = [];
 
+        // A guest's count starts at none: the list says how many they may
+        // bring, and the door counts the ones who come.
         foreach ($this->guests->forDate($date) as $guest) {
+            /* translators: %d: how many extra people this guest may bring */
+            $allowed = sprintf(__('allowed +%d', 'eventcrew'), $guest->plusOnes);
+
             $rows[] = $this->row(
                 CheckinRepository::KIND_GUEST,
                 $guest->id,
                 $guest->name,
-                $guest->note,
+                '' === $guest->note ? $allowed : $guest->note . ' · ' . $allowed,
                 $guest->plusOnes
             );
         }
@@ -350,35 +529,52 @@ final class DoorDesk
     }
 
     /**
-     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}>
+     * Tonight's Holvi buyers and door sales, as two lists.
+     *
+     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>,
+     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>}
      */
-    private function buyerRows(string $date): array
+    private function ticketRows(string $date): array
     {
-        $rows = [];
+        $holvi = [];
+        $door = [];
 
         foreach ($this->buyers->forDate($date) as $buyer) {
-            $rows[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, __('Holvi', 'eventcrew'));
+            if ($buyer->isDoorSale()) {
+                $name = '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name;
+                $door[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $name, __('Door', 'eventcrew'));
+                continue;
+            }
+
+            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, __('Holvi', 'eventcrew'));
         }
 
-        return $rows;
+        return [$holvi, $door];
     }
 
     /**
-     * @return array{kind: string, ref: int, name: string, detail: string, plus: int}
+     * A list row. $max is how many extra people the entry may bring: a
+     * guest's allowance, none for crew or a free-entry credit (the credit
+     * covers one person), the general cap for a ticket.
+     *
+     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}
      */
-    private function row(string $kind, int $ref, string $name, string $detail, int $plus = 0): array
+    private function row(string $kind, int $ref, string $name, string $detail, ?int $max = null): array
     {
-        return ['kind' => $kind, 'ref' => $ref, 'name' => $name, 'detail' => $detail, 'plus' => $plus];
+        $alone = [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT];
+        $max ??= in_array($kind, $alone, true) ? 0 : CheckinRepository::MAX_PLUS_ONES;
+
+        return ['kind' => $kind, 'ref' => $ref, 'name' => $name, 'detail' => $detail, 'plus' => 0, 'max' => $max];
     }
 
     /**
      * Adds each row's check-in to it. A checked-in row shows the plus-ones
      * written at the door, which may differ from the list's default.
      *
-     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}> $rows
+     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
      * @param array<string, int> $checkins
      * @return array{key: string, title: string, rows: array<int, array{
-     *     key: string, kind: string, ref: int, name: string, detail: string, plus: int, in: bool
+     *     key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
      * }>}
      */
     private function section(string $key, string $title, array $rows, array $checkins): array
@@ -396,6 +592,7 @@ final class DoorDesk
                 'name' => $row['name'],
                 'detail' => $row['detail'],
                 'plus' => $in ? $checkins[$rowKey] : $row['plus'],
+                'max' => $row['max'],
                 'in' => $in,
             ];
         }
@@ -403,25 +600,30 @@ final class DoorDesk
         return ['key' => $key, 'title' => $title, 'rows' => $out];
     }
 
-    private function isOnList(string $date, string $kind, int $refId): bool
+    /**
+     * The entry's row on tonight's list, or null when it is not on it.
+     *
+     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}|null
+     */
+    private function findRow(string $date, string $kind, int $refId): ?array
     {
         if (! in_array($kind, CheckinRepository::kinds(), true) || $refId <= 0) {
-            return false;
+            return null;
         }
 
         $rows = match ($kind) {
             CheckinRepository::KIND_GUEST => $this->guestRows($date),
-            CheckinRepository::KIND_BUYER => $this->buyerRows($date),
+            CheckinRepository::KIND_BUYER => array_merge(...$this->ticketRows($date)),
             default => array_merge(...$this->entrants($date)),
         };
 
         foreach ($rows as $row) {
             if ($row['kind'] === $kind && $row['ref'] === $refId) {
-                return true;
+                return $row;
             }
         }
 
-        return false;
+        return null;
     }
 
     private function markCrewArrived(string $date, int $personId, int $doorPersonId): void
@@ -443,8 +645,8 @@ final class DoorDesk
     }
 
     /**
-     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}> $rows
-     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int}>
+     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
+     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>
      */
     private function sorted(array $rows): array
     {

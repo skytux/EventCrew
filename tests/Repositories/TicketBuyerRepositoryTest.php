@@ -78,12 +78,37 @@ final class TicketBuyerRepositoryTest extends TestCase
         self::assertFalse((new TicketBuyerRepository())->hasBatch('2026-08-01', ''));
     }
 
-    public function testClearForDateDeletesOnlyThatDate(): void
+    public function testClearForDateDeletesOnlyThatDateAndKeepsDoorSales(): void
     {
+        $this->wpdb->nextQueryResults[] = 3;
+
         $deleted = (new TicketBuyerRepository())->clearForDate('2026-08-01');
 
-        self::assertSame(1, $deleted);
-        self::assertSame(['event_date' => '2026-08-01'], $this->wpdb->deletes[0]['where']);
+        self::assertSame(3, $deleted);
+        self::assertStringContainsString("event_date = '2026-08-01' AND source <> 'door'", $this->wpdb->lastQuery());
+    }
+
+    public function testAddManyDoesNotSkipANameOnlySoldAtTheDoor(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Ada Lovelace', 'source' => 'door'],
+        ];
+
+        $added = (new TicketBuyerRepository())->addMany('2026-08-01', ['Ada Lovelace'], 'paste', '');
+
+        self::assertSame(1, $added);
+    }
+
+    public function testADoorSaleMayHaveNoNameAndRepeatAName(): void
+    {
+        $repository = new TicketBuyerRepository();
+
+        self::assertSame(1, $repository->addDoorSale('2026-08-01', ''));
+        self::assertSame(2, $repository->addDoorSale('2026-08-01', '  Ada  Lovelace '));
+        self::assertSame(3, $repository->addDoorSale('2026-08-01', 'Ada Lovelace'));
+        self::assertSame('door', $this->wpdb->inserts[0]['data']['source']);
+        self::assertSame('', $this->wpdb->inserts[0]['data']['name']);
+        self::assertSame('Ada Lovelace', $this->wpdb->inserts[1]['data']['name']);
     }
 
     public function testCountForDate(): void
