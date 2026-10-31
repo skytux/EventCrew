@@ -41,7 +41,7 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertStringStartsWith('Only organizers', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testRefusesCrewWhoAreNotLeaderOrWelcomeThatNight(): void
+    public function testRefusesCrewWhoAreNotOnASalesDeskTaskThatNight(): void
     {
         $this->asker(false);
         $this->wpdb->nextCols[] = ['2026-08-01'];              // defaultDate

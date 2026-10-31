@@ -19,10 +19,10 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
-use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
@@ -211,7 +211,7 @@ abstract class TelegramTestCase extends TestCase
             new PermissionService(
                 new PersonRepository(),
                 $this->client(),
-                new LeaderEligibility(new AssignmentRepository(), new PersonRepository()),
+                new RoleConditions(new AssignmentRepository(), new PersonRepository()),
                 $mailer
             ),
             new NotificationSettingsService(new PersonRepository(), $this->client()),

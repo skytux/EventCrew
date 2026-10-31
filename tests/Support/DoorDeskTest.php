@@ -445,10 +445,11 @@ final class DoorDeskTest extends SalesDeskTestCase
 
     public function testOpenTasksListsTonightsTasksWithAFreePlace(): void
     {
+        $this->withDjRole();
         $full = $this->taskRow(6, 'bar');
-        $leader = $this->taskRow(7, Roles::LEADER_SLUG);
+        $dj = $this->taskRow(7, 'dj');
         $this->wpdb->nextRows[] = $this->personRow(8);
-        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00'), $full, $leader];
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00'), $full, $dj];
         $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1], ['task_id' => 6, 'taken' => 3]];
 
         $tasks = $this->desk()->openTasks(self::NIGHT, 8);
@@ -577,6 +578,50 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertStringContainsString("SELECT 9, 8, 'signed_up', '2026-07-20 12:00:00', 0", $insert);
     }
 
+    /**
+     * An organizer at the desk sees every task of the night with a free place
+     * and can sign anyone up to any of them, role or not.
+     */
+    public function testAnOrganizerAtTheDeskSeesAndFillsATaskOfARoleThePersonDoesNotHold(): void
+    {
+        $this->withDjRole();
+        $dj = $this->taskRow(9, 'dj');
+
+        $this->wpdb->nextRows[] = $this->personRow(8);              // the member
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate'), $dj];
+        $this->wpdb->nextResults[] = [];                            // occupancy
+        $this->wpdb->nextResults[] = [];                            // held tasks
+        $this->wpdb->nextRows[] = $this->personRow(1, true);        // the door person
+
+        self::assertSame([5, 9], array_column($this->desk()->openTasks(self::NIGHT, 8, 1), 'id'));
+
+        $this->wpdb->nextRows[] = $this->personRow(8);              // people->find
+        $this->wpdb->nextRows[] = $dj;                              // tasks->find
+        $this->wpdb->nextRows[] = $this->personRow(1, true);        // the door person
+        $this->wpdb->nextVars[] = 3;                                // join: capacity
+        $this->wpdb->nextRows[] = null;                             // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                        // join: inserted
+        $this->wpdb->nextQueryResults[] = 1;                        // the check-in
+
+        $this->desk()->workTonight(self::NIGHT, 1, 8, 9, true);
+
+        self::assertStringContainsString(
+            "SELECT 9, 8, 'signed_up'",
+            implode("\n", $this->wpdb->queries)
+        );
+    }
+
+    public function testCrewAtTheDeskCannotFillATaskOfARoleThePersonDoesNotHold(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = $this->personRow(8);   // people->find
+        $this->wpdb->nextRows[] = $this->taskRow(9, 'dj'); // tasks->find
+        $this->wpdb->nextRows[] = $this->personRow(1);   // the door person: Welcome crew
+
+        self::assertSame(DoorDesk::WORK_UNAVAILABLE, $this->desk()->workTonight(self::NIGHT, 1, 8, 9, true));
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
     public function testWorkingTonightRefusesTheOrganizeTaskToSomeoneWhoIsNotAnOrganizer(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(8);
@@ -627,13 +672,8 @@ final class DoorDeskTest extends SalesDeskTestCase
         );
     }
 
-    public function testWorkingTonightRefusesALeaderTaskAndAnotherNightsTask(): void
+    public function testWorkingTonightRefusesAnotherNightsTask(): void
     {
-        $this->wpdb->nextRows[] = $this->personRow(8);
-        $this->wpdb->nextRows[] = $this->taskRow(7, Roles::LEADER_SLUG);
-
-        self::assertSame(DoorDesk::WORK_LEADER_ONLY, $this->desk()->workTonight(self::NIGHT, 1, 8, 7));
-
         $elsewhere = $this->taskRow(5, 'decorate');
         $elsewhere['task_date'] = '2026-07-27';
         $this->wpdb->nextRows[] = $this->personRow(8);

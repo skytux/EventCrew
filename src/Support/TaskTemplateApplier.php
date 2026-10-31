@@ -19,8 +19,7 @@ use EventCrew\Repositories\TaskRepository;
 final class TaskTemplateApplier
 {
     public function __construct(
-        private readonly TaskRepository $tasks,
-        private readonly LeaderGate $leaderGate
+        private readonly TaskRepository $tasks
     ) {
     }
 
@@ -76,25 +75,8 @@ final class TaskTemplateApplier
             }
         }
 
-        // One reserved leader slot per event, when the feature is on for the day
-        // and the event doesn't already carry one. Untimed - the leader is on
-        // for the whole night, not a slice of it.
-        if ($this->leaderGate->isEnabled($event['date']) && ! isset($existing[Roles::LEADER_SLUG])) {
-            $this->tasks->create([
-                'event_post_id' => $eventPostId,
-                'event_label' => '',
-                'task_date' => $event['date'],
-                'starts_at' => null,
-                'ends_at' => null,
-                'role_slug' => Roles::LEADER_SLUG,
-                'capacity' => 1,
-                'notes' => '',
-            ]);
-            ++$created;
-        }
-
         // One organize task per event, for organizers only and with no limit on
-        // people. Untimed, like the leader slot: it covers the whole night.
+        // people. Untimed: it covers the whole night.
         if (! isset($existing[Roles::ORGANIZE_SLUG])) {
             $this->tasks->create(OrganizeTaskBackfill::taskData($event['date'], $eventPostId, ''));
             ++$created;

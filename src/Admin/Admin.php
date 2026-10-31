@@ -150,11 +150,6 @@ final class Admin
         );
 
         add_action(
-            'admin_post_eventcrew_toggle_leader',
-            [$this->container->get(RosterPage::class), 'toggleLeader']
-        );
-
-        add_action(
             'admin_post_eventcrew_save_person',
             [$this->container->get(PeoplePage::class), 'save']
         );

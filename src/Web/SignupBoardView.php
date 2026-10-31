@@ -233,23 +233,19 @@ final class SignupBoardView
     /**
      * Why this person cannot take this task, or '' if they can.
      *
-     * Both answers come from SignupService rather than being worked out again
-     * here: the gate rule in particular is the sort that gets edited in one
-     * place and silently disagreed with in another, and a board that offers a
-     * button the claim will refuse is worse than one that never offered it.
+     * The answer comes from SignupService rather than being worked out again
+     * here: the gate rule is the sort that gets edited in one place and
+     * silently disagreed with in another, and a board that offers a button the
+     * claim will refuse is worse than one that never offered it.
      *
-     * These are now the only two refusals there are - the third, an overlapping
-     * task, was dropped along with the rule itself - and both cost nothing per
-     * row to answer.
+     * The gate is now the only refusal shown here - an overlapping task was
+     * dropped along with its rule, and restricted tasks are left off the
+     * board - and it costs nothing per row to answer.
      */
     private function blockedReason(Task $task, ?Person $person, string $personRefusal): string
     {
         if (null === $person) {
             return '';
-        }
-
-        if (SignupService::blocksLeaderSlot($task, $person)) {
-            return SignupService::LEADER_ONLY;
         }
 
         return $personRefusal;

@@ -16,7 +16,7 @@ use EventCrew\Repositories\TaskRepository;
  *
  * "Open on other device" makes a link for the person holding the session.
  * "Login as" makes one for someone else who may run the door tonight: an
- * organizer, or the night's leader or Welcome crew once marked arrived - the
+ * organizer, or someone on the night's task of a sales-desk role once marked arrived - the
  * same people DoorLinkSender sends the link to, by SalesDeskGate's rule.
  *
  * Each link is an ordinary door login link (DoorSession::loginUrl, spent by
@@ -115,13 +115,13 @@ final class DoorHandoff
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             self::NO_SESSION => __('This device is not logged in to the sales desk. Ask an organizer for a new link (/sales in Telegram).', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            default => __('This person cannot run the sales desk tonight. Only organizers, the leader and the Welcome crew marked arrived can.', 'eventcrew'),
+            default => __('This person cannot run the sales desk tonight. Only organizers, and the crew marked arrived on tonight’s tasks that open the sales desk, can.', 'eventcrew'),
         };
     }
 
     /**
      * Everyone who may run the door on $date right now, by id: organizers,
-     * and the leader and Welcome crew who are marked arrived - asked of
+     * and the crew on sales-desk tasks who are marked arrived - asked of
      * SalesDeskGate person by person, as DoorLinkSender does.
      *
      * @return array<int, Person>

@@ -88,7 +88,6 @@ final class PersonRepository
                 'telegram_user_id' => $data['telegram_user_id'] ?? null,
                 'telegram_chat_id' => $data['telegram_chat_id'] ?? null,
                 'is_organizer' => ! empty($data['is_organizer']) ? 1 : 0,
-                'can_lead' => ! empty($data['can_lead']) ? 1 : 0,
                 'at_risk_pass' => ! empty($data['at_risk_pass']) ? 1 : 0,
                 'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
                 'role_slugs' => self::encodeRoles((array) ($data['role_slugs'] ?? [])),
@@ -138,7 +137,7 @@ final class PersonRepository
      * is - a person with no assignments at all would otherwise compare as NULL,
      * fail the < test, and quietly never be purged.
      *
-     * Organizers and crew leaders are held back regardless of age: their record
+     * Organizers are held back regardless of age: their record
      * is what a running event is administered through, and anonymising the
      * person who holds the door list is not a retention policy, it is an
      * outage. Rows already stripped are skipped, which is what makes this
@@ -170,7 +169,6 @@ final class PersonRepository
                  ) g ON g.person_id = p.id
                  WHERE p.anonymized_at IS NULL
                    AND p.is_organizer = 0
-                   AND p.can_lead = 0
                    AND GREATEST(
                        p.created_at,
                        COALESCE(a.last_at, p.created_at),
@@ -242,11 +240,6 @@ final class PersonRepository
         $this->update($id, ['is_organizer' => $isOrganizer ? 1 : 0]);
     }
 
-    public function setCanLead(int $id, bool $canLead): void
-    {
-        $this->update($id, ['can_lead' => $canLead ? 1 : 0]);
-    }
-
     /**
      * Replaces the restricted roles a person holds (DJ, VJ, ...). Unknown
      * slugs and Organize are dropped: Organize follows is_organizer.
@@ -270,7 +263,7 @@ final class PersonRepository
         foreach ($slugs as $slug) {
             $slug = sanitize_key((string) $slug);
 
-            if ('' === $slug || Roles::ORGANIZE_SLUG === $slug || Roles::LEADER_SLUG === $slug) {
+            if ('' === $slug || Roles::ORGANIZE_SLUG === $slug) {
                 continue;
             }
 
@@ -311,10 +304,18 @@ final class PersonRepository
         $this->update($id, ['at_risk_pass' => 0]);
     }
 
-    /** Records that the organizers have been told this person is leader-eligible. */
-    public function markLeaderNotified(int $id): void
+    /**
+     * Records that the organizers have been sent a role notice about this
+     * person ("met:<slug>" or "given:<slug>"), so it is never sent twice. The
+     * row is read fresh, so two notices in one run both stay recorded.
+     */
+    public function markRoleNotice(int $id, string $key): void
     {
-        $this->update($id, ['leader_eligible_notified_at' => current_time('mysql')]);
+        $person = $this->find($id);
+        $notices = null === $person ? [] : $person->roleNotices;
+        $notices[$key] = (string) current_time('mysql');
+
+        $this->update($id, ['role_notices' => (string) wp_json_encode($notices)]);
     }
 
     /**

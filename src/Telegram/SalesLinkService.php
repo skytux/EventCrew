@@ -12,13 +12,13 @@ use EventCrew\Support\SalesDeskGate;
  * /sales: a fresh login link for the sales desk (the door page), sent to the
  * asker's DM.
  *
- * Organizers get one for the next event night at any time. The night's leader
- * and Welcome crew get one from a few minutes before their task starts, once
- * they are marked arrived, until the event ends - SalesDeskGate's rule. Anyone
- * else is told plainly why not. It is how someone gets a second link when the
- * automatic one was opened on the wrong phone, or never came. The link goes
- * only to the DM, never into the group, since whoever opens it first holds the
- * session.
+ * Organizers get one for the next event night at any time. People on the
+ * night's task of a sales-desk role get one from a few minutes before their
+ * task starts, once they are marked arrived, until the event ends -
+ * SalesDeskGate's rule. Anyone else is told plainly why not. It is how someone
+ * gets a second link when the automatic one was opened on the wrong phone, or
+ * never came. The link goes only to the DM, never into the group, since
+ * whoever opens it first holds the session.
  */
 final class SalesLinkService
 {

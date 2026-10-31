@@ -34,10 +34,11 @@ only ones who ever need a wp-admin login.
 - **Roster & attendance** — mark who arrived / completed / no-showed, per person
   or a whole crew at once. This is also the **door list**: everyone in free
   tonight, workers plus credit-redeemers.
-- **Reputation, credits & a leader role** — a recency-weighted read of each
+- **Reputation, credits & role conditions** — a recency-weighted read of each
   person's history (never a stored score), earned free-entry credits, an optional
-  gate for at-risk members, and a trusted **crew leader** who can run a night
-  without being an admin. All tunable in Settings.
+  gate for at-risk members, and per-role conditions that tell the organizers when
+  someone has done enough to be given a role such as Crew leader. All tunable in
+  Settings.
 - **Notifications on both channels** — every notice can reach a person by Telegram
   DM *and* email, each type toggleable per channel from a web tab or the
   `/notifications` menu. Signup confirmations and reminders always send.
@@ -93,11 +94,11 @@ to the DM with a breadcrumb left behind.
 | `/replace` | anyone | Cover someone else's task |
 | `/notifications` | anyone | Choose which notices reach you, and on which channel |
 | `/board` | group | Post or refresh the board of open tasks |
-| `/roster` | organizers & the night's crew | The attendance roster; leaders can mark from it |
+| `/roster` | organizers & the night's crew | The attendance roster; the crew on that night's tasks of a role marked **Opens the sales desk** can mark from it |
 | `/gift` | organizers | Give someone free-entry credit(s) |
-| `/roletasks` | people with a restricted role | The tasks for their roles (never on the group board): sign up or cancel; organizers can also add someone, crew member or not |
-| `/roles` | organizers | Give or take away **leader** / a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, ...). `/allow` is the old name and still works |
-| `/leaders` | organizers | Who is eligible and who has been allowed to lead |
+| `/roletasks` | people with a restricted role | The tasks for their roles (never on the group board): sign up or cancel; organizers can also add someone, crew member or not, to any upcoming task |
+| `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
+| `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
 
 The board itself is grouped by event: two inert heading rows — `📅` and the
 event's name, then its date — introduce each group, and its tasks follow as
@@ -118,7 +119,7 @@ Telegram bot → Refresh the board** forces it now — for after an upgrade that
 changes the layout, or to watch a change land. It edits in place and notifies
 nobody; `/board` in the group posts a fresh copy at the bottom instead.
 
-## Reputation, credits & leadership
+## Reputation, credits & role conditions
 
 - **Standing** is a recency-weighted average of a person's finished outcomes
   (completed, replaced, late-cancelled, no-showed), rated once they have enough
@@ -131,12 +132,20 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   A member spends their own (`/ticket` or the web profile) and an organizer can
   hand them out (`/gift`, the People page, or the door list) — every grant tells
   the recipient, and there's an audit log on the People screen.
-- **Crew leaders** are a reserved, auto-managed role: when enabled for an event
-  (globally by default, per-event on the Roster page), a 🧭 Leader slot appears on
-  the board for crew the organizers have cleared with `/roles`. Its holder marks
-  that night's crew from Telegram, no wp-admin needed. A **Leadership** admin page
-  and `/leaders` show who has earned eligibility (completed enough of every role),
-  and organizers are alerted when someone newly qualifies.
+- **Role conditions**: each role in **Settings → Roles** can have conditions —
+  a number of completed tasks in named roles, or at least n different roles done
+  x times each, or both. Meeting them does not let anyone sign up; it is a signal.
+  The organizers get a Telegram message and an email the first time someone meets
+  a role's conditions and the first time someone is given a role (once per person
+  per role). The **Role conditions** tab on the People page and `/eligible` list
+  who meets them. **Crew leader** is an ordinary restricted role set up this way.
+- **Opens the sales desk**: a per-role setting in **Settings → Roles**. The crew
+  marked arrived on that night's task of such a role get the sales desk link, can
+  see who has a ticket and the guest list, and can mark the crew with `/roster`.
+  Welcome has it on by default.
+- **Organizers can add anyone to any task** of a night — with `/roletasks`, on
+  the crew page Admin tab, or at the sales desk — whether or not the person holds
+  the role.
 - **Restricted roles** (Organize, plus any role with **Only people with this
   role** ticked in **Settings → Roles**, such as DJ, VJ or Ceremony leader) have
   no limit on sign-ups and never count as places that need filling. Their tasks
@@ -210,8 +219,6 @@ shipped code actually reads, so there are no dead switches.
   webhook status is shown on the page.
 - **Settings → Reputation** — outcome weights, the good-standing threshold, the
   sign-up gate, tasks-per-credit, "rated after" and the recency half-life.
-- **Settings → Leadership** — whether events carry a leader slot by default, and
-  the per-role experience bar for eligibility.
 - **Settings → Notifications** — enable the on-request cron fallback if your host
   never fires WP-Cron. The next/last run times are shown.
 - **Settings → Mobile app** — pick the page holding `[eventcrew_signup]`, and

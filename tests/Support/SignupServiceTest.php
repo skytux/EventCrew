@@ -109,11 +109,31 @@ final class SignupServiceTest extends TestCase
      */
     public function testRefusalForAnswersWithoutClaiming(): void
     {
+        $this->withCrewLeaderRole();
         $this->wpdb->nextRows[] = $this->taskRow('leader');       // tasks->find
-        $this->wpdb->nextRows[] = ['id' => 9, 'can_lead' => 0];   // people->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
 
-        self::assertSame(SignupService::LEADER_ONLY, $this->service()->refusalFor(9, 5));
+        self::assertSame(SignupService::ORGANIZERS_ONLY, $this->service()->refusalFor(9, 5));
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /**
+     * Settings > Roles with Crew leader as a normal restricted role, switched
+     * off for new nights, with conditions set. The conditions do not let
+     * anyone sign up; only holding the role does.
+     */
+    private function withCrewLeaderRole(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            [
+                'slug' => 'leader',
+                'label' => 'Crew leader',
+                'restricted' => true,
+                'every_night' => false,
+                'conditions' => ['min_roles' => 1, 'times_each' => 1],
+            ],
+        ];
     }
 
     /**
@@ -124,38 +144,84 @@ final class SignupServiceTest extends TestCase
      */
     public function testTheBoardsTwoCheapChecksComeFromHere(): void
     {
+        $this->withCrewLeaderRole();
         $leaderTask = Task::fromRow($this->taskRow('leader'));
-        $person = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'can_lead' => 0]);
-        $leader = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'can_lead' => 1]);
+        $person = Person::fromRow(['id' => 9, 'email' => 'sam@example.com']);
+        $leader = Person::fromRow(['id' => 9, 'email' => 'sam@example.com', 'role_slugs' => '["leader"]']);
 
-        self::assertTrue(SignupService::blocksLeaderSlot($leaderTask, $person));
-        self::assertFalse(SignupService::blocksLeaderSlot($leaderTask, $leader));
-        self::assertFalse(SignupService::blocksLeaderSlot(Task::fromRow($this->taskRow('decorate')), $person));
+        self::assertTrue(SignupService::blocksRestrictedSlot($leaderTask, $person));
+        self::assertFalse(SignupService::blocksRestrictedSlot($leaderTask, $leader));
+        self::assertFalse(SignupService::blocksRestrictedSlot(Task::fromRow($this->taskRow('decorate')), $person));
 
         // The gate off means no person-level refusal, and no standing read.
         $this->options[SignupService::GATE_OPTION] = '0';
         self::assertSame('', $this->service()->personRefusal(9));
     }
 
-    public function testLeaderSlotRefusesAMemberWithoutLeaderPermission(): void
+    public function testACrewLeaderTaskRefusesSomeoneWithoutTheRole(): void
     {
-        $this->wpdb->nextRows[] = $this->taskRow('leader');       // claim tasks->find
-        $this->wpdb->nextRows[] = ['id' => 9, 'can_lead' => 0];   // people->find
+        $this->withCrewLeaderRole();
+        $this->wpdb->nextRows[] = $this->taskRow('leader');        // claim tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
 
-        self::assertSame(SignupService::LEADER_ONLY, $this->service()->claim(9, 5));
+        self::assertSame(SignupService::ORGANIZERS_ONLY, $this->service()->claim(9, 5, true));
         self::assertSame([], $this->wpdb->inserts);
     }
 
-    public function testLeaderSlotAcceptsClearedCrew(): void
+    public function testACrewLeaderTaskAcceptsSomeoneInTheCrewLeaderRoleGroup(): void
     {
+        $this->withCrewLeaderRole();
         $this->options[SignupService::GATE_OPTION] = '0';
-        $this->wpdb->nextRows[] = $this->taskRow('leader');       // claim tasks->find
-        $this->wpdb->nextRows[] = ['id' => 9, 'can_lead' => 1];   // people->find
-        $this->wpdb->nextVars[] = 1;                              // taskCapacity
-        $this->wpdb->nextRows[] = null;                           // join findFor
-        $this->wpdb->nextQueryResults[] = 1;                      // insert
+        $this->wpdb->nextRows[] = $this->taskRow('leader');                  // claim tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '["leader"]']; // people->find
+        $this->wpdb->nextVars[] = 1;                                         // taskCapacity
+        $this->wpdb->nextRows[] = null;                                      // join findFor
+        $this->wpdb->nextQueryResults[] = 1;                                 // insert
 
-        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5, true));
+    }
+
+    /**
+     * An organizer adding someone: no role is needed, the standing gate is
+     * not asked, and the person is not an organizer either.
+     */
+    public function testAnOrganizerCanAddSomeoneWithoutTheRoleToAnyTask(): void
+    {
+        $this->withCrewLeaderRole();
+        $this->wpdb->nextRows[] = $this->taskRow('leader');        // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
+        $this->wpdb->nextVars[] = 1;                               // taskCapacity
+        $this->wpdb->nextRows[] = null;                            // join findFor
+        $this->wpdb->nextQueryResults[] = 1;                       // insert
+
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claimByOrganizer(9, 5, true));
+    }
+
+    public function testAnOrganizerAddStillAsksTheCreditQuestionOnARoleTask(): void
+    {
+        $this->withCrewLeaderRole();
+        $this->wpdb->nextRows[] = $this->taskRow('leader');        // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
+
+        self::assertSame(SignupService::CREDIT_QUESTION, $this->service()->claimByOrganizer(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerAddSkipsTheStandingGateButNotABan(): void
+    {
+        // Gate on (setUp): claimByOrganizer reads no history at all.
+        $this->wpdb->nextRows[] = $this->taskRow('decorate'); // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9];                // people->find
+        $this->wpdb->nextVars[] = 2;                          // taskCapacity
+        $this->wpdb->nextRows[] = null;                       // join findFor
+        $this->wpdb->nextQueryResults[] = 1;                  // insert
+
+        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claimByOrganizer(9, 5));
+
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');                          // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'banned_at' => '2026-07-01 10:00:00'];   // people->find
+
+        self::assertSame(SignupService::GATED, $this->service()->claimByOrganizer(9, 5));
     }
 
     /**
@@ -217,7 +283,7 @@ final class SignupServiceTest extends TestCase
             ++$id;
         }
 
-        $this->wpdb->nextRows[] = $this->taskRow('decorate'); // claim tasks->find (not the leader slot)
+        $this->wpdb->nextRows[] = $this->taskRow('decorate'); // claim tasks->find (not a role task)
         $this->wpdb->nextResults[] = $atRisk;                 // gate: historyFor
         $this->wpdb->nextVars[] = 0;                          // gate: countFor redemptions
         $this->wpdb->nextVars[] = 0;                          // gate: sumFor grants

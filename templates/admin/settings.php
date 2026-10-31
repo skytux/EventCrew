@@ -3,7 +3,7 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -15,8 +15,6 @@
  * @var int $min_rated_tasks Finished tasks before a member is rated rather than "New".
  * @var int $reputation_half_life Days for an outcome to count half as much toward the score.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
- * @var bool $leader_enabled Whether new events carry a crew-leader slot by default.
- * @var int $leader_experience Completions in each role before someone is leader-eligible.
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
@@ -26,7 +24,7 @@
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
- * @var int $door_link_crew Minutes before their own task the leader and Welcome crew can get the link.
+ * @var int $door_link_crew Minutes before their own task the sales-desk crew can get the link.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
  * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
@@ -94,7 +92,8 @@ if (! defined('ABSPATH')) {
                     <th style="width:7em"><?php esc_html_e('Starts', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Ends', 'eventcrew'); ?></th>
                     <th style="width:7em"><?php esc_html_e('Archived', 'eventcrew'); ?></th>
-                    <th style="width:11em"><?php esc_html_e('Restricted', 'eventcrew'); ?></th>
+                    <th style="width:11em"><?php esc_html_e('Access', 'eventcrew'); ?></th>
+                    <th style="min-width:14em"><?php esc_html_e('Conditions', 'eventcrew'); ?></th>
                     <th style="min-width:16em"><?php esc_html_e('Description', 'eventcrew'); ?></th>
                 </tr>
             </thead>
@@ -111,6 +110,8 @@ if (! defined('ABSPATH')) {
                     'archived' => false,
                     'restricted' => false,
                     'every_night' => true,
+                    'sales_desk' => false,
+                    'conditions' => \EventCrew\Support\Roles::noConditions(),
                     'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
                     'start_offset' => null,
                     'end_offset' => null,
@@ -210,7 +211,57 @@ if (! defined('ABSPATH')) {
                                     value="1"
                                     <?php checked($eventcrew_role['every_night']); ?>>
                                 <?php esc_html_e('Add to every night', 'eventcrew'); ?>
+                            </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_sales_desk[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['sales_desk']); ?>>
+                                <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?>
                             </label>
+                        </td>
+                        <td>
+                            <?php $eventcrew_conditions = $eventcrew_role['conditions']; ?>
+                            <details<?php echo \EventCrew\Support\Roles::hasConditions($eventcrew_conditions) ? ' open' : ''; ?>>
+                                <summary><?php esc_html_e('Completed tasks', 'eventcrew'); ?></summary>
+                                <?php foreach ($roles as $eventcrew_count_role) : ?>
+                                    <?php
+                                    if ($eventcrew_count_role['slug'] === $eventcrew_role['slug']) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <label style="display:block">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            name="role_count[<?php echo esc_attr((string) $eventcrew_index); ?>][<?php echo esc_attr($eventcrew_count_role['slug']); ?>]"
+                                            value="<?php echo esc_attr((string) ($eventcrew_conditions['counts'][$eventcrew_count_role['slug']] ?? '')); ?>"
+                                            style="width:4em">
+                                        <?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_count_role['slug'])); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                                <label style="display:block">
+                                    <?php esc_html_e('At least', 'eventcrew'); ?>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        name="role_min_roles[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                        value="<?php echo esc_attr(0 === $eventcrew_conditions['min_roles'] ? '' : (string) $eventcrew_conditions['min_roles']); ?>"
+                                        style="width:4em">
+                                    <?php esc_html_e('different roles,', 'eventcrew'); ?>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        name="role_times_each[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                        value="<?php echo esc_attr(0 === $eventcrew_conditions['times_each'] ? '' : (string) $eventcrew_conditions['times_each']); ?>"
+                                        style="width:4em">
+                                    <?php esc_html_e('times each', 'eventcrew'); ?>
+                                </label>
+                            </details>
                         </td>
                         <td>
                             <textarea
@@ -229,6 +280,12 @@ if (! defined('ABSPATH')) {
         </p>
         <p class="description">
             <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('"Opens the sales desk": people marked arrived on that night’s task of this role get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /eligible show who meets them.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
             <?php esc_html_e('The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder.', 'eventcrew'); ?>
@@ -443,7 +500,7 @@ if (! defined('ABSPATH')) {
             </tr>
             <tr>
                 <th scope="row">
-                    <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, leader & Welcome crew (minutes before)', 'eventcrew'); ?></label>
+                    <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, crew on sales-desk roles (minutes before)', 'eventcrew'); ?></label>
                 </th>
                 <td>
                     <input
@@ -573,35 +630,6 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected.', 'eventcrew'); ?>
-                    </p>
-                </td>
-            </tr>
-        </table>
-
-        <h2><?php esc_html_e('Leadership', 'eventcrew'); ?></h2>
-        <table class="form-table" role="presentation">
-            <tr>
-                <th scope="row"><?php esc_html_e('Crew leader', 'eventcrew'); ?></th>
-                <td>
-                    <label>
-                        <input type="checkbox" name="leader_enabled" value="1" <?php checked($leader_enabled); ?>>
-                        <?php esc_html_e('Offer a crew-leader slot by default on new events', 'eventcrew'); ?>
-                    </label>
-                    <p class="description">
-                        <?php esc_html_e('A reserved 🧭 Leader slot only crew you’ve cleared can take; its holder can mark that night’s crew from the bot. Turn it on or off per event on the Roster screen.', 'eventcrew'); ?>
-                    </p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row">
-                    <label for="eventcrew-leader-experience"><?php esc_html_e('Eligible after', 'eventcrew'); ?></label>
-                </th>
-                <td>
-                    <input type="number" id="eventcrew-leader-experience" name="leader_experience"
-                        value="<?php echo esc_attr((string) $leader_experience); ?>" min="1" step="1" style="width:5em">
-                    <?php esc_html_e('completions in each role', 'eventcrew'); ?>
-                    <p class="description">
-                        <?php esc_html_e('How many tasks someone must have completed in every active role before they show as an eligible leader (and the organizers are alerted). Default 2.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
@@ -932,7 +960,7 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('Anonymise expired records automatically', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers and crew leaders are never touched while they hold the role.', 'eventcrew'); ?>
+                        <?php esc_html_e('The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers are never touched while they hold the role.', 'eventcrew'); ?>
                     </p>
                     <p class="description">
                         <strong><?php esc_html_e('This cannot be undone.', 'eventcrew'); ?></strong>

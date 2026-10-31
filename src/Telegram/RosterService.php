@@ -69,7 +69,7 @@ final class RosterService
             return;
         }
 
-        $canMark = $person->isOrganizer || $this->isLeaderOn($person->id, $date);
+        $canMark = $person->isOrganizer || $this->isOnSalesDesk($person->id, $date);
         $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer);
         $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
         $this->sentDmNote($chatId, $isPrivate);
@@ -110,13 +110,14 @@ final class RosterService
             return;
         }
 
-        // Organizers may always mark; a crew leader may mark their own night -
-        // which needs the task's date, so its lookup is skipped for organizers.
+        // Organizers may always mark; someone on a sales-desk task may mark
+        // their own night - which needs the task's date, so its lookup is
+        // skipped for organizers.
         $canMark = $person->isOrganizer;
 
         if (! $canMark) {
             $task = $this->tasks->find($assignment->taskId);
-            $canMark = null !== $task && $this->isLeaderOn($person->id, $task->taskDate);
+            $canMark = null !== $task && $this->isOnSalesDesk($person->id, $task->taskDate);
         }
 
         if (! $canMark) {
@@ -146,17 +147,17 @@ final class RosterService
 
     private function deniedMarkMessage(): string
     {
-        return __('Only organizers or the night’s leader can mark attendance.', 'eventcrew');
+        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can mark attendance.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     }
 
     /**
-     * Whether this person holds the reserved leader slot on the given date -
-     * what lets a crew leader, not just an organizer, mark that night's crew.
+     * Whether this person is on that date's task of a role with "Sales desk"
+     * ticked - what lets someone who is not an organizer mark that night's crew.
      */
-    private function isLeaderOn(int $personId, string $date): bool
+    private function isOnSalesDesk(int $personId, string $date): bool
     {
         foreach ($this->tasks->forDate($date) as $task) {
-            if (Roles::LEADER_SLUG !== $task->roleSlug) {
+            if (! Roles::opensSalesDesk($task->roleSlug)) {
                 continue;
             }
 

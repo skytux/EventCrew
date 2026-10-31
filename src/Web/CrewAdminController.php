@@ -15,6 +15,7 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
@@ -39,8 +40,8 @@ use EventCrew\Telegram\TelegramClient;
  * The actions reuse the services behind the bot's commands: the sales desk link
  * (/sales), the board repost (/board), the credit grant and its notice (/gift),
  * and the roster with its status write (/roster), and /roles for the restricted
- * roles. "Add a person to a role task" is the bot's "Add someone" button on a
- * role task: it can add someone who is not a crew member yet.
+ * roles. "Add a person to a task" is the bot's "Add someone" button: it puts
+ * anyone on any upcoming task, even someone who is not a crew member yet.
  */
 final class CrewAdminController
 {
@@ -127,7 +128,7 @@ final class CrewAdminController
             self::GIFT_ACTION => __('Give a credit', 'eventcrew'),
             self::MARK_ACTION => __('Mark attendance', 'eventcrew'),
             self::ROLES_ACTION => __('Change a member’s roles', 'eventcrew'),
-            self::ADD_ACTION => __('Add a person to a role task', 'eventcrew'),
+            self::ADD_ACTION => __('Add a person to a task', 'eventcrew'),
         ];
     }
 
@@ -353,13 +354,15 @@ final class CrewAdminController
         $kept = array_values(array_diff($member->roleSlugs, $shown));
         $chosen = null === $add ? $roles : array_merge($member->roleSlugs, $add);
 
-        $this->people->setRoles($member->id, array_merge($kept, array_intersect($chosen, $shown)));
+        $roles = array_merge($kept, array_intersect($chosen, $shown));
+        $this->people->setRoles($member->id, $roles);
+        RoleNotifier::rolesChanged($member->id, $member->roleSlugs, $roles);
 
         return 'admin_roles_saved';
     }
 
     /**
-     * "Add a person to a role task": see RoleTaskService::addPerson().
+     * "Add a person to a task": see RoleTaskService::addPerson().
      */
     public function addPerson(Person $organizer, int $taskId, string $name, string $email, bool $countsCredit): string
     {
@@ -441,7 +444,7 @@ final class CrewAdminController
     }
 
     /**
-     * The upcoming role tasks a person can be added to, id => "Role — event, day".
+     * The upcoming tasks a person can be added to, id => "Role — event, day".
      *
      * @return array<int, string>
      */

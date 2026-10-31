@@ -14,8 +14,6 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\ClaimNotifier;
-use EventCrew\Support\LeaderEligibility;
-use EventCrew\Support\LeaderEligibilityNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -23,6 +21,8 @@ use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RetentionPurge;
+use EventCrew\Support\RoleConditions;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
@@ -59,7 +59,7 @@ final class SchedulerTest extends TestCase
             new StandingNotice($tasks, $assignments, $people, $ledger, $telegram, $mailer),
             new BoardPush($tasks, $ledger, $board),
             $board,
-            new LeaderEligibilityNotifier(new LeaderEligibility($assignments, $people), $people, $mailer, $telegram),
+            new RoleNotifier(new RoleConditions($assignments, $people), $people, $mailer, $telegram),
             new RetentionPurge(
                 $people,
                 new PersonEraser(

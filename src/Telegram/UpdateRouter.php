@@ -198,8 +198,8 @@ final class UpdateRouter
             return;
         }
 
-        // /roles (organizers only) gives and takes away roles: leader, the
-        // one-time pass, organizer, and the restricted roles (DJ, VJ, ...).
+        // /roles (organizers only) gives and takes away roles: the one-time
+        // pass, organizer, and the restricted roles (DJ, VJ, Crew leader, ...).
         // /allow is its old name and still runs it.
         if ($this->isCommand($text, 'roles') || $this->isCommand($text, 'allow')) {
             $this->permissions->start($fromId, $chatId, $isPrivate);
@@ -215,9 +215,10 @@ final class UpdateRouter
             return;
         }
 
-        // /leaders (organizers only): who is eligible and who has been allowed.
-        if ($this->isCommand($text, 'leaders')) {
-            $this->permissions->onLeaders($fromId, $chatId, $isPrivate);
+        // /eligible (organizers only): who meets each role's conditions.
+        // /leaders is its old name and still runs it.
+        if ($this->isCommand($text, 'eligible') || $this->isCommand($text, 'leaders')) {
+            $this->permissions->onEligible($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -248,7 +249,7 @@ final class UpdateRouter
         }
 
         // /sales: a fresh login link for the sales desk, in the DM. Organizers,
-        // and the night's leader and Welcome crew once they are marked arrived.
+        // and people on the night's task of a sales-desk role once arrived.
         if ($this->isCommand($text, 'sales')) {
             $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate);
 

@@ -39,7 +39,7 @@ final class Scheduler
         private readonly StandingNotice $standingNotices,
         private readonly BoardPush $boardPush,
         private readonly BoardService $board,
-        private readonly LeaderEligibilityNotifier $leaderCandidates,
+        private readonly RoleNotifier $roleNotifier,
         private readonly RetentionPurge $retention,
         private readonly WelcomeSender $welcome
     ) {
@@ -98,8 +98,8 @@ final class Scheduler
             $this->standingNotices->sendDue(self::BATCH);
             $this->boardPush->run();
 
-            // Tell the organizers about anyone newly eligible to lead.
-            $this->leaderCandidates->run();
+            // Tell the organizers about anyone who newly meets a role's conditions.
+            $this->roleNotifier->run();
 
             // The welcome message for members who have not had it yet: the
             // ones from before it existed, and anyone who linked Telegram or

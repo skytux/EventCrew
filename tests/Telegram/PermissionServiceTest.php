@@ -7,10 +7,10 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
-use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\RoleConditions;
 use EventCrew\Support\Roles;
 use EventCrew\Telegram\PermissionService;
 
@@ -45,23 +45,21 @@ final class PermissionServiceTest extends TelegramTestCase
         return new PermissionService(
             new PersonRepository(),
             $this->client(),
-            new LeaderEligibility(new AssignmentRepository(), new PersonRepository()),
+            new RoleConditions(new AssignmentRepository(), new PersonRepository()),
             new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
     }
 
-    public function testAllowMakesSomeoneALeaderAndTellsThem(): void
+    public function testTheOldLeaderButtonNoLongerChangesAnything(): void
     {
         // findByTelegramUserId(organizer), then people->find(target).
         $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
-        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999, 'can_lead' => 0];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999];
 
         $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:leader:8']);
 
-        self::assertSame(1, (int) $this->wpdb->updates[0]['data']['can_lead']);
-        // The person is told, on both channels.
-        self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
-        self::assertSame('sam@example.com', $this->mails[0]['to']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->mails);
     }
 
     public function testAllowGrantsAOneTimePass(): void
@@ -74,26 +72,40 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertSame(1, (int) $this->wpdb->updates[0]['data']['at_risk_pass']);
     }
 
-    public function testLeadersListsEligibleAndAllowedForAnOrganizer(): void
+    public function testEligibleListsWhoMeetsEachRolesConditionsForAnOrganizer(): void
     {
-        // findByTelegramUserId(organizer); eligiblePeople -> people->all (none);
-        // allowed scan -> people->all (one can_lead).
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'welcome', 'label' => 'Welcome'],
+            [
+                'slug' => 'leader',
+                'label' => 'Crew leader',
+                'restricted' => true,
+                'conditions' => ['min_roles' => 2, 'times_each' => 2],
+            ],
+        ];
+        // findByTelegramUserId(organizer); people->all; completedByRole per person.
         $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
-        $this->wpdb->nextResults[] = []; // eligiblePeople: people->all
-        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Jo', 'can_lead' => 1]]; // allowed scan
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'display_name' => 'Jo', 'role_slugs' => 'leader'],
+            ['id' => 9, 'display_name' => 'Kim'],
+        ];
+        $this->wpdb->nextResults[] = [['role_slug' => 'decorate', 'n' => 2], ['role_slug' => 'welcome', 'n' => 3]];
+        $this->wpdb->nextResults[] = [['role_slug' => 'decorate', 'n' => 5]];
 
-        $this->service()->onLeaders(555, 555);
+        $this->service()->onEligible(555, 555);
 
         $text = $this->lastCallTo('sendMessage')['text'];
-        self::assertStringContainsString('Crew leaders', $text);
-        self::assertStringContainsString('Jo', $text);
+        self::assertStringContainsString('Crew leader', $text);
+        self::assertStringContainsString('• Jo ✅', $text);
+        self::assertStringNotContainsString('Kim', $text);
     }
 
-    public function testANonOrganizerCannotSeeLeaders(): void
+    public function testANonOrganizerCannotSeeWhoIsEligible(): void
     {
         $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 0, 'telegram_user_id' => 555];
 
-        $this->service()->onLeaders(555, 555);
+        $this->service()->onEligible(555, 555);
 
         self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
     }
@@ -170,7 +182,7 @@ final class PermissionServiceTest extends TelegramTestCase
     {
         $this->withDjRole();
         Functions\when('delete_transient')->justReturn(true);
-        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Sam', 'role_slugs' => 'dj', 'can_lead' => 0]];
+        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Sam', 'role_slugs' => 'dj']];
 
         $this->service()->captureTarget(555, 555, 'Sam', []);
 
@@ -178,10 +190,10 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertStringStartsWith('Roles for Sam.', $sent['text']);
         $buttons = array_merge(...$sent['reply_markup']['inline_keyboard']);
         self::assertSame(
-            ['perm:leader:8', 'perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
+            ['perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
             array_column($buttons, 'callback_data')
         );
-        self::assertStringStartsWith('✅ ', $buttons[3]['text']);
+        self::assertStringStartsWith('✅ ', $buttons[2]['text']);
         self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 }

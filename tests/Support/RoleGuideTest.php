@@ -6,8 +6,8 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\RoleGuide;
+use EventCrew\Support\Roles;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
@@ -31,15 +31,21 @@ final class RoleGuideTest extends TelegramTestCase
         self::assertNull(RoleGuide::descriptionsButton());
     }
 
-    public function testTheLeaderIsListedOnlyWhenEventsCarryOne(): void
+    public function testEveryActiveRoleIsListedWithNoExtraLeaderEntry(): void
     {
-        $without = RoleGuide::descriptions();
-        $this->options[LeaderGate::ENABLED_OPTION] = '1';
-        $with = RoleGuide::descriptions();
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'description' => 'Hang the lights.'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'emoji' => '🧭', 'restricted' => true],
+            ['slug' => 'cacao', 'label' => 'Cacao', 'archived' => true],
+        ];
 
-        self::assertNotSame([], $without);
-        self::assertCount(count($without) + 1, $with);
-        self::assertStringContainsString('Runs the crew for the night', end($with)['description']);
+        self::assertSame(
+            [
+                ['name' => 'Decorate', 'description' => 'Hang the lights.'],
+                ['name' => '🧭 Crew leader', 'description' => ''],
+            ],
+            RoleGuide::descriptions()
+        );
     }
 
     public function testTheTelegramBoardLinksToTheDescriptions(): void

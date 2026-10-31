@@ -6,25 +6,26 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
-use EventCrew\Support\LeaderEligibility;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\RoleConditions;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 
 /**
- * /roles and /leaders - the organizer's permission tools from Telegram.
+ * /roles and /eligible - the organizer's permission tools from Telegram.
  *
- * /roles (its old name /allow still works) manages one person's roles: leader
- * (may take the reserved leader slot), a one-time at-risk pass (sign up once
- * despite being at risk), organizer, and each role set to "Only people with
- * this role" in Settings > Roles (DJ, VJ, ...). The flow mirrors /gift and
- * /replace: ask who, send a name or @mention, then one message per match with
- * a button per role; a check mark shows what the person has, and a tap
- * switches it on or off. /leaders lists who is eligible and who has been
- * allowed. Both are admin-only, answered in the DM with a breadcrumb when
- * asked in a group.
+ * /roles (its old name /allow still works) manages one person's roles: a
+ * one-time at-risk pass (sign up once despite being at risk), organizer, and
+ * each role set to "Only people with this role" in Settings > Roles (DJ, VJ,
+ * Crew leader, ...). The flow mirrors /gift and /replace: ask who, send a name
+ * or @mention, then one message per match with a button per role; a check mark
+ * shows what the person has, and a tap switches it on or off. /eligible (its
+ * old name /leaders still works) lists, for each role with conditions, who
+ * meets them and whether they have the role. Both are admin-only, answered in
+ * the DM with a breadcrumb when asked in a group.
  */
 final class PermissionService
 {
@@ -38,7 +39,7 @@ final class PermissionService
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
-        private readonly LeaderEligibility $eligibility,
+        private readonly RoleConditions $conditions,
         private readonly Mailer $mailer
     ) {
     }
@@ -67,39 +68,47 @@ final class PermissionService
     }
 
     /**
-     * /leaders: the organizer's read-out of who is eligible to lead and who has
-     * been allowed. Answered privately, admin-only.
+     * /eligible: for each role with conditions, who meets them, with ✅ on
+     * those who already have the role. Answered privately, admin-only.
      */
-    public function onLeaders(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    public function onEligible(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         $organizer = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $organizer || ! $organizer->isOrganizer) {
-            $this->telegram->sendMessage($chatId, __('Only organizers can see the leaders list.', 'eventcrew'));
+            $this->telegram->sendMessage(
+                $chatId,
+                __('Only organizers can see who meets the role conditions.', 'eventcrew')
+            );
 
             return;
         }
 
-        $eligible = array_map(
-            static fn ($person): string => '• ' . $person->name(),
-            $this->eligibility->eligiblePeople()
-        );
+        $report = $this->conditions->report();
 
-        $allowed = [];
+        if ([] === $report) {
+            $lines = [
+                __('No role has conditions set. Organizers set them in wp-admin, under Settings, Roles.', 'eventcrew'),
+            ];
+        } else {
+            $lines = [
+                __('Who meets the conditions for each role. ✅ = they have the role. Give a role with /roles.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ];
 
-        foreach ($this->people->all(['per_page' => 1000]) as $person) {
-            if ($person->canLead()) {
-                $allowed[] = '• ' . $person->name();
+            foreach ($report as $slug => $rows) {
+                $slug = (string) $slug;
+                $lines[] = '';
+                $lines[] = Roles::display($slug) . ' (' . RoleConditions::describe(Roles::conditions($slug)) . '):';
+
+                if ([] === $rows) {
+                    $lines[] = __('— nobody yet', 'eventcrew');
+                }
+
+                foreach ($rows as $row) {
+                    $lines[] = '• ' . $row['person']->name() . ($row['holds'] ? ' ✅' : '');
+                }
             }
         }
-
-        $none = __('— none yet', 'eventcrew');
-        $lines = ['🧭 ' . __('Crew leaders', 'eventcrew'), ''];
-        $lines[] = __('Eligible (give them 👑 Leader with /roles):', 'eventcrew');
-        $lines = array_merge($lines, [] === $eligible ? [$none] : $eligible);
-        $lines[] = '';
-        $lines[] = __('Allowed to lead:', 'eventcrew');
-        $lines = array_merge($lines, [] === $allowed ? [$none] : $allowed);
 
         $this->telegram->sendMessage($telegramUserId, implode("\n", $lines));
         $this->sentDmNote($chatId, $isPrivate);
@@ -144,8 +153,8 @@ final class PermissionService
     }
 
     /**
-     * One person's role buttons, two to a row: leader, the one-time pass,
-     * organizer, then every active restricted role.
+     * One person's role buttons, two to a row: the one-time pass, organizer,
+     * then every active restricted role.
      *
      * @return array<string, mixed>
      */
@@ -154,10 +163,6 @@ final class PermissionService
         $mark = static fn (bool $on): string => $on ? '✅ ' : '';
         $prefix = self::PICK_PREFIX;
         $buttons = [
-            [
-                'text' => $mark($person->canLead()) . '👑 ' . __('Leader', 'eventcrew'),
-                'callback_data' => $prefix . 'leader:' . $person->id,
-            ],
             [
                 'text' => $mark($person->hasAtRiskPass) . '🎟 ' . __('One-time pass', 'eventcrew'),
                 'callback_data' => $prefix . 'pass:' . $person->id,
@@ -214,7 +219,7 @@ final class PermissionService
 
         [$answer, $dmKind] = 'role' === $action
             ? $this->toggleRole($person, $slug)
-            : $this->apply($action, $person->id, $person->name(), $person->canLead(), $person->isOrganizer);
+            : $this->apply($action, $person->id, $person->name(), $person->isOrganizer);
         $this->telegram->answerCallbackQuery($callbackId, $answer);
         $this->refreshMenu($callbackQuery, $person->id);
 
@@ -270,6 +275,7 @@ final class PermissionService
         }
 
         $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]));
+        RoleNotifier::rolesChanged($person->id, $person->roleSlugs, [$slug]);
 
         /* translators: 1: person's name, 2: role name */
         return [sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label), 'role:' . $slug];
@@ -303,20 +309,14 @@ final class PermissionService
 
     /**
      * Applies one permission action, returning the organizer's confirmation and
-     * which message the affected person gets ('leader', 'pass', 'admin', or ''
-     * for none; dmText() words it).
+     * which message the affected person gets ('pass', 'admin', or '' for none;
+     * dmText() words it).
      *
      * @return array{0: string, 1: string}
      */
-    private function apply(string $action, int $personId, string $name, bool $canLead, bool $isOrganizer): array
+    private function apply(string $action, int $personId, string $name, bool $isOrganizer): array
     {
         switch ($action) {
-            case 'leader':
-                $this->people->setCanLead($personId, ! $canLead);
-
-                return $canLead
-                    ? [sprintf(__('%s is no longer a leader.', 'eventcrew'), $name), '']
-                    : [sprintf(__('%s can now lead an event.', 'eventcrew'), $name), 'leader'];
             case 'pass':
                 $this->people->grantAtRiskPass($personId);
 
@@ -347,7 +347,6 @@ final class PermissionService
         }
 
         return match ($dmKind) {
-            'leader' => __('👑 You can now lead an event — tap the 🧭 Leader slot on the board to take it.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'pass' => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew'),
             'admin' => __('⭐ You’re now an EventCrew organizer.', 'eventcrew'),
@@ -369,7 +368,7 @@ final class PermissionService
             return ['role', (int) $m[2], $m[1]];
         }
 
-        if (1 !== preg_match('#^' . $prefix . '(leader|pass|admin):(\d+)$#', $data, $m)) {
+        if (1 !== preg_match('#^' . $prefix . '(pass|admin):(\d+)$#', $data, $m)) {
             return ['', 0, ''];
         }
 

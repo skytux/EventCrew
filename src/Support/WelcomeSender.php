@@ -444,7 +444,7 @@ final class WelcomeSender
     }
 
     /**
-     * One "- " line per role on offer, then the Leader when events carry one.
+     * One "- " line per role on offer.
      * The role's own emoji is the line's bullet; a role without one gets 🔹.
      *
      * @return array<int, string>

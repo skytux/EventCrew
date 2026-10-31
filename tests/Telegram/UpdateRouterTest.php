@@ -198,7 +198,7 @@ final class UpdateRouterTest extends TelegramTestCase
     public function testPermCallbackReachesThePermissionService(): void
     {
         $this->router()->dispatch([
-            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:leader:8'],
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:pass:8'],
         ]);
 
         self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);

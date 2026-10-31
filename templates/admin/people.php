@@ -9,11 +9,7 @@
  * @var array<int, array{person: string, credits: int, note: string, granted_by: string, granted_at: string}> $credit_grants Recent credit-grant audit rows.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
- * @var array<int, array{slug: string, label: string}> $lead_roles Active roles, for the Leadership columns.
- * @var array<int, array{id: int, name: string, can_lead: bool, by_role: array<string, int>}> $lead_eligible People who meet the leader bar.
- * @var array<int, array{id: int, name: string}> $lead_allowed People with leader permission.
- * @var int $lead_threshold Completions required in each role.
- * @var bool $lead_default Whether the leader slot is on by default globally.
+ * @var list<array{label: string, conditions: string, people: list<array{id: int, name: string, holds: bool}>}> $condition_roles Roles with conditions and who meets them.
  */
 
 declare(strict_types=1);
@@ -29,7 +25,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 
     <h2 class="nav-tab-wrapper eventcrew-people-tabs" style="margin:.5em 0 1em">
         <a href="#" class="nav-tab" data-ec-tab="people"><?php esc_html_e('People', 'eventcrew'); ?></a>
-        <a href="#" class="nav-tab" data-ec-tab="leadership"><?php esc_html_e('Leadership', 'eventcrew'); ?></a>
+        <a href="#" class="nav-tab" data-ec-tab="conditions"><?php esc_html_e('Role conditions', 'eventcrew'); ?></a>
     </h2>
 
     <div class="ec-tab-panel" data-ec-tab="people">
@@ -82,19 +78,6 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                             <?php esc_html_e('Organizer', 'eventcrew'); ?>
                         </label>
                         <p><?php esc_html_e('Organizers can mark attendance from the bot.', 'eventcrew'); ?></p>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="eventcrew-can-lead">
-                            <input
-                                name="can_lead"
-                                id="eventcrew-can-lead"
-                                type="checkbox"
-                                value="1"
-                                <?php checked($eventcrew_is_edit && $editing->canLead); ?>>
-                            <?php esc_html_e('Crew leader', 'eventcrew'); ?>
-                        </label>
-                        <p><?php esc_html_e('May take the reserved 🧭 Leader slot and mark that night’s crew from the bot, without being an organizer.', 'eventcrew'); ?></p>
                     </div>
 
                     <?php $eventcrew_restricted_roles = \EventCrew\Support\Roles::assignable(); ?>
@@ -325,71 +308,37 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
     <?php endif; ?>
     </div>
 
-    <div class="ec-tab-panel" data-ec-tab="leadership">
+    <div class="ec-tab-panel" data-ec-tab="conditions">
         <p class="description">
-            <?php echo esc_html(sprintf(
-                /* translators: %d: completions required in each role */
-                __('Eligible = has completed at least %d tasks in every active role. Eligibility is only a suggestion; grant leader by editing a person, or with the bot’s /roles.', 'eventcrew'),
-                $lead_threshold
-            )); ?>
-            <br>
-            <?php echo $lead_default
-                ? esc_html__('The leader slot is on by default for new events.', 'eventcrew')
-                : esc_html__('The leader slot is off by default; turn it on per event on the Roster screen.', 'eventcrew'); ?>
+            <?php esc_html_e('Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, on the crew page, or with the bot’s /roles. ✅ = already has the role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
 
-        <h2><?php esc_html_e('Eligible', 'eventcrew'); ?></h2>
-        <?php if ([] === $lead_eligible) : ?>
-            <p><?php esc_html_e('Nobody has completed enough of every role yet.', 'eventcrew'); ?></p>
-        <?php else : ?>
-            <table class="wp-list-table widefat fixed striped" style="max-width:60em">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
-                        <?php foreach ($lead_roles as $eventcrew_role) : ?>
-                            <th><?php echo esc_html($eventcrew_role['label']); ?></th>
-                        <?php endforeach; ?>
-                        <th><?php esc_html_e('Leader', 'eventcrew'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($lead_eligible as $eventcrew_leader) : ?>
-                        <tr>
-                            <td>
-                                <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_leader['id']], admin_url('admin.php'))); ?>">
-                                    <?php echo esc_html($eventcrew_leader['name']); ?>
-                                </a>
-                            </td>
-                            <?php foreach ($lead_roles as $eventcrew_role) : ?>
-                                <td><?php echo esc_html((string) ($eventcrew_leader['by_role'][$eventcrew_role['slug']] ?? 0)); ?></td>
-                            <?php endforeach; ?>
-                            <td><?php echo $eventcrew_leader['can_lead']
-                                ? '<span class="dashicons dashicons-yes" style="color:#1a7f37"></span>'
-                                : '&mdash;'; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <?php if ([] === $condition_roles) : ?>
+            <p><?php esc_html_e('No role has conditions set.', 'eventcrew'); ?></p>
         <?php endif; ?>
 
-        <h2><?php esc_html_e('Allowed to lead', 'eventcrew'); ?></h2>
-        <?php if ([] === $lead_allowed) : ?>
-            <p><?php esc_html_e('No one has been granted leader permission yet.', 'eventcrew'); ?></p>
-        <?php else : ?>
-            <table class="wp-list-table widefat fixed striped" style="max-width:40em">
-                <tbody>
-                    <?php foreach ($lead_allowed as $eventcrew_leader) : ?>
-                        <tr>
-                            <td>
-                                <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_leader['id']], admin_url('admin.php'))); ?>">
-                                    <?php echo esc_html($eventcrew_leader['name']); ?>
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
+        <?php foreach ($condition_roles as $eventcrew_condition_role) : ?>
+            <h2><?php echo esc_html($eventcrew_condition_role['label']); ?></h2>
+            <p class="description"><?php echo esc_html($eventcrew_condition_role['conditions']); ?></p>
+            <?php if ([] === $eventcrew_condition_role['people']) : ?>
+                <p><?php esc_html_e('Nobody meets them yet.', 'eventcrew'); ?></p>
+            <?php else : ?>
+                <table class="wp-list-table widefat fixed striped" style="max-width:40em">
+                    <tbody>
+                        <?php foreach ($eventcrew_condition_role['people'] as $eventcrew_condition_person) : ?>
+                            <tr>
+                                <td>
+                                    <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_condition_person['id']], admin_url('admin.php'))); ?>">
+                                        <?php echo esc_html($eventcrew_condition_person['name']); ?>
+                                    </a>
+                                    <?php echo $eventcrew_condition_person['holds'] ? ' ✅' : ''; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        <?php endforeach; ?>
     </div>
 
     <script>

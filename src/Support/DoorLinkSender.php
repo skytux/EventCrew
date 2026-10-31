@@ -17,7 +17,7 @@ use EventCrew\Telegram\TelegramClient;
  * anyone asking.
  *
  * Organizers get theirs a set number of minutes before the night's first task
- * starts. The night's leader and Welcome crew get theirs under SalesDeskGate's
+ * starts. People on the night's task of a sales-desk role get theirs under SalesDeskGate's
  * rule: a few minutes before their own task starts, once they are marked
  * arrived, and not after the event has ended. Someone marked arrived after
  * that moment gets it there and then, through the status-changed hook every
@@ -182,7 +182,7 @@ final class DoorLinkSender
     }
 
     /**
-     * The status-changed hook: a leader or Welcome crew member marked arrived
+     * The status-changed hook: someone on a sales-desk task marked arrived
      * after their link was due gets it now, instead of at the next check.
      */
     public function onStatusChanged(int $assignmentId, string $status): void

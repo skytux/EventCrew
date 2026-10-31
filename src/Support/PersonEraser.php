@@ -98,7 +98,6 @@ final class PersonEraser
             'notes' => '',
             'notify_prefs' => null,
             'is_organizer' => 0,
-            'can_lead' => 0,
             'at_risk_pass' => 0,
             'anonymized_at' => current_time('mysql'),
             // The row survives anonymising, so a live session cookie would go

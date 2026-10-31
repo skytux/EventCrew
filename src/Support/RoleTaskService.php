@@ -15,11 +15,12 @@ use EventCrew\Repositories\TaskRepository;
  * role", such as DJ or VJ), for the bot and the crew page alike.
  *
  * Two jobs: the list of upcoming restricted tasks one person may take, and an
- * organizer putting someone on such a task - a member, or a person who is not a
- * crew member yet. That second person is created here with a name and an
- * optional email, given the role, and signed up. With an email they get the
- * normal signup email with their ticket; without one nothing is sent, as there
- * is nowhere to send it.
+ * organizer putting someone on any upcoming task - a member, or a person who is
+ * not a crew member yet. That second person is created here with a name and an
+ * optional email and signed up; on a restricted task they are also given the
+ * role. An organizer's sign-up skips the role check and the standing gate. With
+ * an email they get the normal signup email with their ticket; without one
+ * nothing is sent, as there is nowhere to send it.
  */
 final class RoleTaskService
 {
@@ -29,6 +30,7 @@ final class RoleTaskService
     public const BAD_EMAIL = 'bad_email';
     public const NOT_RESTRICTED = 'not_restricted';
     public const ORGANIZERS_ONLY = 'organizers_only';
+    public const FULL = 'full';
     public const FAILED = 'failed';
 
     /**
@@ -62,9 +64,9 @@ final class RoleTaskService
     }
 
     /**
-     * Every upcoming restricted task, for an organizer adding someone. Organize
-     * tasks are left out: putting a new person on one would make them an
-     * organizer, which is done in wp-admin or with /roles, not here.
+     * Every upcoming task, for an organizer adding someone. Organize tasks are
+     * left out: putting a new person on one would make them an organizer,
+     * which is done in wp-admin or with /roles, not here.
      *
      * @return list<Task>
      */
@@ -72,7 +74,7 @@ final class RoleTaskService
     {
         return array_values(array_filter(
             $this->tasks->upcoming(),
-            static fn (Task $task): bool => $task->isRestricted() && Roles::ORGANIZE_SLUG !== $task->roleSlug
+            static fn (Task $task): bool => Roles::ORGANIZE_SLUG !== $task->roleSlug
         ));
     }
 
@@ -87,11 +89,13 @@ final class RoleTaskService
     }
 
     /**
-     * An organizer puts someone on a restricted task. An email that already
-     * belongs to a member reuses that member (the name is then ignored);
-     * otherwise a new person is made with the name, and the email if one was
-     * given. The person gets the task's role, then is signed up with the
-     * organizer's answer to "Count toward free-entry credit?".
+     * An organizer puts someone on a task (any but Organize). An email that
+     * already belongs to a member reuses that member (the name is then
+     * ignored); otherwise a new person is made with the name, and the email if
+     * one was given. On a restricted task the person gets the task's role.
+     * They are then signed up past the role check and the standing gate, with
+     * the organizer's answer to "Count toward free-entry credit?" (only used
+     * on a restricted task; every other task always counts).
      *
      * @return array{code: string, person: ?Person, emailed: bool}
      */
@@ -105,7 +109,7 @@ final class RoleTaskService
 
         $task = $taskId > 0 ? $this->tasks->find($taskId) : null;
 
-        if (null === $task || ! $task->isRestricted() || Roles::ORGANIZE_SLUG === $task->roleSlug) {
+        if (null === $task || Roles::ORGANIZE_SLUG === $task->roleSlug) {
             return $fail(self::NOT_RESTRICTED);
         }
 
@@ -138,14 +142,20 @@ final class RoleTaskService
             return $fail(self::FAILED);
         }
 
-        if (! $person->hasRole($task->roleSlug)) {
-            $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$task->roleSlug]));
+        if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
+            $roles = array_merge($person->roleSlugs, [$task->roleSlug]);
+            $this->people->setRoles($person->id, $roles);
+            RoleNotifier::rolesChanged($person->id, $person->roleSlugs, $roles);
         }
 
-        $outcome = $this->signup->claim($person->id, $task->id, $countsCredit);
+        $outcome = $this->signup->claimByOrganizer($person->id, $task->id, $countsCredit);
 
         if (AssignmentRepository::JOIN_DUPLICATE === $outcome) {
             return ['code' => self::ALREADY_ON, 'person' => $person, 'emailed' => false];
+        }
+
+        if (AssignmentRepository::JOIN_FULL === $outcome) {
+            return ['code' => self::FULL, 'person' => $person, 'emailed' => false];
         }
 
         if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
@@ -171,6 +181,7 @@ final class RoleTaskService
                 ? __('Added to the task. They got an email with their ticket.', 'eventcrew')
                 : __('Added to the task. No email was given, so nothing was sent.', 'eventcrew'),
             self::ALREADY_ON => __('That person is already on this task.', 'eventcrew'),
+            self::FULL => __('That task is full.', 'eventcrew'),
             self::NO_NAME => __('Give their name.', 'eventcrew'),
             self::BAD_EMAIL => __('That email address does not look right.', 'eventcrew'),
             self::NOT_RESTRICTED => __('That task is no longer available.', 'eventcrew'),

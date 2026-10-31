@@ -15,7 +15,7 @@ use EventCrew\Repositories\TaskRepository;
  *
  * The Telegram board and the public web page both go through here, so the
  * question "may this person take this slot?" has a single answer - the
- * reputation gate, the one-time at-risk pass, the leader-only slot and the
+ * reputation gate, the one-time at-risk pass, the restricted roles and the
  * atomic capacity race can never say one thing to the bot and another to the
  * web. Each surface keeps only its own wording; the decision lives here.
  */
@@ -29,9 +29,6 @@ final class SignupService
 
     /** Refused: the person is at risk and the gate is on. */
     public const GATED = 'gated';
-
-    /** Refused: the leader slot, and this person has no leader permission. */
-    public const LEADER_ONLY = 'leader_only';
 
     /**
      * Refused: a restricted task (Organize, or a role set to "Only people with
@@ -60,7 +57,7 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::LEADER_ONLY, self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
+     * self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
      * AssignmentRepository::JOIN_* outcome.
      *
      * $countsCredit is the answer to "Count toward free-entry credit?". It is
@@ -91,6 +88,34 @@ final class SignupService
     }
 
     /**
+     * An organizer signs someone up: any task, whatever roles the person
+     * holds and whatever their standing. A banned person is still refused
+     * (self::GATED), the place limit still holds, and a restricted task still
+     * needs the answer to "Count toward free-entry credit?" (null refuses with
+     * self::CREDIT_QUESTION). An at-risk pass is not spent. Returns one of
+     * those codes or an AssignmentRepository::JOIN_* outcome.
+     */
+    public function claimByOrganizer(int $personId, int $taskId, ?bool $countsCredit = null): string
+    {
+        $task = $this->tasks->find($taskId);
+        $person = $this->people->find($personId);
+
+        if (null === $task || null === $person) {
+            return AssignmentRepository::JOIN_UNKNOWN_TASK;
+        }
+
+        if ($person->isBanned()) {
+            return self::GATED;
+        }
+
+        if ($task->isRestricted() && null === $countsCredit) {
+            return self::CREDIT_QUESTION;
+        }
+
+        return $this->assignments->join($taskId, $personId, $task->isRestricted() ? (bool) $countsCredit : true);
+    }
+
+    /**
      * Why a claim would be refused right now, or '' if it would be allowed.
      *
      * Read-only, and the same checks claim() itself runs - it calls this - so
@@ -99,7 +124,7 @@ final class SignupService
      * someone holding an at-risk pass, because the pass would wave them
      * through; a refusal shown to them would simply be wrong.
      *
-     * Returns self::GATED, self::LEADER_ONLY, self::ORGANIZERS_ONLY or ''.
+     * Returns self::GATED, self::ORGANIZERS_ONLY or ''.
      */
     public function refusalFor(int $personId, int $taskId): string
     {
@@ -128,10 +153,6 @@ final class SignupService
             return ['refusal' => self::GATED, 'pass' => false, 'task' => $task];
         }
 
-        if (self::blocksLeaderSlot($task, $person)) {
-            return ['refusal' => self::LEADER_ONLY, 'pass' => false, 'task' => $task];
-        }
-
         if (self::blocksRestrictedSlot($task, $person)) {
             return ['refusal' => self::ORGANIZERS_ONLY, 'pass' => false, 'task' => $task];
         }
@@ -155,25 +176,11 @@ final class SignupService
     }
 
     /**
-     * Whether this task's slot is reserved for crew leaders and this person is
-     * not one. Static and pure, so a caller holding a task and a person can ask
-     * without a service or a query - which is what lets the board decide a whole
-     * screen of rows without reimplementing the rule.
-     */
-    public static function blocksLeaderSlot(?Task $task, ?Person $person): bool
-    {
-        if (null === $task || Roles::LEADER_SLUG !== $task->roleSlug) {
-            return false;
-        }
-
-        return null === $person || ! $person->canLead();
-    }
-
-    /**
      * Whether this task is restricted (Organize, or a role set to "Only people
-     * with this role") and this person does not hold its role. Static and pure
-     * for the same reason as blocksLeaderSlot(): every list that shows tasks
-     * asks it to leave the task out for everyone else.
+     * with this role") and this person does not hold its role. Static and pure,
+     * so a caller holding a task and a person can ask without a service or a
+     * query: every list that shows tasks asks it to leave the task out for
+     * everyone else.
      */
     public static function blocksRestrictedSlot(?Task $task, ?Person $person): bool
     {

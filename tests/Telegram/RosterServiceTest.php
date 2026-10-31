@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Telegram\RosterService;
 
@@ -124,7 +125,7 @@ final class RosterServiceTest extends TelegramTestCase
         $this->organizer(false);
         $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
         $this->wpdb->nextCols[] = [7];            // personIdsAssignedOn() -> they are rostered
-        $this->wpdb->nextResults[] = [];          // leader check: no leader slot held
+        $this->wpdb->nextResults[] = [];          // sales desk check: no task that day
         $this->wpdb->nextResults[] = [
             ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
             ['id' => 6, 'task_date' => '2026-07-20', 'role_slug' => 'organize', 'capacity' => 1],
@@ -281,12 +282,12 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertSame(['rm:11:c', 'rm:11:l', 'rm:11:n'], array_column($row, 'callback_data'));
     }
 
-    public function testANonOrganizerNonLeaderCannotMark(): void
+    public function testSomeoneNotOnASalesDeskTaskCannotMark(): void
     {
         $this->organizer(false); // a linked, non-organizer person (id 7)
         $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up']; // assignment
         $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3]; // task
-        $this->wpdb->nextResults[] = []; // isLeaderOn: no leader task that day
+        $this->wpdb->nextResults[] = []; // isOnSalesDesk: no task that day
 
         $this->service()->onMark([
             'id' => 'cbq',
@@ -295,17 +296,22 @@ final class RosterServiceTest extends TelegramTestCase
             'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
         ]);
 
-        self::assertStringContainsString('leader', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertStringContainsString('open the sales desk', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertNotContains('editMessageText', $this->calledMethods());
     }
 
-    public function testALeaderCanMarkTheirOwnNight(): void
+    public function testCrewOnASalesDeskRoleCanMarkTheirOwnNight(): void
     {
-        // A non-organizer who holds the leader slot that day may mark attendance.
+        // Crew leader marked "Opens the sales desk" in Settings.
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        // A non-organizer on a sales-desk task that day may mark attendance.
         $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Lead', 'is_organizer' => 0, 'telegram_user_id' => 555];
         $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 9, 'status' => 'signed_up']; // marked assignment
         $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3]; // its task
-        // isLeaderOn: a leader task that day, and the marker holds it.
+        // isOnSalesDesk: a sales-desk task that day, and the marker is on it.
         $this->wpdb->nextResults[] = [['id' => 7, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1]];
         $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 7, 'person_id' => 8, 'status' => 'signed_up'];
 

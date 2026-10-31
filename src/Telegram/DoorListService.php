@@ -17,9 +17,9 @@ use EventCrew\Support\DoorList;
  * everyone who spent a free-entry credit on it, the same list as the wp-admin
  * door list - followed by the night's guest list.
  *
- * Organizers can look at any night; the night's leader and Welcome crew can
- * look at their own night. The list always goes to the asker's DM. A date can
- * be given ("/tickets 1.8."), and buttons under the list switch between the
+ * Organizers can look at any night; people on a night's task of a sales-desk
+ * role can look at their own night. The list always goes to the asker's DM.
+ * A date can be given ("/tickets 1.8."), and buttons under the list switch between the
  * nearby nights by editing the message in place.
  */
 final class DoorListService
@@ -184,6 +184,6 @@ final class DoorListService
 
     private function deniedMessage(): string
     {
-        return __('Only organizers, and that night’s leader and Welcome crew, can see who has a ticket.', 'eventcrew');
+        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can see who has a ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     }
 }

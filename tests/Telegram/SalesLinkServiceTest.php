@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use EventCrew\Support\Roles;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 
 /**
  * /sales: a fresh sales desk link by DM, for organizers at any time and for
- * the night's leader and Welcome crew from 10 minutes before their task once
- * they are marked arrived. The clock reads 12:00 on the night.
+ * the crew on roles that open the sales desk (Welcome by default) from 10
+ * minutes before their task once they are marked arrived. The clock reads 12:00 on the night.
  */
 final class SalesLinkServiceTest extends SalesDeskTestCase
 {
@@ -94,8 +95,12 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->assertLinkDmTo(508, $this->messages()[0]);
     }
 
-    public function testTheLeaderGetsALink(): void
+    public function testCrewOnAnyRoleMarkedAsOpeningTheSalesDeskGetALink(): void
     {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'welcome', 'label' => 'Welcome'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
         $this->queueAsker(8);
         $this->queueDoorCrew('leader', '12:00', 'arrived');
 
@@ -140,7 +145,7 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->salesLinkService()->onSalesCommand(508, 508, true);
 
         self::assertSame(
-            'Only organizers, the night’s leader and the Welcome crew can open the sales desk.',
+            'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
             $this->messages()[0]['text']
         );
     }
@@ -172,7 +177,7 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         ]);
 
         self::assertSame(
-            'Only organizers, the night’s leader and the Welcome crew can open the sales desk.',
+            'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
             $this->lastCallTo('sendMessage')['text']
         );
     }

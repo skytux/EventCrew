@@ -513,7 +513,7 @@ final class BoardServiceTest extends TelegramTestCase
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
         $this->wpdb->nextVars[] = 2; // taskCapacity
-        // claim(): tasks->find for the leader-slot check (non-leader task)
+        // claim(): tasks->find for the role check (not a role task)
         $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
         // claim(): people->find for the ban check (not banned)
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
@@ -588,7 +588,7 @@ final class BoardServiceTest extends TelegramTestCase
         // join; join() then reactivates it.
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
         $this->wpdb->nextVars[] = 2; // taskCapacity
-        // claim(): tasks->find for the leader-slot check (non-leader task)
+        // claim(): tasks->find for the role check (not a role task)
         $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
         // claim(): people->find for the ban check (not banned)
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];

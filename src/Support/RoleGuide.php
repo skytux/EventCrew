@@ -80,9 +80,9 @@ final class RoleGuide
     }
 
     /**
-     * Every role on offer with what it involves, then the Leader when events
-     * carry one. The one list the welcome message and the web board's
-     * descriptions section both print, so they cannot disagree.
+     * Every role on offer with what it involves. The one list the welcome
+     * message and the web board's descriptions section both print, so they
+     * cannot disagree.
      *
      * @return array<int, array{name: string, description: string}>
      */
@@ -94,17 +94,6 @@ final class RoleGuide
             $list[] = [
                 'name' => '' === $role['emoji'] ? $role['label'] : $role['emoji'] . ' ' . $role['label'],
                 'description' => $role['description'],
-            ];
-        }
-
-        if ((bool) get_option(LeaderGate::ENABLED_OPTION, false)) {
-            $list[] = [
-                'name' => Roles::display(Roles::LEADER_SLUG),
-                'description' => sprintf(
-                    /* translators: %d: how many times each other task must be done first */
-                    __('Runs the crew for the night. It opens to you after you have done each of the other tasks %d times.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    max(1, (int) get_option(LeaderEligibility::THRESHOLD_OPTION, 2))
-                ),
             ];
         }
 

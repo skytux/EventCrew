@@ -8,9 +8,9 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\CreditGrantNotifier;
-use EventCrew\Support\LeaderEligibility;
-use EventCrew\Support\LeaderGate;
 use EventCrew\Support\PersonEraser;
+use EventCrew\Support\RoleConditions;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 
@@ -26,8 +26,7 @@ final class PeoplePage
         private readonly StandingCalculator $standing,
         private readonly CreditGrantRepository $grants,
         private readonly CreditGrantNotifier $notifier,
-        private readonly LeaderEligibility $eligibility,
-        private readonly LeaderGate $leaderGate,
+        private readonly RoleConditions $conditions,
         private readonly PersonEraser $eraser
     ) {
     }
@@ -52,54 +51,36 @@ final class PeoplePage
                 'credit_grants' => $this->creditGrantRows(),
                 'nonce_action' => self::NONCE_ACTION,
                 'page_slug' => self::PAGE_SLUG,
-                // The Leadership view, shown as a second tab on this page: who has
-                // earned crew-leader eligibility and who has been granted it.
-                'lead_roles' => array_map(
-                    static fn (array $role): array => ['slug' => $role['slug'], 'label' => $role['label']],
-                    Roles::forTemplate()
-                ),
-                'lead_eligible' => $this->eligibleRows(),
-                'lead_allowed' => $this->allowedRows(),
-                'lead_threshold' => $this->eligibility->threshold(),
-                'lead_default' => $this->leaderGate->enabledByDefault(),
+                // The Role conditions view, shown as a second tab on this page:
+                // for each role with conditions, who meets them.
+                'condition_roles' => $this->conditionRows(),
             ]
         );
     }
 
     /**
-     * People who meet the crew-leader bar, with their per-role completion counts.
+     * For each role with conditions: its name, the conditions in one line, and
+     * who meets them now, with whether they already hold the role.
      *
-     * @return array<int, array{id: int, name: string, can_lead: bool, by_role: array<string, int>}>
+     * @return list<array{label: string, conditions: string, people: list<array{id: int, name: string, holds: bool}>}>
      */
-    private function eligibleRows(): array
+    private function conditionRows(): array
     {
+        $report = $this->conditions->report();
         $rows = [];
 
-        foreach ($this->eligibility->eligiblePeople() as $person) {
-            $rows[] = [
-                'id' => $person->id,
-                'name' => $person->name(),
-                'can_lead' => $person->canLead(),
-                'by_role' => $this->eligibility->byActiveRole($person->id),
-            ];
-        }
+        foreach (RoleConditions::rolesWithConditions() as $role) {
+            $people = [];
 
-        return $rows;
-    }
-
-    /**
-     * Everyone who currently holds leader permission.
-     *
-     * @return array<int, array{id: int, name: string}>
-     */
-    private function allowedRows(): array
-    {
-        $rows = [];
-
-        foreach ($this->people->all(['per_page' => 1000]) as $person) {
-            if ($person->canLead()) {
-                $rows[] = ['id' => $person->id, 'name' => $person->name()];
+            foreach ($report[$role['slug']] ?? [] as $row) {
+                $people[] = ['id' => $row['person']->id, 'name' => $row['person']->name(), 'holds' => $row['holds']];
             }
+
+            $rows[] = [
+                'label' => Roles::display($role['slug']),
+                'conditions' => RoleConditions::describe($role['conditions']),
+                'people' => $people,
+            ];
         }
 
         return $rows;
@@ -164,7 +145,6 @@ final class PeoplePage
             : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         $isOrganizer = isset($_POST['is_organizer']) && '1' === (string) $_POST['is_organizer'];
-        $canLead = isset($_POST['can_lead']) && '1' === (string) $_POST['can_lead'];
         $ticked = isset($_POST['roles']) && is_array($_POST['roles'])
             ? array_map('sanitize_key', wp_unslash($_POST['roles']))
             : [];
@@ -188,17 +168,19 @@ final class PeoplePage
             );
         }
 
+        $before = $id > 0 ? ($this->people->find($id)?->roleSlugs ?? []) : [];
+        $roles = $this->rolesAfterSave($id, $ticked);
         $data = [
             'email' => $email,
             'display_name' => $displayName,
             'notes' => $notes,
             'is_organizer' => $isOrganizer,
-            'can_lead' => $canLead ? 1 : 0,
-            'role_slugs' => PersonRepository::encodeRoles($this->rolesAfterSave($id, $ticked)),
+            'role_slugs' => PersonRepository::encodeRoles($roles),
         ];
 
         if ($id > 0) {
             $this->people->update($id, $data);
+            RoleNotifier::rolesChanged($id, $before, $roles);
 
             Admin::redirectTo(self::PAGE_SLUG, __('Person updated.', 'eventcrew'));
         }
@@ -207,7 +189,11 @@ final class PeoplePage
         // someone's address is not that person confirming it, and consent to
         // open-task email cannot be given on another person's behalf - both
         // only happen when the person acts themselves.
-        $this->people->create($data);
+        $newId = $this->people->create($data);
+
+        if ($newId > 0) {
+            RoleNotifier::rolesChanged($newId, [], $roles);
+        }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Person added.', 'eventcrew'));
     }

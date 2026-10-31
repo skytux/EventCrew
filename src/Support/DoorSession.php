@@ -13,8 +13,8 @@ namespace EventCrew\Support;
  * night. Opening it spends the token and leaves a cookie behind that names the
  * person, the night and the latest it can last - 06:00 the morning after the
  * night - signed the same way WebSession signs its cookie. Nothing is stored
- * server-side for the cookie itself. The shorter lifetime of a leader's or
- * Welcome crew member's session (until the event ends) is checked on every
+ * server-side for the cookie itself. The shorter lifetime of a non-organizer's
+ * session (until the event ends) is checked on every
  * request by SalesDeskGate, since it depends on who the person is now.
  *
  * Times are local wall-clock strings, compared against current_time() like
