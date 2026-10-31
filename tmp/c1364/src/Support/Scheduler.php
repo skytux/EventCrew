@@ -1,0 +1,169 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Support;
+
+use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Telegram\BoardService;
+
+/**
+ * The heartbeat: one hourly WP-Cron event that runs the scheduled sends - the
+ * task reminders and the automated open-task call - in bounded batches.
+ *
+ * The schedule self-heals on boot rather than relying on the activation hook,
+ * which WordPress skips when a plugin is updated by the file-drop or the
+ * updater, so a new version can't leave the site with no heartbeat. The same
+ * run() is what the cron fallback calls on an ordinary request, so there is one
+ * job, reachable two ways.
+ */
+final class Scheduler
+{
+    /** The cron hook, also cleared on deactivation from the main plugin file. */
+    public const HOOK = 'eventcrew_run_notifications';
+
+    public const LAST_RUN_OPTION = 'eventcrew_cron_last_run';
+
+    /** Most sends per run, so a shared-host request can't time out mid-batch. */
+    private const BATCH = 25;
+
+    /** MySQL lock name that keeps two runs from overlapping. */
+    private const LOCK = 'eventcrew_heartbeat';
+
+    /** The fallback only re-runs once the last run is this old. */
+    private const DUE_AFTER_SECONDS = HOUR_IN_SECONDS;
+
+    public function __construct(
+        private readonly ReminderCall $reminders,
+        private readonly OpenTaskCall $openTasks,
+        private readonly StandingNotice $standingNotices,
+        private readonly BoardPush $boardPush,
+        private readonly BoardService $board,
+        private readonly LeaderEligibilityNotifier $leaderCandidates,
+        private readonly RetentionPurge $retention,
+        private readonly WelcomeSender $welcome
+    ) {
+    }
+
+    /**
+     * Registers the run action and makes sure the hourly event exists.
+     */
+    public function boot(): void
+    {
+        add_action(self::HOOK, [$this, 'run']);
+
+        if (false === wp_next_scheduled(self::HOOK)) {
+            wp_schedule_event(time(), 'hourly', self::HOOK);
+        }
+    }
+
+    /**
+     * The batched run itself - the WP-Cron callback. Reminders first (time
+     * critical), then the open-task call, each capped; the ledger and
+     * reminded_at guarantee the next run resumes rather than repeats.
+     */
+    public function run(): void
+    {
+        global $wpdb;
+
+        // WP-Cron and the visitor fallback can start a run at the same moment.
+        // Two runs would read the same unsent rows and send each twice, so the
+        // second one gives up at once and leaves the work to the first.
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::LOCK))) {
+            return;
+        }
+
+        try {
+            $this->runLocked();
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
+        }
+    }
+
+    private function runLocked(): void
+    {
+        /*
+         * Reminders run every tick and decide for themselves: they are the one
+         * scheduled send with a deadline, so a task starting before the window
+         * next opens has to be reminded about now rather than politely at nine
+         * tomorrow, by which time it has happened.
+         *
+         * The rest have no such deadline. A crew-wide email about next weekend
+         * gains nothing from going at 04:00 and loses a good deal.
+         */
+        $this->reminders->run(self::BATCH);
+
+        if (SendWindow::isOpen()) {
+            $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
+            $this->standingNotices->sendDue(self::BATCH);
+            $this->boardPush->run();
+
+            // Tell the organizers about anyone newly eligible to lead.
+            $this->leaderCandidates->run();
+
+            // The welcome message for members who have not had it yet: the
+            // ones from before it existed, and anyone who linked Telegram or
+            // became an organizer since. Does nothing while switched off.
+            $this->welcome->sendDue(self::BATCH);
+        }
+
+        // Not gated: editing the pinned board in place sends nobody a
+        // notification, and a board left stale until morning is just wrong.
+        $this->board->refreshIfChanged();
+
+        // Discover a link to the group, so the emails and DMs can offer a way
+        // in without anyone pasting one into Settings. Throttled to once a week
+        // inside, and a no-op when the organizer has set their own.
+        $this->board->refreshGroupLink();
+
+        // Sweep spent and expired sign-in tokens - one is issued per email's
+        // account-link footer, so the table would grow unbounded otherwise. The
+        // repository is newed inline like the other stateless helpers, so this
+        // adds no constructor to the heartbeat.
+        (new AuthTokenRepository())->purgeExpired();
+
+        // Enforce the published retention period. Not inside the send window:
+        // it notifies nobody, so there is no unsociable hour to protect anyone
+        // from, and a job that only runs half the day takes twice as long to
+        // work through a first backlog. A no-op unless the organizer switched
+        // it on, and a no-op thereafter on a database with nothing overdue.
+        $this->retention->run();
+
+        update_option(self::LAST_RUN_OPTION, time());
+    }
+
+    /**
+     * Runs only when the last run is over an hour old. This is the throttle the
+     * inline fallback leans on; real WP-Cron is already hourly and calls run()
+     * directly. Returns whether it ran.
+     */
+    public function runIfDue(): bool
+    {
+        if (! $this->isDue()) {
+            return false;
+        }
+
+        $this->run();
+
+        return true;
+    }
+
+    public function isDue(): bool
+    {
+        $last = (int) get_option(self::LAST_RUN_OPTION, 0);
+
+        return (time() - $last) >= self::DUE_AFTER_SECONDS;
+    }
+
+    /**
+     * Clears the scheduled event. Called from the plugin's deactivation hook.
+     */
+    public static function unschedule(): void
+    {
+        wp_clear_scheduled_hook(self::HOOK);
+
+        // The door-link check has its own five-minute event. Cleared here so
+        // the deactivation hook in the main plugin file covers it as well.
+        wp_clear_scheduled_hook(DoorLinkSender::HOOK);
+    }
+}

@@ -11,9 +11,13 @@
  * visible and redraws only when the state's version has changed.
  *
  * The "Add" button opens a popup for someone not on the lists yet: a ticket
- * sold at the door, a guest, or a crew member, who either spends a credit or
- * signs up for one of tonight's tasks. A member who has no record yet can be
- * added there with a name and an email.
+ * sold at the door, a Holvi buyer missing from the imported list, a guest, or
+ * a crew member, who either spends a credit or signs up for one of tonight's
+ * tasks. A member who has no record yet can be added there with a name and an
+ * email.
+ *
+ * The "+1" and "−1" buttons at the top count people in without a name, such
+ * as the organizers themselves. That count is part of the "checked in" total.
  *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
  * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, pollMs, searchMin, maxPlus, actions
@@ -47,6 +51,8 @@ $eventcrew_text = [
     'failed' => __('That did not go through. Check the connection and try again.', 'eventcrew'),
     'fewer' => __('One guest fewer', 'eventcrew'),
     'more' => __('One guest more', 'eventcrew'),
+    /* translators: %d: how many people were counted in without a name tonight */
+    'anonymous' => __('Counted without a name: %d', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -81,6 +87,8 @@ button:disabled{opacity:.5}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ec-anon{display:flex;align-items:center;gap:8px;margin-top:8px}
+.ec-anon span{color:var(--muted);font-variant-numeric:tabular-nums}
 .ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
 dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -106,6 +114,11 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     ?></small></div>
     <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
     </div>
+    <div class="ec-anon">
+        <button type="button" id="ec-anon-less" aria-label="<?php esc_attr_e('Take one person off the count without a name', 'eventcrew'); ?>">−1</button>
+        <button type="button" id="ec-anon-more" aria-label="<?php esc_attr_e('Count one person in without a name', 'eventcrew'); ?>">+1</button>
+        <span id="ec-anon-count"></span>
+    </div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
 <main>
@@ -122,6 +135,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     <div id="ec-step-choose" class="ec-stack">
         <button type="button" id="ec-pick-ticket"><?php esc_html_e('Ticket', 'eventcrew'); ?></button>
+        <button type="button" id="ec-pick-holvi"><?php esc_html_e('Bought on Holvi, not on the list', 'eventcrew'); ?></button>
         <button type="button" id="ec-pick-guest"><?php esc_html_e('Guest', 'eventcrew'); ?></button>
         <button type="button" id="ec-pick-member"><?php esc_html_e('Crew member', 'eventcrew'); ?></button>
     </div>
@@ -132,6 +146,18 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             <input type="text" id="ec-ticket-name" autocomplete="off"></label>
         <div class="ec-stack">
             <button type="button" class="ec-primary" id="ec-ticket-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
+        </div>
+    </div>
+
+    <div id="ec-step-holvi" hidden>
+        <h3><?php esc_html_e('Bought on Holvi, not on the list', 'eventcrew'); ?></h3>
+        <label><?php esc_html_e('Name (optional)', 'eventcrew'); ?>
+            <input type="text" id="ec-holvi-name" autocomplete="off"></label>
+        <label><?php esc_html_e('Email (optional)', 'eventcrew'); ?>
+            <input type="email" id="ec-holvi-email" autocomplete="off"></label>
+        <p class="ec-muted"><?php esc_html_e('The email is only shown on the list. Nothing is sent to it.', 'eventcrew'); ?></p>
+        <div class="ec-stack">
+            <button type="button" class="ec-primary" id="ec-holvi-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
         </div>
     </div>
 
@@ -199,7 +225,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     var timer = null;
 
     // The Add popup: which step shows, the member picked, the guest's count.
-    var steps = ['choose', 'ticket', 'guest', 'member', 'choice', 'tasks'];
+    var steps = ['choose', 'ticket', 'holvi', 'guest', 'member', 'choice', 'tasks'];
     var current = 'choose';
     var chosen = null;
     var guestPlus = 0;
@@ -250,6 +276,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-day').textContent = state.day;
         el('ec-in').textContent = state.in;
         el('ec-expected').textContent = state.expected;
+        el('ec-anon-count').textContent = text.anonymous.replace('%d', state.anonymous);
+        el('ec-anon-less').disabled = state.anonymous <= 0;
         holder.textContent = '';
 
         state.sections.forEach(function (section) {
@@ -418,7 +446,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     }
 
     function openAdd() {
-        ['ec-ticket-name', 'ec-guest-name', 'ec-member', 'ec-new-name', 'ec-new-email'].forEach(function (id) {
+        ['ec-ticket-name', 'ec-holvi-name', 'ec-holvi-email', 'ec-guest-name', 'ec-member', 'ec-new-name', 'ec-new-email'].forEach(function (id) {
             el(id).value = '';
         });
         el('ec-members').textContent = '';
@@ -507,12 +535,33 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         }
     });
     el('ec-pick-ticket').addEventListener('click', function () { step('ticket'); el('ec-ticket-name').focus(); });
+    el('ec-pick-holvi').addEventListener('click', function () { step('holvi'); el('ec-holvi-name').focus(); });
     el('ec-pick-guest').addEventListener('click', function () { step('guest'); el('ec-guest-name').focus(); });
     el('ec-pick-member').addEventListener('click', function () { step('member'); el('ec-member').focus(); });
 
     el('ec-ticket-add').addEventListener('click', function () {
         post('ticket', { name: el('ec-ticket-name').value.trim() }).then(done, failed);
     });
+
+    el('ec-holvi-add').addEventListener('click', function () {
+        post('holvi', {
+            name: el('ec-holvi-name').value.trim(),
+            email: el('ec-holvi-email').value.trim()
+        }).then(done, failed);
+    });
+
+    // The count of people let in without a name. Each tap is sent on its
+    // own; the answer carries the new state, which redraws the count.
+    function countAnonymous(stepBy, button) {
+        button.disabled = true;
+        post('count', { step: stepBy }).then(apply, failed).then(function () {
+            button.disabled = false;
+            draw();
+        });
+    }
+
+    el('ec-anon-more').addEventListener('click', function () { countAnonymous('1', el('ec-anon-more')); });
+    el('ec-anon-less').addEventListener('click', function () { countAnonymous('-1', el('ec-anon-less')); });
 
     el('ec-guest-less').addEventListener('click', function () { setGuestPlus(guestPlus - 1); });
     el('ec-guest-more').addEventListener('click', function () { setGuestPlus(guestPlus + 1); });

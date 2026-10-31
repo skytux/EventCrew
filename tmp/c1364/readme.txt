@@ -1,0 +1,721 @@
+=== EventCrew ===
+Contributors: skytux
+Tags: events, attendance, telegram, rsvp, roster
+Requires at least: 6.8
+Tested up to: 6.8
+Requires PHP: 8.2
+Stable tag: 1.36.4
+License: GPLv2
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Staffing, attendance and rewards for recurring events, run from a Telegram group and a public web page, administered from WordPress.
+
+== Description ==
+
+EventCrew turns a recurring event into a self-running crew: people sign up for
+jobs from a Telegram group or a public web page, attendance is marked at the
+door, and reliable helpers earn free entry — all administered from wp-admin.
+
+A person's identity is a **verified email**, never a WordPress account, so the
+same person moves freely between the bot and the web page, and organizers are the
+only ones who need a wp-admin login.
+
+The model is deliberately generic: a **Role** is a kind of job, a **Task** is one
+instance of a role on a date needing N people, and an **Assignment** is one
+person on one task. Nothing assumes the work is unpaid.
+
+= What it does =
+
+* **Tasks & roles** — define roles with capacities and time offsets, then generate
+  a whole evening's tasks for an event in one click. A task set to 0 people stays
+  on the books but drops off the boards.
+* **A Telegram bot** — a shared board in your group, grouped under event and date
+  headings with a Join button per open task, private-chat onboarding that verifies
+  an email, and atomic, capacity-safe joins even under a double-tap.
+* **Public web signup** — an `[eventcrew_signup]` shortcode (and matching block)
+  showing the same board, with email magic-link sign-in and claim/drop that obey
+  exactly the same rules as the bot. Installable as a mobile app (PWA).
+* **Roster, attendance & a door list** — mark who arrived / completed / no-showed,
+  per person or a whole crew at once, and see everyone who gets in free tonight.
+* **Reputation, credits & a crew-leader role** — a recency-weighted read of each
+  person's history (never a stored score), earned free-entry credits, an optional
+  gate for at-risk members, and a trusted leader who can run a night without being
+  an admin. All tunable in Settings.
+* **Notifications on both channels** — every notice can reach a person by Telegram
+  DM and email, each type toggleable per channel from a web tab or the
+  `/notifications` menu. Signup confirmations and reminders always send.
+* **Scheduled sends** — 24h task reminders and a 48h open-task call on an hourly
+  WP-Cron heartbeat, with a fallback for hosts where WP-Cron never fires.
+* **GDPR, answered** — say who the controller is (and a data protection officer, if
+  you have one) and the plugin writes the privacy notice: a public page via
+  `[eventcrew_privacy]`, suggested text for WordPress's own policy, and a line at
+  sign-up linking to it. Plus a retention period you can have enforced
+  automatically, and export and erase handlers on WordPress's own privacy tools.
+
+= Telegram commands =
+
+Personal commands answer in a private chat; asked in the group, the answer goes to
+the DM with a short breadcrumb left behind.
+
+* `/start`, `/stop` — set your account up (verify email) or switch it off
+* `/me`, `/myhistory`, `/mytickets` — your standing & credits, past tasks, tickets
+* `/ticket` — spend a free-entry credit for a door ticket
+* `/replace` — arrange cover for a task
+* `/notifications` — choose what reaches you, and on which channel
+* `/board` — post or refresh the group board of open tasks
+* `/roster` — the attendance roster (organizers, and the night's crew leader)
+* `/gift`, `/allow`, `/leaders` — organizer tools: credits, permissions, leadership
+
+== External services ==
+
+EventCrew connects to the following third-party services. None is contacted until
+you configure it, and no analytics or personal data is sent anywhere for tracking.
+
+* **Telegram Bot API** (`api.telegram.org`) — used only when you add a bot token in
+  Settings. The plugin registers a webhook and sends the messages, board updates
+  and notifications your crew receives. Data sent: the message text and chat ids
+  needed to deliver them. Telegram's terms: https://telegram.org/tos ; privacy
+  policy: https://telegram.org/privacy
+* **Cloudflare Turnstile** (`challenges.cloudflare.com`, `challenges.cloudflare.com/turnstile/v0/siteverify`)
+  — an optional CAPTCHA on the public sign-in form, active only when you enter
+  Turnstile keys in Settings. The visitor's challenge token (and optionally their
+  IP) is sent to Cloudflare to verify they are human. Terms:
+  https://www.cloudflare.com/website-terms/ ; privacy:
+  https://www.cloudflare.com/privacypolicy/
+* **Cloudflare DNS-over-HTTPS** (`cloudflare-dns.com`) — used only if you enable the
+  "DNS bypass" option, for hosts whose DNS cannot resolve `api.telegram.org`. It
+  sends that hostname to Cloudflare's resolver to obtain an IP. Same Cloudflare
+  terms and privacy links as above.
+
+== Installation ==
+
+1. Upload the plugin zip via **Plugins → Add New → Upload Plugin**, then activate.
+   Activation creates the custom tables; the same migration also runs on any later
+   request where the stored schema version is behind, so an update dropped in over
+   FTP is safe.
+2. Under **EventCrew → Settings → Telegram**, paste your BotFather token, save,
+   then *Install / refresh webhook* and add the bot to your group. HTTPS with a
+   valid certificate is required — Telegram refuses plain HTTP and self-signed
+   certs. Re-run the webhook install after upgrades so new commands appear.
+3. Create a page containing the `[eventcrew_signup]` shortcode for the public
+   board, and (optionally) point the Mobile app setting at it.
+4. Define your roles under **EventCrew → Tasks / Settings**, then generate an
+   event's tasks.
+
+Requires MySQL/MariaDB with InnoDB; the plugin converts its own tables if the host
+defaults to MyISAM.
+
+== Frequently Asked Questions ==
+
+= Do crew members need a WordPress account? =
+
+No. Identity is a verified email address. People sign up from Telegram or the web
+page; only organizers use wp-admin.
+
+= Does it work without Telegram? =
+
+Yes. The public `[eventcrew_signup]` page mirrors the board and uses email
+magic-link sign-in. Telegram is optional; add a bot token to enable it.
+
+= What happens to attendance history when I uninstall? =
+
+Nothing is deleted by default — a season of history survives an uninstall/reinstall.
+Tables are dropped only if you set the `eventcrew_delete_data_on_uninstall` option.
+
+= How is "standing" calculated? =
+
+It is a recency-weighted average of each person's finished outcomes (completed,
+replaced, late-cancelled, no-showed), never stored — always recomputed — so it
+cannot drift. The outcome weights, threshold and half-life are editable in Settings.
+
+== Changelog ==
+
+= 1.36.4 =
+* The ticket page shows the site logo (the Site Icon) large and faded behind the ticket, as a watermark. The "ticket not found" page has it too. Without a Site Icon the page looks as before.
+
+= 1.36.3 =
+* The crew web page has a new Help tab. It shows the welcome text (how tasks, tickets, credits and standing work) without the open tasks. Organizers also see the organizer guide lower in the same tab, with a link to it at the top.
+* The welcome message and the organizer guide are easier to read: emoji headings, emoji bullets and more space between lines. The organizer guide starts with a contents list; in the email each entry links to its section.
+* The welcome email and DM, and the organizer guide email and DM, say that the guide is also in the Help tab of the crew web page after sign-in, with the link.
+* The organizer guide has a link to EventCrew in wp-admin. The member welcome email has the wp-admin button only when the member is an organizer.
+
+= 1.36.2 =
+* The welcome email and the organizer guide email have a button to the crew's Telegram group (when its link is known). The organizer guide email also has a button to EventCrew in wp-admin.
+
+= 1.36.1 =
+* Web sign-up board: the task rows no longer repeat each role's description under every event. The descriptions are shown once, in the "What each task involves" section at the bottom.
+
+= 1.36.0 =
+* New: a welcome message for every member, by email and by Telegram DM, sent once. It explains the tasks (with each role's description), tickets, credits and standing, using the live settings, and lists the open tasks. The DM has a sign-up button for each open task. New members get it when they confirm their email; everyone else gets it from the hourly run, inside the notification hours, 25 people per hour.
+* New: an organizer guide for organizers, sent once in addition to the member welcome. The email has an "In short" part and then the details; the DM has the "In short" part. Someone made an organizer later gets it then.
+* The welcome message is off until it is switched on in Settings > Reputation & alerts. "Send me the welcome message" on the same tab sends every message to the member with the administrator's email address, without recording it, so it can be checked first.
+* New: a "What each task involves" section on the web sign-up board. The Telegram group board, the welcome email and the welcome DM link to it.
+* Emails can now have headings (lines starting with "## ").
+
+= 1.35.2 =
+* A late cancellation no longer counts against someone who then turns up for another task on the same date. When they are marked arrived, arrived late or completed on that task (Telegram /roster, wp-admin roster or the sales desk), their late cancellations for that date become a plain "cancelled", with no penalty. Signing up alone does not clear it, so signing up and cancelling again does not wash it out. Signing back up to the same task already cleared it. The late-cancellation message sent at cancel time cannot be taken back.
+
+= 1.35.1 =
+* Sales desk, Add > Crew member: the search now also lists members who are already on tonight's "Crew working" or "Free-entry credit" list, marked "Already on tonight's list: ..." and without a Choose button. Before, they were left out, so the search said "No member matches" and looked broken.
+* Sales desk, Add > Crew member: someone on tonight's "Free-entry credit" list gets a "Take a task instead" button. Signing them up for a task cancels their free-entry ticket, which gives the credit back, and writes "Ticket exchanged against taking a task" in the credit-grant log (as a 0-credit line, so the credit is not counted twice). They are then counted once, on the crew list.
+* Sales desk, Add popup: the Ticket / Guest / Crew member buttons now hide once one is chosen. A stylesheet rule kept them visible on every step, which pushed the search results down the screen.
+
+= 1.35.0 =
+* Sales desk: an "Add" button in the top bar, next to the count. It opens a popup that asks what to add: Ticket, Guest or Crew member.
+* Ticket: a ticket sold at the door, with an optional name. It is checked in at once and listed under the new "Door tickets" list. "Reset import" for Holvi buyers leaves door tickets alone, and the roster page's Holvi list does not show them.
+* Guest: a name and how many extra people they may bring, 0 by default. The guest is checked in at once.
+* Crew member: search by name or email (members with no credit are listed too), or add a new member with a name and an email. A new member gets one email with a button that confirms the address and signs them in, and a one-person invite link to the crew's Telegram group. Then choose "Use a credit" or "Working tonight", which lists tonight's tasks with a free place; signing up there checks them in and marks them arrived.
+* Sales desk: the "Give ticket" search at the bottom of the page is gone; it lives in the Add popup now.
+* Sales desk: a guest's count starts at +0, not at the number on the guest list. Each guest row says how many extra people they are allowed ("allowed +2"), the + button stops there, and the expected total counts that allowance.
+* Sales desk: free-entry credit rows have no guest buttons any more, like crew rows: a credit lets in one person.
+* Telegram /guest help: the examples now say that no +N (or +0) means just the guest, and +N means N extra people.
+
+= 1.34.1 =
+* Sales desk: clearer check-in. The row button now says "Check in", and "✓ In" once tapped. The top line says "0 of 12 checked in".
+* Sales desk: the − / + count is labelled "guests", so it reads as extra people brought along, not the person. Crew rows no longer have it.
+
+= 1.34.0 =
+* New: Holvi ticket buyers on the door list. An organizer can paste the buyer names for a night into the wp-admin Roster page; they appear under "Holvi tickets" on the sales desk.
+* New: an import endpoint for the same list by email. An organizer forwards the Holvi buyer list to the import mailbox, a small poller on the mail server checks the sender (DMARC) and sends the names to the site, signed with a secret from Settings. The organizer gets an email saying how many names were added, and to which night. The same email sent twice is not added twice.
+* The poller and its install steps are in tools/mail-import/ (not part of the plugin zip).
+
+= 1.33.0 =
+* New: the sales desk (door page). A one-time link opens a phone page for the night with four lists: Crew working, Free-entry credit, Guests and Holvi tickets. Each name has an "In" toggle and a +x count, and the page shows a running total and a name filter. "Give ticket" searches for a member and spends their credit, even when free entry is closed. The page refreshes itself every 4 seconds while it is open.
+* New: /sales in Telegram sends a fresh sales desk link in a direct message. Organizers can use it at any time; their link works until 06:00 the next morning. The night's leader and Welcome crew can use it from 10 minutes before their task, once they are marked arrived; their link stops working when the event ends.
+* New: a "Sales desk" button on the member web page, for the same people.
+* New: sales desk links are sent automatically. Organizers get one 30 minutes before the night's first task (or before 17:00 when no task has a start time). The leader and Welcome crew get one when they are marked arrived and their task is near. Both times are set in Settings.
+* Marking a crew member "In" at the door also marks their task arrived.
+* Fixed: the five-minute link check takes a database lock, so two runs at once cannot send the same link twice.
+
+= 1.32.1 =
+* Fixed: the bot could answer the same command two or three times. When the site was slow, Telegram sent the message again before the first answer finished, and each copy was answered. Now only one copy is answered.
+* Fixed: two scheduled runs starting at the same moment (WP-Cron and the visitor fallback) could send the same reminder or notice twice. A second run now stops at once.
+
+= 1.32.0 =
+* Credits can no longer be spent on a night whose linked EventMesh event stopped selling: the event is not published (for example removed from the Holvi shop), is disabled or hidden, or is sold out. This applies to /ticket, the web page and the wp-admin Roster page.
+* Signing up for a task on that night stays open, so crew can still join a sold-out night.
+* wp-admin: the Roster page says when the linked event closes a night to credits, and why. The "Close free entry" button still only changes the organizer's own closing.
+
+= 1.31.0 =
+* New: **guest list.** Each event night has a list of people let in free who are not crew members, with a number of plus-ones and a note for each guest.
+* Telegram: **/guest** shows the next night's list; /guest 1.8. shows another night. Organizers change it: /guest add Anna +2 ; DJ's partner, /guest edit 2 +3 (the number from the list; only the parts given change), /guest remove 2. A date can go before the name or number. The answer always goes to the DM.
+* Organizers can change the list. The night's leader and its Welcome crew can see their own night's list.
+* wp-admin: the Roster page has a Guest list section under the door list, to add, change and remove guests for the shown date.
+* /tickets now lists the night's guests under the crew and credit holders, and the total counts each guest's plus-ones.
+
+= 1.30.0 =
+* New: **/tickets** in Telegram shows who has a ticket for an event night: everyone working it and everyone who spent a free-entry credit on it, the same list as the door list on the wp-admin Roster page. The answer always goes to the DM.
+* Organizers can see every night. The night's leader and its Welcome crew can see their own night.
+* With no date it shows the next event. A date can be given: /tickets 1.8. or /tickets 2026-08-01. Buttons under the list switch to the last past night and the next few.
+
+= 1.29.0 =
+* New: **Arrived late.** A new attendance status for someone who did the task but turned up late. On the Telegram /roster each expected person now has three buttons: ✓ completed, ⏰ arrived late, ✗ no-show. It is also in the status list on the wp-admin Roster page.
+* Arriving late earns the free-entry credit and counts as a completed task for leader eligibility. In reputation it weighs 90%, between a completion (100%) and finding a replacement (80%); organizers can change the weight in Settings like the other outcomes.
+
+= 1.28.0 =
+* Changed: **links are named, not pasted.** Telegram messages no longer carry long raw addresses; each link is a button that says what it opens - "🎟 Show your ticket" and "📅 Add to calendar" on the signup confirmation, "🎟 Show your ticket" on a free-entry ticket, one button per upcoming ticket on /mytickets, "🔑 Sign in on the web" on /web, and "Privacy" on the welcome message.
+* Changed: the email-confirmation mail sent during Telegram setup now uses the same branded template as every other mail, with a "Confirm your email" button instead of the raw link. The privacy notice in it, and in the first web sign-in mail, is a named "Privacy" button too.
+* The plain-text version of each email still lists the full addresses, since a mail client that shows no HTML has nothing else to click.
+
+= 1.27.0 =
+* New: **each role says what the job involves.** A short description per role, edited in Settings ▸ Roles, is shown under the task on the web signup page and as an "About the task" line in the signup confirmation and the 24-hour reminder (Telegram and email). Decorate, Welcome and Clean ship with descriptions taken from the crew guide; roles saved before this version pick those up automatically, and a description you clear stays cleared.
+* New: **one shared crew guide link**, set in Settings ▸ Roles. It is never shown as a raw address: it is a "📋 Crew guide" button at the foot of the Telegram group board and in the signup confirmation and reminder DMs, a named button in those emails, and a named link under the web board. Leave it blank to show no guide link.
+
+= 1.26.2 =
+* Internal: a structural test now checks that every template only calls methods and reads properties that exist on the class its docblock declares. It is the guard that would have caught the People-page fatal fixed in 1.21.1 - a call to a method that never existed, invisible to a test suite that does not render templates. No change to how the plugin behaves.
+
+= 1.26.1 =
+* Fixed: **a free-entry credit could be spent twice.** Both places that redeem one — the /ticket flow and the organizer's Roster page — checked "have they already redeemed this date, and do they have a credit?" and then wrote the redemption as a separate step. Two requests could both be past that check at once: a double-tap, or the bot and the web page a moment apart. Two rows were written, two credits spent against a balance of one, and because the balance is worked out from those rows it simply went negative and clamped at zero — so somebody got in free twice with nothing to show it had happened. The check now lives inside the write itself, which is the same guard the task-signup table has used since v0.5 for exactly this reason.
+* The organizer's Roster page now says "They already have free entry for this date" instead of reporting a second redemption it did not make, and sends no second ticket.
+
+= 1.26.0 =
+* Sign out now sits at the right-hand end of the line it shares with your name, rather than trailing straight after it. It is also centred against the name instead of sharing a baseline with it, which stopped the button's padding hanging below the text now that it is a real button.
+* Section headings on the crew page have a little air above them, so a title is not sitting directly on the button that ended the section before it.
+
+= 1.25.3 =
+* Fixed: the account buttons still looked wrong next to the rest of the site — too much padding, the wrong shape. 1.25.2 handed them your theme's button styling but then shrank the label to 85%, and most themes set button padding in pixels: the text got smaller while the padding stayed exactly where it was, so the button became a slab of padding around small text. Overriding one half of a size the theme sets in two places is how that happens. The size override is gone, so they are now simply your theme's buttons — same border, same corners, same padding as every other button on the site.
+
+= 1.25.2 =
+* The account buttons now use your theme's own button styling, like every other button on the page already did — Save preferences, Get my ticket, and the board's Sign up and Cancel all wear it. 1.24.0 gave them a hand-made grey surface instead, which was legible but looked like nothing else on the panel. Sign out and Sign out everywhere take the theme's outline style, so they read as the secondary things they are; Delete my data keeps the deep red, layered on top of the theme's button exactly the way Cancel already is.
+* Which also settles the legibility problem properly: contrast against the page is the theme's business, decided once by the part that knows what the background is, rather than guessed at here.
+
+= 1.25.1 =
+* Fixed: the account buttons added in 1.24.0 could end up with **no background at all**, looking exactly like the bare text they were meant to replace. Their tint and border were written with `color-mix()`, and a value a browser cannot parse takes its whole declaration with it — so where that was unsupported or blocked, the buttons silently lost both. Each now has a plain colour first and the `color-mix()` version second, so there is always a surface and the nicer, theme-following tint applies wherever it is understood.
+* The neutral tint was also far too faint to see — 8% over the page's own text colour is close to nothing. It is 20% now, with a stronger border, and the labels are bolder.
+
+= 1.25.0 =
+* **A one-minute wait before a sign-in link can be sent again, counted down in the button itself** — "Resend in 47s", then back to "Resend link". Mail takes a moment to arrive, and a second identical link helps nobody; showing the wait rather than silently refusing the press means the button always says what it is doing and when it will be ready. Only a link that actually went starts the clock, so a refused attempt leaves the button ready to try again immediately.
+* It is a courtesy, not a rate limit: it lives in the page, so a reload clears it. Cloudflare's check remains the actual guard against anyone hammering the form.
+
+= 1.24.0 =
+* **Sign out, Sign out everywhere and Delete my data are now proper buttons**, each with a surface of its own instead of bare underlined text. Three releases tried to make Delete legible by choosing a better colour for the text; none could, because no colour is legible against a background nobody has declared. A button carries its own background and settles it: the neutral two are tinted from the page's own text colour, and Delete carries the deep red under white — the same pairing Cancel already uses, so the two destructive controls now read alike.
+* Fixed: **"Resend link" reloaded the spam check and then sent nothing until pressed a second time.** A spent token has to be replaced before anything can go, and the page gave up waiting after four seconds — but a challenge solving from cold after a reset is slower than one that solved during page load, so the first press regularly ran out of patience. It now waits up to ten, and re-arms the widget quietly a second after a link is sent, so by the time you reach for Resend there is usually a token already waiting and it goes on the first press.
+
+= 1.23.4 =
+* Fixed, properly this time: **the "Delete my data" link was still nearly unreadable on a dark page.** 1.22.0 shifted it toward the page's text colour but kept too much of the deep red — enough to stay dark, and dark on dark is dark. No fixed red can be legible against a background nobody has declared, and every step toward making one legible is a step away from it being red at all. The wording now takes the page's own text colour, which the theme already chose to be readable against its own background, and the red moves to a thicker underline beneath it, where being dim costs nothing because nobody has to read a line.
+
+= 1.23.3 =
+* **Root cause found, at last: the spam check keeps its answer in two places and fills them seconds apart.** Cloudflare hands its token to the page's script the moment the challenge is solved — the tick appears then — and only writes it into the hidden form field a few seconds later. The form submits the field, so a press inside that gap sent nothing at all, was refused for having no token, and showed a tick throughout insisting everything was fine. It also explains the one clue that never fitted: focusing the email box first "fixed" it, because typing spends exactly the seconds the field needed to catch up.
+* The request now carries the token explicitly, taking whichever copy exists. So an immediate press works, with no wait and nothing to catch up on.
+* This is the bug 1.21.2, 1.22.0, 1.22.1 and 1.23.0 were all circling. 1.23.0 in particular made it likelier, by trusting the copy that lags over the one that leads.
+
+= 1.23.2 =
+* Fixed: **a refused spam check took about half a minute to say so.** The page waited fifteen seconds for a token, sent the request without one anyway — which the server refuses outright — then waited another fifteen and sent a second, before finally showing "couldn't verify you're human". Both waits are now four seconds, which is far longer than a challenge that is going to answer needs.
+* And it no longer sends a request it knows will be refused. With no token there is nothing to verify, so instead of a round trip and a line in your log it says straight away: "The spam check hasn't finished yet — give it a moment, then try again." The button shows "Checking you're human…" during the wait, so the pause is visible rather than dead air.
+* The widget is also no longer reset when it has not produced a token yet — it may be mid-solve or waiting to be clicked, and resetting threw that progress away.
+
+= 1.23.1 =
+* Fixed: the spam check re-ran itself the moment the sign-in link was sent, so the tick vanished and the box visibly worked itself out again directly under a message telling you to go and check your inbox. It looked like the form reloading, and it was asking a question nobody had been posed — there is nothing to submit until you press Resend. The widget is now left alone and only refreshed on the next press, where the wait belongs.
+
+= 1.23.0 =
+* Fixed: the spam check read one thing and the form sent another. Turnstile writes its result into a hidden field, and that field is what gets submitted — but the page was asking Cloudflare's script instead, which answers for whichever widget it considers first and can come back empty while the field is perfectly well filled in. Both now read the field the form actually sends. This is the likeliest reason a press could fail while the widget showed a tick, and why focusing the email box first appeared to help.
+* A refusal with no token at all is now written to Diagnostics. It was the one refusal that returned silently, so an install failing this way showed **nothing**, which reads as "the check never ran" and sent the last two releases after the wrong cause.
+* The sign-in wording is shorter: "No password — we email you a link, good for 30 minutes." and "We store your email to run the crew." Both share a narrow centred column under the field, where a longer line breaks into ragged halves. Hints also wrap evenly now on browsers that support it.
+* The outcome message no longer sticks around. The redirect after an action put its result in the address bar, so a refresh — or a bookmark, or a shared link — announced "You're signed out" again days later to somebody who was not. Nothing was ever re-run by that; it was a message outliving what it described. It is now cleared from the URL once shown.
+* Note on Diagnostics: the recent-activity list holds the **last 20 entries** and nothing else. It is not a time-based log — a busy hour can push a message out within minutes, so read it soon after reproducing something. Everything also goes to your host's own PHP error log, which keeps whatever your host keeps.
+
+= 1.22.1 =
+* Fixed: **the spam check could fail on the first press even though the widget showed a tick.** Cloudflare's tokens last about five minutes and are good for one use only, but the widget keeps its tick on screen regardless — so a page left open while somebody reads it, or types their address slowly, sent a token that had quietly gone stale. That is the failure the previous two releases did not catch: the token was there, it was just too old. The page now replaces a token that has been sitting for more than a hundred seconds before sending it, and if the check is refused anyway it fetches a fresh one and retries once by itself, without bothering you.
+* Cloudflare's reason for a refusal is now written to Diagnostics. It was being discarded, which left "couldn't verify you're human" as the only evidence — the same message whether the token was stale, already used, or the secret key was simply wrong. **If sign-in is still refusing anyone, look at EventCrew ▸ Diagnostics: the reason is now there in plain words.**
+
+= 1.22.0 =
+* The sign-in button now waits for the spam check instead of letting you press it too early. While Cloudflare is still working it reads "Checking you’re human…" and cannot be pressed; it becomes "Email me a sign-in link" the moment there is something to send. 1.21.2 made an early press work by waiting behind the scenes — this makes the wait visible, so nobody spends a press wondering whether anything happened.
+* If the challenge never arrives — an ad blocker or privacy extension stopping the script is the usual reason — the button goes live anyway after fifteen seconds rather than staying dead for ever. The press then reaches the server, which explains itself.
+* Fixed: **the "Delete my data" link was close to invisible on a dark page.** It was a deep red picked to carry white text on a filled button, which is the wrong colour for bare text on a dark background or over a dark background image. It now shifts with the page's own text colour, so it stays legible and still reads as a warning. Everything else on the page already worked this way; this was the one colour that did not.
+
+= 1.21.2 =
+* Fixed: **the sign-in email often did not send on the first press, then worked on the second.** With the Cloudflare captcha switched on, the widget takes a moment to render and solve, and the form read its token the instant the button was pressed — so anyone quick enough submitted an empty one and was refused. The page now waits for the token before sending, and gives up after five seconds and submits anyway, so a blocked or broken challenge script cannot leave you unable to sign in at all.
+* Fixed: the page said "Check your inbox for the sign-in link" whether or not one had been sent. A refused captcha or a mistyped address got the same message, so the natural thing to do was go and wait for an email that was never coming, instead of pressing the button again. It now only says that when the link really went.
+
+= 1.21.1 =
+* Fixed: **signing out on the crew page did not work.** It answered "please sign in" to somebody who was already signed in and asking to stop being, and left them signed in. Introduced in 1.20.0, which started checking sign-out like every other action but did not give the button the token to pass that check. If you are on 1.20.0, this is the release you want.
+* Fixed: "Sign out everywhere" then locked you out for hours. It signed every session out correctly, but then refused new ones for as long as your site's distance from UTC — two or three hours on Finnish time — so a fresh sign-in link signed you in and bounced you straight back out. Two clocks were being compared without converting between them.
+* Fixed: a record anonymised by the retention purge kept its live sessions. Anyone still holding that person's cookie stayed signed in, looking at the history of a record that no longer had a name on it. Anonymising now retires those sessions along with everything else.
+* Added a check that every form on the crew page carries its token, so the sign-out failure — a form and its handler quietly ceasing to agree — cannot happen again unnoticed.
+
+= 1.21.0 =
+* The 📅 moved from an event's date row up to its name row, where it marks the start of each group. On the date row it was labelling something that already looked like a date; on the first row it is the thing the eye finds while scrolling.
+* Task rows now lead with the job — "🎈 Decorate · 17:00–18:30 · 1/3". The name is what you are choosing between; the times under one heading are all the same evening, so they separate the rows far less than the work does. Time and how full follow.
+* Which also means the role's own emoji starts every task row and no heading has one, so it is clear at a glance which rows do something when tapped and which are just labels.
+* A rule now separates the two links at the foot of the board from the tasks above them — they lead out of the board rather than into a slot, and ran on from the last task as though they were one.
+
+= 1.20.0 =
+* Security review of the whole plugin. It found no critical or high-severity holes — SQL is uniformly prepared, the signed-link and session tokens are sound, and every admin action already checked both permission and nonce. What it did find was recoverability: a few places where, if something did leak, there was no way to take it back. This release is those.
+* **The webhook secret can now be kept out of the URL.** On the admin-ajax fallback door the secret was always sent as a URL parameter as well as a header, which writes it into your server's access log on every update the bot receives. There is a new tick-box to send the header only, and — because the honest answer to "will my host pass the header through?" is "try it" — Settings ▸ Telegram bot now prints the exact header-only request so you can test it with curl before changing anything live. Saving re-installs the webhook for you.
+* **And it can be rotated.** A new "Rotate the webhook secret" button generates a fresh one and re-installs. Anything that can post a valid update to the webhook can claim to be any member of your crew, organizers included, so a secret that may have been seen — in a log, a screenshot, a support ticket — is worth replacing. Taking it out of the URL does not remove what is already in the logs; rotating does.
+* **"Sign out everywhere"**, on your crew page under Settings. Signing in leaves a browser signed in for 30 days, and until now signing out only cleared the cookie on the device in front of you. This retires every session at once — another browser, a shared computer, a phone left somewhere — including the one you press it from.
+* Fixed: signing out could be triggered by a form on another site. Harmless in effect, but it now requires the same token every other action does.
+* The Mobile app ▸ Signup page setting quietly decided something else: with no page picked, the "manage your data" link at the foot of every email fell back to one that never expires, instead of a one-time link good for 30 minutes. The field now says so, and warns if you have a signup page that has not been picked.
+* Also: the self-service manage page and the door-ticket page now tell caches and search engines not to store them; and the retired open-task opt-in columns, unwritten since v0.6 and unread by anything, are dropped from the database.
+* Database: adds one column (`sessions_valid_from`), drops two, applied automatically on upgrade.
+
+= 1.19.0 =
+* The Telegram board now reads as a programme rather than a list of buttons. Each event is introduced by two heading rows — its name, then its date — and its tasks follow underneath, so with several events open you can see at a glance where one ends and the next begins. The headings are inert: tapping one does nothing.
+* Task buttons lead with the time: "17:00–18:30 · Clean 1/3". The time is what you scan for when you are looking for a slot you can make, and the rows under one heading are in time order, so the evening's shape is readable down the column. The date is gone from the buttons — the heading two rows up carries it.
+* Headings appear even when only one event is open. The board used to drop them in that case, which meant it changed shape as soon as a second event opened.
+* Overlapping slots can now be booked. Two tasks whose times run into each other were refused; they are not any more, on the board, on the web page, and when covering for someone. Whether you can do both is your call — the plugin was answering it for you from the clock alone, and turning away crew who could have covered both.
+* A "Refresh the board" button under Settings ▸ Telegram bot. The board still redraws itself whenever anything on it changes, so this is for the times that cannot cover: after an upgrade that lays the board out differently, or to see a change land without waiting for the next hourly check. It edits the board where it sits, so nobody in the group is notified, and it tells you whether it worked — including when the board has been deleted from the group and needs a fresh /board.
+
+= 1.18.0 =
+* GDPR: a new Settings ▸ Privacy tab asks who is answerable for the crew's data — the organisation, a contact address, and a data protection officer if you have designated one — and writes the privacy notice for you from it. The notice describes what this install actually does: Telegram and Cloudflare appear in it only if you use them.
+* A public notice page: the new `[eventcrew_privacy]` shortcode and matching block, with a one-click button under the new tab that creates the page and selects it. The same text is offered to WordPress as suggested privacy-policy content under Settings ▸ Privacy.
+* Signing up now says what happens to your address, at the moment you hand it over: a line under the sign-in field linking to the notice, the same line in the bot's onboarding, and in the first sign-in email. No tick box — signing up is what makes the processing necessary, and a box consenting to something we would do anyway would describe the basis wrongly rather than strengthen it.
+* A retention period you can set, and optionally have enforced. Left off, it is a promise you keep by hand. Switched on, the hourly heartbeat anonymises records that have been dormant past it: email, name, notes and any Telegram link are erased for good, while the attendance rows stay, so "nine people worked that night" survives with nobody attached to it. Organizers and crew leaders are never touched while they hold the role.
+* EventCrew now answers WordPress's Tools ▸ Erase Personal Data as well as the export it already answered, so a request that arrives by email can be handled from the screen WordPress provides for it.
+* Fixed: opening anyone in the People editor was a fatal error — the screen called a method that does not exist. It also reported an "opted in" date from a column nothing has written since the opt-in model was replaced by per-type opt-outs in v0.6; it now shows the setting that actually governs the send.
+* Fixed: deleting a person left their sign-in tokens and their notification history behind, so an "erased" account kept a live magic link in any email they still had. Erasing is now one routine shared by the self-service Delete, the organizer's Delete, and the WordPress eraser.
+* Database: adds one column (`anonymized_at`), applied automatically on upgrade.
+
+= 1.17.1 =
+* Fixed: lead times were counted back from midnight of the task's day rather than from the task itself, so a "48 hours before" notice for a task at 17:00 went out 65 hours before it. Both the open-task call and the board re-post now count from when the day's work actually starts. A date whose tasks have no times recorded still counts from its midnight, which is the only thing it can mean.
+
+= 1.17.0 =
+* Notifications no longer arrive in the middle of the night. There is a new "Start sending at" setting under Settings ▸ Reputation & alerts, defaulting to 09:00: scheduled messages wait for that hour and go out over the twelve hours after it. Before this, a message left the moment it came due, so a task starting at three in the morning produced a reminder at three in the morning.
+* Held: task reminders, the open-task call, standing notices, the board re-post and crew-leader candidate notices. Never held: anything answering something a person just did — a signup confirmation, a freed slot, a ticket.
+* Also never held: a reminder for a task that starts before the window next opens. Waiting until nine for something that begins at eight would be worse than the odd hour.
+
+= 1.16.0 =
+* Security: the signup page is no longer cacheable while somebody is signed in. Crew are not WordPress users, so their session cookie is one a caching plugin has never heard of — and a plugin that only skips caching for logged-in WordPress users would store a signed-in page and serve it to the next visitor, complete with that person's name, standing, ticket links and the token that deletes their account. If you run any page cache, this release matters.
+* Uninstalling with "delete my data" enabled now removes every setting and temporary value the plugin ever wrote, by prefix. About thirty were being left behind, including the Telegram bot token and the Turnstile secret.
+* Your crew can now get their data out, not just delete it: EventCrew answers WordPress's Tools ▸ Export Personal Data with a person's profile, every task they took and how it went, and any free entry they used.
+
+= 1.15.5 =
+* Fixed: a task's slot count and button now always sit to the right of its name and time, on every screen size. They were laid out in a way that moved them to a new line whenever they did not quite fit, which on a phone was most of the time; they are now in a column of their own that cannot move, and a long name wraps within its own space instead.
+
+= 1.15.4 =
+* A task's slot count now sits above its button rather than beside it, which makes that whole block about a third narrower — so rows stay on one line on a phone instead of wrapping.
+
+= 1.15.3 =
+* Fixed: on a phone, a task's slot count and its button often broke onto a second line when there was room for them, and one could end up stranded away from the other. The task's name and time can now give way, so rows stay on one line far more often — and when a row genuinely is too narrow, the count and the button move down together and stay against the right edge.
+
+= 1.15.2 =
+* Fixed: on a sign-in form with a captcha, the email you typed was centred inside its own box. The form is centred on the page; the text in the field is not.
+* Removed dead code left by the previous two releases.
+
+= 1.15.1 =
+* Fixed: the board worked out for itself whether the standing gate was holding someone, rather than asking the code that actually decides it. Change the gate's behaviour and the board would have gone on showing the old answer — offering a Sign up button the signup would then refuse, or hiding one that would have worked. Both checks now come from the single rulebook.
+
+= 1.15.0 =
+* The board now says when you cannot take a task, on the row, instead of letting you press Sign up and refusing afterwards. A crew-leader slot reads "Crew leaders only", and someone held by the standing gate sees "On hold — talk to an organizer".
+* New "What you've done" section on the Me tab: your last five finished tasks and how each turned out. Your standing is calculated from exactly this, so it can now be checked rather than taken on trust.
+* An unrated member is "Beginner" rather than "New".
+* Accessibility: signing up or cancelling no longer throws keyboard focus back to the top of the page. Focus lands on whatever replaces the button you pressed.
+
+= 1.14.8 =
+* The slot dots are filled shapes rather than outlined ones, so they are properly round. An outline gives the screen two curved edges to draw across twelve pixels, which is not enough for either of them; a filled shape has one. An empty slot is now a faint dot and a taken one a green dot.
+
+Note for anyone whose changes to this plugin's appearance do not seem to take effect: if your site uses a CSS minifier or optimiser, it combines stylesheets into a bundle of its own and the plugin's version number never reaches the browser. Purge that plugin's cache after updating, or exclude eventcrew.css from its aggregation.
+
+= 1.14.7 =
+* The slot dots are round, and identical to each other. They were sized in a unit that worked out to 13.6 pixels, which no screen can draw, so each one was rounded off slightly differently from its neighbour. They are a plain 12 pixels now.
+* An empty slot's ring is stronger, so it carries the same visual weight as a filled one — the two should differ in state, not in how much they stand out.
+
+= 1.14.6 =
+* The signup page works on a dark theme without being told it is on one. Borders, text and the empty slot rings now take their colour from the page itself rather than assuming a light background, so a dark theme, a classic theme, or a dark section of a light page all look right. There is deliberately no light/dark setting: it would be one more thing to keep in step with your theme, and the page can simply look instead.
+
+= 1.14.5 =
+* The slot dots are bigger and drawn at full strength — an empty slot is a solid green ring, a filled one is that ring filled in. Before they were hairline circles at half opacity, which at that size amounted to nothing.
+
+= 1.14.4 =
+* Your standing and credits ("New · 9 credits"), and the "How your score works" explainer, now sit under your name above the tabs — visible from every tab instead of only from Me.
+* The Me tab is split into two named sections, My tasks and Tickets, each shown even when empty so you can tell the difference between having nothing and the page having lost something. Spending a free-entry credit moved under Tickets, which is what it produces.
+* Your tickets are no longer hidden behind a collapsed disclosure.
+
+= 1.14.3 =
+* The Me tab reads in the order asked for: standing and credits, then your next tasks, then spending a free-entry credit, then your tickets. 1.14.1 moved the credit-spending control above the task list as well, which was not the request.
+* The slot dots use a vivid green, so a filled slot is obvious at a glance instead of a dark speck.
+
+= 1.14.2 =
+* Fixed: on some sites the signup page arrived with none of its styling — no centring, no aligned buttons, no slot dots, and the browser's own focus ring round the tabs. The stylesheet was only registered while WordPress was preparing the page's assets, so a page rendered by any other route (a site-editor template part, a page builder, the block's preview) asked for a stylesheet that had never been registered, and asking for an unregistered stylesheet fails silently. It is now registered wherever it is first needed.
+* Fixed: Sign out sat far below your name instead of beside it.
+* Fixed: focusing a tab drew a box around it. The underline thickens instead.
+
+= 1.14.1 =
+* Sign out is now next to your name above the tabs, reachable from any tab instead of only from Settings.
+* The tab underline sits under the word rather than spanning the whole tab.
+* The slot dots now show the count beside them ("1 of 2"), so it is clear what they are counting.
+* Sign up, Cancel and Full buttons share one width, so they line up down the right edge instead of shifting with the length of their label.
+* Sign up is back to its familiar green rather than taking the crew's accent colour — "go" is a meaning, not a brand.
+* The sign-in form stacks and centres when a captcha is shown: email field, captcha under it, button below. Before, the three sat in an L that shared no edge.
+* Spending a free-entry credit is now a proper block: the date picker is styled like the rest of the page instead of the browser's grey default, on its own line, with the button centred under it.
+* "You're on next" breaks where it should — the job on one line, the date and calendar link beneath — instead of wrapping mid-phrase.
+* Your standing and credits come before your upcoming tasks, and there is a rule above My tickets.
+* "Open our group in Telegram" is centred.
+
+= 1.14.0 =
+* The signup page is now organised into three tabs — Board, Me and Settings — instead of one long scroll. The board is still what you land on, and still the first thing anyone sees.
+* Signed-out visitors get a simpler page: the sign-in form and the board, nothing else. The "open our group in Telegram" link is no longer shown to people who are not signed in.
+* The page's styling moved out of the page itself into a proper stylesheet, so it is cached by the browser and versioned with the plugin. Installed-app users now actually receive design changes; before, the app could keep serving the old look from its cache indefinitely.
+* Colours follow your theme, with one accent taken from the theme colour under Settings ▸ Web page — the same colour the installed app and the notification emails use, so the three finally match. The hardcoded greens, reds and Telegram blue are gone.
+* Board rows redesigned: the role reads first, the date and time sit under it, and how full a task is shows as a row of dots rather than "(1/2)". Buttons are big enough to hit on a phone.
+* Accessibility: the tabs are a proper tablist with arrow-key navigation, event headings no longer skip a level, and the capacity dots carry their real numbers for screen readers.
+* With JavaScript turned off the page still works — the tabs become links down one long page, exactly as before.
+
+= 1.13.0 =
+* Telegram messages you did not ask for now say who is writing and greet you by name, the way the emails already did. A message that simply arrives — an open-task call, a reminder, a spot opening up — may land weeks after someone last touched the bot, in one chat among dozens; it now opens with your crew's name instead of a bare "Reminder:".
+* New Signature setting under Settings ▸ Email: how your crew signs off. It closes every notification email and the Telegram messages that go out to everyone. Blank by default, and nothing is added when it is blank.
+* The signature is deliberately kept off messages that answer a command, where the person is mid-conversation, and off the standing notices, where a warm sign-off would land badly.
+* New `{{signature}}` tag for the email template, so you can move the sign-off around. Reset the template under Settings ▸ Email to take up the new default placement.
+
+= 1.12.0 =
+* EventCrew now finds your Telegram group's link by itself, so the "open the group" button in the open-task email and DM works without anyone pasting a link into Settings. A public group is resolved from its @username; a private one from its invite link, or from a new invite link created for the purpose, when the bot is an administrator. Your own link, if you have set one, always wins and is never overwritten.
+* The discovery runs when you install or refresh the webhook, and at most once a week after that — a group link changes approximately never, and a bot that is only a member cannot be told one at all.
+* Settings ▸ Telegram bot now shows the link it found, and says plainly what to do when it cannot find one.
+* The web signup page's "Open in Telegram" button uses the same resolved link, so it appears on installs that never filled the field in.
+
+= 1.11.1 =
+* The open-task message now lists the next five open tasks across all upcoming dates, not just the one date that triggered it, so people can see what is coming and sign up early. On both email and Telegram.
+* Both the email and the Telegram DM now offer a link to your crew's group, taken from the group link already set under Settings ▸ Telegram bot. Skipped when no link is configured.
+* Emails no longer try to guess an accent colour from your theme's style settings. Themes name their palette entries as they please, so the guess was as likely to land on the wrong colour as the right one; set the colour under Settings ▸ Web page instead.
+* Button and wordmark text in emails switches between white and near-black on its own, so a light accent colour stays readable.
+
+= 1.11.0 =
+* The open-task call ("some tasks still need people") now goes out at two lead times instead of one — a heads-up a week ahead and a last call 48 hours ahead — and both are configurable under Settings ▸ Reputation & alerts ▸ Open-task call. Previously it went once, 48 hours out, with no setting.
+* Fixed: a task added to a date people had already been told about was never announced. The ledger recorded "told them about this date", so the new job went out to nobody. It now re-sends when something has genuinely been added since the last send — and only then, so an unfilled date never turns into a daily drip.
+* Nobody gets more than one open-task notice a day. Two events falling due at once used to mean two separate emails; they are now gathered into one message listing each date.
+* Fewer database queries per run: the open-task list for a date is now looked up once, not once per recipient.
+
+= 1.10.2 =
+* Fixed: 1.10.1 replaced the linked logo with one attached inside the message, and on many sites that produced a broken image instead of a logo. Attaching happens through PHPMailer, which a site sending mail through a relay or an API-based SMTP plugin never reaches — leaving the HTML pointing at an attachment that was never made. The logo is linked again, as it was in 1.10.0.
+* The white-on-white problem 1.10.1 also fixed remains fixed: the header band uses your theme colour, so a logo drawn for a dark header is visible.
+* Note for sites sending through a relay: the plain-text copy that accompanies each email is added on the same PHPMailer hook, so it may not survive either. Nothing a reader needs is in it alone — it is a duplicate of the HTML — but if you require a plain-text part, turn HTML off under Settings ▸ Email.
+
+= 1.10.1 =
+* Fixed: a white logo was invisible in emails. The header band now uses your theme colour instead of the card's white, which is what a logo drawn for a dark header needs. New `{{accent}}` tag for the template.
+* Fixed: the logo sat against the left edge rather than centred — `align="center"` does not centre a block-level image.
+* Changed the logo to an inline attachment. This was a mistake and is reverted in 1.10.2; upgrade straight past this version.
+* Existing templates keep the design they were created with; use Settings ▸ Email ▸ "Reset the template" to take up the new header.
+
+= 1.10.0 =
+* Notification emails are now designed HTML: your site's logo across the top, the message in a card, and a button for whatever it is asking people to do — "Show your ticket", "Add to calendar", "Sign in", "See open tasks" — instead of a bare URL in the text. A plain-text copy travels with every message, so a client that will not render HTML still gets the whole thing.
+* New "Email template" item under EventCrew opens the design in the normal block editor, with revisions and undo. Keep `{{content}}` where the message goes; `{{logo}}`, `{{footer}}`, `{{site_name}}`, `{{site_url}}`, `{{subject}}` and `{{year}}` are available too. Settings ▸ Email has a "Reset the template" button, so an edit is never a dead end.
+* The logo is your site's own — the Customizer logo, falling back to the Site Icon, then to your site's name set as a wordmark. Point Settings ▸ Email at a different image (a wide banner works as well as a square logo) to override it.
+* Settings ▸ Email also carries a "Send a test email" button, which mails the real template to your own address.
+* Buttons and the wordmark use the theme colour from Settings ▸ Web page, so the emails and the installed app match.
+* Emails can be switched back to plain text with one checkbox.
+
+= 1.9.2 =
+* Leadership is now a tab on the People page — an in-page tab exactly like the Settings tabs — rather than its own menu item. Tab behaviour is consistent across the admin, and the top-level menu is one item shorter (Tasks · Roster · People · Settings · Diagnostics). Editing a person from the Leadership list opens on the People tab as before.
+
+= 1.9.1 =
+* Fixed: the Leadership page returned "you do not have permission" after 1.9.0 — hiding it from the menu also stripped the capability WordPress checks for access. It is a normal menu item again, still grouped with People by a tab.
+* Fixed: a role set to 0 people generated a task with capacity 1 that reappeared on the Telegram board. It now generates a capacity-0 task that stays off the boards, the same as a hand-edited 0.
+* Settings: the Roles tab now comes first and is named simply "Roles"; the Cancellations settings moved to the "Reputation & alerts" tab.
+
+= 1.9.0 =
+* Admin overhaul: the Settings page is now organized into tabs — Telegram bot, Web page, Roles & tasks, Reputation & alerts — instead of one long scroll, and it reopens the tab you were last on. Telegram setup leads, so connecting the bot is the first thing you see.
+* New "Getting started" checklist on the Tasks page for fresh installs — connect a channel, create a task, put it in front of your crew — that ticks itself off and disappears once you're set up.
+* Leadership moved under People as a tab, trimming the top-level menu.
+* Diagnostics now shows an at-a-glance health banner (green / amber / red) above the detail table.
+* The advanced reputation "outcome weights" are tucked into a collapsible so the Reputation tab reads simpler.
+
+= 1.8.3 =
+* The Telegram webhook and command menu now re-install themselves automatically on the first admin page load after a plugin update — no more clicking "Install / refresh webhook" after an upgrade. The button stays for a manual retry.
+* The `/notifications` bot menu now lays out as three columns — the type's name, a 📱 Telegram toggle and a ✉ email toggle — matching the web Notifications tab, so the name no longer doubles as the Telegram toggle.
+
+= 1.8.2 =
+* Removed the account "disable / pause emails" concept entirely — it duplicated the per-type Notifications controls and could strand a member who had no Telegram. To stop a kind of email, untick it under Notifications (web) or /notifications (bot); the emailed self-service page now only offers "Delete my data". The now-unused `disabled_at` column is dropped on upgrade. A wanted email (a gifted credit, a reminder, a signup confirmation) is no longer silently swallowed by a stale "disabled" flag.
+
+= 1.8.1 =
+* New `/web` bot command: DMs you a one-time, 30-minute sign-in link for the web board, so you can hop from Telegram to the web without typing your email.
+* Removed the `/stop` command (account disable), matching the removal of the web "pause account" control — turn individual notifications off under /notifications instead. Re-run "Install / refresh webhook" in Settings so the command menu updates.
+
+= 1.8.0 =
+* Add-to-calendar: signup confirmations (email and Telegram) and the web profile now carry an "Add to calendar" link that drops the task, with its own alarm, into any calendar app — the strongest nudge there is against a no-show.
+* "You're on next": the signed-in web profile shows your upcoming tasks up front, soonest first, instead of leaving them to be hunted on the board.
+* Smoother sign-in: the web form remembers your email, explains the passwordless one-time link, and offers a clear "resend".
+* The 24h Telegram reminder now has a one-tap "Can't make it? Cancel" button, turning a would-be no-show into an early cancel someone else can cover.
+* Roster: one global "Update attendance" button saves every status at once, instead of a button per person.
+* Removed the web "pause account" control (it duplicated Notifications and could strand a non-Telegram user) and the "Open-task email" column from the People list. Fixed the Settings roles table overflowing sideways.
+
+= 1.7.8 =
+* Moved the "Send open-task email now" control from Settings to the Tasks page, where it sits under the task list — it acts on the tasks you're looking at, and now returns you there after sending.
+
+= 1.7.7 =
+* A role's default capacity can now be set to 0 in Settings, matching per-task capacity: the role stays defined but generates no active slots, so its tasks drop off the boards until you raise it. Negative values are still clamped to 0.
+
+= 1.7.6 =
+* New "Group lock" setting (on by default): the board stays in the first Telegram group the bot joins, so adding the bot to another group — or running /board there — can no longer hijack the board into a different chat. Untick it to move the board on purpose.
+
+= 1.7.5 =
+* The email account link is now a single-use, 30-minute sign-in link (like the login form's), so a forwarded or leaked old email can't be replayed as a login. Spent and expired sign-in tokens are swept on the hourly cron so the table stays small.
+
+= 1.7.4 =
+* The "manage your account" link in emails now opens your own signed-in profile page (where pausing email and deleting your data live) instead of a bare endpoint. Telegram-only installs keep the standalone self-service page.
+
+= 1.7.3 =
+* The signed-in web profile now offers account management directly — pause all emails (switch the account off) or delete your data — reusing the same signed self-service page the emails link to.
+
+= 1.7.2 =
+* Open-task and freed-slot calls now also reach crew already working that day (they may want a second, non-overlapping slot).
+
+= 1.7.0 =
+* Per-type, per-channel notification preferences (web tab + `/notifications` menu); every notification now sends by DM and email. New `/mytickets` and a "My tickets" web list. Ticket link added to the signup DM; door-list credit redemptions notify the recipient; a late cancellation broadcasts a "spot just opened" call.
+
+= 1.6.0 =
+* Permissions and the crew-leader meta-role: `/allow` (leader / one-time at-risk pass / admin), an auto-managed leader board slot, Telegram attendance-marking by leaders, an eligibility analysis with a Leadership page and `/leaders`, and a one-time pass through the sign-up gate. Tasks can be set to 0 people to drop them from the boards.
+
+= 1.5.0 =
+* Custom credit quantity + note on `/gift` and the People page; a credit-grant audit log.
+
+= 1.4.0 =
+* Configurable reputation outcome weights and thresholds; `/gift` to grant credits; `/start`, `/stop`, `/replace` usable from the group.
+
+= 1.3.0 =
+* Self-service free tickets (`/ticket` and the web profile), a per-date close-to-free-entry gate, manual credit grants, board wind-down before midnight, and the reliability score shown as a percentage.
+
+= 1.0.0 =
+* First stable release: tasks & roles, the Telegram board and onboarding, public web signup (PWA), roster/attendance/door list, reputation & credits, scheduled reminders and the open-task call, and a diagnostics page.
+
+Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
+
+== Upgrade Notice ==
+
+= 1.36.4 =
+Site logo watermark on the ticket page. No database change.
+
+= 1.36.3 =
+Help tab on the crew web page, easier-to-read welcome message and organizer guide, wp-admin links. No database change.
+
+= 1.36.2 =
+Telegram group button in both welcome emails, and a wp-admin button in the organizer guide email. No database change.
+
+= 1.36.1 =
+Role descriptions on the web board appear only once, at the bottom. No database change.
+
+= 1.36.0 =
+Welcome message for members and organizer guide for organizers (off until switched on in Settings), and a "What each task involves" section on the sign-up board. No database change.
+
+= 1.35.2 =
+A late cancellation is cleared when the person turns up for another task on the same date. No database change.
+
+= 1.35.1 =
+Sales desk member search shows members already on tonight's lists, and a free-entry credit holder can swap their ticket for a task (credit given back). The Add popup's first buttons hide after a choice. No database change.
+
+= 1.35.0 =
+Sales desk "Add" popup: door tickets, guests, and crew members (credit, a task tonight, or a new member). Guest counts start at +0. No database change.
+
+= 1.34.1 =
+Sales desk wording: "Check in" button, guest count label, no guest count on crew rows. No database change.
+
+= 1.34.0 =
+Adds the Holvi ticket buyer import (paste on the Roster page, or by email through the mail poller). No database change.
+
+= 1.33.0 =
+Adds the sales desk (door page), /sales and automatic sales desk links. Database version 13: two new tables, check-ins and ticket buyers, created automatically.
+
+= 1.32.1 =
+Stops duplicate bot answers and duplicate scheduled messages. No database change.
+
+= 1.32.0 =
+Free-entry credits close automatically when the linked EventMesh event is unpublished, disabled, hidden or sold out. Task sign-up is unaffected. No database change.
+
+= 1.31.0 =
+Adds the guest list (/guest in Telegram, and a section on the wp-admin Roster page). Database change: a new guests table, created automatically on update.
+
+= 1.30.0 =
+Adds the /tickets command for organizers and door crew. No database change.
+
+= 1.29.0 =
+Adds the "Arrived late" attendance status and a ⏰ button on the Telegram roster. No database change.
+
+= 1.28.0 =
+Links in Telegram messages and emails are now named buttons instead of raw addresses. No database change.
+
+= 1.27.0 =
+Adds a short description per role and one shared crew guide link, both editable in Settings ▸ Roles. Paste your guide's link there after upgrading. Clear any page cache. No database change.
+
+= 1.26.2 =
+No functional change; adds a developer test guarding the admin and public templates. No database change.
+
+= 1.26.1 =
+Fixes a free-entry credit being spendable twice by two requests arriving together — a double-tap, or the bot and web page at once. Worth taking if your crew earns credits. No database change.
+
+= 1.26.0 =
+Sign out moves to the right of your name, and section headings get a little breathing room above them. Clear any page cache after upgrading. No database change.
+
+= 1.25.3 =
+The account buttons now match your theme's buttons exactly — the previous release shrank their text but left the theme's padding, which made them look oversized. Clear any page cache after upgrading. No database change.
+
+= 1.25.2 =
+The account buttons now match the rest of the page by using your theme's own button styling. Clear any page cache after upgrading. No database change.
+
+= 1.25.1 =
+Fixes the account buttons rendering with no background, and makes the neutral ones visible rather than a barely-there tint. Clear any page cache after upgrading. No database change.
+
+= 1.25.0 =
+Adds a one-minute countdown in the sign-in button before a link can be resent. Clear any page cache after upgrading. No database change.
+
+= 1.24.0 =
+Sign out and Delete my data are now buttons with their own background, readable on any theme or background image. Also fixes "Resend link" needing two presses. Clear any page cache after upgrading. No database change.
+
+= 1.23.4 =
+Makes the "Delete my data" link readable on dark pages; the previous attempt was still too dark. Clear any page cache after upgrading. No database change.
+
+= 1.23.3 =
+Fixes the sign-in link not sending on the first press. Cloudflare fills its token into the form a few seconds after the tick appears, and the form was submitting the empty field; the token is now sent explicitly. This is the release that actually fixes it. Clear any page cache after upgrading. No database change.
+
+= 1.23.2 =
+A refused spam check now says so in seconds instead of about half a minute, and no longer sends two requests it knows will be refused. Clear any page cache after upgrading. No database change.
+
+= 1.23.1 =
+Stops the spam check re-running itself right after the sign-in link is sent, which made the form look like it was reloading. Clear any page cache after upgrading. No database change.
+
+= 1.23.0 =
+Fixes the spam check reading a different value from the one the form submits, which is the likeliest cause of a sign-in being refused while the widget showed success. Also logs the previously silent "no token" refusal, shortens the sign-in wording, and stops a stale status message reappearing on refresh. Clear any page cache after upgrading. No database change.
+
+= 1.22.1 =
+Fixes the spam check failing on the first press despite the widget showing success — its token had expired on a page left open. Cloudflare's reason for any refusal now appears in Diagnostics. Clear any page cache after upgrading. No database change.
+
+= 1.22.0 =
+The sign-in button now says when it is waiting for the spam check and only becomes pressable once it can actually send, and the "Delete my data" link is legible on dark pages. Clear any page cache after upgrading, since the stylesheet changed. No database change.
+
+= 1.21.2 =
+Fixes the sign-in email not sending on the first press when the Cloudflare captcha is on, and the page claiming a link was sent when it was not. No database change.
+
+= 1.21.1 =
+Fixes sign-out, which has been broken since 1.20.0 — the button refused to sign anyone out. Also fixes "Sign out everywhere" locking people out for hours on sites not running on UTC. Upgrade if you are on 1.20.0. No database change.
+
+= 1.21.0 =
+The Telegram board is easier to scan: the 📅 marks each event's name row, and task rows lead with the job rather than the time. Press "Refresh the board" under Settings ▸ Telegram bot after upgrading to redraw it. No database change.
+
+= 1.20.0 =
+Security hardening from a full review: the webhook secret can be kept out of the URL and rotated, crew members can sign out everywhere at once, and the manage and ticket pages are no longer cacheable. If you use the admin-ajax webhook fallback, read Settings ▸ Telegram bot after upgrading — your secret is in your server logs and this is how to fix that. Adds one database column and drops two, automatically.
+
+= 1.19.0 =
+The Telegram board is regrouped under event and date headings, with times leading each task button. Overlapping slots are now allowed to be booked. After upgrading, press "Refresh the board" under Settings ▸ Telegram bot to redraw it in the new layout. No database change.
+
+= 1.18.0 =
+Adds GDPR support: a Privacy settings tab, a public privacy notice page, the notice at sign-up, an optional retention purge, and a WordPress personal-data eraser. Also fixes a fatal error when opening a person in the People editor. Fill in Settings ▸ Privacy after upgrading — until you do, the notice stays unpublished. Adds one database column, applied automatically.
+
+= 1.14.2 =
+Fixes the signup page loading without its stylesheet on some sites, which left it looking unstyled. If 1.14.0 or 1.14.1 looked broken to you, this is why. No database change.
+
+= 1.14.1 =
+Visual refinements to the signup page from 1.14.0: sign out on every tab, clearer slot counts, aligned buttons, a tidier sign-in with captcha, and a modern date picker for spending credits. No database change.
+
+= 1.14.0 =
+The public signup page is reorganised into Board / Me / Settings tabs and restyled to follow your theme. The board still opens by default. Styling moved to a stylesheet file, so clear any page cache after upgrading. No database change.
+
+= 1.13.0 =
+Unprompted Telegram messages now introduce themselves and greet by name, and a new Signature setting signs off both channels. Set it under Settings ▸ Email, then reset the email template to place it. No database change.
+
+= 1.12.0 =
+The Telegram group link is now discovered automatically, so the "open the group" buttons work without configuring one. Make the bot an administrator of your group if it is private and you want this to work. No database change.
+
+= 1.11.1 =
+The open-task message now shows the next five open tasks and links to your Telegram group. No database change.
+
+= 1.11.0 =
+The open-task call gains a week-ahead heads-up alongside the existing 48-hour last call, is capped at one message per person per day, and now notices tasks added to a date after people were told about it. No database change. Check the new lead times under Settings ▸ Reputation & alerts before the next event.
+
+= 1.10.2 =
+Fixes the broken email logo introduced in 1.10.1 by linking it again. If you are on 1.10.1, upgrade. Reset the template under Settings ▸ Email to take up the coloured header band.
+
+= 1.10.1 =
+Colours the email header band so a white logo is visible. Contains a logo regression fixed in 1.10.2 — go straight there.
+
+= 1.10.0 =
+Notification emails become HTML, with your logo and buttons, and the design is editable under EventCrew ▸ Email template. No database change; existing sends are unaffected apart from how they look.
+
+= 1.9.2 =
+Leadership moves from its own menu item to a tab on the People page. No database change.
+
+= 1.9.1 =
+Fixes Leadership page access and 0-people roles reappearing on the board, and tidies the Settings tabs. No database change.
+
+= 1.9.0 =
+Admin UX overhaul: tabbed Settings, a first-run checklist, Leadership under People, and a Diagnostics health banner. No database change.
+
+= 1.8.3 =
+The bot webhook and command menu now refresh themselves after an update — you no longer need to re-run "Install / refresh webhook". No database change.
+
+= 1.8.2 =
+Removes the account-disable feature; email is now controlled only by the per-type Notifications preferences. The database migrates automatically (the disabled_at column is dropped).
+
+= 1.8.1 =
+Adds a /web sign-in link command and removes /stop. Re-run "Install / refresh webhook" in Settings so the bot's command menu updates. No database change.
+
+= 1.8.0 =
+Adds calendar holds, an upcoming-tasks summary, a one-tap reminder cancel, and a single-button roster. No database change.
+
+= 1.7.8 =
+The "Send open-task email now" button now lives on the Tasks page instead of Settings. No database change.
+
+= 1.7.7 =
+Role capacity can now be 0 (a defined role that generates no active slots). No database change.
+
+= 1.7.6 =
+The board is now locked to its first group by default, preventing accidental or malicious moves. No database change.
+
+= 1.7.5 =
+The email account link is now a single-use, 30-minute sign-in link, and expired tokens are auto-swept. No database change.
+
+= 1.7.4 =
+The email account link now lands on your signed-in profile page. No database change.
+
+= 1.7.3 =
+Signed-in web users can now pause emails or delete their data from the profile. No database change.
+
+= 1.7.2 =
+Adds per-channel notification preferences and closes every notification gap. After upgrading, re-run "Install webhook" in Settings so the new `/notifications` and `/mytickets` commands appear; the database migrates automatically.

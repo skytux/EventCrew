@@ -20,10 +20,12 @@ use EventCrew\Telegram\TicketRedemptionService;
 /**
  * The door page's logic: who is on tonight's list, who has come in, and what
  * the door crew can do - mark someone in or out, change how many people they
- * brought, and "Add": a ticket sold at the door, a guest, or a member, who
+ * brought, and "Add": a ticket sold at the door, a Holvi buyer missing from
+ * the imported list, a guest, or a member, who
  * either spends a credit or is signed up for one of tonight's tasks. A member
  * who already spent a credit on tonight can still take a task: their ticket
- * is then cancelled and the credit comes back.
+ * is then cancelled and the credit comes back. The "+1" count adds people let
+ * in without a name, such as the organizers themselves.
  *
  * Everything here takes plain values and returns plain arrays, so it is
  * testable without a request; Web\DoorController is the thin HTTP layer on top.
@@ -42,6 +44,17 @@ final class DoorDesk
     public const WORK_FULL = 'full';
     public const WORK_LEADER_ONLY = 'leader_only';
     public const WORK_UNAVAILABLE = 'unavailable';
+
+    /** addHolviBuyer() answers. */
+    public const HOLVI_OK = 'ok';
+    public const HOLVI_BAD_EMAIL = 'bad_email';
+    public const HOLVI_FAILED = 'failed';
+
+    /**
+     * The option that holds one night's count of people let in without a
+     * name (the "+1" button), followed by the date (YYYY-MM-DD).
+     */
+    public const ANONYMOUS_OPTION_PREFIX = 'eventcrew_door_anonymous_';
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -142,10 +155,11 @@ final class DoorDesk
      * The whole page state for one night: the five sections, the counter, and
      * a version hash the page compares to decide whether to redraw. A guest
      * counts as expected with all the people they are allowed to bring, since
-     * those may still come; the "in" side counts only who did.
+     * those may still come; the "in" side counts only who did. The people
+     * counted in without a name ('anonymous') are added to both sides.
      *
      * @return array{
-     *     date: string, day: string, in: int, expected: int, version: string,
+     *     date: string, day: string, in: int, expected: int, anonymous: int, version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
      *         key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
      *     }>}>
@@ -177,11 +191,14 @@ final class DoorDesk
             }
         }
 
+        $anonymous = $this->anonymousCount($date);
+
         $state = [
             'date' => $date,
             'day' => Dates::dayLabel($date),
-            'in' => $in,
-            'expected' => $expected,
+            'in' => $in + $anonymous,
+            'expected' => $expected + $anonymous,
+            'anonymous' => $anonymous,
             'sections' => $sections,
         ];
 
@@ -255,6 +272,76 @@ final class DoorDesk
         $this->checkins->mark($date, CheckinRepository::KIND_BUYER, $id, 0, $doorPersonId);
 
         return true;
+    }
+
+    /**
+     * Records a Holvi buyer who is missing from the imported list, already
+     * marked in. It is listed with the Holvi buyers and is not a door sale.
+     * The name and the email are both optional; with no name, a placeholder
+     * is stored. The email is only shown on the list: nothing is sent to it.
+     * Answers a HOLVI_* code.
+     */
+    public function addHolviBuyer(string $date, int $doorPersonId, string $name, string $email): string
+    {
+        $email = trim($email);
+
+        if ('' !== $email) {
+            if (! is_email($email)) {
+                return self::HOLVI_BAD_EMAIL;
+            }
+
+            $email = sanitize_email($email);
+        }
+
+        $name = trim($name);
+
+        if ('' === $name) {
+            $name = __('Holvi buyer (no name)', 'eventcrew');
+        }
+
+        $id = $this->buyers->addDeskBuyer($date, $name, $email);
+
+        if ($id <= 0) {
+            return self::HOLVI_FAILED;
+        }
+
+        $this->checkins->mark($date, CheckinRepository::KIND_BUYER, $id, 0, $doorPersonId);
+
+        return self::HOLVI_OK;
+    }
+
+    /**
+     * A plain sentence for an addHolviBuyer() answer.
+     */
+    public function holviBuyerText(string $code): string
+    {
+        return match ($code) {
+            self::HOLVI_OK => __('Holvi buyer added and checked in.', 'eventcrew'),
+            self::HOLVI_BAD_EMAIL => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
+            default => __('The Holvi buyer could not be added. Try again.', 'eventcrew'),
+        };
+    }
+
+    /**
+     * How many people were counted in on $date without a name.
+     */
+    public function anonymousCount(string $date): int
+    {
+        return max(0, (int) get_option(self::ANONYMOUS_OPTION_PREFIX . $date, 0));
+    }
+
+    /**
+     * Adds one to the count of people let in without a name on $date, or
+     * takes one off when $step is negative. The count never goes below 0.
+     * Answers the new count.
+     */
+    public function countAnonymous(string $date, int $step): int
+    {
+        $count = max(0, $this->anonymousCount($date) + ($step < 0 ? -1 : 1));
+
+        update_option(self::ANONYMOUS_OPTION_PREFIX . $date, $count, false);
+
+        return $count;
     }
 
     /**
@@ -595,7 +682,11 @@ final class DoorDesk
                 continue;
             }
 
-            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, __('Holvi', 'eventcrew'));
+            // The page writes the detail with textContent, so the email is
+            // shown as plain text.
+            $detail = __('Holvi', 'eventcrew');
+            $detail = '' === $buyer->email ? $detail : $detail . ' · ' . $buyer->email;
+            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, $detail);
         }
 
         return [$holvi, $door];

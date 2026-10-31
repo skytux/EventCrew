@@ -78,14 +78,43 @@ final class TicketBuyerRepositoryTest extends TestCase
         self::assertFalse((new TicketBuyerRepository())->hasBatch('2026-08-01', ''));
     }
 
-    public function testClearForDateDeletesOnlyThatDateAndKeepsDoorSales(): void
+    public function testClearForDateDeletesOnlyThatDateAndKeepsDoorSalesAndDeskBuyers(): void
     {
         $this->wpdb->nextQueryResults[] = 3;
 
         $deleted = (new TicketBuyerRepository())->clearForDate('2026-08-01');
 
         self::assertSame(3, $deleted);
-        self::assertStringContainsString("event_date = '2026-08-01' AND source <> 'door'", $this->wpdb->lastQuery());
+        self::assertStringContainsString(
+            "event_date = '2026-08-01' AND source NOT IN ('door', 'desk')",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    public function testADeskBuyerIsStoredWithTheEmailOrNull(): void
+    {
+        $repository = new TicketBuyerRepository();
+
+        self::assertSame(1, $repository->addDeskBuyer('2026-08-01', ' Ada ', 'ada@example.com'));
+        self::assertSame(2, $repository->addDeskBuyer('2026-08-01', 'Bo', ''));
+        self::assertSame('desk', $this->wpdb->inserts[0]['data']['source']);
+        self::assertSame('Ada', $this->wpdb->inserts[0]['data']['name']);
+        self::assertSame('ada@example.com', $this->wpdb->inserts[0]['data']['email']);
+        self::assertNull($this->wpdb->inserts[1]['data']['email']);
+    }
+
+    public function testForDateReadsTheEmail(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 3, 'event_date' => '2026-08-01', 'name' => 'Ada', 'email' => 'ada@example.com', 'source' => 'desk'],
+            ['id' => 4, 'event_date' => '2026-08-01', 'name' => 'Bo', 'email' => null, 'source' => 'paste'],
+        ];
+
+        $buyers = (new TicketBuyerRepository())->forDate('2026-08-01');
+
+        self::assertSame('ada@example.com', $buyers[0]->email);
+        self::assertSame('', $buyers[1]->email);
+        self::assertFalse($buyers[0]->isDoorSale());
     }
 
     public function testAddManyDoesNotSkipANameOnlySoldAtTheDoor(): void
