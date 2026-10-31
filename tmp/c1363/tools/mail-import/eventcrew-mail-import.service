@@ -1,0 +1,25 @@
+[Unit]
+Description=EventCrew: import ticket buyer lists mailed to the import mailbox
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=eventcrew-import
+Group=eventcrew-import
+EnvironmentFile=/etc/eventcrew-mail-import.env
+ExecStart=/usr/bin/python3 -I /opt/eventcrew-mail-import/eventcrew-mail-import.py --env /etc/eventcrew-mail-import.env
+TimeoutStartSec=5min
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes

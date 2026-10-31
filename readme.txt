@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.36.3
+Stable tag: 1.36.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.36.4 =
+* The ticket page shows the site logo (the Site Icon) large and faded behind the ticket, as a watermark. The "ticket not found" page has it too. Without a Site Icon the page looks as before.
 
 = 1.36.3 =
 * The crew web page has a new Help tab. It shows the welcome text (how tasks, tickets, credits and standing work) without the open tasks. Organizers also see the organizer guide lower in the same tab, with a link to it at the top.
@@ -527,6 +530,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.36.4 =
+Site logo watermark on the ticket page. No database change.
 
 = 1.36.3 =
 Help tab on the crew web page, easier-to-read welcome message and organizer guide, wp-admin links. No database change.

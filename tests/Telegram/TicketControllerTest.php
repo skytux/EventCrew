@@ -112,6 +112,40 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('Issued', $html);
     }
 
+    public function testRenderPageShowsTheSiteIconAsAWatermark(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('https://site.test/icon-512.png');
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('url(&quot;https://site.test/icon-512.png&quot;) center/contain no-repeat', $html);
+        self::assertStringContainsString('linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.8))', $html);
+        // The card's own background stays inside the card.
+        self::assertStringContainsString('<html lang="en" style="background:#fff">', $html);
+    }
+
+    public function testRenderPageHasNoWatermarkWithoutASiteIcon(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringNotContainsString('url(', $html);
+        self::assertStringNotContainsString('linear-gradient', $html);
+        self::assertStringContainsString('<html lang="en"><head>', $html);
+    }
+
+    /**
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}
+     */
+    private function sampleTicket(): array
+    {
+        return [
+            'valid' => true, 'name' => 'Sam', 'event' => 'Party', 'date' => '2026-08-01',
+            'role' => 'Free entry', 'time' => '', 'issued' => '2026-07-24 20:00:00',
+        ];
+    }
+
     public function testRenderPageShowsNotFoundForANullTicket(): void
     {
         $html = $this->controller()->renderPage(null);

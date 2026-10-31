@@ -1,0 +1,185 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Repositories;
+
+use EventCrew\Database\Schema;
+use EventCrew\Models\Redemption;
+
+/**
+ * All reads and writes of the redemptions table - one row per credit spent for
+ * free entry. The credit balance itself is not stored: it is completions earned
+ * (AssignmentRepository::countCompletedFor) minus rows counted here, computed by
+ * Support\Credits, so there is no running total to drift out of sync.
+ */
+final class RedemptionRepository
+{
+    private function table(): string
+    {
+        return Schema::table(Schema::REDEMPTIONS);
+    }
+
+    /**
+     * How many credits this person has spent, all-time. Paired with their
+     * completed-task count to give the current balance.
+     */
+    public function countFor(int $personId): int
+    {
+        global $wpdb;
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d",
+                $personId
+            )
+        );
+    }
+
+    /**
+     * Records a credit spent for entry to the event on $date and returns the new
+     * row's id (which the self-service ticket signs its link with). The caller
+     * re-checks the balance first; this is the write only.
+     */
+    /**
+     * Spends a credit on one date, and refuses to spend a second on the same
+     * one. Returns the new redemption's id, or 0 when there already was one.
+     *
+     * The check has to live in the statement, not in front of it. Every caller
+     * asks "have they already redeemed this date, and do they have a credit?"
+     * before calling - and between that question and this write there is a gap
+     * two requests can both be inside. A double-tap on Get my ticket, or the
+     * bot and the web page a moment apart, then wrote two rows and spent two
+     * credits against a balance of one; the balance is derived from these rows,
+     * so it simply went negative and clamped at zero, leaving somebody free
+     * entry twice over and nothing to show it.
+     *
+     * This is the same guard the assignments table has carried since v0.5 for
+     * exactly the same reason, and the same derived-table trick: MySQL will not
+     * let a subquery name the table its INSERT targets, so the existing rows
+     * are read through a wrapper, which also forces materialisation.
+     *
+     * A conditional insert rather than a unique key on (person_id,
+     * redeemed_for) because the column is nullable and installs may already
+     * hold duplicate rows from before this - an index added by dbDelta over
+     * those would fail the migration on the sites that most need the fix.
+     */
+    public function record(
+        int $personId,
+        string $date,
+        ?int $eventPostId = null,
+        string $eventLabel = '',
+        string $note = ''
+    ): int {
+        global $wpdb;
+
+        // The event column stays genuinely NULL when there is no event, rather
+        // than becoming the 0 that prepare()'s %d would produce for null.
+        $eventValue = null === $eventPostId ? 'NULL' : '%d';
+        $arguments = [$personId, $date];
+
+        if (null !== $eventPostId) {
+            $arguments[] = $eventPostId;
+        }
+
+        $arguments[] = $eventLabel;
+        $arguments[] = current_time('mysql');
+        $arguments[] = $note;
+        $arguments[] = $personId;
+        $arguments[] = $date;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT INTO {$this->table()}
+                    (person_id, redeemed_for, event_post_id, event_label, redeemed_at, note)
+                 SELECT %d, %s, {$eventValue}, %s, %s, %s
+                 FROM (SELECT 1) AS placeholder
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM (
+                         SELECT person_id, redeemed_for FROM {$this->table()}
+                     ) AS existing
+                     WHERE existing.person_id = %d AND existing.redeemed_for = %s
+                 )",
+                $arguments
+            )
+        );
+
+        return (int) $wpdb->insert_id;
+    }
+
+    /**
+     * One redemption by id, or null when it is gone - what the self-service
+     * ticket page reads to know its credit is still live.
+     */
+    public function find(int $id): ?Redemption
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id = %d", $id),
+            ARRAY_A
+        );
+
+        return is_array($row) ? Redemption::fromRow($row) : null;
+    }
+
+    /**
+     * Every credit redeemed for the event on $date - the credit half of that
+     * night's door list. Full rows, so each carries the id its Remove button
+     * needs.
+     *
+     * @return array<int, Redemption>
+     */
+    public function forDate(string $date): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE redeemed_for = %s ORDER BY id ASC",
+                $date
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Redemption => Redemption::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
+    }
+
+    /**
+     * @return array<int, Redemption>
+     */
+    public function forPerson(int $personId): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE person_id = %d ORDER BY redeemed_at DESC",
+                $personId
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Redemption => Redemption::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
+    }
+
+    public function delete(int $id): void
+    {
+        global $wpdb;
+
+        $wpdb->delete($this->table(), ['id' => $id]);
+    }
+
+    public function deleteForPerson(int $personId): void
+    {
+        global $wpdb;
+
+        $wpdb->delete($this->table(), ['person_id' => $personId]);
+    }
+}
