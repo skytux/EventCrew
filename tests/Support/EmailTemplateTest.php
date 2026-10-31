@@ -208,4 +208,41 @@ final class EmailTemplateTest extends TestCase
         self::assertStringContainsString('<ul', $html);
         self::assertStringContainsString('<li style="margin:0 0 6px">Door at Party</li>', $html);
     }
+
+    public function testALineStartingWithAnEmojiUsesItAsTheBullet(): void
+    {
+        $html = EmailBody::toHtml("- 🎟️ Tickets\n- 🔹 Credits");
+
+        self::assertStringContainsString('list-style:none', $html);
+        self::assertStringContainsString('<li style="margin:0 0 12px">🎟️ Tickets</li>', $html);
+    }
+
+    public function testAPlainDashedListKeepsItsDots(): void
+    {
+        $html = EmailBody::toHtml("- 🎟️ Tickets\n- Credits");
+
+        self::assertStringNotContainsString('list-style:none', $html);
+    }
+
+    public function testAHeadingGetsAnIdAndAContentsLinkPointsAtIt(): void
+    {
+        $html = EmailBody::toHtml("- 🎟️ [Tickets and credits](#ec-tickets-and-credits)\n\n## 🎟️ Tickets and credits");
+
+        self::assertStringContainsString('<a href="#ec-tickets-and-credits"', $html);
+        self::assertStringContainsString('id="ec-tickets-and-credits"', $html);
+        self::assertSame('ec-tickets-and-credits', EmailBody::anchor('🎟️ Tickets and credits'));
+    }
+
+    public function testPlainTextKeepsTheWordsOfAContentsLink(): void
+    {
+        self::assertSame('- 🎟️ Tickets', EmailBody::toText('- 🎟️ [Tickets](#ec-tickets)'));
+    }
+
+    public function testTheDmVersionPutsABlankLineBetweenEmojiLines(): void
+    {
+        self::assertSame(
+            "Tickets\n\n🔹 One\n\n🔹 Two\n- plain\n- plain",
+            EmailBody::forDm("## Tickets\n\n- 🔹 One\n- 🔹 Two\n- plain\n- plain")
+        );
+    }
 }

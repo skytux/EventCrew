@@ -290,12 +290,50 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
         self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[0]['body']);
-        self::assertStringNotContainsString('wp-admin/admin.php?page=eventcrew', $this->mails[0]['body']);
         self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[1]['body']);
         self::assertStringContainsString(
             'Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew',
             $this->mails[1]['body']
         );
+    }
+
+    public function testOnlyAnOrganizersWelcomeEmailLinksToWpAdmin(): void
+    {
+        $this->queueOpenTasks();
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+        self::assertStringContainsString(
+            'Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew',
+            $this->mails[0]['body']
+        );
+
+        $this->mails = [];
+        $this->queueOpenTasks();
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+        self::assertStringNotContainsString('wp-admin', $this->mails[0]['body']);
+    }
+
+    public function testTheEmailsAndDmsSayTheGuideIsInTheHelpTab(): void
+    {
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+
+        $line = 'This guide is also on the crew web page, in the Help tab, after you sign in: ';
+        self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-panel-help', $this->mails[0]['body']);
+        self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-help-organizer', $this->mails[1]['body']);
+        self::assertStringContainsString(
+            $line . 'https://site.test/crew/#eventcrew-help-organizer',
+            $this->lastCallTo('sendMessage')['text']
+        );
+        self::assertStringContainsString('Contents', $this->mails[1]['body']);
+    }
+
+    public function testTheHelpTabTextHasNoOpenTasks(): void
+    {
+        $text = WelcomeSender::helpText();
+
+        self::assertStringContainsString('## 🎟️ Tickets', $text);
+        self::assertStringNotContainsString('Open tasks', $text);
     }
 
     public function testNoGroupLinkMeansNoGroupButton(): void

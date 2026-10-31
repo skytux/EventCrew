@@ -224,6 +224,22 @@
 
 /* What each task involves: role name in bold, its description under it. */
 .eventcrew-signup .eventcrew-tasks-info { margin-top: 1.5em; scroll-margin-top: 1em; }
+
+/*
+ * The Help tab: the welcome text and the organizer guide. Headings get room
+ * above them; a list whose lines start with an emoji uses the emoji as its
+ * bullet, so it has no dot and no indent.
+ */
+.eventcrew-signup .eventcrew-help p { margin: 0 0 1em; line-height: 1.6; }
+.eventcrew-signup .eventcrew-help-heading { margin: 1.8em 0 .6em; font-size: 1.1em; scroll-margin-top: 1em; }
+.eventcrew-signup .eventcrew-help-list { margin: 0 0 1.2em; line-height: 1.6; }
+.eventcrew-signup .eventcrew-help-list li { margin: 0 0 .7em; }
+.eventcrew-signup .eventcrew-help-list.is-emoji { list-style: none; padding: 0; }
+.eventcrew-signup .eventcrew-help-orglink { margin: 0 0 1em; font-weight: 600; }
+.eventcrew-signup .eventcrew-help-organizer {
+    margin-top: 2.5em; padding-top: 1em;
+    border-top: 1px solid var(--eventcrew-line); scroll-margin-top: 1em;
+}
 .eventcrew-signup .eventcrew-tasks-info h3 { margin: 0 0 .5em; font-size: 1.1em; }
 .eventcrew-signup .eventcrew-tasks-info dl { margin: 0; }
 .eventcrew-signup .eventcrew-tasks-info dt { font-weight: 600; margin-top: .75em; }

@@ -228,6 +228,11 @@ final class WelcomeSender
             $actions[] = $group;
         }
 
+        // Only an organizer can use wp-admin.
+        if ($person->isOrganizer) {
+            $actions[] = self::wpAdminAction();
+        }
+
         return $this->mailer->toPerson(
             $person->id,
             $person->email,
@@ -236,7 +241,7 @@ final class WelcomeSender
                 /* translators: %s: the person's first name */
                 __('Hi %s,', 'eventcrew'),
                 $person->name()
-            ) . "\n\n" . $this->body(),
+            ) . "\n\n" . $this->body() . self::webLine(HelpPage::PANEL_ANCHOR),
             $actions
         );
     }
@@ -273,7 +278,7 @@ final class WelcomeSender
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::plainHeadings($this->body(true)), true),
+            DmBody::frame($person, EmailBody::forDm($this->body(true) . self::webLine(HelpPage::PANEL_ANCHOR)), true),
             [] === $keyboard ? null : ['inline_keyboard' => $keyboard]
         );
     }
@@ -287,12 +292,7 @@ final class WelcomeSender
             $actions[] = $group;
         }
 
-        // The EventCrew menu in wp-admin. The slug is Admin::MENU_SLUG, kept
-        // literal so this Support class does not reach up into the Admin layer.
-        $actions[] = [
-            'label' => __('Open EventCrew in wp-admin', 'eventcrew'),
-            'url' => admin_url('admin.php?page=eventcrew'),
-        ];
+        $actions[] = self::wpAdminAction();
 
         return $this->mailer->toPerson(
             $person->id,
@@ -302,10 +302,20 @@ final class WelcomeSender
                 /* translators: %s: the person's first name */
                 __('Hi %s,', 'eventcrew'),
                 $person->name()
-            ) . "\n\n" . $this->organizerIntro()
-                . "\n\n" . OrganizerGuide::short() . "\n\n" . OrganizerGuide::details(),
+            ) . "\n\n" . $this->organizerIntro() . self::webLine(HelpPage::ORGANIZER_ANCHOR)
+                . "\n\n" . OrganizerGuide::full(),
             $actions
         );
+    }
+
+    /**
+     * The button to EventCrew in wp-admin.
+     *
+     * @return array{label: string, url: string}
+     */
+    private static function wpAdminAction(): array
+    {
+        return ['label' => __('Open EventCrew in wp-admin', 'eventcrew'), 'url' => OrganizerGuide::wpAdminUrl()];
     }
 
     /**
@@ -324,11 +334,32 @@ final class WelcomeSender
     private function sendOrganizerDm(Person $person): bool
     {
         $text = $this->organizerIntro() . "\n\n" . OrganizerGuide::short() . "\n\n"
-            . __('The full guide, with the details, is in your email.', 'eventcrew');
+            . __('The full guide, with the details, is in your email.', 'eventcrew')
+            . self::webLine(HelpPage::ORGANIZER_ANCHOR);
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::plainHeadings($text))
+            DmBody::frame($person, EmailBody::forDm($text))
+        );
+    }
+
+    /**
+     * Where the same guide is on the web: the Help tab of the crew page, which
+     * shows only after signing in. Starts with the paragraph break; empty when
+     * no crew page is set.
+     */
+    private static function webLine(string $anchor): string
+    {
+        $url = HelpPage::url($anchor);
+
+        if ('' === $url) {
+            return '';
+        }
+
+        return "\n\n📖 " . sprintf(
+            /* translators: %s: link to the Help tab of the crew web page */
+            __('This guide is also on the crew web page, in the Help tab, after you sign in: %s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $url
         );
     }
 
@@ -347,51 +378,81 @@ final class WelcomeSender
      */
     public function body(bool $forDm = false): string
     {
-        $settings = new ReputationSettings();
-        $site = trim((string) get_bloginfo('name'));
-        $noticeHours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
-        $threshold = (int) round($settings->threshold() * 100);
-
-        $parts = [
+        return implode("\n\n", [
             sprintf(
                 /* translators: %s: the crew's name (the site name) */
                 __('Welcome to the %s crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                $site
+                trim((string) get_bloginfo('name'))
             ),
-            '## ' . __('The tasks', 'eventcrew'),
-            implode("\n", $this->roleLines()),
-            '## ' . __('Tickets', 'eventcrew'),
+            ...self::sections(),
+            '## 📋 ' . __('Open tasks', 'eventcrew'),
+            $this->openTasksText($forDm),
+        ]);
+    }
+
+    /**
+     * The member part of the web Help tab: the welcome message without the
+     * open tasks, which the Board tab already shows.
+     */
+    public static function helpText(): string
+    {
+        return implode("\n\n", [
+            sprintf(
+                /* translators: %s: the crew's name (the site name) */
+                __('How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                trim((string) get_bloginfo('name'))
+            ),
+            ...self::sections(),
+        ]);
+    }
+
+    /**
+     * The sections both texts share: tasks, tickets, credits, standing.
+     *
+     * @return array<int, string>
+     */
+    private static function sections(): array
+    {
+        $settings = new ReputationSettings();
+        $noticeHours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
+        $threshold = (int) round($settings->threshold() * 100);
+
+        return [
+            '## 🧩 ' . __('The tasks', 'eventcrew'),
+            implode("\n", self::roleLines()),
+            '## 🎟️ ' . __('Tickets', 'eventcrew'),
             __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /mytickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            '## ' . __('Credits', 'eventcrew'),
+            '## 🎁 ' . __('Credits', 'eventcrew'),
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
                 __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /ticket to the bot or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
-            '## ' . __('Standing', 'eventcrew'),
+            '## 📈 ' . __('Standing', 'eventcrew'),
             __('Your standing comes from how your past tasks went:', 'eventcrew'),
-            implode("\n", $this->weightLines($settings, $noticeHours)),
-            $this->standingRules($settings, $noticeHours, $threshold),
-            '## ' . __('Open tasks', 'eventcrew'),
-            $this->openTasksText($forDm),
+            implode("\n", self::weightLines($settings, $noticeHours)),
+            self::standingRules($settings, $noticeHours, $threshold),
         ];
-
-        return implode("\n\n", $parts);
     }
 
     /**
      * One "- " line per role on offer, then the Leader when events carry one.
+     * The role's own emoji is the line's bullet; a role without one gets 🔹.
      *
      * @return array<int, string>
      */
-    private function roleLines(): array
+    private static function roleLines(): array
     {
         $lines = [];
 
         foreach (RoleGuide::descriptions() as $role) {
-            $lines[] = '' === $role['description']
-                ? '- ' . $role['name']
-                : '- ' . $role['name'] . ': ' . $role['description'];
+            $line = '- ' . $role['name'];
+
+            if (! EmailBody::isEmojiLine($line)) {
+                $line = '- 🔹 ' . $role['name'];
+            }
+
+            $lines[] = '' === $role['description'] ? $line : $line . ': ' . $role['description'];
         }
 
         return $lines;
@@ -404,7 +465,7 @@ final class WelcomeSender
      *
      * @return array<int, string>
      */
-    private function weightLines(ReputationSettings $settings, int $noticeHours): array
+    private static function weightLines(ReputationSettings $settings, int $noticeHours): array
     {
         $percents = $settings->weightPercents();
         $lines = [];
@@ -418,13 +479,13 @@ final class WelcomeSender
                 );
             }
 
-            $lines[] = sprintf('- %s: %d%%', $label, $percents[$status] ?? 0);
+            $lines[] = sprintf('- 🔹 %s: %d%%', $label, $percents[$status] ?? 0);
         }
 
         return $lines;
     }
 
-    private function standingRules(ReputationSettings $settings, int $noticeHours, int $threshold): string
+    private static function standingRules(ReputationSettings $settings, int $noticeHours, int $threshold): string
     {
         $text = sprintf(
             /* translators: 1: hours of notice, 2: tasks before a rating, 3: good-standing percentage */
@@ -454,9 +515,9 @@ final class WelcomeSender
             $task = $row['task'];
             $time = $task->timeRange();
 
-            $lines[] = sprintf(
+            $lines[] = '- 📅 ' . sprintf(
                 /* translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total */
-                __('- %1$s%2$s: %3$s (%4$d of %5$d places free)', 'eventcrew'),
+                __('%1$s%2$s: %3$s (%4$d of %5$d places free)', 'eventcrew'),
                 Dates::dayLabel($task->taskDate),
                 '' === $time ? '' : ' ' . $time,
                 $task->roleDisplay(),
