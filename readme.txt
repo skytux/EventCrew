@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.47.0
+Stable tag: 1.48.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.48.0 =
+Crew page Admin, Add a person to a task: pick an existing member from a list (name and email are now only for a new person), and tick several tasks in one go. The person is found or created once and put on every ticked task; the message says how many of the ticked tasks they were added to.
 
 = 1.47.0 =
 Crew leader is an ordinary role. The leader switch, leader slot and leadership settings are gone: Crew leader is a restricted role that only role holders can sign up for. Each role can have conditions (a count per role, or at least N roles done X times each); organizers are told by Telegram and email the first time someone meets them, and the first time someone is given a role. A per-role setting decides who opens the sales desk, gets the door link and marks the roster. /eligible lists who meets the conditions (/leaders still works). Organizers can sign anyone up to any task.
@@ -609,6 +612,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.48.0 =
+Add a person to a task now has a member picker and takes several tasks at once.
 
 = 1.47.0 =
 Database update (version 20): moves can_lead into role holders, drops can_lead and leader_eligible_notified_at, adds people.role_notices.

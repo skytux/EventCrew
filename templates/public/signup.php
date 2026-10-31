@@ -578,20 +578,27 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['add_action']); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <fieldset>
+                        <legend><?php esc_html_e('Tasks (tick one or more)', 'eventcrew'); ?></legend>
+                        <?php foreach ($eventcrew_admin['add_tasks'] as $eventcrew_add_task_id => $eventcrew_add_task_label) : ?>
+                            <label><input type="checkbox" name="task_ids[]" value="<?php echo esc_attr((string) $eventcrew_add_task_id); ?>"> <?php echo esc_html($eventcrew_add_task_label); ?></label><br>
+                        <?php endforeach; ?>
+                    </fieldset>
                     <p>
-                        <label for="eventcrew-admin-add-task"><?php esc_html_e('Task', 'eventcrew'); ?></label><br>
-                        <select id="eventcrew-admin-add-task" name="task_id" required>
-                            <?php foreach ($eventcrew_admin['add_tasks'] as $eventcrew_add_task_id => $eventcrew_add_task_label) : ?>
-                                <option value="<?php echo esc_attr((string) $eventcrew_add_task_id); ?>"><?php echo esc_html($eventcrew_add_task_label); ?></option>
+                        <label for="eventcrew-admin-add-member"><?php esc_html_e('Person', 'eventcrew'); ?></label><br>
+                        <select id="eventcrew-admin-add-member" name="person_id">
+                            <option value="0"><?php esc_html_e('New person (fill in the name below)', 'eventcrew'); ?></option>
+                            <?php foreach ($eventcrew_admin['members'] as $eventcrew_member_id => $eventcrew_member_label) : ?>
+                                <option value="<?php echo esc_attr((string) $eventcrew_member_id); ?>"><?php echo esc_html($eventcrew_member_label); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </p>
                     <p>
-                        <label for="eventcrew-admin-add-name"><?php esc_html_e('Name', 'eventcrew'); ?></label><br>
+                        <label for="eventcrew-admin-add-name"><?php esc_html_e('Name (new person only)', 'eventcrew'); ?></label><br>
                         <input id="eventcrew-admin-add-name" type="text" name="name" maxlength="100">
                     </p>
                     <p>
-                        <label for="eventcrew-admin-add-email"><?php esc_html_e('Email (optional)', 'eventcrew'); ?></label><br>
+                        <label for="eventcrew-admin-add-email"><?php esc_html_e('Email (new person only, optional)', 'eventcrew'); ?></label><br>
                         <input id="eventcrew-admin-add-email" type="email" name="email" maxlength="191">
                         <br><span class="eventcrew-muted"><?php esc_html_e('With an email, they get their ticket by email. An email that belongs to a member adds that member.', 'eventcrew'); ?></span>
                     </p>

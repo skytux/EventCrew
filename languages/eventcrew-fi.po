@@ -2327,3 +2327,33 @@ msgstr "Sähköpostin kanssa hän saa lipun sähköpostiin. Jäsenen sähköpost
 #, php-format
 msgid "You now have the role %s. Its tasks are shown to you with /roletasks in the bot and on the crew page, and you can sign up for them."
 msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /roletasks ja crew-sivulla, ja voit ilmoittautua niihin."
+
+msgid "Tasks (tick one or more)"
+msgstr "Tehtävät (valitse yksi tai useampi)"
+
+msgid "Person"
+msgstr "Henkilö"
+
+msgid "New person (fill in the name below)"
+msgstr "Uusi henkilö (kirjoita nimi alle)"
+
+msgid "Name (new person only)"
+msgstr "Nimi (vain uusi henkilö)"
+
+msgid "Email (new person only, optional)"
+msgstr "Sähköposti (vain uusi henkilö, vapaaehtoinen)"
+
+msgid "Tick at least one task."
+msgstr "Valitse vähintään yksi tehtävä."
+
+msgid "The others were skipped: they were already on the task, the task was full, or it is no longer available."
+msgstr "Muut ohitettiin: henkilö oli jo tehtävässä, tehtävä oli täynnä tai se ei ole enää saatavilla."
+
+msgid "They got an email with the ticket for each task they were added to."
+msgstr "Henkilö sai sähköpostilla lipun jokaisesta tehtävästä, johon hänet lisättiin."
+
+msgid "They have no email address here, so nothing was sent."
+msgstr "Henkilöllä ei ole täällä sähköpostiosoitetta, joten mitään ei lähetetty."
+
+msgid "Added to %1$d of %2$d tasks."
+msgstr "Lisätty %1$d/%2$d tehtävään."
