@@ -63,7 +63,9 @@ $include = [
 /** Never ships, at any point, whatever else changes above. */
 $excludePatterns = [
     '#(^|/)\.#',            // dotfiles and .git
-    '#(^|/)vendor(/|$)#',
+    // Composer's vendor/ at the top only: assets/vendor/ holds the bundled
+    // QR code library the sales desk page loads, and must ship.
+    '#^vendor(/|$)#',
     '#(^|/)tests?(/|$)#',
     '#(^|/)dist(/|$)#',
     '#\.dist$#',

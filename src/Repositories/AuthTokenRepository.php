@@ -90,6 +90,52 @@ final class AuthTokenRepository
     }
 
     /**
+     * Like consume(), but the token is stamped used by one conditional UPDATE
+     * that only matches a row that is still unused and unexpired. Two requests
+     * spending the same token at the same moment cannot both get the person:
+     * only the one whose UPDATE changed the row does. Used for the sales
+     * desk's short-lived links shown as a QR code on a screen.
+     */
+    public function consumeOnce(string $rawToken, string $purpose): ?int
+    {
+        global $wpdb;
+
+        $rawToken = trim($rawToken);
+
+        if ('' === $rawToken) {
+            return null;
+        }
+
+        $now = (string) current_time('mysql');
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, person_id, expires_at, used_at
+                FROM {$this->table()}
+                WHERE token_hash = %s AND purpose = %s",
+                $this->hash($rawToken),
+                $purpose
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($row) || null !== $row['used_at'] || (string) $row['expires_at'] < $now) {
+            return null;
+        }
+
+        $changed = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET used_at = %s
+                WHERE id = %d AND used_at IS NULL AND expires_at >= %s",
+                $now,
+                (int) $row['id'],
+                $now
+            )
+        );
+
+        return 1 === $changed ? (int) $row['person_id'] : null;
+    }
+
+    /**
      * Deletes tokens that can no longer be used - past their expiry, or already
      * consumed - so the table stays small now that a fresh sign-in token is
      * issued for every email's account-link footer. Called from the hourly

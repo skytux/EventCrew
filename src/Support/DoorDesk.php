@@ -97,10 +97,27 @@ final class DoorDesk
         }
 
         $personId = $this->tokens->consume($rawToken, DoorSession::TOKEN_PURPOSE);
+        $handoff = false;
+
+        // Not an ordinary door link: maybe one made on the sales desk page
+        // ("Other device"), which is spent by one atomic write.
+        if (null === $personId) {
+            $personId = $this->tokens->consumeOnce($rawToken, DoorSession::HANDOFF_PURPOSE);
+            $handoff = null !== $personId;
+        }
+
         $person = null === $personId ? null : $this->people->find($personId);
 
         if (null === $person) {
             return $used;
+        }
+
+        // A link made on the page logs in only someone who may run the door
+        // right now, asked again at the moment it is spent.
+        $code = $handoff ? $this->gate->check($person, $date) : SalesDeskGate::OK;
+
+        if (SalesDeskGate::OK !== $code) {
+            return ['cookie' => null, 'seconds' => 0, 'message' => SalesDeskGate::message($code)];
         }
 
         $seconds = $this->gate->secondsLeft($person, $date);

@@ -6,6 +6,7 @@ namespace EventCrew\Web;
 
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorSession;
 use EventCrew\Telegram\TicketRedemptionService;
@@ -39,13 +40,16 @@ final class DoorController
     public const NEW_MEMBER_ACTION = 'eventcrew_door_new_member';
     public const HOLVI_ACTION = 'eventcrew_door_holvi';
     public const COUNT_ACTION = 'eventcrew_door_count';
+    public const PEOPLE_ACTION = 'eventcrew_door_people';
+    public const HANDOFF_ACTION = 'eventcrew_door_handoff';
 
     /** How often the page asks for fresh state, in milliseconds. */
     public const POLL_MS = 4000;
 
     public function __construct(
         private readonly DoorDesk $desk,
-        private readonly DoorNewMember $newMember
+        private readonly DoorNewMember $newMember,
+        private readonly DoorHandoff $handoff
     ) {
     }
 
@@ -65,6 +69,8 @@ final class DoorController
             self::NEW_MEMBER_ACTION,
             self::HOLVI_ACTION,
             self::COUNT_ACTION,
+            self::PEOPLE_ACTION,
+            self::HANDOFF_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -235,6 +241,21 @@ final class DoorController
                     'member' => $member,
                 ]);
                 // No break: json() exits.
+
+            case self::PEOPLE_ACTION:
+                $this->json(['people' => $this->handoff->people($cookie) ?? []]);
+                // No break: json() exits.
+
+            case self::HANDOFF_ACTION:
+                $link = $this->handoff->link($cookie, $personId);
+                $ok = DoorHandoff::OK === $link['code'];
+                $this->json([
+                    'ok' => $ok,
+                    'url' => $link['url'],
+                    'name' => $link['name'],
+                    'message' => $ok ? '' : DoorHandoff::message($link['code']),
+                ], $ok ? 200 : 403);
+                // No break: json() exits.
         }
         // phpcs:enable WordPress.Security.NonceVerification
 
@@ -293,6 +314,8 @@ final class DoorController
                 'newMember' => self::NEW_MEMBER_ACTION,
                 'holvi' => self::HOLVI_ACTION,
                 'count' => self::COUNT_ACTION,
+                'people' => self::PEOPLE_ACTION,
+                'handoff' => self::HANDOFF_ACTION,
             ],
         ];
 

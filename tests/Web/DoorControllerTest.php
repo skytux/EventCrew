@@ -15,6 +15,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorSession;
 use EventCrew\Support\EmailTemplate;
@@ -98,7 +99,15 @@ final class DoorControllerTest extends SalesDeskTestCase
 
         return new DoorController(
             $desk,
-            new DoorNewMember(new PersonRepository(), new AuthTokenRepository(), $mailer, $this->client())
+            new DoorNewMember(new PersonRepository(), new AuthTokenRepository(), $mailer, $this->client()),
+            new DoorHandoff(
+                $desk,
+                new TaskRepository(),
+                new AssignmentRepository(),
+                new PersonRepository(),
+                new AuthTokenRepository(),
+                $this->salesDeskGate()
+            )
         );
     }
 

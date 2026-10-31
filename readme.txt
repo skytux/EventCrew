@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.36.5
+Stable tag: 1.37.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.37.0 =
+* Sales desk: a new "📱 Other device" button. "Open on other device" shows a QR code and a Copy link button that log a second phone in to the sales desk as you. "Login as" does the same for another organizer, or for the leader or Welcome crew marked arrived tonight. Each link works once and stops working after 15 minutes. The person is checked again when the link is used.
+* The QR code is drawn on the page by the bundled qrcode-generator library 1.4.4 (MIT, Kazuhiko Arase). The page loads nothing from other sites.
 
 = 1.36.5 =
 * Sales desk: a new Add choice "Bought on Holvi, not on the list" adds a Holvi ticket buyer who is missing from the imported list, with an optional name and email, and checks them in. The row shows under Holvi tickets, not as a door sale. Nothing is sent to the email.
@@ -535,6 +539,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.37.0 =
+Other device button with QR login links at the sales desk. No database change.
 
 = 1.36.5 =
 Holvi buyer and +1 count at the sales desk. Adds an email column to the ticket buyers table (database version 14).
