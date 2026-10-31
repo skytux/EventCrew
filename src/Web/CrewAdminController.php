@@ -45,6 +45,13 @@ final class CrewAdminController
     public const GIFT_ACTION = 'eventcrew_web_admin_gift';
     public const MARK_ACTION = 'eventcrew_web_admin_mark';
 
+    /**
+     * The action names boot() hooks. Kept apart from actionLabels(), because
+     * boot() runs on plugins_loaded and the labels call __(), which WordPress
+     * 6.7+ warns about before init.
+     */
+    private const ACTIONS = [self::SALES_ACTION, self::BOARD_ACTION, self::GIFT_ACTION, self::MARK_ACTION];
+
     /** guard(): an organizer with a valid CSRF token. Run the action. */
     public const OK = 'ok';
 
@@ -87,7 +94,7 @@ final class CrewAdminController
     {
         // The nopriv hooks too: organizers sign in to the crew page by email,
         // not as WordPress users. guard() is what decides, not the hook.
-        foreach (array_keys(self::actionLabels()) as $action) {
+        foreach (self::ACTIONS as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }

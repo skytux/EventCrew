@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.39.0
+Stable tag: 1.39.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.39.1 =
+Fixes the WordPress notice "Translation loading for the eventcrew domain was triggered too early": nothing is translated before init any more.
 
 = 1.39.0 =
 Roster: each attendance mark shows who made it and when ("marked by Ana at 21:42"), on the wp-admin Roster and task editor, Telegram /roster and the crew page Admin tab. Telegram and the Admin tab now record who marked. Older marks show only the time. Database schema 16.
@@ -556,6 +559,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.39.1 =
+Removes the early translation loading notice.
 
 = 1.39.0 =
 Shows who marked each attendance and when. Adds one database column.
