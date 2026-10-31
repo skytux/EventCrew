@@ -32,6 +32,7 @@ final class RoleTaskService
     public const ORGANIZERS_ONLY = 'organizers_only';
     public const FULL = 'full';
     public const FAILED = 'failed';
+    public const NO_PERSON = 'no_person';
 
     /**
      * The domain of the placeholder address a person added without an email
@@ -97,10 +98,19 @@ final class RoleTaskService
      * the organizer's answer to "Count toward free-entry credit?" (only used
      * on a restricted task; every other task always counts).
      *
+     * With $personId above 0 that existing person is added and the name and
+     * email are not used (the crew page's member picker).
+     *
      * @return array{code: string, person: ?Person, emailed: bool}
      */
-    public function addPerson(Person $organizer, int $taskId, string $name, string $email, bool $countsCredit): array
-    {
+    public function addPerson(
+        Person $organizer,
+        int $taskId,
+        string $name,
+        string $email,
+        bool $countsCredit,
+        int $personId = 0
+    ): array {
         $fail = static fn (string $code): array => ['code' => $code, 'person' => null, 'emailed' => false];
 
         if (! $organizer->isOrganizer) {
@@ -111,6 +121,16 @@ final class RoleTaskService
 
         if (null === $task || Roles::ORGANIZE_SLUG === $task->roleSlug) {
             return $fail(self::NOT_RESTRICTED);
+        }
+
+        if ($personId > 0) {
+            $person = $this->people->find($personId);
+
+            if (null === $person || $person->isAnonymized()) {
+                return $fail(self::NO_PERSON);
+            }
+
+            return $this->signUp($person, $task, $countsCredit);
         }
 
         $name = trim(sanitize_text_field($name));
@@ -142,6 +162,17 @@ final class RoleTaskService
             return $fail(self::FAILED);
         }
 
+        return $this->signUp($person, $task, $countsCredit);
+    }
+
+    /**
+     * Gives the task's role if needed, signs the person up, and emails the
+     * ticket when they have a real address.
+     *
+     * @return array{code: string, person: ?Person, emailed: bool}
+     */
+    private function signUp(Person $person, Task $task, bool $countsCredit): array
+    {
         if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
             $roles = array_merge($person->roleSlugs, [$task->roleSlug]);
             $this->people->setRoles($person->id, $roles);
@@ -182,6 +213,7 @@ final class RoleTaskService
                 : __('Added to the task. No email was given, so nothing was sent.', 'eventcrew'),
             self::ALREADY_ON => __('That person is already on this task.', 'eventcrew'),
             self::FULL => __('That task is full.', 'eventcrew'),
+            self::NO_PERSON => __('That member was not found.', 'eventcrew'),
             self::NO_NAME => __('Give their name.', 'eventcrew'),
             self::BAD_EMAIL => __('That email address does not look right.', 'eventcrew'),
             self::NOT_RESTRICTED => __('That task is no longer available.', 'eventcrew'),

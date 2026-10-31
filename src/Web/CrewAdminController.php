@@ -208,10 +208,11 @@ final class CrewAdminController
             ),
             self::ADD_ACTION => $this->addPerson(
                 $organizer,
-                (int) ($post['task_id'] ?? 0),
+                is_array($post['task_ids'] ?? null) ? array_map('intval', $post['task_ids']) : [],
                 (string) ($post['name'] ?? ''),
                 (string) ($post['email'] ?? ''),
-                '1' === (string) ($post['counts_credit'] ?? '')
+                '1' === (string) ($post['counts_credit'] ?? ''),
+                (int) ($post['person_id'] ?? 0)
             ),
             default => $this->markAttendance(
                 $organizer,
@@ -362,17 +363,94 @@ final class CrewAdminController
     }
 
     /**
-     * "Add a person to a task": see RoleTaskService::addPerson().
+     * "Add a person to a task", for each ticked task: see
+     * RoleTaskService::addPerson(). The person is found or created on the
+     * first task; every later task reuses that same person. One task answers
+     * with that task's own notice; several answer with "added to N of M".
+     *
+     * @param list<int> $taskIds
      */
-    public function addPerson(Person $organizer, int $taskId, string $name, string $email, bool $countsCredit): string
-    {
-        $result = $this->roleTasks->addPerson($organizer, $taskId, $name, $email, $countsCredit);
+    public function addPerson(
+        Person $organizer,
+        array $taskIds,
+        string $name,
+        string $email,
+        bool $countsCredit,
+        int $personId = 0
+    ): string {
+        $taskIds = array_values(array_unique(array_filter($taskIds, static fn (int $id): bool => $id > 0)));
 
-        if (RoleTaskService::ADDED === $result['code']) {
-            return $result['emailed'] ? 'admin_add_added_mail' : 'admin_add_added';
+        if ([] === $taskIds) {
+            return 'admin_add_no_task';
         }
 
-        return 'admin_add_' . $result['code'];
+        $added = 0;
+        $emailed = false;
+        $last = null;
+
+        foreach ($taskIds as $taskId) {
+            $last = $this->roleTasks->addPerson($organizer, $taskId, $name, $email, $countsCredit, $personId);
+
+            if (null === $last['person'] && RoleTaskService::NOT_RESTRICTED !== $last['code']) {
+                // Nobody to add (no name, bad email, member not found): no
+                // other task would go differently.
+                return 'admin_add_' . $last['code'];
+            }
+
+            if (null !== $last['person']) {
+                $personId = $last['person']->id;
+            }
+
+            if (RoleTaskService::ADDED === $last['code']) {
+                ++$added;
+                $emailed = $emailed || $last['emailed'];
+            }
+        }
+
+        if (1 === count($taskIds)) {
+            if (RoleTaskService::ADDED === $last['code']) {
+                return $emailed ? 'admin_add_added_mail' : 'admin_add_added';
+            }
+
+            return 'admin_add_' . $last['code'];
+        }
+
+        return sprintf('admin_add_many_%s%d_%d', $emailed ? 'mail_' : '', $added, count($taskIds));
+    }
+
+    /**
+     * The text for an 'admin_add_many_[mail_]<added>_<ticked>' notice, or ''
+     * when the code is not one.
+     */
+    private static function addManyText(string $code): string
+    {
+        if (1 !== preg_match('/^admin_add_many_(mail_)?(\d+)_(\d+)$/', $code, $m)) {
+            return '';
+        }
+
+        $added = (int) $m[2];
+        $ticked = (int) $m[3];
+        $parts = [
+            sprintf(
+                /* translators: 1: tasks the person was added to, 2: tasks ticked */
+                __('Added to %1$d of %2$d tasks.', 'eventcrew'),
+                $added,
+                $ticked
+            ),
+        ];
+
+        if ($added < $ticked) {
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $parts[] = __('The others were skipped: they were already on the task, the task was full, or it is no longer available.', 'eventcrew');
+        }
+
+        if ('' !== $m[1]) {
+            $parts[] = __('They got an email with the ticket for each task they were added to.', 'eventcrew');
+        } elseif ($added > 0) {
+            $parts[] = __('They have no email address here, so nothing was sent.', 'eventcrew');
+        }
+
+        return implode(' ', $parts);
     }
 
     /**
@@ -481,7 +559,12 @@ final class CrewAdminController
             'admin_marked' => __('Attendance saved.', 'eventcrew'),
             'admin_no_entry' => __('That roster entry was not found.', 'eventcrew'),
             'admin_roles_saved' => __('Roles saved.', 'eventcrew'),
+            'admin_add_no_task' => __('Tick at least one task.', 'eventcrew'),
         ];
+
+        if (! isset($map[$code]) && str_starts_with($code, 'admin_add_many_')) {
+            return self::addManyText($code);
+        }
 
         if (! isset($map[$code]) && str_starts_with($code, 'admin_add_')) {
             $add = substr($code, strlen('admin_add_'));

@@ -359,7 +359,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $result = $this->post(
             CrewAdminController::ADD_ACTION,
-            ['task_id' => '9', 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '0']
+            ['task_ids' => ['9'], 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '0']
         );
 
         self::assertSame('admin_add_added_mail', $result['notice']);
@@ -383,13 +383,117 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $result = $this->post(
             CrewAdminController::ADD_ACTION,
-            ['task_id' => '9', 'name' => 'Kim', 'email' => '', 'counts_credit' => '1']
+            ['task_ids' => ['9'], 'name' => 'Kim', 'email' => '', 'counts_credit' => '1']
         );
 
         self::assertSame('admin_add_added', $result['notice']);
         self::assertSame('added-abcdef123456@added.invalid', $this->personInserts()[0]['data']['email']);
         self::assertStringContainsString("SELECT 9, 40, 'signed_up', '2026-07-20 12:00:00', 1", implode("\n", $this->wpdb->queries));
         self::assertSame([], $this->mails);
+    }
+
+    /**
+     * Queues one organizer sign-up of an existing person on a task: the
+     * service's task and person reads, the claim's two reads, then the join.
+     * $inserted 0 makes the join find the task full.
+     *
+     * @param array<string, mixed> $task
+     * @param array<string, mixed> $person
+     */
+    private function queueMemberSignup(array $task, array $person, int $inserted = 1): void
+    {
+        $this->wpdb->nextRows[] = $task;                 // addPerson: tasks->find
+        $this->wpdb->nextRows[] = $person;               // addPerson: people->find
+        $this->wpdb->nextRows[] = $task;                 // claim: tasks->find
+        $this->wpdb->nextRows[] = $person;               // claim: people->find
+        $this->wpdb->nextVars[] = (int) $task['capacity'];  // join: capacity
+        $this->wpdb->nextRows[] = null;                  // join: no row yet
+        $this->wpdb->nextQueryResults[] = $inserted;     // join: inserted or full
+    }
+
+    public function testAnOrganizerPicksAMemberAndTicksSeveralTasks(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $member = ['email' => 'added-zzz@added.invalid'] + $this->personRow(8);
+        $this->queueMemberSignup($this->taskRow(11, 'decorate'), $member);
+        $this->queueMemberSignup($this->taskRow(12, 'decorate'), $member);
+        $this->queueMemberSignup($this->taskRow(13, 'decorate'), $member, 0);
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_ids' => ['11', '12', '13'], 'person_id' => '8', 'name' => '', 'email' => '', 'counts_credit' => '1']
+        );
+
+        self::assertSame('admin_add_many_2_3', $result['notice']);
+        self::assertSame([], $this->personInserts());
+        $sql = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString('SELECT 11, 8,', $sql);
+        self::assertStringContainsString('SELECT 12, 8,', $sql);
+        self::assertSame([], $this->mails);
+        self::assertSame(
+            'Added to 2 of 3 tasks. The others were skipped: they were already on the task, the task was full,'
+            . ' or it is no longer available. They have no email address here, so nothing was sent.',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testANewPersonOnSeveralTasksIsCreatedOnce(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $created = ['id' => 40, 'email' => 'added-abcdef123456@added.invalid', 'display_name' => 'Kim'];
+        $first = $this->taskRow(11, 'decorate');
+        $this->wpdb->insert_id = 40;
+        $this->wpdb->nextRows[] = $first;     // addPerson: tasks->find
+        $this->wpdb->nextRows[] = $created;   // people->find (new)
+        $this->wpdb->nextRows[] = $first;     // claim: tasks->find
+        $this->wpdb->nextRows[] = $created;   // claim: people->find
+        $this->wpdb->nextVars[] = 3;          // join: capacity
+        $this->wpdb->nextRows[] = null;       // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;  // join: inserted
+        $this->queueMemberSignup($this->taskRow(12, 'decorate'), $created);
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_ids' => ['11', '12'], 'person_id' => '0', 'name' => 'Kim', 'email' => '', 'counts_credit' => '1']
+        );
+
+        self::assertSame('admin_add_many_2_2', $result['notice']);
+        self::assertCount(1, $this->personInserts());
+        $sql = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString('SELECT 11, 40,', $sql);
+        self::assertStringContainsString('SELECT 12, 40,', $sql);
+    }
+
+    public function testAddingWithNoTaskTickedAsksForOne(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['person_id' => '8', 'name' => '', 'email' => '', 'counts_credit' => '1']
+        );
+
+        self::assertSame('admin_add_no_task', $result['notice']);
+        self::assertSame('Tick at least one task.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testAPickedMemberWhoIsGoneIsNotFound(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->taskRow(11, 'decorate');   // addPerson: tasks->find
+        $this->wpdb->nextRows[] = null;                             // people->find: gone
+
+        $result = $this->post(
+            CrewAdminController::ADD_ACTION,
+            ['task_ids' => ['11', '12'], 'person_id' => '8', 'name' => '', 'email' => '', 'counts_credit' => '1']
+        );
+
+        self::assertSame('admin_add_no_person', $result['notice']);
+        self::assertSame('That member was not found.', CrewAdminController::noticeText($result['notice']));
     }
 
     public function testAMemberCannotAddAPersonToARoleTask(): void
@@ -400,7 +504,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $result = $this->post(
             CrewAdminController::ADD_ACTION,
-            ['task_id' => '9', 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '1'],
+            ['task_ids' => ['9'], 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '1'],
             8
         );
 
