@@ -356,6 +356,48 @@ final class BoardService
     }
 
     /**
+     * Sends a copy of the board to a private chat, for /board asked in a DM.
+     * The copy is not remembered as the board: refreshes and reposts still go
+     * to the group. Its buttons work like the group's, and a tap on them
+     * redraws that copy too (see onJoinLeave).
+     */
+    public function sendPrivate(int $chatId): void
+    {
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return;
+        }
+
+        $rendered = $this->render();
+        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+
+        $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
+    }
+
+    /**
+     * Redraws the private copy of the board a button was tapped on, so its
+     * counts match the group's. A tap on the group's own board needs nothing
+     * more: refresh() already redrew it.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function refreshPrivateCopy(array $callbackQuery): void
+    {
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chat = is_array($message['chat'] ?? null) ? $message['chat'] : [];
+        $chatId = (int) ($chat['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if ('private' !== ($chat['type'] ?? '') || 0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $rendered = $this->render();
+        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+
+        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+    }
+
+    /**
      * Records the freshly-posted board's id, so the next refresh edits it in
      * place and the next repost knows which message to delete.
      *
@@ -461,6 +503,7 @@ final class BoardService
 
         if ($changed) {
             $this->refresh();
+            $this->refreshPrivateCopy($callbackQuery);
         }
     }
 

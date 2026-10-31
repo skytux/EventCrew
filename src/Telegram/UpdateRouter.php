@@ -11,7 +11,8 @@ use EventCrew\Support\Language;
  *
  * The bot understands a deliberately small vocabulary: a button tap (join or
  * leave), /start in its private chat (onboarding), the email that follows it,
- * and /board in the group (post or refresh the board). Anything else is
+ * and /board (in the group: post or refresh the board; in a private chat: a
+ * copy of the board there). Anything else is
  * ignored - the webhook still answers 200, it just does nothing.
  *
  * Every update is handled in the language its sender chose, so their DMs and
@@ -283,6 +284,14 @@ final class UpdateRouter
             // so a re-run of /board brings the board back to the foot of the
             // chat without leaving the previous copy stacked above it.
             $this->board->repostInto($chatId);
+
+            return;
+        }
+
+        if ($isPrivate && $this->isCommand($text, 'board')) {
+            // Asked in a private chat: the board comes back in that chat. The
+            // group's board stays where it is.
+            $this->board->sendPrivate($chatId);
 
             return;
         }
