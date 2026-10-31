@@ -6,6 +6,7 @@ namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
 use EventCrew\Models\Person;
+use EventCrew\Support\Language;
 
 /**
  * All reads and writes of the people table.
@@ -252,6 +253,15 @@ final class PersonRepository
     public function setNotifyPrefs(int $id, array $prefs): void
     {
         $this->update($id, ['notify_prefs' => wp_json_encode($prefs)]);
+    }
+
+    /**
+     * Stores the language crew-facing text reaches this person in: 'en' or
+     * 'fi', or null to go back to "not chosen".
+     */
+    public function setLanguage(int $id, ?string $language): void
+    {
+        $this->update($id, ['language' => Language::normalize($language)]);
     }
 
     /** Gives a one-time pass to sign up despite being at risk. */

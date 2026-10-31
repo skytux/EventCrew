@@ -58,6 +58,9 @@ $include = [
     // renders unstyled, which no test catches - the CSS moved out of the
     // template in 1.14.0 precisely so it could be cached and versioned.
     'assets',
+    // The Finnish translation (.mo is what WordPress reads; .po and .pot are
+    // its source). Without it a person who chose Finnish gets English.
+    'languages',
 ];
 
 /** Never ships, at any point, whatever else changes above. */

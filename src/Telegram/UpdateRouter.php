@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\Language;
+
 /**
  * Reads one Telegram update and sends it to the right place.
  *
@@ -11,6 +13,10 @@ namespace EventCrew\Telegram;
  * leave), /start in its private chat (onboarding), the email that follows it,
  * and /board in the group (post or refresh the board). Anything else is
  * ignored - the webhook still answers 200, it just does nothing.
+ *
+ * Every update is handled in the language its sender chose, so their DMs and
+ * popups read in it. A private command from someone who has not chosen is held
+ * back behind a "Suomi / English" question and run once they answer.
  */
 final class UpdateRouter
 {
@@ -29,7 +35,8 @@ final class UpdateRouter
         private readonly NotificationSettingsService $notifications,
         private readonly DoorListService $doorList,
         private readonly GuestListService $guestList,
-        private readonly SalesLinkService $salesLink
+        private readonly SalesLinkService $salesLink,
+        private readonly ?LanguageService $language = null
     ) {
     }
 
@@ -46,12 +53,34 @@ final class UpdateRouter
             return;
         }
 
+        if (null === $this->language) {
+            $this->route($update, null);
+
+            return;
+        }
+
+        $sender = $this->senderId($update);
+        $chosen = $this->language->languageFor($sender);
+
+        Language::run($chosen, function () use ($update, $chosen): void {
+            $this->route($update, $chosen);
+        });
+    }
+
+    /**
+     * @param array<string, mixed> $update
+     * @param string|null $chosen The sender's language, null if not chosen yet.
+     */
+    private function route(array $update, ?string $chosen): void
+    {
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
 
             $data = (string) ($callbackQuery['data'] ?? '');
 
-            if (str_starts_with($data, 'rep:')) {
+            if (null !== $this->language && str_starts_with($data, LanguageService::PREFIX)) {
+                $this->onLanguageChosen($callbackQuery);
+            } elseif (str_starts_with($data, 'rep:')) {
                 $this->replacement->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'rm:')) {
                 $this->roster->onMark($callbackQuery);
@@ -88,10 +117,44 @@ final class UpdateRouter
             return;
         }
 
+        $this->routeMessage($message, $chosen);
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     * @param string|null $chosen The sender's language, null if not chosen yet.
+     */
+    private function routeMessage(array $message, ?string $chosen): void
+    {
         $text = trim((string) ($message['text'] ?? ''));
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $fromId = (int) ($message['from']['id'] ?? 0);
         $isPrivate = 'private' === ($message['chat']['type'] ?? '');
+
+        if (null !== $this->language && 0 !== $fromId && $this->isCommand($text, 'language')) {
+            // Asked in the group, the question still goes to the DM: the
+            // buttons are personal, and the group sees English either way.
+            $this->language->ask($fromId, $isPrivate ? $chatId : $fromId);
+
+            return;
+        }
+
+        // Someone who has not chosen a language yet is asked before their first
+        // private command runs; the command waits behind the question and runs
+        // as soon as they tap an answer. Group commands and plain replies are
+        // never held back - the group is English, and a reply answers a
+        // question the bot already asked.
+        if (
+            null !== $this->language
+            && null === $chosen
+            && $isPrivate
+            && 0 !== $fromId
+            && str_starts_with($text, '/')
+        ) {
+            $this->language->ask($fromId, $chatId, $message);
+
+            return;
+        }
 
         if ($this->isCommand($text, 'start')) {
             // The board's deep-link buttons both land here as /start with a
@@ -240,6 +303,50 @@ final class UpdateRouter
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }
         }
+    }
+
+    /**
+     * A Suomi / English tap: save it, then run the command that was waiting
+     * behind the question, in the language just chosen.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function onLanguageChosen(array $callbackQuery): void
+    {
+        if (null === $this->language) {
+            return;
+        }
+
+        $result = $this->language->onSelect($callbackQuery);
+
+        if (null === $result['language'] || null === $result['pending']) {
+            return;
+        }
+
+        $pending = $result['pending'];
+        $language = $result['language'];
+
+        Language::run($language, function () use ($pending, $language): void {
+            $this->routeMessage($pending, $language);
+        });
+    }
+
+    /**
+     * The Telegram user an update comes from: the tapper of a button or the
+     * sender of a message. 0 for anything else, such as the bot being added to
+     * a group.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function senderId(array $update): int
+    {
+        foreach (['callback_query', 'message'] as $key) {
+            if (isset($update[$key]['from']['id'])) {
+                return (int) $update[$key]['from']['id'];
+            }
+        }
+
+        return 0;
     }
 
     /**

@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailBody;
+use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PrivacyPolicy;
@@ -47,12 +48,20 @@ final class SignupController
     public const PREFS_ACTION = 'eventcrew_web_prefs';
     public const REVOKE_ACTION = 'eventcrew_web_revoke_sessions';
     public const SALES_ACTION = 'eventcrew_web_sales';
+    public const LANGUAGE_ACTION = 'eventcrew_web_language';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
 
     /** Composes the board's view model; the presentation half of this class. */
     private readonly SignupBoardView $boardView;
+
+    /**
+     * The session's person, read once per request: the page is drawn in their
+     * language, so it is needed before the view model asks for it too.
+     */
+    private ?Person $person = null;
+    private bool $personRead = false;
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -86,7 +95,7 @@ final class SignupController
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
         add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION, self::SALES_ACTION] as $action) {
+        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION, self::SALES_ACTION, self::LANGUAGE_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -254,13 +263,16 @@ final class SignupController
         $this->registerStyle();
         wp_enqueue_style(self::STYLE_HANDLE);
 
-        $view = $this->viewModel();
-        $view['admin'] = $this->adminView($view['person'] ?? null);
+        // In the signed-in person's language; English for a visitor.
+        return Language::forPerson($this->currentPerson(), function (): string {
+            $view = $this->viewModel();
+            $view['admin'] = $this->adminView($view['person'] ?? null);
 
-        ob_start();
-        include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
+            ob_start();
+            include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
 
-        return (string) ob_get_clean();
+            return (string) ob_get_clean();
+        });
     }
 
     /**
@@ -284,6 +296,8 @@ final class SignupController
             'revoke_action' => self::REVOKE_ACTION,
             'sales_action' => self::SALES_ACTION,
             'sales_desk' => null !== $person && $this->canOpenSalesDesk($person),
+            'language_action' => self::LANGUAGE_ACTION,
+            'language' => null === $person ? null : ($person->language ?? Language::ENGLISH),
         ];
     }
 
@@ -367,6 +381,15 @@ final class SignupController
         $isNew = null === $person;
         $personId = $isNew ? $this->people->create(['email' => $email]) : $person->id;
 
+        // The link mail is in the language the person chose; a new one is
+        // English until they choose.
+        Language::forPerson($person, fn () => $this->sendLoginLink($personId, $email, $isNew));
+
+        return 'check_email';
+    }
+
+    private function sendLoginLink(int $personId, string $email, bool $isNew): void
+    {
         $body = __(
             "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
             'eventcrew'
@@ -391,8 +414,6 @@ final class SignupController
             $body,
             $actions
         );
-
-        return 'check_email';
     }
 
     /**
@@ -483,6 +504,24 @@ final class SignupController
     }
 
     /**
+     * The "Suomi | English" switch: saves the language on the person's record
+     * and returns the notice to show. A value other than en/fi changes nothing
+     * and says nothing.
+     */
+    public function chooseLanguage(int $personId, string $posted): string
+    {
+        $language = Language::normalize($posted);
+
+        if (null === $language) {
+            return '';
+        }
+
+        $this->people->setLanguage($personId, $language);
+
+        return 'language_saved';
+    }
+
+    /**
      * The single admin-ajax entry point, branching on the action. This is the
      * untested-by-design boundary: it reads the request, calls the testable
      * methods above, and redirects.
@@ -542,6 +581,16 @@ final class SignupController
 
         if (null === $person || ! WebSession::verifyCsrf($person->id, $csrf)) {
             $this->finish($redirect, 'please_sign_in', $isAjax);
+        }
+
+        // From here on the request is this person's, and every branch ends in
+        // a redirect or a JSON answer: their toasts, the re-rendered board and
+        // the mail a claim sends are all in their language. Left on exit.
+        Language::enter($person->language);
+
+        if (self::LANGUAGE_ACTION === $action) {
+            $chosen = isset($_POST['language']) ? sanitize_key(wp_unslash($_POST['language'])) : '';
+            $this->redirect($redirect, $this->chooseLanguage($person->id, $chosen));
         }
 
         if (self::LOGOUT_ACTION === $action) {
@@ -659,6 +708,7 @@ final class SignupController
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
             'leader_only' => __('The leader slot is for crew the organizers have cleared to lead.', 'eventcrew'),
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
+            'language_saved' => __('Your language is saved.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'sessions_revoked' => __('Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
@@ -744,7 +794,12 @@ final class SignupController
      */
     private function currentPerson(): ?Person
     {
-        return (new SessionPerson($this->people))->current();
+        if (! $this->personRead) {
+            $this->person = (new SessionPerson($this->people))->current();
+            $this->personRead = true;
+        }
+
+        return $this->person;
     }
 
     private function loginUrl(string $rawToken): string

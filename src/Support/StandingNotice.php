@@ -73,6 +73,11 @@ final class StandingNotice
 
     private function notify(Person $person, Task $task, string $status): void
     {
+        Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $status));
+    }
+
+    private function notifyInLanguage(Person $person, Task $task, string $status): void
+    {
         $isNoShow = AssignmentStatus::NO_SHOW === $status;
         $prefs = new NotificationPreferences();
 

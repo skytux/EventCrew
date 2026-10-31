@@ -27,6 +27,11 @@ final class CreditGrantNotifier
 
     public function notify(Person $person, int $credits = 1): void
     {
+        Language::forPerson($person, fn () => $this->send($person, $credits));
+    }
+
+    private function send(Person $person, int $credits): void
+    {
         $credits = max(1, $credits);
         $prefs = new NotificationPreferences();
 

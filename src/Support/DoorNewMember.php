@@ -93,7 +93,16 @@ final class DoorNewMember
         };
     }
 
+    /**
+     * In the new member's own language - English, as they have not chosen one
+     * yet - not in the language of the desk staff who added them.
+     */
     private function welcome(Person $person, string $email): void
+    {
+        Language::forPerson($person, fn () => $this->sendWelcome($person, $email));
+    }
+
+    private function sendWelcome(Person $person, string $email): void
     {
         $actions = [['label' => __('Confirm my email', 'eventcrew'), 'url' => $this->loginUrl($person->id)]];
         $body = __(

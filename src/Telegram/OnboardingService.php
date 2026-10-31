@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\PrivacyPolicy;
@@ -52,7 +53,8 @@ final class OnboardingService
     public function start(int $telegramUserId, int $chatId, string $displayName, bool $isPrivate = true): void
     {
         if (! $isPrivate) {
-            $this->nudgeToPrivateChat($chatId);
+            // Posted in the group, which reads English.
+            Language::run(Language::ENGLISH, fn () => $this->nudgeToPrivateChat($chatId));
 
             return;
         }

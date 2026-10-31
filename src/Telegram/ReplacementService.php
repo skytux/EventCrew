@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\NotificationPreferences;
@@ -254,43 +255,56 @@ final class ReplacementService
         );
 
         if (null !== $original) {
-            $line = sprintf(
-                /* translators: 1: cover's name, 2: role, 3: event */
-                __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
-                $cover->name(),
-                $role,
-                $event
-            );
-            $prefs = new NotificationPreferences();
-
-            if ($prefs->dmAllowed($original, NotificationPreferences::COVER)) {
-                $this->telegram->sendMessage($original->telegramChatId, $line);
-            }
-
-            if ($prefs->emailAllowed($original, NotificationPreferences::COVER)) {
-                $this->mailer->toPerson(
-                    $original->id,
-                    $original->email,
-                    __('Your task is covered', 'eventcrew'),
-                    sprintf(
-                        /* translators: 1: name, 2: the cover line */
-                        __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                        $original->name(),
-                        $line
-                    )
-                );
-            }
+            Language::forPerson($original, function () use ($original, $cover, $task, $event): void {
+                $this->tellOriginal($original, $cover, null === $task ? '' : $task->roleLabel(), $event);
+            });
         }
 
-        $this->board->announce(sprintf(
+        // The group reads one message, so it is always in English, whatever
+        // language the cover or the person covered chose.
+        $this->board->announce(Language::run(Language::ENGLISH, static fn (): string => sprintf(
             /* translators: 1: cover's name, 2: person being covered, 3: role, 4: event */
             __('%1$s is covering for %2$s: %3$s at %4$s.', 'eventcrew'),
             $cover->name(),
-            $originalName,
+            null === $original ? __('someone', 'eventcrew') : $original->name(),
+            null === $task ? '' : $task->roleLabel(),
+            $event
+        )));
+        $this->board->refresh();
+    }
+
+    /**
+     * Tells the person being covered, by DM and email as they allow, in the
+     * language the caller has switched to for them.
+     */
+    private function tellOriginal(Person $original, Person $cover, string $role, string $event): void
+    {
+        $line = sprintf(
+            /* translators: 1: cover's name, 2: role, 3: event */
+            __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
+            $cover->name(),
             $role,
             $event
-        ));
-        $this->board->refresh();
+        );
+        $prefs = new NotificationPreferences();
+
+        if ($prefs->dmAllowed($original, NotificationPreferences::COVER)) {
+            $this->telegram->sendMessage($original->telegramChatId, $line);
+        }
+
+        if ($prefs->emailAllowed($original, NotificationPreferences::COVER)) {
+            $this->mailer->toPerson(
+                $original->id,
+                $original->email,
+                __('Your task is covered', 'eventcrew'),
+                sprintf(
+                    /* translators: 1: name, 2: the cover line */
+                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                    $original->name(),
+                    $line
+                )
+            );
+        }
     }
 
     /**

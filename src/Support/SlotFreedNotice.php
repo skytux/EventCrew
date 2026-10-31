@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\TelegramClient;
@@ -45,6 +47,19 @@ final class SlotFreedNotice
 
         $prefs = new NotificationPreferences();
 
+        foreach ($this->people->activeEmailRecipients() as $person) {
+            // Skip only the person who just cancelled this slot.
+            if ($person->id === $cancellerId) {
+                continue;
+            }
+
+            Language::forPerson($person, fn () => $this->tell($person, $task, $prefs));
+        }
+    }
+
+    /** One person, in the language they chose. */
+    private function tell(Person $person, Task $task, NotificationPreferences $prefs): void
+    {
         $when = '' === $task->timeRange() ? $task->taskDate : $task->taskDate . ' ' . $task->timeRange();
         $line = sprintf(
             /* translators: 1: role, 2: event, 3: date/time */
@@ -54,33 +69,26 @@ final class SlotFreedNotice
             $when
         );
 
-        foreach ($this->people->activeEmailRecipients() as $person) {
-            // Skip only the person who just cancelled this slot.
-            if ($person->id === $cancellerId) {
-                continue;
-            }
+        if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
+            $this->telegram->sendMessage(
+                (int) $person->telegramChatId,
+                DmBody::frame($person, '⚡ ' . $line, true)
+            );
+        }
 
-            if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
-                $this->telegram->sendMessage(
-                    (int) $person->telegramChatId,
-                    DmBody::frame($person, '⚡ ' . $line, true)
-                );
-            }
-
-            if ($prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)) {
-                $this->mailer->toPerson(
-                    $person->id,
-                    $person->email,
-                    __('A spot just opened up', 'eventcrew'),
-                    sprintf(
-                        /* translators: 1: name, 2: the opening line */
-                        __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                        $person->name(),
-                        $line
-                    ),
-                    [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
-                );
-            }
+        if ($prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)) {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                __('A spot just opened up', 'eventcrew'),
+                sprintf(
+                    /* translators: 1: name, 2: the opening line */
+                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                    $person->name(),
+                    $line
+                ),
+                [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+            );
         }
     }
 }

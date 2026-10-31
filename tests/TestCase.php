@@ -6,6 +6,7 @@ namespace EventCrew\Tests;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
+use EventCrew\Support\Language;
 use FakeWpdb;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 
@@ -28,6 +29,12 @@ abstract class TestCase extends PHPUnitTestCase
 
     protected function tearDown(): void
     {
+        // A test that failed inside Language::run() must not leave the next
+        // one reading Finnish.
+        while (null !== Language::current()) {
+            Language::leave();
+        }
+
         Monkey\tearDown();
         parent::tearDown();
     }
@@ -39,15 +46,22 @@ abstract class TestCase extends PHPUnitTestCase
      */
     private function stubCommonFunctions(): void
     {
-        Functions\when('__')->returnArg(1);
-        Functions\when('_x')->returnArg(1);
+        // English as written, unless the code under test is inside a Finnish
+        // Language::run(); then the shipped .mo answers (see FinnishCatalog).
+        $translate = static fn (string $text): string => FinnishCatalog::translate($text);
+        Functions\when('__')->alias($translate);
+        Functions\when('_x')->alias($translate);
         // Returns the singular or plural template by count, the way WordPress
         // does; sprintf in the caller still fills in the number.
         Functions\when('_n')->alias(
-            static fn (string $single, string $plural, int $number): string => 1 === $number ? $single : $plural
+            static fn (string $single, string $plural, int $number): string => FinnishCatalog::translatePlural(
+                $single,
+                $plural,
+                $number
+            )
         );
-        Functions\when('esc_html__')->returnArg(1);
-        Functions\when('esc_attr__')->returnArg(1);
+        Functions\when('esc_html__')->alias($translate);
+        Functions\when('esc_attr__')->alias($translate);
         Functions\when('sanitize_key')->alias(
             static fn (string $key): string => strtolower(preg_replace('/[^a-z0-9_\-]/i', '', $key) ?? '')
         );

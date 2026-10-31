@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Language;
 use WP_REST_Request;
 
 /**
@@ -18,6 +19,9 @@ use WP_REST_Request;
  */
 final class VerificationController
 {
+    /** The confirmed person's language, for the page that follows; null for English. */
+    private ?string $pageLanguage = null;
+
     public function __construct(
         private readonly AuthTokenRepository $tokens,
         private readonly PersonRepository $people,
@@ -51,7 +55,7 @@ final class VerificationController
         header('Content-Type: text/html; charset=utf-8');
         // Assembled from literal markup and esc_html()'d text in renderPage().
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo $this->renderPage($confirmed);
+        echo Language::run($this->pageLanguage, fn (): string => $this->renderPage($confirmed));
         exit;
     }
 
@@ -71,12 +75,14 @@ final class VerificationController
         $this->people->markEmailVerified($personId);
 
         $person = $this->people->find($personId);
+        $this->pageLanguage = $person?->language;
 
         if (null !== $person && null !== $person->telegramChatId) {
-            $this->telegram->sendMessage(
-                $person->telegramChatId,
+            $chatId = $person->telegramChatId;
+            Language::forPerson($person, fn () => $this->telegram->sendMessage(
+                $chatId,
                 __('Your email is confirmed. Tap a task on the board to sign up.', 'eventcrew')
-            );
+            ));
         }
 
         return true;

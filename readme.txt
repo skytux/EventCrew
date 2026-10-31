@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.41.1
+Stable tag: 1.42.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.42.0 =
+Finnish and English for everything crew members see: bot messages, emails, the crew page, ticket and sales desk pages. The bot asks Suomi / English the first time in a private chat (/language changes it); the crew page has a Suomi | English switch. The group board stays English. No choice means English. Adds people.language (DB version 17). The Finnish text is machine-drafted and needs a proofread by a Finnish speaker.
 
 = 1.41.1 =
 An organizer signed up for the Organize task at the sales desk now gets the signup confirmation with their ticket, by Telegram and email.
@@ -577,6 +580,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.42.0 =
+Finnish/English for crew members. The Finnish text still needs a proofread.
 
 = 1.41.1 =
 An organizer put on Organize at the sales desk gets their ticket.

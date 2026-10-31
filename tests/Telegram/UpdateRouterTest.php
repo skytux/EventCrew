@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\UpdateRouter;
 
 /**
@@ -384,6 +386,106 @@ final class UpdateRouterTest extends TelegramTestCase
         $this->router()->dispatch($update);
 
         self::assertArrayNotHasKey('eventcrew_tg_await_email_556', $this->transients);
+    }
+
+    /**
+     * Someone who has not chosen a language is asked "Suomi / English" before
+     * their first private command runs, and the command is not dropped: it runs
+     * as soon as they tap, in the language they tapped.
+     */
+    public function testAnUnchosenPrivateCommandAsksForTheLanguageFirstThenRuns(): void
+    {
+        $router = $this->languageRouter();
+
+        $router->dispatch([
+            'message' => ['text' => '/ticket', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+        ]);
+
+        // Only the question so far; the /ticket answer is held back.
+        self::assertCount(1, $this->telegramCalls);
+        $question = $this->lastCallTo('sendMessage');
+        self::assertSame('Valitse kieli · Choose your language', $question['text']);
+        self::assertSame(
+            ['lang:fi', 'lang:en'],
+            array_column($question['reply_markup']['inline_keyboard'][0], 'callback_data')
+        );
+
+        $router->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'message' => ['chat' => ['id' => 555]],
+                'data' => 'lang:fi',
+            ],
+        ]);
+
+        // No record yet, so the choice is remembered against the Telegram id.
+        self::assertSame('fi', $this->transients['eventcrew_tg_language_555']);
+        self::assertSame('Tallennettu.', $this->lastCallTo('answerCallbackQuery')['text']);
+
+        $texts = $this->sentTexts();
+        self::assertContains('Kirjoitan sinulle suomeksi. Vaihda kieli komennolla /language.', $texts);
+        // The held /ticket ran after the choice, in Finnish.
+        self::assertSame(
+            'Aloita ensin komennolla /start, sitten /ticket antaa käyttää vapaalipun.',
+            end($texts)
+        );
+    }
+
+    public function testSomeoneWhoHasChosenIsNotAskedAgain(): void
+    {
+        $this->transients['eventcrew_tg_language_555'] = 'en';
+
+        $this->languageRouter()->dispatch([
+            'message' => ['text' => '/ticket', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+        ]);
+
+        self::assertNotContains('Valitse kieli · Choose your language', $this->sentTexts());
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testAGroupCommandIsNotHeldBackForTheQuestion(): void
+    {
+        $this->languageRouter()->dispatch([
+            'message' => ['text' => '/ticket', 'chat' => ['id' => -100, 'type' => 'supergroup'], 'from' => ['id' => 555]],
+        ]);
+
+        self::assertNotContains('Valitse kieli · Choose your language', $this->sentTexts());
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testTheLanguageCommandAsksAgainInTheDm(): void
+    {
+        $this->transients['eventcrew_tg_language_555'] = 'fi';
+
+        $this->languageRouter()->dispatch([
+            'message' => ['text' => '/language', 'chat' => ['id' => -100, 'type' => 'supergroup'], 'from' => ['id' => 555]],
+        ]);
+
+        $question = $this->lastCallTo('sendMessage');
+        self::assertSame('Valitse kieli · Choose your language', $question['text']);
+        self::assertSame(555, $question['chat_id']);
+    }
+
+    private function languageRouter(): UpdateRouter
+    {
+        return $this->updateRouter(new LanguageService(new PersonRepository(), $this->client()));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function sentTexts(): array
+    {
+        $texts = [];
+
+        foreach ($this->telegramCalls as $call) {
+            if ('sendMessage' === $call['method']) {
+                $texts[] = (string) $call['body']['text'];
+            }
+        }
+
+        return $texts;
     }
 
     public function testUnrecognisedUpdateDoesNothing(): void

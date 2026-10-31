@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Models;
 
+use EventCrew\Support\Language;
+
 /**
  * One person who people. Never a WordPress user - WP accounts belong to
  * organizers only, and a person's identity here is their verified email.
@@ -30,7 +32,9 @@ final class Person
         public readonly ?string $anonymizedAt = null,
         public readonly ?string $sessionsValidFrom = null,
         public readonly ?string $bannedAt = null,
-        public readonly string $banReason = ''
+        public readonly string $banReason = '',
+        /** 'en' or 'fi'; null until the person chooses, which reads as English */
+        public readonly ?string $language = null
     ) {
     }
 
@@ -58,7 +62,8 @@ final class Person
             self::nullableString($row['anonymized_at'] ?? null),
             self::nullableString($row['sessions_valid_from'] ?? null),
             self::nullableString($row['banned_at'] ?? null),
-            (string) ($row['ban_reason'] ?? '')
+            (string) ($row['ban_reason'] ?? ''),
+            Language::normalize($row['language'] ?? null)
         );
     }
 

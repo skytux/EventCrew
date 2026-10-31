@@ -32,6 +32,7 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\GuestListService;
+use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\PermissionService;
@@ -156,7 +157,11 @@ abstract class TelegramTestCase extends TestCase
      * the router's object graph is built, so a new collaborator is a single edit
      * here rather than in every bot test that needs a router.
      */
-    protected function updateRouter(): UpdateRouter
+    /**
+     * Without $language the router asks nobody to choose, as most routing
+     * tests want; the language tests pass one in.
+     */
+    protected function updateRouter(?LanguageService $language = null): UpdateRouter
     {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
 
@@ -210,7 +215,8 @@ abstract class TelegramTestCase extends TestCase
             new NotificationSettingsService(new PersonRepository(), $this->client()),
             $this->doorListService(),
             $this->guestListService(),
-            $this->salesLinkService()
+            $this->salesLinkService(),
+            $language
         );
     }
 

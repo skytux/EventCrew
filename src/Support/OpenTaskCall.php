@@ -237,6 +237,11 @@ final class OpenTaskCall
      */
     private function notify(Person $person, NotificationPreferences $prefs): bool
     {
+        return Language::forPerson($person, fn (): bool => $this->notifyInLanguage($person, $prefs));
+    }
+
+    private function notifyInLanguage(Person $person, NotificationPreferences $prefs): bool
+    {
         $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
         $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
 

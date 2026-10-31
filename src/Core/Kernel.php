@@ -78,6 +78,7 @@ use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
+use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
@@ -796,6 +797,14 @@ final class Kernel
         );
 
         $this->container->singleton(
+            LanguageService::class,
+            fn (Container $container) => new LanguageService(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             UpdateRouter::class,
             fn (Container $container) => new UpdateRouter(
                 $container->get(OnboardingService::class),
@@ -809,7 +818,8 @@ final class Kernel
                 $container->get(NotificationSettingsService::class),
                 $container->get(DoorListService::class),
                 $container->get(GuestListService::class),
-                $container->get(SalesLinkService::class)
+                $container->get(SalesLinkService::class),
+                $container->get(LanguageService::class)
             )
         );
 

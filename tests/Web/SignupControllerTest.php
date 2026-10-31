@@ -311,4 +311,23 @@ final class SignupControllerTest extends TestCase
 
         self::assertSame('dropped', $this->controller()->dropFor(7, 5));
     }
+
+    /**
+     * The Suomi | English switch on the page saves the choice to the
+     * signed-in person's record.
+     */
+    public function testTheLanguageSwitchSavesTheChoiceToThePerson(): void
+    {
+        self::assertSame('language_saved', $this->controller()->chooseLanguage(7, 'fi'));
+
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame('fi', $this->wpdb->updates[0]['data']['language']);
+        self::assertSame(['id' => 7], $this->wpdb->updates[0]['where']);
+    }
+
+    public function testAnUnknownLanguageIsIgnored(): void
+    {
+        self::assertSame('', $this->controller()->chooseLanguage(7, 'sv'));
+        self::assertSame([], $this->wpdb->updates);
+    }
 }
