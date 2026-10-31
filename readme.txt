@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.36.4
+Stable tag: 1.36.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.36.5 =
+* Sales desk: a new Add choice "Bought on Holvi, not on the list" adds a Holvi ticket buyer who is missing from the imported list, with an optional name and email, and checks them in. The row shows under Holvi tickets, not as a door sale. Nothing is sent to the email.
+* Sales desk: "+1" and "−1" buttons count people in without a name. The count is per night and is added to the checked-in total.
+* "Reset import" in wp-admin keeps Holvi buyers who were added at the sales desk.
 
 = 1.36.4 =
 * The ticket page shows the site logo (the Site Icon) large and faded behind the ticket, as a watermark. The "ticket not found" page has it too. Without a Site Icon the page looks as before.
@@ -530,6 +535,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.36.5 =
+Holvi buyer and +1 count at the sales desk. Adds an email column to the ticket buyers table (database version 14).
 
 = 1.36.4 =
 Site logo watermark on the ticket page. No database change.

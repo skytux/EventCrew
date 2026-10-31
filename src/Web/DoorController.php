@@ -37,6 +37,8 @@ final class DoorController
     public const TASKS_ACTION = 'eventcrew_door_tasks';
     public const WORK_ACTION = 'eventcrew_door_work';
     public const NEW_MEMBER_ACTION = 'eventcrew_door_new_member';
+    public const HOLVI_ACTION = 'eventcrew_door_holvi';
+    public const COUNT_ACTION = 'eventcrew_door_count';
 
     /** How often the page asks for fresh state, in milliseconds. */
     public const POLL_MS = 4000;
@@ -61,6 +63,8 @@ final class DoorController
             self::TASKS_ACTION,
             self::WORK_ACTION,
             self::NEW_MEMBER_ACTION,
+            self::HOLVI_ACTION,
+            self::COUNT_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -177,6 +181,25 @@ final class DoorController
                 ]);
                 // No break: json() exits.
 
+            case self::HOLVI_ACTION:
+                // Read as plain text, not through sanitize_email(): that would
+                // turn a mistyped address into an empty one, which DoorDesk
+                // would then store as "no email" instead of refusing it.
+                $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+                $code = $this->desk->addHolviBuyer($date, $doorPersonId, $name, $email);
+                $this->json([
+                    'ok' => DoorDesk::HOLVI_OK === $code,
+                    'message' => $this->desk->holviBuyerText($code),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::COUNT_ACTION:
+                $step = isset($_POST['step']) && '-1' === $_POST['step'] ? -1 : 1;
+                $this->desk->countAnonymous($date, $step);
+                $this->json(['ok' => true, 'state' => $this->desk->state($date)]);
+                // No break: json() exits.
+
             case self::GUEST_ACTION:
                 $ok = $this->desk->addGuest($date, $doorPersonId, $name, $plus);
                 $this->json([
@@ -268,6 +291,8 @@ final class DoorController
                 'tasks' => self::TASKS_ACTION,
                 'work' => self::WORK_ACTION,
                 'newMember' => self::NEW_MEMBER_ACTION,
+                'holvi' => self::HOLVI_ACTION,
+                'count' => self::COUNT_ACTION,
             ],
         ];
 

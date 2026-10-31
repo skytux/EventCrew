@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '13';
+    public const DB_VERSION = '14';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -426,10 +426,15 @@ final class Schema
             // Ticket buyers from the Holvi shop for one night: a name only,
             // with where it came from (source) and which import added it
             // (batch), so one import can be told apart from the next.
+            //
+            // email is only filled for a Holvi buyer added by hand at the
+            // sales desk because they were missing from the imported list.
+            // It is shown on the door list and nothing is ever sent to it.
             "CREATE TABLE {$ticketBuyers} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
                 name varchar(191) NOT NULL,
+                email varchar(191) DEFAULT NULL,
                 source varchar(20) NOT NULL DEFAULT 'paste',
                 batch varchar(64) NOT NULL DEFAULT '',
                 created_at datetime NOT NULL,

@@ -35,6 +35,10 @@ final class DoorDeskTest extends SalesDeskTestCase
         parent::setUp();
 
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('is_email')->alias(
+            static fn (string $email): string|false => false === filter_var($email, FILTER_VALIDATE_EMAIL) ? false : $email
+        );
+        Functions\when('sanitize_email')->returnArg(1);
     }
 
     private function desk(): DoorDesk
@@ -199,6 +203,98 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertTrue($this->desk()->addDoorSale(self::NIGHT, 1, ''));
         self::assertSame('door', $this->wpdb->inserts[0]['data']['source']);
         self::assertStringContainsString("'buyer', 1, 0,", $this->wpdb->lastQuery());
+    }
+
+    public function testAHolviBuyerMissingFromTheListIsStoredWithNameAndEmailAndCheckedIn(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $desk = $this->desk();
+
+        self::assertSame(DoorDesk::HOLVI_OK, $desk->addHolviBuyer(self::NIGHT, 1, ' Ada ', ' ada@example.com '));
+        self::assertCount(1, $this->wpdb->inserts);
+        $row = $this->wpdb->inserts[0]['data'];
+        self::assertSame('wp_eventcrew_ticket_buyers', $this->wpdb->inserts[0]['table']);
+        self::assertSame('desk', $row['source']);
+        self::assertSame('Ada', $row['name']);
+        self::assertSame('ada@example.com', $row['email']);
+        self::assertStringContainsString("'buyer', 1, 0,", $this->wpdb->lastQuery());
+        self::assertSame('Holvi buyer added and checked in.', $desk->holviBuyerText(DoorDesk::HOLVI_OK));
+    }
+
+    public function testAHolviBuyerWithNoNameOrEmailGetsAPlaceholderName(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(DoorDesk::HOLVI_OK, $this->desk()->addHolviBuyer(self::NIGHT, 1, '  ', ''));
+        self::assertSame('Holvi buyer (no name)', $this->wpdb->inserts[0]['data']['name']);
+        self::assertNull($this->wpdb->inserts[0]['data']['email']);
+    }
+
+    public function testAHolviBuyerWithAnInvalidEmailIsRefused(): void
+    {
+        $desk = $this->desk();
+
+        self::assertSame(DoorDesk::HOLVI_BAD_EMAIL, $desk->addHolviBuyer(self::NIGHT, 1, 'Ada', 'ada@'));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->queries);
+        self::assertStringContainsString('not valid', $desk->holviBuyerText(DoorDesk::HOLVI_BAD_EMAIL));
+    }
+
+    public function testAHolviBuyerAddedAtTheDeskIsListedWithHolviAndNotAsADoorSale(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'buyer', 'ref_id' => 11, 'plus_ones' => 0]]; // check-ins
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        // In the order the query sorts them: by name.
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 11,
+                'event_date' => self::NIGHT,
+                'name' => 'Ada',
+                'email' => 'ada@example.com',
+                'source' => 'desk',
+            ],
+            ['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'paste'],
+            ['id' => 10, 'event_date' => self::NIGHT, 'name' => 'Cy', 'source' => 'door'],
+        ];
+
+        $sections = $this->desk()->state(self::NIGHT)['sections'];
+
+        self::assertSame(['Ada', 'Bea'], array_column($sections[3]['rows'], 'name'));
+        self::assertSame(['Holvi · ada@example.com', 'Holvi'], array_column($sections[3]['rows'], 'detail'));
+        self::assertTrue($sections[3]['rows'][0]['in']);
+        self::assertSame(['Cy'], array_column($sections[4]['rows'], 'name'));
+    }
+
+    public function testTheCountWithoutANameGoesUpAndDownAndNeverBelowZero(): void
+    {
+        $desk = $this->desk();
+
+        self::assertSame(0, $desk->anonymousCount(self::NIGHT));
+        self::assertSame(1, $desk->countAnonymous(self::NIGHT, 1));
+        self::assertSame(2, $desk->countAnonymous(self::NIGHT, 1));
+        self::assertSame(1, $desk->countAnonymous(self::NIGHT, -1));
+        self::assertSame(0, $desk->countAnonymous(self::NIGHT, -1));
+        self::assertSame(0, $desk->countAnonymous(self::NIGHT, -1));
+        self::assertSame(0, $this->options[DoorDesk::ANONYMOUS_OPTION_PREFIX . self::NIGHT]);
+        // Another night has its own count.
+        self::assertSame(1, $desk->countAnonymous('2026-07-27', 1));
+        self::assertSame(0, $desk->anonymousCount(self::NIGHT));
+    }
+
+    public function testTheCountWithoutANameIsPartOfTheCheckedInTotal(): void
+    {
+        $this->options[DoorDesk::ANONYMOUS_OPTION_PREFIX . self::NIGHT] = 3;
+        $this->queueState([['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]]);
+
+        $state = $this->desk()->state(self::NIGHT);
+
+        self::assertSame(3, $state['anonymous']);
+        // Ann and her one extra person, plus the three counted without a name.
+        self::assertSame(5, $state['in']);
+        self::assertSame(5, $state['expected']);
     }
 
     public function testAGuestAddedAtTheDoorIsCheckedInWithNoExtraPeopleYet(): void

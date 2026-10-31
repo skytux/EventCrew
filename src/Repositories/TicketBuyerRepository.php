@@ -18,6 +18,8 @@ final class TicketBuyerRepository
 
     public const SOURCE_DOOR = TicketBuyer::SOURCE_DOOR;
 
+    public const SOURCE_DESK = TicketBuyer::SOURCE_DESK;
+
     private function table(): string
     {
         return Schema::table(Schema::TICKET_BUYERS);
@@ -128,6 +130,31 @@ final class TicketBuyerRepository
     }
 
     /**
+     * Records one Holvi buyer who was missing from the imported list, added by
+     * hand at the sales desk, and returns its id, or 0 when the write failed.
+     * An empty email is stored as NULL. Nothing is ever sent to the email.
+     */
+    public function addDeskBuyer(string $date, string $name, string $email): int
+    {
+        global $wpdb;
+
+        $inserted = $wpdb->insert(
+            $this->table(),
+            [
+                'event_date' => $date,
+                'name' => self::clean($name),
+                'email' => '' === $email ? null : mb_substr($email, 0, self::MAX_NAME_LENGTH),
+                'source' => self::SOURCE_DESK,
+                'batch' => '',
+                'created_at' => current_time('mysql'),
+            ],
+            ['%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        return false !== $inserted && (int) $inserted > 0 ? (int) $wpdb->insert_id : 0;
+    }
+
+    /**
      * Whether a mail with this batch id has already been imported for $date.
      */
     public function hasBatch(string $date, string $batch): bool
@@ -151,7 +178,8 @@ final class TicketBuyerRepository
 
     /**
      * Deletes every imported buyer on $date - the "Reset import" button - and
-     * returns how many rows went. Tickets sold at the door stay.
+     * returns how many rows went. Tickets sold at the door stay, and so do
+     * Holvi buyers added by hand at the sales desk: no import added them.
      */
     public function clearForDate(string $date): int
     {
@@ -159,9 +187,10 @@ final class TicketBuyerRepository
 
         $deleted = $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$this->table()} WHERE event_date = %s AND source <> %s",
+                "DELETE FROM {$this->table()} WHERE event_date = %s AND source NOT IN (%s, %s)",
                 $date,
-                self::SOURCE_DOOR
+                self::SOURCE_DOOR,
+                self::SOURCE_DESK
             )
         );
 
