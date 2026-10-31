@@ -184,9 +184,16 @@ final class PersonRepository
         return array_map('intval', is_array($ids) ? $ids : []);
     }
 
+    /**
+     * Also fires `eventcrew/email_verified`, which the welcome message listens
+     * to. It fires on every confirmation, including each web sign-in, so a
+     * listener must not assume it is the first.
+     */
     public function markEmailVerified(int $id): void
     {
         $this->update($id, ['email_verified_at' => current_time('mysql')]);
+
+        do_action('eventcrew/email_verified', $id);
     }
 
     /**

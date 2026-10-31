@@ -233,6 +233,17 @@ abstract class TelegramTestCase extends TestCase
         );
     }
 
+    protected function welcomeSender(): \EventCrew\Support\WelcomeSender
+    {
+        return new \EventCrew\Support\WelcomeSender(
+            new TaskRepository(),
+            new PersonRepository(),
+            new NotificationsRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            $this->client()
+        );
+    }
+
     protected function salesLinkService(): SalesLinkService
     {
         return new SalesLinkService($this->salesDeskGate(), new PersonRepository(), $this->doorLinkSender(), $this->client());

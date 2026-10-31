@@ -4,11 +4,30 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Repositories;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Tests\TestCase;
 
 final class PersonRepositoryTest extends TestCase
 {
+    /**
+     * The welcome message hangs off this action, so every way an address gets
+     * confirmed reaches it.
+     */
+    public function testConfirmingAnEmailAnnouncesIt(): void
+    {
+        $fired = [];
+        Functions\when('do_action')->alias(
+            static function (string $hook, mixed ...$args) use (&$fired): void {
+                $fired[] = [$hook, $args];
+            }
+        );
+
+        (new PersonRepository())->markEmailVerified(4);
+
+        self::assertSame([['eventcrew/email_verified', [4]]], $fired);
+    }
+
     /**
      * Email is the identity that merges a Telegram signup with a web signup,
      * so two rows differing only in case would split one person's history -

@@ -50,6 +50,7 @@ use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\WelcomeSender;
 use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
@@ -146,6 +147,10 @@ final class Kernel
         // on-request check that send tonight's links without anyone asking.
         $this->container->get(DoorController::class)->boot();
         $this->container->get(DoorLinkSender::class)->boot();
+
+        // The welcome message: sent the moment a member confirms their email,
+        // which happens on the front path (web sign-in, the bot's webhook).
+        $this->container->get(WelcomeSender::class)->boot();
 
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
@@ -417,7 +422,19 @@ final class Kernel
                 $container->get(BoardPush::class),
                 $container->get(BoardService::class),
                 $container->get(LeaderEligibilityNotifier::class),
-                $container->get(RetentionPurge::class)
+                $container->get(RetentionPurge::class),
+                $container->get(WelcomeSender::class)
+            )
+        );
+
+        $this->container->singleton(
+            WelcomeSender::class,
+            fn (Container $container) => new WelcomeSender(
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NotificationsRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -819,7 +836,9 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
                 $container->get(EmailTemplate::class),
-                $container->get(BoardService::class)
+                $container->get(BoardService::class),
+                $container->get(WelcomeSender::class),
+                $container->get(PersonRepository::class)
             )
         );
 

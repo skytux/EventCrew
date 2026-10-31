@@ -40,7 +40,8 @@ final class Scheduler
         private readonly BoardPush $boardPush,
         private readonly BoardService $board,
         private readonly LeaderEligibilityNotifier $leaderCandidates,
-        private readonly RetentionPurge $retention
+        private readonly RetentionPurge $retention,
+        private readonly WelcomeSender $welcome
     ) {
     }
 
@@ -99,6 +100,11 @@ final class Scheduler
 
             // Tell the organizers about anyone newly eligible to lead.
             $this->leaderCandidates->run();
+
+            // The welcome message for members who have not had it yet: the
+            // ones from before it existed, and anyone who linked Telegram or
+            // became an organizer since. Does nothing while switched off.
+            $this->welcome->sendDue(self::BATCH);
         }
 
         // Not gated: editing the pinned board in place sends nobody a
