@@ -242,11 +242,43 @@ final class TicketController
 
     private function document(string $title, string $inner): string
     {
+        $watermark = $this->watermarkStyle();
+
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-            '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:24em;margin:3em auto;padding:1.5em;border:1px solid #ccc;border-radius:12px;text-align:center"><h1 style="font-size:1.1em;color:#666">%1$s</h1>%2$s</body></html>',
+            '<!doctype html><html lang="en"%3$s><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:24em;margin:3em auto;padding:1.5em;border:1px solid #ccc;border-radius:12px;text-align:center%4$s"><h1 style="font-size:1.1em;color:#666">%1$s</h1>%2$s</body></html>',
             esc_html($title),
-            $inner
+            $inner,
+            '' === $watermark ? '' : ' style="background:#fff"',
+            $watermark
         );
+    }
+
+    /**
+     * The site's logo (the WordPress Site Icon, as-is, background and all) as a
+     * faint watermark filling the ticket card, or '' when the site has none.
+     *
+     * A white layer at 80% sits over the image so every line of text, and the
+     * VALID / DISABLED colours, read exactly as on a plain card. The html
+     * element gets its own white background: without it the browser would
+     * paint the body's background across the whole window instead of only
+     * inside the card.
+     *
+     * The URL goes through esc_url() and sits in a double-quoted CSS string
+     * written as &quot; inside the style attribute. esc_url() strips double
+     * quotes, backslashes and whitespace, so nothing in the URL can end that
+     * string, and the entities it emits (&amp;, &#039;) are decoded back by
+     * the attribute parser to the real URL before CSS reads it.
+     */
+    private function watermarkStyle(): string
+    {
+        $icon = (string) get_site_icon_url(512);
+
+        if ('' === $icon) {
+            return '';
+        }
+
+        return ';background:linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.8)),'
+            . 'url(&quot;' . esc_url($icon) . '&quot;) center/contain no-repeat #fff';
     }
 }
