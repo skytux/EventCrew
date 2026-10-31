@@ -19,7 +19,8 @@ final class Assignment
         public readonly string $signedUpAt = '',
         public readonly ?string $statusChangedAt = null,
         public readonly ?int $changedBy = null,
-        public readonly ?string $remindedAt = null
+        public readonly ?string $remindedAt = null,
+        public readonly ?string $changedByKind = null
     ) {
     }
 
@@ -36,7 +37,8 @@ final class Assignment
             (string) ($row['signed_up_at'] ?? ''),
             self::nullableString($row['status_changed_at'] ?? null),
             self::nullableInt($row['changed_by'] ?? null),
-            self::nullableString($row['reminded_at'] ?? null)
+            self::nullableString($row['reminded_at'] ?? null),
+            self::nullableString($row['changed_by_kind'] ?? null)
         );
     }
 

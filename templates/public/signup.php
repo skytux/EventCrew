@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, markable: bool}>}>}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool}>}>}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -527,6 +527,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <li>
                             <?php echo esc_html($eventcrew_roster_entry['name']); ?>
                             <span class="eventcrew-muted">(<?php echo esc_html($eventcrew_roster_entry['status_label']); ?>)</span>
+                            <?php if ('' !== $eventcrew_roster_entry['marked_by']) : ?>
+                                <span class="eventcrew-muted"><?php echo esc_html($eventcrew_roster_entry['marked_by']); ?></span>
+                            <?php endif; ?>
                             <?php if ($eventcrew_roster_entry['markable']) : ?>
                                 <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['mark_action']); ?>">

@@ -31,7 +31,8 @@ final class RosterAssembler
     /**
      * @return array<int, array{task: Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, occupying: bool, standing: ?Standing}>}>
+     *     status_label: string, occupying: bool, marked_by: string,
+     *     standing: ?Standing}>}>
      */
     public function forDate(string $date): array
     {
@@ -51,6 +52,7 @@ final class RosterAssembler
                     'status' => $assignment->status,
                     'status_label' => $assignment->statusLabel(),
                     'occupying' => $assignment->isOccupying(),
+                    'marked_by' => MarkedBy::line($assignment, $this->people),
                     'standing' => null === $person ? null : $this->standing->for($person->id),
                 ];
             }

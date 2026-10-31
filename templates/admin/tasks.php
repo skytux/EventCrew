@@ -8,7 +8,7 @@
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}> $roles
  * @var array<int, array{id: int, title: string, starts_at: string, ends_at: string, date: string}> $events Linkable EventMesh events.
  * @var bool $events_available Whether EventMesh is installed at all.
- * @var array<int, array{name: string, status: string}> $roster Signed-up people for the edited task.
+ * @var array<int, array{name: string, status: string, marked_by: string}> $roster Signed-up people for the edited task.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $template_nonce_action Nonce action for the apply-template form.
  * @var string $send_nonce_action Nonce action for the "send open-task email" form.
@@ -270,6 +270,12 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                                     esc_html($eventcrew_entry['name']),
                                     esc_html($eventcrew_entry['status'])
                                 );
+                                if ('' !== $eventcrew_entry['marked_by']) {
+                                    printf(
+                                        ' <span style="color:#646970">%s</span>',
+                                        esc_html($eventcrew_entry['marked_by'])
+                                    );
+                                }
                                 ?>
                             </li>
                         <?php endforeach; ?>

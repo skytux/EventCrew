@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Repositories;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -213,6 +214,28 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertNotEmpty($update['data']['status_changed_at']);
         self::assertSame(['id' => 5], $update['where']);
         self::assertSame([], $this->wpdb->queries, 'a no-show clears no late cancellation');
+    }
+
+    public function testRecordsWhichKindOfIdChangedAStatus(): void
+    {
+        $repository = new AssignmentRepository();
+        $repository->setStatus(5, AssignmentStatus::NO_SHOW, 42, MarkedBy::PERSON);
+        $repository->setStatus(6, AssignmentStatus::NO_SHOW, 3, MarkedBy::WP_USER);
+
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
+        self::assertSame(MarkedBy::WP_USER, $this->wpdb->updates[1]['data']['changed_by_kind']);
+    }
+
+    public function testAKindWithNoIdOrAnUnknownKindIsStoredAsNotKnown(): void
+    {
+        $repository = new AssignmentRepository();
+        $repository->setStatus(5, AssignmentStatus::NO_SHOW, null, MarkedBy::PERSON);
+        $repository->setStatus(6, AssignmentStatus::NO_SHOW, 42, 'telegram');
+        $repository->setStatus(7, AssignmentStatus::NO_SHOW, 42);
+
+        self::assertNull($this->wpdb->updates[0]['data']['changed_by_kind']);
+        self::assertNull($this->wpdb->updates[1]['data']['changed_by_kind']);
+        self::assertNull($this->wpdb->updates[2]['data']['changed_by_kind']);
     }
 
     public function testTurningUpClearsALateCancellationOnTheSameDate(): void

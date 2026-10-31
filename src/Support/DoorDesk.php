@@ -810,7 +810,12 @@ final class DoorDesk
             $assignment = $this->assignments->findFor($task->id, $personId);
 
             if (null !== $assignment && AssignmentStatus::SIGNED_UP === $assignment->status) {
-                $this->assignments->setStatus($assignment->id, AssignmentStatus::ARRIVED, $doorPersonId);
+                $this->assignments->setStatus(
+                    $assignment->id,
+                    AssignmentStatus::ARRIVED,
+                    $doorPersonId,
+                    MarkedBy::PERSON
+                );
             }
         }
     }

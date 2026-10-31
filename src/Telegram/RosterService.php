@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 
@@ -124,7 +125,7 @@ final class RosterService
             return;
         }
 
-        $this->assignments->setStatus($assignmentId, $status);
+        $this->assignments->setStatus($assignmentId, $status, $person->id, MarkedBy::PERSON);
 
         $this->telegram->answerCallbackQuery(
             $callbackId,
@@ -271,7 +272,7 @@ final class RosterService
      *
      * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, occupying: bool}>}> $roster
+     *     status_label: string, occupying: bool, marked_by: string}>}> $roster
      * @return array{text: string, keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
     private function render(string $date, array $roster, bool $canMark): array
@@ -303,6 +304,10 @@ final class RosterService
                     $person['status_label'],
                     $reliability
                 );
+
+                if ('' !== ($person['marked_by'] ?? '')) {
+                    $lines[] = '    ' . $person['marked_by'];
+                }
 
                 if ($canMark && $this->isMarkable($person['status'])) {
                     $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);

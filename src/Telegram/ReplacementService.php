@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\NotificationPreferences;
 
 /**
@@ -189,11 +190,16 @@ final class ReplacementService
         // Free the original's slot as `replaced` (their credit for arranging
         // cover), then sign the cover up. If the freed slot is lost to a race
         // before the cover can take it, put the original back and say so.
-        $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::REPLACED, $cover->id);
+        $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::REPLACED, $cover->id, MarkedBy::PERSON);
         $outcome = $this->assignments->join($taskId, $cover->id);
 
         if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
-            $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::SIGNED_UP, $cover->id);
+            $this->assignments->setStatus(
+                $originalAssignmentId,
+                AssignmentStatus::SIGNED_UP,
+                $cover->id,
+                MarkedBy::PERSON
+            );
             $this->telegram->answerCallbackQuery(
                 $callbackId,
                 __('That slot filled up before I could swap it.', 'eventcrew'),

@@ -20,6 +20,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 use EventCrew\Telegram\TicketRedemptionService;
 
@@ -399,6 +400,8 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(DoorDesk::WORK_OK, $this->desk()->workTonight(self::NIGHT, 1, 8, 5));
         self::assertStringContainsString("'crew', 8, 0,", implode("\n", $this->wpdb->queries));
         self::assertSame('arrived', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
     }
 
     public function testWorkingTonightOnAFullTaskChecksNobodyIn(): void
@@ -453,6 +456,9 @@ final class DoorDeskTest extends SalesDeskTestCase
         $update = $this->wpdb->updates[0];
         self::assertSame('arrived', $update['data']['status']);
         self::assertSame(['id' => 30], $update['where']);
+        // Recorded as the door person's EventCrew person id.
+        self::assertSame(1, $update['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $update['data']['changed_by_kind']);
     }
 
     public function testGiveTicketSpendsACreditEvenWhenFreeEntryIsClosed(): void

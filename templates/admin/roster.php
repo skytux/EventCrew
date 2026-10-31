@@ -6,7 +6,7 @@
  * @var array<int, string> $upcoming_dates Dates with tasks, today onward, nearest first.
  * @var array<int, string> $past_dates Dates with tasks before today, most recent first.
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
- * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, standing: ?\EventCrew\Support\Standing}>}> $roster
+ * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, marked_by: string, standing: ?\EventCrew\Support\Standing}>}> $roster
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
@@ -351,6 +351,9 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php if ('' !== $eventcrew_person['marked_by']) : ?>
+                                        <br><span class="description"><?php echo esc_html($eventcrew_person['marked_by']); ?></span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
