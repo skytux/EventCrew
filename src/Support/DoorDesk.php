@@ -9,6 +9,7 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -20,7 +21,9 @@ use EventCrew\Telegram\TicketRedemptionService;
  * The door page's logic: who is on tonight's list, who has come in, and what
  * the door crew can do - mark someone in or out, change how many people they
  * brought, and "Add": a ticket sold at the door, a guest, or a member, who
- * either spends a credit or is signed up for one of tonight's tasks.
+ * either spends a credit or is signed up for one of tonight's tasks. A member
+ * who already spent a credit on tonight can still take a task: their ticket
+ * is then cancelled and the credit comes back.
  *
  * Everything here takes plain values and returns plain arrays, so it is
  * testable without a request; Web\DoorController is the thin HTTP layer on top.
@@ -35,6 +38,7 @@ final class DoorDesk
 
     /** workTonight() answers. */
     public const WORK_OK = 'ok';
+    public const WORK_SWAPPED = 'swapped';
     public const WORK_FULL = 'full';
     public const WORK_LEADER_ONLY = 'leader_only';
     public const WORK_UNAVAILABLE = 'unavailable';
@@ -50,7 +54,8 @@ final class DoorDesk
         private readonly AuthTokenRepository $tokens,
         private readonly StandingCalculator $standing,
         private readonly TicketRedemptionService $tickets,
-        private readonly SalesDeskGate $gate
+        private readonly SalesDeskGate $gate,
+        private readonly CreditGrantRepository $grants
     ) {
     }
 
@@ -277,11 +282,14 @@ final class DoorDesk
     }
 
     /**
-     * Members matching $query by name or email who are not on tonight's crew
-     * or credit list yet, with their credit balance - the "Add" member search.
-     * A member with no credit is listed too: they can still work tonight.
+     * Members matching $query by name or email, with their credit balance -
+     * the "Add" member search. A member with no credit is listed too: they can
+     * still work tonight. A member already on tonight's crew or credit list is
+     * listed with that list's name in 'list' and its kind in 'kind', so the
+     * door sees they are there rather than getting no match. A credit-list
+     * member can still be signed up for a task (workTonight swaps the ticket).
      *
-     * @return array<int, array{id: int, name: string, credits: int}>
+     * @return array<int, array{id: int, name: string, credits: int, list: string, kind: string}>
      */
     public function searchMembers(string $date, string $query): array
     {
@@ -292,23 +300,30 @@ final class DoorDesk
         }
 
         [$crew, $credit] = $this->entrants($date);
-        $alreadyFree = [];
+        $onList = [];
 
-        foreach (array_merge($crew, $credit) as $row) {
-            $alreadyFree[$row['ref']] = true;
+        foreach ($crew as $row) {
+            $onList[$row['ref']] = [CheckinRepository::KIND_CREW, __('Crew working', 'eventcrew')];
+        }
+
+        foreach ($credit as $row) {
+            $onList[$row['ref']] = [CheckinRepository::KIND_CREDIT, __('Free-entry credit', 'eventcrew')];
         }
 
         $matches = [];
 
         foreach ($this->people->all(['search' => $query, 'per_page' => self::SEARCH_LIMIT]) as $person) {
-            if (isset($alreadyFree[$person->id]) || $person->isAnonymized()) {
+            if ($person->isAnonymized()) {
                 continue;
             }
 
+            [$kind, $list] = $onList[$person->id] ?? ['', ''];
             $matches[] = [
                 'id' => $person->id,
                 'name' => $person->name(),
-                'credits' => max(0, $this->standing->for($person->id)->creditBalance),
+                'credits' => '' === $kind ? max(0, $this->standing->for($person->id)->creditBalance) : 0,
+                'list' => $list,
+                'kind' => $kind,
             ];
         }
 
@@ -377,6 +392,10 @@ final class DoorDesk
      * them in, which also marks the task arrived. The standing gate is not
      * asked: the person signing them up is at the door with them. The place
      * limit and the leader-only rule still hold. Answers a WORK_* code.
+     *
+     * Someone who already spent a credit on tonight is counted once, as crew:
+     * their ticket is cancelled, which gives the credit back, and the grant
+     * log gets a line saying why (WORK_SWAPPED).
      */
     public function workTonight(string $date, int $doorPersonId, int $personId, int $taskId): string
     {
@@ -410,7 +429,35 @@ final class DoorDesk
         $this->checkins->mark($date, CheckinRepository::KIND_CREW, $personId, 0, $doorPersonId);
         $this->markCrewArrived($date, $personId, $doorPersonId);
 
-        return self::WORK_OK;
+        return $this->returnTicket($date, $personId, $doorPersonId) ? self::WORK_SWAPPED : self::WORK_OK;
+    }
+
+    /**
+     * Cancels $personId's free-entry ticket for $date, if they hold one, and
+     * logs why. Deleting the redemption is what gives the credit back.
+     */
+    private function returnTicket(string $date, int $personId, int $doorPersonId): bool
+    {
+        $returned = false;
+
+        foreach ($this->redemptions->forDate($date) as $redemption) {
+            if ($redemption->personId !== $personId) {
+                continue;
+            }
+
+            $this->redemptions->delete($redemption->id);
+            $returned = true;
+        }
+
+        if ($returned) {
+            $this->grants->recordNote(
+                $personId,
+                __('Ticket exchanged against taking a task', 'eventcrew'),
+                0 === $doorPersonId ? null : $doorPersonId
+            );
+        }
+
+        return $returned;
     }
 
     /**
@@ -420,6 +467,8 @@ final class DoorDesk
     {
         return match ($code) {
             self::WORK_OK => __('Signed up and checked in. They are on the crew list now.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            self::WORK_SWAPPED => __('Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back.', 'eventcrew'),
             self::WORK_FULL => __('That task has just filled up. Pick another one.', 'eventcrew'),
             self::WORK_LEADER_ONLY => __('That task is for crew leaders only.', 'eventcrew'),
             default => __('They could not be signed up for that task.', 'eventcrew'),

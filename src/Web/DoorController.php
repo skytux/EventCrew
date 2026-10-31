@@ -196,7 +196,7 @@ final class DoorController
                 $task = isset($_POST['task']) ? (int) $_POST['task'] : 0;
                 $code = $this->desk->workTonight($date, $doorPersonId, $personId, $task);
                 $this->json([
-                    'ok' => DoorDesk::WORK_OK === $code,
+                    'ok' => in_array($code, [DoorDesk::WORK_OK, DoorDesk::WORK_SWAPPED], true),
                     'message' => $this->desk->workTonightText($code),
                     'state' => $this->desk->state($date),
                 ]);

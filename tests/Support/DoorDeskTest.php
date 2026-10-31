@@ -10,6 +10,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -57,7 +58,8 @@ final class DoorDeskTest extends SalesDeskTestCase
                 $this->client(),
                 new Mailer(new Logger(), new EmailTemplate(new Logger()))
             ),
-            $this->salesDeskGate()
+            $this->salesDeskGate(),
+            new CreditGrantRepository()
         );
     }
 
@@ -213,6 +215,48 @@ final class DoorDeskTest extends SalesDeskTestCase
     {
         self::assertFalse($this->desk()->addGuest(self::NIGHT, 1, '  ', 0));
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testTheMemberSearchListsSomeoneAlreadyOnTonightsListAndSaysSo(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00')]; // tasks->forDate
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];     // assignments->forTask
+        $this->wpdb->nextRows[] = $this->personRow(8);                                  // nameOf(8)
+        $this->wpdb->nextResults[] = [];                                                // redemptions->forDate
+        $this->wpdb->nextResults[] = [$this->personRow(8), $this->personRow(9)];        // people->all
+
+        $members = $this->desk()->searchMembers(self::NIGHT, 'Person');
+
+        self::assertSame([8, 9], array_column($members, 'id'));
+        self::assertSame(['Crew working', ''], array_column($members, 'list'));
+        self::assertSame(['crew', ''], array_column($members, 'kind'));
+    }
+
+    public function testWorkingTonightWithAFreeEntryTicketCancelsItAndLogsWhy(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);                              // people->find
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate', '10:00', '11:00');  // tasks->find
+        $this->wpdb->nextVars[] = 3;                                                // join: capacity
+        $this->wpdb->nextRows[] = null;                                             // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                                        // join: inserted
+        $this->wpdb->nextQueryResults[] = 1;                                        // the check-in
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '10:00', '11:00')];
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextResults[] = [                                              // redemptions->forDate
+            ['id' => 44, 'person_id' => 8, 'redeemed_for' => self::NIGHT],
+            ['id' => 45, 'person_id' => 9, 'redeemed_for' => self::NIGHT],
+        ];
+
+        $desk = $this->desk();
+
+        self::assertSame(DoorDesk::WORK_SWAPPED, $desk->workTonight(self::NIGHT, 1, 8, 5));
+        self::assertSame([['id' => 44]], array_column($this->wpdb->deletes, 'where'));
+        $grant = end($this->wpdb->inserts)['data'];
+        self::assertSame(8, $grant['person_id']);
+        self::assertSame(0, $grant['credits']);
+        self::assertSame('Ticket exchanged against taking a task', $grant['note']);
+        self::assertSame(1, $grant['granted_by_person_id']);
+        self::assertStringContainsString('credit is given back', $desk->workTonightText(DoorDesk::WORK_SWAPPED));
     }
 
     public function testOpenTasksListsTonightsTasksWithAFreePlace(): void
