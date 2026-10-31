@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\MailImport\MailImporter;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Telegram\BoardService;
 
@@ -165,5 +166,6 @@ final class Scheduler
         // The door-link check has its own five-minute event. Cleared here so
         // the deactivation hook in the main plugin file covers it as well.
         wp_clear_scheduled_hook(DoorLinkSender::HOOK);
+        wp_clear_scheduled_hook(MailImporter::HOOK);
     }
 }
