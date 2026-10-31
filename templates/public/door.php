@@ -32,6 +32,9 @@ $eventcrew_text = [
     'credits' => __('credits', 'eventcrew'),
     'noMatch' => __('No member matches. Add them below as a new member.', 'eventcrew'),
     'choose' => __('Choose', 'eventcrew'),
+    /* translators: %s: the list name, "Crew working" or "Free-entry credit" */
+    'onList' => __('Already on tonight’s list: %s', 'eventcrew'),
+    'swap' => __('Take a task instead', 'eventcrew'),
     /* translators: %d: how many free-entry credits the member has */
     'useCredit' => __('Use a credit (%d left)', 'eventcrew'),
     'noCredit' => __('No credit to use', 'eventcrew'),
@@ -90,6 +93,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 .ec-stack button{width:100%}
 #ec-members,#ec-tasks{max-height:45vh;overflow-y:auto}
 .ec-muted{color:var(--muted)}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -381,12 +385,27 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 var pick = node('button', '', text.choose);
 
                 who.appendChild(node('div', 'ec-name', member.name));
+                li.appendChild(who);
+                list.appendChild(li);
+
+                // Already in tonight's lists: shown so the door knows. Crew
+                // have nothing to add; a free-entry credit holder can still
+                // take a task, which gives their credit back.
+                if (member.list) {
+                    who.appendChild(node('div', 'ec-detail', text.onList.replace('%s', member.list)));
+
+                    if ('credit' === member.kind) {
+                        pick.textContent = text.swap;
+                        pick.addEventListener('click', function () { chosen = member; showTasks(); });
+                        li.appendChild(pick);
+                    }
+
+                    return;
+                }
+
                 who.appendChild(node('div', 'ec-detail', member.credits + ' ' + text.credits));
                 pick.addEventListener('click', function () { showChoice(member); });
-
-                li.appendChild(who);
                 li.appendChild(pick);
-                list.appendChild(li);
             });
         }, failed);
     }
@@ -477,7 +496,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     el('ec-add-open').addEventListener('click', openAdd);
     el('ec-add-close').addEventListener('click', function () { el('ec-add').close(); });
     el('ec-add-back').addEventListener('click', function () {
-        step({ choice: 'member', tasks: 'choice' }[current] || 'choose');
+        var swapping = chosen && 'credit' === chosen.kind;
+
+        step({ choice: 'member', tasks: swapping ? 'member' : 'choice' }[current] || 'choose');
     });
     // A tap on the dimmed area outside the popup lands on the dialog itself.
     el('ec-add').addEventListener('click', function (event) {

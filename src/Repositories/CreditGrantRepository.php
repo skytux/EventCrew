@@ -64,6 +64,29 @@ final class CreditGrantRepository
     }
 
     /**
+     * A grant-log line that gives no credit of its own: the reason a spent
+     * credit came back some other way - the door cancelling a free-entry
+     * ticket when its holder took a task instead. Zero credits, so the
+     * balance (which sums this column) is not counted twice.
+     */
+    public function recordNote(int $personId, string $note, ?int $grantedByPersonId = null): void
+    {
+        global $wpdb;
+
+        $wpdb->insert(
+            $this->table(),
+            [
+                'person_id' => $personId,
+                'credits' => 0,
+                'note' => $note,
+                'granted_by' => null,
+                'granted_by_person_id' => $grantedByPersonId,
+                'granted_at' => current_time('mysql'),
+            ]
+        );
+    }
+
+    /**
      * The most recent grants across everyone, newest first - the credit-grant
      * audit log the People screen shows. Raw rows; the caller resolves the person
      * and granter names for display.

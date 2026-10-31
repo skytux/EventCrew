@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.35.0
+Stable tag: 1.35.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,6 +129,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.35.1 =
+* Sales desk, Add > Crew member: the search now also lists members who are already on tonight's "Crew working" or "Free-entry credit" list, marked "Already on tonight's list: ..." and without a Choose button. Before, they were left out, so the search said "No member matches" and looked broken.
+* Sales desk, Add > Crew member: someone on tonight's "Free-entry credit" list gets a "Take a task instead" button. Signing them up for a task cancels their free-entry ticket, which gives the credit back, and writes "Ticket exchanged against taking a task" in the credit-grant log (as a 0-credit line, so the credit is not counted twice). They are then counted once, on the crew list.
+* Sales desk, Add popup: the Ticket / Guest / Crew member buttons now hide once one is chosen. A stylesheet rule kept them visible on every step, which pushed the search results down the screen.
 
 = 1.35.0 =
 * Sales desk: an "Add" button in the top bar, next to the count. It opens a popup that asks what to add: Ticket, Guest or Crew member.
@@ -500,6 +505,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.35.1 =
+Sales desk member search shows members already on tonight's lists, and a free-entry credit holder can swap their ticket for a task (credit given back). The Add popup's first buttons hide after a choice. No database change.
 
 = 1.35.0 =
 Sales desk "Add" popup: door tickets, guests, and crew members (credit, a task tonight, or a new member). Guest counts start at +0. No database change.
