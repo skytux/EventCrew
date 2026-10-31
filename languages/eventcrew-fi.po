@@ -818,8 +818,8 @@ msgid "Name (optional)"
 msgstr "Nimi (vapaaehtoinen)"
 
 #: src/Telegram/BoardRenderer.php:111
-msgid "New here? Sign up →"
-msgstr "Uusi täällä? Ilmoittaudu →"
+msgid "👋 New here? Sign up →"
+msgstr "👋 Uusi täällä? Ilmoittaudu →"
 
 #: templates/public/door.php:216
 msgid "New member"
@@ -1156,8 +1156,8 @@ msgid "Security"
 msgstr "Turvallisuus"
 
 #: src/Telegram/BoardRenderer.php:112
-msgid "See my info →"
-msgstr "Omat tietoni →"
+msgid "👤 See my info →"
+msgstr "👤 Omat tietoni →"
 
 #: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:88
 msgid "See open tasks"
