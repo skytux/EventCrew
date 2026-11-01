@@ -78,8 +78,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         // Signed out there are only two things - sign in, and look at the board
         // - so there is nothing to tab between and no tab strip is drawn.
         ?>
-        <section class="eventcrew-section">
-            <h2><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
+        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card">
+            <header class="eventcrew-event-head">
+                <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
+            </header>
+            <div class="eventcrew-card-body">
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
@@ -142,6 +145,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <?php endif; ?>
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+            </div>
         </section>
 
         <div id="eventcrew-board" class="eventcrew-board">
