@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.58.0
+Stable tag: 1.59.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.59.0 =
+The crew page's Admin tab now has the wp-admin People tools on its People screen: a searchable list of people, adding a person and editing one (email, name, roles, notes), unbanning, the one-time at-risk pass, giving free-entry credits and each person's credit log. Give a credit has no upper limit any more. Making someone an organizer and deleting a person stay in wp-admin.
 
 = 1.58.0 =
 The crew page's Admin tab now has the wp-admin Roster tools on its Roster screen: pick any date with tasks; see each person's standing; set any attendance status, or mark a whole task arrived or completed; the door list for the date, with closing and reopening free entry, spending a member's credit and handing it back; the guest list (add, edit, remove); the Holvi ticket buyers, with paste import and a Reset button; and the mailbox check with its last result and a Check the mailbox now button.
@@ -720,6 +723,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.59.0 =
+Nothing to do. Organizers find the new tools on the crew page: Admin tab, People.
 
 = 1.58.0 =
 Nothing to do. Organizers find the new tools on the crew page: Admin tab, Roster.

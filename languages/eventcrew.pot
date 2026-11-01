@@ -53,7 +53,7 @@ msgstr ""
 msgid "%1$s (%2$d credits now)"
 msgstr ""
 
-#: templates/admin/roster.php:167 templates/public/signup.php:909
+#: templates/admin/roster.php:167 templates/public/signup.php:1166
 #. translators: 1: person name, 2: credit balance
 msgid "%1$s (%2$d credits)"
 msgstr ""
@@ -132,14 +132,14 @@ msgstr[1] ""
 msgid "%d names were skipped because they were already on the list."
 msgstr ""
 
-#: src/Telegram/DoorListService.php:140
+#: src/Telegram/DoorListService.php:140 templates/public/signup.php:614
 #. translators: %d: number of people
 msgid "%d person"
 msgid_plural "%d people"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/roster.php:239 templates/public/signup.php:994
+#: templates/admin/roster.php:239 templates/public/signup.php:1251
 msgid "%d person bought a ticket in Holvi for this date."
 msgid_plural "%d people bought a ticket in Holvi for this date."
 msgstr[0] ""
@@ -222,11 +222,11 @@ msgid "(%s ago)"
 msgstr ""
 
 #: src/Admin/PeoplePage.php:103 src/Admin/PeoplePage.php:124 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1101
-#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50
+#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:267
 msgid "(deleted person)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:130
+#: src/Admin/PeoplePage.php:130 src/Web/CrewAdminPeople.php:273
 msgid "(unknown)"
 msgstr ""
 
@@ -258,7 +258,7 @@ msgstr ""
 msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:650
+#: src/Web/CrewAdminController.php:702
 msgid "A new board is posted in the Telegram group."
 msgstr ""
 
@@ -274,7 +274,7 @@ msgstr ""
 msgid "A new webhook secret was generated and installed. Any copy of the old one — in a server log, for instance — is now useless."
 msgstr ""
 
-#: templates/admin/people.php:232
+#: templates/admin/people.php:232 templates/public/signup.php:788
 msgid "A one-off bonus, on top of the credits earned for completed tasks."
 msgstr ""
 
@@ -323,7 +323,7 @@ msgstr ""
 msgid "A task is one role on one date. In EventCrew > Tasks you create tasks one by one, or all the tasks of a night at once from the roles. A task can be linked to an event, so it shows under the event's name. A task set to 0 people stays saved but leaves the board."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:156
+#: src/Admin/PeoplePage.php:156 src/Web/CrewAdminPeople.php:199
 msgid "A valid email address is required - it is how a person is identified."
 msgstr ""
 
@@ -364,11 +364,11 @@ msgstr ""
 msgid "Add a bot token first, then install the webhook."
 msgstr ""
 
-#: templates/admin/people.php:39
+#: templates/admin/people.php:39 templates/public/signup.php:677
 msgid "Add a person"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:143 templates/public/signup.php:679
+#: src/Web/CrewAdminController.php:149 templates/public/signup.php:936
 msgid "Add a person to a task"
 msgstr ""
 
@@ -380,7 +380,7 @@ msgstr ""
 msgid "Add and check in"
 msgstr ""
 
-#: templates/admin/roster.php:227 templates/public/signup.php:980
+#: templates/admin/roster.php:227 templates/public/signup.php:1237
 msgid "Add guest"
 msgstr ""
 
@@ -388,7 +388,11 @@ msgstr ""
 msgid "Add new member"
 msgstr ""
 
-#: templates/admin/people.php:113
+#: src/Web/CrewAdminController.php:155
+msgid "Add or edit a person"
+msgstr ""
+
+#: templates/admin/people.php:113 templates/public/signup.php:710
 msgid "Add person"
 msgstr ""
 
@@ -421,7 +425,7 @@ msgstr ""
 msgid "Add: /guest add Name ; note  (just the guest)"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:511
+#: src/Web/CrewAdminController.php:541
 #. translators: 1: tasks the person was added to, 2: tasks ticked
 msgid "Added to %1$d of %2$d tasks."
 msgstr ""
@@ -495,7 +499,7 @@ msgstr ""
 msgid "Anonymise expired records automatically"
 msgstr ""
 
-#: templates/admin/people.php:188
+#: templates/admin/people.php:188 templates/public/signup.php:635
 msgid "Anonymised"
 msgstr ""
 
@@ -507,7 +511,7 @@ msgstr ""
 msgid "Another night: put the date first, e.g. /guest add 1.8. Name"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:166
+#: src/Admin/PeoplePage.php:166 src/Web/CrewAdminPeople.php:203
 msgid "Another person already uses that email address."
 msgstr ""
 
@@ -531,7 +535,7 @@ msgstr ""
 msgid "Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was."
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:105 templates/public/signup.php:807
+#: src/Support/AssignmentStatus.php:105 templates/public/signup.php:1064
 msgid "Arrived"
 msgstr ""
 
@@ -551,7 +555,7 @@ msgstr ""
 msgid "Ask the bot for a fresh one by sending it /start."
 msgstr ""
 
-#: templates/public/signup.php:711
+#: templates/public/signup.php:968
 msgid "Asked only for a role task; every other task always counts."
 msgstr ""
 
@@ -563,7 +567,7 @@ msgstr ""
 msgid "At risk"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:655
+#: src/Web/CrewAdminController.php:707
 msgid "Attendance saved."
 msgstr ""
 
@@ -612,11 +616,11 @@ msgstr ""
 msgid "Beyond that, the only others involved are:"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:145 templates/admin/people.php:249
+#: src/Admin/PeopleListTable.php:145 templates/admin/people.php:249 templates/public/signup.php:642 templates/public/signup.php:744
 msgid "Blocked"
 msgstr ""
 
-#: templates/admin/people.php:254
+#: templates/admin/people.php:254 templates/public/signup.php:755
 #. translators: %s: date and time the block was set
 msgid "Blocked since %s. They cannot sign up for tasks or sign in on the web."
 msgstr ""
@@ -645,7 +649,7 @@ msgstr ""
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
-#: templates/admin/people.php:120 templates/admin/tasks.php:269 templates/public/signup-board.php:204
+#: templates/admin/people.php:120 templates/admin/tasks.php:269 templates/public/signup-board.php:204 templates/public/signup.php:712
 msgid "Cancel"
 msgstr ""
 
@@ -689,7 +693,7 @@ msgstr ""
 msgid "Can’t make it? Cancel"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:142
+#: src/Web/CrewAdminController.php:148
 msgid "Change a member’s roles"
 msgstr ""
 
@@ -709,7 +713,7 @@ msgstr ""
 msgid "Check it"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:148 templates/admin/settings.php:1573 templates/public/signup.php:1044
+#: src/Web/CrewAdminController.php:154 templates/admin/settings.php:1573 templates/public/signup.php:1301
 msgid "Check the mailbox now"
 msgstr ""
 
@@ -729,7 +733,7 @@ msgstr ""
 msgid "Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend."
 msgstr ""
 
-#: templates/public/signup.php:1375
+#: templates/public/signup.php:1632
 msgid "Checking you’re human…"
 msgstr ""
 
@@ -737,7 +741,7 @@ msgstr ""
 msgid "Choose"
 msgstr ""
 
-#: templates/public/signup.php:596 templates/public/signup.php:631
+#: templates/public/signup.php:853 templates/public/signup.php:888
 msgid "Choose a member"
 msgstr ""
 
@@ -753,7 +757,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: templates/admin/roster.php:118 templates/public/signup.php:866
+#: templates/admin/roster.php:118 templates/public/signup.php:1123
 msgid "Close free entry (sold out)"
 msgstr ""
 
@@ -765,7 +769,7 @@ msgstr ""
 msgid "Coming up:"
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:106 templates/public/signup.php:808
+#: src/Support/AssignmentStatus.php:106 templates/public/signup.php:1065
 msgid "Completed"
 msgstr ""
 
@@ -847,7 +851,7 @@ msgid "Count one person in without a name"
 msgstr ""
 
 #: src/Telegram/RoleTaskBot.php:121 src/Telegram/RoleTaskBot.php:266 templates/public/door.php:65 templates/public/signup-board.php:220
-#: templates/public/signup.php:710
+#: templates/public/signup.php:967
 msgid "Count toward free-entry credit?"
 msgstr ""
 
@@ -891,7 +895,7 @@ msgstr ""
 msgid "Credit"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:652
+#: src/Web/CrewAdminController.php:704
 msgid "Credit given. The member is told."
 msgstr ""
 
@@ -903,6 +907,10 @@ msgstr ""
 msgid "Credit handed back."
 msgstr ""
 
+#: templates/public/signup.php:808
+msgid "Credit log"
+msgstr ""
+
 #: src/Admin/RosterPage.php:154 src/Web/CrewAdminRoster.php:409
 msgid "Credit redeemed — they’re on the door list."
 msgstr ""
@@ -912,15 +920,23 @@ msgid "Credit spent — check your DM for the ticket."
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:52 src/Support/WelcomeSender.php:433 templates/admin/people.php:222 templates/admin/people.php:291
-#: templates/public/signup.php:604
+#: templates/public/signup.php:779 templates/public/signup.php:861
 msgid "Credits"
+msgstr ""
+
+#: templates/public/signup.php:815
+msgid "Credits given"
+msgstr ""
+
+#: templates/public/signup.php:827
+msgid "Credits spent"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:79
 msgid "Credits: members earn 1 free-entry credit per %d completed tasks. /gift gives credits by hand."
 msgstr ""
 
-#: templates/public/signup.php:739
+#: templates/public/signup.php:996
 msgid "Crew and attendance"
 msgstr ""
 
@@ -937,7 +953,7 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own crew page has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:738
+#: src/Web/CrewAdminController.php:794
 msgid "Crew page: a member is blocked after a forged admin request"
 msgstr ""
 
@@ -1033,7 +1049,7 @@ msgstr ""
 msgid "Database"
 msgstr ""
 
-#: src/Admin/TasksListTable.php:47 src/Support/PrivacyExporter.php:156 templates/admin/roster.php:61 templates/public/signup.php:753
+#: src/Admin/TasksListTable.php:47 src/Support/PrivacyExporter.php:156 templates/admin/roster.php:61 templates/public/signup.php:1010
 msgid "Date"
 msgstr ""
 
@@ -1065,7 +1081,7 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: templates/admin/roster.php:277 templates/public/signup.php:1030
+#: templates/admin/roster.php:277 templates/public/signup.php:1287
 msgid "Delete all imported ticket buyers for this date? Guests and the crew are not affected."
 msgstr ""
 
@@ -1122,7 +1138,7 @@ msgstr ""
 msgid "Door"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:145 templates/admin/roster.php:86 templates/public/signup.php:833
+#: src/Web/CrewAdminController.php:151 templates/admin/roster.php:86 templates/public/signup.php:1090
 msgid "Door list"
 msgstr ""
 
@@ -1142,7 +1158,7 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: templates/admin/people.php:38
+#: templates/admin/people.php:38 templates/public/signup.php:677
 msgid "Edit person"
 msgstr ""
 
@@ -1156,11 +1172,11 @@ msgstr ""
 
 #: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:108 templates/admin/people.php:51
 #: templates/admin/settings.php:69 templates/admin/settings.php:613 templates/public/door.php:249 templates/public/signup.php:99
-#: templates/public/signup.php:409
+#: templates/public/signup.php:409 templates/public/signup.php:685
 msgid "Email"
 msgstr ""
 
-#: templates/public/signup.php:706
+#: templates/public/signup.php:963
 msgid "Email (new person only, optional)"
 msgstr ""
 
@@ -1188,7 +1204,7 @@ msgstr ""
 msgid "Email templates"
 msgstr ""
 
-#: templates/admin/people.php:131
+#: templates/admin/people.php:131 templates/public/signup.php:726
 msgid "Email verified"
 msgstr ""
 
@@ -1315,7 +1331,7 @@ msgstr ""
 msgid "Every task you signed up for, when you signed up, and how it turned out: completed, covered by someone else, cancelled late, or not turned up to. Free-entry credits you have earned, been given or spent, and the events they were spent on."
 msgstr ""
 
-#: templates/admin/roster.php:88 templates/public/signup.php:837
+#: templates/admin/roster.php:88 templates/public/signup.php:1094
 msgid "Everyone who gets in free that night — working the event, or spending a credit."
 msgstr ""
 
@@ -1356,7 +1372,7 @@ msgstr ""
 msgid "Folders"
 msgstr ""
 
-#: templates/public/signup.php:685
+#: templates/public/signup.php:942
 msgid "For a member, or for someone who is not a crew member yet. On a task of a role marked \"Only people with this role\", they get the role too."
 msgstr ""
 
@@ -1385,7 +1401,7 @@ msgstr ""
 msgid "Free entry is closed for that date."
 msgstr ""
 
-#: templates/admin/roster.php:92 templates/public/signup.php:839
+#: templates/admin/roster.php:92 templates/public/signup.php:1096
 msgid "Free entry is closed for this date — no credits can be spent on it."
 msgstr ""
 
@@ -1405,7 +1421,7 @@ msgstr ""
 msgid "Free-entry credit granted"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:120 templates/admin/people.php:206
+#: src/Support/PrivacyExporter.php:120 templates/admin/people.php:206 templates/public/signup.php:735
 msgid "Free-entry credits"
 msgstr ""
 
@@ -1448,15 +1464,15 @@ msgstr ""
 msgid "Getting started"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:140 templates/public/signup.php:587
+#: src/Web/CrewAdminController.php:146 templates/public/signup.php:844
 msgid "Give a credit"
 msgstr ""
 
-#: templates/admin/people.php:216
+#: templates/admin/people.php:216 templates/public/signup.php:770
 msgid "Give a free-entry credit"
 msgstr ""
 
-#: templates/public/signup.php:612
+#: templates/public/signup.php:869
 msgid "Give credit"
 msgstr ""
 
@@ -1472,7 +1488,7 @@ msgstr ""
 msgid "Give the guest’s number from the list, e.g. /guest remove 2"
 msgstr ""
 
-#: templates/public/signup.php:646
+#: templates/public/signup.php:903
 msgid "Give the role"
 msgstr ""
 
@@ -1488,15 +1504,15 @@ msgstr ""
 msgid "Good-standing threshold"
 msgstr ""
 
-#: templates/admin/people.php:243
+#: src/Web/CrewAdminController.php:156 templates/admin/people.php:243 templates/public/signup.php:801
 msgid "Grant a one-time pass"
 msgstr ""
 
-#: templates/admin/people.php:230
+#: templates/admin/people.php:230 templates/public/signup.php:787
 msgid "Grant credits"
 msgstr ""
 
-#: templates/admin/people.php:293
+#: templates/admin/people.php:293 templates/public/signup.php:821
 msgid "Granted by"
 msgstr ""
 
@@ -1524,7 +1540,7 @@ msgstr ""
 msgid "Guest added."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:146 templates/admin/roster.php:178 templates/public/signup.php:924
+#: src/Web/CrewAdminController.php:152 templates/admin/roster.php:178 templates/public/signup.php:1181
 msgid "Guest list"
 msgstr ""
 
@@ -1612,7 +1628,7 @@ msgstr ""
 msgid "Holvi buyer added and checked in."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:147 templates/admin/roster.php:234 templates/public/signup.php:986
+#: src/Web/CrewAdminController.php:153 templates/admin/roster.php:234 templates/public/signup.php:1243
 msgid "Holvi ticket buyers"
 msgstr ""
 
@@ -1713,7 +1729,7 @@ msgstr ""
 msgid "If you think we have handled your data badly, you can complain to your national data protection authority. In the EU you can complain to the one where you live, work, or where the problem happened."
 msgstr ""
 
-#: templates/admin/roster.php:259 templates/public/signup.php:1015
+#: templates/admin/roster.php:259 templates/public/signup.php:1272
 msgid "Import"
 msgstr ""
 
@@ -1826,7 +1842,7 @@ msgstr ""
 msgid "Left blank, EventCrew asks Telegram for one. That works for a public group, or a private one where the bot is an administrator; otherwise paste your own here."
 msgstr ""
 
-#: templates/admin/people.php:245
+#: templates/admin/people.php:245 templates/public/signup.php:802
 msgid "Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup."
 msgstr ""
 
@@ -1887,11 +1903,11 @@ msgstr ""
 msgid "Manage your account or stop these emails"
 msgstr ""
 
-#: templates/admin/roster.php:367 templates/public/signup.php:823
+#: templates/admin/roster.php:367 templates/public/signup.php:1080
 msgid "Mark all arrived"
 msgstr ""
 
-#: templates/admin/roster.php:370 templates/public/signup.php:824
+#: templates/admin/roster.php:370 templates/public/signup.php:1081
 msgid "Mark all completed"
 msgstr ""
 
@@ -1899,7 +1915,7 @@ msgstr ""
 msgid "Mark arrived"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:141
+#: src/Web/CrewAdminController.php:147
 msgid "Mark attendance"
 msgstr ""
 
@@ -1923,7 +1939,7 @@ msgstr ""
 msgid "Measured from"
 msgstr ""
 
-#: templates/public/signup.php:594 templates/public/signup.php:629
+#: templates/public/signup.php:851 templates/public/signup.php:886
 msgid "Member"
 msgstr ""
 
@@ -1971,11 +1987,11 @@ msgstr ""
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:107 templates/admin/people.php:62 templates/admin/roster.php:186
 #: templates/admin/roster.php:196 templates/admin/roster.php:218 templates/public/door.php:228 templates/public/door.php:247
-#: templates/public/signup.php:940 templates/public/signup.php:968
+#: templates/public/signup.php:690 templates/public/signup.php:1197 templates/public/signup.php:1225
 msgid "Name"
 msgstr ""
 
-#: templates/public/signup.php:702
+#: templates/public/signup.php:959
 msgid "Name (new person only)"
 msgstr ""
 
@@ -1991,7 +2007,7 @@ msgstr ""
 msgid "New events get a task of this role only when the event title contains this text (upper or lower case does not matter). Leave empty for every event."
 msgstr ""
 
-#: templates/admin/roster.php:218 templates/public/signup.php:969
+#: templates/admin/roster.php:218 templates/public/signup.php:1226
 msgid "New guest’s name"
 msgstr ""
 
@@ -1999,8 +2015,12 @@ msgstr ""
 msgid "New member"
 msgstr ""
 
-#: templates/public/signup.php:695
+#: templates/public/signup.php:952
 msgid "New person (fill in the name below)"
+msgstr ""
+
+#: templates/public/signup.php:667
+msgid "Next"
 msgstr ""
 
 #: templates/admin/settings.php:778
@@ -2009,7 +2029,7 @@ msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:113 src/Telegram/RoleTaskBot.php:239 templates/admin/people.php:146 templates/public/door.php:67
-#: templates/public/signup-board.php:221 templates/public/signup.php:714
+#: templates/public/signup-board.php:221 templates/public/signup.php:729 templates/public/signup.php:971
 msgid "No"
 msgstr ""
 
@@ -2025,7 +2045,7 @@ msgstr ""
 msgid "No Site Icon set; a lettered icon is generated with GD."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:651
+#: src/Web/CrewAdminController.php:703
 msgid "No Telegram group is set up for the board yet."
 msgstr ""
 
@@ -2045,9 +2065,13 @@ msgstr ""
 msgid "No credit to use"
 msgstr ""
 
-#: templates/admin/roster.php:106 templates/public/signup.php:853
+#: templates/admin/roster.php:106 templates/public/signup.php:1110
 #. translators: %s: the reason, e.g. "is sold out".
 msgid "No credits can be spent on this date: the linked event %s. Task sign-up stays open."
+msgstr ""
+
+#: templates/public/signup.php:812
+msgid "No credits given or spent yet."
 msgstr ""
 
 #: src/Telegram/GuestListService.php:64
@@ -2099,7 +2123,11 @@ msgstr ""
 msgid "No past tasks yet — your history starts once you’ve worked one."
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:101
+#: templates/public/signup.php:629
+msgid "No people found."
+msgstr ""
+
+#: src/Admin/PeopleListTable.php:101 templates/public/signup.php:629
 msgid "No people yet."
 msgstr ""
 
@@ -2123,11 +2151,11 @@ msgstr ""
 msgid "No tasks are scheduled yet."
 msgstr ""
 
-#: templates/admin/roster.php:57 templates/public/signup.php:745
+#: templates/admin/roster.php:57 templates/public/signup.php:1002
 msgid "No tasks have been created yet, so there is nothing to take a roster for."
 msgstr ""
 
-#: templates/admin/roster.php:286 templates/public/signup.php:773
+#: templates/admin/roster.php:286 templates/public/signup.php:1030
 msgid "No tasks on that date."
 msgstr ""
 
@@ -2143,7 +2171,7 @@ msgstr ""
 msgid "No upcoming events to spend a credit on right now — check back when the next one is on the board."
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:110 src/Support/Reputation.php:71 templates/public/signup.php:809
+#: src/Support/AssignmentStatus.php:110 src/Support/Reputation.php:71 templates/public/signup.php:1066
 msgid "No-show"
 msgstr ""
 
@@ -2163,7 +2191,7 @@ msgstr ""
 msgid "Nobody meets them yet."
 msgstr ""
 
-#: templates/admin/roster.php:133 templates/public/signup.php:870
+#: templates/admin/roster.php:133 templates/public/signup.php:1127
 msgid "Nobody on the door list yet."
 msgstr ""
 
@@ -2171,7 +2199,7 @@ msgstr ""
 msgid "Nobody on this list."
 msgstr ""
 
-#: templates/admin/roster.php:327 templates/public/signup.php:780
+#: templates/admin/roster.php:327 templates/public/signup.php:1037
 msgid "Nobody signed up."
 msgstr ""
 
@@ -2187,16 +2215,16 @@ msgstr ""
 msgid "Not used for JMAP."
 msgstr ""
 
-#: templates/admin/people.php:136
+#: templates/admin/people.php:136 templates/public/signup.php:727
 msgid "Not yet"
 msgstr ""
 
-#: templates/admin/roster.php:188 templates/admin/roster.php:198 templates/admin/roster.php:220 templates/public/signup.php:949
-#: templates/public/signup.php:977
+#: templates/admin/roster.php:188 templates/admin/roster.php:198 templates/admin/roster.php:220 templates/public/signup.php:1206
+#: templates/public/signup.php:1234
 msgid "Note"
 msgstr ""
 
-#: templates/admin/people.php:102 templates/admin/tasks.php:251
+#: templates/admin/people.php:102 templates/admin/tasks.php:251 templates/public/signup.php:706
 msgid "Notes"
 msgstr ""
 
@@ -2288,7 +2316,7 @@ msgstr ""
 msgid "One more"
 msgstr ""
 
-#: templates/admin/people.php:235
+#: templates/admin/people.php:235 templates/public/signup.php:794
 msgid "One-time at-risk pass"
 msgstr ""
 
@@ -2296,7 +2324,7 @@ msgstr ""
 msgid "One-time pass"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:274
+#: src/Admin/PeoplePage.php:274 src/Web/CrewAdminPeople.php:206
 msgid "One-time sign-up pass granted."
 msgstr ""
 
@@ -2352,7 +2380,7 @@ msgstr ""
 msgid "Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it."
 msgstr ""
 
-#: templates/admin/people.php:97 templates/public/signup.php:622
+#: templates/admin/people.php:97 templates/public/signup.php:703 templates/public/signup.php:879
 msgid "Only people with a role see its tasks and can sign up for them."
 msgstr ""
 
@@ -2465,7 +2493,8 @@ msgstr ""
 msgid "Organize task: +1 allowed"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:140 src/Telegram/PermissionService.php:171 templates/admin/people.php:78
+#: src/Admin/PeopleListTable.php:140 src/Telegram/PermissionService.php:171 templates/admin/people.php:78 templates/public/signup.php:639
+#: templates/public/signup.php:731
 msgid "Organizer"
 msgstr ""
 
@@ -2531,7 +2560,11 @@ msgstr ""
 msgid "Pack up after the dance: collect the candles and decorations, clear away the water and snacks, empty full bins, close the movable walls, open the curtains, and do the final check."
 msgstr ""
 
-#: templates/admin/people.php:242
+#: templates/public/signup.php:663
+msgid "Page %1$d of %2$d"
+msgstr ""
+
+#: templates/admin/people.php:242 templates/public/signup.php:801
 msgid "Pass already granted — re-grant"
 msgstr ""
 
@@ -2539,7 +2572,7 @@ msgstr ""
 msgid "Password"
 msgstr ""
 
-#: templates/admin/roster.php:73 templates/public/signup.php:372 templates/public/signup.php:763
+#: templates/admin/roster.php:73 templates/public/signup.php:372 templates/public/signup.php:1020
 msgid "Past"
 msgstr ""
 
@@ -2547,7 +2580,7 @@ msgstr ""
 msgid "Past:"
 msgstr ""
 
-#: templates/admin/roster.php:256 templates/public/signup.php:1012
+#: templates/admin/roster.php:256 templates/public/signup.php:1269
 msgid "Paste names, one per line"
 msgstr ""
 
@@ -2556,7 +2589,7 @@ msgid "Pending updates"
 msgstr ""
 
 #: src/Admin/Admin.php:244 src/Admin/Admin.php:245 templates/admin/people.php:24 templates/admin/people.php:27
-#: templates/admin/settings.php:183
+#: templates/admin/settings.php:183 templates/public/signup.php:610
 msgid "People"
 msgstr ""
 
@@ -2565,7 +2598,7 @@ msgctxt "Admin tab screen"
 msgid "People"
 msgstr ""
 
-#: templates/admin/roster.php:180 templates/public/signup.php:927
+#: templates/admin/roster.php:180 templates/public/signup.php:1184
 msgid "People let in free who are not crew members. The /guest bot command keeps the same list."
 msgstr ""
 
@@ -2581,11 +2614,11 @@ msgstr ""
 msgid "Permission changes"
 msgstr ""
 
-#: templates/admin/people.php:290 templates/admin/roster.php:125 templates/admin/roster.php:332 templates/public/signup.php:693
+#: templates/admin/people.php:290 templates/admin/roster.php:125 templates/admin/roster.php:332 templates/public/signup.php:950
 msgid "Person"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:198
+#: src/Admin/PeoplePage.php:198 src/Web/CrewAdminPeople.php:205
 msgid "Person added."
 msgstr ""
 
@@ -2593,12 +2626,12 @@ msgstr ""
 msgid "Person deleted."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:185
+#: src/Admin/PeoplePage.php:185 src/Web/CrewAdminPeople.php:204
 msgid "Person updated."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:653
-msgid "Pick a number of credits from 1 to 5."
+#: src/Web/CrewAdminController.php:705
+msgid "Pick a number of credits, 1 or more."
 msgstr ""
 
 #: src/Admin/TasksPage.php:139
@@ -2613,8 +2646,8 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: templates/admin/roster.php:187 templates/admin/roster.php:197 templates/admin/roster.php:219 templates/public/signup.php:944
-#: templates/public/signup.php:972
+#: templates/admin/roster.php:187 templates/admin/roster.php:197 templates/admin/roster.php:219 templates/public/signup.php:1201
+#: templates/public/signup.php:1229
 msgid "Plus-ones"
 msgstr ""
 
@@ -2622,12 +2655,16 @@ msgstr ""
 msgid "Point the camera at the QR code on the ticket."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:139 templates/public/signup.php:578
+#: src/Web/CrewAdminController.php:145 templates/public/signup.php:578
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
 #: templates/admin/settings.php:1015
 msgid "Postal address"
+msgstr ""
+
+#: templates/public/signup.php:658
+msgid "Previous"
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:175 templates/admin/settings.php:71
@@ -2698,7 +2735,7 @@ msgstr ""
 msgid "Reason"
 msgstr ""
 
-#: templates/admin/people.php:226 templates/public/signup.php:608
+#: templates/admin/people.php:226 templates/public/signup.php:783 templates/public/signup.php:865
 msgid "Reason (optional)"
 msgstr ""
 
@@ -2730,15 +2767,15 @@ msgstr ""
 msgid "Records past that age are reviewed and cleared by hand. You do not have to wait for that — you can erase yours yourself at any time, as below."
 msgstr ""
 
-#: templates/admin/roster.php:174 templates/public/signup.php:917
+#: templates/admin/roster.php:174 templates/public/signup.php:1174
 msgid "Redeem"
 msgstr ""
 
-#: templates/admin/roster.php:161 templates/public/signup.php:903
+#: templates/admin/roster.php:161 templates/public/signup.php:1160
 msgid "Redeem a credit for"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:191
+#: src/Support/PrivacyExporter.php:191 templates/public/signup.php:833
 msgid "Redeemed"
 msgstr ""
 
@@ -2760,7 +2797,7 @@ msgstr ""
 msgid "Reminders and the open-task call ran %s ago."
 msgstr ""
 
-#: templates/admin/roster.php:147 templates/admin/roster.php:212 templates/public/signup.php:889 templates/public/signup.php:954
+#: templates/admin/roster.php:147 templates/admin/roster.php:212 templates/public/signup.php:1146 templates/public/signup.php:1211
 msgid "Remove"
 msgstr ""
 
@@ -2768,7 +2805,7 @@ msgstr ""
 msgid "Remove: /guest remove 2"
 msgstr ""
 
-#: templates/admin/roster.php:117 templates/public/signup.php:865
+#: templates/admin/roster.php:117 templates/public/signup.php:1122
 msgid "Reopen free entry"
 msgstr ""
 
@@ -2788,16 +2825,16 @@ msgstr ""
 msgid "Requests from people"
 msgstr ""
 
-#: templates/public/signup.php:1364
+#: templates/public/signup.php:1621
 #. translators: %s: whole seconds remaining before the link can be sent again
 msgid "Resend in %ss"
 msgstr ""
 
-#: templates/public/signup.php:1772
+#: templates/public/signup.php:2029
 msgid "Resend link"
 msgstr ""
 
-#: templates/admin/roster.php:281 templates/public/signup.php:1035
+#: templates/admin/roster.php:281 templates/public/signup.php:1292
 msgid "Reset import"
 msgstr ""
 
@@ -2813,7 +2850,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Admin/TasksListTable.php:49 templates/admin/tasks.php:183 templates/public/signup.php:638
+#: src/Admin/TasksListTable.php:49 templates/admin/tasks.php:183 templates/public/signup.php:895
 msgid "Role"
 msgstr ""
 
@@ -2829,7 +2866,8 @@ msgstr ""
 msgid "Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /roletasks and on the crew page. You can add someone there, even a person who is not a crew member."
 msgstr ""
 
-#: templates/admin/people.php:86 templates/admin/settings.php:66 templates/admin/settings.php:79 templates/public/signup.php:619
+#: templates/admin/people.php:86 templates/admin/settings.php:66 templates/admin/settings.php:79 templates/public/signup.php:695
+#: templates/public/signup.php:876
 msgid "Roles"
 msgstr ""
 
@@ -2842,7 +2880,7 @@ msgstr ""
 msgid "Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:657
+#: src/Web/CrewAdminController.php:709
 msgid "Roles saved."
 msgstr ""
 
@@ -2892,7 +2930,7 @@ msgstr ""
 msgid "Sales desk link, organizers (minutes before)"
 msgstr ""
 
-#: templates/admin/roster.php:205 templates/public/signup.php:665 templates/public/signup.php:953
+#: templates/admin/roster.php:205 templates/public/signup.php:922 templates/public/signup.php:1210
 msgid "Save"
 msgstr ""
 
@@ -2940,7 +2978,7 @@ msgstr ""
 msgid "Scheduled messages — task reminders, the open-task call, standing notices and the board re-post — are held until this hour and go out over the twelve hours that follow. Without it they left the moment they came due, which for a task starting at three in the morning meant a reminder at three in the morning."
 msgstr ""
 
-#: templates/admin/people.php:278
+#: templates/admin/people.php:278 templates/public/signup.php:625 templates/public/signup.php:626
 msgid "Search people"
 msgstr ""
 
@@ -2980,7 +3018,7 @@ msgstr ""
 msgid "Send a test email"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:138 templates/public/signup.php:554
+#: src/Web/CrewAdminController.php:144 templates/public/signup.php:554
 msgid "Send me the sales desk link"
 msgstr ""
 
@@ -3022,7 +3060,7 @@ msgstr ""
 msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:699
+#: src/Web/CrewAdminController.php:755
 #. translators: 1: the admin action's name, 2: date and time
 msgid "Sent an admin request from the crew page without being an organizer (%1$s, %2$s)."
 msgstr ""
@@ -3114,7 +3152,7 @@ msgstr ""
 msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
 msgstr ""
 
-#: templates/admin/roster.php:82 templates/public/signup.php:770
+#: templates/admin/roster.php:82 templates/public/signup.php:1027
 msgid "Show"
 msgstr ""
 
@@ -3261,7 +3299,7 @@ msgid "Spend a free-entry credit on"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:51 src/Support/PrivacyExporter.php:118 src/Support/WelcomeSender.php:439 templates/admin/people.php:202
-#: templates/admin/roster.php:127 templates/admin/roster.php:333
+#: templates/admin/roster.php:127 templates/admin/roster.php:333 templates/public/signup.php:733
 msgid "Standing"
 msgstr ""
 
@@ -3287,7 +3325,7 @@ msgid "Starts"
 msgstr ""
 
 #: templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:334 templates/admin/settings.php:1675
-#: templates/public/signup.php:796
+#: templates/public/signup.php:721 templates/public/signup.php:1053
 msgid "Status"
 msgstr ""
 
@@ -3344,7 +3382,7 @@ msgstr ""
 msgid "Tasks"
 msgstr ""
 
-#: templates/public/signup.php:687
+#: templates/public/signup.php:944
 msgid "Tasks (tick one or more)"
 msgstr ""
 
@@ -3409,7 +3447,7 @@ msgstr ""
 msgid "Telegram keeps only the most recent error and never clears it on a successful delivery. If Pending updates is 0 and this predates your last fix, it is stale — reinstall the webhook to clear it."
 msgstr ""
 
-#: templates/admin/people.php:141
+#: templates/admin/people.php:141 templates/public/signup.php:728
 msgid "Telegram linked"
 msgstr ""
 
@@ -3504,7 +3542,7 @@ msgstr ""
 msgid "That list could not be imported."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:216 src/Web/CrewAdminController.php:654
+#: src/Support/RoleTaskService.php:216 src/Web/CrewAdminController.php:706
 msgid "That member was not found."
 msgstr ""
 
@@ -3528,7 +3566,7 @@ msgstr ""
 msgid "That role is no longer offered."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:656
+#: src/Web/CrewAdminController.php:708
 msgid "That roster entry was not found."
 msgstr ""
 
@@ -3731,7 +3769,7 @@ msgstr ""
 msgid "The member could not be added. Try again."
 msgstr ""
 
-#: templates/admin/roster.php:262 templates/public/signup.php:1018
+#: templates/admin/roster.php:262 templates/public/signup.php:1275
 msgid "The names go to the date shown above. A name already on the list is skipped."
 msgstr ""
 
@@ -3747,7 +3785,7 @@ msgstr ""
 msgid "The other phone opens the sales desk as %s."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:519
+#: src/Web/CrewAdminController.php:549
 msgid "The others were skipped: they were already on the task, the task was full, or it is no longer available."
 msgstr ""
 
@@ -3797,7 +3835,7 @@ msgstr ""
 msgid "The sales desk is a web page for the door. It shows tonight's list: the crew, members with a free-entry ticket, guests and Holvi ticket buyers. You mark people in and out and say how many people they brought. Add sells a ticket at the door, adds a guest, or adds a member who spends a credit or takes one of tonight's tasks."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:649
+#: src/Web/CrewAdminController.php:701
 msgid "The sales desk link is sent to your email, and to Telegram if you use the bot."
 msgstr ""
 
@@ -3841,7 +3879,7 @@ msgstr ""
 msgid "The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
 msgstr ""
 
-#: templates/public/signup.php:1367
+#: templates/public/signup.php:1624
 msgid "The spam check hasn’t finished yet — give it a moment, then try again."
 msgstr ""
 
@@ -3910,7 +3948,7 @@ msgstr ""
 msgid "They get an email to confirm their address and join the Telegram group."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:523
+#: src/Web/CrewAdminController.php:553
 msgid "They got an email with the ticket for each task they were added to."
 msgstr ""
 
@@ -3922,7 +3960,7 @@ msgstr ""
 msgid "They have no credit left."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:525
+#: src/Web/CrewAdminController.php:555
 msgid "They have no email address here, so nothing was sent."
 msgstr ""
 
@@ -3955,7 +3993,7 @@ msgstr ""
 msgid "This guide is also on the crew web page, in the Help tab, after you sign in: %s"
 msgstr ""
 
-#: templates/admin/people.php:58
+#: templates/admin/people.php:58 templates/public/signup.php:687
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
@@ -4000,7 +4038,7 @@ msgstr ""
 msgid "This will be your first task — welcome!"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:658
+#: src/Web/CrewAdminController.php:710
 msgid "Tick at least one task."
 msgstr ""
 
@@ -4114,11 +4152,11 @@ msgstr ""
 msgid "Two of those you can do yourself, immediately and without asking anyone: your crew page has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message."
 msgstr ""
 
-#: templates/admin/people.php:267
+#: src/Web/CrewAdminController.php:157 templates/admin/people.php:267 templates/public/signup.php:763
 msgid "Unban"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:300
+#: src/Admin/PeoplePage.php:300 src/Web/CrewAdminPeople.php:207
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
@@ -4126,7 +4164,7 @@ msgstr ""
 msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
 msgstr ""
 
-#: templates/admin/roster.php:64 templates/public/signup.php:372 templates/public/signup.php:756
+#: templates/admin/roster.php:64 templates/public/signup.php:372 templates/public/signup.php:1013
 msgid "Upcoming"
 msgstr ""
 
@@ -4134,11 +4172,11 @@ msgstr ""
 msgid "Upcoming:"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:144 templates/admin/roster.php:295 templates/admin/roster.php:378 templates/public/signup.php:822
+#: src/Web/CrewAdminController.php:150 templates/admin/roster.php:295 templates/admin/roster.php:378 templates/public/signup.php:1079
 msgid "Update attendance"
 msgstr ""
 
-#: templates/admin/people.php:112
+#: templates/admin/people.php:112 templates/public/signup.php:710
 msgid "Update person"
 msgstr ""
 
@@ -4170,7 +4208,7 @@ msgstr ""
 msgid "VALID"
 msgstr ""
 
-#: templates/admin/people.php:213
+#: templates/admin/people.php:213 templates/public/signup.php:737
 msgid "Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen."
 msgstr ""
 
@@ -4359,7 +4397,7 @@ msgstr ""
 msgid "Why we hold it"
 msgstr ""
 
-#: templates/public/signup.php:708
+#: templates/public/signup.php:965
 msgid "With an email, they get their ticket by email. An email that belongs to a member adds that member."
 msgstr ""
 
@@ -4391,7 +4429,7 @@ msgid "Working: %s"
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:112 src/Telegram/RoleTaskBot.php:238 templates/admin/people.php:145 templates/public/door.php:66
-#: templates/public/signup-board.php:221 templates/public/signup.php:713
+#: templates/public/signup-board.php:221 templates/public/signup.php:729 templates/public/signup.php:731 templates/public/signup.php:970
 msgid "Yes"
 msgstr ""
 
@@ -4408,11 +4446,11 @@ msgstr ""
 msgid "You are an organizer of %s. This guide explains how EventCrew works, first in short and then in detail."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:272
+#: src/Web/CrewAdminController.php:290
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:265
+#: src/Web/CrewAdminController.php:283
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
@@ -4421,7 +4459,7 @@ msgstr ""
 msgid "You are organizing on %s"
 msgstr ""
 
-#: templates/admin/roster.php:267 templates/public/signup.php:1023
+#: templates/admin/roster.php:267 templates/public/signup.php:1280
 #. translators: %s: the import email address
 msgid "You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted."
 msgstr ""
@@ -4692,7 +4730,7 @@ msgstr ""
 msgid "different roles,"
 msgstr ""
 
-#: templates/admin/people.php:227
+#: templates/admin/people.php:227 templates/public/signup.php:784
 msgid "e.g. covered a cleaning task"
 msgstr ""
 
@@ -4724,19 +4762,19 @@ msgstr ""
 msgid "hello@example.com"
 msgstr ""
 
-#: templates/admin/roster.php:98 templates/public/signup.php:845
+#: templates/admin/roster.php:98 templates/public/signup.php:1102
 msgid "is disabled"
 msgstr ""
 
-#: templates/admin/roster.php:99 templates/public/signup.php:846
+#: templates/admin/roster.php:99 templates/public/signup.php:1103
 msgid "is hidden"
 msgstr ""
 
-#: templates/admin/roster.php:97 templates/public/signup.php:844
+#: templates/admin/roster.php:97 templates/public/signup.php:1101
 msgid "is not published (removed from the shop)"
 msgstr ""
 
-#: templates/admin/roster.php:100 templates/public/signup.php:847
+#: templates/admin/roster.php:100 templates/public/signup.php:1104
 msgid "is sold out"
 msgstr ""
 
@@ -4792,7 +4830,7 @@ msgstr ""
 msgid "someone"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:133
+#: src/Admin/PeoplePage.php:133 src/Web/CrewAdminPeople.php:276
 msgid "the system"
 msgstr ""
 
@@ -4800,11 +4838,11 @@ msgstr ""
 msgid "times each"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:719
+#: src/Web/CrewAdminController.php:775
 msgid "unknown"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:169
+#: src/Admin/PeopleListTable.php:169 templates/public/signup.php:647
 msgid "unverified"
 msgstr ""
 

@@ -44,6 +44,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
@@ -116,7 +117,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $this->mailer(),
             new Logger(),
             $this->roleTasks(),
-            $this->rosterScreen()
+            $this->rosterScreen(),
+            new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing())
         );
     }
 
@@ -348,15 +350,48 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame(508, $this->lastCallTo('sendMessage')['chat_id']);
     }
 
-    public function testACreditOutsideOneToFiveIsRefused(): void
+    public function testACreditOfMoreThanFiveIsGivenWithNoUpperLimit(): void
     {
         $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // the recipient
+
+        $result = $this->post(CrewAdminController::GIFT_ACTION, ['person_id' => '8', 'credits' => '12']);
+
+        self::assertSame('admin_credit_given', $result['notice']);
+        self::assertSame(1, $this->creditInserts());
+        self::assertSame(12, $this->wpdb->inserts[0]['data']['credits']);
+    }
+
+    /**
+     * @return array<string, array{0: mixed}>
+     */
+    public static function badCreditCounts(): array
+    {
+        return [
+            'zero' => ['0'],
+            'negative' => ['-2'],
+            'a fraction' => ['1.5'],
+            'an exponent' => ['2e3'],
+            'words' => ['three'],
+            'empty' => [''],
+            'a list' => [['3']],
+        ];
+    }
+
+    /**
+     * @dataProvider badCreditCounts
+     */
+    public function testACreditCountThatIsNotAWholeNumberFromOneUpIsRefused(mixed $credits): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // the recipient, if it got that far
 
         self::assertSame(
             'admin_bad_credits',
-            $this->post(CrewAdminController::GIFT_ACTION, ['person_id' => '8', 'credits' => '6'])['notice']
+            $this->post(CrewAdminController::GIFT_ACTION, ['person_id' => '8', 'credits' => $credits])['notice']
         );
         self::assertSame(0, $this->creditInserts());
+        self::assertSame('Pick a number of credits, 1 or more.', CrewAdminController::noticeText('admin_bad_credits'));
     }
 
     public function testAnOrganizerMarksAttendance(): void
@@ -382,6 +417,314 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertSame('admin_no_entry', $result['notice']);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    // --- the People screen: list, add, edit, pass, unban, credit log ------
+
+    /**
+     * One request of each People screen action that would write if it ran.
+     *
+     * @return array<string, array{0: string, 1: array<string, mixed>}>
+     */
+    public static function peopleScreenRequests(): array
+    {
+        $person = ['email' => 'new@example.com', 'display_name' => 'New', 'notes' => '', 'is_organizer' => '1'];
+
+        return [
+            'add a person' => [CrewAdminController::PERSON_ACTION, ['person_id' => '0'] + $person],
+            'edit a person' => [CrewAdminController::PERSON_ACTION, ['person_id' => '9'] + $person],
+            'grant a pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
+            'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider peopleScreenRequests
+     */
+    public function testAMemberSendingAPeopleScreenRequestIsBlockedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+        $this->wpdb->nextRows[] = $this->bannedRow(9);           // the target, if it got that far
+
+        $result = $this->post($action, $post, 8);
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertSame(501, $this->lastCallTo('sendMessage')['chat_id']);
+        // The one write is the sender's own block; nobody is added, changed,
+        // passed or unbanned.
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
+        self::assertNotNull($this->wpdb->updates[0]['data']['banned_at']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider peopleScreenRequests
+     */
+    public function testAPeopleScreenGetRequestIsRefusedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->bannedRow(9);   // the target, if it got that far
+
+        $result = $this->admin()->handle($action, 'GET', $post + ['csrf' => WebSession::csrfToken(1)], self::IP);
+
+        self::assertSame(CrewAdminController::REFUSED, $result['code']);
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerEditsAPersonAndTheOrganizerFlagIsNeverWritten(): void
+    {
+        $this->djTask();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['role_slugs' => 'archived'] + $this->personRow(8);   // find()
+        $this->wpdb->nextRows[] = $this->personRow(8);                                   // findByEmail(): their own
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '8',
+            'email' => 'p8@example.com',
+            'display_name' => ' Anna ',
+            'notes' => 'Bar on Fridays',
+            'roles' => ['dj'],
+            'is_organizer' => '1',
+        ]);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_person_updated'], $result);
+        self::assertCount(1, $this->wpdb->updates);
+        $update = $this->wpdb->updates[0];
+        self::assertSame(['id' => 8], $update['where']);
+        self::assertSame('p8@example.com', $update['data']['email']);
+        self::assertSame('Anna', $update['data']['display_name']);
+        self::assertSame('Bar on Fridays', $update['data']['notes']);
+        // A role the form does not show (archived) is kept, as in wp-admin.
+        self::assertSame('archived,dj', $update['data']['role_slugs']);
+        self::assertArrayNotHasKey('is_organizer', $update['data']);
+        self::assertSame('Person updated.', CrewAdminController::noticeText('admin_person_updated'));
+    }
+
+    public function testEditingAnOrganizerLeavesThemAnOrganizer(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(2, true);   // find()
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '2',
+            'email' => 'p2@example.com',
+            'display_name' => 'Person 2',
+        ]);
+
+        self::assertSame('admin_person_updated', $result['notice']);
+        self::assertArrayNotHasKey('is_organizer', $this->wpdb->updates[0]['data']);
+    }
+
+    public function testAnOrganizerAddsAPersonWhoIsNeitherAnOrganizerNorVerified(): void
+    {
+        $this->djTask();
+        $this->options[Roles::OPTION_NAME][] = ['slug' => 'vj', 'label' => 'VJ', 'restricted' => true];
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->insert_id = 40;
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '0',
+            'email' => 'new@example.com',
+            'display_name' => 'Anna',
+            'notes' => '',
+            'roles' => ['dj', 'vj', 'not-a-role'],
+            'is_organizer' => '1',
+        ]);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_person_added'], $result);
+        self::assertCount(1, $this->wpdb->inserts);
+        $insert = $this->wpdb->inserts[0]['data'];
+        self::assertSame('new@example.com', $insert['email']);
+        self::assertSame('Anna', $insert['display_name']);
+        self::assertSame(0, $insert['is_organizer']);
+        self::assertNull($insert['email_verified_at']);
+        self::assertSame('dj,vj', $insert['role_slugs']);
+        self::assertSame('Person added.', CrewAdminController::noticeText('admin_person_added'));
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function badEmails(): array
+    {
+        return ['empty' => [''], 'no at sign' => ['anna.example.com'], 'no domain' => ['anna@']];
+    }
+
+    /**
+     * @dataProvider badEmails
+     */
+    public function testAPersonWithNoValidEmailIsNotSaved(string $email): void
+    {
+        foreach (['0', '8'] as $personId) {
+            $this->signIn($this->organizerRow(1));
+            if ('8' === $personId) {
+                $this->wpdb->nextRows[] = $this->personRow(8);   // find()
+            }
+
+            $result = $this->post(CrewAdminController::PERSON_ACTION, ['person_id' => $personId, 'email' => $email]);
+
+            self::assertSame('admin_person_bad_email', $result['notice'], $personId);
+        }
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame(
+            'A valid email address is required - it is how a person is identified.',
+            CrewAdminController::noticeText('admin_person_bad_email')
+        );
+    }
+
+    public function testAnEmailThatBelongsToSomeoneElseIsNotSaved(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // find()
+        $this->wpdb->nextRows[] = $this->personRow(9);   // findByEmail(): somebody else
+
+        $edit = $this->post(CrewAdminController::PERSON_ACTION, ['person_id' => '8', 'email' => 'p9@example.com']);
+
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(9);   // findByEmail()
+
+        $add = $this->post(CrewAdminController::PERSON_ACTION, ['person_id' => '0', 'email' => 'p9@example.com']);
+
+        self::assertSame('admin_person_email_taken', $edit['notice']);
+        self::assertSame('admin_person_email_taken', $add['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame(
+            'Another person already uses that email address.',
+            CrewAdminController::noticeText('admin_person_email_taken')
+        );
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: array<string, mixed>}>
+     */
+    public static function peopleScreenTargets(): array
+    {
+        return [
+            'edit' => [CrewAdminController::PERSON_ACTION, ['person_id' => '9', 'email' => 'p9@example.com']],
+            'pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
+            'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider peopleScreenTargets
+     */
+    public function testAPersonWhoIsGoneOrAnonymisedIsNotChanged(string $action, array $post): void
+    {
+        $this->signIn($this->organizerRow(1));
+        // find() answers nothing: the person is gone.
+
+        $gone = $this->post($action, $post);
+
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['anonymized_at' => '2026-01-01 00:00:00'] + $this->bannedRow(9);
+
+        $anonymised = $this->post($action, $post);
+
+        self::assertSame('admin_no_person', $gone['notice']);
+        self::assertSame('admin_no_person', $anonymised['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerGrantsAOneTimePass(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $result = $this->post(CrewAdminController::PASS_ACTION, ['person_id' => '8']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_pass_granted'], $result);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['at_risk_pass']);
+        self::assertSame('One-time sign-up pass granted.', CrewAdminController::noticeText('admin_pass_granted'));
+    }
+
+    public function testAnOrganizerUnbansAPerson(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->bannedRow(8);
+
+        $result = $this->post(CrewAdminController::UNBAN_ACTION, ['person_id' => '8']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_person_unbanned'], $result);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
+        self::assertNull($this->wpdb->updates[0]['data']['banned_at']);
+        self::assertNull($this->wpdb->updates[0]['data']['ban_reason']);
+        self::assertSame(
+            'Unbanned. They can sign in and sign up again.',
+            CrewAdminController::noticeText('admin_person_unbanned')
+        );
+    }
+
+    public function testThePeopleListIsOnePageOfTheSearch(): void
+    {
+        $this->wpdb->nextVars[] = 45;   // count(): three pages of 20
+        $this->wpdb->nextResults[] = [$this->bannedRow(8), ['anonymized_at' => '2026-01-01 00:00:00'] + $this->personRow(9)];
+
+        $view = $this->peopleScreen()->view(' anna ', 7, 0);
+
+        self::assertSame('anna', $view['search']);
+        self::assertSame(3, $view['page']);   // past the end: the last page
+        self::assertSame(3, $view['pages']);
+        self::assertSame(45, $view['total']);
+        self::assertNull($view['editing']);
+        self::assertSame(8, $view['list'][0]['id']);
+        self::assertTrue($view['list'][0]['banned']);
+        self::assertFalse($view['list'][0]['verified']);
+        self::assertTrue($view['list'][1]['anonymized']);
+        $listQuery = implode("\n", array_filter($this->wpdb->queries, static fn (string $q): bool => str_contains($q, 'LIMIT')));
+        self::assertStringContainsString("LIKE '%anna%'", $listQuery);
+        self::assertStringContainsString('LIMIT 20 OFFSET 40', $listQuery);
+    }
+
+    public function testThePersonOpenForEditingHasTheirCreditLog(): void
+    {
+        $this->wpdb->nextResults[] = [];                    // the list: nobody
+        $this->wpdb->nextRows[] = $this->personRow(8);      // find()
+        $this->wpdb->nextResults[] = [];                    // standing: task history
+        $this->wpdb->nextResults[] = [                      // the credit-grant log
+            ['credits' => 3, 'note' => 'set up the bar', 'granted_by' => null, 'granted_by_person_id' => 1, 'granted_at' => '2026-07-19 20:00:00'],
+            ['credits' => 1, 'note' => '', 'granted_by' => null, 'granted_by_person_id' => null, 'granted_at' => '2026-07-01 20:00:00'],
+        ];
+        $this->wpdb->nextResults[] = [                      // the redemptions
+            ['id' => 40, 'person_id' => 8, 'redeemed_for' => '2026-07-13', 'event_label' => 'Milonga', 'redeemed_at' => '2026-07-13 21:00:00'],
+        ];
+        $this->wpdb->nextRows[] = $this->organizerRow(1);   // the granter of the first line
+
+        $view = $this->peopleScreen()->view('', 1, 8);
+
+        self::assertNotNull($view['editing']);
+        self::assertSame(8, $view['editing']['person']->id);
+        self::assertSame('Person 1', $view['editing']['given'][0]['granted_by']);
+        self::assertSame('the system', $view['editing']['given'][1]['granted_by']);
+        self::assertSame(3, $view['editing']['given'][0]['credits']);
+        self::assertSame('Milonga', $view['editing']['spent'][0]['event']);
+        self::assertNotSame('', $view['editing']['spent'][0]['day']);
+    }
+
+    public function testAnAnonymisedPersonIsNotOpenedForEditing(): void
+    {
+        $this->wpdb->nextRows[] = ['anonymized_at' => '2026-01-01 00:00:00'] + $this->personRow(8);
+
+        self::assertNull($this->peopleScreen()->view('', 1, 8)['editing']);
+    }
+
+    private function peopleScreen(): CrewAdminPeople
+    {
+        return new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing());
     }
 
     // --- the Roster screen: date picker, attendance, door, guests, buyers ---
@@ -1422,6 +1765,50 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Check the mailbox now', $html);
     }
 
+    public function testThePeopleScreenHasTheListTheAddFormAndNoCreditLimit(): void
+    {
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('name="people_q"', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::PERSON_ACTION . '"', $html);
+        self::assertStringContainsString('Add a person', $html);
+        self::assertStringNotContainsString('Edit person', $html);
+        self::assertStringNotContainsString('name="is_organizer"', $html);
+        self::assertMatchesRegularExpression('/name="credits" min="1" step="1" value="1" required>/', $html);
+        self::assertStringNotContainsString('max="5"', $html);
+    }
+
+    public function testThePeopleScreenOpensAPersonForEditing(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $_GET =['person_id' => '8', 'people_q' => 'p8'];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1), function (): void {
+                // The page reads the signed-in organizer a second time first.
+                $this->wpdb->nextRows[] = $this->organizerRow(1);
+                $this->wpdb->nextRows[] = ['at_risk_pass' => 1] + $this->bannedRow(8);
+            });
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString('Edit person', $html);
+        self::assertStringContainsString('value="p8@example.com"', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::PASS_ACTION . '"', $html);
+        self::assertStringContainsString('Pass already granted — re-grant', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::UNBAN_ACTION . '"', $html);
+        self::assertStringContainsString('Credit log', $html);
+        self::assertStringNotContainsString('name="is_organizer"', $html);
+        // Every form sends the page back to this person.
+        // (The add_query_arg stub keeps a false arg as 0; WordPress drops it.)
+        self::assertMatchesRegularExpression(
+            '/name="redirect_to" value="[^"]*\?person_id=8&amp;people_q=p8[^"]*#eventcrew-admin-people"/',
+            $html
+        );
+    }
+
     public function testWithNoTasksTheRosterScreenHasNoDateCards(): void
     {
         $html = $this->renderAs($this->organizerRow(1));
@@ -1435,8 +1822,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
      * The full page for a signed-in $row, with an empty board.
      *
      * @param array<string, mixed> $row
+     * @param ?callable $afterSignIn Queues what the page reads after the session.
      */
-    private function renderAs(array $row): string
+    private function renderAs(array $row, ?callable $afterSignIn = null): string
     {
         Functions\when('get_permalink')->justReturn('https://site.test/signup/');
         Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
@@ -1456,6 +1844,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         // Every other read answers empty: no tasks, no members, no next night.
         $this->signIn($row);
+
+        if (null !== $afterSignIn) {
+            $afterSignIn();
+        }
 
         return $this->signupController()->renderShortcode();
     }

@@ -1,0 +1,278 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Web;
+
+use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Support\Dates;
+use EventCrew\Support\RoleNotifier;
+use EventCrew\Support\Roles;
+use EventCrew\Support\StandingCalculator;
+
+/**
+ * The People screen of the crew page's Admin tab, made to match the wp-admin
+ * People page: the list of people with search, adding and editing a person
+ * (email, name, roles, notes), the one-time sign-up pass, Unban, and the
+ * person's credit log.
+ *
+ * Two things stay in wp-admin: the organizer flag and deleting a person. The
+ * save here never writes is_organizer, whatever the request holds.
+ *
+ * CrewAdminController guards every action (session, organizer flag, CSRF,
+ * POST only) before it calls a method here. The methods only check their own
+ * input and answer with an 'admin_' notice code.
+ */
+final class CrewAdminPeople
+{
+    /** People per page of the list: short enough to scroll on a phone. */
+    public const PER_PAGE = 20;
+
+    /** How many lines of a person's credit log are shown. */
+    private const LOG_LINES = 20;
+
+    public function __construct(
+        private readonly PersonRepository $people,
+        private readonly CreditGrantRepository $grants,
+        private readonly RedemptionRepository $redemptions,
+        private readonly StandingCalculator $standing
+    ) {
+    }
+
+    /**
+     * The People screen for the template: one page of the list, matching
+     * $search, and the person open for editing ($personId), or null.
+     *
+     * @return array{
+     *     search: string,
+     *     page: int,
+     *     pages: int,
+     *     total: int,
+     *     list: list<array{id: int, name: string, email: string, verified: bool,
+     *         organizer: bool, banned: bool, anonymized: bool}>,
+     *     editing: ?array<string, mixed>
+     * }
+     */
+    public function view(string $search, int $page, int $personId): array
+    {
+        $search = trim($search);
+        $total = $this->people->count($search);
+        $pages = max(1, (int) ceil($total / self::PER_PAGE));
+        $page = max(1, min($page, $pages));
+        $list = [];
+
+        foreach (
+            $this->people->all([
+                'search' => $search,
+                'orderby' => 'display_name',
+                'order' => 'asc',
+                'per_page' => self::PER_PAGE,
+                'page' => $page,
+            ]) as $person
+        ) {
+            $list[] = [
+                'id' => $person->id,
+                'name' => $person->name(),
+                'email' => $person->email,
+                'verified' => $person->isEmailVerified(),
+                'organizer' => $person->isOrganizer,
+                'banned' => $person->isBanned(),
+                'anonymized' => $person->isAnonymized(),
+            ];
+        }
+
+        return [
+            'search' => $search,
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+            'list' => $list,
+            'editing' => $personId > 0 ? $this->editing($personId) : null,
+        ];
+    }
+
+    /**
+     * "Add person" ($personId 0) or "Update person": the wp-admin save, without
+     * the organizer flag. Email is required and must not belong to anyone
+     * else. Only the active restricted roles are changed; a role not shown,
+     * such as an archived one, is kept. A new person is left unverified, as in
+     * wp-admin: typing someone's address is not that person confirming it.
+     *
+     * @param array<int, string> $ticked The role slugs ticked on the form.
+     */
+    public function save(int $personId, string $email, string $name, string $notes, array $ticked): string
+    {
+        if ($personId < 0) {
+            return 'admin_no_person';
+        }
+
+        $before = null;
+
+        if ($personId > 0) {
+            $before = $this->people->find($personId);
+
+            if (null === $before || $before->isAnonymized()) {
+                return 'admin_no_person';
+            }
+        }
+
+        if ('' === $email || ! is_email($email)) {
+            return 'admin_person_bad_email';
+        }
+
+        $existing = $this->people->findByEmail($email);
+
+        if (null !== $existing && $existing->id !== $personId) {
+            return 'admin_person_email_taken';
+        }
+
+        $shown = array_column(Roles::assignable(), 'slug');
+        $kept = null === $before ? [] : array_diff($before->roleSlugs, $shown);
+        $roles = array_values(array_merge($kept, array_intersect($shown, $ticked)));
+
+        // No is_organizer here: that flag is set in wp-admin or with /roles.
+        $data = [
+            'email' => $email,
+            'display_name' => $name,
+            'notes' => $notes,
+            'role_slugs' => PersonRepository::encodeRoles($roles),
+        ];
+
+        if (null !== $before) {
+            $this->people->update($before->id, $data);
+            RoleNotifier::rolesChanged($before->id, $before->roleSlugs, $roles);
+
+            return 'admin_person_updated';
+        }
+
+        // create() encodes the roles itself; handing it the encoded string
+        // would run "dj,vj" through sanitize_key() as one slug, "djvj".
+        $newId = $this->people->create(['role_slugs' => $roles] + $data);
+
+        if ($newId > 0) {
+            RoleNotifier::rolesChanged($newId, [], $roles);
+        }
+
+        return 'admin_person_added';
+    }
+
+    /**
+     * "Grant a one-time pass": lets the person sign up once even if their
+     * standing is at risk, as on the wp-admin People page and the bot's /roles.
+     */
+    public function grantPass(int $personId): string
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            return 'admin_no_person';
+        }
+
+        $this->people->grantAtRiskPass($person->id);
+
+        return 'admin_pass_granted';
+    }
+
+    /** "Unban": lifts a block, as on the wp-admin People page. */
+    public function unban(int $personId): string
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            return 'admin_no_person';
+        }
+
+        $this->people->unban($person->id);
+
+        return 'admin_person_unbanned';
+    }
+
+    /**
+     * The text for one of this screen's notice codes, or '' when the code is
+     * not one of them. The texts are the wp-admin People page's own.
+     */
+    public static function noticeText(string $code): string
+    {
+        $map = [
+            'admin_person_bad_email' => __(
+                'A valid email address is required - it is how a person is identified.',
+                'eventcrew'
+            ),
+            'admin_person_email_taken' => __('Another person already uses that email address.', 'eventcrew'),
+            'admin_person_updated' => __('Person updated.', 'eventcrew'),
+            'admin_person_added' => __('Person added.', 'eventcrew'),
+            'admin_pass_granted' => __('One-time sign-up pass granted.', 'eventcrew'),
+            'admin_person_unbanned' => __('Unbanned. They can sign in and sign up again.', 'eventcrew'),
+        ];
+
+        return $map[$code] ?? '';
+    }
+
+    /**
+     * The person open for editing, with their standing and credit log, or
+     * null when they are not found or their record is anonymised.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function editing(int $personId): ?array
+    {
+        $person = $this->people->find($personId);
+
+        if (null === $person || $person->isAnonymized()) {
+            return null;
+        }
+
+        $standing = $this->standing->for($person->id);
+        $given = [];
+        $spent = [];
+
+        foreach ($this->grants->forPerson($person->id, self::LOG_LINES) as $grant) {
+            $given[] = [
+                'credits' => $grant['credits'],
+                'note' => $grant['note'],
+                'granted_by' => $this->granterName($grant['granted_by_person_id'], $grant['granted_by']),
+                'granted_at' => $grant['granted_at'],
+            ];
+        }
+
+        foreach (array_slice($this->redemptions->forPerson($person->id), 0, self::LOG_LINES) as $redemption) {
+            $spent[] = [
+                'day' => null === $redemption->redeemedFor ? '' : Dates::dayLabel($redemption->redeemedFor),
+                'event' => $redemption->eventLabel,
+                'redeemed_at' => $redemption->redeemedAt,
+            ];
+        }
+
+        return [
+            'person' => $person,
+            'standing' => $standing->ratedSummary(),
+            'at_risk' => $standing->isAtRisk(),
+            'credits' => $standing->creditBalance,
+            'given' => $given,
+            'spent' => $spent,
+        ];
+    }
+
+    /**
+     * A granter's name, as the wp-admin People page shows it: the granting
+     * person, a WordPress user, or "the system" when neither was recorded.
+     */
+    private function granterName(?int $personId, ?int $userId): string
+    {
+        if (null !== $personId && $personId > 0) {
+            $person = $this->people->find($personId);
+
+            return null === $person ? __('(deleted person)', 'eventcrew') : $person->name();
+        }
+
+        if (null !== $userId && 0 !== $userId) {
+            $user = get_userdata($userId);
+
+            return false === $user ? __('(unknown)', 'eventcrew') : (string) $user->display_name;
+        }
+
+        return __('the system', 'eventcrew');
+    }
+}
