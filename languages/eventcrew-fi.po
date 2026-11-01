@@ -2707,3 +2707,188 @@ msgstr "Postilaatikko tarkistettu: %s."
 #: src/MailImport/MailImporter.php:119 src/Web/CrewAdminRoster.php:459
 msgid "The mailbox check failed: %s"
 msgstr "Postilaatikon tarkistus epäonnistui: %s"
+
+#: src/Admin/PeoplePage.php:130 src/Web/CrewAdminPeople.php:273
+msgid "(unknown)"
+msgstr "(tuntematon)"
+
+#: templates/admin/people.php:232 templates/public/signup.php:788
+msgid "A one-off bonus, on top of the credits earned for completed tasks."
+msgstr "Kertaluonteinen lisä tehdyistä tehtävistä ansaittujen vapaalippujen päälle."
+
+#: src/Admin/PeoplePage.php:156 src/Web/CrewAdminPeople.php:199
+msgid "A valid email address is required - it is how a person is identified."
+msgstr "Toimiva sähköpostiosoite tarvitaan - sillä henkilö tunnistetaan."
+
+#: templates/admin/people.php:39 templates/public/signup.php:677
+msgid "Add a person"
+msgstr "Lisää henkilö"
+
+#: src/Web/CrewAdminController.php:155
+msgid "Add or edit a person"
+msgstr "Lisää tai muokkaa henkilöä"
+
+#: templates/admin/people.php:113 templates/public/signup.php:710
+msgid "Add person"
+msgstr "Lisää henkilö"
+
+#: templates/admin/people.php:188 templates/public/signup.php:635
+msgid "Anonymised"
+msgstr "Anonymisoitu"
+
+#: src/Admin/PeoplePage.php:166 src/Web/CrewAdminPeople.php:203
+msgid "Another person already uses that email address."
+msgstr "Toinen henkilö käyttää jo tätä sähköpostiosoitetta."
+
+#: src/Admin/PeopleListTable.php:145 templates/admin/people.php:249 templates/public/signup.php:642 templates/public/signup.php:744
+msgid "Blocked"
+msgstr "Estetty"
+
+#: templates/admin/people.php:254 templates/public/signup.php:755
+#. translators: %s: date and time the block was set
+msgid "Blocked since %s. They cannot sign up for tasks or sign in on the web."
+msgstr "Estetty %s alkaen. Hän ei voi ilmoittautua tehtäviin eikä kirjautua verkossa."
+
+#: templates/public/signup.php:808
+msgid "Credit log"
+msgstr "Vapaalippuloki"
+
+#: templates/public/signup.php:815
+msgid "Credits given"
+msgstr "Annetut vapaaliput"
+
+#: templates/public/signup.php:827
+msgid "Credits spent"
+msgstr "Käytetyt vapaaliput"
+
+#: templates/admin/people.php:38 templates/public/signup.php:677
+msgid "Edit person"
+msgstr "Muokkaa henkilöä"
+
+#: templates/admin/people.php:131 templates/public/signup.php:726
+msgid "Email verified"
+msgstr "Sähköposti vahvistettu"
+
+#: src/Support/PrivacyExporter.php:120 templates/admin/people.php:206 templates/public/signup.php:735
+msgid "Free-entry credits"
+msgstr "Vapaaliput"
+
+#: templates/admin/people.php:216 templates/public/signup.php:770
+msgid "Give a free-entry credit"
+msgstr "Anna vapaalippu"
+
+#: src/Web/CrewAdminController.php:156 templates/admin/people.php:243 templates/public/signup.php:801
+msgid "Grant a one-time pass"
+msgstr "Anna kertaluontoinen ohitus"
+
+#: templates/admin/people.php:230 templates/public/signup.php:787
+msgid "Grant credits"
+msgstr "Anna vapaalippuja"
+
+#: templates/admin/people.php:293 templates/public/signup.php:821
+msgid "Granted by"
+msgstr "Antaja"
+
+#: templates/admin/people.php:245 templates/public/signup.php:802
+msgid "Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup."
+msgstr "Antaa hänen ilmoittautua kerran, vaikka hänen luotettavuutensa on vaarassa. Kuluu automaattisesti seuraavassa onnistuneessa ilmoittautumisessa."
+
+#: templates/public/signup.php:667
+msgid "Next"
+msgstr "Seuraava"
+
+#: templates/public/signup.php:812
+msgid "No credits given or spent yet."
+msgstr "Vapaalippuja ei ole vielä annettu eikä käytetty."
+
+#: templates/public/signup.php:629
+msgid "No people found."
+msgstr "Henkilöitä ei löytynyt."
+
+#: src/Admin/PeopleListTable.php:101 templates/public/signup.php:629
+msgid "No people yet."
+msgstr "Ei vielä henkilöitä."
+
+#: templates/admin/people.php:136 templates/public/signup.php:727
+msgid "Not yet"
+msgstr "Ei vielä"
+
+#: templates/admin/people.php:102 templates/admin/tasks.php:251 templates/public/signup.php:706
+msgid "Notes"
+msgstr "Muistiinpanot"
+
+#: templates/admin/people.php:235 templates/public/signup.php:794
+msgid "One-time at-risk pass"
+msgstr "Kertaluontoinen ohitus (luotettavuus vaarassa)"
+
+#: src/Admin/PeoplePage.php:274 src/Web/CrewAdminPeople.php:206
+msgid "One-time sign-up pass granted."
+msgstr "Kertaluontoinen ilmoittautumisohitus annettu."
+
+#: templates/public/signup.php:663
+msgid "Page %1$d of %2$d"
+msgstr "Sivu %1$d / %2$d"
+
+#: templates/admin/people.php:242 templates/public/signup.php:801
+msgid "Pass already granted — re-grant"
+msgstr "Ohitus on jo annettu — anna uudelleen"
+
+#: src/Admin/PeoplePage.php:198 src/Web/CrewAdminPeople.php:205
+msgid "Person added."
+msgstr "Henkilö lisätty."
+
+#: src/Admin/PeoplePage.php:185 src/Web/CrewAdminPeople.php:204
+msgid "Person updated."
+msgstr "Henkilö päivitetty."
+
+#: src/Web/CrewAdminController.php:705
+msgid "Pick a number of credits, 1 or more."
+msgstr "Valitse vapaalippujen määrä, vähintään 1."
+
+#: templates/public/signup.php:658
+msgid "Previous"
+msgstr "Edellinen"
+
+#: src/Support/PrivacyExporter.php:191 templates/public/signup.php:833
+msgid "Redeemed"
+msgstr "Käytetty"
+
+#: templates/admin/people.php:278 templates/public/signup.php:625 templates/public/signup.php:626
+msgid "Search people"
+msgstr "Hae henkilöitä"
+
+#: templates/admin/people.php:141 templates/public/signup.php:728
+msgid "Telegram linked"
+msgstr "Telegram yhdistetty"
+
+#: templates/admin/people.php:58 templates/public/signup.php:687
+msgid "This is how a person is identified across Telegram and the web."
+msgstr "Tällä henkilö tunnistetaan Telegramissa ja verkossa."
+
+#: src/Web/CrewAdminController.php:157 templates/admin/people.php:267 templates/public/signup.php:763
+msgid "Unban"
+msgstr "Poista esto"
+
+#: src/Admin/PeoplePage.php:300 src/Web/CrewAdminPeople.php:207
+msgid "Unbanned. They can sign in and sign up again."
+msgstr "Esto poistettu. Hän voi taas kirjautua ja ilmoittautua."
+
+#: templates/admin/people.php:112 templates/public/signup.php:710
+msgid "Update person"
+msgstr "Päivitä henkilö"
+
+#: templates/admin/people.php:213 templates/public/signup.php:737
+msgid "Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen."
+msgstr "Sähköpostin vahvistaminen ja ilmoitusten valinta ovat asioita, jotka vain henkilö itse voi tehdä, joten kumpaakaan ei voi asettaa tästä näkymästä."
+
+#: templates/admin/people.php:227 templates/public/signup.php:784
+msgid "e.g. covered a cleaning task"
+msgstr "esim. hoiti siivoustehtävän"
+
+#: src/Admin/PeoplePage.php:133 src/Web/CrewAdminPeople.php:276
+msgid "the system"
+msgstr "järjestelmä"
+
+#: src/Admin/PeopleListTable.php:169 templates/public/signup.php:647
+msgid "unverified"
+msgstr "vahvistamaton"

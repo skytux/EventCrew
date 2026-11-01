@@ -43,6 +43,8 @@ use EventCrew\Telegram\TelegramClient;
  * and the roster with its status write (/roster), and /roles for the restricted
  * roles. "Add a person to a task" is the bot's "Add someone" button: it puts
  * anyone on any upcoming task, even someone who is not a crew member yet.
+ * The People screen (CrewAdminPeople) is the wp-admin People page without the
+ * organizer flag and without deleting a person.
  */
 final class CrewAdminController
 {
@@ -57,6 +59,9 @@ final class CrewAdminController
     public const GUEST_ACTION = 'eventcrew_web_admin_guest';
     public const BUYERS_ACTION = 'eventcrew_web_admin_buyers';
     public const MAIL_ACTION = 'eventcrew_web_admin_mail';
+    public const PERSON_ACTION = 'eventcrew_web_admin_person';
+    public const PASS_ACTION = 'eventcrew_web_admin_pass';
+    public const UNBAN_ACTION = 'eventcrew_web_admin_unban';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -75,6 +80,9 @@ final class CrewAdminController
         self::GUEST_ACTION,
         self::BUYERS_ACTION,
         self::MAIL_ACTION,
+        self::PERSON_ACTION,
+        self::PASS_ACTION,
+        self::UNBAN_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -85,9 +93,6 @@ final class CrewAdminController
 
     /** guard(): a signed-in non-organizer. Blocked, and the organizers told. */
     public const FORGED = 'forged';
-
-    /** The most credits one press of "Give a credit" hands out. */
-    public const MAX_CREDITS = 5;
 
     /** The statuses the roster buttons write, by the value the form posts. */
     private const MARKS = [
@@ -113,7 +118,8 @@ final class CrewAdminController
         private readonly Mailer $mailer,
         private readonly Logger $logger,
         private readonly RoleTaskService $roleTasks,
-        private readonly CrewAdminRoster $rosterScreen
+        private readonly CrewAdminRoster $rosterScreen,
+        private readonly CrewAdminPeople $peopleScreen
     ) {
     }
 
@@ -146,6 +152,9 @@ final class CrewAdminController
             self::GUEST_ACTION => __('Guest list', 'eventcrew'),
             self::BUYERS_ACTION => __('Holvi ticket buyers', 'eventcrew'),
             self::MAIL_ACTION => __('Check the mailbox now', 'eventcrew'),
+            self::PERSON_ACTION => __('Add or edit a person', 'eventcrew'),
+            self::PASS_ACTION => __('Grant a one-time pass', 'eventcrew'),
+            self::UNBAN_ACTION => __('Unban', 'eventcrew'),
         ];
     }
 
@@ -215,9 +224,18 @@ final class CrewAdminController
             self::GIFT_ACTION => $this->giveCredit(
                 $organizer,
                 (int) ($post['person_id'] ?? 0),
-                (int) ($post['credits'] ?? 0),
+                self::wholeNumber($post['credits'] ?? ''),
                 sanitize_text_field((string) ($post['reason'] ?? ''))
             ),
+            self::PERSON_ACTION => $this->peopleScreen->save(
+                (int) ($post['person_id'] ?? 0),
+                sanitize_email((string) ($post['email'] ?? '')),
+                sanitize_text_field((string) ($post['display_name'] ?? '')),
+                sanitize_textarea_field((string) ($post['notes'] ?? '')),
+                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : []
+            ),
+            self::PASS_ACTION => $this->peopleScreen->grantPass((int) ($post['person_id'] ?? 0)),
+            self::UNBAN_ACTION => $this->peopleScreen->unban((int) ($post['person_id'] ?? 0)),
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
@@ -308,11 +326,12 @@ final class CrewAdminController
 
     /**
      * "Give a credit": the /gift grant, recorded with the organizer's person id
-     * in the credit log, and the member told the way /gift tells them.
+     * in the credit log, and the member told the way /gift tells them. Any
+     * whole number from 1 up, as on the wp-admin People page.
      */
     public function giveCredit(Person $organizer, int $personId, int $credits, string $reason): string
     {
-        if ($credits < 1 || $credits > self::MAX_CREDITS) {
+        if ($credits < 1) {
             return 'admin_bad_credits';
         }
 
@@ -328,6 +347,17 @@ final class CrewAdminController
         $this->grantNotifier->notify($member, $credits);
 
         return 'admin_credit_given';
+    }
+
+    /**
+     * A posted whole number, or 0 when the value is anything else ("1.5",
+     * "2e3", "abc", an array), so giveCredit() refuses it.
+     */
+    private static function wholeNumber(mixed $value): int
+    {
+        $value = is_scalar($value) ? trim((string) $value) : '';
+
+        return '' !== $value && ctype_digit($value) && strlen($value) <= 9 ? (int) $value : 0;
     }
 
     /**
@@ -557,7 +587,6 @@ final class CrewAdminController
             'board_action' => self::BOARD_ACTION,
             'gift_action' => self::GIFT_ACTION,
             'mark_action' => self::MARK_ACTION,
-            'max_credits' => self::MAX_CREDITS,
             'members' => $this->memberChoices(),
             'roster_label' => '' === $date ? '' : Dates::dayLabel($date),
             'roster' => '' === $date ? [] : $this->rosterRows($date),
@@ -577,7 +606,30 @@ final class CrewAdminController
             'roles' => self::assignableRoles(),
             'role_holders' => $this->roleHolders(),
             'add_tasks' => $this->addTaskChoices(),
+            // Last, so its reads come after everything above.
+            'person_action' => self::PERSON_ACTION,
+            'pass_action' => self::PASS_ACTION,
+            'unban_action' => self::UNBAN_ACTION,
+            'people' => $this->peopleScreen->view(...self::peopleQuery()),
         ];
+    }
+
+    /**
+     * The People screen's search, list page and open person from the page
+     * address (?people_q=, ?people_page=, ?person_id=). Read-only choices of
+     * what to show; nothing is written.
+     *
+     * @return array{0: string, 1: int, 2: int}
+     */
+    private static function peopleQuery(): array
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $search = isset($_GET['people_q']) ? sanitize_text_field(wp_unslash($_GET['people_q'])) : '';
+        $page = isset($_GET['people_page']) ? absint($_GET['people_page']) : 1;
+        $personId = isset($_GET['person_id']) ? absint($_GET['person_id']) : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        return [(string) $search, max(1, $page), $personId];
     }
 
     /**
@@ -650,7 +702,7 @@ final class CrewAdminController
             'admin_board_posted' => __('A new board is posted in the Telegram group.', 'eventcrew'),
             'admin_board_no_group' => __('No Telegram group is set up for the board yet.', 'eventcrew'),
             'admin_credit_given' => __('Credit given. The member is told.', 'eventcrew'),
-            'admin_bad_credits' => __('Pick a number of credits from 1 to 5.', 'eventcrew'),
+            'admin_bad_credits' => __('Pick a number of credits, 1 or more.', 'eventcrew'),
             'admin_no_person' => __('That member was not found.', 'eventcrew'),
             'admin_marked' => __('Attendance saved.', 'eventcrew'),
             'admin_no_entry' => __('That roster entry was not found.', 'eventcrew'),
@@ -660,6 +712,10 @@ final class CrewAdminController
 
         if (! isset($map[$code]) && '' !== CrewAdminRoster::noticeText($code)) {
             return CrewAdminRoster::noticeText($code);
+        }
+
+        if (! isset($map[$code]) && '' !== CrewAdminPeople::noticeText($code)) {
+            return CrewAdminPeople::noticeText($code);
         }
 
         if (! isset($map[$code]) && str_starts_with($code, 'admin_add_many_')) {
