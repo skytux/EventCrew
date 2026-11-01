@@ -221,6 +221,29 @@ final class OrganizeTaskBackfillTest extends TestCase
         self::assertCount($queriesBefore, $this->wpdb->queries);
     }
 
+    /**
+     * An every-night role with title text is added only to the nights whose
+     * event title (here the typed label) contains it.
+     */
+    public function testAnEveryNightRoleWithTitleTextSkipsOtherNights(): void
+    {
+        $this->options[OrganizeTaskBackfill::DONE_OPTION] = '1';
+        Roles::save([
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'restricted' => true, 'every_night' => true, 'title_contains' => 'cacao'],
+        ]);
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, null, 'decorate', '2026-11-07', 'Party'),
+            $this->taskRow(2, null, 'decorate', '2026-11-14', 'Cacao Party'),
+        ];
+
+        $this->backfill()->maybeRun();
+
+        $inserts = $this->djInserts();
+        self::assertCount(1, $inserts);
+        self::assertSame('2026-11-14', $inserts[0]['data']['task_date']);
+    }
+
     public function testARestrictedRoleWithEveryNightOffIsNotAdded(): void
     {
         $this->options[OrganizeTaskBackfill::DONE_OPTION] = '1';

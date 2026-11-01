@@ -120,6 +120,30 @@ final class TaskTemplateApplierTest extends TestCase
     }
 
     /**
+     * A role with title text is added only to an event whose title contains
+     * it, in any upper or lower case. The stubbed title is "Synced Event".
+     */
+    public function testARoleWithTitleTextGoesOnlyToEventsWhoseTitleHasIt(): void
+    {
+        $this->stubEvent(12, '2026-08-01T21:00:00', '2026-08-02T01:00:00');
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = null): mixed => Roles::OPTION_NAME === $name
+                ? [
+                    ['slug' => 'decorate', 'label' => 'Decorate'],
+                    ['slug' => 'cacao', 'label' => 'Cacao', 'title_contains' => 'cacao'],
+                    ['slug' => 'sync', 'label' => 'Sync', 'title_contains' => 'SYNCED'],
+                ]
+                : null
+        );
+        $this->wpdb->nextResults[] = [];
+
+        $this->applier()->apply(12);
+
+        $slugs = array_map(static fn (array $insert): string => $insert['data']['role_slug'], $this->wpdb->inserts);
+        self::assertSame(['decorate', 'sync', 'organize'], $slugs);
+    }
+
+    /**
      * Applying again to an event that already has its organize task adds no
      * second one.
      */

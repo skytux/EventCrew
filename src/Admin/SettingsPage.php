@@ -1143,6 +1143,10 @@ final class SettingsPage
             ? array_map('sanitize_text_field', wp_unslash($_POST['role_emoji']))
             : [];
 
+        $titleContains = isset($_POST['role_title_contains']) && is_array($_POST['role_title_contains'])
+            ? array_map('sanitize_text_field', wp_unslash($_POST['role_title_contains']))
+            : [];
+
         $descriptions = isset($_POST['role_description']) && is_array($_POST['role_description'])
             ? array_map('sanitize_textarea_field', wp_unslash($_POST['role_description']))
             : [];
@@ -1215,6 +1219,7 @@ final class SettingsPage
                 'every_night' => isset($everyNightIndexes[$index]),
                 'sales_desk' => isset($salesDeskIndexes[$index]),
                 'on_board' => isset($onBoardIndexes[$index]),
+                'title_contains' => $titleContains[$index] ?? '',
                 'conditions' => [
                     'counts' => is_array($counts[$index] ?? null)
                         ? array_map('intval', $counts[$index])

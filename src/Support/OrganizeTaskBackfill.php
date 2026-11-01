@@ -185,8 +185,18 @@ final class OrganizeTaskBackfill
         $created = 0;
 
         foreach ($this->nights() as $night) {
+            $title = $this->eventTitle($night['event_post_id'], $night['event_label']);
+
             foreach ($slugs as $slug) {
                 if (isset($night['roles'][$slug])) {
+                    continue;
+                }
+
+                // A role meant only for some events (title text) is not
+                // added to the other nights.
+                $role = Roles::find($slug);
+
+                if (null !== $role && ! Roles::fitsEvent($role, $title)) {
                     continue;
                 }
 
@@ -205,6 +215,21 @@ final class OrganizeTaskBackfill
         }
 
         return $created;
+    }
+
+    /**
+     * The title a night's event goes by: the event post's title, or the
+     * typed label of a night with no event post.
+     */
+    private function eventTitle(?int $eventPostId, string $eventLabel): string
+    {
+        if (null === $eventPostId) {
+            return $eventLabel;
+        }
+
+        $event = EventSource::describe($eventPostId);
+
+        return null === $event ? $eventLabel : $event['title'];
     }
 
     /**

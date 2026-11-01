@@ -151,6 +151,12 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   marked arrived on that night's task of such a role get the sales desk link, can
   see who has a ticket and the guest list, and can mark the crew with `/roster`.
   Welcome has it on by default.
+- **Only on events**: a per-role setting in **Settings → Roles**. With text in
+  it, new events get a task of that role only when the event title contains the
+  text (upper or lower case does not matter), e.g. `cacao` for a role that is
+  needed only at cacao nights. Empty means every event. Tasks that already exist
+  are not changed, and a task of the role can still be added to any night by
+  hand on the wp-admin **Tasks** screen.
 - **Organizers can add anyone to any task** of a night — with `/roletasks`, on
   the crew page Admin tab, or at the sales desk — whether or not the person holds
   the role.

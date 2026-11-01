@@ -47,12 +47,17 @@ final class TaskTemplateApplier
         $untimed = 0;
 
         // The ordinary roles, plus the restricted roles set to "Add to every
-        // night" (DJ, VJ, ...). A restricted role switched off is left out.
+        // night" (DJ, VJ, ...). A restricted role switched off is left out,
+        // and so is a role whose title text is not in this event's title.
+        $roles = array_values(array_filter(
+            array_merge(Roles::forTemplate(), Roles::everyNight()),
+            static fn (array $role): bool => Roles::fitsEvent($role, $event['title'])
+        ));
         $planned = TaskTemplate::build(
             $event['date'],
             $event['starts_at'],
             $event['ends_at'],
-            array_merge(Roles::forTemplate(), Roles::everyNight()),
+            $roles,
             $eventPostId
         );
 

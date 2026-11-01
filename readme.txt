@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.55.2
+Stable tag: 1.56.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.56.0 =
+Roles have a new setting in Settings > Roles, "Only on events": with text in it, new events get a task of that role only when the event title contains that text (upper or lower case does not matter). Empty means every event, as before.
 
 = 1.55.2 =
 Crew page: the sign-in form is a card like the rest of the page, and the board's event cards stay inside the page's own box on a desktop screen (the grid no longer widens past it).
@@ -699,6 +702,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.56.0 =
+New role setting "Only on events". Nothing changes until it is filled in.
 
 = 1.55.2 =
 Nothing to do.

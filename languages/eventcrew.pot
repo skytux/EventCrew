@@ -13,7 +13,7 @@ msgstr ""
 msgid " and "
 msgstr ""
 
-#: templates/admin/settings.php:339
+#: templates/admin/settings.php:352
 msgid "\"Opens the sales desk\": people marked arrived on that night’s task of this role get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster."
 msgstr ""
 
@@ -192,7 +192,7 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: templates/admin/settings.php:1654
+#: templates/admin/settings.php:1667
 #. translators: %s: human-readable time since the last webhook error, e.g. "2 hours"
 msgid "(%s ago)"
 msgstr ""
@@ -206,7 +206,7 @@ msgstr ""
 msgid "(unknown)"
 msgstr ""
 
-#: templates/admin/settings.php:131
+#: templates/admin/settings.php:132
 msgid "+ Add a role"
 msgstr ""
 
@@ -226,7 +226,7 @@ msgstr ""
 msgid "A guest needs a name."
 msgstr ""
 
-#: templates/admin/settings.php:627
+#: templates/admin/settings.php:640
 msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6."
 msgstr ""
 
@@ -250,7 +250,7 @@ msgstr ""
 msgid "A one-off bonus, on top of the credits earned for completed tasks."
 msgstr ""
 
-#: templates/admin/settings.php:1486
+#: templates/admin/settings.php:1499
 msgid "A password is saved. Leave this empty to keep it."
 msgstr ""
 
@@ -258,7 +258,7 @@ msgstr ""
 msgid "A privacy page is already chosen."
 msgstr ""
 
-#: templates/admin/settings.php:1567
+#: templates/admin/settings.php:1580
 msgid "A privacy page is chosen. Save any changes above and they appear on it immediately — there is nothing to re-publish."
 msgstr ""
 
@@ -278,7 +278,7 @@ msgstr ""
 msgid "A role is a kind of job, for example Welcome or Clean. You set the roles in Settings: name, emoji, a short description, how many people, and when it starts and ends compared to the event."
 msgstr ""
 
-#: templates/admin/settings.php:336
+#: templates/admin/settings.php:349
 msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
 msgstr ""
 
@@ -307,7 +307,7 @@ msgstr ""
 msgid "About this task"
 msgstr ""
 
-#: templates/admin/settings.php:228
+#: templates/admin/settings.php:229
 msgid "Access"
 msgstr ""
 
@@ -319,12 +319,12 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: templates/admin/settings.php:767
+#: templates/admin/settings.php:780
 #. translators: %s: the Cloudflare Turnstile dashboard URL, already wrapped in an anchor tag
 msgid "Add a Cloudflare Turnstile CAPTCHA to the public sign-in form so bots cannot use it to send sign-in emails. Create a free widget at %s and paste its two keys here. Leave both blank to turn it off."
 msgstr ""
 
-#: templates/admin/settings.php:1605
+#: templates/admin/settings.php:1618
 msgid "Add a bot token above and save before installing the webhook."
 msgstr ""
 
@@ -372,7 +372,7 @@ msgstr ""
 msgid "Add task"
 msgstr ""
 
-#: templates/admin/settings.php:756
+#: templates/admin/settings.php:769
 #. translators: %s: the shortcode, already wrapped in <code>
 msgid "Add the open-task board to any page with the %s shortcode, or the \"EventCrew signup\" block. Visitors sign in by email — no account needed — and signing up respects the same rules as the bot."
 msgstr ""
@@ -381,7 +381,7 @@ msgstr ""
 msgid "Add to calendar"
 msgstr ""
 
-#: templates/admin/settings.php:254
+#: templates/admin/settings.php:255
 msgid "Add to every night"
 msgstr ""
 
@@ -406,7 +406,7 @@ msgstr ""
 msgid "Added to the task. They got an email with their ticket."
 msgstr ""
 
-#: templates/admin/settings.php:635
+#: templates/admin/settings.php:648
 msgid "Adjust what each outcome is worth (advanced)"
 msgstr ""
 
@@ -435,31 +435,31 @@ msgstr ""
 msgid "Already on tonight’s list: %s"
 msgstr ""
 
-#: templates/admin/settings.php:740
+#: templates/admin/settings.php:753
 msgid "Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)"
 msgstr ""
 
-#: templates/admin/settings.php:1299
+#: templates/admin/settings.php:1312
 msgid "Also send the webhook secret as a URL parameter"
 msgstr ""
 
-#: templates/admin/settings.php:843
+#: templates/admin/settings.php:856
 msgid "Also where the “manage your data” link in your emails sends people. With a page picked they get a one-time link good for 30 minutes; with none, a standalone page on a link that never expires."
 msgstr ""
 
-#: templates/admin/settings.php:1011
+#: templates/admin/settings.php:1024
 msgid "An address or phone number people can use directly. This is the field that decides whether a DPO is published at all."
 msgstr ""
 
-#: templates/admin/settings.php:693
+#: templates/admin/settings.php:706
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
 msgstr ""
 
-#: templates/admin/settings.php:1340
+#: templates/admin/settings.php:1353
 msgid "And this JSON body (Content-Type: application/json):"
 msgstr ""
 
-#: templates/admin/settings.php:1046
+#: templates/admin/settings.php:1059
 msgid "Anonymise expired records automatically"
 msgstr ""
 
@@ -483,19 +483,19 @@ msgstr ""
 msgid "App icons"
 msgstr ""
 
-#: templates/admin/settings.php:849
+#: templates/admin/settings.php:862
 msgid "App name"
 msgstr ""
 
-#: templates/admin/settings.php:136
+#: templates/admin/settings.php:137
 msgid "Archived"
 msgstr ""
 
-#: templates/admin/settings.php:237
+#: templates/admin/settings.php:238
 msgid "Archived (hidden)"
 msgstr ""
 
-#: templates/admin/settings.php:333
+#: templates/admin/settings.php:346
 msgid "Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was."
 msgstr ""
 
@@ -523,7 +523,7 @@ msgstr ""
 msgid "Asked only for a role task; every other task always counts."
 msgstr ""
 
-#: templates/admin/settings.php:297
+#: templates/admin/settings.php:310
 msgid "At least"
 msgstr ""
 
@@ -535,7 +535,7 @@ msgstr ""
 msgid "Attendance saved."
 msgstr ""
 
-#: templates/admin/settings.php:411
+#: templates/admin/settings.php:424
 msgid "Auto re-post the board"
 msgstr ""
 
@@ -543,23 +543,23 @@ msgstr ""
 msgid "Automatic messages"
 msgstr ""
 
-#: templates/admin/settings.php:372
+#: templates/admin/settings.php:385
 msgid "Automatically create tasks when a new event is synced from EventMesh"
 msgstr ""
 
-#: templates/admin/settings.php:1167
+#: templates/admin/settings.php:1180
 msgid "Available tags:"
 msgstr ""
 
-#: templates/admin/settings.php:726
+#: templates/admin/settings.php:739
 msgid "Background job"
 msgstr ""
 
-#: templates/admin/settings.php:1112
+#: templates/admin/settings.php:1125
 msgid "Barefoot and with ♥ — the Example crew"
 msgstr ""
 
-#: templates/admin/settings.php:1356
+#: templates/admin/settings.php:1369
 msgid "Before turning off “Secret in the URL”, try this:"
 msgstr ""
 
@@ -572,7 +572,7 @@ msgstr ""
 msgid "Below %d%%, you cannot sign up for new tasks until you talk to an organizer."
 msgstr ""
 
-#: templates/admin/settings.php:680
+#: templates/admin/settings.php:693
 msgid "Below this a member is “New” (unrated); at or above it they are scored. Default 3."
 msgstr ""
 
@@ -593,19 +593,19 @@ msgstr ""
 msgid "Board"
 msgstr ""
 
-#: templates/admin/settings.php:1673
+#: templates/admin/settings.php:1686
 msgid "Board group"
 msgstr ""
 
-#: templates/admin/settings.php:408
+#: templates/admin/settings.php:421
 msgid "Board reminders"
 msgstr ""
 
-#: templates/admin/settings.php:1668
+#: templates/admin/settings.php:1681
 msgid "Bot"
 msgstr ""
 
-#: templates/admin/settings.php:1191
+#: templates/admin/settings.php:1204
 msgid "Bot token"
 msgstr ""
 
@@ -617,7 +617,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: templates/admin/settings.php:386
+#: templates/admin/settings.php:399
 msgid "Cancellations"
 msgstr ""
 
@@ -649,7 +649,7 @@ msgstr ""
 msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with /replace."
 msgstr ""
 
-#: templates/admin/settings.php:402
+#: templates/admin/settings.php:415
 msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
 msgstr ""
 
@@ -673,15 +673,15 @@ msgstr ""
 msgid "Check in"
 msgstr ""
 
-#: templates/admin/settings.php:1394
+#: templates/admin/settings.php:1407
 msgid "Check it"
 msgstr ""
 
-#: templates/admin/settings.php:1527
+#: templates/admin/settings.php:1540
 msgid "Check the mailbox now"
 msgstr ""
 
-#: templates/admin/settings.php:1376
+#: templates/admin/settings.php:1389
 msgid "Check the welcome message"
 msgstr ""
 
@@ -713,7 +713,7 @@ msgstr ""
 msgid "Choose whether this task counts toward free-entry credit."
 msgstr ""
 
-#: src/Support/Roles.php:131
+#: src/Support/Roles.php:134
 msgid "Clean"
 msgstr ""
 
@@ -737,11 +737,11 @@ msgstr ""
 msgid "Completed"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:50 templates/admin/settings.php:278
+#: src/Admin/PeopleListTable.php:50 templates/admin/settings.php:291
 msgid "Completed tasks"
 msgstr ""
 
-#: templates/admin/settings.php:667
+#: templates/admin/settings.php:680
 msgid "Completed tasks a member works to earn one free-entry credit. Default 2."
 msgstr ""
 
@@ -754,11 +754,11 @@ msgstr ""
 msgid "Completed the task"
 msgstr ""
 
-#: templates/admin/settings.php:275
+#: templates/admin/settings.php:288
 msgid "Conditions"
 msgstr ""
 
-#: templates/admin/settings.php:342
+#: templates/admin/settings.php:355
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /eligible show who meets them."
 msgstr ""
 
@@ -790,7 +790,7 @@ msgstr ""
 msgid "Connected — auto-creating tasks for new events"
 msgstr ""
 
-#: templates/admin/settings.php:955
+#: templates/admin/settings.php:968
 msgid "Contact address"
 msgstr ""
 
@@ -802,7 +802,7 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: templates/admin/settings.php:1686
+#: templates/admin/settings.php:1699
 msgid "Could not read the webhook status from Telegram. Check the token."
 msgstr ""
 
@@ -819,7 +819,7 @@ msgstr ""
 msgid "Count toward free-entry credit?"
 msgstr ""
 
-#: templates/admin/settings.php:1033
+#: templates/admin/settings.php:1046
 msgid "Counted from the last task they were on, credit they were given, or credit they spent — or from the day they joined if none of those ever happened. This is what the notice publishes."
 msgstr ""
 
@@ -827,7 +827,7 @@ msgstr ""
 msgid "Cover arranged"
 msgstr ""
 
-#: templates/admin/settings.php:1186
+#: templates/admin/settings.php:1199
 msgid "Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group."
 msgstr ""
 
@@ -839,7 +839,7 @@ msgstr ""
 msgid "Create tasks"
 msgstr ""
 
-#: templates/admin/settings.php:1563
+#: templates/admin/settings.php:1576
 msgid "Create the privacy page"
 msgstr ""
 
@@ -847,7 +847,7 @@ msgstr ""
 msgid "Create your first task"
 msgstr ""
 
-#: templates/admin/settings.php:1558
+#: templates/admin/settings.php:1571
 msgid "Creates a published page called “Crew privacy notice” holding the shortcode, and selects it above. Edit or rename it afterwards like any other page — the notice itself comes from the fields on this tab, not from the page’s text."
 msgstr ""
 
@@ -888,7 +888,7 @@ msgstr ""
 msgid "Credits: members earn 1 free-entry credit per %d completed tasks. /gift gives credits by hand."
 msgstr ""
 
-#: templates/admin/settings.php:348
+#: templates/admin/settings.php:361
 msgid "Crew guide"
 msgstr ""
 
@@ -896,7 +896,7 @@ msgstr ""
 msgid "Crew member"
 msgstr ""
 
-#: templates/admin/settings.php:1589
+#: templates/admin/settings.php:1602
 #. translators: 1: link to the export tool, 2: link to the erase tool, both already wrapped in anchor tags
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own crew page has a Delete button, and every email links to it."
 msgstr ""
@@ -985,11 +985,11 @@ msgstr ""
 msgid "DM — your upcoming and past tickets"
 msgstr ""
 
-#: templates/admin/settings.php:1209
+#: templates/admin/settings.php:1222
 msgid "DNS workaround"
 msgstr ""
 
-#: templates/admin/settings.php:982
+#: templates/admin/settings.php:995
 msgid "Data protection officer"
 msgstr ""
 
@@ -1001,23 +1001,23 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: src/Support/Roles.php:96
+#: src/Support/Roles.php:97
 msgid "Decorate"
 msgstr ""
 
-#: templates/admin/settings.php:588
+#: templates/admin/settings.php:601
 msgid "Default 10. Counted back from their own task’s start; the link comes only once they are marked arrived, and stops working when the event ends."
 msgstr ""
 
-#: templates/admin/settings.php:515
+#: templates/admin/settings.php:528
 msgid "Default 168 (one week). Set to 0 to skip it and send only the last call."
 msgstr ""
 
-#: templates/admin/settings.php:551
+#: templates/admin/settings.php:564
 msgid "Default 30. Counted back from the night’s first task start, or from 17:00 when no task has a start time."
 msgstr ""
 
-#: templates/admin/settings.php:533
+#: templates/admin/settings.php:546
 msgid "Default 48. Set to 0 to skip it. A date that first appears inside both windows gets one message, not two."
 msgstr ""
 
@@ -1053,15 +1053,15 @@ msgstr ""
 msgid "Deleting erases your account and history for good. This cannot be undone."
 msgstr ""
 
-#: templates/admin/settings.php:1117
+#: templates/admin/settings.php:1130
 msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
 msgstr ""
 
-#: templates/admin/settings.php:318
+#: templates/admin/settings.php:331
 msgid "Description"
 msgstr ""
 
-#: templates/admin/settings.php:1152
+#: templates/admin/settings.php:1165
 msgid "Design"
 msgstr ""
 
@@ -1114,12 +1114,12 @@ msgstr ""
 msgid "Edit task"
 msgstr ""
 
-#: src/Support/EmailTemplate.php:77 templates/admin/settings.php:1155
+#: src/Support/EmailTemplate.php:77 templates/admin/settings.php:1168
 msgid "Edit the email template"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:108 templates/admin/people.php:51
-#: templates/admin/settings.php:68 templates/admin/settings.php:567 templates/public/door.php:228 templates/public/signup.php:99
+#: templates/admin/settings.php:68 templates/admin/settings.php:580 templates/public/door.php:228 templates/public/signup.php:99
 #: templates/public/signup.php:409
 msgid "Email"
 msgstr ""
@@ -1156,23 +1156,23 @@ msgstr ""
 msgid "Email verified"
 msgstr ""
 
-#: templates/admin/settings.php:146
+#: templates/admin/settings.php:147
 msgid "Emoji"
 msgstr ""
 
-#: templates/admin/settings.php:1285
+#: templates/admin/settings.php:1298
 msgid "Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Saving re-installs the webhook for you. Leave off on a normal host."
 msgstr ""
 
-#: templates/admin/settings.php:1533
+#: templates/admin/settings.php:1546
 msgid "Endpoint"
 msgstr ""
 
-#: templates/admin/settings.php:217 templates/admin/tasks.php:228
+#: templates/admin/settings.php:218 templates/admin/tasks.php:228
 msgid "Ends"
 msgstr ""
 
-#: templates/admin/settings.php:1037
+#: templates/admin/settings.php:1050
 msgid "Enforce it"
 msgstr ""
 
@@ -1188,7 +1188,7 @@ msgstr ""
 msgid "Event date"
 msgstr ""
 
-#: templates/admin/settings.php:109
+#: templates/admin/settings.php:110
 msgid "Event end"
 msgstr ""
 
@@ -1196,7 +1196,7 @@ msgstr ""
 msgid "Event name"
 msgstr ""
 
-#: templates/admin/settings.php:108
+#: templates/admin/settings.php:109
 msgid "Event start"
 msgstr ""
 
@@ -1227,7 +1227,7 @@ msgstr ""
 msgid "EventCrew free entry"
 msgstr ""
 
-#: templates/admin/settings.php:928
+#: templates/admin/settings.php:941
 msgid "EventCrew holds real people’s email addresses and a record of what they did for you, which makes whoever runs these events the data controller for it. Fill this in and the plugin writes the privacy notice for you — the public page, and the suggested text for WordPress’s own privacy policy — describing what this install actually does, including whether the Telegram bot and the Cloudflare check are in use."
 msgstr ""
 
@@ -1255,11 +1255,11 @@ msgstr ""
 msgid "EventCrew → Settings → Privacy"
 msgstr ""
 
-#: templates/admin/settings.php:363
+#: templates/admin/settings.php:376
 msgid "EventMesh"
 msgstr ""
 
-#: templates/admin/settings.php:380
+#: templates/admin/settings.php:393
 msgid "EventMesh is not active, so there is nothing to sync tasks from."
 msgstr ""
 
@@ -1271,7 +1271,7 @@ msgstr ""
 msgid "Every five minutes (EventCrew sales desk links)"
 msgstr ""
 
-#: templates/admin/settings.php:1099
+#: templates/admin/settings.php:1112
 msgid "Every notification goes out as a designed HTML email with your logo on top and a button for whatever it is asking people to do — show a ticket, sign in, take an open slot. A plain-text copy travels with each one, so a mail client that will not show HTML still gets the whole message."
 msgstr ""
 
@@ -1308,7 +1308,7 @@ msgstr ""
 msgid "Find a name on the list"
 msgstr ""
 
-#: templates/admin/settings.php:424
+#: templates/admin/settings.php:437
 msgid "First reminder (hours before)"
 msgstr ""
 
@@ -1316,7 +1316,7 @@ msgstr ""
 msgid "First tap the “New here? Sign up” button below to confirm your email."
 msgstr ""
 
-#: templates/admin/settings.php:1492
+#: templates/admin/settings.php:1505
 msgid "Folders"
 msgstr ""
 
@@ -1329,7 +1329,7 @@ msgstr ""
 msgid "For anything else, write to %s and we will answer within one month."
 msgstr ""
 
-#: templates/admin/settings.php:1122
+#: templates/admin/settings.php:1135
 msgid "Format"
 msgstr ""
 
@@ -1388,15 +1388,15 @@ msgid_plural "Gave %1$s %2$d credits — they now have %3$d."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/settings.php:1547
+#: templates/admin/settings.php:1560
 msgid "Generate a new import secret? The mail poller stops working until it is given the new one."
 msgstr ""
 
-#: templates/admin/settings.php:1550
+#: templates/admin/settings.php:1563
 msgid "Generate a new secret"
 msgstr ""
 
-#: templates/admin/settings.php:1699
+#: templates/admin/settings.php:1712
 msgid "Generate a new webhook secret and re-install? The bot is unreachable for the moment in between, and any old copy of the secret stops working."
 msgstr ""
 
@@ -1448,7 +1448,7 @@ msgstr ""
 msgid "Good standing"
 msgstr ""
 
-#: templates/admin/settings.php:614
+#: templates/admin/settings.php:627
 msgid "Good-standing threshold"
 msgstr ""
 
@@ -1464,11 +1464,11 @@ msgstr ""
 msgid "Granted by"
 msgstr ""
 
-#: templates/admin/settings.php:1226
+#: templates/admin/settings.php:1239
 msgid "Group link"
 msgstr ""
 
-#: templates/admin/settings.php:1258
+#: templates/admin/settings.php:1271
 msgid "Group lock"
 msgstr ""
 
@@ -1509,7 +1509,7 @@ msgstr ""
 msgid "Guests"
 msgstr ""
 
-#: templates/admin/settings.php:503
+#: templates/admin/settings.php:516
 msgid "Heads-up (hours before)"
 msgstr ""
 
@@ -1592,11 +1592,11 @@ msgstr ""
 msgid "Holvi tickets"
 msgstr ""
 
-#: templates/admin/settings.php:436
+#: templates/admin/settings.php:449
 msgid "How far ahead of an open event the first re-post goes out. Default 168 (one week). Set to 0 to skip this one."
 msgstr ""
 
-#: templates/admin/settings.php:1016
+#: templates/admin/settings.php:1029
 msgid "How long records are kept"
 msgstr ""
 
@@ -1604,7 +1604,7 @@ msgstr ""
 msgid "How long we keep it"
 msgstr ""
 
-#: templates/admin/settings.php:604
+#: templates/admin/settings.php:617
 msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
 msgstr ""
 
@@ -1613,11 +1613,11 @@ msgstr ""
 msgid "How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot."
 msgstr ""
 
-#: templates/admin/settings.php:919
+#: templates/admin/settings.php:932
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the crew page. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr ""
 
-#: templates/admin/settings.php:1114
+#: templates/admin/settings.php:1127
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
 msgstr ""
 
@@ -1649,15 +1649,15 @@ msgstr ""
 msgid "I will write to you in English. Send /language to change it."
 msgstr ""
 
-#: templates/admin/settings.php:1452
+#: templates/admin/settings.php:1465
 msgid "IMAP"
 msgstr ""
 
-#: templates/admin/settings.php:1464
+#: templates/admin/settings.php:1477
 msgid "IMAP port and security"
 msgstr ""
 
-#: templates/admin/settings.php:1460
+#: templates/admin/settings.php:1473
 msgid "IMAP: the host name, for example imap.example.org. JMAP: the host name, or the full session URL if it is not at /.well-known/jmap."
 msgstr ""
 
@@ -1673,11 +1673,11 @@ msgstr ""
 msgid "Import"
 msgstr ""
 
-#: templates/admin/settings.php:1428
+#: templates/admin/settings.php:1441
 msgid "Import mailbox"
 msgstr ""
 
-#: templates/admin/settings.php:1496
+#: templates/admin/settings.php:1509
 msgid "Imported folder"
 msgstr ""
 
@@ -1689,15 +1689,15 @@ msgstr ""
 msgid "Info"
 msgstr ""
 
-#: templates/admin/settings.php:911 templates/public/signup.php:511
+#: templates/admin/settings.php:924 templates/public/signup.php:511
 msgid "Infrastructure"
 msgstr ""
 
-#: templates/admin/settings.php:1693
+#: templates/admin/settings.php:1706
 msgid "Install / refresh webhook"
 msgstr ""
 
-#: templates/admin/settings.php:1633
+#: templates/admin/settings.php:1646
 msgid "Installed"
 msgstr ""
 
@@ -1706,11 +1706,11 @@ msgstr ""
 msgid "Issued %s"
 msgstr ""
 
-#: templates/admin/settings.php:1713
+#: templates/admin/settings.php:1726
 msgid "It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there."
 msgstr ""
 
-#: templates/admin/settings.php:1451
+#: templates/admin/settings.php:1464
 msgid "JMAP (over HTTPS)"
 msgstr ""
 
@@ -1718,19 +1718,19 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: templates/admin/settings.php:1266
+#: templates/admin/settings.php:1279
 msgid "Keep the board locked to the first group the bot joins"
 msgstr ""
 
-#: templates/admin/settings.php:1203
+#: templates/admin/settings.php:1216
 msgid "Kept private on your server. Clearing it disconnects the bot."
 msgstr ""
 
-#: templates/admin/settings.php:802
+#: templates/admin/settings.php:815
 msgid "Kept private on your server; used to verify each submission with Cloudflare."
 msgstr ""
 
-#: templates/admin/settings.php:157
+#: templates/admin/settings.php:158
 msgid "Label"
 msgstr ""
 
@@ -1739,16 +1739,16 @@ msgstr ""
 msgid "Last Telegram update processed: #%s."
 msgstr ""
 
-#: templates/admin/settings.php:521
+#: templates/admin/settings.php:534
 msgid "Last call (hours before)"
 msgstr ""
 
-#: templates/admin/settings.php:1517
+#: templates/admin/settings.php:1530
 #. translators: 1: date and time of the last check, 2: what it found or the error
 msgid "Last check %1$s: %2$s"
 msgstr ""
 
-#: templates/admin/settings.php:1644
+#: templates/admin/settings.php:1657
 msgid "Last error"
 msgstr ""
 
@@ -1761,7 +1761,7 @@ msgstr ""
 msgid "Late cancellation"
 msgstr ""
 
-#: templates/admin/settings.php:390
+#: templates/admin/settings.php:403
 msgid "Late-cancel window (hours)"
 msgstr ""
 
@@ -1769,16 +1769,16 @@ msgstr ""
 msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
 msgstr ""
 
-#: templates/admin/settings.php:1053
+#: templates/admin/settings.php:1066
 msgid "Leave it off and the period is a promise you keep by hand — which is a perfectly good answer, and the one to pick if you are unsure."
 msgstr ""
 
-#: templates/admin/settings.php:1245
+#: templates/admin/settings.php:1258
 #. translators: %s: the invite link discovered from Telegram, already wrapped in <code>
 msgid "Leave this blank and EventCrew uses the link it found by asking Telegram: %s. Anything you type here wins over it."
 msgstr ""
 
-#: templates/admin/settings.php:1252
+#: templates/admin/settings.php:1265
 msgid "Left blank, EventCrew asks Telegram for one. That works for a public group, or a private one where the bot is an administrator; otherwise paste your own here."
 msgstr ""
 
@@ -1802,7 +1802,7 @@ msgstr ""
 msgid "Link expired"
 msgstr ""
 
-#: templates/admin/settings.php:350
+#: templates/admin/settings.php:363
 msgid "Link to the full guide"
 msgstr ""
 
@@ -1822,7 +1822,7 @@ msgstr ""
 msgid "Login link"
 msgstr ""
 
-#: templates/admin/settings.php:1133
+#: templates/admin/settings.php:1146
 msgid "Logo"
 msgstr ""
 
@@ -1871,7 +1871,7 @@ msgstr ""
 msgid "Me"
 msgstr ""
 
-#: templates/admin/settings.php:196
+#: templates/admin/settings.php:197
 msgid "Measured from"
 msgstr ""
 
@@ -1896,7 +1896,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: templates/admin/settings.php:465
+#: templates/admin/settings.php:478
 msgid "Messages that answer something a person just did — a signup confirmation, a freed slot, a ticket — are never held. Nor is a reminder for a task that starts before the next window opens: missing it entirely would be worse than an awkward hour."
 msgstr ""
 
@@ -1909,11 +1909,11 @@ msgstr ""
 msgid "Missing tables: %s. Deactivate and reactivate the plugin to run the migration."
 msgstr ""
 
-#: templates/admin/settings.php:807
+#: templates/admin/settings.php:820
 msgid "Mobile app"
 msgstr ""
 
-#: templates/admin/settings.php:984
+#: templates/admin/settings.php:997
 msgid "Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful."
 msgstr ""
 
@@ -1938,6 +1938,10 @@ msgstr ""
 msgid "Needs attention — some checks want a look."
 msgstr ""
 
+#: templates/admin/settings.php:284
+msgid "New events get a task of this role only when the event title contains this text (upper or lower case does not matter). Leave empty for every event."
+msgstr ""
+
 #: templates/admin/roster.php:218
 msgid "New guest’s name"
 msgstr ""
@@ -1950,7 +1954,7 @@ msgstr ""
 msgid "New person (fill in the name below)"
 msgstr ""
 
-#: templates/admin/settings.php:732
+#: templates/admin/settings.php:745
 #. translators: 1: next run time, 2: last run time
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
@@ -2034,7 +2038,7 @@ msgstr ""
 msgid "No page chosen for web signup / the mobile app. Set one in Settings → Mobile app."
 msgstr ""
 
-#: templates/admin/settings.php:1485
+#: templates/admin/settings.php:1498
 msgid "No password is saved."
 msgstr ""
 
@@ -2102,7 +2106,7 @@ msgstr ""
 msgid "Nobody else can run the sales desk tonight yet."
 msgstr ""
 
-#: templates/admin/settings.php:498
+#: templates/admin/settings.php:511
 msgid "Nobody gets more than one of these a day, however many dates are open: they are gathered into a single message."
 msgstr ""
 
@@ -2126,15 +2130,15 @@ msgstr ""
 msgid "Nobody signed up."
 msgstr ""
 
-#: templates/admin/settings.php:1634
+#: templates/admin/settings.php:1647
 msgid "Not installed"
 msgstr ""
 
-#: templates/admin/settings.php:1678
+#: templates/admin/settings.php:1691
 msgid "Not set yet - run /board in the group once."
 msgstr ""
 
-#: templates/admin/settings.php:1471
+#: templates/admin/settings.php:1484
 msgid "Not used for JMAP."
 msgstr ""
 
@@ -2174,11 +2178,11 @@ msgstr ""
 msgid "Notices about standing, credits, tickets and permissions."
 msgstr ""
 
-#: templates/admin/settings.php:1097
+#: templates/admin/settings.php:1110
 msgid "Notification emails"
 msgstr ""
 
-#: src/Support/HealthReport.php:157 templates/admin/settings.php:711 templates/public/signup.php:398
+#: src/Support/HealthReport.php:157 templates/admin/settings.php:724 templates/public/signup.php:398
 msgid "Notifications"
 msgstr ""
 
@@ -2186,23 +2190,23 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: templates/admin/settings.php:1450
+#: templates/admin/settings.php:1463
 msgid "Off"
 msgstr ""
 
-#: templates/admin/settings.php:1002
+#: templates/admin/settings.php:1015
 msgid "Officer’s contact"
 msgstr ""
 
-#: templates/admin/settings.php:989
+#: templates/admin/settings.php:1002
 msgid "Officer’s name"
 msgstr ""
 
-#: templates/admin/settings.php:601
+#: templates/admin/settings.php:614
 msgid "On"
 msgstr ""
 
-#: templates/admin/settings.php:1269
+#: templates/admin/settings.php:1282
 msgid "On by default. While locked, adding the bot to another group — or running /board there — will not move the board, so no one can hijack it into a different chat. To move the board on purpose (for example, going live): untick this, save, add the bot to the new group (or run /board in it), then tick it again and save."
 msgstr ""
 
@@ -2230,7 +2234,7 @@ msgstr ""
 msgid "One guest more"
 msgstr ""
 
-#: templates/admin/settings.php:360
+#: templates/admin/settings.php:373
 msgid "One link for every role, shown as a named \"Crew guide\" button or link - on the Telegram board, on the web page, and in the signup confirmation and the reminder. Leave blank to show no guide link. Make sure everyone with the link can open it."
 msgstr ""
 
@@ -2250,8 +2254,12 @@ msgstr ""
 msgid "One-time sign-up pass granted."
 msgstr ""
 
-#: templates/admin/settings.php:1220
+#: templates/admin/settings.php:1233
 msgid "Only enable this if installing the webhook fails with “Could not resolve host: api.telegram.org”. It looks the address up over HTTPS instead of the server’s own DNS, which some shared hosts block. Leave off on a normal host."
+msgstr ""
+
+#: templates/admin/settings.php:276
+msgid "Only on events"
 msgstr ""
 
 #: src/Support/RoleTaskService.php:220
@@ -2278,7 +2286,7 @@ msgstr ""
 msgid "Only organizers or people rostered on the day can see the roster."
 msgstr ""
 
-#: templates/admin/settings.php:570
+#: templates/admin/settings.php:583
 msgid "Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the crew page’s Admin tab. Untick both to send nothing."
 msgstr ""
 
@@ -2302,7 +2310,7 @@ msgstr ""
 msgid "Only people with a role see its tasks and can sign up for them."
 msgstr ""
 
-#: templates/admin/settings.php:246
+#: templates/admin/settings.php:247
 msgid "Only people with this role"
 msgstr ""
 
@@ -2358,7 +2366,7 @@ msgstr ""
 msgid "Open-task alerts"
 msgstr ""
 
-#: templates/admin/settings.php:493
+#: templates/admin/settings.php:506
 msgid "Open-task call"
 msgstr ""
 
@@ -2373,20 +2381,20 @@ msgid_plural "Open-task email sent to %d people."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/settings.php:262
+#: templates/admin/settings.php:263
 msgid "Opens the sales desk"
 msgstr ""
 
-#: templates/admin/settings.php:1161
+#: templates/admin/settings.php:1174
 #. translators: %s: the list of merge tags, already wrapped in <code>
 msgid "Opens the template in the normal editor, with revisions and undo. It is the frame around each message, not the wording: keep %s where the message should appear, and use the other tags wherever you want them."
 msgstr ""
 
-#: templates/admin/settings.php:977
+#: templates/admin/settings.php:990
 msgid "Optional, and left out of the notice when blank."
 msgstr ""
 
-#: templates/admin/settings.php:1238
+#: templates/admin/settings.php:1251
 msgid "Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When there is a link, the web signup page, the open-task emails and the open-task DMs all offer a way straight into the group."
 msgstr ""
 
@@ -2395,15 +2403,15 @@ msgstr ""
 msgid "Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead."
 msgstr ""
 
-#: templates/admin/settings.php:1530
+#: templates/admin/settings.php:1543
 msgid "Or: a mail poller on the mail server"
 msgstr ""
 
-#: templates/admin/settings.php:940
+#: templates/admin/settings.php:953
 msgid "Organisation"
 msgstr ""
 
-#: src/Support/Roles.php:319
+#: src/Support/Roles.php:323
 msgid "Organize"
 msgstr ""
 
@@ -2419,11 +2427,11 @@ msgstr ""
 msgid "Organizer guide: how EventCrew works"
 msgstr ""
 
-#: templates/admin/settings.php:556
+#: templates/admin/settings.php:569
 msgid "Organizer notice channels"
 msgstr ""
 
-#: templates/admin/settings.php:1421
+#: templates/admin/settings.php:1434
 msgid "Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
 msgstr ""
 
@@ -2457,7 +2465,7 @@ msgstr ""
 msgid "Outcome"
 msgstr ""
 
-#: templates/admin/settings.php:632
+#: templates/admin/settings.php:645
 msgid "Outcome weights"
 msgstr ""
 
@@ -2465,11 +2473,11 @@ msgstr ""
 msgid "PHP version"
 msgstr ""
 
-#: templates/admin/settings.php:1360
+#: templates/admin/settings.php:1373
 msgid "POST to:"
 msgstr ""
 
-#: src/Support/Roles.php:143
+#: src/Support/Roles.php:147
 msgid "Pack up after the dance: collect the candles and decorations, clear away the water and snacks, empty full bins, close the movable walls, open the curtains, and do the final check."
 msgstr ""
 
@@ -2477,7 +2485,7 @@ msgstr ""
 msgid "Pass already granted — re-grant"
 msgstr ""
 
-#: templates/admin/settings.php:1479
+#: templates/admin/settings.php:1492
 msgid "Password"
 msgstr ""
 
@@ -2493,12 +2501,12 @@ msgstr ""
 msgid "Paste names, one per line"
 msgstr ""
 
-#: templates/admin/settings.php:1639
+#: templates/admin/settings.php:1652
 msgid "Pending updates"
 msgstr ""
 
 #: src/Admin/Admin.php:244 src/Admin/Admin.php:245 templates/admin/people.php:24 templates/admin/people.php:27
-#: templates/admin/settings.php:180
+#: templates/admin/settings.php:181
 msgid "People"
 msgstr ""
 
@@ -2563,7 +2571,7 @@ msgstr ""
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
-#: templates/admin/settings.php:969
+#: templates/admin/settings.php:982
 msgid "Postal address"
 msgstr ""
 
@@ -2571,7 +2579,7 @@ msgstr ""
 msgid "Privacy"
 msgstr ""
 
-#: templates/admin/settings.php:1063
+#: templates/admin/settings.php:1076
 msgid "Privacy page"
 msgstr ""
 
@@ -2587,11 +2595,11 @@ msgstr ""
 msgid "Problems found — see the flagged rows below."
 msgstr ""
 
-#: templates/admin/settings.php:751
+#: templates/admin/settings.php:764
 msgid "Public signup page"
 msgstr ""
 
-#: templates/admin/settings.php:1555
+#: templates/admin/settings.php:1568
 msgid "Publish it"
 msgstr ""
 
@@ -2599,7 +2607,7 @@ msgstr ""
 msgid "Put it in front of your crew"
 msgstr ""
 
-#: templates/admin/settings.php:1540
+#: templates/admin/settings.php:1553
 msgid "Put this in the mail poller’s settings as IMPORT_SECRET."
 msgstr ""
 
@@ -2607,23 +2615,23 @@ msgstr ""
 msgid "QR code of the login link"
 msgstr ""
 
-#: templates/admin/settings.php:1274
+#: templates/admin/settings.php:1287
 msgid "REST workaround"
 msgstr ""
 
-#: templates/admin/settings.php:673
+#: templates/admin/settings.php:686
 msgid "Rated after"
 msgstr ""
 
-#: templates/admin/settings.php:415
+#: templates/admin/settings.php:428
 msgid "Re-post the group board as an open event approaches"
 msgstr ""
 
-#: templates/admin/settings.php:1447
+#: templates/admin/settings.php:1460
 msgid "Read the mailbox"
 msgstr ""
 
-#: templates/admin/settings.php:1438
+#: templates/admin/settings.php:1451
 msgid "Read the mailbox from this site"
 msgstr ""
 
@@ -2639,11 +2647,11 @@ msgstr ""
 msgid "Reason (optional)"
 msgstr ""
 
-#: templates/admin/settings.php:1282
+#: templates/admin/settings.php:1295
 msgid "Receive updates through admin-ajax.php instead of the REST API"
 msgstr ""
 
-#: templates/admin/settings.php:686
+#: templates/admin/settings.php:699
 msgid "Recency half-life"
 msgstr ""
 
@@ -2679,11 +2687,11 @@ msgstr ""
 msgid "Redeemed"
 msgstr ""
 
-#: templates/admin/settings.php:1727
+#: templates/admin/settings.php:1740
 msgid "Refresh the board"
 msgstr ""
 
-#: templates/admin/settings.php:1498
+#: templates/admin/settings.php:1511
 msgid "Rejected folder"
 msgstr ""
 
@@ -2709,11 +2717,11 @@ msgstr ""
 msgid "Reopen free entry"
 msgstr ""
 
-#: templates/admin/settings.php:1413
+#: templates/admin/settings.php:1426
 msgid "Replace the template with the built-in design? Your version stays in the template’s revisions."
 msgstr ""
 
-#: templates/admin/settings.php:610
+#: templates/admin/settings.php:623
 msgid "Reputation"
 msgstr ""
 
@@ -2721,7 +2729,7 @@ msgstr ""
 msgid "Reputation & alerts"
 msgstr ""
 
-#: templates/admin/settings.php:1584
+#: templates/admin/settings.php:1597
 msgid "Requests from people"
 msgstr ""
 
@@ -2738,15 +2746,15 @@ msgstr ""
 msgid "Reset import"
 msgstr ""
 
-#: templates/admin/settings.php:1416
+#: templates/admin/settings.php:1429
 msgid "Reset the template"
 msgstr ""
 
-#: templates/admin/settings.php:1217
+#: templates/admin/settings.php:1230
 msgid "Resolve Telegram’s address via Cloudflare (1.1.1.1)"
 msgstr ""
 
-#: templates/admin/settings.php:1020
+#: templates/admin/settings.php:1033
 msgid "Retention period"
 msgstr ""
 
@@ -2758,7 +2766,7 @@ msgstr ""
 msgid "Role conditions"
 msgstr ""
 
-#: templates/admin/settings.php:139
+#: templates/admin/settings.php:140
 msgid "Role holders only"
 msgstr ""
 
@@ -2800,15 +2808,15 @@ msgstr ""
 msgid "Roster: attendance and the door list for any date, and the Holvi ticket buyers."
 msgstr ""
 
-#: templates/admin/settings.php:1702
+#: templates/admin/settings.php:1715
 msgid "Rotate the webhook secret"
 msgstr ""
 
-#: templates/admin/settings.php:1468
+#: templates/admin/settings.php:1481
 msgid "SSL/TLS (usually port 993)"
 msgstr ""
 
-#: templates/admin/settings.php:1469
+#: templates/admin/settings.php:1482
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
@@ -2821,11 +2829,11 @@ msgstr ""
 msgid "Sales desk for %s"
 msgstr ""
 
-#: templates/admin/settings.php:576
+#: templates/admin/settings.php:589
 msgid "Sales desk link, crew on sales-desk roles (minutes before)"
 msgstr ""
 
-#: templates/admin/settings.php:539
+#: templates/admin/settings.php:552
 msgid "Sales desk link, organizers (minutes before)"
 msgstr ""
 
@@ -2837,15 +2845,15 @@ msgstr ""
 msgid "Save preferences"
 msgstr ""
 
-#: templates/admin/settings.php:1372
+#: templates/admin/settings.php:1385
 msgid "Save settings"
 msgstr ""
 
-#: templates/admin/settings.php:1435
+#: templates/admin/settings.php:1448
 msgid "Save the import mailbox"
 msgstr ""
 
-#: templates/admin/settings.php:1510
+#: templates/admin/settings.php:1523
 msgid "Save the mailbox settings"
 msgstr ""
 
@@ -2865,7 +2873,7 @@ msgstr ""
 msgid "Scan this QR code with the camera of the other phone. The link works once and stops working after 15 minutes."
 msgstr ""
 
-#: templates/admin/settings.php:462
+#: templates/admin/settings.php:475
 msgid "Scheduled messages — task reminders, the open-task call, standing notices and the board re-post — are held until this hour and go out over the twelve hours that follow. Without it they left the moment they came due, which for a task starting at three in the morning meant a reminder at three in the morning."
 msgstr ""
 
@@ -2873,23 +2881,23 @@ msgstr ""
 msgid "Search people"
 msgstr ""
 
-#: templates/admin/settings.php:442
+#: templates/admin/settings.php:455
 msgid "Second reminder (hours before)"
 msgstr ""
 
-#: templates/admin/settings.php:1537
+#: templates/admin/settings.php:1550
 msgid "Secret"
 msgstr ""
 
-#: templates/admin/settings.php:1291
+#: templates/admin/settings.php:1304
 msgid "Secret in the URL"
 msgstr ""
 
-#: templates/admin/settings.php:791
+#: templates/admin/settings.php:804
 msgid "Secret key"
 msgstr ""
 
-#: templates/admin/settings.php:1467 templates/public/signup.php:439
+#: templates/admin/settings.php:1480 templates/public/signup.php:439
 msgid "Security"
 msgstr ""
 
@@ -2905,7 +2913,7 @@ msgstr ""
 msgid "Send /myhistory to see everything you’ve done."
 msgstr ""
 
-#: templates/admin/settings.php:1407
+#: templates/admin/settings.php:1420
 msgid "Send a test email"
 msgstr ""
 
@@ -2913,11 +2921,11 @@ msgstr ""
 msgid "Send me the sales desk link"
 msgstr ""
 
-#: templates/admin/settings.php:1389
+#: templates/admin/settings.php:1402
 msgid "Send me the welcome message"
 msgstr ""
 
-#: templates/admin/settings.php:1126
+#: templates/admin/settings.php:1139
 msgid "Send notifications as HTML"
 msgstr ""
 
@@ -2929,20 +2937,20 @@ msgstr ""
 msgid "Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member."
 msgstr ""
 
-#: templates/admin/settings.php:597
+#: templates/admin/settings.php:610
 msgid "Send the welcome message"
 msgstr ""
 
-#: templates/admin/settings.php:1327
+#: templates/admin/settings.php:1340
 msgid "Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot."
 msgstr ""
 
-#: templates/admin/settings.php:1399
+#: templates/admin/settings.php:1412
 #. translators: %s: the current administrator's email address
 msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
 msgstr ""
 
-#: templates/admin/settings.php:1381
+#: templates/admin/settings.php:1394
 #. translators: %s: the current administrator's email address
 msgid "Sends every welcome message to the member with your address, %s, by email and Telegram, with the live settings and open tasks. It works while the welcome message is off, and nobody else gets anything."
 msgstr ""
@@ -2961,7 +2969,7 @@ msgstr ""
 msgid "Sent to %2$s: %1$s."
 msgstr ""
 
-#: templates/admin/settings.php:1457
+#: templates/admin/settings.php:1470
 msgid "Server"
 msgstr ""
 
@@ -2969,7 +2977,7 @@ msgstr ""
 msgid "Set me up →"
 msgstr ""
 
-#: src/Support/Roles.php:108
+#: src/Support/Roles.php:110
 msgid "Set up before the dance: close the curtains, check the bathrooms, place the LED candles, decorate the DJ table, prepare the water and fruit, and open the movable walls."
 msgstr ""
 
@@ -3035,7 +3043,7 @@ msgstr ""
 msgid "Settings saved."
 msgstr ""
 
-#: templates/admin/settings.php:1578
+#: templates/admin/settings.php:1591
 msgid "Settings → Privacy"
 msgstr ""
 
@@ -3051,7 +3059,7 @@ msgstr ""
 msgid "Show QR code"
 msgstr ""
 
-#: templates/admin/settings.php:270
+#: templates/admin/settings.php:271
 msgid "Show on the Telegram board"
 msgstr ""
 
@@ -3059,7 +3067,7 @@ msgstr ""
 msgid "Show your ticket"
 msgstr ""
 
-#: templates/admin/settings.php:859
+#: templates/admin/settings.php:872
 msgid "Shown under the home-screen icon. Blank uses the site name."
 msgstr ""
 
@@ -3108,7 +3116,7 @@ msgstr ""
 msgid "Sign-up and cancellation confirmations, at once."
 msgstr ""
 
-#: templates/admin/settings.php:698
+#: templates/admin/settings.php:711
 msgid "Sign-up gate"
 msgstr ""
 
@@ -3120,7 +3128,7 @@ msgstr ""
 msgid "Sign-ups are paused on your account — please contact the organizer."
 msgstr ""
 
-#: templates/admin/settings.php:1104
+#: templates/admin/settings.php:1117
 msgid "Signature"
 msgstr ""
 
@@ -3157,15 +3165,15 @@ msgstr ""
 msgid "Signup confirmations and task reminders are always sent on both channels."
 msgstr ""
 
-#: src/Support/HealthReport.php:195 templates/admin/settings.php:830
+#: src/Support/HealthReport.php:195 templates/admin/settings.php:843
 msgid "Signup page"
 msgstr ""
 
-#: templates/admin/settings.php:775
+#: templates/admin/settings.php:788
 msgid "Site key"
 msgstr ""
 
-#: templates/admin/settings.php:168
+#: templates/admin/settings.php:169
 msgid "Slug"
 msgstr ""
 
@@ -3181,7 +3189,7 @@ msgstr ""
 msgid "Someone was given a role"
 msgstr ""
 
-#: templates/admin/settings.php:762
+#: templates/admin/settings.php:775
 msgid "Spam protection"
 msgstr ""
 
@@ -3207,19 +3215,19 @@ msgstr ""
 msgid "Standing: %d%% or higher is good standing. It comes from how each member's past tasks went."
 msgstr ""
 
-#: templates/admin/settings.php:470
+#: templates/admin/settings.php:483
 msgid "Start sending at"
 msgstr ""
 
-#: templates/admin/settings.php:208 templates/admin/tasks.php:219
+#: templates/admin/settings.php:209 templates/admin/tasks.php:219
 msgid "Starts"
 msgstr ""
 
-#: templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:334 templates/admin/settings.php:1629
+#: templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:334 templates/admin/settings.php:1642
 msgid "Status"
 msgstr ""
 
-#: templates/admin/settings.php:702
+#: templates/admin/settings.php:715
 msgid "Stop at-risk members from signing up for new tasks"
 msgstr ""
 
@@ -3260,7 +3268,7 @@ msgstr ""
 msgid "Task deleted."
 msgstr ""
 
-#: templates/admin/settings.php:713
+#: templates/admin/settings.php:726
 msgid "Task reminders (24h before) and the open-task email (48h before) are sent by an hourly background job."
 msgstr ""
 
@@ -3292,7 +3300,7 @@ msgstr ""
 msgid "Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers)."
 msgstr ""
 
-#: templates/admin/settings.php:661
+#: templates/admin/settings.php:674
 msgid "Tasks per credit"
 msgstr ""
 
@@ -3304,7 +3312,7 @@ msgstr ""
 msgid "Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night."
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:49 templates/admin/people.php:177 templates/admin/settings.php:562 templates/public/signup.php:408
+#: src/Admin/PeopleListTable.php:49 templates/admin/people.php:177 templates/admin/settings.php:575 templates/public/signup.php:408
 #: templates/public/signup.php:534
 msgid "Telegram"
 msgstr ""
@@ -3313,7 +3321,7 @@ msgstr ""
 msgid "Telegram account linked"
 msgstr ""
 
-#: templates/admin/settings.php:1302
+#: templates/admin/settings.php:1315
 msgid "Telegram always sends the secret as a header; this sends a second copy in the address as well. That is only needed on hosts or proxies that strip custom headers — and it means the secret is written into your server’s access log on every update the bot receives."
 msgstr ""
 
@@ -3321,7 +3329,7 @@ msgstr ""
 msgid "Telegram board"
 msgstr ""
 
-#: src/Support/HealthReport.php:130 templates/admin/settings.php:66 templates/admin/settings.php:1184
+#: src/Support/HealthReport.php:130 templates/admin/settings.php:66 templates/admin/settings.php:1197
 msgid "Telegram bot"
 msgstr ""
 
@@ -3329,11 +3337,11 @@ msgstr ""
 msgid "Telegram group"
 msgstr ""
 
-#: templates/admin/settings.php:1330
+#: templates/admin/settings.php:1343
 msgid "Telegram is posting to:"
 msgstr ""
 
-#: templates/admin/settings.php:1661
+#: templates/admin/settings.php:1674
 msgid "Telegram keeps only the most recent error and never clears it on a successful delivery. If Pending updates is 0 and this predates your last fix, it is stale — reinstall the webhook to clear it."
 msgstr ""
 
@@ -3346,7 +3354,7 @@ msgstr ""
 msgid "Telegram refused the webhook: %s"
 msgstr ""
 
-#: templates/admin/settings.php:1612
+#: templates/admin/settings.php:1625
 #. translators: %s: the webhook URL Telegram will post updates to
 msgid "Telegram will post updates to %s. This needs HTTPS with a valid certificate - Telegram refuses plain HTTP and self-signed certificates."
 msgstr ""
@@ -3360,11 +3368,11 @@ msgstr ""
 msgid "Test email sent to %s."
 msgstr ""
 
-#: templates/admin/settings.php:1325
+#: templates/admin/settings.php:1338
 msgid "Test the endpoint by hand"
 msgstr ""
 
-#: templates/admin/settings.php:906
+#: templates/admin/settings.php:919
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
 msgstr ""
 
@@ -3501,19 +3509,19 @@ msgstr ""
 msgid "The QR code could not be drawn. Use Copy link instead."
 msgstr ""
 
-#: templates/admin/settings.php:893
+#: templates/admin/settings.php:906
 msgid "The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket."
 msgstr ""
 
-#: templates/admin/settings.php:1431
+#: templates/admin/settings.php:1444
 msgid "The address organizers send their lists to. Leave it empty if this site has no import mailbox."
 msgstr ""
 
-#: templates/admin/settings.php:872
+#: templates/admin/settings.php:885
 msgid "The app’s accent colour, and the fallback icon’s background."
 msgstr ""
 
-#: templates/admin/settings.php:1708
+#: templates/admin/settings.php:1721
 msgid "The board"
 msgstr ""
 
@@ -3549,7 +3557,7 @@ msgstr ""
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
-#: templates/admin/settings.php:950
+#: templates/admin/settings.php:963
 msgid "The club, association or person answerable for these records. Required."
 msgstr ""
 
@@ -3567,7 +3575,7 @@ msgstr ""
 msgid "The day this task is filed under. A clean-up at 01:00 after a Saturday event still belongs to Saturday."
 msgstr ""
 
-#: templates/admin/settings.php:345
+#: templates/admin/settings.php:358
 msgid "The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder."
 msgstr ""
 
@@ -3583,11 +3591,11 @@ msgstr ""
 msgid "The email template was reset to the built-in design."
 msgstr ""
 
-#: templates/admin/settings.php:1506
+#: templates/admin/settings.php:1519
 msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one."
 msgstr ""
 
-#: templates/admin/settings.php:1495
+#: templates/admin/settings.php:1508
 msgid "The folder to read. INBOX is the inbox."
 msgstr ""
 
@@ -3595,15 +3603,15 @@ msgstr ""
 msgid "The full guide, with the details, is in your email."
 msgstr ""
 
-#: templates/admin/settings.php:1710
+#: templates/admin/settings.php:1723
 msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
 msgstr ""
 
-#: templates/admin/settings.php:1173
+#: templates/admin/settings.php:1186
 msgid "The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent."
 msgstr ""
 
-#: templates/admin/settings.php:1049
+#: templates/admin/settings.php:1062
 msgid "The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers are never touched while they hold the role."
 msgstr ""
 
@@ -3615,11 +3623,11 @@ msgstr ""
 msgid "The hourly job has not run yet; the on-request fallback will run it on a visit."
 msgstr ""
 
-#: templates/admin/settings.php:1146
+#: templates/admin/settings.php:1159
 msgid "The image at the top of every email. Leave this blank to use your site’s own logo, falling back to the Site Icon, then to your site’s name in text. Paste a URL here to use a different image — a wide banner works as well as a square logo."
 msgstr ""
 
-#: templates/admin/settings.php:1147
+#: templates/admin/settings.php:1160
 msgid "The image is linked, so the mail client fetches it from wherever it is hosted when the email is opened. If it does not appear, check that the file is reachable without being logged in — some hosts refuse to serve images to anything that is not a browser."
 msgstr ""
 
@@ -3655,7 +3663,7 @@ msgstr ""
 msgid "The names go to the date shown above. A name already on the list is skipped."
 msgstr ""
 
-#: templates/admin/settings.php:454
+#: templates/admin/settings.php:467
 msgid "The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one."
 msgstr ""
 
@@ -3671,12 +3679,12 @@ msgstr ""
 msgid "The others were skipped: they were already on the task, the task was full, or it is no longer available."
 msgstr ""
 
-#: templates/admin/settings.php:1079
+#: templates/admin/settings.php:1092
 #. translators: %s: the shortcode, already wrapped in <code>
 msgid "The page carrying the %s shortcode or the “EventCrew privacy notice” block. Signing-up links to it. If you have no such page yet, there is a button below that makes one."
 msgstr ""
 
-#: templates/admin/settings.php:817
+#: templates/admin/settings.php:830
 #. translators: %s: the title of the page holding the signup shortcode
 msgid "The page “%s” has the signup shortcode on it, but no page is picked below. Pick it: the setting does more than the mobile app."
 msgstr ""
@@ -3685,11 +3693,11 @@ msgstr ""
 msgid "The person could not be added. Try again."
 msgstr ""
 
-#: templates/admin/settings.php:495
+#: templates/admin/settings.php:508
 msgid "The personal “some tasks still need people” notice, sent by email and Telegram DM to everyone active. It goes out at the two lead times below — a heads-up while there is still time to rearrange a weekend, then a last call — and again if a job is added to a date after people have already been told about it."
 msgstr ""
 
-#: templates/admin/settings.php:933
+#: templates/admin/settings.php:946
 msgid "The privacy notice is not published yet. Until an organisation and a contact address are filled in below, the public page stays blank and nothing is added to your site’s privacy policy — a notice that cannot say who is answerable would be worse than none."
 msgstr ""
 
@@ -3697,11 +3705,11 @@ msgstr ""
 msgid "The privacy page could not be created."
 msgstr ""
 
-#: templates/admin/settings.php:786
+#: templates/admin/settings.php:799
 msgid "The public key that renders the widget. Safe to expose in the page."
 msgstr ""
 
-#: templates/admin/settings.php:1059
+#: templates/admin/settings.php:1072
 msgid "The public notice"
 msgstr ""
 
@@ -3730,12 +3738,12 @@ msgstr ""
 msgid "The sales desk link opens %d minutes before your task, once you are marked arrived."
 msgstr ""
 
-#: templates/admin/settings.php:1576
+#: templates/admin/settings.php:1589
 #. translators: %s: link to the WordPress privacy settings screen, already wrapped in an anchor tag
 msgid "The same notice is offered to WordPress as suggested policy text, so the site’s main policy can cover the crew data too. Review and paste it in under %s. WordPress will tell you there whenever a new version of this plugin rewords it."
 msgstr ""
 
-#: templates/admin/settings.php:1357
+#: templates/admin/settings.php:1370
 msgid "The same request with the secret in the header instead of the address. A 200 means your host keeps the header, so the URL copy can be switched off safely. Anything else means leave it on."
 msgstr ""
 
@@ -3748,7 +3756,7 @@ msgstr ""
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr ""
 
-#: templates/admin/settings.php:1705
+#: templates/admin/settings.php:1718
 msgid "The secret is what proves an incoming update really came from Telegram — it is the bot’s only authentication. Rotate it if it may have been seen: in a server log, a screenshot, or a support ticket. The bot keeps working; only the old secret stops."
 msgstr ""
 
@@ -3757,7 +3765,7 @@ msgstr ""
 msgid "The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /roles can give them a one-time pass."
 msgstr ""
 
-#: templates/admin/settings.php:1440
+#: templates/admin/settings.php:1453
 msgid "The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
 msgstr ""
 
@@ -3781,7 +3789,7 @@ msgstr ""
 msgid "The timing columns are what \"Create an event's tasks\" uses. Offsets are in minutes from the chosen anchor, negative for before it: decorating might run -120 to 0 from the start, cleaning 0 to 60 from the end. Leave both blank for a role whose timing varies - its tasks are created without times for you to fill in."
 msgstr ""
 
-#: templates/admin/settings.php:1315
+#: templates/admin/settings.php:1328
 msgid "The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included."
 msgstr ""
 
@@ -3789,7 +3797,7 @@ msgstr ""
 msgid "The wp-admin pages"
 msgstr ""
 
-#: templates/admin/settings.php:864
+#: templates/admin/settings.php:877
 msgid "Theme colour"
 msgstr ""
 
@@ -3797,7 +3805,7 @@ msgstr ""
 msgid "There are no upcoming tasks for your roles. An organizer gives roles with /roles."
 msgstr ""
 
-#: templates/admin/settings.php:1718
+#: templates/admin/settings.php:1731
 msgid "There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it."
 msgstr ""
 
@@ -3854,7 +3862,7 @@ msgstr ""
 msgid "This calendar link is not valid."
 msgstr ""
 
-#: templates/admin/settings.php:1052
+#: templates/admin/settings.php:1065
 msgid "This cannot be undone."
 msgstr ""
 
@@ -3916,11 +3924,11 @@ msgstr ""
 msgid "Ticket"
 msgstr ""
 
-#: templates/admin/settings.php:881
+#: templates/admin/settings.php:894
 msgid "Ticket background"
 msgstr ""
 
-#: templates/admin/settings.php:1419
+#: templates/admin/settings.php:1432
 msgid "Ticket buyer import by email"
 msgstr ""
 
@@ -3941,11 +3949,11 @@ msgstr ""
 msgid "Ticket not found"
 msgstr ""
 
-#: templates/admin/settings.php:898
+#: templates/admin/settings.php:911
 msgid "Ticket note"
 msgstr ""
 
-#: templates/admin/settings.php:877
+#: templates/admin/settings.php:890
 msgid "Ticket page"
 msgstr ""
 
@@ -3970,7 +3978,7 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: templates/admin/settings.php:193
+#: templates/admin/settings.php:194
 msgid "Timing"
 msgstr ""
 
@@ -3994,27 +4002,27 @@ msgstr ""
 msgid "Tonight’s crew"
 msgstr ""
 
-#: templates/admin/settings.php:1594
+#: templates/admin/settings.php:1607
 msgid "Tools → Erase Personal Data"
 msgstr ""
 
-#: templates/admin/settings.php:1591
+#: templates/admin/settings.php:1604
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: templates/admin/settings.php:1503
+#: templates/admin/settings.php:1516
 msgid "Trusted mail server"
 msgstr ""
 
-#: templates/admin/settings.php:1305
+#: templates/admin/settings.php:1318
 msgid "Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save."
 msgstr ""
 
-#: templates/admin/settings.php:809
+#: templates/admin/settings.php:822
 msgid "Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android)."
 msgstr ""
 
-#: templates/admin/settings.php:1128
+#: templates/admin/settings.php:1141
 msgid "Turn this off to send plain text only."
 msgstr ""
 
@@ -4034,7 +4042,7 @@ msgstr ""
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
-#: templates/admin/settings.php:1318
+#: templates/admin/settings.php:1331
 msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
 msgstr ""
 
@@ -4066,11 +4074,11 @@ msgstr ""
 msgid "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once."
 msgstr ""
 
-#: templates/admin/settings.php:1475
+#: templates/admin/settings.php:1488
 msgid "User name"
 msgstr ""
 
-#: templates/admin/settings.php:376
+#: templates/admin/settings.php:389
 msgid "Uses the active roles' offsets, exactly like \"Create an event's tasks\" on the Tasks page. Only ever runs the first time an event is synced - a later re-sync that corrects its time never touches tasks that may already have signups or edits on them. Use the button on the Tasks page for any event synced before this was turned on."
 msgstr ""
 
@@ -4086,11 +4094,11 @@ msgstr ""
 msgid "Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen."
 msgstr ""
 
-#: templates/admin/settings.php:1087
+#: templates/admin/settings.php:1100
 msgid "View the notice people are shown"
 msgstr ""
 
-#: templates/admin/settings.php:743
+#: templates/admin/settings.php:756
 msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
 msgstr ""
 
@@ -4125,7 +4133,7 @@ msgstr ""
 msgid "Web page"
 msgstr ""
 
-#: templates/admin/settings.php:1602
+#: templates/admin/settings.php:1615
 msgid "Webhook"
 msgstr ""
 
@@ -4133,15 +4141,15 @@ msgstr ""
 msgid "Webhook installed. Add the bot to your group and the board will appear there on its own."
 msgstr ""
 
-#: src/Support/Roles.php:113
+#: src/Support/Roles.php:115
 msgid "Welcome"
 msgstr ""
 
-#: templates/admin/settings.php:594
+#: templates/admin/settings.php:607
 msgid "Welcome message"
 msgstr ""
 
-#: src/Support/Roles.php:125
+#: src/Support/Roles.php:128
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr ""
 
@@ -4162,7 +4170,7 @@ msgstr ""
 msgid "Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks."
 msgstr ""
 
-#: templates/admin/settings.php:653
+#: templates/admin/settings.php:666
 msgid "What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0."
 msgstr ""
 
@@ -4178,15 +4186,15 @@ msgstr ""
 msgid "When"
 msgstr ""
 
-#: templates/admin/settings.php:460
+#: templates/admin/settings.php:473
 msgid "When notifications go out"
 msgstr ""
 
-#: templates/admin/settings.php:705
+#: templates/admin/settings.php:718
 msgid "When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected."
 msgstr ""
 
-#: templates/admin/settings.php:418
+#: templates/admin/settings.php:431
 msgid "When on, the board is re-posted into the group at each lead time below (deleting the previous one), so it resurfaces instead of sitting buried. It reaches the whole group and cannot be muted per person."
 msgstr ""
 
@@ -4199,15 +4207,15 @@ msgstr ""
 msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /mytickets lists all your tickets."
 msgstr ""
 
-#: templates/admin/settings.php:1497
+#: templates/admin/settings.php:1510
 msgid "Where imported lists go. Created if missing."
 msgstr ""
 
-#: templates/admin/settings.php:964
+#: templates/admin/settings.php:977
 msgid "Where people write about their data. Required, and it must be an address somebody actually reads — a request has to be answered within a month."
 msgstr ""
 
-#: templates/admin/settings.php:1499
+#: templates/admin/settings.php:1512
 msgid "Where refused messages go. Created if missing."
 msgstr ""
 
@@ -4223,7 +4231,7 @@ msgstr ""
 msgid "Which task?"
 msgstr ""
 
-#: templates/admin/settings.php:823
+#: templates/admin/settings.php:836
 msgid "While it is unset, the “manage your data” link at the foot of every email cannot point at your signup page, so it falls back to a plain standalone page reached by a link that never expires. Picking the page below switches those links to one-time ones that stop working after 30 minutes."
 msgstr ""
 
@@ -4231,7 +4239,7 @@ msgstr ""
 msgid "Who else can see it"
 msgstr ""
 
-#: templates/admin/settings.php:926
+#: templates/admin/settings.php:939
 msgid "Who is responsible for the data"
 msgstr ""
 
@@ -4275,7 +4283,7 @@ msgstr ""
 msgid "With an email, they get their ticket by email. An email that belongs to a member adds that member."
 msgstr ""
 
-#: templates/admin/settings.php:1335 templates/admin/settings.php:1364
+#: templates/admin/settings.php:1348 templates/admin/settings.php:1377
 msgid "With header:"
 msgstr ""
 
@@ -4342,7 +4350,7 @@ msgstr ""
 msgid "You can ask for a copy of everything we hold about you, ask us to correct it, ask us to delete it, ask us to restrict or stop a particular use of it, and object to us holding it at all. You can also take it elsewhere in a machine-readable form."
 msgstr ""
 
-#: templates/admin/settings.php:1204
+#: templates/admin/settings.php:1217
 msgid "You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field."
 msgstr ""
 
@@ -4483,11 +4491,11 @@ msgstr ""
 msgid "Your rights"
 msgstr ""
 
-#: templates/admin/settings.php:1571
+#: templates/admin/settings.php:1584
 msgid "Your site’s own privacy policy"
 msgstr ""
 
-#: templates/admin/settings.php:484
+#: templates/admin/settings.php:497
 #. translators: %s: the site's timezone, e.g. Europe/Helsinki
 msgid "Your site’s time (%s). Default 09:00."
 msgstr ""
@@ -4505,7 +4513,7 @@ msgstr ""
 msgid "Your task is covered"
 msgstr ""
 
-#: templates/admin/settings.php:1176
+#: templates/admin/settings.php:1189
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
@@ -4596,11 +4604,11 @@ msgstr ""
 msgid "credits"
 msgstr ""
 
-#: templates/admin/settings.php:691
+#: templates/admin/settings.php:704
 msgid "days"
 msgstr ""
 
-#: templates/admin/settings.php:305
+#: templates/admin/settings.php:318
 msgid "different roles,"
 msgstr ""
 
@@ -4616,7 +4624,7 @@ msgstr ""
 msgid "extra"
 msgstr ""
 
-#: templates/admin/settings.php:678
+#: templates/admin/settings.php:691
 msgid "finished tasks"
 msgstr ""
 
@@ -4668,11 +4676,11 @@ msgstr ""
 msgid "member email"
 msgstr ""
 
-#: templates/admin/settings.php:718
+#: templates/admin/settings.php:731
 msgid "never"
 msgstr ""
 
-#: templates/admin/settings.php:733
+#: templates/admin/settings.php:746
 msgid "not scheduled"
 msgstr ""
 
@@ -4708,7 +4716,7 @@ msgstr ""
 msgid "the system"
 msgstr ""
 
-#: templates/admin/settings.php:313
+#: templates/admin/settings.php:326
 msgid "times each"
 msgstr ""
 
@@ -4728,7 +4736,7 @@ msgstr ""
 msgid "wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running."
 msgstr ""
 
-#: templates/admin/settings.php:1032
+#: templates/admin/settings.php:1045
 msgid "years after someone’s last activity"
 msgstr ""
 
@@ -4737,11 +4745,11 @@ msgstr ""
 msgid "—\nManage your account or stop these emails: %s"
 msgstr ""
 
-#: templates/admin/settings.php:838
+#: templates/admin/settings.php:851
 msgid "— None (app disabled) —"
 msgstr ""
 
-#: templates/admin/settings.php:1071
+#: templates/admin/settings.php:1084
 msgid "— None —"
 msgstr ""
 
@@ -4823,7 +4831,7 @@ msgstr ""
 msgid "❌ Cancelled"
 msgstr ""
 
-#: src/Support/Roles.php:331
+#: src/Support/Roles.php:335
 msgid "⭐ Organize"
 msgstr ""
 
