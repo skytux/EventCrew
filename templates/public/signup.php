@@ -481,8 +481,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Help', 'eventcrew'); ?></h2>
 
             <?php if ($eventcrew_person->isOrganizer) : ?>
-                <p class="eventcrew-help-orglink">
-                    <a href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
+                <p class="eventcrew-links eventcrew-help-orglink">
+                    <a class="wp-element-button is-style-outline eventcrew-link-secondary" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
                 </p>
             <?php endif; ?>
 

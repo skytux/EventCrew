@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.54.2
+Stable tag: 1.54.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.54.3 =
+Tabs look like tabs: each is a raised box with a shadow, the selected one is flat with an accent line under it; on a phone the tab text is smaller so all five fit on one line. The organizer guide link on the Help tab is a centred button.
 
 = 1.54.2 =
 The Telegram group button under the board is the same size as the crew guide button, with the Telegram logo and the shorter label Telegram group.
@@ -678,6 +681,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.54.3 =
+Look change only.
 
 = 1.54.2 =
 Button change only.

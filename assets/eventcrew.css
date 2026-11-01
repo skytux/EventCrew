@@ -114,30 +114,42 @@
  * JavaScript-less visitor gets.
  */
 .eventcrew-signup .eventcrew-tabs {
-    display: flex; gap: 1.5em; flex-wrap: wrap;
+    display: flex; gap: .35em; flex-wrap: wrap;
     margin: 0 0 1.2em;
     border-bottom: 1px solid var(--eventcrew-line);
 }
 /*
- * No horizontal padding, so the active underline is exactly as wide as the
- * word above it rather than a bar spanning the whole hit area. The tab is still
- * a comfortable 44px to tap - that comes from the height, which costs nothing
- * visually, not from padding, which would show.
+ * Each tab is a small raised box, so it reads as something to tap: a light
+ * tint and a drop shadow. The selected tab is flat (no shadow), brighter, and
+ * has a thick accent line under it. 44px tall to tap.
  */
 .eventcrew-signup .eventcrew-tab {
-    padding: 0; color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
-    border-bottom: 2px solid transparent; opacity: .6;
-    min-height: 44px; display: inline-flex; align-items: center;
+    box-sizing: border-box; padding: .3em .9em;
+    color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-radius: var(--eventcrew-radius) var(--eventcrew-radius) 0 0;
+    border-bottom: 3px solid transparent; opacity: .75;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .45);
+    min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
 }
 .eventcrew-signup .eventcrew-tab:hover { opacity: 1; }
 .eventcrew-signup .eventcrew-tab.is-active {
-    opacity: 1; border-bottom-color: currentColor;
+    opacity: 1; box-shadow: none;
+    background: color-mix(in srgb, currentColor 20%, transparent);
+    border-bottom-color: var(--eventcrew-accent);
 }
 /*
- * No box. A ring drawn round a tab that is only an underline looks like a
- * mistake, and browsers draw their own on click as well as on keyboard focus.
- * The focus state thickens and colours the underline instead - visible, and
- * the same shape as the thing it is marking.
+ * Phone: smaller text and padding so five tabs fit on one line in English; if
+ * they still wrap (Finnish), the rows sit close together and each row's tabs
+ * stretch to fill it evenly.
+ */
+@media (max-width: 640px) {
+    .eventcrew-signup .eventcrew-tabs { gap: .25em; }
+    .eventcrew-signup .eventcrew-tab { flex: 1 1 auto; padding: .3em .35em; font-size: .75em; }
+}
+/*
+ * Browsers draw their own ring on click as well as on keyboard focus; the
+ * focus state colours the bottom line instead.
  */
 .eventcrew-signup .eventcrew-tab:focus { outline: none; }
 .eventcrew-signup .eventcrew-tab:focus-visible {
@@ -424,7 +436,8 @@
 .eventcrew-signup .eventcrew-help-list { margin: 0 0 1.2em; line-height: 1.6; }
 .eventcrew-signup .eventcrew-help-list li { margin: 0 0 .7em; }
 .eventcrew-signup .eventcrew-help-list.is-emoji { list-style: none; padding: 0; }
-.eventcrew-signup .eventcrew-help-orglink { margin: 0 0 1em; font-weight: 600; }
+/* A centred outlined button, like the crew guide button under the board. */
+.eventcrew-signup .eventcrew-links.eventcrew-help-orglink { margin: 0 0 1.2em; }
 .eventcrew-signup .eventcrew-help-organizer { margin-top: 2em; scroll-margin-top: 1em; }
 .eventcrew-signup .eventcrew-help-organizer > h2 { margin: 0 0 .8em; }
 
