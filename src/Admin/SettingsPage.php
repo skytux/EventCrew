@@ -12,6 +12,7 @@ use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\HelpPage;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
@@ -124,6 +125,7 @@ final class SettingsPage
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_note' => (string) get_option(TicketController::NOTE_OPTION, ''),
+                'infrastructure_note' => HelpPage::infrastructure(),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
@@ -462,6 +464,12 @@ final class SettingsPage
         update_option(
             TicketController::NOTE_OPTION,
             isset($_POST['ticket_note']) ? sanitize_textarea_field(wp_unslash($_POST['ticket_note'])) : ''
+        );
+        update_option(
+            HelpPage::INFRASTRUCTURE_OPTION,
+            isset($_POST['infrastructure_note'])
+                ? sanitize_textarea_field(wp_unslash($_POST['infrastructure_note']))
+                : ''
         );
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;

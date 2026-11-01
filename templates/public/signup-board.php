@@ -55,6 +55,15 @@ if (null === $eventcrew_person && [] !== $view['groups']) :
     <?php
 endif; ?>
 
+<?php
+/*
+ * The event cards sit in a grid: one column on a narrow page, more where there
+ * is room. The grid carries the id the Telegram "What each task involves" link
+ * points at, so that link lands on the tasks, whose (i) buttons say what each
+ * one involves.
+ */
+?>
+<div class="eventcrew-board-grid" id="<?php echo esc_attr(\EventCrew\Support\RoleGuide::DESCRIPTIONS_ANCHOR); ?>">
 <?php foreach ($view['groups'] as $eventcrew_group) :
     ?>
     <?php
@@ -73,8 +82,17 @@ endif; ?>
         ? date_i18n('l j F', (int) strtotime((string) reset($eventcrew_dates)))
         : '';
     ?>
+    <?php
+    // The event's picture behind its header, darkened so the white text on
+    // it stays readable. No picture: the plain header.
+    $eventcrew_image = (string) ($eventcrew_group['image'] ?? '');
+    ?>
     <section class="eventcrew-event">
-    <header class="eventcrew-event-head">
+    <header class="eventcrew-event-head<?php echo '' !== $eventcrew_image ? ' has-image' : ''; ?>"<?php
+    if ('' !== $eventcrew_image) {
+        printf(' style="%s"', esc_attr('--eventcrew-event-image: url("' . esc_url($eventcrew_image) . '")'));
+    }
+    ?>>
         <h3 class="eventcrew-event-title"><?php echo esc_html($eventcrew_group['title']); ?></h3>
         <?php if ('' !== $eventcrew_group_date) : ?>
             <span class="eventcrew-event-date"><?php echo esc_html($eventcrew_group_date); ?></span>
@@ -101,10 +119,33 @@ endif; ?>
             }
             ?>
             <li class="eventcrew-task-row" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
+                <?php
+                $eventcrew_about = trim($eventcrew_task->roleDescription());
+                $eventcrew_about_id = 'eventcrew-about-' . $eventcrew_task->id;
+                ?>
                 <span class="eventcrew-task-main">
-                    <span class="eventcrew-task-role"><?php echo esc_html($eventcrew_task->roleDisplay()); ?></span>
+                    <span class="eventcrew-task-role">
+                        <?php echo esc_html($eventcrew_task->roleDisplay()); ?>
+                        <?php
+                        /*
+                         * The (i) button opens what this task involves in a
+                         * bubble (the browser's popover: a tap outside or Esc
+                         * closes it). A browser without popovers ignores the
+                         * attribute and shows the text under the name instead.
+                         */
+                        if ('' !== $eventcrew_about) :
+                            ?>
+                            <button type="button" class="eventcrew-about-btn" popovertarget="<?php echo esc_attr($eventcrew_about_id); ?>" aria-label="<?php esc_attr_e('About this task', 'eventcrew'); ?>" title="<?php esc_attr_e('About this task', 'eventcrew'); ?>">i</button>
+                        <?php endif; ?>
+                    </span>
                     <?php if ('' !== $eventcrew_when) : ?>
                         <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
+                    <?php endif; ?>
+                    <?php if ('' !== $eventcrew_about) : ?>
+                        <span class="eventcrew-about" id="<?php echo esc_attr($eventcrew_about_id); ?>" popover>
+                            <strong><?php echo esc_html($eventcrew_task->roleDisplay()); ?></strong>
+                            <?php echo esc_html($eventcrew_about); ?>
+                        </span>
                     <?php endif; ?>
                 </span>
                 <?php
@@ -211,34 +252,4 @@ endif; ?>
     <?php
 endforeach; ?>
 
-<?php
-// Only roles that have a description: a bare name under "What each task
-// involves" answers nothing. The Telegram welcome keeps the full list.
-$eventcrew_roles = array_values(array_filter(
-    \EventCrew\Support\RoleGuide::descriptions(),
-    static fn (array $role): bool => '' !== trim($role['description'])
-));
-if ([] !== $eventcrew_roles) :
-    ?>
-    <section class="eventcrew-tasks-info" id="<?php echo esc_attr(\EventCrew\Support\RoleGuide::DESCRIPTIONS_ANCHOR); ?>">
-        <h3><?php esc_html_e('What each task involves', 'eventcrew'); ?></h3>
-        <dl>
-            <?php foreach ($eventcrew_roles as $eventcrew_role) : ?>
-                <dt><?php echo esc_html($eventcrew_role['name']); ?></dt>
-                <dd><?php echo esc_html($eventcrew_role['description']); ?></dd>
-            <?php endforeach; ?>
-        </dl>
-    </section>
-    <?php
-endif;
-
-$eventcrew_guide = \EventCrew\Support\RoleGuide::emailAction();
-if (null !== $eventcrew_guide) :
-    ?>
-    <p class="eventcrew-guide">
-        <a href="<?php echo esc_url($eventcrew_guide['url']); ?>" target="_blank" rel="noopener">
-            <?php echo esc_html($eventcrew_guide['label']); ?>
-        </a>
-    </p>
-    <?php
-endif; ?>
+</div>

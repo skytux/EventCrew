@@ -100,7 +100,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <div
                             class="cf-turnstile eventcrew-turnstile"
                             data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
-                            data-theme="auto"></div>
+                            data-theme="auto"
+                            data-size="flexible"></div>
                     <?php endif; ?>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
                 </div>
@@ -141,104 +142,91 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
         </div>
         <?php
+        $eventcrew_group_link = '';
+        require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
+        ?>
+        <?php
     else :
         ?>
         <?php
-        // Sign out lives here, above the tabs, rather than inside Settings:
-        // it is the one thing you might want from any tab, and hunting for it
-        // is a poor last impression.
+        /*
+         * The header card, above the tabs: who is signed in, the language
+         * switch and Sign out in its top bar, and the person's standing,
+         * credits and the score explainer in its body. Sign out is here rather
+         * than in Settings because it is the one thing you might want from any
+         * tab. The sales desk button that used to sit under it is gone: an
+         * organizer opens the desk from the Admin tab, and the crew on a
+         * sales-desk task from the Sales desk card at the top of the Me tab.
+         */
         ?>
-        <div class="eventcrew-identity eventcrew-muted">
-            <span>
-                <?php
-                printf(/* translators: %s: person's name */
-                    esc_html__('Signed in as %s.', 'eventcrew'),
-                    esc_html($eventcrew_person->name())
-                ); ?>
-            </span>
-            <?php
-            /*
-             * The language this page, the bot's DMs and the emails reach this
-             * person in. The two names stay untranslated: each is written in
-             * its own language so a reader can find theirs whichever is on.
-             */
-            ?>
-            <?php if ('' !== (string) ($view['language_action'] ?? '')) : ?>
-                <form class="eventcrew-language" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
-                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" name="language" value="fi" lang="fi" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'true' : 'false'; ?>">Suomi</button>
-                    <span aria-hidden="true">|</span>
-                    <button type="submit" name="language" value="en" lang="en" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'false' : 'true'; ?>">English</button>
-                </form>
-            <?php endif; ?>
-            <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
+        <section class="eventcrew-event eventcrew-me-card eventcrew-header-card">
+            <header class="eventcrew-event-head eventcrew-identity">
+                <span class="eventcrew-identity-name">
+                    <?php
+                    printf(/* translators: %s: person's name */
+                        esc_html__('Signed in as %s.', 'eventcrew'),
+                        esc_html($eventcrew_person->name())
+                    ); ?>
+                </span>
                 <?php
                 /*
-                 * Signing out is now checked like every other action, so this
-                 * has to carry the token. It did not when logout sat above the
-                 * gate, and the release that moved it forgot this form - which
-                 * left the button answering "please sign in" to someone who was
-                 * signed in and asking to stop being.
+                 * The language this page, the bot's DMs and the emails reach
+                 * this person in. The two names stay untranslated: each is
+                 * written in its own language so a reader can find theirs
+                 * whichever is on.
                  */
                 ?>
-                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
-            </form>
-        </div>
-
-        <?php
-        /*
-         * The sales desk (door page), for organizers and - from a few minutes
-         * before their task, once marked arrived - the crew on the night's
-         * tasks of a sales-desk role. Pressing it checks that again on the server and opens
-         * the desk with a fresh one-time link.
-         */
-        ?>
-        <?php if (! empty($view['sales_desk'])) : ?>
-            <form class="eventcrew-sales-desk" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
-                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                <button type="submit" class="wp-element-button"><?php esc_html_e('Sales desk', 'eventcrew'); ?></button>
-            </form>
-        <?php endif; ?>
-
-        <?php
-        /*
-         * Standing and credits sit with the name, above the tabs, rather than
-         * inside one of them: "how am I doing" and "what can I spend" are the
-         * context you want while reading any tab, not a thing to go and look
-         * up. The score explainer follows it, collapsed.
-         */
-        ?>
-        <?php if (null !== $eventcrew_standing) : ?>
-            <p class="eventcrew-standing">
-                <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
-                &middot;
-                <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
-                    _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
-                    $eventcrew_standing->creditBalance
-                )); ?></span>
-            </p>
-            <details class="eventcrew-disclosure eventcrew-score-help">
-                <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
-                <table>
-                    <tbody>
-                    <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
-                        <tr>
-                            <td><?php echo esc_html($eventcrew_label); ?></td>
-                            <td class="eventcrew-num"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
-            </details>
-        <?php endif; ?>
+                <?php if ('' !== (string) ($view['language_action'] ?? '')) : ?>
+                    <form class="eventcrew-language" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                        <button type="submit" name="language" value="fi" lang="fi" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'true' : 'false'; ?>">Suomi</button>
+                        <span aria-hidden="true">|</span>
+                        <button type="submit" name="language" value="en" lang="en" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'false' : 'true'; ?>">English</button>
+                    </form>
+                <?php endif; ?>
+                <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
+                    <?php
+                    /*
+                     * Signing out is checked like every other action, so this
+                     * has to carry the token; without it the button answered
+                     * "please sign in" to someone who was signed in.
+                     */
+                    ?>
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+                </form>
+            </header>
+            <?php if (null !== $eventcrew_standing) : ?>
+                <div class="eventcrew-card-body">
+                    <p class="eventcrew-standing">
+                        <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
+                        &middot;
+                        <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
+                            _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
+                            $eventcrew_standing->creditBalance
+                        )); ?></span>
+                    </p>
+                    <details class="eventcrew-disclosure eventcrew-score-help">
+                        <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
+                        <table>
+                            <tbody>
+                            <?php foreach (\EventCrew\Support\StandingExplainer::rows() as $eventcrew_label => $eventcrew_percent) : ?>
+                                <tr>
+                                    <td><?php echo esc_html($eventcrew_label); ?></td>
+                                    <td class="eventcrew-num"><?php echo esc_html($eventcrew_percent . '%'); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
+                    </details>
+                </div>
+            <?php endif; ?>
+        </section>
 
         <?php
         /*
@@ -274,13 +262,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
             </div>
 
-            <?php if ('' !== (string) $view['telegram_group_link']) : ?>
-                <p class="eventcrew-tgline">
-                    <a class="eventcrew-tglink wp-element-button is-style-outline" href="<?php echo esc_url((string) $view['telegram_group_link']); ?>" target="_blank" rel="noopener">
-                        <?php esc_html_e('Open our group in Telegram', 'eventcrew'); ?> →
-                    </a>
-                </p>
-            <?php endif; ?>
+            <?php
+            $eventcrew_group_link = (string) $view['telegram_group_link'];
+            require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
+            ?>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-me" data-eventcrew-panel="me" aria-labelledby="eventcrew-tab-me">
@@ -292,8 +277,27 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
              * its name, and its rows under it. My tasks and Tickets are always
              * drawn, even empty, because "you are not on anything yet" is worth
              * knowing.
+             *
+             * Sales desk comes first, and only for someone on tonight's
+             * sales-desk task who is not an organizer: an organizer has the
+             * same button on the Admin tab. The server checks again on press.
              */
             ?>
+            <?php if (! empty($view['sales_desk']) && null === $eventcrew_admin) : ?>
+                <section class="eventcrew-event eventcrew-me-card">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
+                    </header>
+                    <div class="eventcrew-card-body">
+                        <form class="eventcrew-sales-desk" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
+                        </form>
+                    </div>
+                </section>
+            <?php endif; ?>
             <section class="eventcrew-event eventcrew-me-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('My tasks', 'eventcrew'); ?></h3>
@@ -387,8 +391,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Settings', 'eventcrew'); ?></h2>
 
             <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
-                <h3 class="eventcrew-subhead"><?php esc_html_e('Notifications', 'eventcrew'); ?></h3>
-                <form class="eventcrew-prefs" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <section class="eventcrew-event eventcrew-me-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Notifications', 'eventcrew'); ?></h3>
+                </header>
+                <form class="eventcrew-prefs eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_prefs_action); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
@@ -417,6 +424,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on both channels.', 'eventcrew'); ?></p>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
                 </form>
+                </section>
             <?php endif; ?>
 
             <?php
@@ -424,7 +432,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
             if ('' !== $eventcrew_revoke_action) :
                 ?>
-                <h3 class="eventcrew-subhead"><?php esc_html_e('Security', 'eventcrew'); ?></h3>
+                <section class="eventcrew-event eventcrew-me-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Security', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
                 <p class="eventcrew-muted">
                     <?php esc_html_e('Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again.', 'eventcrew'); ?>
                 </p>
@@ -435,10 +447,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                     <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
                 </form>
+                </div>
+                </section>
             <?php endif; ?>
 
             <?php if ('' !== $eventcrew_manage_token) : ?>
-                <h3 class="eventcrew-subhead"><?php esc_html_e('Account', 'eventcrew'); ?></h3>
+                <section class="eventcrew-event eventcrew-me-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Account', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
                 <p class="eventcrew-muted"><?php esc_html_e('To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone.', 'eventcrew'); ?></p>
                 <form class="eventcrew-danger" method="post" action="<?php echo esc_url($eventcrew_manage_endpoint); ?>"
                     onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
@@ -446,6 +464,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <input type="hidden" name="action" value="delete">
                     <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-linkbtn-danger"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
                 </form>
+                </div>
+                </section>
             <?php endif; ?>
 
         </section>
@@ -468,7 +488,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
             <?php
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
-            echo \EventCrew\Support\HelpPage::html(\EventCrew\Support\WelcomeSender::helpText());
+            echo \EventCrew\Support\HelpPage::cards(\EventCrew\Support\WelcomeSender::helpText());
             ?>
 
             <?php if ($eventcrew_person->isOrganizer) : ?>
@@ -476,7 +496,18 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <h2><?php esc_html_e('Organizer guide', 'eventcrew'); ?></h2>
                     <?php
                     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
-                    echo \EventCrew\Support\HelpPage::html(\EventCrew\Support\OrganizerGuide::full());
+                    echo \EventCrew\Support\HelpPage::cards(\EventCrew\Support\OrganizerGuide::full());
+
+                    /*
+                     * How this site is run, as the organizers wrote it in
+                     * Settings > Web page. Organizers only: it names the host
+                     * and the services behind the site.
+                     */
+                    $eventcrew_infrastructure = \EventCrew\Support\HelpPage::infrastructure();
+                    if ('' !== $eventcrew_infrastructure) {
+                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
+                        echo \EventCrew\Support\HelpPage::cards('## 🏗️ ' . __('Infrastructure', 'eventcrew') . "\n\n" . $eventcrew_infrastructure);
+                    }
                     ?>
                 </div>
             <?php endif; ?>

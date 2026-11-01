@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.51.1
+Stable tag: 1.52.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.52.0 =
+Crew page: the board's events are cards in columns that fit the screen, each with the event picture behind its header. Each task has an (i) button that opens its description in a bubble; the list at the bottom is gone. The header is one card (name, language, Sign out, standing). The Sales desk button moved off the header: organizers have it on the Admin tab, sales-desk crew on a card at the top of Me. Settings and Help sections are cards. The Telegram group is the main button under the board, the crew guide a second outlined button. Sign-in field, captcha and button are one width and 65px tall. On phones the page uses nearly the full screen width. New Infrastructure text in Settings > Web page, shown to organizers at the end of Help.
 
 = 1.51.1 =
 * Crew page, Me tab: My tasks, What you've done and Tickets are cards like the board's events. Each task's ticket is a link on its row under My tasks, so Tickets no longer repeats upcoming and past tasks; it keeps the free-entry credits.
@@ -642,6 +645,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.52.0 =
+Board in cards with event pictures, task info bubbles, tidier header, Settings and Help cards, organizer-only Infrastructure help.
 
 = 1.51.1 =
 Crew page Me and Admin tabs as cards, one-role-at-a-time Roles editor, page cache emptied after updates.
