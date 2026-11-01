@@ -209,14 +209,17 @@
 /*
  * An event with a picture shows it behind its header, under a dark layer so
  * the white name and date stay readable on any photo. The header is taller so
- * the picture can be seen; the text sits at its bottom.
+ * the picture can be seen; the text sits at its bottom. The header shows only
+ * a strip of the picture: the strip is placed 25% from the top, not in the
+ * middle, because on the event posters the faces are in the upper third and
+ * a centred strip showed the chins.
  */
 .eventcrew-signup .eventcrew-event-head.has-image {
     min-height: 6.5em;
     align-content: flex-end; align-items: flex-end;
     background:
         linear-gradient(to bottom, rgba(0, 0, 0, .25), rgba(0, 0, 0, .7)),
-        var(--eventcrew-event-image) center / cover no-repeat;
+        var(--eventcrew-event-image) center 25% / cover no-repeat;
     color: #fff;
     text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
 }
