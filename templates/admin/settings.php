@@ -553,6 +553,25 @@ if (! defined('ABSPATH')) {
                 </td>
             </tr>
             <tr>
+                <th scope="row"><?php esc_html_e('Organizer notice channels', 'eventcrew'); ?></th>
+                <td>
+                    <?php $eventcrew_org_channels = \EventCrew\Support\DoorLinkSender::organizerChannels(); ?>
+                    <label>
+                        <input type="checkbox" name="organizer_notice_channels[]" value="telegram"
+                            <?php checked(in_array('telegram', $eventcrew_org_channels, true)); ?>>
+                        <?php esc_html_e('Telegram', 'eventcrew'); ?>
+                    </label>
+                    <label style="margin-left:1em">
+                        <input type="checkbox" name="organizer_notice_channels[]" value="email"
+                            <?php checked(in_array('email', $eventcrew_org_channels, true)); ?>>
+                        <?php esc_html_e('Email', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the crew page’s Admin tab. Untick both to send nothing.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
                 <th scope="row">
                     <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, crew on sales-desk roles (minutes before)', 'eventcrew'); ?></label>
                 </th>

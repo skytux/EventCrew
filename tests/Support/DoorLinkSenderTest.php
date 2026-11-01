@@ -18,16 +18,24 @@ use EventCrew\Support\Roles;
 final class DoorLinkSenderTest extends SalesDeskTestCase
 {
     /**
-     * Queues the reads run() makes for organizers: tonight's tasks (one,
-     * not a door task), the first task start, the organizer list, and the
-     * ledger answer for organizer 1.
+     * Queues the reads run() makes for organizers: tonight's tasks (the
+     * untimed Organize task 4 and a decorate task, neither a door task), the
+     * first task start, the sign-ups on Organize (person 1, signed up), that
+     * person (an organizer unless $organizer says not), and the ledger answer.
      */
-    private function queueOrganizerRun(string $firstStart, ?string $sentAt = null): void
+    private function queueOrganizerRun(string $firstStart, ?string $sentAt = null, bool $organizer = true): void
     {
-        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate', '13:00', '14:00')];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(4, Roles::ORGANIZE_SLUG),
+            $this->taskRow(5, 'decorate', '13:00', '14:00'),
+        ];
         $this->wpdb->nextVars[] = self::NIGHT . ' ' . $firstStart . ':00';
-        $this->wpdb->nextResults[] = [$this->personRow(1, true)];
-        $this->wpdb->nextVars[] = $sentAt;
+        $this->wpdb->nextResults[] = [$this->assignmentRow(40, 4, 1, 'signed_up')];
+        $this->wpdb->nextRows[] = $this->personRow(1, $organizer);
+
+        if ($organizer) {
+            $this->wpdb->nextVars[] = $sentAt;
+        }
     }
 
     private function dmsSent(): int
@@ -68,6 +76,80 @@ final class DoorLinkSenderTest extends SalesDeskTestCase
         self::assertSame([[], [], []], [$this->wpdb->nextResults, $this->wpdb->nextVars, $this->wpdb->nextRows]);
         $this->queueOrganizerRun('12:30', self::NIGHT . ' 12:00:00');
         $sender->run();
+
+        self::assertSame(1, $this->dmsSent());
+        self::assertCount(1, $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerNotSignedUpOnOrganizeGetsNothing(): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(4, Roles::ORGANIZE_SLUG),
+            $this->taskRow(5, 'decorate', '13:00', '14:00'),
+        ];
+        $this->wpdb->nextVars[] = self::NIGHT . ' 12:30:00';
+        $this->wpdb->nextResults[] = [];                                // forTask(4): nobody
+
+        $this->doorLinkSender()->run();
+
+        self::assertSame(0, $this->dmsSent());
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testSomeoneOnOrganizeWhoIsNoLongerAnOrganizerGetsNothing(): void
+    {
+        $this->queueOrganizerRun('12:30', null, false);
+
+        $this->doorLinkSender()->run();
+
+        self::assertSame(0, $this->dmsSent());
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testTheNoticeHasTheSalesDeskAndTheAdminTabButtons(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 897;
+        \Brain\Monkey\Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $this->queueOrganizerRun('12:30');
+
+        $this->doorLinkSender()->run();
+
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertCount(2, $keyboard);
+        self::assertStringContainsString('action=eventcrew_door', $keyboard[0][0]['url']);
+        self::assertSame('https://site.test/crew/#eventcrew-panel-admin', $keyboard[1][0]['url']);
+    }
+
+    public function testTelegramUntickedSendsNoDm(): void
+    {
+        $this->options[DoorLinkSender::ORGANIZER_CHANNELS_OPTION] = ['email'];
+        $this->queueOrganizerRun('12:30');
+
+        $this->doorLinkSender()->run();
+
+        // The organizer row has no verified email, so nothing went out at
+        // all, and no ledger row is written: the next check tries again.
+        self::assertSame(0, $this->dmsSent());
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testBothChannelsUntickedSendsNothing(): void
+    {
+        $this->options[DoorLinkSender::ORGANIZER_CHANNELS_OPTION] = [];
+        $this->queueOrganizerRun('12:30');
+
+        $this->doorLinkSender()->run();
+
+        self::assertSame(0, $this->dmsSent());
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testEmailUntickedStillSendsTheDm(): void
+    {
+        $this->options[DoorLinkSender::ORGANIZER_CHANNELS_OPTION] = ['telegram'];
+        $this->queueOrganizerRun('12:30');
+
+        $this->doorLinkSender()->run();
 
         self::assertSame(1, $this->dmsSent());
         self::assertCount(1, $this->wpdb->inserts);
