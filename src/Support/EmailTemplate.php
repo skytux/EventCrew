@@ -348,6 +348,26 @@ final class EmailTemplate
         return '';
     }
 
+    /**
+     * The image for the middle of a ticket's QR code: the Site Icon first,
+     * then logoUrl(), or '' when there is none. The Site Icon comes first
+     * because it is square and made to be read small; the email logo is often
+     * a wide wordmark drawn in white for a dark masthead, which is invisible on
+     * the white square in the middle of the code.
+     */
+    public static function qrMarkUrl(): string
+    {
+        if (function_exists('has_site_icon') && has_site_icon()) {
+            $icon = get_site_icon_url(180);
+
+            if (is_string($icon) && '' !== $icon) {
+                return $icon;
+            }
+        }
+
+        return self::logoUrl();
+    }
+
     public static function logoHtml(): string
     {
         $explicit = trim((string) get_option(self::LOGO_OPTION, ''));

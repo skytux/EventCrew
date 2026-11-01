@@ -220,6 +220,27 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('addData(location.href)', $html);
     }
 
+    public function testRenderPageQrCodePrefersTheSiteIconOverTheEmailLogo(): void
+    {
+        // The email logo is often white for a dark masthead: on the white
+        // square in the middle of the code it cannot be seen.
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_email_logo' === $name
+                ? 'https://site.test/logo-white.png'
+                : null
+        );
+        Functions\when('has_site_icon')->justReturn(true);
+        Functions\when('get_site_icon_url')->justReturn('https://site.test/icon-180.png');
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString(
+            '<img class="t-qr-logo" src="https://site.test/icon-180.png" alt="">',
+            $html
+        );
+        self::assertStringNotContainsString('logo-white.png', $html);
+    }
+
     public function testRenderPageQrCodeHasNoLogoWhenNoneIsSet(): void
     {
         $html = $this->controller()->renderPage($this->sampleTicket());
