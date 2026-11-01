@@ -67,7 +67,7 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
     <?php endif; ?>
 
     <div id="col-container" class="wp-clearfix">
-        <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">
+        <div id="col-left" class="eventcrew-col-left">
             <?php if ($events_available && [] !== $events && ! $eventcrew_is_edit) : ?>
                 <div class="form-wrap" style="margin-bottom:2em">
                     <h2><?php esc_html_e('Create an event\'s tasks', 'eventcrew'); ?></h2>
@@ -284,7 +284,7 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
             </div>
         </div>
 
-        <div id="col-right" style="width:63%;float:left">
+        <div id="col-right" class="eventcrew-col-right">
             <?php $table->display(); ?>
 
             <div class="form-wrap" style="margin-top:2em">

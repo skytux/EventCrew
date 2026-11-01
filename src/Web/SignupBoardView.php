@@ -112,12 +112,13 @@ final class SignupBoardView
             }
 
             $time = $task->timeRange();
+            $day = self::humanDate($task->taskDate);
 
             $rows[] = [
                 'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
                 'task_id' => $task->id,
                 'label' => $task->roleLabel() . ' · ' . $task->eventName(),
-                'when' => '' === $time ? $task->taskDate : $task->taskDate . ' · ' . $time,
+                'when' => '' === $time ? $day : $day . ' · ' . $time,
                 'calendar_url' => CalendarController::url($task->id),
             ];
         }
@@ -163,13 +164,26 @@ final class SignupBoardView
             $task = $this->tasks->find($assignment->taskId);
 
             $history[] = [
-                'when' => $date,
+                'when' => self::humanDate($date),
                 'label' => null === $task ? '' : $task->roleLabel() . ' · ' . $task->eventName(),
                 'status' => AssignmentStatus::label($assignment->status),
             ];
         }
 
         return $history;
+    }
+
+    /**
+     * A Y-m-d date as the page shows dates to people: "Sat 7 Nov", in the
+     * site's language. The board and the Me tab use the same form, so a task
+     * reads the same in both places. Anything that is not a date comes back
+     * unchanged.
+     */
+    public static function humanDate(string $date): string
+    {
+        $stamp = strtotime($date);
+
+        return false === $stamp ? $date : (string) date_i18n('D j M', $stamp);
     }
 
     /**

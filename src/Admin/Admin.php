@@ -30,6 +30,7 @@ final class Admin
     {
         add_action('admin_menu', [$this, 'registerMenus']);
         add_action('admin_notices', [$this, 'renderNotice']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueStyles']);
 
         // Re-publish the webhook and command menu once after a plugin update, so
         // a release that changes a bot command takes effect on its own.
@@ -183,6 +184,28 @@ final class Admin
         add_action(
             'admin_post_eventcrew_unban_person',
             [$this->container->get(PeoplePage::class), 'unban']
+        );
+    }
+
+    /**
+     * The admin stylesheet, on EventCrew's own pages only. Every one of them
+     * is admin.php?page=eventcrew…, so the page parameter is the test; the
+     * Email template is the core post editor and needs nothing from it.
+     */
+    public function enqueueStyles(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only: picks a stylesheet, changes nothing.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash((string) $_GET['page'])) : '';
+
+        if (! str_starts_with($page, self::MENU_SLUG)) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'eventcrew-admin',
+            EVENTCREW_PLUGIN_URL . 'assets/eventcrew-admin.css',
+            [],
+            EVENTCREW_VERSION
         );
     }
 
