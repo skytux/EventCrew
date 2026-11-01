@@ -135,7 +135,7 @@ msgstr "Lisää"
 
 #: templates/public/door.php:181 templates/public/door.php:193 templates/public/door.php:208
 msgid "Add and check in"
-msgstr "Lisää ja kirjaa sisään"
+msgstr "Lisää ja sisään"
 
 #: templates/public/door.php:223
 msgid "Add new member"
@@ -248,7 +248,7 @@ msgstr "Muuta: /guest edit 2 +3  (numero listalta; anna vain se, mikä muuttuu)"
 
 #: templates/public/door.php:41
 msgid "Check in"
-msgstr "Kirjaa sisään"
+msgstr "Sisään"
 
 #: src/Telegram/OnboardingService.php:193
 msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
@@ -326,7 +326,7 @@ msgstr "Laske yksi henkilö sisään ilman nimeä"
 
 #: src/Support/NotificationPreferences.php:61
 msgid "Cover arranged"
-msgstr "Tuuraus järjestetty"
+msgstr "Tuuraus sovittu"
 
 #: src/Support/DoorDesk.php:673
 msgid "Credit"
@@ -408,7 +408,7 @@ msgstr "Sähköposti vahvistettu"
 
 #: templates/public/signup.php:105
 msgid "Email me a sign-in link"
-msgstr "Lähetä minulle kirjautumislinkki"
+msgstr "Lähetä kirjautumislinkki"
 
 #. translators: the name shown against the invite link in Telegram's admin list
 #: src/Telegram/BoardService.php:198 src/Telegram/ManageController.php:131
@@ -442,7 +442,7 @@ msgstr "Löysi tuuraajan"
 
 #: src/Support/TicketList.php:65 src/Telegram/TicketController.php:159
 msgid "Free entry"
-msgstr "Ilmainen sisäänpääsy"
+msgstr "Vapaalippu"
 
 #: src/Telegram/TicketRedemptionService.php:321 src/Web/SignupController.php:708
 msgid "Free entry is closed for that date."
@@ -750,16 +750,16 @@ msgstr "Linkki kopioitu."
 
 #: src/Telegram/ManageController.php:61
 msgid "Link expired"
-msgstr "Linkki vanhentunut"
+msgstr "Linkki vanhentui"
 
 #: templates/public/door.php:250 templates/public/door.php:254
 msgid "Login as"
-msgstr "Kirjaudu henkilönä"
+msgstr "Kirjaudu"
 
 #: templates/public/door.php:63
 #, php-format
 msgid "Login as %s"
-msgstr "Kirjaudu henkilönä %s"
+msgstr "Kirjaudu: %s"
 
 #: templates/public/door.php:263
 msgid "Login link"
@@ -807,7 +807,7 @@ msgstr "Jäsenen nimi tai sähköposti"
 
 #: templates/public/signup.php:298
 msgid "My tasks"
-msgstr "Omat tehtäväni"
+msgstr "Tehtäväni"
 
 #: templates/public/door.php:199 templates/public/door.php:218
 msgid "Name"
@@ -819,7 +819,7 @@ msgstr "Nimi (vapaaehtoinen)"
 
 #: src/Telegram/BoardRenderer.php:111
 msgid "👋 New here? Sign up →"
-msgstr "👋 Uusi täällä? Ilmoittaudu →"
+msgstr "👋 Uusi? Ilmoittaudu →"
 
 #: templates/public/door.php:216
 msgid "New member"
@@ -835,7 +835,7 @@ msgstr "Taululle ei ole vielä asetettu Telegram-ryhmää."
 
 #: templates/public/door.php:51
 msgid "No credit to use"
-msgstr "Ei vapaalippua käytettäväksi"
+msgstr "Ei vapaalippua"
 
 #: src/Telegram/GuestListService.php:64
 msgid "No event is scheduled yet. Give a date: /guest add 1.8. Name"
@@ -939,7 +939,7 @@ msgstr "Yksi vähemmän"
 
 #: templates/public/door.php:59
 msgid "One guest fewer"
-msgstr "Yksi vieras vähemmän"
+msgstr "Vieras vähemmän"
 
 #: templates/public/door.php:60
 msgid "One guest more"
@@ -1051,7 +1051,7 @@ msgstr "Avaa myyntipiste tällä laitteella"
 
 #: src/Support/NotificationPreferences.php:62
 msgid "Open-task alerts"
-msgstr "Avoimien tehtävien hälytykset"
+msgstr "Avoimet tehtävät"
 
 #: templates/public/signup.php:468
 msgid "Organizer guide"
@@ -1123,11 +1123,11 @@ msgstr "Poista: /guest remove 2"
 #: templates/public/signup.php:814
 #, php-format
 msgid "Resend in %ss"
-msgstr "Lähetä uudelleen %s s:n päästä"
+msgstr "Uudelleen %s s"
 
 #: templates/public/signup.php:1222
 msgid "Resend link"
-msgstr "Lähetä linkki uudelleen"
+msgstr "Lähetä uudelleen"
 
 #: src/Web/DoorController.php:347 templates/public/door.php:81 templates/public/signup.php:206 templates/public/signup.php:481
 msgid "Sales desk"
@@ -1165,7 +1165,7 @@ msgstr "👤 Omat tietoni →"
 
 #: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:88
 msgid "See open tasks"
-msgstr "Katso avoimet tehtävät"
+msgstr "Avoimet tehtävät"
 
 #: src/Telegram/BoardRenderer.php:85
 msgid "Send /me in a DM to get your summary."
@@ -1243,7 +1243,7 @@ msgstr "Näytä lippusi"
 
 #: src/Web/SignupController.php:399 templates/public/signup.php:75
 msgid "Sign in"
-msgstr "Kirjaudu sisään"
+msgstr "Kirjaudu"
 
 #: templates/public/signup.php:189
 msgid "Sign out"
@@ -1259,7 +1259,7 @@ msgstr "Kirjaudutaanko ulos kaikkialta, myös täältä?"
 
 #: templates/public/door.php:54 templates/public/signup-board.php:137
 msgid "Sign up"
-msgstr "Ilmoita tehtävään"
+msgstr "Ilmoittaudu"
 
 #: src/Support/WelcomeSender.php:223
 msgid "Sign up for a task"
@@ -1291,7 +1291,7 @@ msgstr "Kirjauduit ulos kaikkialta. Muut selaimet ja puhelimet, joilla olit kirj
 
 #: src/Support/AssignmentStatus.php:104
 msgid "Signed up"
-msgstr "Ilmoittautunut"
+msgstr "Mukana"
 
 #: src/Support/DoorDesk.php:596
 msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
@@ -1617,7 +1617,7 @@ msgstr "Tulossa:"
 #: templates/public/door.php:50
 #, php-format
 msgid "Use a credit (%d left)"
-msgstr "Käytä vapaalippu (%d jäljellä)"
+msgstr "Vapaalippu (%d jäljellä)"
 
 #: src/Web/SignupController.php:393
 msgid ""
@@ -2203,11 +2203,11 @@ msgstr "⭐ Järjestelyt"
 
 #: templates/public/signup-board.php:64
 msgid "%d signed up"
-msgstr "ilmoittautuneita: %d"
+msgstr "%d ilmoittautunut"
 
 #: templates/public/door.php:55
 msgid "✓ Signed up"
-msgstr "✓ Ilmoittautunut"
+msgstr "✓ Mukana"
 
 #: src/Support/MarkedBy.php:59
 msgid "signed out at %s"
