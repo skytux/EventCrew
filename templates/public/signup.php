@@ -529,6 +529,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
              */
             $eventcrew_subtabs = [
                 'roster' => _x('Roster', 'Admin tab screen', 'eventcrew'),
+                'tasks' => __('Tasks', 'eventcrew'),
                 'door' => __('Door', 'eventcrew'),
                 'people' => _x('People', 'Admin tab screen', 'eventcrew'),
                 'telegram' => __('Telegram', 'eventcrew'),
@@ -1304,6 +1305,412 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </section>
             <?php endif; ?>
             </div>
+
+            <div class="eventcrew-subpanel" id="eventcrew-admin-tasks" data-eventcrew-subpanel="tasks">
+            <?php
+            /*
+             * The wp-admin Tasks page, for one date at a time: the date's tasks
+             * with their people, the task form, "Create an event's tasks", the
+             * open-task email, and one role's settings. Every form sends the
+             * page back here with the same date (and role) and this screen open.
+             */
+            $eventcrew_tasks = $eventcrew_admin['tasks'];
+            $eventcrew_tasks_date = (string) $eventcrew_tasks['date'];
+            $eventcrew_tasks_args = ['tasks_date' => $eventcrew_tasks_date];
+            $eventcrew_tasks_here = add_query_arg($eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks';
+            $eventcrew_task_editing = $eventcrew_tasks['editing'];
+            $eventcrew_task_is_edit = $eventcrew_task_editing instanceof \EventCrew\Models\Task;
+            $eventcrew_task_events = $eventcrew_tasks['events_available'] ? $eventcrew_tasks['events'] : [];
+            $eventcrew_task_other = (string) $eventcrew_tasks['event_other'];
+            $eventcrew_task_event = $eventcrew_task_is_edit && null !== $eventcrew_task_editing->eventPostId
+                ? (string) $eventcrew_task_editing->eventPostId
+                : $eventcrew_task_other;
+            // datetime-local wants Y-m-d\TH:i; the column holds Y-m-d H:i:s.
+            $eventcrew_task_local = static function (?string $stored): string {
+                return null === $stored || '' === $stored ? '' : str_replace(' ', 'T', substr($stored, 0, 16));
+            };
+            $eventcrew_task_event_label = static function (array $event): string {
+                return '' === $event['date'] ? (string) $event['title'] : $event['date'] . ' — ' . $event['title'];
+            };
+            $eventcrew_role_editing = $eventcrew_tasks['role_editing'];
+            // A GET form drops the query of its action, so a permalink like
+            // ?page_id=5 goes along as hidden fields.
+            $eventcrew_tasks_query = [];
+            parse_str((string) wp_parse_url($eventcrew_here, PHP_URL_QUERY), $eventcrew_tasks_query);
+            unset($eventcrew_tasks_query['tasks_date'], $eventcrew_tasks_query['tasks_task'], $eventcrew_tasks_query['tasks_role']);
+            $eventcrew_tasks_hidden = static function (array $query): void {
+                foreach ($query as $eventcrew_query_key => $eventcrew_query_value) {
+                    if (is_scalar($eventcrew_query_value)) {
+                        printf(
+                            '<input type="hidden" name="%s" value="%s">',
+                            esc_attr((string) $eventcrew_query_key),
+                            esc_attr((string) $eventcrew_query_value)
+                        );
+                    }
+                }
+            };
+
+            // The task form is drawn first while a task is open for editing,
+            // so the Edit link lands on it; otherwise under the list.
+            ob_start();
+            ?>
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-task-form">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php echo $eventcrew_task_is_edit ? esc_html__('Edit task', 'eventcrew') : esc_html__('Add a task', 'eventcrew'); ?></h3>
+                </header>
+                <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['task_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
+                    <?php if ($eventcrew_task_is_edit) : ?>
+                        <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task_editing->id); ?>">
+                    <?php endif; ?>
+                    <p>
+                        <label for="eventcrew-admin-task-event"><?php esc_html_e('Event', 'eventcrew'); ?></label>
+                        <?php if ([] !== $eventcrew_task_events) : ?>
+                            <select name="event_choice" id="eventcrew-admin-task-event" data-eventcrew-task-events>
+                                <?php foreach ($eventcrew_task_events as $eventcrew_event) : ?>
+                                    <option value="<?php echo esc_attr((string) $eventcrew_event['id']); ?>"
+                                        data-date="<?php echo esc_attr($eventcrew_event['date']); ?>"
+                                        data-starts="<?php echo esc_attr($eventcrew_task_local($eventcrew_event['starts_at'])); ?>"
+                                        data-ends="<?php echo esc_attr($eventcrew_task_local($eventcrew_event['ends_at'])); ?>"<?php echo (string) $eventcrew_event['id'] === $eventcrew_task_event ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_task_event_label($eventcrew_event)); ?></option>
+                                <?php endforeach; ?>
+                                <option value="<?php echo esc_attr($eventcrew_task_other); ?>"<?php echo $eventcrew_task_other === $eventcrew_task_event ? ' selected' : ''; ?>><?php esc_html_e('Other (type a name)', 'eventcrew'); ?></option>
+                            </select>
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Picking an event fills in the date and times below. Change them afterwards if this task runs to its own schedule.', 'eventcrew'); ?></span>
+                        <?php else : ?>
+                            <input type="hidden" name="event_choice" value="<?php echo esc_attr($eventcrew_task_other); ?>">
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('No linkable events found. Type a name below instead.', 'eventcrew'); ?></span>
+                        <?php endif; ?>
+                    </p>
+                    <p data-eventcrew-task-other<?php echo $eventcrew_task_other === $eventcrew_task_event ? '' : ' hidden'; ?>>
+                        <label for="eventcrew-admin-task-event-label"><?php esc_html_e('Event name', 'eventcrew'); ?></label>
+                        <input type="text" name="event_label" id="eventcrew-admin-task-event-label" value="<?php echo esc_attr($eventcrew_task_is_edit ? $eventcrew_task_editing->eventLabel : ''); ?>">
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-date"><?php esc_html_e('Task date', 'eventcrew'); ?></label>
+                        <input type="date" name="task_date" id="eventcrew-admin-task-date" required value="<?php echo esc_attr($eventcrew_task_is_edit ? $eventcrew_task_editing->taskDate : $eventcrew_tasks_date); ?>">
+                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('The day this task is filed under. A clean-up at 01:00 after a Saturday event still belongs to Saturday.', 'eventcrew'); ?></span>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-role"><?php esc_html_e('Role', 'eventcrew'); ?></label>
+                        <select name="role_slug" id="eventcrew-admin-task-role" required>
+                            <?php foreach ($eventcrew_tasks['roles'] as $eventcrew_task_role) : ?>
+                                <option value="<?php echo esc_attr($eventcrew_task_role['slug']); ?>" data-capacity="<?php echo esc_attr((string) $eventcrew_task_role['capacity']); ?>"<?php echo $eventcrew_task_is_edit && $eventcrew_task_editing->roleSlug === $eventcrew_task_role['slug'] ? ' selected' : ''; ?>><?php
+                                    echo esc_html(
+                                        $eventcrew_task_role['archived']
+                                            /* translators: %s: role label */
+                                            ? sprintf(__('%s (archived)', 'eventcrew'), $eventcrew_task_role['label'])
+                                            : $eventcrew_task_role['label']
+                                    );
+                                ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-capacity"><?php esc_html_e('People needed', 'eventcrew'); ?></label>
+                        <input type="number" name="capacity" id="eventcrew-admin-task-capacity" min="0" step="1" value="<?php echo esc_attr((string) ($eventcrew_task_is_edit ? $eventcrew_task_editing->capacity : 2)); ?>">
+                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Defaults come from the role in Settings. Set to 0 to take a task off the board without deleting it.', 'eventcrew'); ?></span>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-plus-ones"><?php esc_html_e('+1 allowed', 'eventcrew'); ?></label>
+                        <input type="number" name="plus_ones" id="eventcrew-admin-task-plus-ones" min="0" max="20" step="1" value="<?php echo esc_attr($eventcrew_task_is_edit ? (string) $eventcrew_task_editing->plusOnes : ''); ?>">
+                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('How many guests each person on this task may bring in for free. The sales desk adds this up over all of a person\'s tasks that night. Leave empty on a new task to use the role\'s default from Settings.', 'eventcrew'); ?></span>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-starts"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
+                        <input type="datetime-local" name="starts_at" id="eventcrew-admin-task-starts" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->startsAt : null)); ?>">
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-ends"><?php esc_html_e('Ends', 'eventcrew'); ?></label>
+                        <input type="datetime-local" name="ends_at" id="eventcrew-admin-task-ends" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->endsAt : null)); ?>">
+                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning.', 'eventcrew'); ?></span>
+                    </p>
+                    <p>
+                        <label for="eventcrew-admin-task-notes"><?php esc_html_e('Notes', 'eventcrew'); ?></label>
+                        <textarea name="notes" id="eventcrew-admin-task-notes" rows="3"><?php echo esc_textarea($eventcrew_task_is_edit ? $eventcrew_task_editing->notes : ''); ?></textarea>
+                    </p>
+                    <p class="eventcrew-admin-actions">
+                        <button type="submit" class="wp-element-button"><?php echo $eventcrew_task_is_edit ? esc_html__('Update task', 'eventcrew') : esc_html__('Add task', 'eventcrew'); ?></button>
+                        <?php if ($eventcrew_task_is_edit) : ?>
+                            <a class="wp-element-button is-style-outline" href="<?php echo esc_url($eventcrew_tasks_here); ?>"><?php esc_html_e('Cancel', 'eventcrew'); ?></a>
+                        <?php endif; ?>
+                    </p>
+                </form>
+                <?php if ($eventcrew_task_is_edit && [] !== $eventcrew_tasks['signed_up']) : ?>
+                    <h4 class="eventcrew-admin-task"><?php esc_html_e('Signed up', 'eventcrew'); ?></h4>
+                    <ul class="eventcrew-card-body eventcrew-plain-list">
+                        <?php foreach ($eventcrew_tasks['signed_up'] as $eventcrew_task_person) : ?>
+                            <li>
+                                <?php echo esc_html($eventcrew_task_person['name']); ?>
+                                <span class="eventcrew-muted">(<?php echo esc_html($eventcrew_task_person['status']); ?>)</span>
+                                <?php if ('' !== $eventcrew_task_person['marked_by']) : ?>
+                                    <span class="eventcrew-muted"><?php echo esc_html($eventcrew_task_person['marked_by']); ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+            <?php
+            $eventcrew_task_form = (string) ob_get_clean();
+
+            if ($eventcrew_task_is_edit) {
+                echo $eventcrew_task_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built above, every part escaped.
+            }
+            ?>
+
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h3>
+                    <span class="eventcrew-muted"><?php echo esc_html($eventcrew_tasks['label']); ?></span>
+                </header>
+                <?php if ([] !== $eventcrew_tasks['upcoming'] || [] !== $eventcrew_tasks['past']) : ?>
+                    <form class="eventcrew-card-body eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-tasks'); ?>">
+                        <?php $eventcrew_tasks_hidden($eventcrew_tasks_query); ?>
+                        <label for="eventcrew-admin-tasks-date"><?php esc_html_e('Date', 'eventcrew'); ?></label>
+                        <select id="eventcrew-admin-tasks-date" name="tasks_date" onchange="this.form.submit()">
+                            <?php if (! isset($eventcrew_tasks['upcoming'][$eventcrew_tasks_date]) && ! isset($eventcrew_tasks['past'][$eventcrew_tasks_date])) : ?>
+                                <option value="<?php echo esc_attr($eventcrew_tasks_date); ?>" selected><?php echo esc_html($eventcrew_tasks['label']); ?></option>
+                            <?php endif; ?>
+                            <?php if ([] !== $eventcrew_tasks['upcoming']) : ?>
+                                <optgroup label="<?php esc_attr_e('Upcoming', 'eventcrew'); ?>">
+                                    <?php foreach ($eventcrew_tasks['upcoming'] as $eventcrew_date_value => $eventcrew_date_label) : ?>
+                                        <option value="<?php echo esc_attr((string) $eventcrew_date_value); ?>"<?php echo (string) $eventcrew_date_value === $eventcrew_tasks_date ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_date_label); ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+                            <?php if ([] !== $eventcrew_tasks['past']) : ?>
+                                <optgroup label="<?php esc_attr_e('Past', 'eventcrew'); ?>">
+                                    <?php foreach ($eventcrew_tasks['past'] as $eventcrew_date_value => $eventcrew_date_label) : ?>
+                                        <option value="<?php echo esc_attr((string) $eventcrew_date_value); ?>"<?php echo (string) $eventcrew_date_value === $eventcrew_tasks_date ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_date_label); ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+                        </select>
+                        <noscript><button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Show', 'eventcrew'); ?></button></noscript>
+                    </form>
+                <?php endif; ?>
+                <form class="eventcrew-card-body eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-tasks'); ?>">
+                    <?php $eventcrew_tasks_hidden($eventcrew_tasks_query); ?>
+                    <label for="eventcrew-admin-tasks-new-date"><?php esc_html_e('Another date', 'eventcrew'); ?></label>
+                    <input type="date" id="eventcrew-admin-tasks-new-date" name="tasks_date" required value="<?php echo esc_attr($eventcrew_tasks_date); ?>">
+                    <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Show', 'eventcrew'); ?></button>
+                </form>
+                <?php if ([] === $eventcrew_tasks['list']) : ?>
+                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>
+                <?php endif; ?>
+                <?php foreach ($eventcrew_tasks['list'] as $eventcrew_task_row) : ?>
+                    <?php $eventcrew_task_item = $eventcrew_task_row['task']; ?>
+                    <h4 class="eventcrew-admin-task"><?php echo esc_html($eventcrew_task_item->roleDisplay() . ' — ' . $eventcrew_task_item->eventName()); ?></h4>
+                    <p class="eventcrew-admin-nobody eventcrew-muted"><?php
+                        echo esc_html(trim(('' === $eventcrew_task_row['time'] ? '' : $eventcrew_task_row['time'] . ' · ') . $eventcrew_task_row['filled']));
+                    ?></p>
+                    <?php if ([] === $eventcrew_task_row['people']) : ?>
+                        <p class="eventcrew-admin-nobody eventcrew-muted"><?php esc_html_e('Nobody signed up.', 'eventcrew'); ?></p>
+                    <?php else : ?>
+                        <ul class="eventcrew-plain-list eventcrew-admin-roster">
+                            <?php foreach ($eventcrew_task_row['people'] as $eventcrew_task_person) : ?>
+                                <li>
+                                    <span class="eventcrew-admin-who">
+                                        <?php echo esc_html($eventcrew_task_person['name']); ?>
+                                        <span class="eventcrew-muted">(<?php echo esc_html($eventcrew_task_person['status']); ?>)</span>
+                                        <?php if ('' !== $eventcrew_task_person['marked_by']) : ?>
+                                            <span class="eventcrew-muted"><?php echo esc_html($eventcrew_task_person['marked_by']); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    <div class="eventcrew-admin-actions eventcrew-admin-attend">
+                        <a class="wp-element-button is-style-outline" href="<?php echo esc_url(add_query_arg(['tasks_task' => $eventcrew_task_item->id] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks'); ?>"><?php esc_html_e('Edit', 'eventcrew'); ?></a>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                            onsubmit="return confirm('<?php echo esc_js(__('Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED.', 'eventcrew')); ?>');">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['task_delete_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
+                            <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task_item->id); ?>">
+                            <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Delete', 'eventcrew'); ?></button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+
+            <?php
+            if (! $eventcrew_task_is_edit) {
+                echo $eventcrew_task_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built above, every part escaped.
+            }
+            ?>
+
+            <?php if ([] !== $eventcrew_task_events && ! $eventcrew_task_is_edit) : ?>
+                <section class="eventcrew-event eventcrew-admin-card">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Create an event\'s tasks', 'eventcrew'); ?></h3>
+                    </header>
+                    <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <p class="eventcrew-muted"><?php esc_html_e('Creates one task per active role, with times worked out from each role\'s offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role.', 'eventcrew'); ?></p>
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['template_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
+                        <p>
+                            <label for="eventcrew-admin-template-event"><?php esc_html_e('Event', 'eventcrew'); ?></label>
+                            <select name="template_event" id="eventcrew-admin-template-event">
+                                <?php foreach ($eventcrew_task_events as $eventcrew_event) : ?>
+                                    <option value="<?php echo esc_attr((string) $eventcrew_event['id']); ?>"><?php echo esc_html($eventcrew_task_event_label($eventcrew_event)); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                        <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Create tasks', 'eventcrew'); ?></button>
+                    </form>
+                </section>
+            <?php endif; ?>
+
+            <?php
+            $eventcrew_open_task_count = sprintf(
+                /* translators: %d: number of active accounts */
+                __('%d active account(s) would receive the open-task email.', 'eventcrew'),
+                (int) $eventcrew_tasks['active_recipients']
+            );
+            ?>
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Open-task email', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <p><?php echo esc_html($eventcrew_open_task_count); ?></p>
+                    <p class="eventcrew-muted"><?php esc_html_e('Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email).', 'eventcrew'); ?></p>
+                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                        onsubmit="return confirm('<?php echo esc_js($eventcrew_open_task_count); ?>');">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['open_task_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
+                        <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Send open-task email now', 'eventcrew'); ?></button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-role-form">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Roles', 'eventcrew'); ?></h3>
+                </header>
+                <form class="eventcrew-card-body eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-tasks'); ?>">
+                    <?php $eventcrew_tasks_hidden($eventcrew_tasks_query + $eventcrew_tasks_args); ?>
+                    <label for="eventcrew-admin-role-pick"><?php esc_html_e('Role', 'eventcrew'); ?></label>
+                    <select id="eventcrew-admin-role-pick" name="tasks_role" onchange="this.form.submit()">
+                        <option value=""><?php esc_html_e('Pick a role', 'eventcrew'); ?></option>
+                        <?php foreach ($eventcrew_tasks['role_list'] as $eventcrew_pick_role) : ?>
+                            <option value="<?php echo esc_attr($eventcrew_pick_role['slug']); ?>"<?php echo null !== $eventcrew_role_editing && $eventcrew_role_editing['slug'] === $eventcrew_pick_role['slug'] ? ' selected' : ''; ?>><?php
+                                echo esc_html(
+                                    $eventcrew_pick_role['archived']
+                                        /* translators: %s: role label */
+                                        ? sprintf(__('%s (archived)', 'eventcrew'), \EventCrew\Support\Roles::display($eventcrew_pick_role['slug']))
+                                        : \EventCrew\Support\Roles::display($eventcrew_pick_role['slug'])
+                                );
+                            ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <noscript><button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Show', 'eventcrew'); ?></button></noscript>
+                </form>
+                <?php if (null !== $eventcrew_role_editing) : ?>
+                    <?php
+                    $eventcrew_role_here = add_query_arg(['tasks_role' => $eventcrew_role_editing['slug']] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks';
+                    $eventcrew_role_conditions = $eventcrew_role_editing['conditions'];
+                    ?>
+                    <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['role_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_role_here); ?>">
+                        <input type="hidden" name="role" value="<?php echo esc_attr($eventcrew_role_editing['slug']); ?>">
+                        <p>
+                            <label for="eventcrew-admin-role-emoji"><?php esc_html_e('Emoji', 'eventcrew'); ?></label>
+                            <input type="text" name="role_emoji" id="eventcrew-admin-role-emoji" value="<?php echo esc_attr($eventcrew_role_editing['emoji']); ?>">
+                        </p>
+                        <p>
+                            <label for="eventcrew-admin-role-label"><?php esc_html_e('Label', 'eventcrew'); ?></label>
+                            <input type="text" name="role_label" id="eventcrew-admin-role-label" value="<?php echo esc_attr($eventcrew_role_editing['label']); ?>">
+                        </p>
+                        <p>
+                            <label for="eventcrew-admin-role-slug"><?php esc_html_e('Slug', 'eventcrew'); ?></label>
+                            <input type="text" id="eventcrew-admin-role-slug" value="<?php echo esc_attr($eventcrew_role_editing['slug']); ?>" readonly>
+                        </p>
+                        <p>
+                            <label for="eventcrew-admin-role-capacity"><?php esc_html_e('People', 'eventcrew'); ?></label>
+                            <input type="number" name="role_capacity" id="eventcrew-admin-role-capacity" min="0" step="1" value="<?php echo esc_attr((string) $eventcrew_role_editing['capacity']); ?>">
+                        </p>
+                        <p>
+                            <label for="eventcrew-admin-role-plus-ones"><?php esc_html_e('+1 allowed', 'eventcrew'); ?></label>
+                            <input type="number" name="role_plus_ones" id="eventcrew-admin-role-plus-ones" min="0" max="20" step="1" value="<?php echo esc_attr((string) $eventcrew_role_editing['plus_ones']); ?>">
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('How many guests each person on a new task of this role may bring in for free. New tasks copy this number; change it on a single task on the Tasks screen.', 'eventcrew'); ?></span>
+                        </p>
+                        <fieldset>
+                            <legend><?php esc_html_e('Timing', 'eventcrew'); ?></legend>
+                            <p>
+                                <label for="eventcrew-admin-role-anchor"><?php esc_html_e('Measured from', 'eventcrew'); ?></label>
+                                <select name="role_anchor" id="eventcrew-admin-role-anchor">
+                                    <option value="<?php echo esc_attr(\EventCrew\Support\Roles::ANCHOR_START); ?>"<?php echo \EventCrew\Support\Roles::ANCHOR_START === $eventcrew_role_editing['anchor'] ? ' selected' : ''; ?>><?php esc_html_e('Event start', 'eventcrew'); ?></option>
+                                    <option value="<?php echo esc_attr(\EventCrew\Support\Roles::ANCHOR_END); ?>"<?php echo \EventCrew\Support\Roles::ANCHOR_END === $eventcrew_role_editing['anchor'] ? ' selected' : ''; ?>><?php esc_html_e('Event end', 'eventcrew'); ?></option>
+                                </select>
+                            </p>
+                            <p class="eventcrew-admin-pair">
+                                <span>
+                                    <label for="eventcrew-admin-role-start"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
+                                    <input type="number" step="15" name="role_start_offset" id="eventcrew-admin-role-start" value="<?php echo esc_attr(null === $eventcrew_role_editing['start_offset'] ? '' : (string) $eventcrew_role_editing['start_offset']); ?>">
+                                </span>
+                                <span>
+                                    <label for="eventcrew-admin-role-end"><?php esc_html_e('Ends', 'eventcrew'); ?></label>
+                                    <input type="number" step="15" name="role_end_offset" id="eventcrew-admin-role-end" value="<?php echo esc_attr(null === $eventcrew_role_editing['end_offset'] ? '' : (string) $eventcrew_role_editing['end_offset']); ?>">
+                                </span>
+                            </p>
+                        </fieldset>
+                        <fieldset class="eventcrew-admin-roles">
+                            <legend><?php esc_html_e('Access', 'eventcrew'); ?></legend>
+                            <label><input type="checkbox" name="role_archived" value="1"<?php echo $eventcrew_role_editing['archived'] ? ' checked' : ''; ?>> <?php esc_html_e('Archived (hidden)', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_restricted" value="1"<?php echo $eventcrew_role_editing['restricted'] ? ' checked' : ''; ?>> <?php esc_html_e('Only people with this role', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_every_night" value="1"<?php echo $eventcrew_role_editing['every_night'] ? ' checked' : ''; ?>> <?php esc_html_e('Add to every night', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_sales_desk" value="1"<?php echo $eventcrew_role_editing['sales_desk'] ? ' checked' : ''; ?>> <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_on_board" value="1"<?php echo ($eventcrew_role_editing['on_board'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Show on the Telegram board', 'eventcrew'); ?></label>
+                        </fieldset>
+                        <p>
+                            <label for="eventcrew-admin-role-title"><?php esc_html_e('Only on events', 'eventcrew'); ?></label>
+                            <input type="text" name="role_title_contains" id="eventcrew-admin-role-title" value="<?php echo esc_attr($eventcrew_role_editing['title_contains']); ?>">
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('New events get a task of this role only when the event title contains this text (upper or lower case does not matter). Leave empty for every event.', 'eventcrew'); ?></span>
+                        </p>
+                        <fieldset>
+                            <legend><?php esc_html_e('Conditions', 'eventcrew'); ?></legend>
+                            <p class="eventcrew-muted"><?php esc_html_e('Completed tasks', 'eventcrew'); ?></p>
+                            <?php foreach ($eventcrew_tasks['role_list'] as $eventcrew_count_role) : ?>
+                                <?php
+                                if ($eventcrew_count_role['slug'] === $eventcrew_role_editing['slug']) {
+                                    continue;
+                                }
+                                $eventcrew_count_id = 'eventcrew-admin-role-count-' . $eventcrew_count_role['slug'];
+                                ?>
+                                <p>
+                                    <label for="<?php echo esc_attr($eventcrew_count_id); ?>"><?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_count_role['slug'])); ?></label>
+                                    <input type="number" min="0" step="1" id="<?php echo esc_attr($eventcrew_count_id); ?>" name="role_count[<?php echo esc_attr($eventcrew_count_role['slug']); ?>]" value="<?php echo esc_attr((string) ($eventcrew_role_conditions['counts'][$eventcrew_count_role['slug']] ?? '')); ?>">
+                                </p>
+                            <?php endforeach; ?>
+                            <p class="eventcrew-admin-pair">
+                                <span>
+                                    <label for="eventcrew-admin-role-min"><?php esc_html_e('At least', 'eventcrew'); ?> <?php esc_html_e('different roles,', 'eventcrew'); ?></label>
+                                    <input type="number" min="0" step="1" name="role_min_roles" id="eventcrew-admin-role-min" value="<?php echo esc_attr(0 === $eventcrew_role_conditions['min_roles'] ? '' : (string) $eventcrew_role_conditions['min_roles']); ?>">
+                                </span>
+                                <span>
+                                    <label for="eventcrew-admin-role-times"><?php esc_html_e('times each', 'eventcrew'); ?></label>
+                                    <input type="number" min="0" step="1" name="role_times_each" id="eventcrew-admin-role-times" value="<?php echo esc_attr(0 === $eventcrew_role_conditions['times_each'] ? '' : (string) $eventcrew_role_conditions['times_each']); ?>">
+                                </span>
+                            </p>
+                        </fieldset>
+                        <p>
+                            <label for="eventcrew-admin-role-description"><?php esc_html_e('Description', 'eventcrew'); ?></label>
+                            <textarea name="role_description" id="eventcrew-admin-role-description" rows="3"><?php echo esc_textarea($eventcrew_role_editing['description']); ?></textarea>
+                        </p>
+                        <button type="submit" class="wp-element-button"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                    </form>
+                <?php endif; ?>
+            </section>
+            </div>
         </section>
         <?php endif; ?>
         <?php
@@ -1484,6 +1891,42 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
     admin.classList.add('has-subtabs');
     show(key);
+})();
+
+/*
+ * The Admin tab's task form, as on the wp-admin Tasks page: picking an event
+ * fills in the date and times, and the event name field shows only for
+ * "Other". Only a convenience: without it the form still posts every field.
+ */
+(function () {
+    var picker = document.querySelector('[data-eventcrew-task-events]');
+    var otherRow = document.querySelector('[data-eventcrew-task-other]');
+
+    if (!picker) { return; }
+
+    function apply(overwrite) {
+        var option = picker.options[picker.selectedIndex];
+        var isOther = option.value === <?php echo wp_json_encode(\EventCrew\Web\CrewAdminTasks::EVENT_OTHER); ?>;
+
+        if (otherRow) { otherRow.hidden = !isOther; }
+        if (isOther) { return; }
+
+        [
+            ['eventcrew-admin-task-date', option.getAttribute('data-date')],
+            ['eventcrew-admin-task-starts', option.getAttribute('data-starts')],
+            ['eventcrew-admin-task-ends', option.getAttribute('data-ends')]
+        ].forEach(function (pair) {
+            var field = document.getElementById(pair[0]);
+
+            // Never overwrite a typed value unless the event was just changed.
+            if (field && pair[1] && (overwrite || !field.value)) {
+                field.value = pair[1];
+            }
+        });
+    }
+
+    picker.addEventListener('change', function () { apply(true); });
+    apply(false);
 })();
 
 /*

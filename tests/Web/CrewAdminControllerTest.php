@@ -31,12 +31,15 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
@@ -46,6 +49,7 @@ use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
+use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
 
@@ -77,6 +81,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $this->mails = [];
 
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        // No events plugin: the Tasks screen's event picker is empty.
+        Functions\when('post_type_exists')->justReturn(false);
         Functions\when('sanitize_email')->alias(static fn (string $e): string => trim($e));
         Functions\when('sanitize_textarea_field')->alias(static fn (string $text): string => trim($text));
         Functions\when('is_email')->alias(
@@ -118,7 +124,30 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             new Logger(),
             $this->roleTasks(),
             $this->rosterScreen(),
-            new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing())
+            new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing()),
+            $this->tasksScreen()
+        );
+    }
+
+    /** The Tasks screen over the fake wpdb, with the real template applier and open-task call. */
+    private function tasksScreen(): CrewAdminTasks
+    {
+        $tasks = new TaskRepository();
+        $assignments = new AssignmentRepository();
+
+        return new CrewAdminTasks(
+            $tasks,
+            $assignments,
+            new PersonRepository(),
+            new TaskTemplateApplier($tasks),
+            new OpenTaskCall(
+                $tasks,
+                $assignments,
+                new PersonRepository(),
+                new NotificationsRepository(),
+                $this->mailer(),
+                $this->client()
+            )
         );
     }
 
@@ -1816,6 +1845,499 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('nothing to take a roster for', $html);
         self::assertStringNotContainsString('value="' . CrewAdminController::DOOR_ACTION . '"', $html);
         self::assertStringNotContainsString('value="' . CrewAdminController::GUEST_ACTION . '"', $html);
+    }
+
+    // --- the Tasks screen: tasks, template, open-task email, roles ----------
+
+    /**
+     * One request of each Tasks screen action that would write or send if it
+     * ran.
+     *
+     * @return array<string, array{0: string, 1: array<string, mixed>}>
+     */
+    public static function tasksScreenRequests(): array
+    {
+        $task = ['task_date' => self::NIGHT, 'role_slug' => 'decorate', 'capacity' => '2'];
+
+        return [
+            'add task' => [CrewAdminController::TASK_ACTION, $task],
+            'edit task' => [CrewAdminController::TASK_ACTION, ['task_id' => '6'] + $task],
+            'delete task' => [CrewAdminController::TASK_DELETE_ACTION, ['task_id' => '6']],
+            'create tasks' => [CrewAdminController::TEMPLATE_ACTION, ['template_event' => '70']],
+            'open-task email' => [CrewAdminController::OPEN_TASK_ACTION, []],
+            'edit role' => [CrewAdminController::ROLE_ACTION, ['role' => 'decorate', 'role_label' => 'Changed']],
+        ];
+    }
+
+    /**
+     * Every write the fake wpdb saw apart from the ban itself.
+     *
+     * @return array<string, mixed>
+     */
+    private function tasksScreenWrites(): array
+    {
+        $banOnly = static fn (array $u): bool => ! array_key_exists('banned_at', $u['data']);
+
+        return [
+            'inserts' => $this->wpdb->inserts,
+            'updates' => array_values(array_filter($this->wpdb->updates, $banOnly)),
+            'deletes' => $this->wpdb->deletes,
+            'statements' => array_values(array_filter(
+                $this->wpdb->queries,
+                static fn (string $sql): bool => 1 === preg_match('/^\s*(INSERT|UPDATE|DELETE)\s/i', $sql)
+            )),
+        ];
+    }
+
+    /** Queues one open date for the open-task email: its task, then its occupancy. */
+    private function queueOpenTaskDate(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate', '19:00', '21:00')];
+        $this->wpdb->nextResults[] = [];
+    }
+
+    /** Records every do_action call, by hook name. */
+    private function recordHooks(): \ArrayObject
+    {
+        $hooks = new \ArrayObject();
+        Functions\when('do_action')->alias(static function (string $hook) use ($hooks): void {
+            $hooks[] = $hook;
+        });
+
+        return $hooks;
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider tasksScreenRequests
+     */
+    public function testAMemberSendingATasksScreenRequestIsBlockedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+        // What each action would read if it ran: task 6, an event, a date with
+        // an open task and someone to mail. Nothing may read them.
+        $this->stubEvent(70);
+        $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
+        $this->wpdb->nextCols[] = [self::NIGHT];
+        $this->queueOpenTaskDate();
+        $this->queueOpenTaskDate();
+        $this->wpdb->nextResults[] = [['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00']];
+
+        $result = $this->post($action, $post, 8);
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertCount(1, $this->banWrites());
+        self::assertSame(501, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        // The block itself writes a log line; the roles are not touched.
+        self::assertArrayNotHasKey(Roles::OPTION_NAME, $this->options);
+        self::assertArrayNotHasKey(OrganizeTaskBackfill::PENDING_OPTION, $this->options);
+        // The only mail is the alert to the organizer; no open-task email.
+        self::assertSame(['p1@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('blocked', $this->mails[0]['subject']);
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider tasksScreenRequests
+     */
+    public function testATasksScreenGetRequestIsRefusedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $options = $this->options;
+
+        $result = $this->admin()->handle($action, 'GET', $post + ['csrf' => WebSession::csrfToken(1)], self::IP);
+
+        self::assertSame(CrewAdminController::REFUSED, $result['code']);
+        self::assertSame([], $this->banWrites());
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        self::assertSame($options, $this->options);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testATaskWithADateThatIsNotARealDayIsNotSaved(): void
+    {
+        foreach (['2026-02-30', '', '20-07-2026', '2026-07-20 OR 1=1'] as $date) {
+            $this->signIn($this->organizerRow(1));
+
+            $result = $this->post(CrewAdminController::TASK_ACTION, ['task_date' => $date, 'role_slug' => 'decorate']);
+
+            self::assertSame('admin_task_bad_date', $result['notice'], $date);
+        }
+
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        self::assertSame(
+            'That date could not be read. Use the date picker and try again.',
+            CrewAdminController::noticeText('admin_task_bad_date')
+        );
+    }
+
+    public function testATaskWithARoleThatDoesNotExistIsNotSaved(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::TASK_ACTION, ['task_date' => self::NIGHT, 'role_slug' => 'juggle']);
+
+        self::assertSame('admin_task_bad_role', $result['notice']);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        self::assertSame('Pick a role that still exists in Settings.', CrewAdminController::noticeText('admin_task_bad_role'));
+    }
+
+    public function testEditingOrDeletingATaskThatIsGoneChangesNothing(): void
+    {
+        $hooks = $this->recordHooks();
+
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = null;   // task 6: not found
+        $edit = $this->post(CrewAdminController::TASK_ACTION, ['task_id' => '6', 'task_date' => self::NIGHT, 'role_slug' => 'decorate']);
+
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = null;
+        $delete = $this->post(CrewAdminController::TASK_DELETE_ACTION, ['task_id' => '6']);
+
+        $this->signIn($this->organizerRow(1));
+        $none = $this->post(CrewAdminController::TASK_DELETE_ACTION, []);
+
+        self::assertSame('admin_task_gone', $edit['notice']);
+        self::assertSame('admin_task_gone', $delete['notice']);
+        self::assertSame('admin_task_gone', $none['notice']);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        self::assertSame([], $hooks->getArrayCopy());
+        self::assertSame('That task was not found.', CrewAdminController::noticeText('admin_task_gone'));
+    }
+
+    public function testAnOrganizerAddsATaskThatEndsAfterMidnight(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'plus_ones' => 2],
+            ['slug' => 'clean', 'label' => 'Clean'],
+        ];
+        $hooks = $this->recordHooks();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::TASK_ACTION, [
+            'task_date' => self::NIGHT,
+            'role_slug' => 'decorate',
+            'starts_at' => self::NIGHT . 'T22:00',
+            'ends_at' => self::NIGHT . 'T01:00',
+            'event_choice' => CrewAdminTasks::EVENT_OTHER,
+            'event_label' => 'Summer party',
+            'capacity' => '4',
+            'plus_ones' => '',
+            'notes' => 'Bring tape',
+        ]);
+
+        self::assertSame('admin_task_added', $result['notice']);
+        self::assertCount(1, $this->wpdb->inserts);
+        $data = $this->wpdb->inserts[0]['data'];
+        self::assertSame('decorate', $data['role_slug']);
+        self::assertSame(self::NIGHT, $data['task_date']);
+        self::assertSame(self::NIGHT . ' 22:00:00', $data['starts_at']);
+        self::assertSame('2026-07-21 01:00:00', $data['ends_at']);
+        self::assertSame('Summer party', $data['event_label']);
+        self::assertNull($data['event_post_id']);
+        self::assertSame(4, $data['capacity']);
+        self::assertSame(2, $data['plus_ones']);   // the role's default
+        self::assertSame('Bring tape', $data['notes']);
+        self::assertSame(['eventcrew/board_stale'], $hooks->getArrayCopy());
+        self::assertSame('Task added.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testAnOrganizerEditsATask(): void
+    {
+        $hooks = $this->recordHooks();
+
+        // A blank +1 field leaves the task's own +1s as they are.
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
+        $blank = $this->post(CrewAdminController::TASK_ACTION, [
+            'task_id' => '6',
+            'task_date' => self::NIGHT,
+            'role_slug' => 'clean',
+            'starts_at' => '23:00',
+            'capacity' => '-3',
+            'plus_ones' => '',
+        ]);
+
+        // A number is clamped to 0-20.
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
+        $clamped = $this->post(CrewAdminController::TASK_ACTION, [
+            'task_id' => '6',
+            'task_date' => self::NIGHT,
+            'role_slug' => 'clean',
+            'plus_ones' => '99',
+        ]);
+
+        self::assertSame('admin_task_updated', $blank['notice']);
+        self::assertSame('admin_task_updated', $clamped['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertCount(2, $this->wpdb->updates);
+        self::assertSame(['id' => 6], $this->wpdb->updates[0]['where']);
+        self::assertSame('clean', $this->wpdb->updates[0]['data']['role_slug']);
+        self::assertSame(self::NIGHT . ' 23:00:00', $this->wpdb->updates[0]['data']['starts_at']);
+        self::assertNull($this->wpdb->updates[0]['data']['ends_at']);
+        self::assertSame(0, $this->wpdb->updates[0]['data']['capacity']);
+        self::assertArrayNotHasKey('plus_ones', $this->wpdb->updates[0]['data']);
+        self::assertSame(20, $this->wpdb->updates[1]['data']['plus_ones']);
+        self::assertSame(['eventcrew/board_stale', 'eventcrew/board_stale'], $hooks->getArrayCopy());
+        self::assertSame('Task updated.', CrewAdminController::noticeText('admin_task_updated'));
+    }
+
+    public function testDeletingATaskWithPeopleOnItTakesThemOffAndTellsNobody(): void
+    {
+        $hooks = $this->recordHooks();
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 6, 8, 'signed_up')];   // never read
+
+        $result = $this->post(CrewAdminController::TASK_DELETE_ACTION, ['task_id' => '6']);
+
+        self::assertSame('admin_task_deleted', $result['notice']);
+        $writes = $this->tasksScreenWrites()['statements'];
+        self::assertCount(2, $writes);
+        self::assertStringContainsString("status = 'cancelled'", $writes[0]);
+        self::assertStringContainsString('task_id = 6', $writes[0]);
+        self::assertStringContainsString('deleted_at', $writes[1]);
+        self::assertStringContainsString('id = 6', $writes[1]);
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame([], $this->mails);
+        self::assertSame(['eventcrew/board_stale'], $hooks->getArrayCopy());
+        self::assertSame('Task deleted.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testCreatingTasksForAnEventWithNoStartCreatesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::TEMPLATE_ACTION, ['template_event' => '70']);
+
+        self::assertSame('admin_template_no_start', $result['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** EventSource::describe() reads these; see TaskTemplateApplierTest. */
+    private function stubEvent(int $postId): void
+    {
+        Functions\when('post_type_exists')->justReturn(true);
+        Functions\when('wp_timezone')->justReturn(new \DateTimeZone('Europe/Helsinki'));
+        Functions\when('get_post')->justReturn(
+            (object) ['ID' => $postId, 'post_type' => 'eventmesh_event', 'post_title' => 'Synced Event']
+        );
+        Functions\when('get_post_meta')->alias(static fn (int $id, string $key): string => match ($key) {
+            '_eventmesh_starts_at' => '2026-08-01T21:00:00',
+            '_eventmesh_ends_at' => '2026-08-02T01:00:00',
+            default => '',
+        });
+    }
+
+    public function testAnOrganizerCreatesAnEventsTasks(): void
+    {
+        $this->stubEvent(70);
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextResults[] = [];   // no tasks on that date yet
+
+        $result = $this->post(CrewAdminController::TEMPLATE_ACTION, ['template_event' => '70']);
+
+        // The three shipped roles plus the organize task.
+        self::assertSame('admin_template_created_4_0', $result['notice']);
+        self::assertCount(4, $this->wpdb->inserts);
+        self::assertSame(70, $this->wpdb->inserts[0]['data']['event_post_id']);
+        self::assertSame('4 tasks created.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testCreatingTasksWhenEveryRoleHasOneCreatesNothing(): void
+    {
+        $this->stubEvent(70);
+        $existing = [];
+        foreach (['decorate', 'welcome', 'clean', 'organize'] as $i => $role) {
+            $existing[] = ['task_date' => '2026-08-01', 'event_post_id' => 70] + $this->taskRow(10 + $i, $role);
+        }
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextResults[] = $existing;
+
+        $result = $this->post(CrewAdminController::TEMPLATE_ACTION, ['template_event' => '70']);
+
+        self::assertSame('admin_template_none', $result['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame(
+            'Every active role already has a task for that event.',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testTheTemplateNoticeSaysHowManyTasksHaveNoTimes(): void
+    {
+        self::assertSame('1 task created.', CrewAdminController::noticeText('admin_template_created_1_0'));
+        self::assertSame(
+            '3 tasks created, 2 without times - those roles have no offsets, or the event has no end recorded.',
+            CrewAdminController::noticeText('admin_template_created_3_2')
+        );
+        self::assertSame(
+            '1 task created, 1 without times - the role has no offsets, or the event has no end recorded.',
+            CrewAdminController::noticeText('admin_template_created_1_1')
+        );
+    }
+
+    public function testTheOpenTaskEmailWithNothingOpenSendsNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextCols[] = [];   // no upcoming dates
+
+        $result = $this->post(CrewAdminController::OPEN_TASK_ACTION);
+
+        self::assertSame('admin_open_task_none', $result['notice']);
+        self::assertSame([], $this->mails);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+    }
+
+    public function testTheOpenTaskEmailIsSentAndTheNoticeCountsThePeople(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextCols[] = [self::NIGHT];          // upcoming dates
+        $this->queueOpenTaskDate();                       // hasOpenSlotsOn
+        $this->queueOpenTaskDate();                       // sendForDate
+        $this->wpdb->nextResults[] = [['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00']];
+        $this->wpdb->nextVars[] = null;                   // not sent yet
+        $this->wpdb->nextVars[] = 0;                      // recap: completed
+        $this->wpdb->nextResults[] = [];                  // recap: history
+
+        $result = $this->post(CrewAdminController::OPEN_TASK_ACTION);
+
+        self::assertSame('admin_open_task_sent_1', $result['notice']);
+        self::assertCount(1, $this->mails);
+        self::assertSame('sam@example.com', $this->mails[0]['to']);
+        self::assertSame('Open-task email sent to 1 person.', CrewAdminController::noticeText($result['notice']));
+        self::assertSame('Open-task email sent to 3 people.', CrewAdminController::noticeText('admin_open_task_sent_3'));
+    }
+
+    public function testAnOrganizerSavesARoleAndTheOtherRolesStayAsTheyWere(): void
+    {
+        Roles::save(Roles::defaults());
+        $before = $this->options[Roles::OPTION_NAME];
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::ROLE_ACTION, [
+            'role' => 'welcome',
+            'role_label' => 'Door',
+            'role_emoji' => '🚪',
+            'role_capacity' => '5',
+            'role_restricted' => '1',
+            'role_sales_desk' => '1',
+            'role_title_contains' => 'party',
+            'role_plus_ones' => '1',
+            'role_count' => ['decorate' => '2'],
+            'role_min_roles' => '1',
+            'role_times_each' => '0',
+            'role_anchor' => Roles::ANCHOR_END,
+            'role_start_offset' => '-15',
+            'role_end_offset' => 'soon',
+            'role_description' => 'Stand at the door.',
+        ]);
+
+        self::assertSame('admin_role_saved', $result['notice']);
+        $saved = $this->options[Roles::OPTION_NAME];
+        self::assertSame(['decorate', 'welcome', 'clean'], array_column($saved, 'slug'));
+        self::assertSame($before[0], $saved[0]);
+        self::assertSame($before[2], $saved[2]);
+        $role = Roles::find('welcome');
+        self::assertNotNull($role);
+        self::assertSame('Door', $role['label']);
+        self::assertSame(5, $role['capacity']);
+        self::assertTrue($role['restricted']);
+        self::assertFalse($role['every_night']);
+        self::assertTrue($role['sales_desk']);
+        self::assertFalse($role['archived']);
+        self::assertSame('party', $role['title_contains']);
+        self::assertSame(1, $role['plus_ones']);
+        self::assertSame(2, $role['conditions']['counts']['decorate'] ?? null);
+        self::assertSame(Roles::ANCHOR_END, $role['anchor']);
+        self::assertSame(-15, $role['start_offset']);
+        self::assertNull($role['end_offset']);
+        self::assertSame('Stand at the door.', $role['description']);
+        self::assertSame('Settings saved.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testTheOrganizeRoleOrAnUnknownRoleIsNotSaved(): void
+    {
+        foreach ([Roles::ORGANIZE_SLUG, 'juggle', ''] as $slug) {
+            $this->signIn($this->organizerRow(1));
+
+            $result = $this->post(CrewAdminController::ROLE_ACTION, ['role' => $slug, 'role_label' => 'Taken over']);
+
+            self::assertSame('admin_role_gone', $result['notice'], $slug);
+        }
+
+        self::assertArrayNotHasKey(Roles::OPTION_NAME, $this->options);
+        self::assertSame('That role was not found.', CrewAdminController::noticeText('admin_role_gone'));
+    }
+
+    public function testTheTasksScreenHasItsTabFormsAndTheOpenTaskCount(): void
+    {
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('href="#eventcrew-admin-tasks"', $html);
+        self::assertStringContainsString('id="eventcrew-admin-tasks"', $html);
+        self::assertStringContainsString('name="tasks_date"', $html);
+        self::assertStringContainsString('name="tasks_role"', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::TASK_ACTION . '"', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::OPEN_TASK_ACTION . '"', $html);
+        self::assertStringContainsString('Add a task', $html);
+        self::assertStringNotContainsString('Edit task', $html);
+        // The button asks first, with the count in the question.
+        self::assertStringContainsString(
+            'onsubmit="return confirm(\'0 active account(s) would receive the open-task email.\');"',
+            $html
+        );
+        // No events plugin: no "Create an event's tasks" form.
+        self::assertStringNotContainsString('value="' . CrewAdminController::TEMPLATE_ACTION . '"', $html);
+    }
+
+    public function testTheTasksScreenOpensATaskForEditing(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $_GET = ['tasks_task' => '6', 'tasks_date' => self::NIGHT];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1), function (): void {
+                // The page reads the signed-in organizer a second time first.
+                $this->wpdb->nextRows[] = $this->organizerRow(1);
+                $this->wpdb->nextRows[] = $this->taskRow(6, 'clean', '23:00', '23:30');
+            });
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString('Edit task', $html);
+        self::assertStringContainsString('Update task', $html);
+        self::assertMatchesRegularExpression('/name="task_id" value="6"/', $html);
+        self::assertStringContainsString('value="' . self::NIGHT . 'T23:30"', $html);
+        self::assertMatchesRegularExpression(
+            '/name="redirect_to" value="[^"]*tasks_date=2026-07-20[^"]*#eventcrew-admin-tasks"/',
+            $html
+        );
+    }
+
+    public function testTheTasksScreenOpensARoleForEditing(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $_GET = ['tasks_role' => 'welcome'];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1));
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString('value="' . CrewAdminController::ROLE_ACTION . '"', $html);
+        self::assertMatchesRegularExpression('/name="role" value="welcome"/', $html);
+        self::assertStringContainsString('name="role_label"', $html);
+        self::assertStringContainsString('name="role_description"', $html);
+        self::assertStringContainsString('name="role_count[decorate]"', $html);
     }
 
     /**
