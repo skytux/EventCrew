@@ -44,7 +44,9 @@ use EventCrew\Telegram\TelegramClient;
  * roles. "Add a person to a task" is the bot's "Add someone" button: it puts
  * anyone on any upcoming task, even someone who is not a crew member yet.
  * The People screen (CrewAdminPeople) is the wp-admin People page without the
- * organizer flag and without deleting a person.
+ * organizer flag and without deleting a person. The Tasks screen
+ * (CrewAdminTasks) is the wp-admin Tasks page, plus editing one role with the
+ * fields of wp-admin Settings > Roles.
  */
 final class CrewAdminController
 {
@@ -62,6 +64,11 @@ final class CrewAdminController
     public const PERSON_ACTION = 'eventcrew_web_admin_person';
     public const PASS_ACTION = 'eventcrew_web_admin_pass';
     public const UNBAN_ACTION = 'eventcrew_web_admin_unban';
+    public const TASK_ACTION = 'eventcrew_web_admin_task';
+    public const TASK_DELETE_ACTION = 'eventcrew_web_admin_task_delete';
+    public const TEMPLATE_ACTION = 'eventcrew_web_admin_template';
+    public const OPEN_TASK_ACTION = 'eventcrew_web_admin_open_task';
+    public const ROLE_ACTION = 'eventcrew_web_admin_role';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -83,6 +90,11 @@ final class CrewAdminController
         self::PERSON_ACTION,
         self::PASS_ACTION,
         self::UNBAN_ACTION,
+        self::TASK_ACTION,
+        self::TASK_DELETE_ACTION,
+        self::TEMPLATE_ACTION,
+        self::OPEN_TASK_ACTION,
+        self::ROLE_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -119,7 +131,8 @@ final class CrewAdminController
         private readonly Logger $logger,
         private readonly RoleTaskService $roleTasks,
         private readonly CrewAdminRoster $rosterScreen,
-        private readonly CrewAdminPeople $peopleScreen
+        private readonly CrewAdminPeople $peopleScreen,
+        private readonly CrewAdminTasks $tasksScreen
     ) {
     }
 
@@ -155,6 +168,11 @@ final class CrewAdminController
             self::PERSON_ACTION => __('Add or edit a person', 'eventcrew'),
             self::PASS_ACTION => __('Grant a one-time pass', 'eventcrew'),
             self::UNBAN_ACTION => __('Unban', 'eventcrew'),
+            self::TASK_ACTION => __('Add or edit a task', 'eventcrew'),
+            self::TASK_DELETE_ACTION => __('Delete a task', 'eventcrew'),
+            self::TEMPLATE_ACTION => __('Create an event\'s tasks', 'eventcrew'),
+            self::OPEN_TASK_ACTION => __('Send open-task email now', 'eventcrew'),
+            self::ROLE_ACTION => __('Edit a role', 'eventcrew'),
         ];
     }
 
@@ -236,6 +254,11 @@ final class CrewAdminController
             ),
             self::PASS_ACTION => $this->peopleScreen->grantPass((int) ($post['person_id'] ?? 0)),
             self::UNBAN_ACTION => $this->peopleScreen->unban((int) ($post['person_id'] ?? 0)),
+            self::TASK_ACTION => $this->tasksScreen->save($post),
+            self::TASK_DELETE_ACTION => $this->tasksScreen->delete((int) ($post['task_id'] ?? 0)),
+            self::TEMPLATE_ACTION => $this->tasksScreen->applyTemplate((int) ($post['template_event'] ?? 0)),
+            self::OPEN_TASK_ACTION => $this->tasksScreen->sendOpenTaskEmail(),
+            self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
@@ -611,7 +634,32 @@ final class CrewAdminController
             'pass_action' => self::PASS_ACTION,
             'unban_action' => self::UNBAN_ACTION,
             'people' => $this->peopleScreen->view(...self::peopleQuery()),
+            // After People, so the reads the existing screens make come first.
+            'task_action' => self::TASK_ACTION,
+            'task_delete_action' => self::TASK_DELETE_ACTION,
+            'template_action' => self::TEMPLATE_ACTION,
+            'open_task_action' => self::OPEN_TASK_ACTION,
+            'role_action' => self::ROLE_ACTION,
+            'tasks' => $this->tasksScreen->view(...self::tasksQuery()),
         ];
+    }
+
+    /**
+     * The Tasks screen's date, open task and open role from the page address
+     * (?tasks_date=, ?tasks_task=, ?tasks_role=). Read-only choices of what to
+     * show; nothing is written.
+     *
+     * @return array{0: string, 1: int, 2: string}
+     */
+    private static function tasksQuery(): array
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $date = isset($_GET['tasks_date']) ? sanitize_text_field(wp_unslash($_GET['tasks_date'])) : '';
+        $taskId = isset($_GET['tasks_task']) ? absint($_GET['tasks_task']) : 0;
+        $role = isset($_GET['tasks_role']) ? sanitize_key(wp_unslash($_GET['tasks_role'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        return [(string) $date, $taskId, (string) $role];
     }
 
     /**
@@ -716,6 +764,10 @@ final class CrewAdminController
 
         if (! isset($map[$code]) && '' !== CrewAdminPeople::noticeText($code)) {
             return CrewAdminPeople::noticeText($code);
+        }
+
+        if (! isset($map[$code]) && '' !== CrewAdminTasks::noticeText($code)) {
+            return CrewAdminTasks::noticeText($code);
         }
 
         if (! isset($map[$code]) && str_starts_with($code, 'admin_add_many_')) {

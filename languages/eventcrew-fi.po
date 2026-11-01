@@ -2892,3 +2892,300 @@ msgstr "järjestelmä"
 #: src/Admin/PeopleListTable.php:169 templates/public/signup.php:647
 msgid "unverified"
 msgstr "vahvistamaton"
+
+#: src/Admin/TasksPage.php:243 src/Web/CrewAdminTasks.php:323
+#. translators: 1: number of tasks created, 2: how many of them have no times
+msgid "%1$d task created, %2$d without times - the role has no offsets, or the event has no end recorded."
+msgid_plural "%1$d tasks created, %2$d without times - those roles have no offsets, or the event has no end recorded."
+msgstr[0] "%1$d tehtävä luotu, %2$d ilman aikoja - roolilla ei ole siirtymiä, tai tapahtumalle ei ole merkitty loppua."
+msgstr[1] "%1$d tehtävää luotu, %2$d ilman aikoja - rooleilla ei ole siirtymiä, tai tapahtumalle ei ole merkitty loppua."
+
+#: src/Admin/TasksListTable.php:185 src/Web/CrewAdminTasks.php:359
+msgid "%d / no limit"
+msgstr "%d / ei rajaa"
+
+#: templates/admin/tasks.php:309 templates/public/signup.php:1572
+#. translators: %d: number of active accounts
+msgid "%d active account(s) would receive the open-task email."
+msgstr "%d aktiivista tiliä saisi avoimet tehtävät -sähköpostin."
+
+#: src/Admin/TasksPage.php:235 src/Web/CrewAdminTasks.php:315
+#. translators: %d: number of tasks created
+msgid "%d task created."
+msgid_plural "%d tasks created."
+msgstr[0] "%d tehtävä luotu."
+msgstr[1] "%d tehtävää luotu."
+
+#: templates/admin/tasks.php:195 templates/public/signup.php:1403 templates/public/signup.php:1607
+#. translators: %s: role label
+msgid "%s (archived)"
+msgstr "%s (arkistoitu)"
+
+#: templates/admin/settings.php:196 templates/admin/tasks.php:219 templates/public/signup.php:1416 templates/public/signup.php:1642
+msgid "+1 allowed"
+msgstr "+1 sallittu"
+
+#: templates/admin/settings.php:246 templates/public/signup.php:1667
+msgid "Access"
+msgstr "Pääsy"
+
+#: src/Web/CrewAdminController.php:171
+msgid "Add or edit a task"
+msgstr "Lisää tai muokkaa tehtävää"
+
+#: templates/admin/tasks.php:262 templates/public/signup.php:1434
+msgid "Add task"
+msgstr "Lisää tehtävä"
+
+#: templates/admin/settings.php:272 templates/public/signup.php:1670
+msgid "Add to every night"
+msgstr "Lisää joka iltaan"
+
+#: templates/public/signup.php:1496
+msgid "Another date"
+msgstr "Toinen päivä"
+
+#: templates/admin/settings.php:255 templates/public/signup.php:1668
+msgid "Archived (hidden)"
+msgstr "Arkistoitu (piilotettu)"
+
+#: templates/admin/settings.php:327 templates/public/signup.php:1696
+msgid "At least"
+msgstr "Vähintään"
+
+#: src/Admin/PeopleListTable.php:50 templates/admin/settings.php:308 templates/public/signup.php:1681
+msgid "Completed tasks"
+msgstr "Tehdyt tehtävät"
+
+#: templates/admin/settings.php:305 templates/public/signup.php:1680
+msgid "Conditions"
+msgstr "Ehdot"
+
+#: src/Web/CrewAdminController.php:173 templates/admin/tasks.php:73 templates/public/signup.php:1549
+msgid "Create an event's tasks"
+msgstr "Luo tapahtuman tehtävät"
+
+#: templates/admin/tasks.php:101 templates/public/signup.php:1564
+msgid "Create tasks"
+msgstr "Luo tehtävät"
+
+#: templates/admin/tasks.php:75 templates/public/signup.php:1552
+msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
+msgstr "Luo yhden tehtävän jokaista aktiivista roolia kohden. Ajat lasketaan kunkin roolin siirtymistä asetuksissa. Rooleihin, joilla on jo tehtävä tapahtumassa, ei kosketa, joten tämän voi ajaa uudelleen roolin lisäämisen jälkeen."
+
+#: templates/admin/tasks.php:215 templates/public/signup.php:1413
+msgid "Defaults come from the role in Settings. Set to 0 to take a task off the board without deleting it."
+msgstr "Oletukset tulevat roolista asetuksissa. Aseta 0, niin tehtävä poistuu taululta ilman että sitä poistetaan."
+
+#: src/Admin/PeopleListTable.php:134 src/Admin/TasksListTable.php:138 templates/public/signup.php:1534
+msgid "Delete"
+msgstr "Poista"
+
+#: src/Web/CrewAdminController.php:172
+msgid "Delete a task"
+msgstr "Poista tehtävä"
+
+#: src/Admin/TasksListTable.php:133 templates/public/signup.php:1529
+msgid "Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED."
+msgstr "Poistetaanko tämä tehtävä? Kaikki siihen ilmoittautuneet poistetaan, ja heidän lippunsa näyttävät MITÄTÖITY."
+
+#: templates/admin/settings.php:348 templates/public/signup.php:1706
+msgid "Description"
+msgstr "Kuvaus"
+
+#: src/Admin/PeopleListTable.php:126 src/Admin/TasksListTable.php:127 templates/public/signup.php:1527
+msgid "Edit"
+msgstr "Muokkaa"
+
+#: src/Web/CrewAdminController.php:175
+msgid "Edit a role"
+msgstr "Muokkaa roolia"
+
+#: templates/admin/tasks.php:112 templates/public/signup.php:1359
+msgid "Edit task"
+msgstr "Muokkaa tehtävää"
+
+#: templates/admin/settings.php:149 templates/public/signup.php:1626
+msgid "Emoji"
+msgstr "Emoji"
+
+#: templates/admin/settings.php:235 templates/admin/tasks.php:241 templates/public/signup.php:1425 templates/public/signup.php:1661
+msgid "Ends"
+msgstr "Päättyy"
+
+#: src/Admin/TasksListTable.php:48 src/Support/PrivacyExporter.php:190 templates/admin/tasks.php:83 templates/admin/tasks.php:126
+#: templates/public/signup.php:1369 templates/public/signup.php:1557
+msgid "Event"
+msgstr "Tapahtuma"
+
+#: templates/admin/settings.php:112 templates/public/signup.php:1652
+msgid "Event end"
+msgstr "Tapahtuman loppu"
+
+#: templates/admin/tasks.php:163 templates/public/signup.php:1387
+msgid "Event name"
+msgstr "Tapahtuman nimi"
+
+#: templates/admin/settings.php:111 templates/public/signup.php:1651
+msgid "Event start"
+msgstr "Tapahtuman alku"
+
+#: src/Admin/TasksPage.php:223 src/Web/CrewAdminTasks.php:278
+msgid "Every active role already has a task for that event."
+msgstr "Jokaisella aktiivisella roolilla on jo tehtävä tässä tapahtumassa."
+
+#: templates/admin/settings.php:207 templates/public/signup.php:1644
+msgid "How many guests each person on a new task of this role may bring in for free. New tasks copy this number; change it on a single task on the Tasks screen."
+msgstr "Montako vierasta kukin tämän roolin uuden tehtävän henkilö saa tuoda ilmaiseksi. Uudet tehtävät kopioivat tämän luvun; muuta sitä yksittäisessä tehtävässä Tehtävät-näkymässä."
+
+#: templates/admin/tasks.php:228 templates/public/signup.php:1418
+msgid "How many guests each person on this task may bring in for free. The sales desk adds this up over all of a person's tasks that night. Leave empty on a new task to use the role's default from Settings."
+msgstr "Montako vierasta kukin tämän tehtävän henkilö saa tuoda ilmaiseksi. Myyntipiste laskee yhteen henkilön kaikki saman illan tehtävät. Jätä uudessa tehtävässä tyhjäksi, niin käytetään roolin oletusta asetuksista."
+
+#: templates/admin/settings.php:160 templates/public/signup.php:1630
+msgid "Label"
+msgstr "Nimi"
+
+#: templates/admin/tasks.php:247 templates/public/signup.php:1427
+msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
+msgstr "Jätä molemmat tyhjiksi, jos aikoja ei ole päätetty. Päällekkäiset tehtävät voidaan havaita vain, kun ajat on asetettu. Alkua aiempi loppu tulkitaan seuraavaksi aamuksi."
+
+#: templates/admin/settings.php:214 templates/public/signup.php:1649
+msgid "Measured from"
+msgstr "Laskettu alkaen"
+
+#: templates/admin/settings.php:301 templates/public/signup.php:1677
+msgid "New events get a task of this role only when the event title contains this text (upper or lower case does not matter). Leave empty for every event."
+msgstr "Uudet tapahtumat saavat tämän roolin tehtävän vain, kun tapahtuman nimessä on tämä teksti (isoilla tai pienillä kirjaimilla ei ole väliä). Jätä tyhjäksi kaikille tapahtumille."
+
+#: templates/admin/tasks.php:155 templates/public/signup.php:1383
+msgid "No linkable events found. Type a name below instead."
+msgstr "Linkitettäviä tapahtumia ei löytynyt. Kirjoita nimi alle."
+
+#: src/Admin/TasksPage.php:291 src/Web/CrewAdminTasks.php:279
+msgid "Nothing to send: no open tasks, or everyone eligible already has it."
+msgstr "Ei lähetettävää: ei avoimia tehtäviä, tai kaikki mahdolliset ovat jo saaneet sen."
+
+#: templates/admin/settings.php:293 templates/public/signup.php:1675
+msgid "Only on events"
+msgstr "Vain tapahtumissa"
+
+#: templates/admin/settings.php:264 templates/public/signup.php:1669
+msgid "Only people with this role"
+msgstr "Vain henkilöt, joilla on tämä rooli"
+
+#: templates/admin/tasks.php:304 templates/public/signup.php:1578
+msgid "Open-task email"
+msgstr "Avoimet tehtävät -sähköposti"
+
+#: src/Admin/TasksPage.php:294 src/Web/CrewAdminTasks.php:296
+#. translators: %d: number of people emailed
+msgid "Open-task email sent to %d person."
+msgid_plural "Open-task email sent to %d people."
+msgstr[0] "Avoimet tehtävät -sähköposti lähetetty %d henkilölle."
+msgstr[1] "Avoimet tehtävät -sähköposti lähetetty %d henkilölle."
+
+#: templates/admin/settings.php:280 templates/public/signup.php:1671
+msgid "Opens the sales desk"
+msgstr "Avaa myyntipisteen"
+
+#: templates/admin/tasks.php:148 templates/public/signup.php:1378
+msgid "Other (type a name)"
+msgstr "Muu (kirjoita nimi)"
+
+#: templates/admin/tasks.php:207 templates/public/signup.php:1411
+msgid "People needed"
+msgstr "Tarvittavat henkilöt"
+
+#: templates/public/signup.php:1601
+msgid "Pick a role"
+msgstr "Valitse rooli"
+
+#: src/Admin/TasksPage.php:139 src/Web/CrewAdminTasks.php:272
+msgid "Pick a role that still exists in Settings."
+msgstr "Valitse rooli, joka on yhä olemassa asetuksissa."
+
+#: templates/admin/tasks.php:151 templates/public/signup.php:1380
+msgid "Picking an event fills in the date and times below. Change them afterwards if this task runs to its own schedule."
+msgstr "Tapahtuman valinta täyttää alla olevan päivän ja ajat. Muuta niitä jälkikäteen, jos tällä tehtävällä on oma aikataulunsa."
+
+#: src/Web/CrewAdminController.php:174 templates/admin/tasks.php:320 templates/public/signup.php:1588
+msgid "Send open-task email now"
+msgstr "Lähetä avoimet tehtävät -sähköposti nyt"
+
+#: templates/admin/tasks.php:315 templates/public/signup.php:1582
+msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
+msgstr "Lähetetään kaikille, joilla on vahvistettu ja päällä oleva tili, paitsi niille, jotka ovat jo ilmoittautuneet sille päivälle. Lähetetään vain, kun on avoimia tehtäviä, eikä koskaan samalle henkilölle kahdesti samasta päivästä. Sen saa pois päältä poistamalla tilin käytöstä (botissa /stop tai minkä tahansa sähköpostin linkistä)."
+
+#: src/Admin/SettingsPage.php:536 src/Web/CrewAdminTasks.php:280
+msgid "Settings saved."
+msgstr "Asetukset tallennettu."
+
+#: templates/admin/settings.php:288 templates/public/signup.php:1672
+msgid "Show on the Telegram board"
+msgstr "Näytä Telegram-taululla"
+
+#: templates/admin/settings.php:171 templates/public/signup.php:1634
+msgid "Slug"
+msgstr "Tunniste"
+
+#: templates/admin/settings.php:226 templates/admin/tasks.php:232 templates/public/signup.php:1421 templates/public/signup.php:1657
+msgid "Starts"
+msgstr "Alkaa"
+
+#: src/Admin/TasksPage.php:190 src/Web/CrewAdminTasks.php:273
+msgid "Task added."
+msgstr "Tehtävä lisätty."
+
+#: templates/admin/tasks.php:172 templates/public/signup.php:1391
+msgid "Task date"
+msgstr "Tehtävän päivä"
+
+#: src/Admin/TasksPage.php:273 src/Web/CrewAdminTasks.php:275
+msgid "Task deleted."
+msgstr "Tehtävä poistettu."
+
+#: src/Admin/TasksPage.php:183 src/Web/CrewAdminTasks.php:274
+msgid "Task updated."
+msgstr "Tehtävä päivitetty."
+
+#: src/Admin/Admin.php:226 src/Admin/Admin.php:227 templates/admin/tasks.php:44 templates/public/signup.php:532
+#: templates/public/signup.php:1465
+msgid "Tasks"
+msgstr "Tehtävät"
+
+#: src/Admin/TasksPage.php:131 src/Web/CrewAdminTasks.php:271
+msgid "That date could not be read. Use the date picker and try again."
+msgstr "Päivää ei voitu lukea. Käytä päivävalitsinta ja yritä uudelleen."
+
+#: src/Admin/TasksPage.php:215 src/Web/CrewAdminTasks.php:277
+msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
+msgstr "Tapahtumalle ei ole merkitty alkupäivää, joten sen tehtäviä ei voi ajoittaa. Aseta se tapahtumaan ja yritä uudelleen."
+
+#: src/Web/CrewAdminTasks.php:281
+msgid "That role was not found."
+msgstr "Roolia ei löytynyt."
+
+#: src/Web/CrewAdminTasks.php:276
+msgid "That task was not found."
+msgstr "Tehtävää ei löytynyt."
+
+#: templates/admin/tasks.php:179 templates/public/signup.php:1393
+msgid "The day this task is filed under. A clean-up at 01:00 after a Saturday event still belongs to Saturday."
+msgstr "Päivä, jolle tämä tehtävä kirjataan. Lauantain tapahtuman jälkeinen siivous klo 01:00 kuuluu yhä lauantaille."
+
+#: templates/admin/settings.php:211 templates/public/signup.php:1647
+msgid "Timing"
+msgstr "Ajoitus"
+
+#: templates/admin/tasks.php:261 templates/public/signup.php:1434
+msgid "Update task"
+msgstr "Päivitä tehtävä"
+
+#: templates/admin/settings.php:335 templates/public/signup.php:1696
+msgid "different roles,"
+msgstr "eri roolia,"
+
+#: templates/admin/settings.php:343 templates/public/signup.php:1700
+msgid "times each"
+msgstr "kertaa kutakin"

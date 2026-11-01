@@ -328,7 +328,9 @@
 .eventcrew-signup .eventcrew-admin-card select,
 .eventcrew-signup .eventcrew-admin-card input[type="text"],
 .eventcrew-signup .eventcrew-admin-card input[type="email"],
-.eventcrew-signup .eventcrew-admin-card input[type="number"] {
+.eventcrew-signup .eventcrew-admin-card input[type="number"],
+.eventcrew-signup .eventcrew-admin-card input[type="date"],
+.eventcrew-signup .eventcrew-admin-card input[type="datetime-local"] {
     box-sizing: border-box; width: 100%; min-height: 44px; padding: .4em .6em;
     /*
      * A light tint of the card's own text colour, not the surface colour: the

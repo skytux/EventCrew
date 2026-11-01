@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.59.0
+Stable tag: 1.60.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.60.0 =
+The crew page's Admin tab has a new Tasks screen with the wp-admin task tools: the tasks of any date with who signed up; adding, editing and deleting a task; creating an event's tasks from the roles; sending the open-task email now; and editing a role's settings (label, emoji, capacity, +1, timing, access, only on events, conditions, description).
 
 = 1.59.0 =
 The crew page's Admin tab now has the wp-admin People tools on its People screen: a searchable list of people, adding a person and editing one (email, name, roles, notes), unbanning, the one-time at-risk pass, giving free-entry credits and each person's credit log. Give a credit has no upper limit any more. Making someone an organizer and deleting a person stay in wp-admin.
@@ -723,6 +726,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.60.0 =
+Nothing to do. Organizers find the new tools on the crew page: Admin tab, Tasks.
 
 = 1.59.0 =
 Nothing to do. Organizers find the new tools on the crew page: Admin tab, People.

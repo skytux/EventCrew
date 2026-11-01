@@ -88,6 +88,7 @@ use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
+use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
@@ -515,7 +516,19 @@ final class Kernel
                 $container->get(Logger::class),
                 $container->get(RoleTaskService::class),
                 $container->get(CrewAdminRoster::class),
-                $container->get(CrewAdminPeople::class)
+                $container->get(CrewAdminPeople::class),
+                $container->get(CrewAdminTasks::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminTasks::class,
+            fn (Container $container) => new CrewAdminTasks(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TaskTemplateApplier::class),
+                $container->get(OpenTaskCall::class)
             )
         );
 
