@@ -94,6 +94,7 @@ final class SignupController
         add_action('wp_enqueue_scripts', [$this, 'enqueueStyle']);
         add_action('template_redirect', [$this, 'maybeSignInFromEmailLink']);
         add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
+        add_filter('w3tc_minify_css_do_tag_minification', [$this, 'keepStyleOutOfMinify'], 10, 2);
 
         foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION, self::SALES_ACTION, self::LANGUAGE_ACTION] as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
@@ -220,6 +221,28 @@ final class SignupController
         if ('' !== $accent) {
             wp_add_inline_style(self::STYLE_HANDLE, $accent);
         }
+    }
+
+    /**
+     * Keeps this plugin's stylesheet out of W3 Total Cache's combined CSS file.
+     *
+     * The combined file is named after the list of stylesheets, not their
+     * content, so it keeps the same address when the plugin is updated, and
+     * W3TC tells browsers to keep it for 30 days. A browser that already has
+     * it never asks for the new one, and a release's style changes do not
+     * reach that person. Left out of the combined file, the stylesheet keeps
+     * its own link with ?ver=<plugin version>, a new address on every release.
+     *
+     * @param mixed $minify    W3TC's decision so far.
+     * @param mixed $styleTag  The <link> tag being considered.
+     */
+    public function keepStyleOutOfMinify(mixed $minify, mixed $styleTag = ''): mixed
+    {
+        if (is_string($styleTag) && str_contains($styleTag, self::STYLE_HANDLE . '-css')) {
+            return false;
+        }
+
+        return $minify;
     }
 
     /**
