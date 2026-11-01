@@ -139,6 +139,21 @@
     border-bottom-color: var(--eventcrew-accent);
 }
 /*
+ * The Admin tab (organizers only) in the accent colour so it stands out:
+ * accent text on an accent tint with an accent edge. Accent text rather than
+ * text on a solid accent, because the configured on-accent colour is often
+ * white, which is hard to read on a light accent.
+ */
+.eventcrew-signup .eventcrew-tab[data-eventcrew-tab="admin"] {
+    color: var(--eventcrew-accent); opacity: 1;
+    background: color-mix(in srgb, var(--eventcrew-accent) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--eventcrew-accent) 60%, transparent), 0 2px 5px rgba(0, 0, 0, .45);
+}
+.eventcrew-signup .eventcrew-tab[data-eventcrew-tab="admin"].is-active {
+    background: color-mix(in srgb, var(--eventcrew-accent) 32%, transparent);
+    box-shadow: inset 0 0 0 1px var(--eventcrew-accent);
+}
+/*
  * Phone: smaller text and padding so five tabs fit on one line in English; if
  * they still wrap (Finnish), the rows sit close together and each row's tabs
  * stretch to fill it evenly.
