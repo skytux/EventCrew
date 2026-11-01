@@ -154,6 +154,25 @@
     box-shadow: inset 0 0 0 1px var(--eventcrew-accent);
 }
 /*
+ * The Admin tab's second row: Roster, Door, People, Telegram. Smaller pills
+ * than the main tabs; the open one is drawn like the Admin tab (accent text
+ * on an accent tint), for the same reason given above. Only
+ * once the script has run (has-subtabs) are the other screens hidden, so
+ * without JavaScript every Admin card stays on one page.
+ */
+.eventcrew-signup .eventcrew-subtabs {
+    display: flex; flex-wrap: wrap; gap: .4em; justify-content: center; margin: 0 0 1em;
+}
+.eventcrew-signup .eventcrew-subtab {
+    padding: .3em .9em; border: 1px solid currentColor; border-radius: 999px;
+    color: inherit; text-decoration: none; opacity: .85; font-size: .9em;
+}
+.eventcrew-signup .eventcrew-subtab.is-active {
+    background: color-mix(in srgb, var(--eventcrew-accent) 32%, transparent);
+    border-color: var(--eventcrew-accent); color: var(--eventcrew-accent); opacity: 1;
+}
+.eventcrew-signup .has-subtabs [data-eventcrew-subpanel]:not(.is-active) { display: none; }
+/*
  * Phone: smaller text and padding so five tabs fit on one line in English; if
  * they still wrap (Finnish), the rows sit close together and each row's tabs
  * stretch to fill it evenly.

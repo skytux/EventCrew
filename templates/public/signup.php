@@ -520,9 +520,26 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <?php
             /*
              * One card per job, the same frame as the Board and Me tabs, so the
-             * tab reads as six separate tools instead of one long form.
+             * tab reads as separate tools instead of one long form. The cards
+             * are grouped into screens with a second row of tabs, Roster first:
+             * marking the crew is the job done most. Without JavaScript the row
+             * is a list of jump links and every group shows, one after another.
              */
+            $eventcrew_subtabs = [
+                'roster' => _x('Roster', 'Admin tab screen', 'eventcrew'),
+                'door' => __('Door', 'eventcrew'),
+                'people' => _x('People', 'Admin tab screen', 'eventcrew'),
+                'telegram' => __('Telegram', 'eventcrew'),
+            ];
             ?>
+            <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
+                <?php foreach ($eventcrew_subtabs as $eventcrew_sub_key => $eventcrew_sub_label) : ?>
+                    <a class="eventcrew-subtab" href="#eventcrew-admin-<?php echo esc_attr($eventcrew_sub_key); ?>"
+                        data-eventcrew-subtab="<?php echo esc_attr($eventcrew_sub_key); ?>"><?php echo esc_html($eventcrew_sub_label); ?></a>
+                <?php endforeach; ?>
+            </nav>
+
+            <div class="eventcrew-subpanel" id="eventcrew-admin-door" data-eventcrew-subpanel="door">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
@@ -544,7 +561,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php endif; ?>
                 </div>
             </section>
+            </div>
 
+            <div class="eventcrew-subpanel" id="eventcrew-admin-telegram" data-eventcrew-subpanel="telegram">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Telegram board', 'eventcrew'); ?></h3>
@@ -558,7 +577,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </form>
                 </div>
             </section>
+            </div>
 
+            <div class="eventcrew-subpanel" id="eventcrew-admin-people" data-eventcrew-subpanel="people">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Give a credit', 'eventcrew'); ?></h3>
@@ -647,7 +668,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php endif; ?>
                 </section>
             <?php endif; ?>
+            </div>
 
+            <div class="eventcrew-subpanel" id="eventcrew-admin-roster" data-eventcrew-subpanel="roster">
             <?php if ([] !== $eventcrew_admin['add_tasks']) : ?>
                 <section class="eventcrew-event eventcrew-admin-card">
                     <header class="eventcrew-event-head">
@@ -733,12 +756,17 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </ul>
                 <?php endforeach; ?>
             </section>
+            </div>
         </section>
         <?php endif; ?>
         <?php
     endif; ?>
 </div>
 <script>
+// The address's #part as the page opened: the tab script below replaces it
+// with the open tab's, and the Admin screens script needs the original.
+var eventcrewStartHash = (window.location.hash || '').slice(1);
+
 /*
  * Progressive enhancement: turn the three sections into tabs.
  *
@@ -848,6 +876,67 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
     root.classList.add('is-tabbed');
     show(initialKey(), false);
     if (hashTarget) { hashTarget.scrollIntoView(); }
+})();
+
+/*
+ * The Admin tab's second row of tabs: one screen of cards at a time, Roster
+ * first. Every Admin form is a full-page post, so the screen it was sent from
+ * is kept in sessionStorage and reopened when the page comes back with an
+ * admin_ notice; without that, giving a credit would land you on Roster.
+ */
+(function () {
+    var admin = document.querySelector('.eventcrew-panel.eventcrew-admin');
+    var nav = admin && admin.querySelector('.eventcrew-subtabs');
+    var root = document.querySelector('.eventcrew-signup');
+
+    if (!nav || !root || !root.classList.contains('is-tabbed')) { return; }
+
+    var links = [].slice.call(nav.querySelectorAll('[data-eventcrew-subtab]'));
+    var subs = [].slice.call(admin.querySelectorAll('[data-eventcrew-subpanel]'));
+    var store = 'eventcrew-admin-screen';
+
+    function has(key) {
+        return subs.some(function (s) { return s.getAttribute('data-eventcrew-subpanel') === key; });
+    }
+
+    function remember(key) {
+        try { window.sessionStorage.setItem(store, key); } catch (e) {}
+    }
+
+    function show(key) {
+        if (!has(key)) { key = links[0].getAttribute('data-eventcrew-subtab'); }
+        links.forEach(function (link) {
+            var on = link.getAttribute('data-eventcrew-subtab') === key;
+            link.classList.toggle('is-active', on);
+            link.setAttribute('aria-current', on ? 'true' : 'false');
+        });
+        subs.forEach(function (s) {
+            s.classList.toggle('is-active', s.getAttribute('data-eventcrew-subpanel') === key);
+        });
+    }
+
+    links.forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var key = link.getAttribute('data-eventcrew-subtab');
+            show(key);
+            remember(key);
+        });
+    });
+
+    subs.forEach(function (s) {
+        s.addEventListener('submit', function () { remember(s.getAttribute('data-eventcrew-subpanel')); });
+    });
+
+    var key = '';
+    var hash = eventcrewStartHash;
+    if (hash.indexOf('eventcrew-admin-') === 0) { key = hash.replace('eventcrew-admin-', ''); }
+    if (!key && /[?&]eventcrew_notice=admin_/.test(window.location.search)) {
+        try { key = window.sessionStorage.getItem(store) || ''; } catch (e) {}
+    }
+
+    admin.classList.add('has-subtabs');
+    show(key);
 })();
 
 /*
