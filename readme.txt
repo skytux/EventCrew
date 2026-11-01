@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.56.0
+Stable tag: 1.56.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.56.1 =
+Fixed: the logo in the middle of a ticket's QR code could not be seen when the site's logo is white. The QR code now uses the Site Icon (square, made for small sizes) and falls back to the email logo only when no Site Icon is set.
 
 = 1.56.0 =
 Roles have a new setting in Settings > Roles, "Only on events": with text in it, new events get a task of that role only when the event title contains that text (upper or lower case does not matter). Empty means every event, as before.
@@ -702,6 +705,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.56.1 =
+No action needed.
 
 = 1.56.0 =
 New role setting "Only on events". Nothing changes until it is filled in.

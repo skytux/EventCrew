@@ -254,7 +254,7 @@ final class TicketController
 
     /**
      * A QR code of this ticket's own link, so door staff can open it on their
-     * phone, with the site's logo in the middle. The code is drawn in the
+     * phone, with the site's icon (or logo) in the middle. The code is drawn in the
      * browser by the bundled qrcode-generator, at error correction level H:
      * up to 30% of the code can be covered and it still scans, and the logo
      * covers about 5%. No library, no code: the box is removed.
@@ -265,7 +265,7 @@ final class TicketController
             return '';
         }
 
-        $logo = EmailTemplate::logoUrl();
+        $logo = EmailTemplate::qrMarkUrl();
         $img = '' === $logo ? '' : '<img class="t-qr-logo" src="' . esc_url($logo) . '" alt="">';
         $lib = EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION;
 
