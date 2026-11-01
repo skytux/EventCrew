@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -117,6 +118,8 @@ final class TasksPage
         $eventChoice = isset($_POST['event_choice']) ? sanitize_text_field(wp_unslash($_POST['event_choice'])) : '';
         $eventLabel = isset($_POST['event_label']) ? sanitize_text_field(wp_unslash($_POST['event_label'])) : '';
         $capacity = isset($_POST['capacity']) ? (int) $_POST['capacity'] : 1;
+        // Empty means "the role's default", which only a new task can use.
+        $plusOnes = isset($_POST['plus_ones']) ? trim(sanitize_text_field(wp_unslash($_POST['plus_ones']))) : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
@@ -163,6 +166,12 @@ final class TasksPage
             'capacity' => max(0, $capacity),
             'notes' => $notes,
         ];
+
+        if (is_numeric($plusOnes)) {
+            $data['plus_ones'] = Task::clampPlusOnes((int) $plusOnes);
+        } elseif ($id <= 0) {
+            $data['plus_ones'] = Roles::defaultPlusOnes($roleSlug);
+        }
 
         if ($id > 0) {
             $this->tasks->update($id, $data);

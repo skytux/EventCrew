@@ -19,6 +19,14 @@
  * The "+1" and "−1" buttons at the top count people in without a name, such
  * as the organizers themselves. That count is part of the "checked in" total.
  *
+ * The "Scan" button opens the phone's camera and reads the QR code on a
+ * crew, free-entry or (later) buyer ticket. The server finds the person on
+ * tonight's list (DoorDesk::scan) without marking them; the popup then shows
+ * the name, a +1 counter up to what that person may bring, and "Mark
+ * arrived". The QR code is read by the browser's own BarcodeDetector where
+ * there is one, and otherwise by the bundled decoder of the qr library
+ * (assets/vendor/qr-decode, MIT), which is loaded only when Scan is tapped.
+ *
  * The "Other device" button opens a popup that shows a one-time login link as
  * a QR code: for this person on a second phone, or ("Login as") for another
  * organizer or sales-desk crew member (Support\DoorHandoff). The QR code
@@ -27,7 +35,7 @@
  * itself.
  *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
- * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions
+ * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions, qrDecodeUrl
  */
 
 declare(strict_types=1);
@@ -77,6 +85,12 @@ $eventcrew_text = [
     'noPeople' => __('Nobody else can run the sales desk tonight yet.', 'eventcrew'),
     'showQr' => __('Show QR code', 'eventcrew'),
     'loading' => __('Loading…', 'eventcrew'),
+    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+    'noCamera' => __('The camera could not be opened. Allow the camera for this page, or find the name on the list instead.', 'eventcrew'),
+    'noDecoder' => __('This phone cannot read QR codes here. Find the name on the list instead.', 'eventcrew'),
+    'already' => __('Already marked arrived.', 'eventcrew'),
+    /* translators: %s: the name of the person just marked arrived */
+    'arrived' => __('%s is marked arrived.', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -132,6 +146,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-qr{margin:12px auto;max-width:280px}
 #ec-qr svg{display:block;width:100%;height:auto}
 #ec-qr-link{width:100%;font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
+#ec-scan-video{display:block;width:100%;max-height:55vh;object-fit:cover;border-radius:10px;background:#000}
+#ec-scan-name{font-size:22px;font-weight:700;margin:12px 0 0;overflow-wrap:anywhere}
+#ec-scan-already{color:var(--in);font-weight:700}
+.ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+#ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+#ec-scan-mark{min-height:64px;font-size:20px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -146,6 +166,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     ?></small></div>
     </div>
     <div class="ec-buttons">
+    <button type="button" id="ec-scan-open"><?php esc_html_e('📷 Scan', 'eventcrew'); ?></button>
     <button type="button" id="ec-other-open"><?php esc_html_e('📱 Other device', 'eventcrew'); ?></button>
     <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
     </div>
@@ -274,6 +295,33 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         </div>
     </div>
 </dialog>
+<dialog id="ec-scan" aria-labelledby="ec-scan-title">
+    <div class="ec-dialog-head">
+        <h2 id="ec-scan-title"><?php esc_html_e('Scan ticket', 'eventcrew'); ?></h2>
+        <button type="button" id="ec-scan-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
+    </div>
+    <p class="ec-msg" id="ec-scan-msg" role="status"></p>
+
+    <div id="ec-scan-camera">
+        <video id="ec-scan-video" playsinline muted></video>
+        <p class="ec-muted"><?php esc_html_e('Point the camera at the QR code on the ticket.', 'eventcrew'); ?></p>
+    </div>
+
+    <div id="ec-scan-result" hidden>
+        <p id="ec-scan-name"></p>
+        <p class="ec-muted" id="ec-scan-detail"></p>
+        <p id="ec-scan-already" hidden><?php esc_html_e('Already marked arrived.', 'eventcrew'); ?></p>
+        <div class="ec-scan-plus" id="ec-scan-plus">
+            <button type="button" id="ec-scan-less" aria-label="<?php esc_attr_e('One guest fewer', 'eventcrew'); ?>">−</button>
+            <span id="ec-scan-count" aria-live="polite">+0</span>
+            <button type="button" id="ec-scan-more" aria-label="<?php esc_attr_e('One guest more', 'eventcrew'); ?>">+</button>
+        </div>
+        <div class="ec-stack">
+            <button type="button" class="ec-primary" id="ec-scan-mark"><?php esc_html_e('Mark arrived', 'eventcrew'); ?></button>
+            <button type="button" id="ec-scan-next"><?php esc_html_e('Scan another', 'eventcrew'); ?></button>
+        </div>
+    </div>
+</dialog>
 <script src="<?php echo esc_url(EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION); ?>"></script>
 <script>
 (function () {
@@ -393,7 +441,15 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     // While the Add popup is open, messages show inside it.
     function say(message) {
-        el(el('ec-add').open ? 'ec-add-msg' : 'ec-msg').textContent = message || '';
+        var target = 'ec-msg';
+
+        if (el('ec-add').open) {
+            target = 'ec-add-msg';
+        } else if (el('ec-scan').open) {
+            target = 'ec-scan-msg';
+        }
+
+        el(target).textContent = message || '';
     }
 
     function plusOf(row) {
@@ -442,8 +498,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         who.appendChild(node('div', 'ec-name', row.name));
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }
 
-        // Crew and free-entry credit rows have no guest count at all (their
-        // max is 0); a guest can bring as many as they are allowed.
+        // A row whose max is 0 has no guest count at all: free-entry credit
+        // rows, and crew whose tasks tonight allow no +1.
         if (row.max > 0) {
             less.setAttribute('aria-label', text.fewer);
             more.setAttribute('aria-label', text.more);
@@ -952,6 +1008,227 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     el('ec-member').addEventListener('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(searchMembers, 300);
+    });
+
+    // The Scan popup. The camera runs while the popup shows the camera; a
+    // code read is sent to the server, which finds the person on tonight's
+    // list without marking them.
+    var scanStream = null;
+    var scanTimer = null;
+    var scanRead = null;
+    var scanRow = null;
+    var scanPlus = 0;
+    var scanLast = '';
+    var scanLastAt = 0;
+
+    function scanMessage(message) {
+        el('ec-scan-msg').textContent = message || '';
+    }
+
+    function stopCamera() {
+        clearTimeout(scanTimer);
+        scanTimer = null;
+
+        if (scanStream) {
+            scanStream.getTracks().forEach(function (track) { track.stop(); });
+            scanStream = null;
+        }
+
+        el('ec-scan-video').srcObject = null;
+    }
+
+    // A function that reads the QR code in the video, or '' when there is
+    // none: the browser's BarcodeDetector, else the bundled decoder.
+    function scanReader() {
+        if (scanRead) {
+            return Promise.resolve(scanRead);
+        }
+
+        var native = 'BarcodeDetector' in window
+            ? window.BarcodeDetector.getSupportedFormats().then(function (formats) {
+                return -1 !== formats.indexOf('qr_code');
+            }, function () { return false; })
+            : Promise.resolve(false);
+
+        return native.then(function (supported) {
+            if (supported) {
+                var detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                scanRead = function (video) {
+                    return detector.detect(video).then(function (codes) {
+                        return codes.length ? codes[0].rawValue : '';
+                    });
+                };
+                return scanRead;
+            }
+
+            return import(config.qrDecodeUrl).then(function (module) {
+                var canvas = document.createElement('canvas');
+                var context = canvas.getContext('2d', { willReadFrequently: true });
+
+                scanRead = function (video) {
+                    // A smaller picture reads faster and a phone camera is
+                    // sharp enough for a code that fills part of it.
+                    var scale = Math.min(1, 800 / Math.max(video.videoWidth, video.videoHeight));
+                    canvas.width = Math.round(video.videoWidth * scale);
+                    canvas.height = Math.round(video.videoHeight * scale);
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    try {
+                        return Promise.resolve(module.decodeQR(context.getImageData(0, 0, canvas.width, canvas.height)));
+                    } catch (error) {
+                        return Promise.resolve('');
+                    }
+                };
+                return scanRead;
+            });
+        });
+    }
+
+    function startCamera() {
+        el('ec-scan-camera').hidden = false;
+        el('ec-scan-result').hidden = true;
+        scanRow = null;
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            scanMessage(text.noCamera);
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(function (stream) {
+                var video = el('ec-scan-video');
+
+                if (!el('ec-scan').open) {
+                    stream.getTracks().forEach(function (track) { track.stop(); });
+                    return;
+                }
+
+                scanStream = stream;
+                video.srcObject = stream;
+                video.play();
+
+                return scanReader().then(function (read) {
+                    scanLoop(read);
+                }, function () {
+                    stopCamera();
+                    scanMessage(text.noDecoder);
+                });
+            }, function () {
+                scanMessage(text.noCamera);
+            });
+    }
+
+    function scanLoop(read) {
+        var video = el('ec-scan-video');
+
+        if (!scanStream) {
+            return;
+        }
+
+        var next = function () { scanTimer = setTimeout(function () { scanLoop(read); }, 250); };
+
+        if (video.readyState < 2) {
+            next();
+            return;
+        }
+
+        read(video).then(function (found) {
+            // The same code again within a few seconds is the one just
+            // answered: still in front of the camera.
+            if (!found || (found === scanLast && Date.now() - scanLastAt < 4000)) {
+                next();
+                return;
+            }
+
+            scanLast = found;
+            scanLastAt = Date.now();
+            stopCamera();
+            post('scan', { text: found }).then(showScan, function (error) {
+                failed(error);
+                startCamera();
+            });
+        }, next);
+    }
+
+    function findRow(key) {
+        var found = null;
+
+        state.sections.forEach(function (section) {
+            section.rows.forEach(function (row) {
+                if (row.key === key) { found = row; }
+            });
+        });
+
+        return found;
+    }
+
+    function showScan(data) {
+        apply(data);
+        scanRow = data && data.ok ? findRow(data.key) : null;
+
+        if (!scanRow) {
+            scanMessage(data ? data.message : text.failed);
+            startCamera();
+            return;
+        }
+
+        scanMessage('');
+        el('ec-scan-camera').hidden = true;
+        el('ec-scan-result').hidden = false;
+        el('ec-scan-name').textContent = scanRow.name;
+        el('ec-scan-detail').textContent = scanRow.detail || '';
+        el('ec-scan-already').hidden = !scanRow.in;
+        el('ec-scan-plus').hidden = scanRow.max <= 0;
+        el('ec-scan-mark').disabled = false;
+        // Someone already in keeps the guests counted for them; anyone else
+        // starts at none.
+        setScanPlus(scanRow.in ? scanRow.plus : 0);
+    }
+
+    function setScanPlus(value) {
+        scanPlus = Math.max(0, Math.min(scanRow ? scanRow.max : 0, value));
+        el('ec-scan-count').textContent = '+' + scanPlus + ' ' + text.guests;
+        el('ec-scan-less').disabled = scanPlus <= 0;
+        el('ec-scan-more').disabled = !scanRow || scanPlus >= scanRow.max;
+    }
+
+    el('ec-scan-open').addEventListener('click', function () {
+        scanMessage('');
+        scanLast = '';
+        el('ec-scan').showModal();
+        startCamera();
+    });
+    el('ec-scan-close').addEventListener('click', function () { el('ec-scan').close(); });
+    el('ec-scan').addEventListener('close', function () {
+        stopCamera();
+        scanRow = null;
+    });
+    el('ec-scan-less').addEventListener('click', function () { setScanPlus(scanPlus - 1); });
+    el('ec-scan-more').addEventListener('click', function () { setScanPlus(scanPlus + 1); });
+    el('ec-scan-next').addEventListener('click', function () {
+        scanMessage('');
+        startCamera();
+    });
+    el('ec-scan-mark').addEventListener('click', function () {
+        var row = scanRow;
+
+        el('ec-scan-mark').disabled = true;
+        post('mark', { kind: row.kind, ref: row.ref, in: '1', plus: scanPlus }).then(function (data) {
+            apply(data);
+
+            if (data && data.ok) {
+                // Ready for the next person in the queue.
+                startCamera();
+                scanMessage(text.arrived.replace('%s', row.name));
+                return;
+            }
+
+            el('ec-scan-mark').disabled = false;
+            scanMessage(text.failed);
+        }, function (error) {
+            el('ec-scan-mark').disabled = false;
+            failed(error);
+        });
     });
 
     // No polling while the tab is hidden; one fresh read as soon as it shows.

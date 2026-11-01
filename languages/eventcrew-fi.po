@@ -2394,3 +2394,48 @@ msgstr "Ihmiset"
 
 msgid "Admin screens"
 msgstr "Admin-näkymät"
+
+msgid "%1$s: this ticket is for %2$s, not tonight."
+msgstr "%1$s: tämä lippu on päivälle %2$s, ei tälle illalle."
+
+msgid "%s is marked arrived."
+msgstr "%s on merkitty saapuneeksi."
+
+msgid "%s is not on tonight’s list."
+msgstr "%s ei ole tämän illan listalla."
+
+msgid "%s: this ticket is cancelled."
+msgstr "%s: tämä lippu on peruttu."
+
+msgid "%s: this ticket is not for tonight."
+msgstr "%s: tämä lippu ei ole tälle illalle."
+
+msgid "This QR code is not one of our tickets."
+msgstr "Tämä QR-koodi ei ole meidän lippumme."
+
+msgid "This ticket"
+msgstr "Tämä lippu"
+
+msgid "The camera could not be opened. Allow the camera for this page, or find the name on the list instead."
+msgstr "Kameraa ei voitu avata. Salli kamera tälle sivulle tai etsi nimi listalta."
+
+msgid "This phone cannot read QR codes here. Find the name on the list instead."
+msgstr "Tämä puhelin ei pysty lukemaan QR-koodeja tässä. Etsi nimi listalta."
+
+msgid "Already marked arrived."
+msgstr "Merkitty jo saapuneeksi."
+
+msgid "📷 Scan"
+msgstr "📷 Skannaa"
+
+msgid "Scan ticket"
+msgstr "Skannaa lippu"
+
+msgid "Point the camera at the QR code on the ticket."
+msgstr "Osoita kameralla lipun QR-koodia."
+
+msgid "Mark arrived"
+msgstr "Merkitse saapuneeksi"
+
+msgid "Scan another"
+msgstr "Skannaa seuraava"

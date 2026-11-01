@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
@@ -77,6 +78,7 @@ final class SettingsPage
             [
                 'roles' => Roles::all(),
                 'guide_url' => Roles::guideUrl(),
+                'organize_plus_ones' => Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG),
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
@@ -292,6 +294,16 @@ final class SettingsPage
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
         $guideUrl = isset($_POST['guide_url']) ? esc_url_raw(wp_unslash($_POST['guide_url'])) : '';
         update_option(Roles::GUIDE_URL_OPTION, $guideUrl);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $organizePlusOnes = isset($_POST['organize_plus_ones'])
+            ? trim(wp_unslash((string) $_POST['organize_plus_ones']))
+            : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if (is_numeric($organizePlusOnes)) {
+            update_option(Roles::ORGANIZE_PLUS_ONES_OPTION, Task::clampPlusOnes((int) $organizePlusOnes));
+        }
 
         // Checkbox: absent means unticked, same reasoning as the role
         // archive checkboxes above - an absent field is a real "off", not
@@ -1151,6 +1163,10 @@ final class SettingsPage
             ? array_map('sanitize_textarea_field', wp_unslash($_POST['role_description']))
             : [];
 
+        $plusOnes = isset($_POST['role_plus_ones']) && is_array($_POST['role_plus_ones'])
+            ? array_map('intval', wp_unslash($_POST['role_plus_ones']))
+            : [];
+
         $capacities = isset($_POST['role_capacity']) && is_array($_POST['role_capacity'])
             ? array_map('intval', wp_unslash($_POST['role_capacity']))
             : [];
@@ -1220,6 +1236,7 @@ final class SettingsPage
                 'sales_desk' => isset($salesDeskIndexes[$index]),
                 'on_board' => isset($onBoardIndexes[$index]),
                 'title_contains' => $titleContains[$index] ?? '',
+                'plus_ones' => $plusOnes[$index] ?? 0,
                 'conditions' => [
                     'counts' => is_array($counts[$index] ?? null)
                         ? array_map('intval', $counts[$index])

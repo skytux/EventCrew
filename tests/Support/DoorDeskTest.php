@@ -23,6 +23,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
+use EventCrew\Support\SignedLink;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -809,6 +810,128 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('allowed +1', $row['detail']);
         // Ann and the one person she may bring.
         self::assertSame(2, $state['expected']);
+    }
+
+    public function testScanningTonightsCrewTicketFindsTheirRowWithoutMarkingThem(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');   // assignments->find
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');                 // tasks->find
+        $this->wpdb->nextRows[] = $this->personRow(8);                           // the name
+        $this->queueCrewEntrants();
+
+        $url = 'https://site.test/wp-json/eventcrew/v1/ticket?token=' . SignedLink::sign('ticket', 30);
+        $scan = $this->desk()->scan(self::NIGHT, $url);
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('crew:8', $scan['key']);
+        self::assertSame('Person 8', $scan['name']);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testABareTokenScansTheSameAsTheLink(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueCrewEntrants();
+
+        self::assertSame('crew:8', $this->desk()->scan(self::NIGHT, ' ' . SignedLink::sign('ticket', 30) . ' ')['key']);
+    }
+
+    public function testATicketForAnotherNightSaysWhichNight(): void
+    {
+        $other = ['task_date' => '2026-12-12'] + $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $other;
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $desk = $this->desk();
+        $scan = $desk->scan(self::NIGHT, SignedLink::sign('ticket', 30));
+
+        self::assertSame(DoorDesk::SCAN_OTHER_NIGHT, $scan['code']);
+        self::assertSame('2026-12-12', $scan['date']);
+        self::assertStringStartsWith('Person 8: this ticket is for ', $desk->scanText($scan['code'], $scan['name'], $scan['date']));
+    }
+
+    public function testACancelledSignUpIsRefused(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'cancelled');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $desk = $this->desk();
+        $scan = $desk->scan(self::NIGHT, SignedLink::sign('ticket', 30));
+
+        self::assertSame(DoorDesk::SCAN_DISABLED, $scan['code']);
+        self::assertSame('Person 8: this ticket is cancelled.', $desk->scanText($scan['code'], $scan['name'], $scan['date']));
+    }
+
+    public function testTonightsCreditTicketFindsTheCreditRow(): void
+    {
+        $credit = ['id' => 44, 'person_id' => 9, 'redeemed_for' => self::NIGHT];
+        $this->wpdb->nextRows[] = $credit;                // redemptions->find
+        $this->wpdb->nextRows[] = $this->personRow(9);    // the name
+        $this->wpdb->nextResults[] = [];                  // tonight's tasks: none
+        $this->wpdb->nextResults[] = [$credit];           // tonight's redemptions
+        $this->wpdb->nextRows[] = $this->personRow(9);
+
+        $scan = $this->desk()->scan(self::NIGHT, SignedLink::sign('credit_ticket', 44));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('credit:9', $scan['key']);
+    }
+
+    public function testSomeOtherQrCodeIsNotOneOfOurs(): void
+    {
+        $desk = $this->desk();
+
+        foreach (['https://example.com/?token=abc.def', 'hello', SignedLink::sign('manage', 30)] as $text) {
+            $scan = $desk->scan(self::NIGHT, $text);
+            self::assertSame(DoorDesk::SCAN_NOT_OURS, $scan['code'], $text);
+        }
+
+        self::assertSame('This QR code is not one of our tickets.', $desk->scanText(DoorDesk::SCAN_NOT_OURS, '', ''));
+    }
+
+    /**
+     * Queues entrants() for one crew member, person 8 on task 5: the night's
+     * tasks, the task's crew, the name, and no redemptions.
+     */
+    private function queueCrewEntrants(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate')];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [];
+    }
+
+    public function testACrewRowMayBringTheSumOfItsTasksPlusOnes(): void
+    {
+        // A DJ (+1) who is also the host (+1) tonight may bring two.
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [
+            ['plus_ones' => 1] + $this->taskRow(5, 'dj'),
+            ['plus_ones' => 1] + $this->taskRow(6, 'host'),
+            $this->taskRow(7, 'decorate'),
+        ];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(31, 6, 8, 'signed_up')];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(32, 7, 9, 'signed_up')];
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $rows = $this->desk()->state(self::NIGHT)['sections'][0]['rows'];
+        $byRef = array_column($rows, null, 'ref');
+
+        self::assertSame(2, $byRef[8]['max']);
+        self::assertStringEndsWith(' · allowed +2', $byRef[8]['detail']);
+        // A task with no +1 lets its crew bring nobody, as before.
+        self::assertSame(0, $byRef[9]['max']);
+        self::assertStringNotContainsString('allowed', $byRef[9]['detail']);
     }
 
     public function testDoorTicketsHaveTheirOwnList(): void

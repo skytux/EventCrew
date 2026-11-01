@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '20';
+    public const DB_VERSION = '21';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -371,6 +371,7 @@ final class Schema
                 ends_at datetime DEFAULT NULL,
                 role_slug varchar(32) NOT NULL,
                 capacity smallint(5) unsigned NOT NULL DEFAULT 1,
+                plus_ones tinyint(3) unsigned NOT NULL DEFAULT 0,
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 deleted_at datetime DEFAULT NULL,

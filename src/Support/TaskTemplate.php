@@ -57,6 +57,7 @@ final class TaskTemplate
                 // capacity > 0), the same as a hand-edited 0. Clamping to 1 here
                 // wrongly put those roles' tasks back on the Telegram board.
                 'capacity' => max(0, (int) ($role['capacity'] ?? 1)),
+                'plus_ones' => (int) ($role['plus_ones'] ?? 0),
                 'event_post_id' => $eventPostId,
                 'event_label' => $eventLabel,
                 'notes' => '',
