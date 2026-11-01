@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.52.4
+Stable tag: 1.52.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.52.5 =
+On a computer screen the board shows its event cards side by side (three at 1280px wide). The theme's 645px content column only fitted one; the board alone now widens to the theme's wide size.
 
 = 1.52.4 =
 Sign up on a restricted task (Organize, Crew leader, DJ...) is the same height and width as on the other rows, with its word centred; before it was taller with the word at the top.
@@ -657,6 +660,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.52.5 =
+Board cards side by side on desktop.
 
 = 1.52.4 =
 Fixes the taller Sign up button on restricted tasks.
