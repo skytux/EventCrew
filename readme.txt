@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.51.0
+Stable tag: 1.51.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.51.1 =
+* Crew page, Me tab: My tasks, What you've done and Tickets are cards like the board's events. Each task's ticket is a link on its row under My tasks, so Tickets no longer repeats upcoming and past tasks; it keeps the free-entry credits.
+* Crew page, Admin tab: each part (Sales desk, Telegram board, Give a credit, Roles, Add a person to a task, Tonight's crew) is a card. Smaller buttons, outline buttons that really have an outline, fields the full card width, one line per role holder, a scroll box for the task list, one row of buttons per person tonight.
+* Crew page: Sign out is an outline button, the same height as the language links.
+* Settings > Roles: one role at a time. Each role is a collapsed row (emoji, name, slug, tags); opening it shows its fields. Replaces the 11-column table that needed sideways scrolling.
+* The page cache (W3 Total Cache) is emptied once after each plugin update, so visitors do not get pages that link the old stylesheet.
 
 = 1.51.0 =
 * The web page board shows each event as a card with its day in the header; task rows show only their time.
@@ -635,6 +642,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.51.1 =
+Crew page Me and Admin tabs as cards, one-role-at-a-time Roles editor, page cache emptied after updates.
 
 = 1.51.0 =
 Front page polish and wp-admin pages that work on a phone.

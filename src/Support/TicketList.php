@@ -26,15 +26,18 @@ final class TicketList
     }
 
     /**
+     * $withTasks false leaves out the tickets that come with a task, for the web
+     * page's Me tab, which shows each of those on its task's own row.
+     *
      * @return array{upcoming: array<int, array{label: string, when: string, url: string}>, past: array<int, array{label: string, when: string, url: string}>}
      */
-    public function forPerson(int $personId): array
+    public function forPerson(int $personId, bool $withTasks = true): array
     {
         $today = (string) current_time('Y-m-d');
         $upcoming = [];
         $past = [];
 
-        foreach ($this->assignments->forPerson($personId) as $assignment) {
+        foreach ($withTasks ? $this->assignments->forPerson($personId) : [] as $assignment) {
             // A ticket exists for a slot they hold or held; a cancelled/replaced
             // slot never became one.
             if (! in_array($assignment->status, self::TICKETED_STATUSES, true)) {
@@ -50,7 +53,7 @@ final class TicketList
             $item = [
                 'label' => $task->roleLabel() . ' · ' . $task->eventName(),
                 'when' => $task->taskDate,
-                'url' => $this->url('ticket', $assignment->id),
+                'url' => self::taskTicketUrl($assignment->id),
             ];
 
             $task->taskDate >= $today ? $upcoming[] = $item : $past[] = $item;
@@ -64,7 +67,7 @@ final class TicketList
             $item = [
                 'label' => __('Free entry', 'eventcrew'),
                 'when' => $redemption->redeemedFor,
-                'url' => $this->url('credit_ticket', $redemption->id),
+                'url' => self::url('credit_ticket', $redemption->id),
             ];
 
             $redemption->redeemedFor >= $today ? $upcoming[] = $item : $past[] = $item;
@@ -85,7 +88,13 @@ final class TicketList
         AssignmentStatus::NO_SHOW,
     ];
 
-    private function url(string $purpose, int $id): string
+    /** The signed ticket link for one sign-up (assignment). */
+    public static function taskTicketUrl(int $assignmentId): string
+    {
+        return self::url('ticket', $assignmentId);
+    }
+
+    private static function url(string $purpose, int $id): string
     {
         return add_query_arg(
             ['token' => SignedLink::sign($purpose, $id)],

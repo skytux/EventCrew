@@ -82,127 +82,164 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('The timing columns are what "Create an event\'s tasks" uses. Offsets are in minutes from the chosen anchor, negative for before it: decorating might run -120 to 0 from the start, cleaning 0 to 60 from the end. Leave both blank for a role whose timing varies - its tasks are created without times for you to fill in.', 'eventcrew'); ?>
         </p>
 
-        <div style="overflow-x:auto;margin:1em 0">
-        <table class="widefat striped eventcrew-roles-table" style="width:100%">
-            <thead>
-                <tr>
-                    <th style="width:5em"><?php esc_html_e('Emoji', 'eventcrew'); ?></th>
-                    <th><?php esc_html_e('Label', 'eventcrew'); ?></th>
-                    <th style="width:11em"><?php esc_html_e('Slug', 'eventcrew'); ?></th>
-                    <th style="width:7em"><?php esc_html_e('People', 'eventcrew'); ?></th>
-                    <th style="width:9em"><?php esc_html_e('Measured from', 'eventcrew'); ?></th>
-                    <th style="width:7em"><?php esc_html_e('Starts', 'eventcrew'); ?></th>
-                    <th style="width:7em"><?php esc_html_e('Ends', 'eventcrew'); ?></th>
-                    <th style="width:7em"><?php esc_html_e('Archived', 'eventcrew'); ?></th>
-                    <th style="width:11em"><?php esc_html_e('Access', 'eventcrew'); ?></th>
-                    <th style="min-width:14em"><?php esc_html_e('Conditions', 'eventcrew'); ?></th>
-                    <th style="min-width:16em"><?php esc_html_e('Description', 'eventcrew'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                // One blank row is appended so a new role can always be added
-                // without a JavaScript "add row" control.
-                $eventcrew_rows = $roles;
-                $eventcrew_rows[] = [
-                    'slug' => '',
-                    'label' => '',
-                    'emoji' => '',
-                    'capacity' => 1,
-                    'archived' => false,
-                    'restricted' => false,
-                    'every_night' => true,
-                    'sales_desk' => false,
-                    'on_board' => true,
-                    'conditions' => \EventCrew\Support\Roles::noConditions(),
-                    'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
-                    'start_offset' => null,
-                    'end_offset' => null,
-                    'description' => '',
-                ];
+        <?php
+        // One blank role is appended so a new role can always be added
+        // without a JavaScript "add" control.
+        $eventcrew_rows = $roles;
+        $eventcrew_rows[] = [
+            'slug' => '',
+            'label' => '',
+            'emoji' => '',
+            'capacity' => 1,
+            'archived' => false,
+            'restricted' => false,
+            'every_night' => true,
+            'sales_desk' => false,
+            'on_board' => true,
+            'conditions' => \EventCrew\Support\Roles::noConditions(),
+            'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
+            'start_offset' => null,
+            'end_offset' => null,
+            'description' => '',
+        ];
 
-                $eventcrew_anchors = [
-                    \EventCrew\Support\Roles::ANCHOR_START => __('Event start', 'eventcrew'),
-                    \EventCrew\Support\Roles::ANCHOR_END => __('Event end', 'eventcrew'),
-                ];
-                ?>
-                <?php foreach ($eventcrew_rows as $eventcrew_index => $eventcrew_role) : ?>
-                    <tr<?php echo $eventcrew_role['archived'] ? ' style="opacity:.6"' : ''; ?>>
+        $eventcrew_anchors = [
+            \EventCrew\Support\Roles::ANCHOR_START => __('Event start', 'eventcrew'),
+            \EventCrew\Support\Roles::ANCHOR_END => __('Event end', 'eventcrew'),
+        ];
+
+        /*
+         * One role at a time: each role is a closed block showing its emoji,
+         * name and slug; pressing it opens that role's fields as an ordinary
+         * settings form. The shared name="" makes the browser keep only one
+         * open (a browser too old for that just lets several open). Closed
+         * blocks are still inside the form, so Save stores every role exactly
+         * as the old table did.
+         */
+        ?>
+        <div class="eventcrew-role-list">
+        <?php foreach ($eventcrew_rows as $eventcrew_index => $eventcrew_role) : ?>
+            <?php
+            $eventcrew_i = (string) $eventcrew_index;
+            $eventcrew_id = 'eventcrew-role-' . $eventcrew_i;
+            $eventcrew_is_new = '' === $eventcrew_role['slug'];
+            ?>
+            <details class="eventcrew-role<?php echo $eventcrew_role['archived'] ? ' is-archived' : ''; ?>" name="eventcrew-role">
+                <summary>
+                    <?php if ($eventcrew_is_new) : ?>
+                        <strong><?php esc_html_e('+ Add a role', 'eventcrew'); ?></strong>
+                    <?php else : ?>
+                        <strong><?php echo esc_html(trim($eventcrew_role['emoji'] . ' ' . $eventcrew_role['label'])); ?></strong>
+                        <code><?php echo esc_html($eventcrew_role['slug']); ?></code>
+                        <?php if ($eventcrew_role['archived']) : ?>
+                            <span class="eventcrew-role-tag"><?php esc_html_e('Archived', 'eventcrew'); ?></span>
+                        <?php endif; ?>
+                        <?php if ($eventcrew_role['restricted']) : ?>
+                            <span class="eventcrew-role-tag"><?php esc_html_e('Role holders only', 'eventcrew'); ?></span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </summary>
+
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-emoji"><?php esc_html_e('Emoji', 'eventcrew'); ?></label></th>
                         <td>
                             <input
                                 type="text"
-                                name="role_emoji[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-emoji"
+                                name="role_emoji[<?php echo esc_attr($eventcrew_i); ?>]"
                                 value="<?php echo esc_attr($eventcrew_role['emoji']); ?>"
                                 size="2">
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-label"><?php esc_html_e('Label', 'eventcrew'); ?></label></th>
                         <td>
                             <input
                                 type="text"
-                                name="role_label[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-label"
+                                name="role_label[<?php echo esc_attr($eventcrew_i); ?>]"
                                 value="<?php echo esc_attr($eventcrew_role['label']); ?>"
-                                style="width:11em;max-width:100%">
+                                class="regular-text">
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-slug"><?php esc_html_e('Slug', 'eventcrew'); ?></label></th>
                         <td>
                             <input
                                 type="text"
-                                name="role_slug[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-slug"
+                                name="role_slug[<?php echo esc_attr($eventcrew_i); ?>]"
                                 value="<?php echo esc_attr($eventcrew_role['slug']); ?>"
-                                style="width:9em;max-width:100%"
-                                <?php echo '' !== $eventcrew_role['slug'] ? 'readonly' : ''; ?>>
+                                class="regular-text"
+                                <?php echo $eventcrew_is_new ? '' : 'readonly'; ?>>
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-capacity"><?php esc_html_e('People', 'eventcrew'); ?></label></th>
                         <td>
                             <input
                                 type="number"
                                 min="0"
                                 step="1"
-                                name="role_capacity[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-capacity"
+                                name="role_capacity[<?php echo esc_attr($eventcrew_i); ?>]"
                                 value="<?php echo esc_attr((string) $eventcrew_role['capacity']); ?>"
-                                style="width:5em">
+                                class="small-text">
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Timing', 'eventcrew'); ?></th>
                         <td>
-                            <select name="role_anchor[<?php echo esc_attr((string) $eventcrew_index); ?>]">
-                                <?php foreach ($eventcrew_anchors as $eventcrew_value => $eventcrew_anchor_label) : ?>
-                                    <option
-                                        value="<?php echo esc_attr($eventcrew_value); ?>"
-                                        <?php selected($eventcrew_role['anchor'], $eventcrew_value); ?>>
-                                        <?php echo esc_html($eventcrew_anchor_label); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label>
+                                <?php esc_html_e('Measured from', 'eventcrew'); ?>
+                                <select name="role_anchor[<?php echo esc_attr($eventcrew_i); ?>]">
+                                    <?php foreach ($eventcrew_anchors as $eventcrew_value => $eventcrew_anchor_label) : ?>
+                                        <option
+                                            value="<?php echo esc_attr($eventcrew_value); ?>"
+                                            <?php selected($eventcrew_role['anchor'], $eventcrew_value); ?>>
+                                            <?php echo esc_html($eventcrew_anchor_label); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label><br>
+                            <label>
+                                <?php esc_html_e('Starts', 'eventcrew'); ?>
+                                <input
+                                    type="number"
+                                    step="15"
+                                    name="role_start_offset[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="<?php echo esc_attr(null === $eventcrew_role['start_offset'] ? '' : (string) $eventcrew_role['start_offset']); ?>"
+                                    class="small-text">
+                            </label>
+                            <label>
+                                <?php esc_html_e('Ends', 'eventcrew'); ?>
+                                <input
+                                    type="number"
+                                    step="15"
+                                    name="role_end_offset[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="<?php echo esc_attr(null === $eventcrew_role['end_offset'] ? '' : (string) $eventcrew_role['end_offset']); ?>"
+                                    class="small-text">
+                            </label>
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Access', 'eventcrew'); ?></th>
                         <td>
-                            <input
-                                type="number"
-                                step="15"
-                                name="role_start_offset[<?php echo esc_attr((string) $eventcrew_index); ?>]"
-                                value="<?php echo esc_attr(null === $eventcrew_role['start_offset'] ? '' : (string) $eventcrew_role['start_offset']); ?>"
-                                style="width:5em">
-                        </td>
-                        <td>
-                            <input
-                                type="number"
-                                step="15"
-                                name="role_end_offset[<?php echo esc_attr((string) $eventcrew_index); ?>]"
-                                value="<?php echo esc_attr(null === $eventcrew_role['end_offset'] ? '' : (string) $eventcrew_role['end_offset']); ?>"
-                                style="width:5em">
-                        </td>
-                        <td>
-                            <?php if ('' !== $eventcrew_role['slug']) : ?>
+                            <?php if (! $eventcrew_is_new) : ?>
                                 <label>
                                     <input
                                         type="checkbox"
-                                        name="role_archived[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                        name="role_archived[<?php echo esc_attr($eventcrew_i); ?>]"
                                         value="1"
                                         <?php checked($eventcrew_role['archived']); ?>>
-                                    <?php esc_html_e('Hide', 'eventcrew'); ?>
-                                </label>
+                                    <?php esc_html_e('Archived (hidden)', 'eventcrew'); ?>
+                                </label><br>
                             <?php endif; ?>
-                        </td>
-                        <td>
                             <label>
                                 <input
                                     type="checkbox"
-                                    name="role_restricted[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    name="role_restricted[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['restricted']); ?>>
                                 <?php esc_html_e('Only people with this role', 'eventcrew'); ?>
@@ -210,7 +247,7 @@ if (! defined('ABSPATH')) {
                             <label>
                                 <input
                                     type="checkbox"
-                                    name="role_every_night[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    name="role_every_night[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['every_night']); ?>>
                                 <?php esc_html_e('Add to every night', 'eventcrew'); ?>
@@ -218,7 +255,7 @@ if (! defined('ABSPATH')) {
                             <label>
                                 <input
                                     type="checkbox"
-                                    name="role_sales_desk[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    name="role_sales_desk[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['sales_desk']); ?>>
                                 <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?>
@@ -226,64 +263,69 @@ if (! defined('ABSPATH')) {
                             <label>
                                 <input
                                     type="checkbox"
-                                    name="role_on_board[<?php echo esc_attr((string) $eventcrew_index); ?>]"
+                                    name="role_on_board[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['on_board']); ?>>
                                 <?php esc_html_e('Show on the Telegram board', 'eventcrew'); ?>
                             </label>
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Conditions', 'eventcrew'); ?></th>
                         <td>
                             <?php $eventcrew_conditions = $eventcrew_role['conditions']; ?>
-                            <details<?php echo \EventCrew\Support\Roles::hasConditions($eventcrew_conditions) ? ' open' : ''; ?>>
-                                <summary><?php esc_html_e('Completed tasks', 'eventcrew'); ?></summary>
-                                <?php foreach ($roles as $eventcrew_count_role) : ?>
-                                    <?php
-                                    if ($eventcrew_count_role['slug'] === $eventcrew_role['slug']) {
-                                        continue;
-                                    }
-                                    ?>
-                                    <label style="display:block">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="1"
-                                            name="role_count[<?php echo esc_attr((string) $eventcrew_index); ?>][<?php echo esc_attr($eventcrew_count_role['slug']); ?>]"
-                                            value="<?php echo esc_attr((string) ($eventcrew_conditions['counts'][$eventcrew_count_role['slug']] ?? '')); ?>"
-                                            style="width:4em">
-                                        <?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_count_role['slug'])); ?>
-                                    </label>
-                                <?php endforeach; ?>
+                            <p class="description"><?php esc_html_e('Completed tasks', 'eventcrew'); ?></p>
+                            <?php foreach ($roles as $eventcrew_count_role) : ?>
+                                <?php
+                                if ($eventcrew_count_role['slug'] === $eventcrew_role['slug']) {
+                                    continue;
+                                }
+                                ?>
                                 <label style="display:block">
-                                    <?php esc_html_e('At least', 'eventcrew'); ?>
                                     <input
                                         type="number"
                                         min="0"
                                         step="1"
-                                        name="role_min_roles[<?php echo esc_attr((string) $eventcrew_index); ?>]"
-                                        value="<?php echo esc_attr(0 === $eventcrew_conditions['min_roles'] ? '' : (string) $eventcrew_conditions['min_roles']); ?>"
-                                        style="width:4em">
-                                    <?php esc_html_e('different roles,', 'eventcrew'); ?>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        name="role_times_each[<?php echo esc_attr((string) $eventcrew_index); ?>]"
-                                        value="<?php echo esc_attr(0 === $eventcrew_conditions['times_each'] ? '' : (string) $eventcrew_conditions['times_each']); ?>"
-                                        style="width:4em">
-                                    <?php esc_html_e('times each', 'eventcrew'); ?>
+                                        name="role_count[<?php echo esc_attr($eventcrew_i); ?>][<?php echo esc_attr($eventcrew_count_role['slug']); ?>]"
+                                        value="<?php echo esc_attr((string) ($eventcrew_conditions['counts'][$eventcrew_count_role['slug']] ?? '')); ?>"
+                                        class="small-text">
+                                    <?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_count_role['slug'])); ?>
                                 </label>
-                            </details>
-                        </td>
-                        <td>
-                            <textarea
-                                name="role_description[<?php echo esc_attr((string) $eventcrew_index); ?>]"
-                                rows="3"
-                                style="width:100%;min-width:16em"><?php echo esc_textarea($eventcrew_role['description']); ?></textarea>
+                            <?php endforeach; ?>
+                            <label style="display:block">
+                                <?php esc_html_e('At least', 'eventcrew'); ?>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    name="role_min_roles[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="<?php echo esc_attr(0 === $eventcrew_conditions['min_roles'] ? '' : (string) $eventcrew_conditions['min_roles']); ?>"
+                                    class="small-text">
+                                <?php esc_html_e('different roles,', 'eventcrew'); ?>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    name="role_times_each[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="<?php echo esc_attr(0 === $eventcrew_conditions['times_each'] ? '' : (string) $eventcrew_conditions['times_each']); ?>"
+                                    class="small-text">
+                                <?php esc_html_e('times each', 'eventcrew'); ?>
+                            </label>
                         </td>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-description"><?php esc_html_e('Description', 'eventcrew'); ?></label></th>
+                        <td>
+                            <textarea
+                                id="<?php echo esc_attr($eventcrew_id); ?>-description"
+                                name="role_description[<?php echo esc_attr($eventcrew_i); ?>]"
+                                rows="3"
+                                class="large-text"><?php echo esc_textarea($eventcrew_role['description']); ?></textarea>
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        <?php endforeach; ?>
         </div>
 
         <p class="description">

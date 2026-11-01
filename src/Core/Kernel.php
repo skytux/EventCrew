@@ -42,6 +42,7 @@ use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
+use EventCrew\Support\PageCacheFlush;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
@@ -111,6 +112,10 @@ final class Kernel
         // Adds the organize task to nights created before it existed. Runs
         // once per site, on the first request of any kind after the update.
         $this->container->get(OrganizeTaskBackfill::class)->maybeRun();
+
+        // Empties the page cache once after each update, so no visitor gets a
+        // page built by the old version.
+        PageCacheFlush::boot();
 
         $admin = $this->container->get(Admin::class);
         $admin->boot();
