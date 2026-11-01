@@ -55,7 +55,9 @@
     --eventcrew-pip: #22c55e;
 }
 
-.eventcrew-signup .eventcrew-muted { opacity: .7; }
+/* .8, not .7: at .7 small print went faint on a translucent or photo
+   background, which is what the live theme puts behind the page. */
+.eventcrew-signup .eventcrew-muted { opacity: .8; }
 /*
  * Hints wrap evenly rather than leaving one word stranded on a second line.
  *
@@ -165,8 +167,35 @@
 
 /* The board list. Scoped to the board so ticket and task lists elsewhere in the
    panels keep the theme's own list styling. */
-.eventcrew-signup .eventcrew-board ul { list-style: none; padding: 0; margin: 0 0 1.2em; }
-.eventcrew-signup .eventcrew-board h3 { margin: 1em 0 .4em; font-size: 1em; }
+.eventcrew-signup .eventcrew-board ul { list-style: none; padding: 0; margin: 0; }
+
+/*
+ * One card per event: the event's name and day in a header strip, its tasks
+ * underneath. Without the card the events ran together into one long list and
+ * the only thing marking where one ended was a small bold line.
+ *
+ * The surface is the page's own text colour at a few percent, so the card
+ * shows on a light page, a dark page and a photo background alike without the
+ * sheet having to know which it is on.
+ */
+.eventcrew-signup .eventcrew-event {
+    margin: 0 0 1.2em;
+    border: 1px solid var(--eventcrew-line);
+    border-radius: var(--eventcrew-radius);
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    overflow: hidden;
+}
+.eventcrew-signup .eventcrew-event-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+    gap: .2em 1em;
+    padding: .7em 1em;
+    border-bottom: 1px solid var(--eventcrew-line);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.eventcrew-signup .eventcrew-board .eventcrew-event-title { margin: 0; font-size: 1.05em; line-height: 1.3; }
+.eventcrew-signup .eventcrew-event-date { font-size: .9em; opacity: .8; white-space: nowrap; }
+.eventcrew-signup .eventcrew-event .eventcrew-task-row { padding-inline: 1em; }
+.eventcrew-signup .eventcrew-board-note { margin: 0 0 1em; font-size: .95em; }
 /*
  * Each upcoming task breaks where it should: the job on its own line, the when
  * and the calendar link beneath. Left to wrap on its own it split mid-phrase
@@ -186,7 +215,10 @@
 .eventcrew-signup .eventcrew-divider {
     margin: 1.5em 0 0; padding-top: 1.2em; border-top: 1px solid var(--eventcrew-line);
 }
-.eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .4em; padding-left: 1.2em; }
+/* Tickets are a plain list like My tasks: the ticket's name as the link, its
+   day under it, no bullets and no ragged wrap after a dash. */
+.eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .8em; }
+.eventcrew-signup .eventcrew-ticket-list a.eventcrew-mine-label { text-decoration: underline; text-underline-offset: .15em; }
 .eventcrew-signup .eventcrew-listhead { margin: .4em 0 .2em; }
 .eventcrew-signup form { margin: 0; }
 
@@ -221,7 +253,7 @@
     min-width: 0; overflow-wrap: anywhere;
 }
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
-.eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .7; }
+.eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; }
 .eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
 .eventcrew-signup .eventcrew-guide { margin-top: 1em; }
 

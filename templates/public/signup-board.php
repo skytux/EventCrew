@@ -43,9 +43,43 @@ $eventcrew_hidden = static function (string $action, string $csrf, string $here)
     <?php
 endif; ?>
 
+<?php
+/*
+ * Signed out, the board says once, above the list, that signing in comes
+ * first. It used to say "sign in first" on every row, which on a full board
+ * was the same three words a dozen times down the right edge.
+ */
+if (null === $eventcrew_person && [] !== $view['groups']) :
+    ?>
+    <p class="eventcrew-board-note"><?php esc_html_e('Sign in above to take a task.', 'eventcrew'); ?></p>
+    <?php
+endif; ?>
+
 <?php foreach ($view['groups'] as $eventcrew_group) :
     ?>
-    <h3><?php echo esc_html($eventcrew_group['title']); ?></h3>
+    <?php
+    /*
+     * Each event is a card with its date in the header. When every task in
+     * the event falls on one day the rows show only their time, because the
+     * date above already says which day; an event spread over several days
+     * keeps the date on each row.
+     */
+    $eventcrew_dates = array_unique(array_map(
+        static fn (array $row): string => (string) $row['task']->taskDate,
+        $eventcrew_group['tasks']
+    ));
+    $eventcrew_one_day = 1 === count($eventcrew_dates);
+    $eventcrew_group_date = $eventcrew_one_day
+        ? date_i18n('l j F', (int) strtotime((string) reset($eventcrew_dates)))
+        : '';
+    ?>
+    <section class="eventcrew-event">
+    <header class="eventcrew-event-head">
+        <h3 class="eventcrew-event-title"><?php echo esc_html($eventcrew_group['title']); ?></h3>
+        <?php if ('' !== $eventcrew_group_date) : ?>
+            <span class="eventcrew-event-date"><?php echo esc_html($eventcrew_group_date); ?></span>
+        <?php endif; ?>
+    </header>
     <ul>
         <?php foreach ($eventcrew_group['tasks'] as $eventcrew_row) :
             ?>
@@ -54,8 +88,10 @@ endif; ?>
             $eventcrew_time = $eventcrew_task->timeRange();
             $eventcrew_no_limit = $eventcrew_task->hasNoLimit();
             $eventcrew_full = ! $eventcrew_no_limit && $eventcrew_row['taken'] >= $eventcrew_task->capacity;
-            $eventcrew_when = date_i18n('j M', strtotime($eventcrew_task->taskDate))
-                . ('' === $eventcrew_time ? '' : ' · ' . $eventcrew_time);
+            $eventcrew_when = $eventcrew_one_day
+                ? $eventcrew_time
+                : date_i18n('D j M', (int) strtotime($eventcrew_task->taskDate))
+                    . ('' === $eventcrew_time ? '' : ' · ' . $eventcrew_time);
             /* translators: 1: people signed up so far, 2: people needed in total */
             $eventcrew_fill = sprintf(__('%1$d of %2$d', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);
 
@@ -67,7 +103,9 @@ endif; ?>
             <li class="eventcrew-task-row" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
                 <span class="eventcrew-task-main">
                     <span class="eventcrew-task-role"><?php echo esc_html($eventcrew_task->roleDisplay()); ?></span>
-                    <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
+                    <?php if ('' !== $eventcrew_when) : ?>
+                        <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
+                    <?php endif; ?>
                 </span>
                 <?php
                 /*
@@ -98,8 +136,9 @@ endif; ?>
                 $eventcrew_blocked = (string) ($eventcrew_row['blocked'] ?? '');
                 ?>
                 <?php if (null === $eventcrew_person) :
+                    // Nothing to press until signed in; the note above the
+                    // board says so once.
                     ?>
-                    <span class="eventcrew-muted"><?php esc_html_e('sign in first', 'eventcrew'); ?></span>
                     <?php
                 elseif (! $eventcrew_row['mine'] && '' !== $eventcrew_blocked) :
                     /*
@@ -168,11 +207,17 @@ endif; ?>
             <?php
         endforeach; ?>
     </ul>
+    </section>
     <?php
 endforeach; ?>
 
 <?php
-$eventcrew_roles = \EventCrew\Support\RoleGuide::descriptions();
+// Only roles that have a description: a bare name under "What each task
+// involves" answers nothing. The Telegram welcome keeps the full list.
+$eventcrew_roles = array_values(array_filter(
+    \EventCrew\Support\RoleGuide::descriptions(),
+    static fn (array $role): bool => '' !== trim($role['description'])
+));
 if ([] !== $eventcrew_roles) :
     ?>
     <section class="eventcrew-tasks-info" id="<?php echo esc_attr(\EventCrew\Support\RoleGuide::DESCRIPTIONS_ANCHOR); ?>">
@@ -180,9 +225,7 @@ if ([] !== $eventcrew_roles) :
         <dl>
             <?php foreach ($eventcrew_roles as $eventcrew_role) : ?>
                 <dt><?php echo esc_html($eventcrew_role['name']); ?></dt>
-                <?php if ('' !== $eventcrew_role['description']) : ?>
-                    <dd><?php echo esc_html($eventcrew_role['description']); ?></dd>
-                <?php endif; ?>
+                <dd><?php echo esc_html($eventcrew_role['description']); ?></dd>
             <?php endforeach; ?>
         </dl>
     </section>

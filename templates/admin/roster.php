@@ -180,7 +180,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 <?php esc_html_e('People let in free who are not crew members. The /guest bot command keeps the same list.', 'eventcrew'); ?>
             </p>
             <?php /* Each row's fields post into that row's own form by id, since a form cannot wrap a table row. */ ?>
-            <table class="widefat striped" style="max-width:820px;margin-bottom:2em">
+            <table class="widefat striped eventcrew-stack" style="max-width:820px;margin-bottom:2em">
                 <thead>
                     <tr>
                         <th><?php esc_html_e('Name', 'eventcrew'); ?></th>
@@ -193,10 +193,10 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <?php foreach ($guests as $eventcrew_guest) : ?>
                         <?php $eventcrew_form = 'eventcrew-guest-' . $eventcrew_guest->id; ?>
                         <tr>
-                            <td><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>"></td>
-                            <td><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr((string) $eventcrew_guest->plusOnes); ?>"></td>
-                            <td><input type="text" name="guest_note" maxlength="191" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->note); ?>"></td>
-                            <td style="white-space:nowrap">
+                            <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>"></td>
+                            <td data-label="<?php esc_attr_e('Plus-ones', 'eventcrew'); ?>"><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr((string) $eventcrew_guest->plusOnes); ?>"></td>
+                            <td data-label="<?php esc_attr_e('Note', 'eventcrew'); ?>"><input type="text" name="guest_note" maxlength="191" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->note); ?>"></td>
+                            <td class="eventcrew-stack-actions" style="white-space:nowrap">
                                 <form method="post" id="<?php echo esc_attr($eventcrew_form); ?>" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
                                     <input type="hidden" name="action" value="eventcrew_save_guest">
                                     <?php wp_nonce_field($nonce_action); ?>
@@ -215,10 +215,10 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         </tr>
                     <?php endforeach; ?>
                     <tr>
-                        <td><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="eventcrew-guest-new" placeholder="<?php esc_attr_e('New guest’s name', 'eventcrew'); ?>"></td>
-                        <td><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="eventcrew-guest-new" value="0"></td>
-                        <td><input type="text" name="guest_note" maxlength="191" style="width:100%" form="eventcrew-guest-new"></td>
-                        <td>
+                        <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="eventcrew-guest-new" placeholder="<?php esc_attr_e('New guest’s name', 'eventcrew'); ?>"></td>
+                        <td data-label="<?php esc_attr_e('Plus-ones', 'eventcrew'); ?>"><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="eventcrew-guest-new" value="0"></td>
+                        <td data-label="<?php esc_attr_e('Note', 'eventcrew'); ?>"><input type="text" name="guest_note" maxlength="191" style="width:100%" form="eventcrew-guest-new"></td>
+                        <td class="eventcrew-stack-actions">
                             <form method="post" id="eventcrew-guest-new" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                                 <input type="hidden" name="action" value="eventcrew_save_guest">
                                 <?php wp_nonce_field($nonce_action); ?>
