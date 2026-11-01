@@ -239,8 +239,9 @@
 .eventcrew-signup .eventcrew-event-date { font-size: .9em; opacity: .8; white-space: nowrap; }
 
 /*
- * The events on the board in columns: as many 18rem columns as fit, so one on
- * a phone or a narrow theme column, three on a 1280px page. rem, not em: em
+ * The events on the board in columns: as many 18rem columns as fit inside the
+ * page's own column (it never reaches past the theme's box), so one on a
+ * phone and two in a 645px theme column. rem, not em: em
  * follows the theme's text size, which is about 20px on the live theme, and
  * 20em columns then fitted only two across 1280px. auto-fit, not auto-fill:
  * with fewer events than columns, the cards widen to fill the row instead of
@@ -254,20 +255,6 @@
     scroll-margin-top: 1em;
 }
 .eventcrew-signup .eventcrew-board-grid .eventcrew-event { margin: 0; }
-/*
- * A block theme's content column is narrow (645px on Twenty Twenty-Five), and
- * two 20em columns plus the gap do not fit in it, so the board was one column
- * at every screen size. Above phone width the grid alone widens to the theme's
- * wide size, never closer than 24px to the screen edge, and stays centred on
- * the content column. Everything else on the page keeps the content width.
- */
-@media (min-width: 641px) {
-    .eventcrew-signup .eventcrew-board-grid {
-        --eventcrew-board-width: min(var(--wp--style--global--wide-size, 1200px), calc(100vw - 48px));
-        margin-left: min(0px, calc((100% - var(--eventcrew-board-width)) / 2));
-        margin-right: min(0px, calc((100% - var(--eventcrew-board-width)) / 2));
-    }
-}
 
 /*
  * An event with a picture shows it behind its header, under a dark layer so

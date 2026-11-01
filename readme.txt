@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.55.1
+Stable tag: 1.55.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.55.2 =
+Crew page: the sign-in form is a card like the rest of the page, and the board's event cards stay inside the page's own box on a desktop screen (the grid no longer widens past it).
 
 = 1.55.1 =
 Crew page: the Telegram group and crew guide buttons moved from under the board to the top of the page, above every tab.
@@ -696,6 +699,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.55.2 =
+Nothing to do.
 
 = 1.55.1 =
 Nothing to do.
