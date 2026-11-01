@@ -86,6 +86,7 @@ use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
@@ -511,7 +512,25 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
                 $container->get(Logger::class),
-                $container->get(RoleTaskService::class)
+                $container->get(RoleTaskService::class),
+                $container->get(CrewAdminRoster::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminRoster::class,
+            fn (Container $container) => new CrewAdminRoster(
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(DoorList::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(FreeEntryGate::class),
+                $container->get(TicketRedemptionService::class),
+                $container->get(GuestRepository::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(BuyerImport::class),
+                $container->get(MailImporter::class)
             )
         );
 

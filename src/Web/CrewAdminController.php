@@ -7,6 +7,7 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\CreditGrantNotifier;
@@ -51,6 +52,11 @@ final class CrewAdminController
     public const MARK_ACTION = 'eventcrew_web_admin_mark';
     public const ROLES_ACTION = 'eventcrew_web_admin_roles';
     public const ADD_ACTION = 'eventcrew_web_admin_add';
+    public const ROSTER_ACTION = 'eventcrew_web_admin_roster';
+    public const DOOR_ACTION = 'eventcrew_web_admin_door';
+    public const GUEST_ACTION = 'eventcrew_web_admin_guest';
+    public const BUYERS_ACTION = 'eventcrew_web_admin_buyers';
+    public const MAIL_ACTION = 'eventcrew_web_admin_mail';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -64,6 +70,11 @@ final class CrewAdminController
         self::MARK_ACTION,
         self::ROLES_ACTION,
         self::ADD_ACTION,
+        self::ROSTER_ACTION,
+        self::DOOR_ACTION,
+        self::GUEST_ACTION,
+        self::BUYERS_ACTION,
+        self::MAIL_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -101,7 +112,8 @@ final class CrewAdminController
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
         private readonly Logger $logger,
-        private readonly RoleTaskService $roleTasks
+        private readonly RoleTaskService $roleTasks,
+        private readonly CrewAdminRoster $rosterScreen
     ) {
     }
 
@@ -129,6 +141,11 @@ final class CrewAdminController
             self::MARK_ACTION => __('Mark attendance', 'eventcrew'),
             self::ROLES_ACTION => __('Change a member’s roles', 'eventcrew'),
             self::ADD_ACTION => __('Add a person to a task', 'eventcrew'),
+            self::ROSTER_ACTION => __('Update attendance', 'eventcrew'),
+            self::DOOR_ACTION => __('Door list', 'eventcrew'),
+            self::GUEST_ACTION => __('Guest list', 'eventcrew'),
+            self::BUYERS_ACTION => __('Holvi ticket buyers', 'eventcrew'),
+            self::MAIL_ACTION => __('Check the mailbox now', 'eventcrew'),
         ];
     }
 
@@ -214,6 +231,8 @@ final class CrewAdminController
                 '1' === (string) ($post['counts_credit'] ?? ''),
                 (int) ($post['person_id'] ?? 0)
             ),
+            self::ROSTER_ACTION, self::DOOR_ACTION, self::GUEST_ACTION, self::BUYERS_ACTION, self::MAIL_ACTION
+                => $this->rosterScreenAction($organizer, $action, $post),
             default => $this->markAttendance(
                 $organizer,
                 (int) ($post['assignment_id'] ?? 0),
@@ -331,6 +350,62 @@ final class CrewAdminController
         $this->assignments->setStatus($assignment->id, self::MARKS[$mark], $organizer->id, MarkedBy::PERSON);
 
         return 'admin_marked';
+    }
+
+    /**
+     * The Roster screen's forms (attendance, door list, guests, ticket buyers,
+     * mailbox), handed to CrewAdminRoster. Each form posts the date it was
+     * drawn for as roster_date and the part it wants as op.
+     *
+     * @param array<string, mixed> $post The request body, unslashed.
+     */
+    private function rosterScreenAction(Person $organizer, string $action, array $post): string
+    {
+        $date = sanitize_text_field((string) ($post['roster_date'] ?? ''));
+        $op = sanitize_key((string) ($post['op'] ?? ''));
+
+        return match ($action) {
+            self::ROSTER_ACTION => isset($post['mark_all'])
+                ? $this->rosterScreen->markAll(
+                    $organizer,
+                    $date,
+                    (int) ($post['task_id'] ?? 0),
+                    sanitize_key((string) $post['mark_all'])
+                )
+                : $this->rosterScreen->saveRoster(
+                    $organizer,
+                    $date,
+                    is_array($post['status'] ?? null) ? $post['status'] : []
+                ),
+            self::DOOR_ACTION => match ($op) {
+                'toggle' => $this->rosterScreen->toggleFreeEntry($date),
+                'redeem' => $this->rosterScreen->redeem($date, (int) ($post['person_id'] ?? 0)),
+                'unredeem' => $this->rosterScreen->unredeem((int) ($post['redemption_id'] ?? 0)),
+                default => 'admin_change_failed',
+            },
+            self::GUEST_ACTION => match ($op) {
+                'save' => $this->rosterScreen->saveGuest(
+                    $organizer,
+                    $date,
+                    (int) ($post['guest_id'] ?? 0),
+                    sanitize_text_field((string) ($post['guest_name'] ?? '')),
+                    (int) ($post['guest_plus_ones'] ?? 0),
+                    sanitize_text_field((string) ($post['guest_note'] ?? ''))
+                ),
+                'remove' => $this->rosterScreen->removeGuest((int) ($post['guest_id'] ?? 0)),
+                default => 'admin_change_failed',
+            },
+            self::BUYERS_ACTION => match ($op) {
+                // The textarea variant keeps the line breaks: one name per line.
+                'import' => $this->rosterScreen->importBuyers(
+                    $date,
+                    sanitize_textarea_field((string) ($post['buyer_names'] ?? ''))
+                ),
+                'reset' => $this->rosterScreen->resetBuyers($date),
+                default => 'admin_change_failed',
+            },
+            default => $this->rosterScreen->checkMail(),
+        };
     }
 
     /**
@@ -457,15 +532,25 @@ final class CrewAdminController
      * What the Admin tab shows, or null for anyone who is not an organizer -
      * the template draws no tab and no panel then.
      *
+     * The Roster screen shows $rosterDate when it has tasks; null reads the
+     * date from the page address (?roster_date=), which the date picker sets.
+     *
      * @return array<string, mixed>|null
      */
-    public function viewFor(?Person $person): ?array
+    public function viewFor(?Person $person, ?string $rosterDate = null): ?array
     {
         if (null === $person || ! $person->isOrganizer) {
             return null;
         }
 
-        $date = $this->salesDesk->nextNight();
+        if (null === $rosterDate) {
+            // A read-only choice of which date to show; nothing is written.
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            $rosterDate = isset($_GET['roster_date']) ? sanitize_text_field(wp_unslash($_GET['roster_date'])) : '';
+        }
+
+        $dates = $this->rosterScreen->dates((string) $rosterDate);
+        $date = $dates['date'];
 
         return [
             'sales_action' => self::SALES_ACTION,
@@ -476,6 +561,17 @@ final class CrewAdminController
             'members' => $this->memberChoices(),
             'roster_label' => '' === $date ? '' : Dates::dayLabel($date),
             'roster' => '' === $date ? [] : $this->rosterRows($date),
+            'roster_date' => $date,
+            'roster_upcoming' => $dates['upcoming'],
+            'roster_past' => $dates['past'],
+            'roster_action' => self::ROSTER_ACTION,
+            'door_action' => self::DOOR_ACTION,
+            'guest_action' => self::GUEST_ACTION,
+            'buyers_action' => self::BUYERS_ACTION,
+            'mail_action' => self::MAIL_ACTION,
+            'statuses' => CrewAdminRoster::statusChoices(),
+            'max_plus_ones' => GuestRepository::MAX_PLUS_ONES,
+            'night' => $this->rosterScreen->view($date),
             'roles_action' => self::ROLES_ACTION,
             'add_action' => self::ADD_ACTION,
             'roles' => self::assignableRoles(),
@@ -561,6 +657,10 @@ final class CrewAdminController
             'admin_roles_saved' => __('Roles saved.', 'eventcrew'),
             'admin_add_no_task' => __('Tick at least one task.', 'eventcrew'),
         ];
+
+        if (! isset($map[$code]) && '' !== CrewAdminRoster::noticeText($code)) {
+            return CrewAdminRoster::noticeText($code);
+        }
 
         if (! isset($map[$code]) && str_starts_with($code, 'admin_add_many_')) {
             return self::addManyText($code);
@@ -663,13 +763,17 @@ final class CrewAdminController
     }
 
     /**
-     * The next night's roster for the template: each task with its people, and
+     * The roster of $date for the template: each task with its people, and
      * whether each person still has buttons - only those signed up or arrived,
      * the same rows the bot's /roster offers buttons for.
      *
-     * @return array<int, array{title: string, people: array<int, array{
+     * Each person also carries their standing ('' for a deleted person) and
+     * whether it is at risk; each task its id, for "Mark all".
+     *
+     * @return array<int, array{task_id: int, title: string, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, marked_by: string, markable: bool}>}>
+     *     status_label: string, marked_by: string, markable: bool,
+     *     standing: string, at_risk: bool}>}>
      */
     private function rosterRows(string $date): array
     {
@@ -687,10 +791,13 @@ final class CrewAdminController
                     'status_label' => $entry['status_label'],
                     'marked_by' => $entry['marked_by'],
                     'markable' => in_array($entry['status'], self::MARKABLE, true),
+                    'standing' => null === $entry['standing'] ? '' : $entry['standing']->ratedSummary(),
+                    'at_risk' => null !== $entry['standing'] && $entry['standing']->isAtRisk(),
                 ];
             }
 
             $rows[] = [
+                'task_id' => $task->id,
                 'title' => sprintf('%s — %s', $task->roleDisplay(), $task->eventName()),
                 'people' => $people,
             ];

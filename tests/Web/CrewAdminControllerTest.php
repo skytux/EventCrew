@@ -7,16 +7,25 @@ namespace EventCrew\Tests\Web;
 use Brain\Monkey\Functions;
 use EventCrew\Admin\PeoplePage;
 use EventCrew\Admin\View;
+use EventCrew\MailImport\Mailbox;
+use EventCrew\MailImport\MailboxException;
+use EventCrew\MailImport\MailFetchSettings;
+use EventCrew\MailImport\MailImporter;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
@@ -33,7 +42,9 @@ use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
+use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
 
@@ -54,6 +65,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     /** @var array<int, array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
+    /** Whether the stand-in mailbox fails to connect. */
+    private bool $mailboxFails = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -63,6 +77,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
         Functions\when('sanitize_email')->alias(static fn (string $e): string => trim($e));
+        Functions\when('sanitize_textarea_field')->alias(static fn (string $text): string => trim($text));
         Functions\when('is_email')->alias(
             static fn (string $e): bool => 1 === preg_match('/^[^@\s]+@[^@\s]+\.[^@\s]+$/', $e)
         );
@@ -100,8 +115,79 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $this->client(),
             $this->mailer(),
             new Logger(),
-            $this->roleTasks()
+            $this->roleTasks(),
+            $this->rosterScreen()
         );
+    }
+
+    /**
+     * The Roster screen over the fake wpdb. Free entry has no task lookup here,
+     * so only a date closed by hand is closed. The mailbox is a stand-in that
+     * holds no mail, or fails when $mailboxFails is set.
+     */
+    private function rosterScreen(): CrewAdminRoster
+    {
+        $tasks = new TaskRepository();
+        $assignments = new AssignmentRepository();
+        $buyers = new TicketBuyerRepository();
+        $buyerImport = new BuyerImport($buyers, new DoorAccess($tasks, $assignments));
+        $mailbox = $this->emptyMailbox($this->mailboxFails);
+
+        return new CrewAdminRoster(
+            $tasks,
+            $assignments,
+            new DoorList($tasks, $assignments, new PersonRepository(), new RedemptionRepository(), $this->standing()),
+            new RedemptionRepository(),
+            $this->standing(),
+            new FreeEntryGate(),
+            new TicketRedemptionService(
+                new PersonRepository(),
+                $tasks,
+                new RedemptionRepository(),
+                $this->standing(),
+                new FreeEntryGate(),
+                $this->client(),
+                $this->mailer()
+            ),
+            new GuestRepository(),
+            $buyers,
+            $buyerImport,
+            new MailImporter(
+                new BuyerImportController(new PersonRepository(), $buyerImport, $this->mailer()),
+                new Logger(),
+                static fn (): Mailbox => $mailbox
+            )
+        );
+    }
+
+    private function emptyMailbox(bool $fails): Mailbox
+    {
+        return new class ($fails) implements Mailbox {
+            public function __construct(private bool $fails)
+            {
+            }
+
+            public function unread(int $limit): array
+            {
+                if ($this->fails) {
+                    throw new MailboxException('Could not reach mail.example.org: timed out');
+                }
+
+                return [];
+            }
+
+            public function moveToImported(string $id): void
+            {
+            }
+
+            public function moveToRejected(string $id): void
+            {
+            }
+
+            public function close(): void
+            {
+            }
+        };
     }
 
     private function roleTasks(): RoleTaskService
@@ -296,6 +382,526 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertSame('admin_no_entry', $result['notice']);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    // --- the Roster screen: date picker, attendance, door, guests, buyers ---
+
+    /**
+     * One request of each Roster screen action that would write if it ran.
+     *
+     * @return array<string, array{0: string, 1: array<string, mixed>}>
+     */
+    public static function rosterScreenRequests(): array
+    {
+        $date = self::NIGHT;
+
+        return [
+            'save attendance' => [CrewAdminController::ROSTER_ACTION, ['roster_date' => $date, 'status' => ['30' => 'arrived']]],
+            'mark all' => [CrewAdminController::ROSTER_ACTION, ['roster_date' => $date, 'task_id' => '6', 'mark_all' => 'arrived']],
+            'close free entry' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'toggle']],
+            'redeem' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'redeem', 'person_id' => '8']],
+            'unredeem' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'unredeem', 'redemption_id' => '40']],
+            'add guest' => [CrewAdminController::GUEST_ACTION, ['roster_date' => $date, 'op' => 'save', 'guest_name' => 'Anna']],
+            'remove guest' => [CrewAdminController::GUEST_ACTION, ['roster_date' => $date, 'op' => 'remove', 'guest_id' => '5']],
+            'import buyers' => [CrewAdminController::BUYERS_ACTION, ['roster_date' => $date, 'op' => 'import', 'buyer_names' => 'Anna']],
+            'reset buyers' => [CrewAdminController::BUYERS_ACTION, ['roster_date' => $date, 'op' => 'reset']],
+            'check mail' => [CrewAdminController::MAIL_ACTION, []],
+        ];
+    }
+
+    /**
+     * Every write the fake wpdb saw apart from the ban itself, and the options
+     * the free-entry switch and the mail check write.
+     *
+     * @return array<string, mixed>
+     */
+    private function rosterScreenWrites(): array
+    {
+        $banOnly = static fn (array $u): bool => ! array_key_exists('banned_at', $u['data']);
+
+        return [
+            'inserts' => $this->wpdb->inserts,
+            'updates' => array_values(array_filter($this->wpdb->updates, $banOnly)),
+            'deletes' => $this->wpdb->deletes,
+            'statements' => array_values(array_filter(
+                $this->wpdb->queries,
+                static fn (string $sql): bool => 1 === preg_match('/^\s*(INSERT|UPDATE|DELETE)\s/i', $sql)
+            )),
+            'closed' => $this->options[FreeEntryGate::OPTION] ?? null,
+            'mail' => $this->options[MailFetchSettings::STATUS_OPTION] ?? null,
+        ];
+    }
+
+    private function switchMailOn(): void
+    {
+        $this->options[MailFetchSettings::OPTION] = [
+            'protocol' => 'imap',
+            'server' => 'mail.example.org',
+            'username' => 'door@example.org',
+            'password' => 'secret',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider rosterScreenRequests
+     */
+    public function testAMemberSendingARosterScreenRequestIsBlockedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->switchMailOn();
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+
+        $result = $this->post($action, $post, 8);
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertCount(1, $this->banWrites());
+        self::assertSame(501, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame(
+            ['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => [], 'closed' => null, 'mail' => null],
+            $this->rosterScreenWrites()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $post
+     * @dataProvider rosterScreenRequests
+     */
+    public function testARosterScreenGetRequestIsRefusedAndNothingIsWritten(string $action, array $post): void
+    {
+        $this->switchMailOn();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->admin()->handle($action, 'GET', $post + ['csrf' => WebSession::csrfToken(1)], self::IP);
+
+        self::assertSame(CrewAdminController::REFUSED, $result['code']);
+        self::assertSame([], $this->banWrites());
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame(
+            ['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => [], 'closed' => null, 'mail' => null],
+            $this->rosterScreenWrites()
+        );
+    }
+
+    public function testADateThatIsNotARealDayChangesNothing(): void
+    {
+        $requests = [
+            [CrewAdminController::ROSTER_ACTION, ['status' => ['30' => 'arrived']], 'admin_change_failed'],
+            [CrewAdminController::ROSTER_ACTION, ['task_id' => '6', 'mark_all' => 'arrived'], 'admin_roster_bulk_failed'],
+            [CrewAdminController::DOOR_ACTION, ['op' => 'toggle'], 'admin_change_failed'],
+            [CrewAdminController::DOOR_ACTION, ['op' => 'redeem', 'person_id' => '8'], 'admin_door_failed'],
+            [CrewAdminController::GUEST_ACTION, ['op' => 'save', 'guest_name' => 'Anna'], 'admin_change_failed'],
+            [CrewAdminController::BUYERS_ACTION, ['op' => 'import', 'buyer_names' => 'Anna'], 'admin_buyers_failed'],
+            [CrewAdminController::BUYERS_ACTION, ['op' => 'reset'], 'admin_change_failed'],
+        ];
+
+        foreach (['2026-02-30', '20-07-2026', '', '2026-07-20 OR 1=1'] as $date) {
+            foreach ($requests as [$action, $post, $notice]) {
+                $this->signIn($this->organizerRow(1));
+                $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'signed_up');
+
+                $result = $this->post($action, $post + ['roster_date' => $date]);
+
+                self::assertSame($notice, $result['notice'], $action . ' ' . $date);
+                // The queued assignment was never read, so nothing was looked up.
+                self::assertNotNull(array_shift($this->wpdb->nextRows), $action . ' ' . $date);
+            }
+        }
+
+        self::assertSame(
+            ['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => [], 'closed' => null, 'mail' => null],
+            $this->rosterScreenWrites()
+        );
+    }
+
+    public function testThePickerListsUpcomingDatesNearestFirstAndPastDatesMostRecentFirst(): void
+    {
+        $dates = ['2026-08-10', '2026-07-27', self::NIGHT, '2026-07-13', '2026-07-06'];   // most recent first
+
+        $this->wpdb->nextCols[] = $dates;
+        $picked = $this->rosterScreen()->dates('');
+
+        self::assertSame(self::NIGHT, $picked['date']);
+        self::assertSame([self::NIGHT, '2026-07-27', '2026-08-10'], array_keys($picked['upcoming']));
+        self::assertSame(['2026-07-13', '2026-07-06'], array_keys($picked['past']));
+        self::assertSame('Mon 20 Jul', $picked['upcoming'][self::NIGHT]);
+
+        // A past date with tasks is shown; a date with none falls back.
+        $this->wpdb->nextCols[] = $dates;
+        self::assertSame('2026-07-13', $this->rosterScreen()->dates('2026-07-13')['date']);
+        $this->wpdb->nextCols[] = $dates;
+        self::assertSame(self::NIGHT, $this->rosterScreen()->dates('2026-07-14')['date']);
+
+        // Nothing upcoming: the most recent past date.
+        $this->wpdb->nextCols[] = ['2026-07-13', '2026-07-06'];
+        self::assertSame('2026-07-13', $this->rosterScreen()->dates('')['date']);
+    }
+
+    public function testSavingAttendanceWritesOnlyTheRowsThatChanged(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'signed_up');   // changes
+        $this->wpdb->nextRows[] = $this->assignmentRow(31, 6, 9, 'arrived');     // the same status
+        $this->wpdb->nextRows[] = null;                                          // 33: not found
+
+        $result = $this->post(CrewAdminController::ROSTER_ACTION, [
+            'roster_date' => self::NIGHT,
+            'status' => ['30' => 'completed', '31' => 'arrived', '32' => 'bogus', '33' => 'no_show'],
+        ]);
+
+        self::assertSame('admin_roster_updated_1', $result['notice']);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 30], $this->wpdb->updates[0]['where']);
+        self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
+        // The invalid status was skipped before any lookup.
+        self::assertSame([], $this->wpdb->nextRows);
+        self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_contains($sql, 'WHERE id = 32')));
+        self::assertSame('1 person updated.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testSavingAttendanceWithNothingChangedWritesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'arrived');
+
+        $result = $this->post(CrewAdminController::ROSTER_ACTION, ['roster_date' => self::NIGHT, 'status' => ['30' => 'arrived']]);
+
+        self::assertSame('admin_roster_none', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testMarkAllSkipsCancelledAndAbsentPeople(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextResults[] = [
+            $this->assignmentRow(30, 6, 8, 'signed_up'),
+            $this->assignmentRow(31, 6, 9, 'arrived'),
+            $this->assignmentRow(32, 6, 10, 'cancelled'),
+            $this->assignmentRow(33, 6, 11, 'no_show'),
+            $this->assignmentRow(34, 6, 12, 'completed'),
+        ];
+
+        $result = $this->post(
+            CrewAdminController::ROSTER_ACTION,
+            ['roster_date' => self::NIGHT, 'task_id' => '6', 'mark_all' => 'completed']
+        );
+
+        self::assertSame('admin_roster_updated_2', $result['notice']);
+        self::assertSame([['id' => 30], ['id' => 31]], array_column($this->wpdb->updates, 'where'));
+        self::assertSame(['completed', 'completed'], array_column(array_column($this->wpdb->updates, 'data'), 'status'));
+        self::assertSame([1, 1], array_column(array_column($this->wpdb->updates, 'data'), 'changed_by'));
+    }
+
+    public function testMarkAllRefusesAnyStatusButArrivedOrCompleted(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 6, 8, 'signed_up')];
+
+        $result = $this->post(
+            CrewAdminController::ROSTER_ACTION,
+            ['roster_date' => self::NIGHT, 'task_id' => '6', 'mark_all' => 'no_show']
+        );
+
+        self::assertSame('admin_roster_bulk_failed', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTheFreeEntrySwitchClosesAndReopensTheDate(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'toggle']);
+
+        self::assertSame('admin_door_closed_now', $result['notice']);
+        self::assertSame([self::NIGHT], $this->options[FreeEntryGate::OPTION]);
+
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'toggle']);
+
+        self::assertSame('admin_door_reopened', $result['notice']);
+        self::assertSame([], $this->options[FreeEntryGate::OPTION]);
+    }
+
+    /** The INSERTs of credit redemptions the fake wpdb saw. */
+    private function redemptionInserts(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => 1 === preg_match('/^\s*INSERT\s.*redemption/is', $sql)
+        ));
+    }
+
+    /**
+     * Queues person 8's standing: no tasks, no redemptions, $grants credits
+     * given by hand.
+     */
+    private function queueStanding(int $grants): void
+    {
+        $this->wpdb->nextResults[] = [];               // historyFor
+        $this->wpdb->nextVars[] = '0';                 // redemptions countFor
+        $this->wpdb->nextVars[] = (string) $grants;    // grants sumFor
+    }
+
+    public function testRedeemingWhenFreeEntryIsClosedRecordsNothing(): void
+    {
+        $this->options[FreeEntryGate::OPTION] = [self::NIGHT];
+        $this->signIn($this->organizerRow(1));
+        $this->queueStanding(2);
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
+
+        self::assertSame('admin_door_closed', $result['notice']);
+        self::assertSame([], $this->redemptionInserts());
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testRedeemingWithNoCreditLeftRecordsNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->queueStanding(0);
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
+
+        self::assertSame('admin_door_no_credit', $result['notice']);
+        self::assertSame([], $this->redemptionInserts());
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testRedeemingTwiceForOneDateSendsNoSecondTicket(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->queueStanding(2);
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // the event context
+        $this->wpdb->nextQueryResults[] = 0;                             // already redeemed
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
+
+        self::assertSame('admin_door_already', $result['notice']);
+        self::assertCount(1, $this->redemptionInserts());
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testRedeemingACreditPutsThemOnTheDoorListAndSendsTheTicket(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->queueStanding(2);
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // the event context
+        $this->wpdb->nextQueryResults[] = 1;                             // recorded
+        $this->wpdb->nextRows[] = $this->personRow(8);                   // the ticket goes to them
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
+
+        self::assertSame('admin_door_redeemed', $result['notice']);
+        $inserts = $this->redemptionInserts();
+        self::assertCount(1, $inserts);
+        self::assertStringContainsString("8, '" . self::NIGHT . "'", $inserts[0]);
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(508, $dm['chat_id']);
+        self::assertStringContainsString('eventcrew/v1/ticket', (string) json_encode($dm, JSON_UNESCAPED_SLASHES));
+    }
+
+    public function testRemovingARedemptionHandsTheCreditBack(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 40, 'person_id' => 8, 'redeemed_for' => self::NIGHT];
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'unredeem', 'redemption_id' => '40']);
+
+        self::assertSame('admin_door_returned', $result['notice']);
+        $cancels = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'SET cancelled_at')
+        ));
+        self::assertCount(1, $cancels);
+        self::assertStringContainsString('WHERE id = 40', $cancels[0]);
+    }
+
+    public function testRemovingARedemptionThatIsGoneChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'unredeem', 'redemption_id' => '40']);
+
+        self::assertSame('admin_change_failed', $result['notice']);
+        self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_contains($sql, 'SET cancelled_at')));
+    }
+
+    public function testAnOrganizerAddsAGuest(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '0',
+            'guest_name' => 'Anna',
+            'guest_plus_ones' => '25',
+            'guest_note' => 'DJ’s partner',
+        ]);
+
+        self::assertSame('admin_guest_added', $result['notice']);
+        self::assertCount(1, $this->wpdb->inserts);
+        $guest = $this->wpdb->inserts[0]['data'];
+        self::assertSame(self::NIGHT, $guest['event_date']);
+        self::assertSame('Anna', $guest['name']);
+        self::assertSame(GuestRepository::MAX_PLUS_ONES, $guest['plus_ones']);
+        self::assertSame('DJ’s partner', $guest['note']);
+        self::assertSame(1, $guest['added_by']);
+    }
+
+    public function testAGuestWithNoNameIsNotAdded(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, ['roster_date' => self::NIGHT, 'op' => 'save', 'guest_name' => '  ']);
+
+        self::assertSame('admin_guest_no_name', $result['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerEditsAGuest(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Ana', 'plus_ones' => 0];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '5',
+            'guest_name' => 'Anna',
+            'guest_plus_ones' => '2',
+            'guest_note' => '',
+        ]);
+
+        self::assertSame('admin_guest_saved', $result['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 5], $this->wpdb->updates[0]['where']);
+        self::assertSame(['name' => 'Anna', 'plus_ones' => 2, 'note' => ''], $this->wpdb->updates[0]['data']);
+    }
+
+    public function testEditingAGuestWhoIsGoneChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(
+            CrewAdminController::GUEST_ACTION,
+            ['roster_date' => self::NIGHT, 'op' => 'save', 'guest_id' => '5', 'guest_name' => 'Anna']
+        );
+
+        self::assertSame('admin_change_failed', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerRemovesAGuest(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Anna'];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, ['roster_date' => self::NIGHT, 'op' => 'remove', 'guest_id' => '5']);
+
+        self::assertSame('admin_guest_removed', $result['notice']);
+        self::assertCount(1, $this->wpdb->deletes);
+        self::assertSame(['id' => 5], $this->wpdb->deletes[0]['where']);
+    }
+
+    public function testRemovingAGuestWhoIsGoneDeletesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, ['roster_date' => self::NIGHT, 'op' => 'remove', 'guest_id' => '5']);
+
+        self::assertSame('admin_change_failed', $result['notice']);
+        self::assertSame([], $this->wpdb->deletes);
+    }
+
+    public function testAPastedListOfTicketBuyersIsImported(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        // Anna is already on the list.
+        $this->wpdb->nextResults[] = [['id' => 1, 'event_date' => self::NIGHT, 'name' => 'Anna', 'source' => 'paste']];
+
+        $result = $this->post(
+            CrewAdminController::BUYERS_ACTION,
+            ['roster_date' => self::NIGHT, 'op' => 'import', 'buyer_names' => "Anna\nBen\n\nCleo\n"]
+        );
+
+        self::assertSame('admin_buyers_added_2_1', $result['notice']);
+        self::assertSame(['Ben', 'Cleo'], array_column(array_column($this->wpdb->inserts, 'data'), 'name'));
+        self::assertSame(['paste', 'paste'], array_column(array_column($this->wpdb->inserts, 'data'), 'source'));
+        self::assertSame(
+            '2 ticket buyers added, 1 skipped (already on the list).',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testResetImportDeletesTheImportedBuyersOfThatDate(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextQueryResults[] = 3;
+
+        $result = $this->post(CrewAdminController::BUYERS_ACTION, ['roster_date' => self::NIGHT, 'op' => 'reset']);
+
+        self::assertSame('admin_buyers_deleted_3', $result['notice']);
+        $deletes = array_values(array_filter($this->wpdb->queries, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+        self::assertCount(1, $deletes);
+        self::assertStringContainsString("event_date = '" . self::NIGHT . "'", $deletes[0]);
+        self::assertSame('3 ticket buyers deleted.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    public function testAnUnknownOpChangesNothing(): void
+    {
+        foreach ([CrewAdminController::DOOR_ACTION, CrewAdminController::GUEST_ACTION, CrewAdminController::BUYERS_ACTION] as $action) {
+            $this->signIn($this->organizerRow(1));
+
+            self::assertSame('admin_change_failed', $this->post($action, ['roster_date' => self::NIGHT, 'op' => 'drop'])['notice']);
+        }
+
+        self::assertSame(
+            ['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => [], 'closed' => null, 'mail' => null],
+            $this->rosterScreenWrites()
+        );
+    }
+
+    public function testTheMailboxCheckIsRefusedWhenReadingMailIsOff(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::MAIL_ACTION);
+
+        self::assertSame('admin_mail_off', $result['notice']);
+        self::assertArrayNotHasKey(MailFetchSettings::STATUS_OPTION, $this->options);
+    }
+
+    public function testTheMailboxCheckRunsAndSaysWhatItFound(): void
+    {
+        $this->switchMailOn();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::MAIL_ACTION);
+
+        self::assertSame('admin_mail_checked', $result['notice']);
+        self::assertTrue($this->options[MailFetchSettings::STATUS_OPTION]['ok']);
+        self::assertSame(
+            'Mailbox checked: 0 imported, 0 rejected, 0 left to try again.',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testAFailedMailboxCheckSaysWhy(): void
+    {
+        $this->mailboxFails = true;
+        $this->switchMailOn();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::MAIL_ACTION);
+
+        self::assertSame('admin_mail_failed', $result['notice']);
+        self::assertStringContainsString('timed out', CrewAdminController::noticeText($result['notice']));
     }
 
     // --- restricted roles: adding a person to a role task ------------------
@@ -736,7 +1342,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertNull($this->signupController()->adminView(Person::fromRow($this->personRow(8))));
 
         $this->wpdb->nextResults[] = [$this->personRow(8), $this->organizerRow(1)];   // members
-        $this->wpdb->nextCols[] = [self::NIGHT];                                       // nextNight
+        $this->wpdb->nextCols[] = [self::NIGHT];                                       // dates with tasks
         $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];                  // roster tasks
         $this->wpdb->nextResults[] = [$this->assignmentRow(30, 6, 8, 'signed_up')];    // its people
         $this->wpdb->nextRows[] = $this->personRow(8);
@@ -755,7 +1361,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));
 
         $this->wpdb->nextResults[] = [];                                // members
-        $this->wpdb->nextCols[] = [self::NIGHT];                        // nextNight
+        $this->wpdb->nextCols[] = [self::NIGHT];                        // dates with tasks
         $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // roster tasks
         $this->wpdb->nextResults[] = [[                                 // its people
             'status_changed_at' => self::NIGHT . ' 21:42:00',
@@ -791,6 +1397,40 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Send me the sales desk link', $html);
     }
 
+    public function testTheRosterScreenShowsEveryCardForTheDate(): void
+    {
+        // Dates with tasks: read once for the sales desk night, then by the picker.
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('name="roster_date"', $html);
+        self::assertMatchesRegularExpression('/<option value="2026-07-20" selected>/', $html);
+        self::assertStringContainsString('<option value="2026-07-13"', $html);
+        foreach (
+            [
+                CrewAdminController::DOOR_ACTION,
+                CrewAdminController::GUEST_ACTION,
+                CrewAdminController::BUYERS_ACTION,
+                CrewAdminController::MAIL_ACTION,
+            ] as $action
+        ) {
+            self::assertStringContainsString('value="' . $action . '"', $html, $action);
+        }
+        self::assertStringContainsString('Reset import', $html);
+        self::assertStringContainsString('Check the mailbox now', $html);
+    }
+
+    public function testWithNoTasksTheRosterScreenHasNoDateCards(): void
+    {
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('nothing to take a roster for', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::DOOR_ACTION . '"', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::GUEST_ACTION . '"', $html);
+    }
+
     /**
      * The full page for a signed-in $row, with an empty board.
      *
@@ -799,6 +1439,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     private function renderAs(array $row): string
     {
         Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+        Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
         Functions\when('wp_style_is')->justReturn(false);
         Functions\when('wp_register_style')->justReturn(true);
         Functions\when('wp_add_inline_style')->justReturn(true);

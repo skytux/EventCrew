@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.57.1
+Stable tag: 1.58.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.58.0 =
+The crew page's Admin tab now has the wp-admin Roster tools on its Roster screen: pick any date with tasks; see each person's standing; set any attendance status, or mark a whole task arrived or completed; the door list for the date, with closing and reopening free entry, spending a member's credit and handing it back; the guest list (add, edit, remove); the Holvi ticket buyers, with paste import and a Reset button; and the mailbox check with its last result and a Check the mailbox now button.
 
 = 1.57.1 =
 * The reply to a mailed buyer list: its "Open the Roster page" button now opens the Roster screen on the crew page's Admin tab, not wp-admin. Sites with no crew page still get the wp-admin link.
@@ -717,6 +720,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.58.0 =
+Nothing to do. Organizers find the new tools on the crew page: Admin tab, Roster.
 
 = 1.57.1 =
 Fixes the Roster link in the buyer-import reply email.
