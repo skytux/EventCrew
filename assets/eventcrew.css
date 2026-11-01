@@ -775,4 +775,20 @@
         margin-left: min(0px, calc(50% - 50vw + 24px)) !important;
         margin-right: min(0px, calc(50% - 50vw + 24px)) !important;
     }
+    /*
+     * On a phone the identity row wrapped and Sign out dropped under the
+     * name, on the left. Two columns instead: the name on the left, and on
+     * the right Suomi | English with Sign out stacked under it.
+     */
+    .eventcrew-signup .eventcrew-header-card .eventcrew-identity {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center; column-gap: .75em; row-gap: .4em;
+    }
+    .eventcrew-signup .eventcrew-identity:has(.eventcrew-language) .eventcrew-identity-name {
+        grid-row: span 2;
+    }
+    .eventcrew-signup .eventcrew-header-card .eventcrew-language,
+    .eventcrew-signup .eventcrew-header-card .eventcrew-signout {
+        grid-column: 2; justify-self: end; margin: 0;
+    }
 }
