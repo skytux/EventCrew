@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.54.5
+Stable tag: 1.54.6
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.54.6 =
+Settings: the Save preferences, Sign out everywhere and Delete my data buttons are one size and centred in their cards. Save and Sign out are outlined instead of filled; Delete stays red.
 
 = 1.54.5 =
 The Admin tab on the crew page is drawn in the accent colour, so organizers see it at once.
@@ -687,6 +690,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.54.6 =
+Settings buttons centred, same size, outlined.
 
 = 1.54.5 =
 Admin tab drawn in the accent colour.
