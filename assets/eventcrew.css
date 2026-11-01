@@ -280,9 +280,16 @@
 .eventcrew-signup .eventcrew-admin-card input[type="email"],
 .eventcrew-signup .eventcrew-admin-card input[type="number"] {
     box-sizing: border-box; width: 100%; min-height: 44px; padding: .4em .6em;
-    font: inherit; color: inherit; background: var(--eventcrew-surface);
+    /*
+     * A light tint of the card's own text colour, not the surface colour: the
+     * surface colour is the theme's base colour, which on a dark theme is a
+     * bright yellow box inside the dark card.
+     */
+    font: inherit; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
     border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
 }
+/* The open dropdown list is drawn by the browser: dark text on white there. */
+.eventcrew-signup .eventcrew-admin-card select option { color: #222; background: #fff; }
 .eventcrew-signup .eventcrew-admin-hint { display: block; margin-top: .3em; font-size: .9em; }
 /* Two short fields side by side (Credits + Reason, Member + Role), stacked when narrow. */
 .eventcrew-signup .eventcrew-admin-pair { display: flex; flex-wrap: wrap; gap: .7em; }

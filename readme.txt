@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.52.1
+Stable tag: 1.52.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.52.2 =
+Crew page Admin tab: the input fields (Give a credit and the other admin forms) are a light tint of the card's text colour instead of the theme's base colour, which showed as a bright yellow box on a dark theme. Dropdown lists stay dark text on white.
 
 = 1.52.1 =
 Crew page: the event picture behind each board card header now shows the upper part of the picture (the faces), not the middle (the chins).
@@ -648,6 +651,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.52.2 =
+Admin tab fields no longer show a yellow background on dark themes.
 
 = 1.52.1 =
 Event pictures on the board show the faces.
