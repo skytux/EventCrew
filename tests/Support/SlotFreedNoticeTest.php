@@ -85,4 +85,52 @@ final class SlotFreedNoticeTest extends TestCase
 
         self::assertSame([], $this->mails);
     }
+
+    /** The test clock is 2026-07-20 12:00. */
+    public function testATaskThatHasStartedIsNotAnnounced(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => null, 'event_label' => 'Party',
+            'starts_at' => '2026-07-20 11:30:00', 'ends_at' => '2026-07-20 14:00:00',
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'email' => 'member@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+        ];
+
+        $this->notice()->announce(5, 7);
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAnUntimedTaskOnAPastDateIsNotAnnounced(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-07-19', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => null, 'ends_at' => null,
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'email' => 'member@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+        ];
+
+        $this->notice()->announce(5, 7);
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testATaskStartingLaterTodayIsStillAnnounced(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => null, 'event_label' => 'Party',
+            'starts_at' => '2026-07-20 18:00:00', 'ends_at' => '2026-07-20 20:00:00',
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'email' => 'member@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+        ];
+
+        $this->notice()->announce(5, 7);
+
+        self::assertCount(1, $this->mails);
+    }
 }

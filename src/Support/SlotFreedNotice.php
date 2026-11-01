@@ -45,6 +45,12 @@ final class SlotFreedNotice
             return;
         }
 
+        // A task already under way cannot be stepped into: telling the crew a
+        // spot opened would only send people to a task that has begun.
+        if ($task->hasStarted()) {
+            return;
+        }
+
         $prefs = new NotificationPreferences();
 
         foreach ($this->people->activeEmailRecipients() as $person) {

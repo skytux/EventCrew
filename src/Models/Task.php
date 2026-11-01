@@ -175,6 +175,20 @@ final class Task
         return $this->taskDate < current_time('Y-m-d');
     }
 
+    /**
+     * True once the task is under way: its start time has passed, or - for a
+     * task with no start time - its date is over. startsAt is site-local wall
+     * clock, like current_time('mysql'), so the two compare as strings.
+     */
+    public function hasStarted(): bool
+    {
+        if (null === $this->startsAt) {
+            return $this->isPast();
+        }
+
+        return $this->startsAt <= (string) current_time('mysql');
+    }
+
     private static function nullableString(mixed $value): ?string
     {
         if (null === $value || '' === $value) {
