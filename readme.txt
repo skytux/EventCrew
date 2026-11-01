@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.53.0
+Stable tag: 1.54.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.54.0 =
+The ticket page is redesigned like a crew-board event card: the event's picture at the top with the event name and the full date, then the name, the task, a green VALID or red DISABLED band across the card, a QR code of the ticket's own link with the site logo in the middle, the note and the live clock.
 
 = 1.53.0 =
 The automatic sales desk link for organizers now goes only to organizers signed up on that night's Organize task, and carries a second button that opens the crew page's Admin tab. Settings > Reputation & alerts has Telegram and Email checkboxes for it (both on by default; untick both to switch it off).
@@ -669,6 +672,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.54.0 =
+The ticket page has a new layout. Nothing to set up: the QR logo uses the email logo setting, then the site logo, then the site icon.
 
 = 1.53.0 =
 Organizer notice: only signed-up organizers, with an Admin tab button and channel settings.

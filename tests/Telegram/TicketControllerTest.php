@@ -142,8 +142,8 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('url(&quot;https://site.test/team-background.png&quot;) center/cover no-repeat', $html);
         self::assertStringNotContainsString('icon-512', $html);
         self::assertStringContainsString('linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.8))', $html);
-        // The card's own background stays inside the card.
-        self::assertStringContainsString('<html lang="en" style="background:#fff">', $html);
+        // The background sits on the card's body, under the picture header.
+        self::assertStringContainsString('<div class="t-body" style="background:linear-gradient(', $html);
     }
 
     public function testRenderPageHasNoBackgroundWhenNoneIsSet(): void
@@ -154,7 +154,78 @@ final class TicketControllerTest extends TestCase
 
         self::assertStringNotContainsString('url(', $html);
         self::assertStringNotContainsString('linear-gradient', $html);
-        self::assertStringContainsString('<html lang="en"><head>', $html);
+        self::assertStringContainsString('<div class="t-body"><p class="t-name">Sam</p>', $html);
+    }
+
+    public function testRenderPageShowsTheEventPictureInTheHeader(): void
+    {
+        $ticket = $this->sampleTicket();
+        $ticket['image'] = 'https://site.test/poster.jpg';
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('<header class="t-head has-image" style="background-image:', $html);
+        self::assertStringContainsString('url(&quot;https://site.test/poster.jpg&quot;)', $html);
+        self::assertStringContainsString('<h1 class="t-event">Party</h1>', $html);
+    }
+
+    public function testRenderPageHeaderIsPlainWithoutAPicture(): void
+    {
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('<header class="t-head"><p class="t-kicker">', $html);
+    }
+
+    public function testRenderPageWritesTheDateOutInFull(): void
+    {
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026</p>', $html);
+    }
+
+    public function testRenderPageShowsTheValidAndDisabledBands(): void
+    {
+        $ticket = $this->sampleTicket();
+
+        self::assertStringContainsString(
+            '<p class="t-band is-valid">VALID</p>',
+            $this->controller()->renderPage($ticket)
+        );
+
+        $ticket['valid'] = false;
+
+        self::assertStringContainsString(
+            '<p class="t-band is-disabled">DISABLED</p>',
+            $this->controller()->renderPage($ticket)
+        );
+    }
+
+    public function testRenderPageDrawsAQrCodeWithTheLogoInTheMiddle(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_email_logo' === $name
+                ? 'https://site.test/logo.png'
+                : null
+        );
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString(
+            '<div class="t-qr" id="ec-qr"><img class="t-qr-logo" src="https://site.test/logo.png" alt=""></div>',
+            $html
+        );
+        self::assertStringContainsString('assets/vendor/qrcode-generator/qrcode.js?ver=', $html);
+        // Level H: the code still scans with the logo covering its middle.
+        self::assertStringContainsString('qrcode(0,"H")', $html);
+        self::assertStringContainsString('addData(location.href)', $html);
+    }
+
+    public function testRenderPageQrCodeHasNoLogoWhenNoneIsSet(): void
+    {
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('<div class="t-qr" id="ec-qr"></div>', $html);
+        self::assertStringNotContainsString('t-qr-logo"', $html);
     }
 
     /**
