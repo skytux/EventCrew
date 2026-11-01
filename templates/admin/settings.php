@@ -3,7 +3,7 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, title_contains: string, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -97,6 +97,7 @@ if (! defined('ABSPATH')) {
             'every_night' => true,
             'sales_desk' => false,
             'on_board' => true,
+            'title_contains' => '',
             'conditions' => \EventCrew\Support\Roles::noConditions(),
             'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
             'start_offset' => null,
@@ -269,6 +270,18 @@ if (! defined('ABSPATH')) {
                                     <?php checked($eventcrew_role['on_board']); ?>>
                                 <?php esc_html_e('Show on the Telegram board', 'eventcrew'); ?>
                             </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-title-contains"><?php esc_html_e('Only on events', 'eventcrew'); ?></label></th>
+                        <td>
+                            <input
+                                type="text"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-title-contains"
+                                name="role_title_contains[<?php echo esc_attr($eventcrew_i); ?>]"
+                                value="<?php echo esc_attr($eventcrew_role['title_contains']); ?>"
+                                class="regular-text">
+                            <p class="description"><?php esc_html_e('New events get a task of this role only when the event title contains this text (upper or lower case does not matter). Leave empty for every event.', 'eventcrew'); ?></p>
                         </td>
                     </tr>
                     <tr>

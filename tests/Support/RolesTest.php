@@ -287,6 +287,24 @@ final class RolesTest extends TestCase
         self::assertSame('Pour drinks.', $saved[0]['description']);
     }
 
+    /**
+     * Title text survives a save trimmed; a role without it fits every
+     * event, one with it only titles that contain it in any case.
+     */
+    public function testTitleTextIsTrimmedAndMatchedIgnoringCase(): void
+    {
+        $saved = $this->captureSavedRoles([
+            ['slug' => 'bar', 'label' => 'Bar'],
+            ['slug' => 'cacao', 'label' => 'Cacao', 'title_contains' => '  Cacao '],
+        ]);
+
+        self::assertSame('', $saved[0]['title_contains']);
+        self::assertSame('Cacao', $saved[1]['title_contains']);
+        self::assertTrue(Roles::fitsEvent($saved[0], 'Anything'));
+        self::assertTrue(Roles::fitsEvent($saved[1], 'Ecstatic Dance with CACAO ceremony'));
+        self::assertFalse(Roles::fitsEvent($saved[1], 'Ecstatic Dance'));
+    }
+
     public function testTheGuideLinkIsTrimmedAndBlankByDefault(): void
     {
         Functions\when('get_option')->justReturn('');

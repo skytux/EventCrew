@@ -41,6 +41,7 @@ namespace EventCrew\Support;
  *     every_night: bool,
  *     sales_desk: bool,
  *     on_board: bool,
+ *     title_contains: string,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
@@ -100,6 +101,7 @@ final class Roles
                 'restricted' => false,
                 'every_night' => true,
                 'sales_desk' => false,
+                'title_contains' => '',
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -120,
@@ -117,6 +119,7 @@ final class Roles
                 'restricted' => false,
                 'every_night' => true,
                 'sales_desk' => true,
+                'title_contains' => '',
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -30,
@@ -135,6 +138,7 @@ final class Roles
                 'restricted' => false,
                 'every_night' => true,
                 'sales_desk' => false,
+                'title_contains' => '',
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_END,
                 'start_offset' => 0,
@@ -544,7 +548,25 @@ final class Roles
             // On unless switched off: every role stored before this key
             // existed was on the board.
             'on_board' => ! array_key_exists('on_board', $role) || ! empty($role['on_board']),
+            // Empty means every event, which is what a role stored before
+            // this key existed was added to.
+            'title_contains' => trim((string) ($role['title_contains'] ?? '')),
         ];
+    }
+
+    /**
+     * Whether new events get a task of this role, judged by the event's
+     * title: a role with title text only goes to events whose title contains
+     * that text, ignoring upper and lower case. A role with none goes to
+     * every event.
+     *
+     * @param Role $role
+     */
+    public static function fitsEvent(array $role, string $eventTitle): bool
+    {
+        $needle = $role['title_contains'];
+
+        return '' === $needle || false !== mb_stripos($eventTitle, $needle);
     }
 
     /**
