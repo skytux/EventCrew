@@ -200,6 +200,22 @@ final class BuyerImportControllerTest extends TestCase
         self::assertStringContainsString('roster_date=2026-08-01', $this->mails[0]['body']);
     }
 
+    public function testTheConfirmationLinksToTheAdminTabRosterWhenThereIsACrewPage(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 12;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01']; // datesWithTasks
+        $this->wpdb->nextVars[] = '0'; // hasBatch: new mail
+        $this->wpdb->nextResults[] = []; // nobody on the list yet
+
+        $this->controller()->handle($this->request($this->payload()));
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('https://site.test/crew/#eventcrew-admin-roster', $this->mails[0]['body']);
+        self::assertStringNotContainsString('wp-admin', $this->mails[0]['body']);
+    }
+
     public function testANonOrganizerIsRefusedAndNothingIsImported(): void
     {
         $this->queueOrganizer(false);
