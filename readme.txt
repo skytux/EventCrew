@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.57.0
+Stable tag: 1.57.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.57.1 =
+* The reply to a mailed buyer list: its "Open the Roster page" button now opens the Roster screen on the crew page's Admin tab, not wp-admin. Sites with no crew page still get the wp-admin link.
 
 = 1.57.0 =
 * Sales desk: a new "📷 Scan" button reads the QR code on a crew ticket or a free-entry ticket with the phone's camera. The popup shows the person's name, a +1 counter that starts at 0 and goes up to what that person may bring, and a "Mark arrived" button. After marking, the camera opens again for the next person. A ticket for another night, a cancelled ticket, someone not on tonight's list, or a QR code that is not an EventCrew ticket gets a message instead.
@@ -714,6 +717,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.57.1 =
+Fixes the Roster link in the buyer-import reply email.
 
 = 1.57.0 =
 Adds a QR ticket scanner to the sales desk and a "+1 allowed" number to tasks and roles. Updates the database (new task column).

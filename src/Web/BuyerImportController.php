@@ -203,10 +203,16 @@ final class BuyerImportController
             );
         }
 
-        $rosterUrl = add_query_arg(
-            ['page' => RosterPage::PAGE_SLUG, 'roster_date' => $date],
-            admin_url('admin.php')
-        );
+        // The Admin tab's Roster screen on the crew page: organizers run the
+        // night from their phone, not from wp-admin. wp-admin's Roster page
+        // only when there is no crew page (a Telegram-only install).
+        $boardUrl = $this->mailer->boardUrl();
+        $rosterUrl = '' !== $boardUrl
+            ? $boardUrl . '#eventcrew-admin-roster'
+            : add_query_arg(
+                ['page' => RosterPage::PAGE_SLUG, 'roster_date' => $date],
+                admin_url('admin.php')
+            );
 
         $this->mailer->toPerson(
             $personId,
