@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.56.1
+Stable tag: 1.56.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.56.2 =
+The sales desk shows the name of the person the device is logged in as, next to the date.
 
 = 1.56.1 =
 Fixed: the logo in the middle of a ticket's QR code could not be seen when the site's logo is white. The QR code now uses the Site Icon (square, made for small sizes) and falls back to the email logo only when no Site Icon is set.
@@ -705,6 +708,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.56.2 =
+No action needed.
 
 = 1.56.1 =
 No action needed.

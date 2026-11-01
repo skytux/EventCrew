@@ -27,7 +27,7 @@
  * itself.
  *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
- * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, pollMs, searchMin, maxPlus, actions
+ * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions
  */
 
 declare(strict_types=1);
@@ -404,7 +404,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         var query = el('ec-filter').value.trim().toLowerCase();
         var holder = el('ec-sections');
 
-        el('ec-day').textContent = state.day;
+        // The date, then who this device is logged in as.
+        el('ec-day').textContent = config.who ? state.day + ' · ' + config.who : state.day;
         el('ec-in').textContent = state.in;
         el('ec-expected').textContent = state.expected;
         el('ec-anon-count').textContent = state.anonymous;
