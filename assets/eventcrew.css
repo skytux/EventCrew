@@ -687,14 +687,14 @@
 }
 
 /*
- * The buttons under the board: the Telegram group filled (the theme's own
+ * The buttons at the top of the page: the Telegram group filled (the theme's own
  * button, as the main action) and the crew guide outlined beside it. Both the
  * same height; they wrap to two lines on a narrow screen. The outline is drawn
  * here because the theme only styles is-style-outline inside a block wrapper.
  */
 .eventcrew-signup .eventcrew-links {
     display: flex; flex-wrap: wrap; justify-content: center; gap: .6em;
-    margin: 1.5em 0 0;
+    margin: 0 0 1.2em;
 }
 .eventcrew-signup .eventcrew-links .wp-element-button {
     box-sizing: border-box;

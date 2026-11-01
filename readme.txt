@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.55.0
+Stable tag: 1.55.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.55.1 =
+Crew page: the Telegram group and crew guide buttons moved from under the board to the top of the page, above every tab.
 
 = 1.55.0 =
 Admin tab: a second row of tabs splits it into four screens, one at a time: Roster (add a person to a task, tonight's crew), Door (sales desk), People (give a credit, roles) and Telegram (post a new board). Roster opens first; after a form is sent, the page comes back on the screen it was sent from. Without JavaScript all screens show one after another, as before. tools/make-pot.php now writes msgctxt for _x() strings.
@@ -693,6 +696,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.55.1 =
+Nothing to do.
 
 = 1.55.0 =
 Nothing to do.

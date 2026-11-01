@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The buttons under the board: the crew's Telegram group (the main button,
+ * The buttons at the top of the crew page: the crew's Telegram group (the main button,
  * filled) and the crew guide (a second, outlined button beside it). Signed out
  * there is no group link, so only the guide shows. Nothing is drawn when
  * neither is set.
