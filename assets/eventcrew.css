@@ -191,6 +191,36 @@
 .eventcrew-signup .eventcrew-me-card .eventcrew-event-title,
 .eventcrew-signup .eventcrew-admin-card .eventcrew-event-title { margin: 0; font-size: 1.05em; line-height: 1.3; }
 .eventcrew-signup .eventcrew-event-date { font-size: .9em; opacity: .8; white-space: nowrap; }
+
+/*
+ * The events on the board in columns: as many 20em columns as fit, so one on
+ * a phone or a narrow theme column, two or three on a wide page. The gap
+ * replaces each card's bottom margin.
+ */
+.eventcrew-signup .eventcrew-board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20em), 1fr));
+    gap: 1.2em;
+    align-items: start;
+    scroll-margin-top: 1em;
+}
+.eventcrew-signup .eventcrew-board-grid .eventcrew-event { margin: 0; }
+
+/*
+ * An event with a picture shows it behind its header, under a dark layer so
+ * the white name and date stay readable on any photo. The header is taller so
+ * the picture can be seen; the text sits at its bottom.
+ */
+.eventcrew-signup .eventcrew-event-head.has-image {
+    min-height: 6.5em;
+    align-content: flex-end; align-items: flex-end;
+    background:
+        linear-gradient(to bottom, rgba(0, 0, 0, .25), rgba(0, 0, 0, .7)),
+        var(--eventcrew-event-image) center / cover no-repeat;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+.eventcrew-signup .eventcrew-event-head.has-image .eventcrew-event-date { opacity: .95; }
 .eventcrew-signup .eventcrew-event .eventcrew-task-row { padding-inline: 1em; }
 .eventcrew-signup .eventcrew-board-note { margin: 0 0 1em; font-size: .95em; }
 /*
@@ -318,10 +348,39 @@
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; }
 .eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
-.eventcrew-signup .eventcrew-guide { margin-top: 1em; }
 
-/* What each task involves: role name in bold, its description under it. */
-.eventcrew-signup .eventcrew-tasks-info { margin-top: 1.5em; scroll-margin-top: 1em; }
+/*
+ * The (i) button after a task's name, and the bubble it opens. The bubble is
+ * a popover, so the browser puts it above the page, centred, and closes it on
+ * a tap outside or Esc. The ::after widens the place you can tap to about
+ * 40px without making the circle itself bigger.
+ */
+.eventcrew-signup .eventcrew-about-btn {
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.35em; height: 1.35em; margin-left: .35em; padding: 0;
+    border: 1px solid currentColor; border-radius: 50%;
+    background: transparent; color: inherit; opacity: .85;
+    font: italic 700 .8em/1 Georgia, "Times New Roman", serif;
+    vertical-align: .1em; cursor: pointer;
+}
+.eventcrew-signup .eventcrew-about-btn::after { content: ""; position: absolute; inset: -10px; }
+.eventcrew-signup .eventcrew-about-btn:hover,
+.eventcrew-signup .eventcrew-about-btn:focus-visible { opacity: 1; background: color-mix(in srgb, currentColor 15%, transparent); }
+/* Without popover support the text shows under the name, as small print. */
+.eventcrew-signup .eventcrew-about { font-size: .85em; font-weight: 400; }
+@supports selector(:popover-open) {
+    .eventcrew-signup .eventcrew-about[popover] {
+        max-width: min(22em, calc(100vw - 2em));
+        margin: auto; padding: .9em 1.1em;
+        border: 0; border-radius: var(--eventcrew-radius, 8px);
+        background: #222; color: #fff;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
+        font-size: 1rem; line-height: 1.5;
+    }
+    .eventcrew-signup .eventcrew-about[popover]::backdrop { background: rgba(0, 0, 0, .35); }
+    .eventcrew-signup .eventcrew-about strong { display: block; margin-bottom: .3em; }
+}
 
 /*
  * The Help tab: the welcome text and the organizer guide. Headings get room
@@ -330,18 +389,17 @@
  */
 .eventcrew-signup .eventcrew-help p { margin: 0 0 1em; line-height: 1.6; }
 .eventcrew-signup .eventcrew-help-heading { margin: 1.8em 0 .6em; font-size: 1.1em; scroll-margin-top: 1em; }
+/* In a Help card the heading is the card's title, so it loses the gap above. */
+.eventcrew-signup .eventcrew-help-card .eventcrew-event-title { margin: 0; font-size: 1.05em; line-height: 1.3; }
+.eventcrew-signup .eventcrew-help-card .eventcrew-card-body { padding: .8em 1em; }
+.eventcrew-signup .eventcrew-help-card .eventcrew-card-body > :last-child { margin-bottom: 0; }
+.eventcrew-signup .eventcrew-help-card .eventcrew-help-heading:not(.eventcrew-event-title) { margin-top: 1em; }
 .eventcrew-signup .eventcrew-help-list { margin: 0 0 1.2em; line-height: 1.6; }
 .eventcrew-signup .eventcrew-help-list li { margin: 0 0 .7em; }
 .eventcrew-signup .eventcrew-help-list.is-emoji { list-style: none; padding: 0; }
 .eventcrew-signup .eventcrew-help-orglink { margin: 0 0 1em; font-weight: 600; }
-.eventcrew-signup .eventcrew-help-organizer {
-    margin-top: 2.5em; padding-top: 1em;
-    border-top: 1px solid var(--eventcrew-line); scroll-margin-top: 1em;
-}
-.eventcrew-signup .eventcrew-tasks-info h3 { margin: 0 0 .5em; font-size: 1.1em; }
-.eventcrew-signup .eventcrew-tasks-info dl { margin: 0; }
-.eventcrew-signup .eventcrew-tasks-info dt { font-weight: 600; margin-top: .75em; }
-.eventcrew-signup .eventcrew-tasks-info dd { margin: .2em 0 0; font-size: .9em; }
+.eventcrew-signup .eventcrew-help-organizer { margin-top: 2em; scroll-margin-top: 1em; }
+.eventcrew-signup .eventcrew-help-organizer > h2 { margin: 0 0 .8em; }
 
 /* The count above the action, the pair as narrow as the button itself. */
 .eventcrew-signup .eventcrew-task-side {
@@ -517,16 +575,28 @@
     border: 1px solid var(--eventcrew-line);
 }
 
-/* The Telegram jump. The theme's own outline button, not a Telegram-blue slab. */
-.eventcrew-signup .eventcrew-tgline { margin: 1.5em 0 0; text-align: center; }
-.eventcrew-signup .eventcrew-tglink {
-    display: inline-flex; align-items: center; gap: .4em;
-    padding: .5em 1em; border-radius: var(--eventcrew-radius);
-    border: 1px solid var(--eventcrew-line);
-    background: transparent; color: inherit; text-decoration: none; font-weight: 600;
+/*
+ * The buttons under the board: the Telegram group filled (the theme's own
+ * button, as the main action) and the crew guide outlined beside it. Both the
+ * same height; they wrap to two lines on a narrow screen. The outline is drawn
+ * here because the theme only styles is-style-outline inside a block wrapper.
+ */
+.eventcrew-signup .eventcrew-links {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: .6em;
+    margin: 1.5em 0 0;
 }
-.eventcrew-signup .eventcrew-tglink:hover {
-    border-color: var(--eventcrew-accent); color: var(--eventcrew-accent);
+.eventcrew-signup .eventcrew-links .wp-element-button {
+    box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center; gap: .4em;
+    min-height: 44px; padding: .5em 1.1em;
+    border-radius: var(--eventcrew-radius); font-weight: 600; text-decoration: none;
+}
+.eventcrew-signup .eventcrew-links .eventcrew-link-secondary {
+    background: transparent; color: inherit; border: 1px solid currentColor;
+}
+.eventcrew-signup .eventcrew-links .eventcrew-link-secondary:hover,
+.eventcrew-signup .eventcrew-links .eventcrew-link-secondary:focus-visible {
+    background: color-mix(in srgb, currentColor 10%, transparent); color: inherit;
 }
 
 /*
@@ -568,6 +638,13 @@
 /* The collapsible disclosures. */
 /* Part of the header block above the tabs, so it sits tight under the name. */
 .eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; font-weight: 600; }
+/*
+ * The header card: name, language and Sign out in its top bar, standing in
+ * its body. The bar keeps the identity row's centring and its smaller text.
+ */
+.eventcrew-signup .eventcrew-header-card .eventcrew-identity { margin: 0; align-items: center; }
+.eventcrew-signup .eventcrew-header-card .eventcrew-identity-name { font-weight: 600; }
+.eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
 .eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
@@ -603,8 +680,14 @@
    email typed down the middle of its box looks like a mistake. */
 .eventcrew-signin-row.has-captcha .wp-element-input { min-width: 0; flex: none; }
 .eventcrew-signin-row.has-captcha .wp-element-button { width: 100%; }
-/* The widget is a fixed-width iframe, so it is centred rather than stretched. */
-.eventcrew-signin-row.has-captcha .eventcrew-turnstile { margin-inline: auto; }
+/*
+ * The widget runs at its flexible size, which fills the column, and is 65px
+ * tall. The field and the button take the same 65px, so the three controls
+ * are one width and one height instead of three different boxes.
+ */
+.eventcrew-signin-row.has-captcha .eventcrew-turnstile { width: 100%; margin: 0; }
+.eventcrew-signin-row.has-captcha .wp-element-input,
+.eventcrew-signin-row.has-captcha .wp-element-button { height: 65px; min-height: 65px; max-height: 65px; margin: 0; }
 .eventcrew-signup .eventcrew-turnstile { min-height: 65px; }
 
 /* The note under the centred form is centred with it. A sibling selector, not
@@ -639,4 +722,17 @@
 .eventcrew-signin-row .wp-element-input::placeholder {
     color: var(--eventcrew-ink);
     opacity: 0.5;
+}
+
+/*
+ * On a phone, the crew page uses nearly the whole screen width. Themes that
+ * put the page in a framed column pad that frame on all sides, which on a
+ * 390px screen left the cards about 290px. The negative side margins pull the
+ * page out to 24px from each screen edge; min() keeps them at zero or less, so
+ * a theme with less padding is never pushed inward.
+ */
+@media (max-width: 640px) {
+    .eventcrew-signup {
+        margin-inline: min(0px, calc(50% - 50vw + 24px));
+    }
 }

@@ -22,6 +22,19 @@ final class HelpPage
     /** The organizer part inside the Help tab. */
     public const ORGANIZER_ANCHOR = 'eventcrew-help-organizer';
 
+    /**
+     * Free text about how this install is run (hosting, mail, outside
+     * services), shown to organizers only, in the Help tab's Infrastructure
+     * card. '' leaves the card out. Set in Settings > Web page.
+     */
+    public const INFRASTRUCTURE_OPTION = 'eventcrew_infrastructure_note';
+
+    /** The infrastructure text, or '' when none is set. */
+    public static function infrastructure(): string
+    {
+        return trim((string) get_option(self::INFRASTRUCTURE_OPTION, ''));
+    }
+
     /** The crew page's address with $anchor, or '' when no crew page is set. */
     public static function url(string $anchor = self::PANEL_ANCHOR): string
     {
@@ -70,6 +83,50 @@ final class HelpPage
             }
 
             $html .= '<p>' . str_replace("\n", '<br>', EmailBody::inline($block)) . '</p>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * $text as cards, one per "## " section: the heading in the card's header
+     * bar (with the same id as html() gives it, so contents links still land),
+     * the section's text in the card's body. Text before the first heading
+     * becomes a card with no header.
+     */
+    public static function cards(string $text): string
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $sections = preg_split('/^(?=## )/m', trim($text)) ?: [];
+        $html = '';
+
+        foreach ($sections as $section) {
+            $section = trim($section, "\n");
+
+            if ('' === trim($section)) {
+                continue;
+            }
+
+            $head = '';
+
+            if (str_starts_with($section, '## ')) {
+                $parts = explode("\n", $section, 2);
+                $heading = trim(substr($parts[0], 3));
+                $section = $parts[1] ?? '';
+                $head = sprintf(
+                    '<header class="eventcrew-event-head">'
+                    . '<h3 class="eventcrew-event-title eventcrew-help-heading" id="%s">%s</h3></header>',
+                    esc_attr(EmailBody::anchor($heading)),
+                    esc_html($heading)
+                );
+            }
+
+            $body = self::html($section);
+            $html .= sprintf(
+                '<section class="eventcrew-event eventcrew-help-card">%s%s</section>',
+                $head,
+                '' === $body ? '' : '<div class="eventcrew-card-body">' . $body . '</div>'
+            );
         }
 
         return $html;

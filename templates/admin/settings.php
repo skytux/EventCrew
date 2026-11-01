@@ -39,6 +39,7 @@
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var string $ticket_note Free text shown on every ticket; blank shows nothing.
+ * @var string $infrastructure_note How the site is run, shown to organizers in the crew page's Help tab; blank shows nothing.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
@@ -884,6 +885,19 @@ if (! defined('ABSPATH')) {
                         rows="3"
                         class="large-text"><?php echo esc_textarea($ticket_note); ?></textarea>
                     <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-infrastructure-note"><?php esc_html_e('Infrastructure', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <textarea
+                        id="eventcrew-infrastructure-note"
+                        name="infrastructure_note"
+                        rows="12"
+                        class="large-text"><?php echo esc_textarea($infrastructure_note); ?></textarea>
+                    <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the crew page. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>

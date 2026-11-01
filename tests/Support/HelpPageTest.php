@@ -31,6 +31,30 @@ final class HelpPageTest extends TestCase
         );
     }
 
+    public function testCardsPutEachSectionInItsOwnCard(): void
+    {
+        $html = HelpPage::cards("Intro.\n\n## 🎟️ Tickets\n\nOne.\n\n## 🎁 Credits\n\n- Two");
+
+        self::assertSame(3, substr_count($html, '<section class="eventcrew-event eventcrew-help-card">'));
+        // Text before the first heading: a card without a header.
+        self::assertStringStartsWith('<section class="eventcrew-event eventcrew-help-card"><div class="eventcrew-card-body"><p>Intro.</p>', $html);
+        // The heading keeps the id contents links point at.
+        self::assertStringContainsString(
+            '<header class="eventcrew-event-head"><h3 class="eventcrew-event-title eventcrew-help-heading" id="ec-tickets">🎟️ Tickets</h3></header><div class="eventcrew-card-body"><p>One.</p></div>',
+            $html
+        );
+        self::assertStringContainsString('<ul class="eventcrew-help-list"><li>Two</li></ul>', $html);
+    }
+
+    public function testTheInfrastructureTextIsTheTrimmedOption(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => HelpPage::INFRASTRUCTURE_OPTION === $name ? "  Hosted here.\n" : $default
+        );
+
+        self::assertSame('Hosted here.', HelpPage::infrastructure());
+    }
+
     public function testTheUrlNeedsACrewPage(): void
     {
         Functions\when('get_option')->justReturn(0);

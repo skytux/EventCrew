@@ -125,12 +125,80 @@ final class SignupControllerTest extends TestCase
      */
     public function testTheRenderedPageKeepsTheBoardTargetAndHidesTheGroupFromStrangers(): void
     {
+        $this->stubPageRender();
+
+        $this->wpdb->nextResults[] = [];   // upcoming dates: an empty board is enough
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        // The JS assigns the fresh board HTML to this element on every claim
+        // and drop; lose the id and the page silently stops updating in place.
+        self::assertStringContainsString('id="eventcrew-board"', $html);
+
+        // Signed out there is nothing to tab between, and the group invite is
+        // not for passers-by.
+        self::assertStringNotContainsString('https://t.me/+secretcrew', $html);
+        // The markup, not the class name: the tab script mentions the selector
+        // whether or not there is a strip to upgrade.
+        self::assertStringNotContainsString('<nav class="eventcrew-tabs"', $html);
+    }
+
+    /**
+     * Each task has an (i) button opening its description in a bubble, the
+     * event's picture is behind its card header, and the Telegram "What each
+     * task involves" link still has its anchor to land on - now the board.
+     */
+    public function testTheBoardShowsTheEventPictureAndAnInfoBubblePerTask(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/night.jpg');
+        Functions\when('get_the_title')->justReturn('Ecstatic Dance');
+
+        $row = $this->taskRow();
+        $row['event_post_id'] = 42;
+        $this->wpdb->nextResults[] = [$row]; // upcoming
+        $this->wpdb->nextResults[] = [];     // occupancyFor
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('class="eventcrew-event-head has-image"', $html);
+        self::assertStringContainsString('--eventcrew-event-image: url(&quot;https://site.test/night.jpg&quot;)', $html);
+        self::assertStringContainsString('popovertarget="eventcrew-about-5"', $html);
+        self::assertStringContainsString('id="eventcrew-about-5" popover', $html);
+        self::assertStringContainsString('Set up before the dance', $html);
+        self::assertStringContainsString('id="eventcrew-tasks-info"', $html);
+        // The list at the bottom is gone: the bubbles replace it.
+        self::assertStringNotContainsString('What each task involves', $html);
+    }
+
+    public function testAnEventWithoutAPictureKeepsThePlainHeader(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+        Functions\when('get_the_title')->justReturn('Ecstatic Dance');
+
+        $row = $this->taskRow();
+        $row['event_post_id'] = 42;
+        $this->wpdb->nextResults[] = [$row];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('<header class="eventcrew-event-head">', $html);
+        self::assertStringNotContainsString('has-image', $html);
+    }
+
+    /** The WordPress functions a full page render touches. */
+    private function stubPageRender(): void
+    {
         Functions\when('get_option')->alias(
             static fn (string $name): mixed => 'eventcrew_telegram_group_link' === $name
                 ? 'https://t.me/+secretcrew'
                 : false
         );
         Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+        Functions\when('date_i18n')->alias(static fn (string $format, int $time): string => gmdate($format, $time));
 
         // The stylesheet plumbing. wp_style_is returns false so the render path
         // takes its registration branch - the one that exists because an
@@ -151,22 +219,6 @@ final class SignupControllerTest extends TestCase
                 echo $text;
             });
         }
-
-        $this->wpdb->nextResults[] = [];   // upcoming dates: an empty board is enough
-        $this->wpdb->nextResults[] = [];
-
-        $html = $this->controller()->renderShortcode();
-
-        // The JS assigns the fresh board HTML to this element on every claim
-        // and drop; lose the id and the page silently stops updating in place.
-        self::assertStringContainsString('id="eventcrew-board"', $html);
-
-        // Signed out there is nothing to tab between, and the group invite is
-        // not for passers-by.
-        self::assertStringNotContainsString('https://t.me/+secretcrew', $html);
-        // The markup, not the class name: the tab script mentions the selector
-        // whether or not there is a strip to upgrade.
-        self::assertStringNotContainsString('<nav class="eventcrew-tabs"', $html);
     }
 
     public function testViewModelForALoggedOutVisitorShowsTheBoardAndNoPerson(): void

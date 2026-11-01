@@ -212,7 +212,7 @@ final class SignupBoardView
      * @param array<int, Task> $tasks
      * @param array<int, int> $occupancy
      * @param array<int, bool> $mine
-     * @return array<int, array{title: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string}>}>
+     * @return array<int, array{title: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string}>}>
      */
     private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
@@ -233,7 +233,11 @@ final class SignupBoardView
                 : 'l:' . $task->eventLabel . '|' . $task->taskDate;
 
             if (! isset($groups[$key])) {
-                $groups[$key] = ['title' => $task->eventName(), 'tasks' => []];
+                $groups[$key] = [
+                    'title' => $task->eventName(),
+                    'image' => self::eventImage($task->eventPostId),
+                    'tasks' => [],
+                ];
             }
 
             $groups[$key]['tasks'][] = [
@@ -245,6 +249,23 @@ final class SignupBoardView
         }
 
         return array_values($groups);
+    }
+
+    /**
+     * The event post's featured image, drawn behind the event's card header.
+     *
+     * '' when the task has no event post or the post has no featured image:
+     * the header is then plain, as before.
+     */
+    public static function eventImage(?int $eventPostId): string
+    {
+        if (null === $eventPostId || ! function_exists('get_the_post_thumbnail_url')) {
+            return '';
+        }
+
+        $url = get_the_post_thumbnail_url($eventPostId, 'large');
+
+        return is_string($url) ? $url : '';
     }
 
     /**
