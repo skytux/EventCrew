@@ -909,7 +909,7 @@ msgstr ""
 msgid "Crew working"
 msgstr ""
 
-#: src/Telegram/TicketController.php:199
+#: src/Telegram/TicketController.php:208
 msgid "DISABLED"
 msgstr ""
 
@@ -1263,7 +1263,7 @@ msgstr ""
 msgid "Every active role already has a task for that event."
 msgstr ""
 
-#: src/Support/DoorLinkSender.php:105
+#: src/Support/DoorLinkSender.php:106
 msgid "Every five minutes (EventCrew sales desk links)"
 msgstr ""
 
@@ -1333,7 +1333,7 @@ msgstr ""
 msgid "Found a replacement"
 msgstr ""
 
-#: src/Support/TicketList.php:68 src/Telegram/TicketController.php:165 templates/admin/roster.php:126
+#: src/Support/TicketList.php:68 src/Telegram/TicketController.php:168 templates/admin/roster.php:126
 msgid "Free entry"
 msgstr ""
 
@@ -1697,7 +1697,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:244
+#: src/Telegram/TicketController.php:306
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -2802,7 +2802,7 @@ msgstr ""
 msgid "Sales desk"
 msgstr ""
 
-#: src/Support/DoorLinkSender.php:268
+#: src/Support/DoorLinkSender.php:269
 #. translators: %s: event day, e.g. "Sat 1 Aug"
 msgid "Sales desk for %s"
 msgstr ""
@@ -3526,7 +3526,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:254
+#: src/Telegram/TicketController.php:316
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -3877,7 +3877,7 @@ msgstr ""
 msgid "This person cannot run the sales desk tonight. Only organizers, and the crew marked arrived on tonight’s tasks that open the sales desk, can."
 msgstr ""
 
-#: src/Telegram/TicketController.php:193
+#: src/Telegram/TicketController.php:200
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -3918,7 +3918,7 @@ msgstr ""
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
-#: src/Telegram/TicketController.php:192
+#: src/Telegram/TicketController.php:195
 msgid "Ticket not found"
 msgstr ""
 
@@ -4059,7 +4059,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:198
+#: src/Telegram/TicketController.php:207
 msgid "VALID"
 msgstr ""
 
@@ -4309,7 +4309,7 @@ msgstr ""
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: src/Support/DoorLinkSender.php:426
+#: src/Support/DoorLinkSender.php:427
 #. translators: %s: event day, e.g. "Sat 1 Aug"
 msgid "You are organizing on %s"
 msgstr ""
@@ -4396,7 +4396,7 @@ msgstr ""
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:211
+#: src/Telegram/TicketController.php:204
 msgid "Your EventCrew ticket"
 msgstr ""
 
@@ -4877,11 +4877,11 @@ msgstr ""
 msgid "🗑 Removed %s."
 msgstr ""
 
-#: src/Support/DoorLinkSender.php:313
+#: src/Support/DoorLinkSender.php:314
 msgid "🚪 Open the sales desk"
 msgstr ""
 
-#: src/Support/DoorLinkSender.php:455
+#: src/Support/DoorLinkSender.php:456
 msgid "🛠️ Open the Admin tab"
 msgstr ""
 

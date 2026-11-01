@@ -9,8 +9,10 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
+use EventCrew\Web\SignupBoardView;
 use WP_REST_Request;
 
 /**
@@ -85,7 +87,7 @@ final class TicketController
      * (assignment or redemption), or its task or person, is gone. A token is
      * tried as a rostered-slot ticket first, then as a free-entry-credit one.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null
      */
     public function ticketFor(string $token): ?array
     {
@@ -95,7 +97,7 @@ final class TicketController
     /**
      * A ticket for a rostered slot - the assignment's own signed link.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null
      */
     private function assignmentTicket(string $token): ?array
     {
@@ -127,6 +129,7 @@ final class TicketController
             'time' => $task->timeRange(),
             'issued' => $assignment->signedUpAt,
             'language' => $person->language,
+            'image' => SignupBoardView::eventImage($task->eventPostId),
         ];
     }
 
@@ -135,7 +138,7 @@ final class TicketController
      * while the redemption exists; once handed back the row is gone and the link
      * no longer resolves.
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null
+     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null
      */
     private function creditTicket(string $token): ?array
     {
@@ -166,6 +169,7 @@ final class TicketController
             'time' => '',
             'issued' => $redemption->redeemedAt,
             'language' => $person->language,
+            'image' => SignupBoardView::eventImage($redemption->eventPostId),
         ];
     }
 
@@ -183,34 +187,92 @@ final class TicketController
     }
 
     /**
-     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string}|null $ticket
+     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null $ticket
      */
     public function renderPage(?array $ticket): string
     {
         if (null === $ticket) {
+            $title = __('Ticket not found', 'eventcrew');
+
             return $this->document(
-                __('Ticket not found', 'eventcrew'),
-                '<p>' . esc_html__('This ticket link is not valid.', 'eventcrew') . '</p>'
+                $title,
+                '<header class="t-head"><h1 class="t-event">' . esc_html($title) . '</h1></header>'
+                . '<div class="t-body"><p>' . esc_html__('This ticket link is not valid.', 'eventcrew') . '</p></div>'
             );
         }
 
-        $badge = $ticket['valid']
-            ? '<strong style="color:#1a7f37">' . esc_html__('VALID', 'eventcrew') . '</strong>'
-            : '<strong style="color:#b32d2e">' . esc_html__('DISABLED', 'eventcrew') . '</strong>';
+        $title = __('Your EventCrew ticket', 'eventcrew');
 
-        $rows = sprintf(
-            '<p style="font-size:1.5em;margin:.2em 0">%s</p><p>%s</p><p>%s%s</p><p>%s</p>',
+        $band = $ticket['valid']
+            ? '<p class="t-band is-valid">' . esc_html__('VALID', 'eventcrew') . '</p>'
+            : '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
+
+        $body = sprintf(
+            '<p class="t-name">%s</p><p class="t-task">%s%s</p>',
             esc_html($ticket['name']),
-            esc_html($ticket['event']),
             esc_html($ticket['role']),
-            '' === $ticket['time'] ? '' : ' · ' . esc_html($ticket['time']),
-            esc_html($ticket['date'])
+            '' === $ticket['time'] ? '' : ' · ' . esc_html($ticket['time'])
         );
+
+        $watermark = ltrim($this->watermarkStyle(), ';');
 
         return $this->document(
-            __('Your EventCrew ticket', 'eventcrew'),
-            $rows . '<p>' . $badge . '</p>' . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
+            $title,
+            $this->headBlock($title, $ticket['event'], $ticket['date'], (string) ($ticket['image'] ?? ''))
+            . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
+            . $body . $band . $this->qrBlock() . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
+            . '</div>'
         );
+    }
+
+    /**
+     * The card's header, like an event card on the crew board: the event's
+     * picture behind it under a dark layer (faces sit about a third of the way
+     * down the posters, hence centre 25%), the event name large, and the date
+     * written out. Without a picture the header is plain dark.
+     *
+     * The picture URL goes through esc_url() inside &quot; quotes, as in
+     * watermarkStyle().
+     */
+    private function headBlock(string $title, string $event, string $date, string $image): string
+    {
+        $style = '' === $image
+            ? ''
+            : ' style="background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.72)),url(&quot;'
+                . esc_url($image) . '&quot;)"';
+
+        return sprintf(
+            '<header class="t-head%1$s"%2$s><p class="t-kicker">%3$s</p>'
+                . '<h1 class="t-event">%4$s</h1><p class="t-date">%5$s</p></header>',
+            '' === $image ? '' : ' has-image',
+            $style,
+            esc_html($title),
+            esc_html($event),
+            esc_html(Dates::longDayLabel($date))
+        );
+    }
+
+    /**
+     * A QR code of this ticket's own link, so door staff can open it on their
+     * phone, with the site's logo in the middle. The code is drawn in the
+     * browser by the bundled qrcode-generator, at error correction level H:
+     * up to 30% of the code can be covered and it still scans, and the logo
+     * covers about 5%. No library, no code: the box is removed.
+     */
+    private function qrBlock(): string
+    {
+        if (! defined('EVENTCREW_PLUGIN_URL')) {
+            return '';
+        }
+
+        $logo = EmailTemplate::logoUrl();
+        $img = '' === $logo ? '' : '<img class="t-qr-logo" src="' . esc_url($logo) . '" alt="">';
+        $lib = EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION;
+
+        return '<div class="t-qr" id="ec-qr">' . $img . '</div>'
+            . '<script src="' . esc_url($lib) . '"></script>'
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
+            . '<script>(function(){var h=document.getElementById("ec-qr");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);return;}var q=window.qrcode(0,"H");q.addData(location.href);q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));})();</script>';
     }
 
     /**
@@ -238,7 +300,7 @@ final class TicketController
         $issuedLine = '' === $issued
             ? ''
             : sprintf(
-                '<p style="opacity:.7;font-size:.85em">%s</p>',
+                '<p class="t-small">%s</p>',
                 esc_html(sprintf(
                     /* translators: %s: the date and time the ticket was issued */
                     __('Issued %s', 'eventcrew'),
@@ -249,8 +311,8 @@ final class TicketController
         // The clock is written and ticked entirely client-side (no network), so
         // it moves every second on a live page and freezes in a screenshot.
         return $issuedLine
-            . '<p style="font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0" id="ec-clock">—</p>'
-            . '<p style="opacity:.7;font-size:.8em">'
+            . '<p class="t-clock" id="ec-clock">—</p>'
+            . '<p class="t-small">'
             . esc_html__('The clock above must match the time now. A frozen clock is a screenshot.', 'eventcrew')
             . '</p>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained clock script; wrapping adds stray whitespace.
@@ -266,17 +328,44 @@ final class TicketController
         return Dates::wallClock($issued, 'H:i, D j M');
     }
 
+    /**
+     * The page around the ticket: a grey page with one white card in the
+     * middle, built like an event card on the crew board (picture header,
+     * then the body). All styling is in this one style block; the page loads
+     * nothing from the theme.
+     */
     private function document(string $title, string $inner): string
     {
-        $watermark = $this->watermarkStyle();
+        $css = 'html{background:#e8e6e3}'
+            . 'body{margin:0;padding:1.5em 1em;font-family:system-ui,sans-serif;color:#1d1d1f;text-align:center}'
+            . '.t{max-width:26em;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;'
+            . 'box-shadow:0 2px 12px rgba(0,0,0,.18)}'
+            . '.t-head{background:#2b2b30 center 25%/cover no-repeat;color:#fff;padding:1.2em;'
+            . 'display:flex;flex-direction:column;justify-content:flex-end}'
+            . '.t-head.has-image{min-height:9em}'
+            . '.t-head p,.t-head h1{margin:0;text-shadow:0 1px 3px rgba(0,0,0,.6)}'
+            . '.t-kicker{font-size:.75em;text-transform:uppercase;letter-spacing:.08em;opacity:.85}'
+            . '.t-event{font-size:1.5em;line-height:1.2;margin:.2em 0}'
+            . '.t-date{font-size:.95em}'
+            . '.t-body{padding:1.2em}'
+            . '.t-name{font-size:1.9em;font-weight:700;line-height:1.15;margin:0 0 .2em}'
+            . '.t-task{margin:0 0 1em;opacity:.8}'
+            . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
+            . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
+            . '.t-qr{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
+            . '.t-qr svg{display:block;width:100%;height:auto}'
+            . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
+            . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'
+            . '.t-qr svg+.t-qr-logo{display:block}'
+            . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
+            . '.t-small{opacity:.7;font-size:.82em}';
 
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-            '<!doctype html><html lang="en"%3$s><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:24em;margin:3em auto;padding:1.5em;border:1px solid #ccc;border-radius:12px;text-align:center%4$s"><h1 style="font-size:1.1em;color:#666">%1$s</h1>%2$s</body></html>',
+            '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title><style>%3$s</style></head><body><main class="t">%2$s</main></body></html>',
             esc_html($title),
             $inner,
-            '' === $watermark ? '' : ' style="background:#fff"',
-            $watermark
+            $css
         );
     }
 
@@ -286,10 +375,8 @@ final class TicketController
      * none is set.
      *
      * A white layer at 80% sits over the image so every line of text, and the
-     * VALID / DISABLED colours, read exactly as on a plain card. The html
-     * element gets its own white background: without it the browser would
-     * paint the body's background across the whole window instead of only
-     * inside the card.
+     * VALID / DISABLED colours, read exactly as on a plain card. It is put on
+     * the card's body, under the picture header.
      *
      * The URL goes through esc_url() and sits in a double-quoted CSS string
      * written as &quot; inside the style attribute. esc_url() strips double

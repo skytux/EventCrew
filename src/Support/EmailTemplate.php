@@ -314,6 +314,40 @@ final class EmailTemplate
      * Customizer's logo first, the Site Icon behind it, and the site name set as
      * a wordmark when there is no image at all.
      */
+    /**
+     * The logo's image URL in the same order as the email masthead (Settings
+     * logo, Customizer logo, Site Icon), or '' when there is none. The ticket
+     * draws it in the middle of its QR code.
+     */
+    public static function logoUrl(): string
+    {
+        $explicit = trim((string) get_option(self::LOGO_OPTION, ''));
+
+        if ('' !== $explicit) {
+            return $explicit;
+        }
+
+        $customLogo = function_exists('get_theme_mod') ? (int) get_theme_mod('custom_logo') : 0;
+
+        if ($customLogo > 0) {
+            $source = wp_get_attachment_image_src($customLogo, 'medium');
+
+            if (is_array($source) && isset($source[0])) {
+                return (string) $source[0];
+            }
+        }
+
+        if (function_exists('has_site_icon') && has_site_icon()) {
+            $icon = get_site_icon_url(180);
+
+            if (is_string($icon)) {
+                return $icon;
+            }
+        }
+
+        return '';
+    }
+
     public static function logoHtml(): string
     {
         $explicit = trim((string) get_option(self::LOGO_OPTION, ''));

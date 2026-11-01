@@ -36,6 +36,23 @@ final class Dates
     }
 
     /**
+     * A bare Y-m-d written out in full, like "Saturday 1 August 2026", in the
+     * current language. Noon UTC for the same reason as dayLabel().
+     */
+    public static function longDayLabel(string $ymd): string
+    {
+        $timestamp = strtotime($ymd . ' 12:00:00 UTC');
+
+        if (false === $timestamp) {
+            return $ymd;
+        }
+
+        return function_exists('wp_date')
+            ? (string) wp_date('l j F Y', $timestamp, new \DateTimeZone('UTC'))
+            : gmdate('l j F Y', $timestamp);
+    }
+
+    /**
      * A date typed in a chat - "2026-08-01", "1.8.2026" or "1.8." / "1.8" - as
      * Y-m-d, or '' when it is not a real date. A day and month without a year
      * take the year that puts it nearest ahead: the current year, unless that
