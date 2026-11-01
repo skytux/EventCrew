@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.56.2
+Stable tag: 1.57.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.57.0 =
+* Sales desk: a new "📷 Scan" button reads the QR code on a crew ticket or a free-entry ticket with the phone's camera. The popup shows the person's name, a +1 counter that starts at 0 and goes up to what that person may bring, and a "Mark arrived" button. After marking, the camera opens again for the next person. A ticket for another night, a cancelled ticket, someone not on tonight's list, or a QR code that is not an EventCrew ticket gets a message instead.
+* The QR code is read by the browser's own reader where the phone has one. Other phones (iPhone Safari) use the bundled decoder from the qr library 0.7.2 (MIT, Paul Miller), which is loaded only when Scan is tapped.
+* Tasks have a new "+1 allowed" number: how many guests each person on the task may bring. The sales desk adds the numbers up over a person's tasks that night and shows "allowed +N" on their row.
+* Settings > Roles: each role has a "+1 allowed" default, which new tasks of that role copy. The reserved Organize task has its own "+1 allowed" setting, 1 until it is saved.
 
 = 1.56.2 =
 The sales desk shows the name of the person the device is logged in as, next to the date.
@@ -708,6 +714,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.57.0 =
+Adds a QR ticket scanner to the sales desk and a "+1 allowed" number to tasks and roles. Updates the database (new task column).
 
 = 1.56.2 =
 No action needed.

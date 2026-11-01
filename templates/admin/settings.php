@@ -3,7 +3,8 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, title_contains: string, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, title_contains: string, plus_ones: int, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var int $organize_plus_ones The "+1 allowed" number new Organize tasks copy.
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -98,6 +99,7 @@ if (! defined('ABSPATH')) {
             'sales_desk' => false,
             'on_board' => true,
             'title_contains' => '',
+            'plus_ones' => 0,
             'conditions' => \EventCrew\Support\Roles::noConditions(),
             'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
             'start_offset' => null,
@@ -188,6 +190,21 @@ if (! defined('ABSPATH')) {
                                 name="role_capacity[<?php echo esc_attr($eventcrew_i); ?>]"
                                 value="<?php echo esc_attr((string) $eventcrew_role['capacity']); ?>"
                                 class="small-text">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-plus-ones"><?php esc_html_e('+1 allowed', 'eventcrew'); ?></label></th>
+                        <td>
+                            <input
+                                type="number"
+                                min="0"
+                                max="20"
+                                step="1"
+                                id="<?php echo esc_attr($eventcrew_id); ?>-plus-ones"
+                                name="role_plus_ones[<?php echo esc_attr($eventcrew_i); ?>]"
+                                value="<?php echo esc_attr((string) $eventcrew_role['plus_ones']); ?>"
+                                class="small-text">
+                            <p class="description"><?php esc_html_e('How many guests each person on a new task of this role may bring in for free. New tasks copy this number; change it on a single task on the Tasks screen.', 'eventcrew'); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -356,6 +373,22 @@ if (! defined('ABSPATH')) {
         </p>
         <p class="description">
             <?php esc_html_e('The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder.', 'eventcrew'); ?>
+        </p>
+
+        <p>
+            <label for="eventcrew-organize-plus-ones"><?php esc_html_e('Organize task: +1 allowed', 'eventcrew'); ?></label>
+            <input
+                type="number"
+                min="0"
+                max="20"
+                step="1"
+                id="eventcrew-organize-plus-ones"
+                name="organize_plus_ones"
+                value="<?php echo esc_attr((string) $organize_plus_ones); ?>"
+                class="small-text">
+        </p>
+        <p class="description">
+            <?php esc_html_e('The Organize task is not in the list above. New Organize tasks copy this number.', 'eventcrew'); ?>
         </p>
 
         <h2><?php esc_html_e('Crew guide', 'eventcrew'); ?></h2>

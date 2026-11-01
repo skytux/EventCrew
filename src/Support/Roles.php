@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Task;
+
 /**
  * The kinds of job a task can be - the role someone signs up to fill.
  *
@@ -42,6 +44,7 @@ namespace EventCrew\Support;
  *     sales_desk: bool,
  *     on_board: bool,
  *     title_contains: string,
+ *     plus_ones: int,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
@@ -73,6 +76,12 @@ final class Roles
      */
     public const ORGANIZE_SLUG = 'organize';
 
+    /**
+     * The reserved Organize role is not in the role list, so its "+1 allowed"
+     * default is an option of its own. 1 until it is saved.
+     */
+    public const ORGANIZE_PLUS_ONES_OPTION = 'eventcrew_organize_plus_ones';
+
     /** The shipped door role: its crew checks tickets, so it ships with sales_desk on. */
     public const WELCOME_SLUG = 'welcome';
 
@@ -102,6 +111,7 @@ final class Roles
                 'every_night' => true,
                 'sales_desk' => false,
                 'title_contains' => '',
+                'plus_ones' => 0,
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -120,
@@ -120,6 +130,7 @@ final class Roles
                 'every_night' => true,
                 'sales_desk' => true,
                 'title_contains' => '',
+                'plus_ones' => 0,
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_START,
                 'start_offset' => -30,
@@ -139,6 +150,7 @@ final class Roles
                 'every_night' => true,
                 'sales_desk' => false,
                 'title_contains' => '',
+                'plus_ones' => 0,
                 'conditions' => self::noConditions(),
                 'anchor' => self::ANCHOR_END,
                 'start_offset' => 0,
@@ -368,6 +380,21 @@ final class Roles
     }
 
     /**
+     * How many guests a new task of this role allows, before anyone edits the
+     * task: 0 for a role that does not exist.
+     */
+    public static function defaultPlusOnes(string $slug): int
+    {
+        if (self::ORGANIZE_SLUG === $slug) {
+            $stored = get_option(self::ORGANIZE_PLUS_ONES_OPTION, '');
+
+            return Task::clampPlusOnes(is_numeric($stored) ? (int) $stored : 1);
+        }
+
+        return self::find($slug)['plus_ones'] ?? 0;
+    }
+
+    /**
      * Whether the role exists at all, archived or not.
      *
      * Editing a task that was created under a since-archived role must keep
@@ -551,6 +578,10 @@ final class Roles
             // Empty means every event, which is what a role stored before
             // this key existed was added to.
             'title_contains' => trim((string) ($role['title_contains'] ?? '')),
+            // How many guests someone on a task of this role may bring: the
+            // number new tasks of this role start with. 0 for a role stored
+            // before this key existed.
+            'plus_ones' => Task::clampPlusOnes((int) ($role['plus_ones'] ?? 0)),
         ];
     }
 

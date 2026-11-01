@@ -50,6 +50,13 @@ final class DoorDesk
     public const HOLVI_BAD_EMAIL = 'bad_email';
     public const HOLVI_FAILED = 'failed';
 
+    /** scan() answers. */
+    public const SCAN_OK = 'ok';
+    public const SCAN_OTHER_NIGHT = 'other_night';
+    public const SCAN_DISABLED = 'disabled';
+    public const SCAN_NOT_ON_LIST = 'not_on_list';
+    public const SCAN_NOT_OURS = 'not_ours';
+
     /**
      * The option that holds one night's count of people let in without a
      * name (the "+1" button), followed by the date (YYYY-MM-DD).
@@ -342,6 +349,166 @@ final class DoorDesk
             self::HOLVI_BAD_EMAIL => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
             default => __('The Holvi buyer could not be added. Try again.', 'eventcrew'),
         };
+    }
+
+    /**
+     * Reads what the camera found in a QR code at the desk. A ticket is the
+     * signed ticket link (or its bare token) of a sign-up or of a spent
+     * free-entry credit. On SCAN_OK, key is the row on tonight's list
+     * ("crew:8", "credit:8"), for the page to show with its +1 counter and
+     * "Mark arrived" button; nothing is marked here. The other answers carry
+     * the ticket holder's name and the ticket's night when they are known.
+     *
+     * @return array{code: string, key: string, name: string, date: string}
+     */
+    public function scan(string $date, string $text): array
+    {
+        $token = self::tokenFrom($text);
+
+        if ('' !== $token) {
+            $assignmentId = SignedLink::verify('ticket', $token);
+
+            if (null !== $assignmentId) {
+                return $this->scanAssignment($date, $assignmentId);
+            }
+
+            $redemptionId = SignedLink::verify('credit_ticket', $token);
+
+            if (null !== $redemptionId) {
+                return $this->scanRedemption($date, $redemptionId);
+            }
+        }
+
+        return self::scanAnswer(self::SCAN_NOT_OURS);
+    }
+
+    /**
+     * The line the desk shows for one of scan()'s answers other than SCAN_OK.
+     */
+    public function scanText(string $code, string $name, string $date): string
+    {
+        $who = '' === $name ? __('This ticket', 'eventcrew') : $name;
+
+        return match ($code) {
+            self::SCAN_OTHER_NIGHT => '' === $date
+                ? sprintf(
+                    /* translators: %s: the ticket holder's name */
+                    __('%s: this ticket is not for tonight.', 'eventcrew'),
+                    $who
+                )
+                : sprintf(
+                    /* translators: 1: the ticket holder's name, 2: the day the ticket is for */
+                    __('%1$s: this ticket is for %2$s, not tonight.', 'eventcrew'),
+                    $who,
+                    Dates::dayLabel($date)
+                ),
+            self::SCAN_DISABLED => sprintf(
+                /* translators: %s: the ticket holder's name */
+                __('%s: this ticket is cancelled.', 'eventcrew'),
+                $who
+            ),
+            self::SCAN_NOT_ON_LIST => sprintf(
+                /* translators: %s: the ticket holder's name */
+                __('%s is not on tonight’s list.', 'eventcrew'),
+                $who
+            ),
+            self::SCAN_OK => '',
+            default => __('This QR code is not one of our tickets.', 'eventcrew'),
+        };
+    }
+
+    /**
+     * The token in a scanned ticket link, or the scanned text itself when it
+     * is not a link with a query string.
+     */
+    private static function tokenFrom(string $text): string
+    {
+        $text = trim($text);
+        $query = parse_url($text, PHP_URL_QUERY);
+
+        if (is_string($query) && '' !== $query) {
+            parse_str($query, $args);
+
+            return isset($args['token']) && is_string($args['token']) ? trim($args['token']) : '';
+        }
+
+        return $text;
+    }
+
+    /**
+     * @return array{code: string, key: string, name: string, date: string}
+     */
+    private function scanAssignment(string $date, int $assignmentId): array
+    {
+        $assignment = $this->assignments->find($assignmentId);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        // The sign-up or its task is gone: the ticket no longer stands for
+        // anything.
+        if (null === $assignment || null === $task) {
+            return self::scanAnswer(self::SCAN_DISABLED);
+        }
+
+        $name = $this->nameOf($assignment->personId);
+
+        if ($task->taskDate !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, $task->taskDate);
+        }
+
+        if (! $assignment->isOccupying()) {
+            return self::scanAnswer(self::SCAN_DISABLED, '', $name, $date);
+        }
+
+        return $this->scanPerson($date, $assignment->personId, $name);
+    }
+
+    /**
+     * @return array{code: string, key: string, name: string, date: string}
+     */
+    private function scanRedemption(string $date, int $redemptionId): array
+    {
+        $redemption = $this->redemptions->find($redemptionId);
+
+        if (null === $redemption || null !== $redemption->cancelledAt) {
+            return self::scanAnswer(
+                self::SCAN_DISABLED,
+                '',
+                null === $redemption ? '' : $this->nameOf($redemption->personId)
+            );
+        }
+
+        $name = $this->nameOf($redemption->personId);
+
+        if ($redemption->redeemedFor !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, (string) $redemption->redeemedFor);
+        }
+
+        return $this->scanPerson($date, $redemption->personId, $name);
+    }
+
+    /**
+     * The person's row on tonight's list: crew when they work tonight,
+     * otherwise their free-entry credit, the same one-row rule as the list.
+     *
+     * @return array{code: string, key: string, name: string, date: string}
+     */
+    private function scanPerson(string $date, int $personId, string $name): array
+    {
+        foreach (array_merge(...$this->entrants($date)) as $row) {
+            if ($row['ref'] === $personId) {
+                return self::scanAnswer(self::SCAN_OK, $row['kind'] . ':' . $row['ref'], $row['name'], $date);
+            }
+        }
+
+        return self::scanAnswer(self::SCAN_NOT_ON_LIST, '', $name, $date);
+    }
+
+    /**
+     * @return array{code: string, key: string, name: string, date: string}
+     */
+    private static function scanAnswer(string $code, string $key = '', string $name = '', string $date = ''): array
+    {
+        return ['code' => $code, 'key' => $key, 'name' => $name, 'date' => $date];
     }
 
     /**
@@ -710,11 +877,15 @@ final class DoorDesk
     private function entrants(string $date): array
     {
         $roles = [];
+        $plusOnes = [];
 
         foreach ($this->tasks->forDate($date) as $task) {
             foreach ($this->assignments->forTask($task->id) as $assignment) {
                 if ($assignment->isOccupying()) {
                     $roles[$assignment->personId][] = $task->roleLabel();
+                    // Each task's "+1 allowed", added up over all of the
+                    // person's tasks tonight.
+                    $plusOnes[$assignment->personId] = ($plusOnes[$assignment->personId] ?? 0) + $task->plusOnes;
                 }
             }
         }
@@ -722,11 +893,20 @@ final class DoorDesk
         $crew = [];
 
         foreach ($roles as $personId => $labels) {
+            $allowed = min(CheckinRepository::MAX_PLUS_ONES, $plusOnes[$personId] ?? 0);
+            $detail = implode(', ', array_unique($labels));
+
+            if ($allowed > 0) {
+                /* translators: %d: how many extra people this guest may bring */
+                $detail .= ' · ' . sprintf(__('allowed +%d', 'eventcrew'), $allowed);
+            }
+
             $crew[] = $this->row(
                 CheckinRepository::KIND_CREW,
                 $personId,
                 $this->nameOf($personId),
-                implode(', ', array_unique($labels))
+                $detail,
+                $allowed
             );
         }
 
@@ -803,8 +983,9 @@ final class DoorDesk
 
     /**
      * A list row. $max is how many extra people the entry may bring: a
-     * guest's allowance, none for crew or a free-entry credit (the credit
-     * covers one person), the general cap for a ticket.
+     * guest's allowance, the sum of a crew person's tasks' "+1 allowed",
+     * none for a free-entry credit (the credit covers one person), the general
+     * cap for a ticket.
      *
      * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}
      */

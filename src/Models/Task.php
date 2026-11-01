@@ -27,7 +27,8 @@ final class Task
         public readonly ?string $startsAt = null,
         public readonly ?string $endsAt = null,
         public readonly string $notes = '',
-        public readonly string $createdAt = ''
+        public readonly string $createdAt = '',
+        public readonly int $plusOnes = 0
     ) {
     }
 
@@ -46,8 +47,18 @@ final class Task
             self::nullableString($row['starts_at'] ?? null),
             self::nullableString($row['ends_at'] ?? null),
             (string) ($row['notes'] ?? ''),
-            (string) ($row['created_at'] ?? '')
+            (string) ($row['created_at'] ?? ''),
+            (int) ($row['plus_ones'] ?? 0)
         );
+    }
+
+    /**
+     * How many guests a person working this task may bring in (0 to 20, the
+     * same cap as a guest-list entry).
+     */
+    public static function clampPlusOnes(int $plusOnes): int
+    {
+        return max(0, min(20, $plusOnes));
     }
 
     public function roleLabel(): string

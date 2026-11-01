@@ -65,6 +65,7 @@ final class OrganizeTaskBackfill
             'ends_at' => null,
             'role_slug' => Roles::ORGANIZE_SLUG,
             'capacity' => 1,
+            'plus_ones' => Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG),
             'notes' => '',
         ];
     }

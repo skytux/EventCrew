@@ -305,6 +305,27 @@ final class RolesTest extends TestCase
         self::assertFalse(Roles::fitsEvent($saved[1], 'Ecstatic Dance'));
     }
 
+    public function testPlusOnesAreKeptBetweenNoneAndTwenty(): void
+    {
+        $saved = $this->captureSavedRoles([
+            ['slug' => 'bar', 'label' => 'Bar'],
+            ['slug' => 'dj', 'label' => 'DJ', 'plus_ones' => 1],
+            ['slug' => 'big', 'label' => 'Big', 'plus_ones' => 99],
+            ['slug' => 'neg', 'label' => 'Neg', 'plus_ones' => -3],
+        ]);
+
+        self::assertSame([0, 1, 20, 0], array_column($saved, 'plus_ones'));
+    }
+
+    public function testTheOrganizeTaskAllowsOneGuestUntilItsSettingIsSaved(): void
+    {
+        Functions\when('get_option')->justReturn('');
+        self::assertSame(1, Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG));
+
+        Functions\when('get_option')->justReturn('0');
+        self::assertSame(0, Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG));
+    }
+
     public function testTheGuideLinkIsTrimmedAndBlankByDefault(): void
     {
         Functions\when('get_option')->justReturn('');

@@ -43,6 +43,7 @@ final class DoorController
     public const COUNT_ACTION = 'eventcrew_door_count';
     public const PEOPLE_ACTION = 'eventcrew_door_people';
     public const HANDOFF_ACTION = 'eventcrew_door_handoff';
+    public const SCAN_ACTION = 'eventcrew_door_scan';
 
     /** How often the page asks for fresh state, in milliseconds. */
     public const POLL_MS = 4000;
@@ -72,6 +73,7 @@ final class DoorController
             self::COUNT_ACTION,
             self::PEOPLE_ACTION,
             self::HANDOFF_ACTION,
+            self::SCAN_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -255,6 +257,20 @@ final class DoorController
                 ]);
                 // No break: json() exits.
 
+            case self::SCAN_ACTION:
+                // Only looks the ticket up: the desk then shows the person
+                // and marks them arrived through MARK_ACTION.
+                $text = isset($_POST['text']) ? sanitize_text_field(wp_unslash($_POST['text'])) : '';
+                $scan = $this->desk->scan($date, $text);
+                $this->json([
+                    'ok' => DoorDesk::SCAN_OK === $scan['code'],
+                    'key' => $scan['key'],
+                    'name' => $scan['name'],
+                    'message' => $this->desk->scanText($scan['code'], $scan['name'], $scan['date']),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
             case self::PEOPLE_ACTION:
                 $this->json(['people' => $this->handoff->people($cookie) ?? []]);
                 // No break: json() exits.
@@ -334,7 +350,11 @@ final class DoorController
                 'count' => self::COUNT_ACTION,
                 'people' => self::PEOPLE_ACTION,
                 'handoff' => self::HANDOFF_ACTION,
+                'scan' => self::SCAN_ACTION,
             ],
+            // The QR decoder for phones without BarcodeDetector, loaded only
+            // when Scan is tapped.
+            'qrDecodeUrl' => EVENTCREW_PLUGIN_URL . 'assets/vendor/qr-decode/decode.js?ver=' . EVENTCREW_VERSION,
         ];
 
         status_header(200);

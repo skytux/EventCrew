@@ -76,6 +76,30 @@ final class TaskTemplateTest extends TestCase
         );
 
         self::assertSame(0, $tasks[0]['capacity']);
+        // A role with no "+1 allowed" gives its tasks none.
+        self::assertSame(0, $tasks[0]['plus_ones']);
+    }
+
+    public function testANewTaskCopiesItsRolesPlusOnes(): void
+    {
+        $tasks = TaskTemplate::build(
+            '2026-08-01',
+            '2026-08-01 21:00:00',
+            '2026-08-02 01:00:00',
+            [[
+                'slug' => 'dj',
+                'label' => 'DJ',
+                'emoji' => '',
+                'capacity' => 1,
+                'archived' => false,
+                'anchor' => Roles::ANCHOR_START,
+                'start_offset' => 0,
+                'end_offset' => null,
+                'plus_ones' => 1,
+            ]]
+        );
+
+        self::assertSame(1, $tasks[0]['plus_ones']);
     }
 
     /**

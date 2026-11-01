@@ -54,6 +54,7 @@ final class TaskRepository
                 'ends_at' => $data['ends_at'] ?? null,
                 'role_slug' => (string) ($data['role_slug'] ?? ''),
                 'capacity' => max(0, (int) ($data['capacity'] ?? 1)),
+                'plus_ones' => Task::clampPlusOnes((int) ($data['plus_ones'] ?? 0)),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => current_time('mysql'),
             ]

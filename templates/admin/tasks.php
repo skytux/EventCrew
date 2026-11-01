@@ -216,6 +216,19 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                     </div>
 
                     <div class="form-field">
+                        <label for="eventcrew-plus-ones"><?php esc_html_e('+1 allowed', 'eventcrew'); ?></label>
+                        <input
+                            name="plus_ones"
+                            id="eventcrew-plus-ones"
+                            type="number"
+                            min="0"
+                            max="20"
+                            step="1"
+                            value="<?php echo esc_attr($eventcrew_is_edit ? (string) $editing->plusOnes : ''); ?>">
+                        <p><?php esc_html_e('How many guests each person on this task may bring in for free. The sales desk adds this up over all of a person\'s tasks that night. Leave empty on a new task to use the role\'s default from Settings.', 'eventcrew'); ?></p>
+                    </div>
+
+                    <div class="form-field">
                         <label for="eventcrew-starts-at"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
                         <input
                             name="starts_at"
