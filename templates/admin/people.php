@@ -30,7 +30,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 
     <div class="ec-tab-panel" data-ec-tab="people">
     <div id="col-container" class="wp-clearfix">
-        <div id="col-left" style="width:35%;float:left;padding-right:2%;box-sizing:border-box">
+        <div id="col-left" class="eventcrew-col-left">
             <div class="form-wrap">
                 <h2>
                     <?php
@@ -272,7 +272,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
             </div>
         </div>
 
-        <div id="col-right" style="width:63%;float:left">
+        <div id="col-right" class="eventcrew-col-right">
             <form method="get">
                 <input type="hidden" name="page" value="<?php echo esc_attr($page_slug); ?>">
                 <?php $table->search_box(__('Search people', 'eventcrew'), 'eventcrew-person-search'); ?>
@@ -283,7 +283,8 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 
     <?php if ([] !== $credit_grants) : ?>
         <h2><?php esc_html_e('Recent credit grants', 'eventcrew'); ?></h2>
-        <table class="wp-list-table widefat fixed striped" style="max-width:60em">
+        <div class="eventcrew-scroll">
+        <table class="widefat striped" style="max-width:60em">
             <thead>
                 <tr>
                     <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
@@ -305,6 +306,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                 <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
     </div>
 
@@ -323,7 +325,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
             <?php if ([] === $eventcrew_condition_role['people']) : ?>
                 <p><?php esc_html_e('Nobody meets them yet.', 'eventcrew'); ?></p>
             <?php else : ?>
-                <table class="wp-list-table widefat fixed striped" style="max-width:40em">
+                <table class="widefat striped" style="max-width:40em">
                     <tbody>
                         <?php foreach ($eventcrew_condition_role['people'] as $eventcrew_condition_person) : ?>
                             <tr>

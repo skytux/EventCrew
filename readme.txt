@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.50.1
+Stable tag: 1.51.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.51.0 =
+* The web page board shows each event as a card with its day in the header; task rows show only their time.
+* Signed out, the board says once that you sign in first, instead of on every row.
+* "What each task involves" lists only roles that have a description.
+* The Me tab shows dates as "Sat 7 Nov" instead of 2026-11-07, and tickets are a plain list like My tasks.
+* Small grey text is a little stronger, so it reads on a photo or coloured background.
+* wp-admin on a phone: Tasks and People stack the form above the list, the Tasks and People lists show every column, the roster's guest list becomes one card per guest, and wide tables scroll sideways.
 
 = 1.50.1 =
 * Fix: the "a spot just opened" Telegram message and email are no longer sent when the task has already started (or, for a task with no start time, when its date is over).
@@ -627,6 +635,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.51.0 =
+Front page polish and wp-admin pages that work on a phone.
 
 = 1.50.1 =
 No more "a spot just opened" messages for tasks that have already started.

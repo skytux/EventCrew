@@ -1,0 +1,88 @@
+/*
+ * EventCrew wp-admin pages (Tasks, Roster, People, Settings, Diagnostics).
+ *
+ * Loaded only on those pages (Admin::enqueueStyles), so plain .wrap selectors
+ * here cannot reach any other screen. The pages otherwise wear WordPress's own
+ * admin styles; this sheet only fixes what breaks on a phone.
+ */
+
+/*
+ * The two-column layout of Tasks and People: the form on the left, the list on
+ * the right. These widths used to be inline styles, and an inline style beats
+ * WordPress's own rule that stacks the columns on a narrow screen - so on a
+ * phone both columns stayed side by side at a third and two thirds of 390px.
+ */
+.eventcrew-col-left {
+    width: 35%; float: left; padding-right: 2%; box-sizing: border-box;
+}
+.eventcrew-col-right { width: 63%; float: left; }
+
+/* A table that may be wider than the screen scrolls sideways inside its box
+   rather than squeezing every column to a few letters. */
+.eventcrew-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/*
+ * Settings > Roles has eleven columns of inputs. Given only the screen's width
+ * each column shrinks until the inputs are one character wide and every row is
+ * very tall. A minimum width keeps the columns usable; the box around the
+ * table already scrolls sideways.
+ */
+.eventcrew-roles-table { min-width: 72em; }
+
+@media screen and (max-width: 782px) {
+    .eventcrew-col-left,
+    .eventcrew-col-right {
+        width: 100%; float: none; padding-right: 0;
+    }
+    .eventcrew-col-left { margin-bottom: 1.5em; }
+
+    /*
+     * The roster's guest list: each guest becomes a small card with its fields
+     * one under another and a label above each field, because a table row of
+     * three inputs and two buttons cannot fit on a phone.
+     */
+    .wrap table.eventcrew-stack thead { display: none; }
+    .wrap table.eventcrew-stack,
+    .wrap table.eventcrew-stack tbody,
+    .wrap table.eventcrew-stack tr,
+    .wrap table.eventcrew-stack td {
+        display: block; width: 100%; box-sizing: border-box;
+    }
+    .wrap table.eventcrew-stack tr {
+        padding: .5em 0; border-bottom: 1px solid #c3c4c7;
+    }
+    .wrap table.eventcrew-stack td { padding: .3em .75em; }
+    .wrap table.eventcrew-stack td[data-label]::before {
+        content: attr(data-label);
+        display: block; margin-bottom: .2em;
+        font-size: 12px; font-weight: 600; color: #50575e;
+    }
+    .wrap table.eventcrew-stack td input { max-width: 100%; }
+    .wrap table.eventcrew-stack td.eventcrew-stack-actions {
+        display: flex; flex-wrap: wrap; gap: .75em; align-items: center;
+        white-space: normal !important;
+    }
+
+    /* Tables of figures (door list, recent credit grants) keep their columns
+       and scroll sideways inside the screen instead of pushing the page wide. */
+    .wrap .eventcrew-scroll > table { min-width: 36em; }
+
+    /*
+     * The Tasks and People lists. On a phone WordPress hides every column but
+     * the first behind a small arrow, so the Tasks list read as a column of
+     * bare dates. These rows are short, so every column is shown, each with
+     * its name in front (WordPress already writes the name into the cell), and
+     * the arrow is hidden because there is nothing left to open.
+     */
+    .wrap .wp-list-table.tasks tr:not(.inline-edit-row):not(.no-items) td:not(.check-column),
+    .wrap .wp-list-table.people tr:not(.inline-edit-row):not(.no-items) td:not(.check-column) {
+        /* WordPress makes the row a wrapping flex row, so a short cell would
+           sit beside the date instead of under it. Full width, one per line. */
+        display: block; flex: 0 0 100%; box-sizing: border-box;
+    }
+    .wrap .wp-list-table.tasks .toggle-row,
+    .wrap .wp-list-table.people .toggle-row { display: none; }
+
+    /* The settings tabs wrap onto a second row instead of running off screen. */
+    .wrap .nav-tab-wrapper { display: flex; flex-wrap: wrap; }
+}
