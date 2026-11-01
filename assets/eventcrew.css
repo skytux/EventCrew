@@ -436,6 +436,11 @@
 .eventcrew-signup .eventcrew-help-list { margin: 0 0 1.2em; line-height: 1.6; }
 .eventcrew-signup .eventcrew-help-list li { margin: 0 0 .7em; }
 .eventcrew-signup .eventcrew-help-list.is-emoji { list-style: none; padding: 0; }
+/* Bot commands and other things to type, kept on one line. */
+.eventcrew-signup .eventcrew-cmd {
+    white-space: nowrap; font-size: .9em; padding: .05em .35em; border-radius: 4px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+}
 /* A centred outlined button, like the crew guide button under the board. */
 .eventcrew-signup .eventcrew-links.eventcrew-help-orglink { margin: 0 0 1.2em; }
 .eventcrew-signup .eventcrew-help-organizer { margin-top: 2em; scroll-margin-top: 1em; }

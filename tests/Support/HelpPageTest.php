@@ -64,4 +64,15 @@ final class HelpPageTest extends TestCase
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         self::assertSame('https://site.test/crew/#eventcrew-help-organizer', HelpPage::url(HelpPage::ORGANIZER_ANCHOR));
     }
+
+    public function testCommandsAreCodeThatDoesNotWrap(): void
+    {
+        $html = HelpPage::html('Send /sales (or `/tickets 14.11`) in the bot. DMARC/SPF and https://t.me/crew stay text.');
+
+        self::assertStringContainsString('<code class="eventcrew-cmd" style="white-space:nowrap;font-family:monospace">/sales</code>', $html);
+        self::assertStringContainsString('>/tickets 14.11</code>', $html);
+        self::assertSame(2, substr_count($html, '<code'));
+        self::assertStringContainsString('DMARC/SPF', $html);
+        self::assertStringContainsString('<a href="https://t.me/crew"', $html);
+    }
 }

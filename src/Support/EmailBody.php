@@ -234,6 +234,16 @@ final class EmailBody
     {
         $escaped = esc_html($text);
 
+        // Commands as code that never breaks across lines: anything in
+        // `backticks`, and a bare bot command like /sales or /tickets 14.11
+        // (a slash at the start of a word, so a/b and URLs are left alone).
+        $code = '<code class="eventcrew-cmd" style="white-space:nowrap;font-family:monospace">%s</code>';
+        $escaped = (string) preg_replace_callback(
+            '~`([^`]+)`|(?<![\w/.:&;-])(/[a-z][a-z_]*)(?![\w/.])~',
+            static fn (array $m): string => sprintf($code, '' !== $m[1] ? $m[1] : $m[2]),
+            $escaped
+        );
+
         $escaped = (string) preg_replace(
             self::ANCHOR_LINK,
             '<a href="#$2" style="color:inherit;text-decoration:underline">$1</a>',
