@@ -460,4 +460,17 @@ final class SignupControllerTest extends TestCase
         self::assertSame('', $this->controller()->chooseLanguage(7, 'sv'));
         self::assertSame([], $this->wpdb->updates);
     }
+
+    public function testTheStylesheetIsKeptOutOfW3TotalCacheMinify(): void
+    {
+        $controller = $this->controller();
+        $own = "<link rel='stylesheet' id='eventcrew-signup-css' href='x/eventcrew.css?ver=1' />";
+        $inline = "<style id='eventcrew-signup-inline-css'>a{}</style>";
+        $other = "<link rel='stylesheet' id='theme-css' href='x/style.css' />";
+
+        self::assertFalse($controller->keepStyleOutOfMinify(true, $own));
+        self::assertTrue($controller->keepStyleOutOfMinify(true, $inline));
+        self::assertTrue($controller->keepStyleOutOfMinify(true, $other));
+        self::assertTrue($controller->keepStyleOutOfMinify(true));
+    }
 }

@@ -193,13 +193,16 @@
 .eventcrew-signup .eventcrew-event-date { font-size: .9em; opacity: .8; white-space: nowrap; }
 
 /*
- * The events on the board in columns: as many 20em columns as fit, so one on
- * a phone or a narrow theme column, two or three on a wide page. The gap
- * replaces each card's bottom margin.
+ * The events on the board in columns: as many 18rem columns as fit, so one on
+ * a phone or a narrow theme column, three on a 1280px page. rem, not em: em
+ * follows the theme's text size, which is about 20px on the live theme, and
+ * 20em columns then fitted only two across 1280px. auto-fit, not auto-fill:
+ * with fewer events than columns, the cards widen to fill the row instead of
+ * leaving empty columns. The gap replaces each card's bottom margin.
  */
 .eventcrew-signup .eventcrew-board-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20em), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
     gap: 1.2em;
     align-items: start;
     scroll-margin-top: 1em;
@@ -586,13 +589,16 @@
 .eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
 /* A role task: Sign up opens "Count toward free-entry credit?" with Yes / No. */
 /*
- * The summary is not a <button>, so it does not centre its own text: as an
- * inline-block with min-height 44px the word sat at the top. inline-flex
- * centres it like the plain Sign up buttons on the other rows.
+ * The summary is not a <button>, so it does not centre its own text: with
+ * min-height 44px the word sat at the top. A 44px line height centres the word
+ * in every browser (Safari does not reliably lay out a <summary> as flex, which
+ * was the 1.52.4 attempt); no vertical padding, so the box is exactly 44px,
+ * the height of the plain Sign up buttons on the other rows.
  */
 .eventcrew-signup .eventcrew-credit-ask summary {
-    list-style: none; display: inline-flex; align-items: center; justify-content: center;
-    box-sizing: border-box;
+    list-style: none; display: inline-block; box-sizing: border-box;
+    padding-top: 0; padding-bottom: 0; line-height: 44px; white-space: nowrap;
+    vertical-align: middle;
 }
 .eventcrew-signup .eventcrew-credit-ask summary::-webkit-details-marker { display: none; }
 .eventcrew-signup .eventcrew-credit-ask[open] summary { display: none; }
@@ -648,9 +654,14 @@
     box-sizing: border-box; width: 100%;
     height: 3em; padding: 0 2.5em 0 1em;
     font: inherit; font-size: 1rem; line-height: 1;
-    color: var(--eventcrew-ink);
-    background-color: var(--eventcrew-surface);
-    border: 1px solid var(--eventcrew-ink);
+    /*
+     * A light tint of the text colour, as on the Admin card fields: the
+     * surface colour is the theme's base colour, which on a dark theme is a
+     * bright yellow box.
+     */
+    color: inherit;
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+    border: 1px solid var(--eventcrew-line);
     border-radius: var(--eventcrew-radius);
     /* The browser's own arrow is part of the grey look being replaced. */
     appearance: none; -webkit-appearance: none;
@@ -660,6 +671,8 @@
     background-size: .35em .35em, .35em .35em;
     background-repeat: no-repeat;
 }
+/* The open dropdown list is drawn by the browser: dark text on white there. */
+.eventcrew-signup .eventcrew-redeem select option { color: #222; background: #fff; }
 .eventcrew-signup .eventcrew-redeem select:focus {
     outline: none;
     border-color: var(--eventcrew-accent);
