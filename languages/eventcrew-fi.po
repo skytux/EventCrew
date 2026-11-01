@@ -2370,3 +2370,12 @@ msgstr "Tietoa tehtävästä"
 
 msgid "Infrastructure"
 msgstr "Infrastruktuuri"
+
+msgid "You are organizing on %s"
+msgstr "Järjestäjänä %s"
+
+msgid "🛠️ Open the Admin tab"
+msgstr "🛠️ Avaa Admin-välilehti"
+
+msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot."
+msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on crew-sivulla; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /sales."

@@ -16,10 +16,12 @@ use EventCrew\Telegram\TelegramClient;
  * Sends the sales desk's (door page's) login link on an event night, without
  * anyone asking.
  *
- * Organizers get theirs a set number of minutes before the night's first task
- * starts. People on the night's task of a sales-desk role get theirs under SalesDeskGate's
- * rule: a few minutes before their own task starts, once they are marked
- * arrived, and not after the event has ended. Someone marked arrived after
+ * Organizers signed up on the night's Organize task get theirs a set number of
+ * minutes before the night's first task starts, with a second button to the
+ * crew page's Admin tab, on the channels set in Settings. People on the
+ * night's task of a sales-desk role get theirs under SalesDeskGate's rule: a
+ * few minutes before their own task starts, once they are marked arrived, and
+ * not after the event has ended. Someone marked arrived after
  * that moment gets it there and then, through the status-changed hook every
  * status write fires.
  *
@@ -45,6 +47,15 @@ final class DoorLinkSender
 
     public const LEAD_OPTION = 'eventcrew_door_link_lead_minutes';
     public const DEFAULT_LEAD_MINUTES = 30;
+
+    /** Settings: the channels the organizer notice uses. */
+    public const ORGANIZER_CHANNELS_OPTION = 'eventcrew_organizer_notice_channels';
+
+    /** Every channel, and the default: both on. */
+    public const ORGANIZER_CHANNELS = ['telegram', 'email'];
+
+    /** The crew page's Admin tab. */
+    private const ADMIN_ANCHOR = 'eventcrew-panel-admin';
 
     /** The ledger kind. One per person per night. */
     public const KIND = 'door_link';
@@ -157,8 +168,8 @@ final class DoorLinkSender
         }
 
         if ((string) current_time('mysql') >= $this->organizersFrom($date)) {
-            foreach ($this->people->organizers() as $organizer) {
-                $this->sendOnce($organizer, $date);
+            foreach ($this->signedUpOrganizers($tasks) as $organizer) {
+                $this->sendOrganizerOnce($organizer, $date);
             }
         }
 
@@ -301,6 +312,148 @@ final class DoorLinkSender
     public static function buttonLabel(): string
     {
         return __('🚪 Open the sales desk', 'eventcrew');
+    }
+
+    /**
+     * Which channels the organizer notice goes out on: 'telegram', 'email',
+     * both (the default) or neither. Settings > Reputation & alerts.
+     *
+     * @return list<string>
+     */
+    public static function organizerChannels(): array
+    {
+        $saved = get_option(self::ORGANIZER_CHANNELS_OPTION, self::ORGANIZER_CHANNELS);
+        $saved = is_array($saved) ? $saved : self::ORGANIZER_CHANNELS;
+
+        return array_values(array_intersect(self::ORGANIZER_CHANNELS, array_map('strval', $saved)));
+    }
+
+    /**
+     * The organizers signed up on the night's Organize task: an occupying
+     * sign-up, by a person who is still an organizer. Each once.
+     *
+     * @param list<\EventCrew\Models\Task> $tasks
+     * @return list<Person>
+     */
+    private function signedUpOrganizers(array $tasks): array
+    {
+        $found = [];
+
+        foreach ($tasks as $task) {
+            if (Roles::ORGANIZE_SLUG !== $task->roleSlug) {
+                continue;
+            }
+
+            foreach ($this->assignments->forTask($task->id) as $assignment) {
+                if (! $assignment->isOccupying() || isset($found[$assignment->personId])) {
+                    continue;
+                }
+
+                $person = $this->people->find($assignment->personId);
+
+                if (null !== $person && $person->isOrganizer) {
+                    $found[$person->id] = $person;
+                }
+            }
+        }
+
+        return array_values($found);
+    }
+
+    private function sendOrganizerOnce(Person $person, string $date): void
+    {
+        if ($this->ledger->hasSent(self::KIND, $person->id, $date)) {
+            return;
+        }
+
+        $sent = Language::forPerson(
+            $person,
+            fn (): bool => $this->sendOrganizerNotice($person, $date)
+        );
+
+        if ($sent) {
+            $this->ledger->recordSent(self::KIND, $person->id, $date);
+        }
+    }
+
+    /**
+     * The organizer's notice: the sales desk link, plus a button to the
+     * crew page's Admin tab, on the channels set in Settings. Returns false
+     * when nothing could be sent, so the next check tries again.
+     */
+    private function sendOrganizerNotice(Person $person, string $date): bool
+    {
+        $channels = self::organizerChannels();
+        $byTelegram = in_array('telegram', $channels, true) && null !== $person->telegramChatId;
+        $byEmail = in_array('email', $channels, true) && $person->isEmailVerified() && ! $person->isAnonymized();
+
+        // No login token is made when there is nowhere to send it.
+        if (! $byTelegram && ! $byEmail) {
+            return false;
+        }
+
+        $url = $this->loginUrl($person, $date);
+
+        if ('' === $url) {
+            return false;
+        }
+
+        $body = self::organizerBody($date);
+        $buttons = [['label' => self::buttonLabel(), 'url' => $url]];
+        $adminUrl = HelpPage::url(self::ADMIN_ANCHOR);
+
+        if ('' !== $adminUrl) {
+            $buttons[] = ['label' => self::adminButtonLabel(), 'url' => $adminUrl];
+        }
+
+        if ($byTelegram) {
+            $rows = array_map(
+                static fn (array $b): array => [['text' => $b['label'], 'url' => $b['url']]],
+                $buttons
+            );
+            $this->telegram->sendMessage(
+                (int) $person->telegramChatId,
+                DmBody::frame($person, $body),
+                ['inline_keyboard' => $rows]
+            );
+        }
+
+        if ($byEmail) {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                sprintf(
+                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
+                    __('You are organizing on %s', 'eventcrew'),
+                    Dates::dayLabel($date)
+                ),
+                $body,
+                $buttons
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * The organizer notice's text. The two links are the buttons under it.
+     */
+    public static function organizerBody(string $date): string
+    {
+        return sprintf(
+            /* translators: %s: event day, e.g. "Sat 1 Aug" */
+            __(
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot.',
+                'eventcrew'
+            ),
+            Dates::dayLabel($date)
+        );
+    }
+
+    public static function adminButtonLabel(): string
+    {
+        return __('🛠️ Open the Admin tab', 'eventcrew');
     }
 
     private function sendOnce(Person $person, string $date): void

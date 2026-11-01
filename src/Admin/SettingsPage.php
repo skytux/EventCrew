@@ -422,6 +422,15 @@ final class SettingsPage
                 ? max(0, (int) $_POST['door_link_lead'])
                 : DoorLinkSender::DEFAULT_LEAD_MINUTES
         );
+        // The organizer notice's channels: whichever boxes are ticked, none
+        // meaning the notice is off.
+        $orgChannels = isset($_POST['organizer_notice_channels']) && is_array($_POST['organizer_notice_channels'])
+            ? array_map('sanitize_key', wp_unslash($_POST['organizer_notice_channels']))
+            : [];
+        update_option(
+            DoorLinkSender::ORGANIZER_CHANNELS_OPTION,
+            array_values(array_intersect(DoorLinkSender::ORGANIZER_CHANNELS, $orgChannels))
+        );
         update_option(
             SalesDeskGate::CREW_MINUTES_OPTION,
             isset($_POST['door_link_crew'])

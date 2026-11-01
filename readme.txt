@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.52.7
+Stable tag: 1.53.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.53.0 =
+The automatic sales desk link for organizers now goes only to organizers signed up on that night's Organize task, and carries a second button that opens the crew page's Admin tab. Settings > Reputation & alerts has Telegram and Email checkboxes for it (both on by default; untick both to switch it off).
 
 = 1.52.7 =
 Finnish: 22 button, header and label texts shortened to about the length of the English (Sign up is now Ilmoittaudu instead of Ilmoita tehtävään). Sentences are unchanged.
@@ -666,6 +669,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.53.0 =
+Organizer notice: only signed-up organizers, with an Admin tab button and channel settings.
 
 = 1.52.7 =
 Shorter Finnish button and header texts.
