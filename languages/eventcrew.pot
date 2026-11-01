@@ -340,7 +340,7 @@ msgstr ""
 msgid "Add a person"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:131 templates/public/signup.php:654
+#: src/Web/CrewAdminController.php:131 templates/public/signup.php:677
 msgid "Add a person to a task"
 msgstr ""
 
@@ -412,6 +412,10 @@ msgstr ""
 
 #: templates/public/signup.php:247 templates/public/signup.php:518
 msgid "Admin"
+msgstr ""
+
+#: templates/public/signup.php:535
+msgid "Admin screens"
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:438
@@ -495,7 +499,7 @@ msgstr ""
 msgid "Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was."
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:105 templates/public/signup.php:726
+#: src/Support/AssignmentStatus.php:105 templates/public/signup.php:749
 msgid "Arrived"
 msgstr ""
 
@@ -515,7 +519,7 @@ msgstr ""
 msgid "Ask the bot for a fresh one by sending it /start."
 msgstr ""
 
-#: templates/public/signup.php:686
+#: templates/public/signup.php:709
 msgid "Asked only for a role task; every other task always counts."
 msgstr ""
 
@@ -693,7 +697,7 @@ msgstr ""
 msgid "Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend."
 msgstr ""
 
-#: templates/public/signup.php:996
+#: templates/public/signup.php:1085
 msgid "Checking you’re human…"
 msgstr ""
 
@@ -701,7 +705,7 @@ msgstr ""
 msgid "Choose"
 msgstr ""
 
-#: templates/public/signup.php:573 templates/public/signup.php:608
+#: templates/public/signup.php:594 templates/public/signup.php:629
 msgid "Choose a member"
 msgstr ""
 
@@ -729,7 +733,7 @@ msgstr ""
 msgid "Coming up:"
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:106 templates/public/signup.php:727
+#: src/Support/AssignmentStatus.php:106 templates/public/signup.php:750
 msgid "Completed"
 msgstr ""
 
@@ -811,7 +815,7 @@ msgid "Count one person in without a name"
 msgstr ""
 
 #: src/Telegram/RoleTaskBot.php:121 src/Telegram/RoleTaskBot.php:266 templates/public/door.php:57 templates/public/signup-board.php:220
-#: templates/public/signup.php:685
+#: templates/public/signup.php:708
 msgid "Count toward free-entry credit?"
 msgstr ""
 
@@ -876,7 +880,7 @@ msgid "Credit spent — check your DM for the ticket."
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:52 src/Support/WelcomeSender.php:433 templates/admin/people.php:222 templates/admin/people.php:291
-#: templates/public/signup.php:581
+#: templates/public/signup.php:602
 msgid "Credits"
 msgstr ""
 
@@ -1078,7 +1082,7 @@ msgstr ""
 msgid "Done — you’re covering %1$s’s %2$s."
 msgstr ""
 
-#: src/Support/DoorDesk.php:790
+#: src/Support/DoorDesk.php:790 templates/public/signup.php:530
 msgid "Door"
 msgstr ""
 
@@ -1120,7 +1124,7 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: templates/public/signup.php:681
+#: templates/public/signup.php:704
 msgid "Email (new person only, optional)"
 msgstr ""
 
@@ -1316,7 +1320,7 @@ msgstr ""
 msgid "Folders"
 msgstr ""
 
-#: templates/public/signup.php:660
+#: templates/public/signup.php:683
 msgid "For a member, or for someone who is not a crew member yet. On a task of a role marked \"Only people with this role\", they get the role too."
 msgstr ""
 
@@ -1408,7 +1412,7 @@ msgstr ""
 msgid "Getting started"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:128 templates/public/signup.php:564
+#: src/Web/CrewAdminController.php:128 templates/public/signup.php:585
 msgid "Give a credit"
 msgstr ""
 
@@ -1416,7 +1420,7 @@ msgstr ""
 msgid "Give a free-entry credit"
 msgstr ""
 
-#: templates/public/signup.php:589
+#: templates/public/signup.php:610
 msgid "Give credit"
 msgstr ""
 
@@ -1432,7 +1436,7 @@ msgstr ""
 msgid "Give the guest’s number from the list, e.g. /guest remove 2"
 msgstr ""
 
-#: templates/public/signup.php:623
+#: templates/public/signup.php:644
 msgid "Give the role"
 msgstr ""
 
@@ -1871,7 +1875,7 @@ msgstr ""
 msgid "Measured from"
 msgstr ""
 
-#: templates/public/signup.php:571 templates/public/signup.php:606
+#: templates/public/signup.php:592 templates/public/signup.php:627
 msgid "Member"
 msgstr ""
 
@@ -1922,7 +1926,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: templates/public/signup.php:677
+#: templates/public/signup.php:700
 msgid "Name (new person only)"
 msgstr ""
 
@@ -1942,7 +1946,7 @@ msgstr ""
 msgid "New member"
 msgstr ""
 
-#: templates/public/signup.php:670
+#: templates/public/signup.php:693
 msgid "New person (fill in the name below)"
 msgstr ""
 
@@ -1952,7 +1956,7 @@ msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:113 src/Telegram/RoleTaskBot.php:239 templates/admin/people.php:146 templates/public/door.php:59
-#: templates/public/signup-board.php:221 templates/public/signup.php:689
+#: templates/public/signup-board.php:221 templates/public/signup.php:712
 msgid "No"
 msgstr ""
 
@@ -2074,7 +2078,7 @@ msgstr ""
 msgid "No tasks on that date."
 msgstr ""
 
-#: templates/public/signup.php:703
+#: templates/public/signup.php:726
 msgid "No tasks on the next event night."
 msgstr ""
 
@@ -2090,7 +2094,7 @@ msgstr ""
 msgid "No upcoming events to spend a credit on right now — check back when the next one is on the board."
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:110 src/Support/Reputation.php:71 templates/public/signup.php:728
+#: src/Support/AssignmentStatus.php:110 src/Support/Reputation.php:71 templates/public/signup.php:751
 msgid "No-show"
 msgstr ""
 
@@ -2118,7 +2122,7 @@ msgstr ""
 msgid "Nobody on this list."
 msgstr ""
 
-#: templates/admin/roster.php:327 templates/public/signup.php:708
+#: templates/admin/roster.php:327 templates/public/signup.php:731
 msgid "Nobody signed up."
 msgstr ""
 
@@ -2294,7 +2298,7 @@ msgstr ""
 msgid "Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it."
 msgstr ""
 
-#: templates/admin/people.php:97 templates/public/signup.php:599
+#: templates/admin/people.php:97 templates/public/signup.php:620
 msgid "Only people with a role see its tasks and can sign up for them."
 msgstr ""
 
@@ -2342,7 +2346,7 @@ msgstr ""
 msgid "Open the group in Telegram"
 msgstr ""
 
-#: templates/public/signup.php:296 templates/public/signup.php:542
+#: templates/public/signup.php:296 templates/public/signup.php:559
 msgid "Open the sales desk on this device"
 msgstr ""
 
@@ -2498,6 +2502,11 @@ msgstr ""
 msgid "People"
 msgstr ""
 
+#: templates/public/signup.php:531
+msgctxt "Admin tab screen"
+msgid "People"
+msgstr ""
+
 #: templates/admin/roster.php:180
 msgid "People let in free who are not crew members. The /guest bot command keeps the same list."
 msgstr ""
@@ -2514,7 +2523,7 @@ msgstr ""
 msgid "Permission changes"
 msgstr ""
 
-#: templates/admin/people.php:290 templates/admin/roster.php:125 templates/admin/roster.php:332 templates/public/signup.php:668
+#: templates/admin/people.php:290 templates/admin/roster.php:125 templates/admin/roster.php:332 templates/public/signup.php:691
 msgid "Person"
 msgstr ""
 
@@ -2550,7 +2559,7 @@ msgstr ""
 msgid "Plus-ones"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:127 templates/public/signup.php:557
+#: src/Web/CrewAdminController.php:127 templates/public/signup.php:576
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
@@ -2626,7 +2635,7 @@ msgstr ""
 msgid "Reason"
 msgstr ""
 
-#: templates/admin/people.php:226 templates/public/signup.php:585
+#: templates/admin/people.php:226 templates/public/signup.php:606
 msgid "Reason (optional)"
 msgstr ""
 
@@ -2716,12 +2725,12 @@ msgstr ""
 msgid "Requests from people"
 msgstr ""
 
-#: templates/public/signup.php:985
+#: templates/public/signup.php:1074
 #. translators: %s: whole seconds remaining before the link can be sent again
 msgid "Resend in %ss"
 msgstr ""
 
-#: templates/public/signup.php:1393
+#: templates/public/signup.php:1482
 msgid "Resend link"
 msgstr ""
 
@@ -2741,7 +2750,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Admin/TasksListTable.php:49 templates/admin/tasks.php:183 templates/public/signup.php:615
+#: src/Admin/TasksListTable.php:49 templates/admin/tasks.php:183 templates/public/signup.php:636
 msgid "Role"
 msgstr ""
 
@@ -2757,7 +2766,7 @@ msgstr ""
 msgid "Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /roletasks and on the crew page. You can add someone there, even a person who is not a crew member."
 msgstr ""
 
-#: templates/admin/people.php:86 templates/admin/settings.php:65 templates/admin/settings.php:78 templates/public/signup.php:596
+#: templates/admin/people.php:86 templates/admin/settings.php:65 templates/admin/settings.php:78 templates/public/signup.php:617
 msgid "Roles"
 msgstr ""
 
@@ -2782,6 +2791,11 @@ msgstr ""
 msgid "Roster"
 msgstr ""
 
+#: templates/public/signup.php:529
+msgctxt "Admin tab screen"
+msgid "Roster"
+msgstr ""
+
 #: src/Support/OrganizerGuide.php:281
 msgid "Roster: attendance and the door list for any date, and the Holvi ticket buyers."
 msgstr ""
@@ -2798,7 +2812,7 @@ msgstr ""
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
-#: src/Web/DoorController.php:352 templates/public/door.php:87 templates/public/signup.php:289 templates/public/signup.php:528
+#: src/Web/DoorController.php:352 templates/public/door.php:87 templates/public/signup.php:289 templates/public/signup.php:545
 msgid "Sales desk"
 msgstr ""
 
@@ -2815,7 +2829,7 @@ msgstr ""
 msgid "Sales desk link, organizers (minutes before)"
 msgstr ""
 
-#: templates/admin/roster.php:205 templates/public/signup.php:642
+#: templates/admin/roster.php:205 templates/public/signup.php:663
 msgid "Save"
 msgstr ""
 
@@ -2895,7 +2909,7 @@ msgstr ""
 msgid "Send a test email"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:126 templates/public/signup.php:535
+#: src/Web/CrewAdminController.php:126 templates/public/signup.php:552
 msgid "Send me the sales desk link"
 msgstr ""
 
@@ -3258,7 +3272,7 @@ msgstr ""
 msgid "Tasks"
 msgstr ""
 
-#: templates/public/signup.php:662
+#: templates/public/signup.php:685
 msgid "Tasks (tick one or more)"
 msgstr ""
 
@@ -3291,6 +3305,7 @@ msgid "Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes al
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:49 templates/admin/people.php:177 templates/admin/settings.php:562 templates/public/signup.php:406
+#: templates/public/signup.php:532
 msgid "Telegram"
 msgstr ""
 
@@ -3302,7 +3317,7 @@ msgstr ""
 msgid "Telegram always sends the secret as a header; this sends a second copy in the address as well. That is only needed on hosts or proxies that strip custom headers — and it means the secret is written into your server’s access log on every update the bot receives."
 msgstr ""
 
-#: templates/public/signup.php:550
+#: templates/public/signup.php:569
 msgid "Telegram board"
 msgstr ""
 
@@ -3746,7 +3761,7 @@ msgstr ""
 msgid "The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
 msgstr ""
 
-#: templates/public/signup.php:988
+#: templates/public/signup.php:1077
 msgid "The spam check hasn’t finished yet — give it a moment, then try again."
 msgstr ""
 
@@ -3975,7 +3990,7 @@ msgstr ""
 msgid "Token set, but the webhook is not installed — install it from the Settings page."
 msgstr ""
 
-#: templates/public/signup.php:697
+#: templates/public/signup.php:720
 msgid "Tonight’s crew"
 msgstr ""
 
@@ -4256,7 +4271,7 @@ msgstr ""
 msgid "Why we hold it"
 msgstr ""
 
-#: templates/public/signup.php:683
+#: templates/public/signup.php:706
 msgid "With an email, they get their ticket by email. An email that belongs to a member adds that member."
 msgstr ""
 
@@ -4288,7 +4303,7 @@ msgid "Working: %s"
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:112 src/Telegram/RoleTaskBot.php:238 templates/admin/people.php:145 templates/public/door.php:58
-#: templates/public/signup-board.php:221 templates/public/signup.php:688
+#: templates/public/signup-board.php:221 templates/public/signup.php:711
 msgid "Yes"
 msgstr ""
 

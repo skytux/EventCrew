@@ -40,7 +40,18 @@ $plural = [
 ];
 
 /**
- * @var array<string, array{comments: array<string, true>, refs: array<int, string>, plural: ?string}>
+ * Forms with a context (msgctxt): function => index of the context argument.
+ * The same English word with two contexts is two separate entries, each
+ * translated on its own.
+ */
+$contextArg = [
+    'esc_html_x' => 1,
+    '_x' => 1,
+    '_nx' => 3,
+];
+
+/**
+ * @var array<string, array{msgid: string, context: ?string, comments: array<string, true>, refs: array<int, string>, plural: ?string}>
  */
 $entries = [];
 
@@ -48,16 +59,24 @@ $addEntry = static function (
     string $msgid,
     ?string $msgidPlural,
     string $ref,
-    string $comment
+    string $comment,
+    ?string $context = null
 ) use (&$entries): void {
     if ('' === $msgid) {
         return;
     }
 
-    $key = (null === $msgidPlural ? '' : $msgidPlural . "\x00") . $msgid;
+    $key = (null === $msgidPlural ? '' : $msgidPlural . "\x00") . $msgid
+        . (null === $context ? '' : "\x04" . $context);
 
     if (! isset($entries[$key])) {
-        $entries[$key] = ['comments' => [], 'refs' => [], 'plural' => $msgidPlural];
+        $entries[$key] = [
+            'msgid' => $msgid,
+            'context' => $context,
+            'comments' => [],
+            'refs' => [],
+            'plural' => $msgidPlural,
+        ];
     }
 
     $entries[$key]['refs'][] = $ref;
@@ -214,12 +233,13 @@ foreach ($files as $path) {
 
         $ref = $relative . ':' . $token[2];
         $comment = $precedingComment($tokens, $i);
+        $context = isset($contextArg[$name]) ? ($args[$contextArg[$name]] ?? null) : null;
 
         if ($isSingular) {
             $msgid = $args[$singular[$name]] ?? null;
 
             if (null !== $msgid) {
-                $addEntry($msgid, null, $ref, $comment);
+                $addEntry($msgid, null, $ref, $comment, $context);
             }
 
             continue;
@@ -230,7 +250,7 @@ foreach ($files as $path) {
         $msgidPlural = $args[$pluralIdx] ?? null;
 
         if (null !== $msgid && null !== $msgidPlural) {
-            $addEntry($msgid, $msgidPlural, $ref, $comment);
+            $addEntry($msgid, $msgidPlural, $ref, $comment, $context);
         }
     }
 }
@@ -273,10 +293,11 @@ foreach ($entries as $key => $entry) {
         $out .= '#. translators: ' . $comment . "\n";
     }
 
-    // Recover the plain msgid: the key is optionally "plural\x00msgid".
-    $msgid = null === $entry['plural'] ? (string) $key : substr((string) $key, strlen($entry['plural']) + 1);
+    if (null !== $entry['context']) {
+        $out .= 'msgctxt "' . $escape($entry['context']) . "\"\n";
+    }
 
-    $out .= 'msgid "' . $escape($msgid) . "\"\n";
+    $out .= 'msgid "' . $escape($entry['msgid']) . "\"\n";
 
     if (null !== $entry['plural']) {
         $out .= 'msgid_plural "' . $escape($entry['plural']) . "\"\n";
