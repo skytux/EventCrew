@@ -67,6 +67,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 <div class="eventcrew-signup">
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
+    <?php
+    // The Telegram group and crew guide buttons, at the top of the page so
+    // they show above every tab. Signed out there is no group link.
+    $eventcrew_group_link = null === $eventcrew_person ? '' : (string) ($view['telegram_group_link'] ?? '');
+    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
+    ?>
+
     <?php if (null === $eventcrew_person) :
         // Signed out there are only two things - sign in, and look at the board
         // - so there is nothing to tab between and no tab strip is drawn.
@@ -141,10 +148,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <h2><?php esc_html_e('Board', 'eventcrew'); ?></h2>
             <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
         </div>
-        <?php
-        $eventcrew_group_link = '';
-        require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
-        ?>
         <?php
     else :
         ?>
@@ -261,11 +264,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <div id="eventcrew-board" class="eventcrew-board">
                 <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
             </div>
-
-            <?php
-            $eventcrew_group_link = (string) $view['telegram_group_link'];
-            require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
-            ?>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-me" data-eventcrew-panel="me" aria-labelledby="eventcrew-tab-me">
