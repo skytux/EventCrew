@@ -52,4 +52,21 @@ final class TicketListTest extends TestCase
         self::assertCount(1, $out['past']);
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $out['upcoming'][0]['url']);
     }
+
+    public function testWithoutTasksListsOnlyFreeEntryTickets(): void
+    {
+        // No assignment query is made: the only result queued is the
+        // redemptions one, which must be what forPerson reads.
+        $this->wpdb->nextResults[] = [ // redemptions->forPerson
+            ['id' => 10, 'person_id' => 9, 'redeemed_for' => '2026-08-05', 'redeemed_at' => '2026-07-10 10:00:00'],
+            ['id' => 11, 'person_id' => 9, 'redeemed_for' => '2026-07-01', 'redeemed_at' => '2026-06-20 10:00:00'],
+        ];
+
+        $out = $this->list()->forPerson(9, false);
+
+        self::assertCount(1, $out['upcoming']);
+        self::assertCount(1, $out['past']);
+        self::assertSame('Free entry', $out['upcoming'][0]['label']);
+        self::assertSame('Free entry', $out['past'][0]['label']);
+    }
 }

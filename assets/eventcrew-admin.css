@@ -22,12 +22,26 @@
 .eventcrew-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 /*
- * Settings > Roles has eleven columns of inputs. Given only the screen's width
- * each column shrinks until the inputs are one character wide and every row is
- * very tall. A minimum width keeps the columns usable; the box around the
- * table already scrolls sideways.
+ * Settings > Roles: one closed block per role. The title line (emoji, name,
+ * slug) is the button that opens the role's fields below it.
  */
-.eventcrew-roles-table { min-width: 72em; }
+.eventcrew-role-list { margin: 1em 0; max-width: 60em; }
+.eventcrew-role {
+    border: 1px solid #c3c4c7; background: #fff; margin: 0 0 -1px;
+}
+.eventcrew-role > summary {
+    cursor: pointer; padding: .75em 1em;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .3em .75em;
+}
+.eventcrew-role > summary:hover { background: #f6f7f7; }
+.eventcrew-role[open] > summary { border-bottom: 1px solid #dcdcde; background: #f6f7f7; }
+.eventcrew-role.is-archived > summary { opacity: .6; }
+.eventcrew-role > .form-table { margin: 0; }
+.eventcrew-role > .form-table th { padding-left: 1em; }
+.eventcrew-role-tag {
+    font-size: 12px; padding: 0 .5em; border-radius: 3px;
+    background: #f0f0f1; color: #50575e;
+}
 
 @media screen and (max-width: 782px) {
     .eventcrew-col-left,

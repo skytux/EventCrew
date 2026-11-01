@@ -74,7 +74,9 @@ final class SignupBoardView
             'notify_matrix' => null === $person ? [] : (new NotificationPreferences())->matrix($person),
             'my_tickets' => null === $person
                 ? ['upcoming' => [], 'past' => []]
-                : (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id),
+                // Free-entry tickets only: a task's ticket is on its row under
+                // My tasks, and listing it here too showed every task twice.
+                : (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id, false),
             // The person's own upcoming tasks, soonest first, so "when am I next
             // on?" is answered up front rather than by hunting the board.
             'my_upcoming' => null === $person ? [] : $this->upcomingFor($person->id),
@@ -93,7 +95,7 @@ final class SignupBoardView
      * first. Each carries an add-to-calendar link and the task id, so the
      * profile can surface "what am I next on" with a one-tap calendar hold.
      *
-     * @return array<int, array{task_id: int, label: string, when: string, calendar_url: string}>
+     * @return array<int, array{task_id: int, label: string, when: string, calendar_url: string, ticket_url: string}>
      */
     private function upcomingFor(int $personId): array
     {
@@ -120,6 +122,7 @@ final class SignupBoardView
                 'label' => $task->roleLabel() . ' · ' . $task->eventName(),
                 'when' => '' === $time ? $day : $day . ' · ' . $time,
                 'calendar_url' => CalendarController::url($task->id),
+                'ticket_url' => TicketList::taskTicketUrl($assignment->id),
             ];
         }
 
