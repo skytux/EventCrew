@@ -130,7 +130,7 @@ final class DoorController
                 $this->plainPage($this->desk->closedText());
             }
 
-            $this->page($session['date'], DoorSession::csrfToken($cookie));
+            $this->page($session['date'], DoorSession::csrfToken($cookie), $session['person']->name());
         }
 
         // The page reloads itself on a 401, which lands on one of the two
@@ -305,12 +305,17 @@ final class DoorController
         exit;
     }
 
-    private function page(string $date, string $csrf): never
+    /**
+     * @param string $who The name of the person this device is logged in as,
+     *                    shown next to the date.
+     */
+    private function page(string $date, string $csrf, string $who): never
     {
         $eventcrew_state = $this->desk->state($date);
         $eventcrew_config = [
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'csrf' => $csrf,
+            'who' => $who,
             'pollMs' => self::POLL_MS,
             'searchMin' => DoorDesk::SEARCH_MIN,
             'maxPlus' => CheckinRepository::MAX_PLUS_ONES,
