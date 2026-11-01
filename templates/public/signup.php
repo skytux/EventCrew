@@ -359,13 +359,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
                         <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
                             <p class="eventcrew-muted eventcrew-listhead"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
-                            <ul class="eventcrew-ticket-list">
+                            <ul class="eventcrew-plain-list eventcrew-ticket-list">
                                 <?php foreach ($eventcrew_my_tickets[$eventcrew_group] as $eventcrew_ticket) : ?>
                                     <li>
-                                        <a href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
+                                        <a class="eventcrew-mine-label" href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
                                             <?php echo esc_html($eventcrew_ticket['label']); ?>
                                         </a>
-                                        — <?php echo esc_html($eventcrew_ticket['when']); ?>
+                                        <span class="eventcrew-mine-when"><?php echo esc_html(\EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when'])); ?></span>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>

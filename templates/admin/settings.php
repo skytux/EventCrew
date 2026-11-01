@@ -83,7 +83,7 @@ if (! defined('ABSPATH')) {
         </p>
 
         <div style="overflow-x:auto;margin:1em 0">
-        <table class="widefat striped" style="width:100%">
+        <table class="widefat striped eventcrew-roles-table" style="width:100%">
             <thead>
                 <tr>
                     <th style="width:5em"><?php esc_html_e('Emoji', 'eventcrew'); ?></th>
