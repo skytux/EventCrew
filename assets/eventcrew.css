@@ -368,6 +368,17 @@
 .eventcrew-signup .eventcrew-admin-roster li { gap: .4em; }
 .eventcrew-signup .eventcrew-admin-roster form { margin: 0; display: flex; flex-wrap: wrap; gap: .4em; }
 .eventcrew-signup .eventcrew-admin-roster .wp-element-button { padding: .4em .8em; font-size: .85em; }
+/* The Roster screen's date picker, each task's Update / Mark all buttons, guests and ticket buyers. */
+.eventcrew-signup .eventcrew-admin-card textarea {
+    box-sizing: border-box; width: 100%; padding: .4em .6em;
+    font: inherit; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
+    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
+}
+.eventcrew-signup .eventcrew-admin-attend { padding: .2em 1em .7em; }
+.eventcrew-signup .eventcrew-admin-at-risk { color: #b32d2e; opacity: 1; }
+.eventcrew-signup .eventcrew-admin-guests li > form { display: flex; flex-direction: column; gap: .5em; }
+.eventcrew-signup .eventcrew-admin-guests p { margin: 0; }
+.eventcrew-signup .eventcrew-admin-buyers { columns: 2 10em; margin: 0 0 .7em; padding-left: 1.2em; }
 /* Tickets are a plain list like My tasks: the ticket's name as the link, its
    day under it, no bullets and no ragged wrap after a dash. */
 .eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .8em; }

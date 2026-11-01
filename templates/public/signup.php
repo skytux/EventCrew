@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool}>}>, roles_action: string, add_action: string, roles: array<string, string>, role_holders: list<array{id: int, name: string, roles: list<string>}>, add_tasks: array<int, string>}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, max_credits: int, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, role_holders: list<array{id: int, name: string, roles: list<string>}>, add_tasks: array<int, string>}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -717,17 +717,64 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </section>
             <?php endif; ?>
 
+            <?php
+            /*
+             * The cards below are for one date, picked at the top of "Crew and
+             * attendance". Every form sends the page back here with that date
+             * and the Roster screen open.
+             */
+            $eventcrew_roster_date = $eventcrew_admin['roster_date'];
+            $eventcrew_roster_here = ('' === $eventcrew_roster_date
+                ? $eventcrew_here
+                : add_query_arg(['roster_date' => $eventcrew_roster_date], $eventcrew_here)) . '#eventcrew-admin-roster';
+            $eventcrew_night = $eventcrew_admin['night'];
+            // A GET form drops the query of its action, so a permalink like
+            // ?page_id=5 goes along as hidden fields.
+            $eventcrew_here_query = [];
+            parse_str((string) wp_parse_url($eventcrew_here, PHP_URL_QUERY), $eventcrew_here_query);
+            unset($eventcrew_here_query['roster_date']);
+            ?>
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tonight’s crew', 'eventcrew'); ?></h3>
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Crew and attendance', 'eventcrew'); ?></h3>
                     <?php if ('' !== $eventcrew_admin['roster_label']) : ?>
                         <span class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></span>
                     <?php endif; ?>
                 </header>
-                <?php if ([] === $eventcrew_admin['roster']) : ?>
-                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks on the next event night.', 'eventcrew'); ?></p>
+                <?php if ('' === $eventcrew_roster_date) : ?>
+                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks have been created yet, so there is nothing to take a roster for.', 'eventcrew'); ?></p>
+                <?php else : ?>
+                    <form class="eventcrew-card-body eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-roster'); ?>">
+                        <?php foreach ($eventcrew_here_query as $eventcrew_query_key => $eventcrew_query_value) : ?>
+                            <?php if (is_scalar($eventcrew_query_value)) : ?>
+                                <input type="hidden" name="<?php echo esc_attr((string) $eventcrew_query_key); ?>" value="<?php echo esc_attr((string) $eventcrew_query_value); ?>">
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        <label for="eventcrew-admin-roster-date"><?php esc_html_e('Date', 'eventcrew'); ?></label>
+                        <select id="eventcrew-admin-roster-date" name="roster_date" onchange="this.form.submit()">
+                            <?php if ([] !== $eventcrew_admin['roster_upcoming']) : ?>
+                                <optgroup label="<?php esc_attr_e('Upcoming', 'eventcrew'); ?>">
+                                    <?php foreach ($eventcrew_admin['roster_upcoming'] as $eventcrew_date_value => $eventcrew_date_label) : ?>
+                                        <option value="<?php echo esc_attr($eventcrew_date_value); ?>"<?php echo $eventcrew_date_value === $eventcrew_roster_date ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_date_label); ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+                            <?php if ([] !== $eventcrew_admin['roster_past']) : ?>
+                                <optgroup label="<?php esc_attr_e('Past', 'eventcrew'); ?>">
+                                    <?php foreach ($eventcrew_admin['roster_past'] as $eventcrew_date_value => $eventcrew_date_label) : ?>
+                                        <option value="<?php echo esc_attr($eventcrew_date_value); ?>"<?php echo $eventcrew_date_value === $eventcrew_roster_date ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_date_label); ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
+                        </select>
+                        <noscript><button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Show', 'eventcrew'); ?></button></noscript>
+                    </form>
+                    <?php if ([] === $eventcrew_admin['roster']) : ?>
+                        <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <?php foreach ($eventcrew_admin['roster'] as $eventcrew_roster_task) : ?>
+                    <?php $eventcrew_attend_form = 'eventcrew-admin-attend-' . $eventcrew_roster_task['task_id']; ?>
                     <h4 class="eventcrew-admin-task"><?php echo esc_html($eventcrew_roster_task['title']); ?></h4>
                     <?php if ([] === $eventcrew_roster_task['people']) : ?>
                         <p class="eventcrew-admin-nobody eventcrew-muted"><?php esc_html_e('Nobody signed up.', 'eventcrew'); ?></p>
@@ -738,15 +785,24 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 <span class="eventcrew-admin-who">
                                     <?php echo esc_html($eventcrew_roster_entry['name']); ?>
                                     <span class="eventcrew-muted">(<?php echo esc_html($eventcrew_roster_entry['status_label']); ?>)</span>
+                                    <?php if ('' !== $eventcrew_roster_entry['standing']) : ?>
+                                        <span class="eventcrew-muted<?php echo $eventcrew_roster_entry['at_risk'] ? ' eventcrew-admin-at-risk' : ''; ?>"><?php echo esc_html($eventcrew_roster_entry['standing']); ?></span>
+                                    <?php endif; ?>
                                     <?php if ('' !== $eventcrew_roster_entry['marked_by']) : ?>
                                         <span class="eventcrew-muted"><?php echo esc_html($eventcrew_roster_entry['marked_by']); ?></span>
                                     <?php endif; ?>
                                 </span>
+                                <?php /* The picker posts with this task's "Update attendance" form below, by its form attribute. */ ?>
+                                <select name="status[<?php echo esc_attr((string) $eventcrew_roster_entry['assignment_id']); ?>]" form="<?php echo esc_attr($eventcrew_attend_form); ?>" aria-label="<?php esc_attr_e('Status', 'eventcrew'); ?>">
+                                    <?php foreach ($eventcrew_admin['statuses'] as $eventcrew_status_value => $eventcrew_status_label) : ?>
+                                        <option value="<?php echo esc_attr($eventcrew_status_value); ?>"<?php echo $eventcrew_status_value === $eventcrew_roster_entry['status'] ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_status_label); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                                 <?php if ($eventcrew_roster_entry['markable']) : ?>
                                     <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                                         <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['mark_action']); ?>">
                                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
                                         <input type="hidden" name="assignment_id" value="<?php echo esc_attr((string) $eventcrew_roster_entry['assignment_id']); ?>">
                                         <button type="submit" name="mark" value="arrived" class="wp-element-button is-style-outline"><?php esc_html_e('Arrived', 'eventcrew'); ?></button>
                                         <button type="submit" name="mark" value="completed" class="wp-element-button is-style-outline"><?php esc_html_e('Completed', 'eventcrew'); ?></button>
@@ -756,8 +812,240 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php if ([] !== $eventcrew_roster_task['people']) : ?>
+                        <form id="<?php echo esc_attr($eventcrew_attend_form); ?>" class="eventcrew-admin-actions eventcrew-admin-attend" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['roster_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_roster_task['task_id']); ?>">
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Update attendance', 'eventcrew'); ?></button>
+                            <button type="submit" name="mark_all" value="arrived" class="wp-element-button is-style-outline"><?php esc_html_e('Mark all arrived', 'eventcrew'); ?></button>
+                            <button type="submit" name="mark_all" value="completed" class="wp-element-button is-style-outline"><?php esc_html_e('Mark all completed', 'eventcrew'); ?></button>
+                        </form>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </section>
+
+            <?php if ('' !== $eventcrew_roster_date) : ?>
+                <section class="eventcrew-event eventcrew-admin-card">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Door list', 'eventcrew'); ?></h3>
+                        <span class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></span>
+                    </header>
+                    <div class="eventcrew-card-body">
+                        <p class="eventcrew-muted"><?php esc_html_e('Everyone who gets in free that night — working the event, or spending a credit.', 'eventcrew'); ?></p>
+                        <?php if ($eventcrew_night['closed_by_hand']) : ?>
+                            <p class="eventcrew-admin-at-risk"><strong><?php esc_html_e('Free entry is closed for this date — no credits can be spent on it.', 'eventcrew'); ?></strong></p>
+                        <?php endif; ?>
+                        <?php if ('' !== $eventcrew_night['event_reason']) : ?>
+                            <?php
+                            $eventcrew_reasons = [
+                                'unpublished' => __('is not published (removed from the shop)', 'eventcrew'),
+                                'disabled' => __('is disabled', 'eventcrew'),
+                                'hidden' => __('is hidden', 'eventcrew'),
+                                'sold_out' => __('is sold out', 'eventcrew'),
+                            ];
+                            ?>
+                            <p class="eventcrew-admin-at-risk"><strong><?php
+                                echo esc_html(sprintf(
+                                    /* translators: %s: the reason, e.g. "is sold out". */
+                                    __('No credits can be spent on this date: the linked event %s. Task sign-up stays open.', 'eventcrew'),
+                                    $eventcrew_reasons[$eventcrew_night['event_reason']] ?? $eventcrew_night['event_reason']
+                                ));
+                            ?></strong></p>
+                        <?php endif; ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['door_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <button type="submit" name="op" value="toggle" class="wp-element-button is-style-outline">
+                                <?php echo $eventcrew_night['closed_by_hand']
+                                    ? esc_html__('Reopen free entry', 'eventcrew')
+                                    : esc_html__('Close free entry (sold out)', 'eventcrew'); ?>
+                            </button>
+                        </form>
+                        <?php if ([] === $eventcrew_night['entrants']) : ?>
+                            <p class="eventcrew-muted"><?php esc_html_e('Nobody on the door list yet.', 'eventcrew'); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ([] !== $eventcrew_night['entrants']) : ?>
+                        <ul class="eventcrew-plain-list eventcrew-admin-roster">
+                            <?php foreach ($eventcrew_night['entrants'] as $eventcrew_entrant) : ?>
+                                <li>
+                                    <span class="eventcrew-admin-who">
+                                        <?php echo esc_html($eventcrew_entrant['name']); ?>
+                                        <span class="eventcrew-muted"><?php echo esc_html($eventcrew_entrant['detail']); ?></span>
+                                        <span class="eventcrew-muted<?php echo $eventcrew_entrant['at_risk'] ? ' eventcrew-admin-at-risk' : ''; ?>"><?php echo esc_html($eventcrew_entrant['standing']); ?></span>
+                                    </span>
+                                    <?php if (null !== $eventcrew_entrant['redemption_id']) : ?>
+                                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['door_action']); ?>">
+                                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                                            <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_entrant['redemption_id']); ?>">
+                                            <button type="submit" name="op" value="unredeem" class="wp-element-button is-style-outline"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                        </form>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    <?php if ([] !== $eventcrew_night['candidates'] && ! $eventcrew_night['closed_by_hand']) : ?>
+                        <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['door_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <p>
+                                <label for="eventcrew-admin-redeem"><?php esc_html_e('Redeem a credit for', 'eventcrew'); ?></label>
+                                <select id="eventcrew-admin-redeem" name="person_id" required>
+                                    <?php foreach ($eventcrew_night['candidates'] as $eventcrew_candidate) : ?>
+                                        <option value="<?php echo esc_attr((string) $eventcrew_candidate['person_id']); ?>"><?php
+                                            echo esc_html(sprintf(
+                                                /* translators: 1: person name, 2: credit balance */
+                                                __('%1$s (%2$d credits)', 'eventcrew'),
+                                                $eventcrew_candidate['name'],
+                                                $eventcrew_candidate['credit_balance']
+                                            ));
+                                        ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </p>
+                            <button type="submit" name="op" value="redeem" class="wp-element-button"><?php esc_html_e('Redeem', 'eventcrew'); ?></button>
+                        </form>
+                    <?php endif; ?>
+                </section>
+
+                <section class="eventcrew-event eventcrew-admin-card">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Guest list', 'eventcrew'); ?></h3>
+                        <span class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></span>
+                    </header>
+                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('People let in free who are not crew members. The /guest bot command keeps the same list.', 'eventcrew'); ?></p>
+                    <ul class="eventcrew-plain-list eventcrew-admin-guests">
+                        <?php foreach ($eventcrew_night['guests'] as $eventcrew_guest) : ?>
+                            <?php $eventcrew_guest_field = 'eventcrew-admin-guest-' . $eventcrew_guest['id']; ?>
+                            <li>
+                                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['guest_action']); ?>">
+                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                                    <input type="hidden" name="guest_id" value="<?php echo esc_attr((string) $eventcrew_guest['id']); ?>">
+                                    <p class="eventcrew-admin-pair">
+                                        <span>
+                                            <label for="<?php echo esc_attr($eventcrew_guest_field); ?>-name"><?php esc_html_e('Name', 'eventcrew'); ?></label>
+                                            <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-name" type="text" name="guest_name" required maxlength="191" value="<?php echo esc_attr($eventcrew_guest['name']); ?>">
+                                        </span>
+                                        <span>
+                                            <label for="<?php echo esc_attr($eventcrew_guest_field); ?>-plus"><?php esc_html_e('Plus-ones', 'eventcrew'); ?></label>
+                                            <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-plus" type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) $eventcrew_admin['max_plus_ones']); ?>" value="<?php echo esc_attr((string) $eventcrew_guest['plus_ones']); ?>">
+                                        </span>
+                                    </p>
+                                    <p>
+                                        <label for="<?php echo esc_attr($eventcrew_guest_field); ?>-note"><?php esc_html_e('Note', 'eventcrew'); ?></label>
+                                        <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-note" type="text" name="guest_note" maxlength="191" value="<?php echo esc_attr($eventcrew_guest['note']); ?>">
+                                    </p>
+                                    <div class="eventcrew-admin-actions">
+                                        <button type="submit" name="op" value="save" class="wp-element-button is-style-outline"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                                        <button type="submit" name="op" value="remove" formnovalidate class="wp-element-button is-style-outline"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                    </div>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['guest_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                        <input type="hidden" name="guest_id" value="0">
+                        <p class="eventcrew-admin-pair">
+                            <span>
+                                <label for="eventcrew-admin-guest-new-name"><?php esc_html_e('Name', 'eventcrew'); ?></label>
+                                <input id="eventcrew-admin-guest-new-name" type="text" name="guest_name" required maxlength="191" placeholder="<?php esc_attr_e('New guest’s name', 'eventcrew'); ?>">
+                            </span>
+                            <span>
+                                <label for="eventcrew-admin-guest-new-plus"><?php esc_html_e('Plus-ones', 'eventcrew'); ?></label>
+                                <input id="eventcrew-admin-guest-new-plus" type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) $eventcrew_admin['max_plus_ones']); ?>" value="0">
+                            </span>
+                        </p>
+                        <p>
+                            <label for="eventcrew-admin-guest-new-note"><?php esc_html_e('Note', 'eventcrew'); ?></label>
+                            <input id="eventcrew-admin-guest-new-note" type="text" name="guest_note" maxlength="191">
+                        </p>
+                        <button type="submit" name="op" value="save" class="wp-element-button"><?php esc_html_e('Add guest', 'eventcrew'); ?></button>
+                    </form>
+                </section>
+
+                <section class="eventcrew-event eventcrew-admin-card">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Holvi ticket buyers', 'eventcrew'); ?></h3>
+                        <span class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></span>
+                    </header>
+                    <div class="eventcrew-card-body">
+                        <p class="eventcrew-muted">
+                            <?php
+                            printf(
+                                /* translators: %d: number of imported ticket buyers */
+                                esc_html(_n('%d person bought a ticket in Holvi for this date.', '%d people bought a ticket in Holvi for this date.', count($eventcrew_night['buyers']), 'eventcrew')),
+                                count($eventcrew_night['buyers'])
+                            );
+                            ?>
+                        </p>
+                        <?php if ([] !== $eventcrew_night['buyers']) : ?>
+                            <ul class="eventcrew-admin-buyers">
+                                <?php foreach ($eventcrew_night['buyers'] as $eventcrew_buyer_name) : ?>
+                                    <li><?php echo esc_html($eventcrew_buyer_name); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <p>
+                                <label for="eventcrew-admin-buyer-names"><?php esc_html_e('Paste names, one per line', 'eventcrew'); ?></label>
+                                <textarea id="eventcrew-admin-buyer-names" name="buyer_names" rows="6"></textarea>
+                            </p>
+                            <button type="submit" name="op" value="import" class="wp-element-button"><?php esc_html_e('Import', 'eventcrew'); ?></button>
+                        </form>
+                        <p class="eventcrew-muted eventcrew-admin-hint">
+                            <?php esc_html_e('The names go to the date shown above. A name already on the list is skipped.', 'eventcrew'); ?>
+                            <?php
+                            if ('' !== $eventcrew_night['mailbox']) {
+                                printf(
+                                    /* translators: %s: the import email address */
+                                    esc_html__('You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
+                                    '<code>' . esc_html($eventcrew_night['mailbox']) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+                                );
+                            }
+                            ?>
+                        </p>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                            onsubmit="return confirm('<?php echo esc_js(__('Delete all imported ticket buyers for this date? Guests and the crew are not affected.', 'eventcrew')); ?>');">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <button type="submit" name="op" value="reset" class="wp-element-button is-style-outline"><?php esc_html_e('Reset import', 'eventcrew'); ?></button>
+                        </form>
+                        <?php if ('' !== $eventcrew_night['mail_last']) : ?>
+                            <p class="eventcrew-muted"><?php echo esc_html($eventcrew_night['mail_last']); ?></p>
+                        <?php endif; ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['mail_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                            <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Check the mailbox now', 'eventcrew'); ?></button>
+                        </form>
+                    </div>
+                </section>
+            <?php endif; ?>
             </div>
         </section>
         <?php endif; ?>
