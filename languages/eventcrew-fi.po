@@ -2134,6 +2134,10 @@ msgstr "📅 Lisää kalenteriin"
 msgid "📋 Crew guide"
 msgstr "📋 Crew-opas"
 
+#: templates/public/signup-links.php:28
+msgid "Telegram group"
+msgstr "Telegram-ryhmä"
+
 #. translators: %s: a sentence or two on what the role involves
 #: src/Support/RoleGuide.php:33
 #, php-format

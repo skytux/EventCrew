@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.54.1
+Stable tag: 1.54.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.54.2 =
+The Telegram group button under the board is the same size as the crew guide button, with the Telegram logo and the shorter label Telegram group.
 
 = 1.54.1 =
 Board shows 3 columns at 1280 wide (18rem columns, auto-fit). The restricted Sign up button is centred with line-height, which Safari lays out reliably. The date dropdown on the Me tab is no longer yellow. The stylesheet is kept out of W3 Total Cache's combined CSS so each release loads fresh (?ver=).
@@ -675,6 +678,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.54.2 =
+Button change only.
 
 = 1.54.1 =
 Layout fixes; after updating, reload the crew page once with a hard reload.

@@ -628,7 +628,10 @@
     display: inline-flex; align-items: center; justify-content: center; gap: .4em;
     min-height: 44px; padding: .5em 1.1em;
     border-radius: var(--eventcrew-radius); font-weight: 600; text-decoration: none;
+    /* One width for both: side by side when they fit, else stacked at full width. */
+    flex: 1 1 12em; max-width: 18em; white-space: nowrap;
 }
+.eventcrew-signup .eventcrew-links .eventcrew-link-icon { flex: none; width: 1.2em; height: 1.2em; }
 .eventcrew-signup .eventcrew-links .eventcrew-link-secondary {
     background: transparent; color: inherit; border: 1px solid currentColor;
 }
