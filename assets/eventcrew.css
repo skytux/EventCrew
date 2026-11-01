@@ -740,9 +740,17 @@
  * 390px screen left the cards about 290px. The negative side margins pull the
  * page out to 24px from each screen edge; min() keeps them at zero or less, so
  * a theme with less padding is never pushed inward.
+ *
+ * WordPress's own layout CSS sets `margin-left/right: auto !important` on
+ * every block directly inside a constrained group (the page content), which
+ * silently cancelled these margins in 1.52.0. Hence !important here too, with
+ * a selector that is more specific than WordPress's, and no max-width cap.
  */
 @media (max-width: 640px) {
+    .is-layout-constrained > .eventcrew-signup,
     .eventcrew-signup {
-        margin-inline: min(0px, calc(50% - 50vw + 24px));
+        max-width: none;
+        margin-left: min(0px, calc(50% - 50vw + 24px)) !important;
+        margin-right: min(0px, calc(50% - 50vw + 24px)) !important;
     }
 }
