@@ -100,8 +100,8 @@ $eventcrew_text = [
 <meta name="robots" content="noindex, nofollow">
 <title><?php esc_html_e('Sales desk', 'eventcrew'); ?></title>
 <style>
-:root{--fg:#1d1d1f;--muted:#6e6e73;--bg:#fff;--card:#f5f5f7;--line:#d2d2d7;--in:#1a7f37;--in-bg:#dafbe1;--accent:#0b57d0;--err:#b3261e;--err-bg:#fde7e7}
-@media (prefers-color-scheme:dark){:root{--fg:#f5f5f7;--muted:#a1a1a6;--bg:#111;--card:#1c1c1e;--line:#38383a;--in:#4ac26b;--in-bg:#12361e;--accent:#8ab4f8;--err:#ff8a80;--err-bg:#3b1414}}
+:root{--fg:#1d1d1f;--muted:#6e6e73;--bg:#fff;--card:#f5f5f7;--line:#d2d2d7;--in:#1a7f37;--in-bg:#dafbe1;--accent:#0b57d0;--err:#b3261e;--err-bg:#fde7e7;--warn:#a85a00;--warn-bg:#fff1dc}
+@media (prefers-color-scheme:dark){:root{--fg:#f5f5f7;--muted:#a1a1a6;--bg:#111;--card:#1c1c1e;--line:#38383a;--in:#4ac26b;--in-bg:#12361e;--accent:#8ab4f8;--err:#ff8a80;--err-bg:#3b1414;--warn:#ffb74d;--warn-bg:#3a2a10}}
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg)}
 header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 12px 8px}
@@ -162,6 +162,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-scan-video{display:block;width:100%;max-height:55vh;object-fit:cover;border-radius:10px;background:#000}
 #ec-scan-name{font-size:32px;line-height:1.2;font-weight:700;margin:12px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ec-msg.is-error{background:var(--err-bg);border:2px solid var(--err);color:var(--err);font-weight:700}
+.ec-msg.is-warn{background:var(--warn-bg);border:2px solid var(--warn);color:var(--warn);font-weight:700}
+#ec-in.is-full{color:var(--in)}
+.ec-n.is-near{color:var(--warn);font-weight:700}
+.ec-n.is-max{color:var(--err);font-weight:700}
 .ec-msg.is-welcome{background:var(--in-bg);border:2px solid var(--in);color:var(--in);font-size:26px;line-height:1.2;font-weight:700;text-align:center}
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -174,9 +178,16 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     <div class="ec-top">
     <div>
     <h1 id="ec-day"></h1>
-    <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small><?php
+    <div class="ec-count" aria-live="polite"><span id="ec-in">0</span> <small id="ec-of"><?php
         /* translators: %s: the number of people expected tonight. */
-        printf(esc_html__('of %s checked in', 'eventcrew'), '<span id="ec-expected">0</span>');
+        printf(esc_html__('of %s checked in', 'eventcrew'), '<span class="ec-n" id="ec-expected">0</span>');
+    ?></small><small id="ec-of-max" hidden><?php
+        printf(
+            /* translators: 1: the number of people expected tonight, 2: the most people allowed in. */
+            esc_html__('of %1$s (%2$s max)', 'eventcrew'),
+            '<span class="ec-n" id="ec-expected-max">0</span>',
+            '<span id="ec-max">0</span>'
+        );
     ?></small></div>
     </div>
     <div class="ec-buttons">
@@ -199,6 +210,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 </header>
 <main>
     <p class="ec-msg" id="ec-msg" role="status"></p>
+    <p class="ec-msg ec-quota" id="ec-quota" role="alert"></p>
     <div id="ec-sections"></div>
 </main>
 <dialog id="ec-add" aria-labelledby="ec-add-title">
@@ -208,6 +220,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <button type="button" id="ec-add-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
     </div>
     <p class="ec-msg" id="ec-add-msg" role="status"></p>
+    <p class="ec-msg ec-quota" id="ec-add-quota" role="alert"></p>
 
     <div id="ec-step-choose" class="ec-stack">
         <button type="button" id="ec-pick-ticket"><?php esc_html_e('Ticket', 'eventcrew'); ?></button>
@@ -315,6 +328,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <button type="button" id="ec-scan-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
     </div>
     <p class="ec-msg" id="ec-scan-msg" role="status"></p>
+    <p class="ec-msg ec-quota" id="ec-scan-quota" role="alert"></p>
 
     <div id="ec-scan-camera">
         <video id="ec-scan-video" playsinline muted></video>
@@ -512,8 +526,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
         // The date, then who this device is logged in as.
         el('ec-day').textContent = config.who ? state.day + ' · ' + config.who : state.day;
-        el('ec-in').textContent = state.in;
-        el('ec-expected').textContent = state.expected;
+        drawCount();
         el('ec-anon-count').textContent = state.anonymous;
         el('ec-anon-less').disabled = state.anonymous <= 0;
         holder.textContent = '';
@@ -598,9 +611,43 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         if (data && data.state) {
             state = data.state;
             draw();
+            // The max people line: the warning after each action that went
+            // over the max, the refusal of one that would have, else nothing.
+            quotaLine(data.warning || (data.refused ? data.message : ''), !data.warning);
         }
 
         return data;
+    }
+
+    // "x of n", or "x of n (z max)" when there is a max. x is green once
+    // everyone expected is in; n turns orange from 90% of the max and red at
+    // the max. Adding stops at the max unless going over is allowed.
+    function drawCount() {
+        var max = state.max || 0;
+        var atMax = max > 0 && state.expected >= max;
+        var near = max > 0 && !atMax && state.expected >= max * 0.9;
+        var stop = atMax && !state.over_allowed;
+
+        el('ec-in').textContent = state.in;
+        el('ec-in').classList.toggle('is-full', state.expected > 0 && state.in === state.expected);
+        el('ec-of').hidden = max > 0;
+        el('ec-of-max').hidden = max <= 0;
+        el('ec-max').textContent = max;
+        ['ec-expected', 'ec-expected-max'].forEach(function (id) {
+            el(id).textContent = state.expected;
+            el(id).classList.toggle('is-near', near);
+            el(id).classList.toggle('is-max', atMax);
+        });
+        el('ec-add-open').disabled = stop;
+        el('ec-anon-more').disabled = stop;
+    }
+
+    function quotaLine(message, isError) {
+        ['ec-quota', 'ec-add-quota', 'ec-scan-quota'].forEach(function (id) {
+            el(id).textContent = message || '';
+            el(id).classList.toggle('is-warn', !!message && !isError);
+            el(id).classList.toggle('is-error', !!message && !!isError);
+        });
     }
 
     function failed(error) {
@@ -1302,7 +1349,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             }
 
             el('ec-scan-mark').disabled = false;
-            scanMessage(text.failed, true);
+            scanMessage(data && data.message ? data.message : text.failed, true);
         }, function (error) {
             el('ec-scan-mark').disabled = false;
             failed(error);

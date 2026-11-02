@@ -201,4 +201,67 @@ final class SalesDeskGateTest extends SalesDeskTestCase
             Task::fromRow($this->taskRow(6, 'welcome')),
         ]));
     }
+
+    public function testTheEventStartIsTheLinkedEventsStart(): void
+    {
+        Functions\when('post_type_exists')->justReturn(true);
+        Functions\when('get_post')->justReturn(
+            (object) ['ID' => 12, 'post_type' => 'eventmesh_event', 'post_title' => 'Party']
+        );
+        Functions\when('get_post_meta')->alias(
+            static fn (int $id, string $key): string => '_eventmesh_starts_at' === $key ? '2026-07-20 21:00:00' : ''
+        );
+
+        $linked = $this->taskRow(6, 'welcome', '20:00', '21:00') + ['event_post_id' => 12];
+
+        self::assertSame('2026-07-20 21:00:00', $this->gate()->startOf([Task::fromRow($linked)]));
+    }
+
+    public function testWithoutALinkedEventTheStartIsTheEarliestSalesDeskTask(): void
+    {
+        self::assertSame(self::NIGHT . ' 20:00:00', $this->gate()->startOf([
+            Task::fromRow($this->taskRow(5, 'decorate', '18:00', '19:00')),
+            Task::fromRow($this->taskRow(6, 'welcome', '20:30', '21:00')),
+            Task::fromRow($this->taskRow(7, 'welcome', '20:00', '21:00')),
+        ]));
+        self::assertSame('', $this->gate()->startOf([Task::fromRow($this->taskRow(5, 'decorate', '18:00', '19:00'))]));
+    }
+
+    public function testTicketScansOpenAnHourBeforeTheStartAndCloseAtTheEnd(): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(6, 'welcome', '20:00', '21:00'),
+            $this->taskRow(7, 'clean', '23:00', '23:59'),
+        ];
+
+        self::assertSame(
+            ['opens' => self::NIGHT . ' 19:00:00', 'closes' => self::NIGHT . ' 23:00:00'],
+            $this->gate()->scanWindow(self::NIGHT)
+        );
+    }
+
+    public function testTheScanWindowMinutesComeFromSettings(): void
+    {
+        $this->options[SalesDeskGate::SCAN_OPEN_OPTION] = '30';
+        $this->options[SalesDeskGate::SCAN_CLOSE_OPTION] = '90';
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(6, 'welcome', '20:00', '21:00'),
+            $this->taskRow(7, 'clean', '23:00', '23:59'),
+        ];
+
+        self::assertSame(
+            ['opens' => self::NIGHT . ' 19:30:00', 'closes' => '2026-07-21 00:30:00'],
+            $this->gate()->scanWindow(self::NIGHT)
+        );
+    }
+
+    public function testWithNoKnownStartScansHaveNoOpeningTime(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate')];
+
+        self::assertSame(
+            ['opens' => '', 'closes' => '2026-07-21 06:00:00'],
+            $this->gate()->scanWindow(self::NIGHT)
+        );
+    }
 }

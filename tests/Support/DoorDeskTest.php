@@ -839,6 +839,58 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('crew:8', $this->desk()->scan(self::NIGHT, ' ' . SignedLink::sign('ticket', 30) . ' ')['key']);
     }
 
+    public function testAScanBeforeTheWindowOpensSaysWhenItOpens(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueCrewEntrants();
+        // The scan window's read of the night: Welcome starts at 19:00, so
+        // scans open at 18:00, after the clock's 12:00.
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '19:00', '23:00')];
+
+        $desk = $this->desk();
+        $scan = $desk->scan(self::NIGHT, SignedLink::sign('ticket', 30));
+
+        self::assertSame(DoorDesk::SCAN_TOO_EARLY, $scan['code']);
+        self::assertSame('', $scan['key']);
+        self::assertSame(
+            'Ticket scanning opens at 18:00.',
+            $desk->scanText($scan['code'], $scan['name'], $scan['date'], $scan['at'])
+        );
+    }
+
+    public function testAScanAfterTheEventEndedSaysScanningClosed(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueCrewEntrants();
+        // The night ran 08:00 to 11:00; the clock reads 12:00.
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '08:00', '11:00')];
+
+        $desk = $this->desk();
+        $scan = $desk->scan(self::NIGHT, SignedLink::sign('ticket', 30));
+
+        self::assertSame(DoorDesk::SCAN_CLOSED, $scan['code']);
+        self::assertSame(
+            'Ticket scanning closed at 11:00.',
+            $desk->scanText($scan['code'], $scan['name'], $scan['date'], $scan['at'])
+        );
+    }
+
+    public function testAScanInsideTheWindowFindsTheRow(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueCrewEntrants();
+        // Welcome at 12:30: scans opened at 11:30 and close at 14:00.
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '12:30', '14:00')];
+
+        self::assertSame(DoorDesk::SCAN_OK, $this->desk()->scan(self::NIGHT, SignedLink::sign('ticket', 30))['code']);
+    }
+
     public function testATicketForAnotherNightSaysWhichNight(): void
     {
         $other = ['task_date' => '2026-12-12'] + $this->taskRow(5, 'decorate');

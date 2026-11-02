@@ -2400,6 +2400,45 @@ msgstr "Tervetuloa %s"
 msgid "%s: this ticket was already used tonight."
 msgstr "%s: tämä lippu on jo käytetty tänä iltana."
 
+msgid "Ticket scanning opens at %s."
+msgstr "Lippujen skannaus alkaa klo %s."
+
+msgid "Ticket scanning closed at %s."
+msgstr "Lippujen skannaus päättyi klo %s."
+
+msgid "The max of %d people is reached. Nobody more can be added."
+msgstr "Enimmäismäärä %d henkeä on täynnä. Ketään ei voi enää lisätä."
+
+msgid "Over the max: %1$d people, max %2$d."
+msgstr "Yli enimmäismäärän: %1$d henkeä, enintään %2$d."
+
+msgid "of %1$s (%2$s max)"
+msgstr "/ %1$s (enintään %2$s)"
+
+msgid "Ticket scans open (minutes before the event starts)"
+msgstr "Lippujen skannaus alkaa (minuuttia ennen tapahtuman alkua)"
+
+msgid "Ticket scans close (minutes after the event ends)"
+msgstr "Lippujen skannaus päättyy (minuuttia tapahtuman päättymisen jälkeen)"
+
+msgid "Default 60. The start is the linked event’s start, or else the first sales desk task’s start. A ticket QR code scanned earlier is refused."
+msgstr "Oletus 60. Alku on linkitetyn tapahtuman alku tai muuten ensimmäisen myyntipistetehtävän alku. Aiemmin skannattu lipun QR-koodi hylätään."
+
+msgid "Default 0. A ticket QR code scanned later is refused. Finding a person on the list and ticking them by hand still works."
+msgstr "Oletus 0. Myöhemmin skannattu lipun QR-koodi hylätään. Henkilön voi silti etsiä listalta ja merkitä käsin."
+
+msgid "Max people per event"
+msgstr "Enimmäismäärä henkeä tapahtumaa kohden"
+
+msgid "Empty for no max. Counts everyone the sales desk expects: crew, tickets, guests and the people they may bring, and the people counted without a name."
+msgstr "Tyhjä = ei enimmäismäärää. Laskee kaikki, joita myyntipiste odottaa: tiimin, liput, vieraat ja heidän mukaansa tuomansa henkilöt sekä nimettömästi lasketut."
+
+msgid "Allow going over the max"
+msgstr "Salli enimmäismäärän ylitys"
+
+msgid "Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max."
+msgstr "Valittuna: myyntipiste voi yhä lisätä henkilöitä ja näyttää varoituksen joka kerta. Ei valittuna: lisääminen loppuu enimmäismäärään."
+
 msgid "%s is not on tonight’s list."
 msgstr "%s ei ole tämän illan listalla."
 

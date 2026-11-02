@@ -26,6 +26,10 @@
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
  * @var int $door_link_crew Minutes before their own task the sales-desk crew can get the link.
+ * @var int $door_scan_open Minutes before the event's start that ticket scans are taken.
+ * @var int $door_scan_close Minutes after the event's end that ticket scans are still taken.
+ * @var int $door_max_people The most people let in on one night; 0 for no max.
+ * @var bool $door_allow_over_max Whether the sales desk may go over the max, with a warning.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
  * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
@@ -632,6 +636,67 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Default 10. Counted back from their own task’s start; the link comes only once they are marked arrived, and stops working when the event ends.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-door-scan-open"><?php esc_html_e('Ticket scans open (minutes before the event starts)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-door-scan-open"
+                        name="door_scan_open"
+                        value="<?php echo esc_attr((string) $door_scan_open); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 60. The start is the linked event’s start, or else the first sales desk task’s start. A ticket QR code scanned earlier is refused.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-door-scan-close"><?php esc_html_e('Ticket scans close (minutes after the event ends)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-door-scan-close"
+                        name="door_scan_close"
+                        value="<?php echo esc_attr((string) $door_scan_close); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Default 0. A ticket QR code scanned later is refused. Finding a person on the list and ticking them by hand still works.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-door-max-people"><?php esc_html_e('Max people per event', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-door-max-people"
+                        name="door_max_people"
+                        value="<?php echo $door_max_people > 0 ? esc_attr((string) $door_max_people) : ''; ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Empty for no max. Counts everyone the sales desk expects: crew, tickets, guests and the people they may bring, and the people counted without a name.', 'eventcrew'); ?>
+                    </p>
+                    <label>
+                        <input type="checkbox" name="door_allow_over_max" value="1" <?php checked($door_allow_over_max); ?>>
+                        <?php esc_html_e('Allow going over the max', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

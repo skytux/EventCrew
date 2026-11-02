@@ -12,6 +12,7 @@ use EventCrew\Support\EventSource;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Credits;
 use EventCrew\Support\DoorLinkSender;
+use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\HelpPage;
 use EventCrew\Support\Mailer;
@@ -114,6 +115,10 @@ final class SettingsPage
                 ),
                 'door_link_lead' => DoorLinkSender::leadMinutes(),
                 'door_link_crew' => SalesDeskGate::crewMinutes(),
+                'door_scan_open' => SalesDeskGate::scanOpenMinutes(),
+                'door_scan_close' => SalesDeskGate::scanCloseMinutes(),
+                'door_max_people' => DoorQuota::max(),
+                'door_allow_over_max' => DoorQuota::allowsOver(),
                 'welcome_enabled' => WelcomeSender::enabled(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
@@ -451,6 +456,25 @@ final class SettingsPage
                 ? max(0, (int) $_POST['door_link_crew'])
                 : SalesDeskGate::DEFAULT_CREW_MINUTES
         );
+        // When ticket QR scans are taken, around the event's start and end.
+        update_option(
+            SalesDeskGate::SCAN_OPEN_OPTION,
+            isset($_POST['door_scan_open'])
+                ? max(0, (int) $_POST['door_scan_open'])
+                : SalesDeskGate::DEFAULT_SCAN_OPEN_MINUTES
+        );
+        update_option(
+            SalesDeskGate::SCAN_CLOSE_OPTION,
+            isset($_POST['door_scan_close'])
+                ? max(0, (int) $_POST['door_scan_close'])
+                : SalesDeskGate::DEFAULT_SCAN_CLOSE_MINUTES
+        );
+        // The most people let in on one night; empty or 0 means no max.
+        update_option(
+            DoorQuota::MAX_OPTION,
+            isset($_POST['door_max_people']) ? max(0, (int) $_POST['door_max_people']) : 0
+        );
+        update_option(DoorQuota::OVER_OPTION, isset($_POST['door_allow_over_max']) ? '1' : '0');
         update_option(WelcomeSender::ENABLED_OPTION, isset($_POST['welcome_enabled']) ? '1' : '0');
 
         update_option(
