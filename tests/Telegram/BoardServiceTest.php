@@ -94,11 +94,11 @@ final class BoardServiceTest extends TelegramTestCase
     /**
      * @return array<string, mixed>
      */
-    private function taskRow(int $id, ?int $eventPostId, string $label): array
+    private function taskRow(int $id, ?int $eventPostId, string $label, string $date = '2026-08-01'): array
     {
         return [
             'id' => $id,
-            'task_date' => '2026-08-01',
+            'task_date' => $date,
             'role_slug' => 'decorate',
             'capacity' => 2,
             'event_post_id' => $eventPostId,
@@ -629,6 +629,174 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->inserts);
         self::assertStringContainsString('UPDATE', implode("\n", $this->wpdb->queries));
         self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    // --- one day at a time ---------------------------------------------------
+
+    /**
+     * Three event days: 1 Aug (Party A), 8 Aug (Party B), 15 Aug (Party C).
+     */
+    private function queueThreeDays(): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party A', '2026-08-01'),
+            $this->taskRow(2, 200, 'Party B', '2026-08-08'),
+            $this->taskRow(3, 300, 'Party C', '2026-08-15'),
+        ];
+        $this->wpdb->nextResults[] = []; // occupancyFor
+    }
+
+    /**
+     * @param array<int, array<int, array<string, mixed>>> $keyboard
+     * @return array<int, array<string, mixed>>
+     */
+    private function buttons(array $keyboard): array
+    {
+        return array_merge(...$keyboard);
+    }
+
+    public function testByDefaultTheBoardShowsOnlyTheNextEvent(): void
+    {
+        $this->queueThreeDays();
+
+        $rendered = $this->board()->render();
+        $labels = array_column($this->buttons($rendered['keyboard']), 'text');
+
+        self::assertContains('📅 Party A', $labels);
+        self::assertNotContains('📅 Party B', $labels);
+        self::assertNotContains('📅 Party C', $labels);
+        // On the next event the task buttons keep the plain form.
+        self::assertContains('t:1', array_column($this->buttons($rendered['keyboard']), 'callback_data'));
+    }
+
+    public function testTheOtherDaysAreOfferedAsButtons(): void
+    {
+        $this->queueThreeDays();
+
+        $data = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data', 'text');
+
+        self::assertSame('bd:2026-08-08', $data['Sat 8 Aug'] ?? null);
+        self::assertSame('bd:2026-08-15', $data['Sat 15 Aug'] ?? null);
+        // No button for the day already shown, and no way "back" from it.
+        self::assertNotContains('bd:2026-08-01', $data);
+        self::assertNotContains('bd:', $data);
+    }
+
+    public function testAPickedDayShowsOnlyThatDayWithAWayBack(): void
+    {
+        $this->queueThreeDays();
+
+        $rendered = $this->board()->render('2026-08-08');
+        $data = array_column($this->buttons($rendered['keyboard']), 'callback_data', 'text');
+
+        self::assertArrayHasKey('📅 Party B', $data);
+        self::assertArrayNotHasKey('📅 Party A', $data);
+        self::assertArrayNotHasKey('📅 Party C', $data);
+        // Its task button carries the day, so a join redraws the same day.
+        self::assertContains('t:2:2026-08-08', $data);
+        self::assertSame('bd:', $data['⬅ Back to the next event'] ?? null);
+        self::assertSame('bd:2026-08-15', $data['Sat 15 Aug'] ?? null);
+    }
+
+    public function testADayWithNoOpenTasksFallsBackToTheNextEvent(): void
+    {
+        $this->queueThreeDays();
+
+        $labels = array_column($this->buttons($this->board()->render('2026-09-30')['keyboard']), 'text');
+
+        self::assertContains('📅 Party A', $labels);
+        self::assertNotContains('⬅ Back to the next event', $labels);
+    }
+
+    public function testTappingADayEditsTheTappedMessageToThatDay(): void
+    {
+        $this->queueThreeDays();
+
+        $query = $this->callbackQuery('bd:2026-08-15');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onPickDate($query);
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(100, $edit['chat_id']);
+        self::assertSame(5, $edit['message_id']);
+        $labels = array_column($this->buttons($edit['reply_markup']['inline_keyboard']), 'text');
+        self::assertContains('📅 Party C', $labels);
+        self::assertNotContains('📅 Party A', $labels);
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+    }
+
+    public function testJoiningOnAPickedDayRedrawsTheGroupBoardOnThatDay(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+        $this->queueThreeDays(); // the redraw
+
+        $query = $this->callbackQuery('t:2:2026-08-08');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onJoinLeave($query);
+
+        self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
+        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
+        self::assertContains('📅 Party B', $labels);
+        self::assertNotContains('📅 Party A', $labels);
+    }
+
+    public function testJoiningOnAPickedDayInADmKeepsTheGroupBoardOnTheNextEvent(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+        $this->queueThreeDays(); // the group board's redraw
+        $this->queueThreeDays(); // the private copy's redraw
+
+        $query = $this->callbackQuery('t:2:2026-08-08');
+        $query['message'] = ['message_id' => 42, 'chat' => ['id' => 555, 'type' => 'private']];
+        $this->board()->onJoinLeave($query);
+
+        $edits = array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'editMessageText' === $c['method']));
+        self::assertCount(2, $edits);
+        $group = array_column($this->buttons($edits[0]['body']['reply_markup']['inline_keyboard']), 'text');
+        $private = array_column($this->buttons($edits[1]['body']['reply_markup']['inline_keyboard']), 'text');
+        self::assertSame(100, $edits[0]['body']['chat_id']);
+        self::assertContains('📅 Party A', $group);
+        self::assertSame(555, $edits[1]['body']['chat_id']);
+        self::assertContains('📅 Party B', $private);
+    }
+
+    /**
+     * Boards posted before the day buttons carry j:/l:/t:<id> with no day;
+     * they still join, and the redraw shows the next event.
+     */
+    public function testOldCallbackDataStillWorks(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+        $this->queueThreeDays();
+
+        $query = $this->callbackQuery('j:2');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onJoinLeave($query);
+
+        self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
+        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
+        self::assertContains('📅 Party A', $labels);
+    }
+
+    public function testTheAutomaticRedrawGoesBackToTheNextEvent(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->queueThreeDays();
+
+        $this->board()->refresh();
+
+        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
+        self::assertContains('📅 Party A', $labels);
+        self::assertNotContains('📅 Party B', $labels);
     }
 
     public function testIgnoresMalformedCallbackData(): void

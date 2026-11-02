@@ -91,6 +91,10 @@ final class UpdateRouter
                 $this->replacement->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'rm:')) {
                 $this->roster->onMark($callbackQuery);
+            } elseif (str_starts_with($data, RosterService::SELECT_PREFIX)) {
+                $this->roster->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, BoardService::PICK_PREFIX)) {
+                $this->board->onPickDate($callbackQuery);
             } elseif (str_starts_with($data, 'tkt:')) {
                 $this->tickets->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gift:')) {

@@ -5426,3 +5426,13 @@ msgstr "Perumisen takaraja (minuuttia ennen alkua)"
 
 msgid "From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5."
 msgstr "Näin monta minuuttia ennen tehtävän alkua ja alun jälkeen crew'n jäsenet eivät voi enää perua tehtävää itse. Järjestäjät voivat silti poistaa heidät. Tehtäviä ilman alkamisaikaa ei lukita koskaan. 0 poistaa tämän käytöstä. Oletus 5."
+
+#. translators: %s: when the person signed up, e.g. "2 Nov 14:05"
+msgid "signed up %s"
+msgstr "ilmoittautui %s"
+
+msgid "⬅ Back to the next event"
+msgstr "⬅ Takaisin seuraavaan tapahtumaan"
+
+msgid "🗓 Other dates"
+msgstr "🗓 Muut päivät"
