@@ -77,14 +77,24 @@ msgstr ""
 msgid "%1$s now has the role %2$s."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:110
+#: src/Support/RoleNotifier.php:155
 #. translators: 1: the person's name, 2: the role
 msgid "%1$s now meets the conditions for the role %2$s. You can give them the role with /people."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:118
+#: src/Support/RoleNotifier.php:171
+#. translators: 1: the person's name, 2: the role, 3: the name of the organizer who gave it
+msgid "%1$s was given the role %2$s by %3$s."
+msgstr ""
+
+#: src/Support/RoleNotifier.php:163
 #. translators: 1: the person's name, 2: the role
 msgid "%1$s was given the role %2$s."
+msgstr ""
+
+#: src/Support/RoleNotifier.php:147
+#. translators: 1: the person's name, 2: the name of the organizer who did it
+msgid "%1$s was made an organizer by %2$s."
 msgstr ""
 
 #: src/Support/Standing.php:76
@@ -199,7 +209,7 @@ msgstr ""
 msgid "%s has a one-time sign-up pass."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:355
+#: src/Telegram/PermissionService.php:359
 msgid "%s is no longer an organizer."
 msgstr ""
 
@@ -208,12 +218,17 @@ msgstr ""
 msgid "%s is not on tonight’s list."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:356
+#: src/Telegram/PermissionService.php:360
 msgid "%s is now an organizer."
 msgstr ""
 
 #: templates/public/signup-board.php:202
 msgid "%s only"
+msgstr ""
+
+#: src/Support/RoleNotifier.php:142
+#. translators: %s: the person's name
+msgid "%s was made an organizer."
 msgstr ""
 
 #: templates/admin/people.php:193
@@ -241,12 +256,12 @@ msgid "(%s ago)"
 msgstr ""
 
 #: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1147
-#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:267
+#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:274
 #: src/Web/CrewAdminTasks.php:382
 msgid "(deleted person)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:131 src/Web/CrewAdminPeople.php:273
+#: src/Admin/PeoplePage.php:131 src/Web/CrewAdminPeople.php:280
 msgid "(unknown)"
 msgstr ""
 
@@ -318,7 +333,7 @@ msgstr ""
 msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:729
+#: src/Web/CrewAdminController.php:731
 msgid "A new board is posted in the Telegram group."
 msgstr ""
 
@@ -387,7 +402,7 @@ msgstr ""
 msgid "A task is one role on one date. In EventCrew > Tasks you create tasks one by one, or all the tasks of a night at once from the roles. A task can be linked to an event, so it shows under the event's name. A task set to 0 people stays saved but leaves the board."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:157 src/Web/CrewAdminPeople.php:199
+#: src/Admin/PeoplePage.php:157 src/Web/CrewAdminPeople.php:206
 msgid "A valid email address is required - it is how a person is identified."
 msgstr ""
 
@@ -497,7 +512,7 @@ msgstr ""
 msgid "Add: /door add Name ; note  (just the guest)"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:564
+#: src/Web/CrewAdminController.php:566
 #. translators: 1: tasks the person was added to, 2: tasks ticked
 msgid "Added to %1$d of %2$d tasks."
 msgstr ""
@@ -587,7 +602,7 @@ msgstr ""
 msgid "Another night: put the date first, e.g. /door add 1.8. Name"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:167 src/Web/CrewAdminPeople.php:203
+#: src/Admin/PeoplePage.php:167 src/Web/CrewAdminPeople.php:210
 msgid "Another person already uses that email address."
 msgstr ""
 
@@ -643,7 +658,7 @@ msgstr ""
 msgid "At risk"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:734
+#: src/Web/CrewAdminController.php:736
 msgid "Attendance saved."
 msgstr ""
 
@@ -984,11 +999,11 @@ msgstr ""
 msgid "Credit"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:731
+#: src/Web/CrewAdminController.php:733
 msgid "Credit given. The member is told."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:259
+#: src/Admin/PeoplePage.php:267
 msgid "Credit granted."
 msgstr ""
 
@@ -1037,7 +1052,7 @@ msgstr ""
 msgid "Crew and attendance"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:825
+#: src/Web/CrewAdminController.php:827
 msgid "Crew app: a member is blocked after a forged admin request"
 msgstr ""
 
@@ -2121,7 +2136,7 @@ msgstr ""
 msgid "No Site Icon set; a lettered icon is generated with GD."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:730
+#: src/Web/CrewAdminController.php:732
 msgid "No Telegram group is set up for the board yet."
 msgstr ""
 
@@ -2408,7 +2423,7 @@ msgstr ""
 msgid "One-time at-risk pass"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:286 src/Web/CrewAdminPeople.php:206
+#: src/Admin/PeoplePage.php:294 src/Web/CrewAdminPeople.php:213
 msgid "One-time sign-up pass granted."
 msgstr ""
 
@@ -2719,19 +2734,19 @@ msgstr ""
 msgid "Person"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:210 src/Web/CrewAdminPeople.php:205
+#: src/Admin/PeoplePage.php:218 src/Web/CrewAdminPeople.php:212
 msgid "Person added."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:334
+#: src/Admin/PeoplePage.php:342
 msgid "Person deleted."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:191 src/Web/CrewAdminPeople.php:204
+#: src/Admin/PeoplePage.php:198 src/Web/CrewAdminPeople.php:211
 msgid "Person updated."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:732
+#: src/Web/CrewAdminController.php:734
 msgid "Pick a number of credits, 1 or more."
 msgstr ""
 
@@ -2985,7 +3000,7 @@ msgstr ""
 msgid "Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk. It only gives a pass; it cannot take one away."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:736
+#: src/Web/CrewAdminController.php:738
 msgid "Roles saved."
 msgstr ""
 
@@ -3182,7 +3197,7 @@ msgstr ""
 msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:786
+#: src/Web/CrewAdminController.php:788
 #. translators: 1: the admin action's name, 2: date and time
 msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
 msgstr ""
@@ -3373,12 +3388,16 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:114
+#: src/Support/RoleNotifier.php:159
 msgid "Someone meets the conditions for a role"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:122
+#: src/Support/RoleNotifier.php:167 src/Support/RoleNotifier.php:176
 msgid "Someone was given a role"
+msgstr ""
+
+#: src/Support/RoleNotifier.php:151
+msgid "Someone was made an organizer"
 msgstr ""
 
 #: templates/admin/settings.php:874
@@ -3590,7 +3609,7 @@ msgstr ""
 msgid "That bulk update could not be applied."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:229 src/Telegram/PermissionService.php:358
+#: src/Telegram/PermissionService.php:229 src/Telegram/PermissionService.php:362
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
@@ -3598,7 +3617,7 @@ msgstr ""
 msgid "That change could not be applied."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:249
+#: src/Admin/PeoplePage.php:257
 msgid "That credit could not be granted."
 msgstr ""
 
@@ -3654,15 +3673,15 @@ msgstr ""
 msgid "That list could not be imported."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:216 src/Web/CrewAdminController.php:733
+#: src/Support/RoleTaskService.php:216 src/Web/CrewAdminController.php:735
 msgid "That member was not found."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:279
+#: src/Admin/PeoplePage.php:287
 msgid "That pass could not be granted."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:305
+#: src/Admin/PeoplePage.php:313
 msgid "That person could not be unbanned."
 msgstr ""
 
@@ -3682,7 +3701,7 @@ msgstr ""
 msgid "That role was not found."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:735
+#: src/Web/CrewAdminController.php:737
 msgid "That roster entry was not found."
 msgstr ""
 
@@ -3927,7 +3946,7 @@ msgstr ""
 msgid "The other phone opens the sales desk as %s."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:572
+#: src/Web/CrewAdminController.php:574
 msgid "The others were skipped: they were already on the task, the task was full, or it is no longer available."
 msgstr ""
 
@@ -3977,7 +3996,7 @@ msgstr ""
 msgid "The sales desk is a web page for the door. It shows tonight's list: the crew, members with a free-entry ticket, guests and Holvi ticket buyers. You mark people in and out and say how many people they brought. Add sells a ticket at the door, adds a guest, or adds a member who spends a credit or takes one of tonight's tasks."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:728
+#: src/Web/CrewAdminController.php:730
 msgid "The sales desk link is sent to your email, and to Telegram if you use the bot."
 msgstr ""
 
@@ -4102,7 +4121,7 @@ msgstr ""
 msgid "They get an email to confirm their address and join the Telegram group."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:576
+#: src/Web/CrewAdminController.php:578
 msgid "They got an email with the ticket for each task they were added to."
 msgstr ""
 
@@ -4114,7 +4133,7 @@ msgstr ""
 msgid "They have no credit left."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:578
+#: src/Web/CrewAdminController.php:580
 msgid "They have no email address here, so nothing was sent."
 msgstr ""
 
@@ -4192,7 +4211,7 @@ msgstr ""
 msgid "This will be your first task — welcome!"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:737
+#: src/Web/CrewAdminController.php:739
 msgid "Tick at least one task."
 msgstr ""
 
@@ -4332,7 +4351,7 @@ msgstr ""
 msgid "Unban"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:312 src/Web/CrewAdminPeople.php:207
+#: src/Admin/PeoplePage.php:320 src/Web/CrewAdminPeople.php:214
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
@@ -4654,11 +4673,11 @@ msgstr ""
 msgid "You are an organizer of %s. This guide explains how EventCrew works, first in short and then in detail."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:313
+#: src/Web/CrewAdminController.php:315
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:306
+#: src/Web/CrewAdminController.php:308
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
@@ -4689,7 +4708,7 @@ msgstr ""
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
-#: src/Admin/Admin.php:322 src/Admin/PeoplePage.php:321 src/Admin/TasksPage.php:258
+#: src/Admin/Admin.php:322 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:258
 msgid "You do not have permission to do this."
 msgstr ""
 
@@ -4728,7 +4747,7 @@ msgid_plural "You have no free-entry credits yet — you earn one for every %d t
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/PermissionService.php:371
+#: src/Telegram/PermissionService.php:375
 #. translators: %s: role name, such as DJ
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
@@ -5079,7 +5098,7 @@ msgstr ""
 msgid "someone"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:134 src/Web/CrewAdminPeople.php:276
+#: src/Admin/PeoplePage.php:134 src/Web/CrewAdminPeople.php:283
 msgid "the system"
 msgstr ""
 
@@ -5087,7 +5106,7 @@ msgstr ""
 msgid "times each"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:806
+#: src/Web/CrewAdminController.php:808
 msgid "unknown"
 msgstr ""
 
@@ -5198,7 +5217,7 @@ msgstr ""
 msgid "⭐ Organize"
 msgstr ""
 
-#: src/Telegram/PermissionService.php:379
+#: src/Telegram/PermissionService.php:383
 msgid "⭐ You’re now an EventCrew organizer."
 msgstr ""
 
@@ -5211,7 +5230,7 @@ msgstr ""
 msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:378
+#: src/Telegram/PermissionService.php:382
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 

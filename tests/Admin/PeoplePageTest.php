@@ -27,6 +27,7 @@ final class PeoplePageTest extends TestCase
         Functions\when('sanitize_email')->returnArg(1);
         Functions\when('sanitize_textarea_field')->returnArg(1);
         Functions\when('get_current_user_id')->justReturn(1);
+        Functions\when('wp_get_current_user')->justReturn((object) ['display_name' => 'Owner']);
         Functions\when('is_email')->alias(static fn (string $email): bool => false !== strpos($email, '@'));
         Functions\when('get_option')->alias(
             static fn (string $name, mixed $default = false): mixed => Roles::OPTION_NAME === $name
@@ -97,9 +98,14 @@ final class PeoplePageTest extends TestCase
      *
      * @return array<int, array{0: string, 1: array<int, mixed>}>
      */
-    private function editOrganizer(bool $stillOrganizer): array
+    private function editOrganizer(bool $stillOrganizer, bool $wasOrganizer = true): array
     {
-        $row = ['id' => 8, 'email' => 'anna@example.com', 'display_name' => 'Anna', 'is_organizer' => 1];
+        $row = [
+            'id' => 8,
+            'email' => 'anna@example.com',
+            'display_name' => 'Anna',
+            'is_organizer' => (int) $wasOrganizer,
+        ];
         $this->wpdb->nextRows[] = $row; // findByEmail
         $this->wpdb->nextRows[] = $row; // find, before the save
         $this->wpdb->nextRows[] = $row; // find, for the roles
@@ -137,5 +143,13 @@ final class PeoplePageTest extends TestCase
         $fired = $this->editOrganizer(true);
 
         self::assertNotContains(\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, array_column($fired, 0));
+        self::assertNotContains(\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, array_column($fired, 0));
+    }
+
+    public function testTickingOrganizerAnnouncesItWithTheWpAdminUsersName(): void
+    {
+        $fired = $this->editOrganizer(true, false);
+
+        self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Owner']], $fired);
     }
 }

@@ -130,7 +130,7 @@ final class RoleTaskService
                 return $fail(self::NO_PERSON);
             }
 
-            return $this->signUp($person, $task, $countsCredit);
+            return $this->signUp($person, $task, $countsCredit, $organizer->name());
         }
 
         $name = trim(sanitize_text_field($name));
@@ -162,7 +162,7 @@ final class RoleTaskService
             return $fail(self::FAILED);
         }
 
-        return $this->signUp($person, $task, $countsCredit);
+        return $this->signUp($person, $task, $countsCredit, $organizer->name());
     }
 
     /**
@@ -171,12 +171,12 @@ final class RoleTaskService
      *
      * @return array{code: string, person: ?Person, emailed: bool}
      */
-    private function signUp(Person $person, Task $task, bool $countsCredit): array
+    private function signUp(Person $person, Task $task, bool $countsCredit, string $giverName): array
     {
         if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
             $roles = array_merge($person->roleSlugs, [$task->roleSlug]);
             $this->people->setRoles($person->id, $roles);
-            RoleNotifier::rolesChanged($person->id, $person->roleSlugs, $roles);
+            RoleNotifier::rolesChanged($person->id, $person->roleSlugs, $roles, $giverName);
         }
 
         $outcome = $this->signup->claimByOrganizer($person->id, $task->id, $countsCredit);
