@@ -87,7 +87,8 @@ $eventcrew_text = [
     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     'noCamera' => __('The camera could not be opened. Allow the camera for this page, or find the name on the list instead.', 'eventcrew'),
     'noDecoder' => __('This phone cannot read QR codes here. Find the name on the list instead.', 'eventcrew'),
-    'already' => __('Already marked arrived.', 'eventcrew'),
+    /* translators: %s: the ticket holder's name */
+    'used' => __('%s: this ticket was already used tonight.', 'eventcrew'),
     /* translators: %s: the name of the person just marked arrived */
     'arrived' => __('Welcome %s', 'eventcrew'),
 ];
@@ -162,7 +163,6 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-scan-name{font-size:32px;line-height:1.2;font-weight:700;margin:12px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ec-msg.is-error{background:var(--err-bg);border:2px solid var(--err);color:var(--err);font-weight:700}
 .ec-msg.is-welcome{background:var(--in-bg);border:2px solid var(--in);color:var(--in);font-size:26px;line-height:1.2;font-weight:700;text-align:center}
-#ec-scan-already{color:var(--in);font-weight:700}
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 #ec-scan-mark{min-height:64px;font-size:20px}
@@ -324,7 +324,6 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     <div id="ec-scan-result" hidden>
         <p id="ec-scan-name"></p>
         <p class="ec-muted" id="ec-scan-detail"></p>
-        <p id="ec-scan-already" hidden><?php esc_html_e('Already marked arrived.', 'eventcrew'); ?></p>
         <div class="ec-scan-plus" id="ec-scan-plus">
             <button type="button" id="ec-scan-less" aria-label="<?php esc_attr_e('One guest fewer', 'eventcrew'); ?>">−</button>
             <span id="ec-scan-count" aria-live="polite">+0</span>
@@ -1249,13 +1248,14 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             return;
         }
 
-        scanMessage('');
+        // A ticket already used tonight is said in red; the card still opens,
+        // so the desk can change the guests counted for them.
+        scanMessage(scanRow.in ? text.used.replace('%s', scanRow.name) : '', true);
         el('ec-scan-camera').hidden = true;
         el('ec-scan-result').hidden = false;
         el('ec-scan-name').textContent = scanRow.name;
         fitScanName();
         el('ec-scan-detail').textContent = scanRow.detail || '';
-        el('ec-scan-already').hidden = !scanRow.in;
         el('ec-scan-plus').hidden = scanRow.max <= 0;
         el('ec-scan-mark').disabled = false;
         // Someone already in keeps the guests counted for them; anyone else

@@ -223,6 +223,10 @@ msgstr ""
 msgid "%s: this ticket is not for tonight."
 msgstr ""
 
+#: templates/public/door.php:91
+msgid "%s: this ticket was already used tonight."
+msgstr ""
+
 #: templates/admin/settings.php:1700
 #. translators: %s: human-readable time since the last webhook error, e.g. "2 hours"
 msgid "(%s ago)"
@@ -557,10 +561,6 @@ msgstr ""
 #: src/Support/HealthReport.php:122
 #. translators: %s: schema version number
 msgid "All tables present at schema version %s."
-msgstr ""
-
-#: templates/public/door.php:90 templates/public/door.php:327
-msgid "Already marked arrived."
 msgstr ""
 
 #: templates/public/door.php:54
@@ -1975,7 +1975,7 @@ msgstr ""
 msgid "Mark all completed"
 msgstr ""
 
-#: templates/public/door.php:334
+#: templates/public/door.php:333
 msgid "Mark arrived"
 msgstr ""
 
@@ -2368,11 +2368,11 @@ msgstr ""
 msgid "One fewer"
 msgstr ""
 
-#: templates/public/door.php:71 templates/public/door.php:329
+#: templates/public/door.php:71 templates/public/door.php:328
 msgid "One guest fewer"
 msgstr ""
 
-#: templates/public/door.php:72 templates/public/door.php:331
+#: templates/public/door.php:72 templates/public/door.php:330
 msgid "One guest more"
 msgstr ""
 
@@ -2989,7 +2989,7 @@ msgstr ""
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
-#: src/Web/DoorController.php:377 templates/public/door.php:100 templates/public/signup.php:291 templates/public/signup.php:548
+#: src/Web/DoorController.php:377 templates/public/door.php:101 templates/public/signup.php:291 templates/public/signup.php:548
 msgid "Sales desk"
 msgstr ""
 
@@ -3042,7 +3042,7 @@ msgstr ""
 msgid "Scan"
 msgstr ""
 
-#: templates/public/door.php:335
+#: templates/public/door.php:334
 msgid "Scan another"
 msgstr ""
 
@@ -4373,7 +4373,7 @@ msgstr ""
 msgid "Welcome"
 msgstr ""
 
-#: templates/public/door.php:92
+#: templates/public/door.php:93
 msgid "Welcome %s"
 msgstr ""
 

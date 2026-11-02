@@ -2397,6 +2397,9 @@ msgstr "%1$s: tämä lippu on päivälle %2$s, ei tälle illalle."
 msgid "Welcome %s"
 msgstr "Tervetuloa %s"
 
+msgid "%s: this ticket was already used tonight."
+msgstr "%s: tämä lippu on jo käytetty tänä iltana."
+
 msgid "%s is not on tonight’s list."
 msgstr "%s ei ole tämän illan listalla."
 
@@ -2417,9 +2420,6 @@ msgstr "Kameraa ei voitu avata. Salli kamera tälle sivulle tai etsi nimi listal
 
 msgid "This phone cannot read QR codes here. Find the name on the list instead."
 msgstr "Tämä puhelin ei pysty lukemaan QR-koodeja tässä. Etsi nimi listalta."
-
-msgid "Already marked arrived."
-msgstr "Merkitty jo saapuneeksi."
 
 msgid "Scan"
 msgstr "Skannaa"
