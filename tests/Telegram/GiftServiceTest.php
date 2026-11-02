@@ -93,6 +93,23 @@ final class GiftServiceTest extends TelegramTestCase
         self::assertSame('covered setup', $this->wpdb->inserts[0]['data']['note']);
     }
 
+    public function testTheNameButtonSaysOneCreditInTheSingular(): void
+    {
+        Functions\when('set_transient')->justReturn(true);
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'telegram_user_id' => 888]; // the mention
+        $this->wpdb->nextResults[] = [                                                             // historyFor
+            ['id' => 1, 'task_id' => 1, 'person_id' => 8, 'status' => 'completed', 'task_date' => '2026-07-01'],
+            ['id' => 2, 'task_id' => 2, 'person_id' => 8, 'status' => 'completed', 'task_date' => '2026-07-02'],
+        ];
+        $this->wpdb->nextVars[] = 0; // countFor redemptions
+        $this->wpdb->nextVars[] = 0; // sumFor grants
+
+        $this->service()->captureTarget(555, 555, 'Sam', [['type' => 'text_mention', 'user' => ['id' => 888]]]);
+
+        $button = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0];
+        self::assertSame('Sam (1 credit now)', $button['text']);
+    }
+
     public function testANonOrganizerCannotGift(): void
     {
         $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Nope', 'is_organizer' => 0, 'telegram_user_id' => 555];

@@ -76,7 +76,7 @@ final class GuestListServiceTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(555, $sent['chat_id']);
         self::assertStringStartsWith('✅ Added Anna Virtanen to Sat 1 Aug.', $sent['text']);
-        self::assertStringContainsString('1 guests, 3 people in all', $sent['text']);
+        self::assertStringContainsString('1 guest, 3 people in all', $sent['text']);
         self::assertStringContainsString('1. Anna Virtanen +2 (DJ’s partner)', $sent['text']);
     }
 

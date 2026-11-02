@@ -72,6 +72,19 @@ final class GiftService
     }
 
     /**
+     * /cancel: forgets the "who should get a credit?" question and the amount
+     * kept for the tap. True when the question was waiting.
+     */
+    public function cancelPending(int $telegramUserId): bool
+    {
+        $waiting = $this->isAwaitingTarget($telegramUserId);
+        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+        delete_transient(self::AMOUNT_PREFIX . $telegramUserId);
+
+        return $waiting;
+    }
+
+    /**
      * The reply naming who to gift. Resolves them and offers the matches as
      * buttons; a tap on one records the grant.
      *
@@ -94,12 +107,13 @@ final class GiftService
         $buttons = [];
 
         foreach (PersonResolver::matching($this->people, $query, $entities) as $person) {
+            $balance = $this->standing->for($person->id)->creditBalance;
             $buttons[] = [[
                 'text' => sprintf(
                     /* translators: 1: person's name, 2: their current credit balance */
-                    __('%1$s (%2$d credits now)', 'eventcrew'),
+                    _n('%1$s (%2$d credit now)', '%1$s (%2$d credits now)', $balance, 'eventcrew'),
                     $person->name(),
-                    $this->standing->for($person->id)->creditBalance
+                    $balance
                 ),
                 'callback_data' => self::PICK_PREFIX . $person->id,
             ]];
@@ -108,7 +122,7 @@ final class GiftService
         if ([] === $buttons) {
             $this->telegram->sendMessage(
                 $chatId,
-                __('I couldn’t find anyone by that name. Try their exact name or @mention them.', 'eventcrew')
+                __('I couldn’t find anyone by that name. Send /gift to try again, with their exact name or an @mention.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             );
 
             return;
@@ -150,7 +164,11 @@ final class GiftService
         $recipient = $this->people->find($personId);
 
         if (null === $recipient) {
-            $this->telegram->answerCallbackQuery($callbackId, __('That person is gone.', 'eventcrew'), true);
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That person is no longer in EventCrew. Send /gift to pick someone else.', 'eventcrew'),
+                true
+            );
 
             return;
         }

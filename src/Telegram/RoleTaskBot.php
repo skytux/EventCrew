@@ -16,7 +16,8 @@ use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\SignupService;
 
 /**
- * /roletasks - the restricted-role tasks (Organize, DJ, VJ, ...) in the bot.
+ * /tasks (old name /roletasks) - the restricted-role tasks (Organize, DJ, VJ,
+ * ...) in the bot.
  *
  * These tasks are never on the group board. A person who holds the role gets
  * them here, in the DM: one button per task to sign up or cancel. Signing up
@@ -26,9 +27,13 @@ use EventCrew\Support\SignupService;
  * the person - a member, or someone who is not a crew member yet - is put on
  * the task, and given the role when the task is restricted.
  *
+ * After a sign-up or a cancel the list message is edited to show the new
+ * state, so its ✋ / ❌ buttons never go stale.
+ *
  * Callback data, all "rt:<kind>:<task_id>": s = sign up (asks the question),
  * y / n = the answer, c = cancel, a = add someone, ay / an = the answer for
- * the person being added.
+ * the person being added. y / n carry a third part, the id of the list
+ * message to refresh: "rt:y:<task_id>:<message_id>".
  */
 final class RoleTaskBot
 {
@@ -51,19 +56,20 @@ final class RoleTaskBot
     }
 
     /**
-     * /roletasks: the list, in the DM.
+     * /tasks: the list, in the DM.
      */
     public function start(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->sendMessage($chatId, __('Set yourself up first: send /start to the bot.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
 
-        $this->sendList($person, $telegramUserId);
+        [$text, $markup] = $this->buildList($person);
+        $this->telegram->sendMessage($telegramUserId, $text, $markup);
         $this->sentDmNote($chatId, $isPrivate);
     }
 
@@ -72,6 +78,18 @@ final class RoleTaskBot
         $pending = get_transient(self::AWAIT_PREFIX . $telegramUserId);
 
         return is_array($pending) && ! isset($pending['name']);
+    }
+
+    /**
+     * /cancel: forgets the "who should be added?" question, and the credit
+     * question that follows it. True when one was waiting.
+     */
+    public function cancelPending(int $telegramUserId): bool
+    {
+        $waiting = is_array(get_transient(self::AWAIT_PREFIX . $telegramUserId));
+        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+
+        return $waiting;
     }
 
     /**
@@ -92,7 +110,7 @@ final class RoleTaskBot
 
         if (0 === $taskId || ('' === $name && '' === $email)) {
             delete_transient(self::AWAIT_PREFIX . $telegramUserId);
-            $this->telegram->sendMessage($chatId, __('Nothing was added. Start again with /roletasks.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, __('Nothing was added. Start again with /tasks.', 'eventcrew'));
 
             return;
         }
@@ -133,37 +151,57 @@ final class RoleTaskBot
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
         $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? $telegramUserId);
+        // The message the tapped button sits on: the list itself for s and c.
+        $tappedMessageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
 
-        if (1 !== preg_match('/^rt:(s|y|n|c|a|ay|an):(\d+)$/', (string) ($callbackQuery['data'] ?? ''), $m)) {
+        $data = (string) ($callbackQuery['data'] ?? '');
+
+        if (1 !== preg_match('/^rt:(s|y|n|c|a|ay|an):(\d+)(?::(\d+))?$/', $data, $m)) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
         }
 
-        [, $kind, $taskId] = $m;
-        $taskId = (int) $taskId;
+        $kind = $m[1];
+        $taskId = (int) $m[2];
+        $listMessageId = (int) ($m[3] ?? 0);
         $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('Set yourself up first: send /start to the bot.', 'eventcrew'),
-                true
-            );
+            $this->telegram->answerCallbackQuery($callbackId, SetupNudge::text(), true);
 
             return;
         }
 
         match ($kind) {
-            's' => $this->askCredit($callbackId, $chatId, $person, $taskId),
-            'y', 'n' => $this->join($callbackId, $chatId, $person, $taskId, 'y' === $kind),
-            'c' => $this->leave($callbackId, $chatId, $person, $taskId),
+            's' => $this->askCredit($callbackId, $chatId, $person, $taskId, $tappedMessageId),
+            'y', 'n' => $this->join($callbackId, $chatId, $person, $taskId, 'y' === $kind, $listMessageId),
+            'c' => $this->leave($callbackId, $chatId, $person, $taskId, $tappedMessageId),
             'a' => $this->askPerson($callbackId, $chatId, $person, $taskId),
             default => $this->add($callbackId, $chatId, $person, $taskId, 'ay' === $kind),
         };
     }
 
-    private function sendList(Person $person, int $chatId): void
+    /**
+     * Edits the list message in place so it shows the person's tasks as they
+     * are now. Nothing happens when the message id is unknown.
+     */
+    private function refreshList(Person $person, int $chatId, int $messageId): void
+    {
+        if ($messageId <= 0) {
+            return;
+        }
+
+        [$text, $markup] = $this->buildList($person);
+        $this->telegram->editMessageText($chatId, $messageId, $text, $markup);
+    }
+
+    /**
+     * The list text and its keyboard (null when there is nothing to tap).
+     *
+     * @return array{0: string, 1: array<string, mixed>|null}
+     */
+    private function buildList(Person $person): array
     {
         $own = $this->roleTasks->tasksFor($person);
         $addable = $person->isOrganizer ? $this->roleTasks->addableTasks() : [];
@@ -179,12 +217,14 @@ final class RoleTaskBot
         }
 
         if ([] === $byId) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('There are no upcoming tasks for your roles. An organizer gives roles with /roles.', 'eventcrew')
-            );
-
-            return;
+            // Only an organizer can run /roles, so only they are pointed at it.
+            return [
+                $person->isOrganizer
+                    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    ? __('There are no upcoming tasks for your roles. An organizer gives roles with /roles.', 'eventcrew')
+                    : __('There are no upcoming tasks for your roles.', 'eventcrew'),
+                null,
+            ];
         }
 
         usort(
@@ -213,15 +253,13 @@ final class RoleTaskBot
             $rows[] = $row;
         }
 
-        $this->telegram->sendMessage(
-            $chatId,
+        return [
             $person->isOrganizer
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 ? __("Tasks for your roles, and every upcoming task you can add someone to.\n✋ = sign up · ❌ = cancel · ➕ = add someone.", 'eventcrew')
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                : __("Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel · ➕ = add someone (organizers).", 'eventcrew'),
-            ['inline_keyboard' => $rows]
-        );
+                : __("Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel", 'eventcrew'),
+            ['inline_keyboard' => $rows],
+        ];
     }
 
     private function taskLabel(Task $task): string
@@ -232,11 +270,13 @@ final class RoleTaskBot
     /**
      * @return array<string, mixed>
      */
-    private function creditKeyboard(string $yes, string $no, int $taskId): array
+    private function creditKeyboard(string $yes, string $no, int $taskId, int $listMessageId = 0): array
     {
+        $suffix = $taskId . ($listMessageId > 0 ? ':' . $listMessageId : '');
+
         return ['inline_keyboard' => [[
-            ['text' => __('Yes', 'eventcrew'), 'callback_data' => self::PREFIX . $yes . ':' . $taskId],
-            ['text' => __('No', 'eventcrew'), 'callback_data' => self::PREFIX . $no . ':' . $taskId],
+            ['text' => __('Yes', 'eventcrew'), 'callback_data' => self::PREFIX . $yes . ':' . $suffix],
+            ['text' => __('No', 'eventcrew'), 'callback_data' => self::PREFIX . $no . ':' . $suffix],
         ]]];
     }
 
@@ -248,7 +288,7 @@ final class RoleTaskBot
         return null !== $task && $task->isRestricted() && $person->hasRole($task->roleSlug) ? $task : null;
     }
 
-    private function askCredit(string $callbackId, int $chatId, Person $person, int $taskId): void
+    private function askCredit(string $callbackId, int $chatId, Person $person, int $taskId, int $listMessageId): void
     {
         if (null === $this->ownTask($person, $taskId)) {
             $this->telegram->answerCallbackQuery(
@@ -264,12 +304,18 @@ final class RoleTaskBot
         $this->telegram->sendMessage(
             $chatId,
             __('Count toward free-entry credit?', 'eventcrew'),
-            $this->creditKeyboard('y', 'n', $taskId)
+            $this->creditKeyboard('y', 'n', $taskId, $listMessageId)
         );
     }
 
-    private function join(string $callbackId, int $chatId, Person $person, int $taskId, bool $countsCredit): void
-    {
+    private function join(
+        string $callbackId,
+        int $chatId,
+        Person $person,
+        int $taskId,
+        bool $countsCredit,
+        int $listMessageId
+    ): void {
         $outcome = null === $this->ownTask($person, $taskId)
             ? SignupService::ORGANIZERS_ONLY
             : $this->signup->claim($person->id, $taskId, $countsCredit);
@@ -277,7 +323,7 @@ final class RoleTaskBot
 
         $message = match ($outcome) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message the organizer.', 'eventcrew'),
+            SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message an organizer.', 'eventcrew'),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),
@@ -288,10 +334,11 @@ final class RoleTaskBot
 
         if ($joined) {
             $this->notifier->confirmSignup($person, $taskId);
+            $this->refreshList($person, $chatId, $listMessageId);
         }
     }
 
-    private function leave(string $callbackId, int $chatId, Person $person, int $taskId): void
+    private function leave(string $callbackId, int $chatId, Person $person, int $taskId, int $listMessageId): void
     {
         $status = null === $this->tasks->find($taskId) ? '' : $this->signup->drop($person->id, $taskId);
 
@@ -306,6 +353,7 @@ final class RoleTaskBot
 
         if ('' !== $status) {
             $this->notifier->confirmCancellation($person, $taskId, $status);
+            $this->refreshList($person, $chatId, $listMessageId);
         }
     }
 
@@ -339,7 +387,7 @@ final class RoleTaskBot
         if (! is_array($pending) || $taskId !== (int) ($pending['task'] ?? 0) || ! isset($pending['name'])) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('Nothing was added. Start again with /roletasks.', 'eventcrew'),
+                __('Nothing was added. Start again with /tasks.', 'eventcrew'),
                 true
             );
 

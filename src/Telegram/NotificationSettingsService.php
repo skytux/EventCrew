@@ -33,11 +33,18 @@ final class NotificationSettingsService
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
-        if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /notifications lets you choose what reaches you.', 'eventcrew')
-            );
+        if (null === $person) {
+            // Not known yet, so the bot may not be able to DM them: the nudge
+            // goes back to wherever they asked, in English in the group.
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
+
+            return;
+        }
+
+        if (! $person->isEmailVerified()) {
+            // Known, so the refusal goes to the DM, with a breadcrumb in the group.
+            $this->telegram->sendMessage($telegramUserId, SetupNudge::text());
+            $this->sentDmNote($chatId, $isPrivate);
 
             return;
         }
@@ -89,11 +96,9 @@ final class NotificationSettingsService
 
     private function text(): string
     {
-        return __(
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both.",
-            'eventcrew'
-        );
+        // The comment sits outside __( so tools/make-pot.php still reads the literal.
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __("🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both.", 'eventcrew');
     }
 
     /**
@@ -107,7 +112,7 @@ final class NotificationSettingsService
         // A header row labels the two toggle columns; the name cell above each
         // row's toggles is a no-op, so a tap on the label never changes a pref.
         $rows[] = [
-            ['text' => ' ', 'callback_data' => self::PREFIX . 'noop'],
+            ['text' => __('Notification', 'eventcrew'), 'callback_data' => self::PREFIX . 'noop'],
             ['text' => '📱', 'callback_data' => self::PREFIX . 'noop'],
             ['text' => '✉', 'callback_data' => self::PREFIX . 'noop'],
         ];

@@ -300,11 +300,7 @@ final class DoorLinkSender
     {
         return sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __(
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                'Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /sales to the bot.',
-                'eventcrew'
-            ),
+            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             Dates::dayLabel($date)
         );
     }
@@ -442,11 +438,7 @@ final class DoorLinkSender
     {
         return sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __(
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                'You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot.',
-                'eventcrew'
-            ),
+            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             Dates::dayLabel($date)
         );
     }

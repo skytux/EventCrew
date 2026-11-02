@@ -115,7 +115,7 @@ final class DoorHandoff
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             self::NO_SESSION => __('This device is not logged in to the sales desk. Ask an organizer for a new link (/sales in Telegram).', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            default => __('This person cannot run the sales desk tonight. Only organizers, and the crew marked arrived on tonight’s tasks that open the sales desk, can.', 'eventcrew'),
+            default => __('This person cannot run the sales desk tonight. Only organizers, and the welcome crew once marked arrived tonight, can.', 'eventcrew'),
         };
     }
 

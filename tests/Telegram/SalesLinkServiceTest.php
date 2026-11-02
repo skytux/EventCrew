@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use EventCrew\Support\Language;
 use EventCrew\Support\Roles;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 
@@ -130,10 +131,13 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
 
         $this->salesLinkService()->onSalesCommand(508, self::GROUP, false);
 
+        // The refusal goes to the DM; the group only gets the breadcrumb.
         $messages = $this->messages();
-        self::assertCount(1, $messages);
-        self::assertSame(self::GROUP, $messages[0]['chat_id']);
+        self::assertCount(2, $messages);
+        self::assertSame(508, $messages[0]['chat_id']);
         self::assertStringStartsWith('The sales desk link opens 10 minutes', $messages[0]['text']);
+        self::assertSame(self::GROUP, $messages[1]['chat_id']);
+        self::assertSame('📬 Sent you a DM.', $messages[1]['text']);
         self::assertSame([], $this->wpdb->inserts);
     }
 
@@ -145,7 +149,7 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->salesLinkService()->onSalesCommand(508, 508, true);
 
         self::assertSame(
-            'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
+            'Only organizers and tonight’s welcome crew can open it.',
             $this->messages()[0]['text']
         );
     }
@@ -165,6 +169,18 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->assertLinkDmTo(501, $messages[1]);
     }
 
+    public function testAStrangerInTheGroupIsRefusedThereInEnglish(): void
+    {
+        Language::run('fi', function (): void {
+            $this->salesLinkService()->onSalesCommand(777, self::GROUP, false);
+        });
+
+        $messages = $this->messages();
+        self::assertCount(1, $messages);
+        self::assertSame(self::GROUP, $messages[0]['chat_id']);
+        self::assertSame('Only organizers and tonight’s welcome crew can open it.', $messages[0]['text']);
+    }
+
     public function testTheRouterSendsSalesHere(): void
     {
         // Nobody with this Telegram account: the refusal proves /sales ran.
@@ -177,7 +193,7 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         ]);
 
         self::assertSame(
-            'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
+            'Only organizers and tonight’s welcome crew can open it.',
             $this->lastCallTo('sendMessage')['text']
         );
     }

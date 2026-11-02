@@ -9,11 +9,11 @@ use EventCrew\Support\Language;
 /**
  * Reads one Telegram update and sends it to the right place.
  *
- * The bot understands a deliberately small vocabulary: a button tap (join or
- * leave), /start in its private chat (onboarding), the email that follows it,
- * and /board (in the group: post or refresh the board; in a private chat: a
- * copy of the board there). Anything else is
- * ignored - the webhook still answers 200, it just does nothing.
+ * Button taps go to the service that owns their prefix. Commands go to their
+ * service; /help lists them for the asker and /cancel drops any question the
+ * bot is waiting on. A plain private message is read only as the answer to
+ * such a question. Anything else is ignored - the webhook still answers 200,
+ * it just does nothing.
  *
  * Every update is handled in the language its sender chose, so their DMs and
  * popups read in it. A private command from someone who has not chosen is held
@@ -38,7 +38,8 @@ final class UpdateRouter
         private readonly GuestListService $guestList,
         private readonly SalesLinkService $salesLink,
         private readonly ?LanguageService $language = null,
-        private readonly ?RoleTaskBot $roleTasks = null
+        private readonly ?RoleTaskBot $roleTasks = null,
+        private readonly ?HelpService $help = null
     ) {
     }
 
@@ -160,6 +161,28 @@ final class UpdateRouter
             return;
         }
 
+        // /help: the commands this person may use.
+        if (null !== $this->help && $this->isCommand($text, 'help')) {
+            $this->help->onHelp($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        // /cancel: drop every question the bot is waiting on for this person.
+        // Each one is asked to stop, so none is left behind by a short-circuit.
+        if (null !== $this->help && 0 !== $fromId && $this->isCommand($text, 'cancel')) {
+            $stopped = [
+                $this->replacement->cancelPending($fromId),
+                $this->gift->cancelPending($fromId),
+                $this->permissions->cancelPending($fromId),
+                null !== $this->roleTasks && $this->roleTasks->cancelPending($fromId),
+                $this->onboarding->cancelPending($fromId),
+            ];
+            $this->help->onCancel($chatId, $isPrivate, in_array(true, $stopped, true));
+
+            return;
+        }
+
         if ($this->isCommand($text, 'start')) {
             // The board's deep-link buttons both land here as /start with a
             // payload: "onboard" (or none) is the sign-up flow, "me" is the
@@ -177,9 +200,10 @@ final class UpdateRouter
         }
 
         // /roster works from either the group or a private chat; the service
-        // itself refuses anyone who is not a linked organizer.
+        // itself refuses anyone who is not an organizer or on that night's
+        // tasks. An optional date picks the night.
         if ($this->isCommand($text, 'roster')) {
-            $this->roster->onRosterCommand($fromId, $chatId, $isPrivate);
+            $this->roster->onRosterCommand($fromId, $chatId, $isPrivate, $this->commandPayload($text, 'roster'));
 
             return;
         }
@@ -207,9 +231,13 @@ final class UpdateRouter
             return;
         }
 
-        // /roletasks: the restricted-role tasks this person may take, which are
+        // /tasks: the restricted-role tasks this person may take, which are
         // never on the group board; organizers can also add someone there.
-        if (null !== $this->roleTasks && $this->isCommand($text, 'roletasks')) {
+        // /roletasks is its old name and still runs it.
+        if (
+            null !== $this->roleTasks
+            && ($this->isCommand($text, 'tasks') || $this->isCommand($text, 'roletasks'))
+        ) {
             $this->roleTasks->start($fromId, $chatId, $isPrivate);
 
             return;
@@ -241,7 +269,7 @@ final class UpdateRouter
         }
 
         // /tickets: who has a ticket for a night, for organizers and that
-        // night's door crew. Answered in the DM; an optional date picks the night.
+        // night's welcome crew. Answered in the DM; an optional date picks the night.
         if ($this->isCommand($text, 'tickets')) {
             $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $this->commandPayload($text, 'tickets'));
 
@@ -257,16 +285,17 @@ final class UpdateRouter
         }
 
         // /guest: show, add, edit or remove a night's guest list. Organizers
-        // change it; the night's door crew can look. Answered in the DM.
+        // change it; the night's welcome crew can look. Answered in the DM.
         if ($this->isCommand($text, 'guest')) {
             $this->guestList->onGuestCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'guest'));
 
             return;
         }
 
-        // /me and /myhistory work from either the group or a private chat; the
-        // service always answers in the asker's DM so a personal summary is
-        // never printed in front of the whole crew.
+        // /me, /me history and /me tickets work from either the group or a
+        // private chat; the service always answers in the asker's DM so a
+        // personal summary is never printed in front of the whole crew.
+        // /myhistory and /mytickets are their old names and still run them.
         if ($this->isCommand($text, 'myhistory')) {
             $this->profile->onMyHistory($fromId, $chatId, $isPrivate);
 
@@ -288,7 +317,15 @@ final class UpdateRouter
         }
 
         if ($this->isCommand($text, 'me')) {
-            $this->profile->onMe($fromId, $chatId, $isPrivate);
+            $part = strtolower($this->commandPayload($text, 'me'));
+
+            if ('history' === $part) {
+                $this->profile->onMyHistory($fromId, $chatId, $isPrivate);
+            } elseif ('tickets' === $part) {
+                $this->profile->onMyTickets($fromId, $chatId, $isPrivate);
+            } else {
+                $this->profile->onMe($fromId, $chatId, $isPrivate);
+            }
 
             return;
         }

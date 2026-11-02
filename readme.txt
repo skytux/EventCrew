@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.60.2
+Stable tag: 1.61.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.61.0 =
+Telegram: new /help and /cancel; /me history, /me tickets and /tasks (old names /myhistory, /mytickets, /roletasks still work); /roster takes a date and explains its marks; the door people are called welcome crew everywhere; clearer bot messages with Finnish translations.
 
 = 1.60.2 =
 Admin tab People: the older "Give a credit" and "Roles" cards are removed; open a person to give a credit or change their roles.
@@ -732,6 +735,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.61.0 =
+The old command names still work. The Telegram command menu is updated in the next release.
 
 = 1.60.2 =
 

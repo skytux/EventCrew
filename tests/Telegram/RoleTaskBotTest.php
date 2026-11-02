@@ -159,7 +159,8 @@ final class RoleTaskBotTest extends TelegramTestCase
         $this->roleTaskBot()->onSelect($this->tap('rt:s:9'));
 
         self::assertSame('Count toward free-entry credit?', $this->lastCallTo('sendMessage')['text']);
-        self::assertSame(['rt:y:9', 'rt:n:9'], $this->buttonData());
+        // The answer buttons carry the list message (3) so it can be refreshed.
+        self::assertSame(['rt:y:9:3', 'rt:n:9:3'], $this->buttonData());
 
         $this->wpdb->nextRows[] = $this->personRow(7, 'dj');   // the tapper
         $this->wpdb->nextRows[] = $this->djTask();             // ownTask
@@ -172,6 +173,27 @@ final class RoleTaskBotTest extends TelegramTestCase
         $this->roleTaskBot()->onSelect($this->tap('rt:n:9'));
 
         self::assertStringContainsString("SELECT 9, 7, 'signed_up', '2026-07-20 12:00:00', 0", implode("\n", $this->wpdb->queries));
+    }
+
+    public function testAnsweringTheCreditQuestionRefreshesTheList(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');   // the tapper
+        $this->wpdb->nextRows[] = $this->djTask();             // ownTask
+        $this->wpdb->nextRows[] = $this->djTask();             // claim: tasks->find
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');   // claim: people->find
+        $this->wpdb->nextVars[] = 1;                           // join: capacity
+        $this->wpdb->nextRows[] = null;                        // join: no row yet
+        $this->wpdb->nextQueryResults[] = 1;                   // join: inserted
+
+        // The answer button carries the list message (3); the tap itself sits
+        // on the question message (8).
+        $tap = $this->tap('rt:n:9:3');
+        $tap['message']['message_id'] = 8;
+        $this->roleTaskBot()->onSelect($tap);
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(555, $edit['chat_id']);
+        self::assertSame(3, $edit['message_id']);
     }
 
     /**

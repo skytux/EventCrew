@@ -68,6 +68,17 @@ final class PermissionService
     }
 
     /**
+     * /cancel: forgets the "whose roles?" question. True when one was waiting.
+     */
+    public function cancelPending(int $telegramUserId): bool
+    {
+        $waiting = $this->isAwaitingTarget($telegramUserId);
+        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+
+        return $waiting;
+    }
+
+    /**
      * /eligible: for each role with conditions, who meets them, with ✅ on
      * those who already have the role. Answered privately, admin-only.
      */
@@ -147,7 +158,7 @@ final class PermissionService
     {
         return sprintf(
             /* translators: %s: person's name */
-            __("Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk.", 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __("Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk. It only gives a pass; it cannot take one away.", 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             $person->name()
         );
     }
@@ -164,7 +175,7 @@ final class PermissionService
         $prefix = self::PICK_PREFIX;
         $buttons = [
             [
-                'text' => $mark($person->hasAtRiskPass) . '🎟 ' . __('One-time pass', 'eventcrew'),
+                'text' => $mark($person->hasAtRiskPass) . '🎟 ' . __('Give a one-time pass', 'eventcrew'),
                 'callback_data' => $prefix . 'pass:' . $person->id,
             ],
             [
@@ -211,8 +222,22 @@ final class PermissionService
 
         $person = 0 === $personId ? null : $this->people->find($personId);
 
-        if (null === $person || '' === $action) {
-            $this->telegram->answerCallbackQuery($callbackId, __('That person is gone.', 'eventcrew'), true);
+        if ('' === $action) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That button no longer works. Send /roles again.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        if (null === $person) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That person is no longer in EventCrew. Send /roles to pick someone else.', 'eventcrew'),
+                true
+            );
 
             return;
         }
@@ -328,7 +353,7 @@ final class PermissionService
                     ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']
                     : [sprintf(__('%s is now an organizer.', 'eventcrew'), $name), 'admin'];
             default:
-                return [__('Nothing to do.', 'eventcrew'), ''];
+                return [__('That button no longer works. Send /roles again.', 'eventcrew'), ''];
         }
     }
 
@@ -341,7 +366,7 @@ final class PermissionService
         if (str_starts_with($dmKind, 'role:')) {
             return sprintf(
                 /* translators: %s: role name, such as DJ */
-                __('You now have the role %s. Its tasks are shown to you with /roletasks in the bot and on the crew page, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('You now have the role %s. Its tasks are shown to you with /tasks in the bot and on the crew page, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 Roles::label(substr($dmKind, strlen('role:')))
             );
         }

@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Language;
 use EventCrew\Telegram\VerificationController;
 
 final class VerificationControllerTest extends TelegramTestCase
@@ -70,5 +71,17 @@ final class VerificationControllerTest extends TelegramTestCase
         self::assertStringStartsWith('<!doctype html>', $ok);
         self::assertStringContainsString('Email confirmed', $ok);
         self::assertStringContainsString('invalid or has expired', $bad);
+    }
+
+    public function testThePageDeclaresTheLanguageItIsWrittenIn(): void
+    {
+        Functions\when('esc_attr')->returnArg(1);
+        Functions\when('get_bloginfo')->alias(static fn (string $show = ''): string => 'language' === $show ? 'en-US' : 'Test Site');
+
+        $finnish = Language::run('fi', fn (): string => $this->controller()->renderPage(true));
+        $site = $this->controller()->renderPage(true);
+
+        self::assertStringContainsString('<html lang="fi">', $finnish);
+        self::assertStringContainsString('<html lang="en-US">', $site);
     }
 }

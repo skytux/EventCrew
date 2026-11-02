@@ -113,6 +113,18 @@ final class OnboardingService
     }
 
     /**
+     * /cancel: forgets the "what's your email?" question. True when it was
+     * waiting.
+     */
+    public function cancelPending(int $telegramUserId): bool
+    {
+        $waiting = $this->isAwaitingEmail($telegramUserId);
+        delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
+
+        return $waiting;
+    }
+
+    /**
      * Points a group at the bot's private chat with a one-tap deep link, for
      * /start where onboarding can only happen in the DM. Falls back to plain
      * guidance if the bot's username isn't cached yet.

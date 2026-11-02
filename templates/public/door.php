@@ -281,7 +281,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     <div id="ec-other-people" hidden>
         <h3><?php esc_html_e('Login as', 'eventcrew'); ?></h3>
-        <p class="ec-muted"><?php esc_html_e('Organizers, and the crew marked arrived on tonight’s tasks that open the sales desk.', 'eventcrew'); ?></p>
+        <p class="ec-muted"><?php esc_html_e('Organizers, and tonight’s welcome crew once marked arrived.', 'eventcrew'); ?></p>
         <ul id="ec-people"></ul>
     </div>
 
