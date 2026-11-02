@@ -147,4 +147,44 @@ final class TicketBuyerRepositoryTest extends TestCase
         self::assertSame(7, (new TicketBuyerRepository())->countForDate('2026-08-01'));
         self::assertStringContainsString("event_date = '2026-08-01'", $this->wpdb->lastQuery());
     }
+
+    /**
+     * The newsletter release passes its subscribers here; their emails stay.
+     */
+    public function testBlankEmailsBeforeSkipsTheAddressesToKeep(): void
+    {
+        $this->wpdb->nextQueryResults[] = 2;
+
+        $changed = (new TicketBuyerRepository())->blankEmailsBefore(
+            '2026-05-21',
+            ['keep@example.test', '', 'also@example.test']
+        );
+
+        self::assertSame(2, $changed);
+        self::assertStringContainsString(
+            "event_date < '2026-05-21' AND email IS NOT NULL AND email <> '' AND email NOT IN ('keep@example.test', 'also@example.test')",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    public function testEraseEmailClearsNameAndEmailButKeepsTheRow(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(1, (new TicketBuyerRepository())->eraseEmail('buyer@example.test'));
+        self::assertStringContainsString(
+            "SET email = NULL, name = '' WHERE email = 'buyer@example.test'",
+            $this->wpdb->lastQuery()
+        );
+        self::assertSame([], $this->wpdb->deletes);
+    }
+
+    public function testAnEmptyEmailFindsAndErasesNothing(): void
+    {
+        $repository = new TicketBuyerRepository();
+
+        self::assertSame([], $repository->rowsForEmail(''));
+        self::assertSame(0, $repository->eraseEmail(''));
+        self::assertSame([], $this->wpdb->queries);
+    }
 }

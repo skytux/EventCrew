@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Support\Language;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\TelegramClient;
@@ -195,6 +196,70 @@ final class PrivacyPolicyTest extends TestCase
         $this->withOptions([PrivacyPolicy::PAGE_OPTION => 12]);
 
         self::assertSame('', PrivacyPolicy::noticeUrl());
+    }
+
+    /**
+     * The ticket buyer notice says what is taken from the shop export, that
+     * the address can be a dash, and that the email goes 60 days after the
+     * event unless the buyer joined the newsletter.
+     */
+    public function testTheTicketBuyerNoticeStatesWhatWhyAndHowLong(): void
+    {
+        $this->withOptions([
+            PrivacyPolicy::CONTROLLER_OPTION => 'Dance Club',
+            PrivacyPolicy::CONTACT_OPTION => 'privacy@example.test',
+        ]);
+
+        $text = $this->flatten(PrivacyPolicy::buyerSections());
+
+        self::assertStringContainsString('ticket buyer records described here is Dance Club', $text);
+        self::assertStringContainsString('privacy@example.test', $text);
+        self::assertStringContainsString('your name, your email address, and your order or ticket code', $text);
+        self::assertStringContainsString('date of the event', $text);
+        self::assertStringContainsString('a dash ("-") in the address field', $text);
+        self::assertStringContainsString('check you in at the door', $text);
+        self::assertStringContainsString('invites you to join our newsletter', $text);
+        self::assertStringContainsString('We delete your email address 60 days after the event', $text);
+        self::assertStringContainsString('unless you have joined our newsletter', $text);
+        self::assertStringContainsString('You can leave it at any time', $text);
+
+        // Not the crew notice: nothing about tasks or the crew record.
+        self::assertStringNotContainsString('crew records', $text);
+        self::assertStringNotContainsString('claim a task', $text);
+    }
+
+    public function testTheTicketBuyerNoticeHasAFinnishVersion(): void
+    {
+        $this->withOptions([
+            PrivacyPolicy::CONTROLLER_OPTION => 'Dance Club',
+            PrivacyPolicy::CONTACT_OPTION => 'privacy@example.test',
+        ]);
+
+        $text = Language::run(
+            Language::FINNISH,
+            fn (): string => $this->flatten(PrivacyPolicy::buyerSections())
+        );
+
+        self::assertStringContainsString('viivan ("-")', $text);
+        self::assertStringContainsString('Poistamme sähköpostiosoitteesi 60 päivän kuluttua tapahtumasta', $text);
+        self::assertStringContainsString('lipunostajien tietojen rekisterinpitäjä on Dance Club', $text);
+    }
+
+    public function testTheTicketBuyerNoticeUrlUsesItsOwnPageThenCore(): void
+    {
+        Functions\when('get_post_status')->justReturn('publish');
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string => 'https://site.test/?p=' . $id
+        );
+
+        $this->withOptions([PrivacyPolicy::BUYER_PAGE_OPTION => 14, PrivacyPolicy::PAGE_OPTION => 12]);
+        self::assertSame('https://site.test/?p=14', PrivacyPolicy::buyerNoticeUrl());
+
+        $this->withOptions(['wp_page_for_privacy_policy' => 3]);
+        self::assertSame('https://site.test/?p=3', PrivacyPolicy::buyerNoticeUrl());
+
+        $this->withOptions([]);
+        self::assertSame('', PrivacyPolicy::buyerNoticeUrl());
     }
 
     /**

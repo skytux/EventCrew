@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 
 /**
  * Enforces the retention period the privacy notice publishes, by anonymising
@@ -39,7 +40,8 @@ final class RetentionPurge
 
     public function __construct(
         private readonly PersonRepository $people,
-        private readonly PersonEraser $eraser
+        private readonly PersonEraser $eraser,
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
     ) {
     }
 
@@ -67,6 +69,56 @@ final class RetentionPurge
         }
 
         return count($ids);
+    }
+
+    /**
+     * Deletes ticket buyers' email addresses once the event is more than
+     * PrivacyPolicy::BUYER_EMAIL_DAYS days ago, keeping the addresses that
+     * buyerEmailsToKeep() returns. Returns how many rows changed.
+     *
+     * Not switched off by the purge setting above, unlike run(): the public
+     * ticket buyer notice promises this deletion, so it always happens. Only
+     * the email column is cleared; the rows stay.
+     */
+    public function purgeBuyerEmails(): int
+    {
+        $cutoff = $this->buyerEmailCutoff();
+
+        if ('' === $cutoff) {
+            return 0;
+        }
+
+        return $this->buyers->blankEmailsBefore($cutoff, $this->buyerEmailsToKeep());
+    }
+
+    /**
+     * The first event date whose buyers still keep their email: today minus
+     * BUYER_EMAIL_DAYS, in the site's own time, as Y-m-d. An event on this
+     * date or later is kept; an earlier one is purged.
+     */
+    public function buyerEmailCutoff(): string
+    {
+        $now = strtotime((string) current_time('mysql'));
+
+        if (false === $now) {
+            return '';
+        }
+
+        $cutoff = strtotime('-' . PrivacyPolicy::BUYER_EMAIL_DAYS . ' days', $now);
+
+        return false === $cutoff ? '' : gmdate('Y-m-d', $cutoff);
+    }
+
+    /**
+     * Buyer email addresses that must not be deleted: the people who joined
+     * the newsletter. There is no newsletter yet, so this returns none and
+     * every expired address is deleted. The newsletter release fills this in.
+     *
+     * @return array<int, string>
+     */
+    public function buyerEmailsToKeep(): array
+    {
+        return [];
     }
 
     /**
