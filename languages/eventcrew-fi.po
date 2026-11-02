@@ -349,8 +349,8 @@ msgid "Crew member"
 msgstr "Crew-jäsen"
 
 #: src/Web/CrewAdminController.php:411
-msgid "Crew page: a member is blocked after a forged admin request"
-msgstr "Crew-sivu: jäsen estettiin väärennetyn ylläpitopyynnön jälkeen"
+msgid "Crew app: a member is blocked after a forged admin request"
+msgstr "Crew-sovellus: jäsen estettiin väärennetyn ylläpitopyynnön jälkeen"
 
 #: src/Support/DoorDesk.php:193 src/Support/DoorDesk.php:431
 msgid "Crew working"
@@ -1182,8 +1182,8 @@ msgstr "Lähetä minulle myyntipisteen linkki"
 #. translators: 1: the admin action's name, 2: date and time
 #: src/Web/CrewAdminController.php:372
 #, php-format
-msgid "Sent an admin request from the crew page without being an organizer (%1$s, %2$s)."
-msgstr "Lähetti ylläpitopyynnön crew-sivulta olematta järjestäjä (%1$s, %2$s)."
+msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
+msgstr "Lähetti ylläpitopyynnön Crew-sovelluksesta olematta järjestäjä (%1$s, %2$s)."
 
 #: src/Telegram/OnboardingService.php:137
 msgid "Set me up →"
@@ -1533,8 +1533,8 @@ msgstr "Tämä sähköposti kuuluu jo jäsenelle. Jatka hänen kanssaan."
 #. translators: %s: link to the Help tab of the crew web page
 #: src/Support/WelcomeSender.php:369
 #, php-format
-msgid "This guide is also on the crew web page, in the Help tab, after you sign in: %s"
-msgstr "Tämä opas on myös crew-verkkosivulla Ohje-välilehdellä, kun olet kirjautunut: %s"
+msgid "This guide is also in the Crew app, in the Help tab, after you sign in: %s"
+msgstr "Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: %s"
 
 #: src/Telegram/VerificationController.php:95
 msgid "This link is invalid or has expired"
@@ -1812,8 +1812,8 @@ msgid "Your account is blocked. Talk to an organizer."
 msgstr "Tilisi on estetty. Puhu järjestäjän kanssa."
 
 #: templates/public/signup.php:251
-msgid "Your crew page"
-msgstr "Oma crew-sivusi"
+msgid "Your Crew app"
+msgstr "Oma Crew-sovelluksesi"
 
 #: src/Telegram/ManageController.php:127
 msgid "Your data has been deleted. Thanks for helping out."
@@ -2329,8 +2329,8 @@ msgid "With an email, they get their ticket by email. An email that belongs to a
 msgstr "Sähköpostin kanssa hän saa lipun sähköpostiin. Jäsenen sähköposti lisää sen jäsenen."
 
 #, php-format
-msgid "You now have the role %s. Its tasks are shown to you with /roletasks in the bot and on the crew page, and you can sign up for them."
-msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /roletasks ja crew-sivulla, ja voit ilmoittautua niihin."
+msgid "You now have the role %s. Its tasks are shown to you with /roletasks in the bot and in the Crew app, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /roletasks ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
 
 msgid "Tasks (tick one or more)"
 msgstr "Tehtävät (valitse yksi tai useampi)"
@@ -2377,8 +2377,8 @@ msgstr "Järjestäjänä %s"
 msgid "🛠️ Open the Admin tab"
 msgstr "🛠️ Avaa Admin-välilehti"
 
-msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot."
-msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on crew-sivulla; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /sales."
+msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /sales to the bot."
+msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /sales."
 
 msgctxt "Admin tab screen"
 msgid "Roster"
@@ -3323,8 +3323,8 @@ msgid "/tickets [date] – the door list"
 msgstr "/tickets [päivä] – ovilista"
 
 #: src/Telegram/HelpService.php:110
-msgid "/web – a sign-in link for the crew web page"
-msgstr "/web – kirjautumislinkki crew-sivulle"
+msgid "/web – a sign-in link for the Crew app"
+msgstr "/web – kirjautumislinkki Crew-sovellukseen"
 
 #: src/Telegram/TicketRedemptionService.php:160
 msgid "Credit spent — send /me tickets to see your ticket."
@@ -3456,8 +3456,8 @@ msgstr[1] "Sinulla ei ole vielä vapaalippuja — saat yhden jokaista %d tekemä
 
 #: src/Telegram/PermissionService.php:369
 #. translators: %s: role name, such as DJ
-msgid "You now have the role %s. Its tasks are shown to you with /tasks in the bot and on the crew page, and you can sign up for them."
-msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /tasks ja crew-sivulla, ja voit ilmoittautua niihin."
+msgid "You now have the role %s. Its tasks are shown to you with /tasks in the bot and in the Crew app, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /tasks ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
 
 #: src/Telegram/BoardService.php:538 src/Telegram/RoleTaskBot.php:324
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
@@ -3500,8 +3500,8 @@ msgid "Tasks for your roles"
 msgstr "Roolejesi tehtävät"
 
 #: src/Telegram/CommandMenu.php:298
-msgid "A sign-in link for the crew web page"
-msgstr "Kirjautumislinkki crew-sivulle"
+msgid "A sign-in link for the Crew app"
+msgstr "Kirjautumislinkki Crew-sovellukseen"
 
 #: src/Telegram/CommandMenu.php:299
 msgid "Choose which messages you get"
@@ -3549,3 +3549,6 @@ msgstr "Vierasnäkymä. Kirjaudu yllä, niin voit ottaa tehtävän ja näet kaik
 #. translators: %s: a role name, e.g. DJ
 msgid "%s only"
 msgstr "Vain %s"
+
+msgid "Website"
+msgstr "Verkkosivusto"

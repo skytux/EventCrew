@@ -783,7 +783,7 @@ final class CrewAdminController
             $offender->id,
             sprintf(
                 /* translators: 1: the admin action's name, 2: date and time */
-                __('Sent an admin request from the crew page without being an organizer (%1$s, %2$s).', 'eventcrew'),
+                __('Sent an admin request from the Crew app without being an organizer (%1$s, %2$s).', 'eventcrew'),
                 $label,
                 $when
             )
@@ -796,7 +796,7 @@ final class CrewAdminController
              */
             __(
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                "A member who is not an organizer sent an admin request from the crew page. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1\$s (%2\$s)\nWhen: %3\$s\nAction: %4\$s\nIP address: %5\$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban.",
+                "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1\$s (%2\$s)\nWhen: %3\$s\nAction: %4\$s\nIP address: %5\$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban.",
                 'eventcrew'
             ),
             $offender->name(),
@@ -822,7 +822,7 @@ final class CrewAdminController
                 $this->mailer->toPerson(
                     $organizer->id,
                     $organizer->email,
-                    __('Crew page: a member is blocked after a forged admin request', 'eventcrew'),
+                    __('Crew app: a member is blocked after a forged admin request', 'eventcrew'),
                     $body
                 );
             }

@@ -203,7 +203,7 @@ final class PwaController
         return false === $first ? $name : $first;
     }
 
-    private function themeColor(): string
+    public function themeColor(): string
     {
         $color = trim((string) get_option(self::COLOR_OPTION, ''));
 

@@ -85,7 +85,7 @@ final class OrganizerGuide
                 (int) round($settings->threshold() * 100)
             ),
             '- 🔑 ' . __('Roles: /roles makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            '- 🎧 ' . __('Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /tasks and on the crew page. You can add someone there, even a person who is not a crew member.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🎧 ' . __('Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /tasks and in the Crew app. You can add someone there, even a person who is not a crew member.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00 */
                 '- 🔔 ' . __('Messages: reminders and calls go out by themselves, only between %1$s and %2$s.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -237,9 +237,9 @@ final class OrganizerGuide
         $lines = ['## 🔑 ' . __('Roles and permissions', 'eventcrew')];
 
         $lines[] = __('A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role\'s conditions and the first time someone is given a role. /eligible lists who meets the conditions of each role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        $lines[] = __('As an organizer you can add anyone to any task of a night, with /tasks, on the crew page Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('As an organizer you can add anyone to any task of a night, with /tasks, in the Crew app Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
-        $lines[] = __('/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab on the crew page can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
         return $lines;
     }

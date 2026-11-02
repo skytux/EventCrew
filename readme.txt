@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.65.0
+Stable tag: 1.66.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.66.0 =
+The Crew app (the page set as the sign-up page, Settings, App) opens as a page of its own: the full browser width, without the theme's header, menu and footer, with a "← Website" link at the top, on the app colour. To keep it inside the theme, set the option eventcrew_crew_app_standalone to 0. A page whose address is changed now sends its old address to the new one, so links in emails already sent keep working. Texts that said "crew page" now say "Crew app".
 
 = 1.65.0 =
 Guest board: the web page signed out shows the same tasks as the Telegram group board. Signed in, members also see the tasks of their roles; organizers see every task, with a disabled "DJ only" button on roles they do not hold. The role setting is now "Show on the guest board".
@@ -762,6 +765,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.66.0 =
+The Crew app page now opens without the theme. Rename the page and its address freely: the old address keeps working.
 
 = 1.65.0 =
 The web board signed out now hides restricted roles and roles not shown on the guest board.

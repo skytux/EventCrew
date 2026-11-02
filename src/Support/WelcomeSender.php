@@ -366,7 +366,7 @@ final class WelcomeSender
 
         return "\n\n📖 " . sprintf(
             /* translators: %s: link to the Help tab of the crew web page */
-            __('This guide is also on the crew web page, in the Help tab, after you sign in: %s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('This guide is also in the Crew app, in the Help tab, after you sign in: %s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             $url
         );
     }

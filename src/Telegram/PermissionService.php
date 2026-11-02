@@ -367,7 +367,7 @@ final class PermissionService
         if (str_starts_with($dmKind, 'role:')) {
             return sprintf(
                 /* translators: %s: role name, such as DJ */
-                __('You now have the role %s. Its tasks are shown to you with /tasks in the bot and on the crew page, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('You now have the role %s. Its tasks are shown to you with /tasks in the bot and in the Crew app, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 Roles::label(substr($dmKind, strlen('role:')))
             );
         }
