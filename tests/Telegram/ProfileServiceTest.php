@@ -84,7 +84,7 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringContainsString('Good standing', $body);
         self::assertStringContainsString('4', $body); // completed count
         self::assertStringContainsString('2', $body); // credit balance
-        self::assertStringContainsString('2026-07-20', $body); // a recent task line
+        self::assertStringContainsString('Mon 20 Jul — Decorate', $body); // a recent task line
     }
 
     public function testMeAsksAnUnknownUserToSetUpFirst(): void
@@ -153,7 +153,7 @@ final class ProfileServiceTest extends TelegramTestCase
 
         $dm = $this->telegramCalls[0]['body'];
         self::assertSame(555, $dm['chat_id']);
-        self::assertStringContainsString('2026-07-18', (string) $dm['text']);
+        self::assertStringContainsString('Sat 18 Jul — Decorate', (string) $dm['text']);
 
         self::assertSame(999, $this->telegramCalls[1]['body']['chat_id']);
     }

@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\DoorLinkSender;
+use EventCrew\Support\Language;
 use EventCrew\Support\SalesDeskGate;
 
 /**
@@ -37,7 +38,13 @@ final class SalesLinkService
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person) {
-            $this->telegram->sendMessage($chatId, $this->gate->message(SalesDeskGate::NOT_CREW));
+            // Not known, so the bot may not be able to DM them: the refusal
+            // goes back to wherever they asked, in English in the group.
+            $refusal = static fn (): string => SalesDeskGate::message(SalesDeskGate::NOT_CREW);
+            $this->telegram->sendMessage(
+                $chatId,
+                $isPrivate ? $refusal() : Language::run(Language::ENGLISH, $refusal)
+            );
 
             return;
         }
@@ -46,12 +53,14 @@ final class SalesLinkService
         $code = $this->gate->check($person, $date);
 
         // A private chat's id is the user's id, so the DM goes to the asker
-        // even when the command came from the group.
+        // even when the command came from the group. A refusal goes there too,
+        // with a breadcrumb in the group.
         if (SalesDeskGate::OK !== $code || ! $this->sender->send($person, $date, false, $telegramUserId)) {
             $this->telegram->sendMessage(
-                $chatId,
-                $this->gate->message(SalesDeskGate::OK === $code ? SalesDeskGate::CLOSED : $code)
+                $telegramUserId,
+                SalesDeskGate::message(SalesDeskGate::OK === $code ? SalesDeskGate::CLOSED : $code)
             );
+            $this->sentDmNote($chatId, $isPrivate);
 
             return;
         }

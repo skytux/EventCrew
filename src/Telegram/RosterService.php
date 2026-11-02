@@ -15,7 +15,7 @@ use EventCrew\Support\RosterAssembler;
 
 /**
  * The bot side of the roster: /roster returns who is on what for the most
- * recent event day.
+ * recent event day, or for the day named after it (/roster 1.8.).
  *
  * The answer always goes to the asker's private chat, never back to the group,
  * so the crew's attendance is not pinned up in public. It is gated on the
@@ -42,8 +42,17 @@ final class RosterService
     ) {
     }
 
-    public function onRosterCommand(int $telegramUserId, int $chatId, bool $isPrivate = true): void
-    {
+    /**
+     * @param string $payload An optional date after the command ("1.8." or
+     *                        "2026-08-01"), read the same way /tickets reads
+     *                        it. Empty means the default day.
+     */
+    public function onRosterCommand(
+        int $telegramUserId,
+        int $chatId,
+        bool $isPrivate = true,
+        string $payload = ''
+    ): void {
         // Refusals and nudges go back to wherever they asked, so they are visible
         // even from the group; only the roster itself - the sensitive part - goes
         // to the DM, with a breadcrumb in the group so the asker knows to look.
@@ -55,12 +64,22 @@ final class RosterService
             return;
         }
 
-        $date = $this->defaultDate();
+        if ('' !== $payload) {
+            $date = Dates::parseUserDate($payload, current_time('Y-m-d'));
 
-        if ('' === $date) {
-            $this->telegram->sendMessage($chatId, __('No tasks are scheduled yet.', 'eventcrew'));
+            if ('' === $date) {
+                $this->telegram->sendMessage($chatId, UnreadableDate::text());
 
-            return;
+                return;
+            }
+        } else {
+            $date = $this->defaultDate();
+
+            if ('' === $date) {
+                $this->telegram->sendMessage($chatId, __('No tasks are scheduled yet.', 'eventcrew'));
+
+                return;
+            }
         }
 
         if (! $person->isOrganizer && ! $this->isRosteredOn($person->id, $date)) {
@@ -105,7 +124,11 @@ final class RosterService
         $assignment = $this->assignments->find($assignmentId);
 
         if (null === $assignment) {
-            $this->telegram->answerCallbackQuery($callbackId, __('That entry is gone.', 'eventcrew'), true);
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That sign-up no longer exists. Send /roster again to see the current list.', 'eventcrew'),
+                true
+            );
 
             return;
         }
@@ -147,7 +170,7 @@ final class RosterService
 
     private function deniedMarkMessage(): string
     {
-        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can mark attendance.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('Only organizers and that night’s welcome crew can mark attendance.', 'eventcrew');
     }
 
     /**
@@ -322,6 +345,13 @@ final class RosterService
                     $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);
                 }
             }
+        }
+
+        // The mark buttons carry only a symbol and a name, so say what each
+        // symbol means whenever there are buttons to tap.
+        if ([] !== $keyboard) {
+            $lines[] = '';
+            $lines[] = __('✓ done · ⏰ late · ✗ no-show', 'eventcrew');
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];

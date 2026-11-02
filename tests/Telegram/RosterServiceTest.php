@@ -296,7 +296,7 @@ final class RosterServiceTest extends TelegramTestCase
             'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
         ]);
 
-        self::assertStringContainsString('open the sales desk', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertStringContainsString('welcome crew can mark attendance', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertNotContains('editMessageText', $this->calledMethods());
     }
 

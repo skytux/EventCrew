@@ -9,13 +9,15 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\Dates;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\StandingExplainer;
 use EventCrew\Support\TicketList;
 
 /**
- * /me and /myhistory: a person's own standing, what they're signed up for next,
- * and everything they've done - sent to their private chat.
+ * /me, /me history and /me tickets: a person's own standing, what they're
+ * signed up for next, everything they've done and their tickets - sent to
+ * their private chat. /myhistory and /mytickets are the old names.
  *
  * The one self-service window into the reputation and credits the organizer
  * sees on the People list - read-only, so it exposes what someone has earned
@@ -47,10 +49,7 @@ final class ProfileService
         if (null === $person || ! $person->isEmailVerified()) {
             // Guidance goes back to wherever they asked, so it is visible even
             // when they typed /me in the group and we cannot yet DM them.
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /me shows how you’re doing.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -100,7 +99,7 @@ final class ProfileService
         $lines = array_merge($lines, StandingExplainer::lines());
 
         $lines[] = '';
-        $lines[] = __('Send /myhistory to see everything you’ve done.', 'eventcrew');
+        $lines[] = __('Send /me history to see everything you’ve done.', 'eventcrew');
 
         $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines));
     }
@@ -113,10 +112,7 @@ final class ProfileService
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /myhistory shows your past tasks.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -138,10 +134,7 @@ final class ProfileService
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /mytickets shows your tickets.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -197,10 +190,7 @@ final class ProfileService
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /web sends you a sign-in link for the web.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -317,7 +307,7 @@ final class ProfileService
 
         return sprintf(
             '• %s — %s: %s',
-            (string) $entry['task_date'],
+            Dates::dayLabel((string) $entry['task_date']),
             $what,
             $assignment->statusLabel()
         );

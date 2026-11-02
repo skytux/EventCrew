@@ -66,7 +66,8 @@ final class SlotFreedNotice
     /** One person, in the language they chose. */
     private function tell(Person $person, Task $task, NotificationPreferences $prefs): void
     {
-        $when = '' === $task->timeRange() ? $task->taskDate : $task->taskDate . ' ' . $task->timeRange();
+        $day = Dates::dayLabel($task->taskDate);
+        $when = '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
         $line = sprintf(
             /* translators: 1: role, 2: event, 3: date/time */
             __('A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board.', 'eventcrew'),

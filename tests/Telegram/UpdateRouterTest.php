@@ -461,7 +461,7 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertContains('Kirjoitan sinulle suomeksi. Vaihda kieli komennolla /language.', $texts);
         // The held /ticket ran after the choice, in Finnish.
         self::assertSame(
-            'Aloita ensin komennolla /start, sitten /ticket antaa käyttää vapaalipun.',
+            'Aloita ensin: lähetä botille /start.',
             end($texts)
         );
     }

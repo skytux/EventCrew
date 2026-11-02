@@ -33,6 +33,7 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\GuestListService;
+use EventCrew\Telegram\HelpService;
 use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\OnboardingService;
@@ -219,7 +220,12 @@ abstract class TelegramTestCase extends TestCase
             $this->guestListService(),
             $this->salesLinkService(),
             $language,
-            $this->roleTaskBot()
+            $this->roleTaskBot(),
+            new HelpService(
+                new PersonRepository(),
+                new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+                $this->client()
+            )
         );
     }
 

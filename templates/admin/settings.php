@@ -366,7 +366,7 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
-            <?php esc_html_e('"Opens the sales desk": people marked arrived on that night’s task of this role get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+            <?php esc_html_e('"Opens the sales desk": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
             <?php esc_html_e('Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /eligible show who meets them.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
@@ -619,7 +619,7 @@ if (! defined('ABSPATH')) {
             </tr>
             <tr>
                 <th scope="row">
-                    <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, crew on sales-desk roles (minutes before)', 'eventcrew'); ?></label>
+                    <label for="eventcrew-door-link-crew"><?php esc_html_e('Sales desk link, welcome crew (minutes before)', 'eventcrew'); ?></label>
                 </th>
                 <td>
                     <input

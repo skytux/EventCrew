@@ -132,6 +132,28 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertStringContainsString($result['url'], $mails[0]['body']);
     }
 
+    public function testTappingANightSaysWhereTheTicketIs(): void
+    {
+        Functions\when('wp_mail')->justReturn(true);
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 555,
+        ];
+        $this->wpdb->nextRows[] = $person;        // the tapper
+        $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates (eligible)
+        $this->wpdb->nextResults[] = [];          // forPerson -> not already redeemed
+        $this->queueBalanceAndEvent(2);           // two completions -> one credit
+        $this->wpdb->nextQueryResults[] = 1;      // the conditional insert wrote a row
+        $this->wpdb->nextRows[] = $person;        // people->find(7) for the DM + email
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+
+        self::assertSame(
+            'Credit spent — your ticket is in the next message.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
     public function testRedeemRefusesWithNoCredit(): void
     {
         $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates

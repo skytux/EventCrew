@@ -75,6 +75,7 @@ use EventCrew\Telegram\SalesLinkService;
 use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GuestListService;
+use EventCrew\Telegram\HelpService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
@@ -899,7 +900,17 @@ final class Kernel
                 $container->get(GuestListService::class),
                 $container->get(SalesLinkService::class),
                 $container->get(LanguageService::class),
-                $container->get(RoleTaskBot::class)
+                $container->get(RoleTaskBot::class),
+                $container->get(HelpService::class)
+            )
+        );
+
+        $this->container->singleton(
+            HelpService::class,
+            fn (Container $container) => new HelpService(
+                $container->get(PersonRepository::class),
+                $container->get(DoorAccess::class),
+                $container->get(TelegramClient::class)
             )
         );
 

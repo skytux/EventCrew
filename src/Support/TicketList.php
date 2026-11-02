@@ -12,7 +12,7 @@ use EventCrew\Repositories\TaskRepository;
  * A person's door tickets - the rostered-slot ones and the free-entry credit
  * ones - split into upcoming and past, each with its signed ticket link.
  *
- * Shared by the bot's /mytickets and the web profile so the two show the same
+ * Shared by the bot's /me tickets and the web profile so the two show the same
  * list. Dependency-light (three stateless repositories), so it is newed where
  * needed rather than threaded through a constructor.
  */

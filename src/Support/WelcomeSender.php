@@ -429,7 +429,7 @@ final class WelcomeSender
             '## 🧩 ' . __('The tasks', 'eventcrew'),
             implode("\n", self::roleLines()),
             '## 🎟️ ' . __('Tickets', 'eventcrew'),
-            __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /mytickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             '## 🎁 ' . __('Credits', 'eventcrew'),
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */

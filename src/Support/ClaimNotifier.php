@@ -60,7 +60,7 @@ final class ClaimNotifier
             sprintf(
                 /* translators: 1: role, 2: event, 3: date/time */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTap the task again to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /tasks, or tap Cancel in your reminder. Or ask someone to type /replace to take it over.", 'eventcrew'),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task)
@@ -231,7 +231,8 @@ final class ClaimNotifier
     private function whenText(Task $task): string
     {
         $time = $task->timeRange();
+        $day = Dates::dayLabel($task->taskDate);
 
-        return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
+        return '' === $time ? $day : $day . ' ' . $time;
     }
 }

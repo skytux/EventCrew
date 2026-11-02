@@ -11,6 +11,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 
@@ -55,10 +56,7 @@ final class TicketRedemptionService
 
         if (null === $person || ! $person->isEmailVerified()) {
             // A harmless nudge, so it goes back to wherever they asked.
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first with /start, then /ticket lets you spend a free-entry credit.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -68,10 +66,22 @@ final class TicketRedemptionService
         $balance = $this->standing->for($person->id)->creditBalance;
 
         if ($balance < 1) {
+            $perCredit = (new ReputationSettings())->tasksPerCredit();
+            // phpcs:disable WordPress.WP.I18n.MissingSingularPlaceholder -- the singular is only used for 1.
             $this->telegram->sendMessage(
                 $telegramUserId,
-                __('You have no free-entry credits yet — you earn one for every two tasks you complete.', 'eventcrew')
+                sprintf(
+                    /* translators: %d: tasks a person completes to earn one free-entry credit */
+                    _n(
+                        'You have no free-entry credits yet — you earn one for every task you complete.',
+                        'You have no free-entry credits yet — you earn one for every %d tasks you complete.',
+                        $perCredit,
+                        'eventcrew'
+                    ),
+                    $perCredit
+                )
             );
+            // phpcs:enable WordPress.WP.I18n.MissingSingularPlaceholder
             $this->sentDmNote($chatId, $isPrivate);
 
             return;
@@ -128,11 +138,7 @@ final class TicketRedemptionService
         $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
 
         if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('Set yourself up first with /start.', 'eventcrew'),
-                true
-            );
+            $this->telegram->answerCallbackQuery($callbackId, SetupNudge::text(), true);
 
             return;
         }
@@ -145,9 +151,16 @@ final class TicketRedemptionService
             return;
         }
 
-        // redeem() already DM'd (and emailed) the ticket link; the callback answer
-        // just closes the tap so the button stops spinning.
-        $this->telegram->answerCallbackQuery($callbackId, __('Credit spent — check your DM for the ticket.', 'eventcrew'));
+        // redeem() already sent the ticket link on the channels the person
+        // allows. The buttons only appear in the private chat, so when ticket
+        // DMs are on, the ticket is the next message here; when they are off,
+        // the person is pointed at /me tickets instead.
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::TICKET)
+                ? __('Credit spent — your ticket is in the next message.', 'eventcrew')
+                : __('Credit spent — send /me tickets to see your ticket.', 'eventcrew')
+        );
     }
 
     /**

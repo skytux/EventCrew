@@ -207,10 +207,7 @@ final class SalesDeskGate
             ),
             self::CLOSED => __('The sales desk for this night has closed.', 'eventcrew'),
             self::NO_NIGHT => __('There is no upcoming event night yet.', 'eventcrew'),
-            default => __(
-                'Only organizers, and the crew on tonight’s tasks that open the sales desk, can open it.',
-                'eventcrew'
-            ),
+            default => __('Only organizers and tonight’s welcome crew can open it.', 'eventcrew'),
         };
     }
 

@@ -3189,3 +3189,253 @@ msgstr "eri roolia,"
 #: templates/admin/settings.php:343 templates/public/signup.php:1700
 msgid "times each"
 msgstr "kertaa kutakin"
+
+#: src/Telegram/GiftService.php:114
+#. translators: 1: person's name, 2: their current credit balance
+msgid "%1$s (%2$d credit now)"
+msgid_plural "%1$s (%2$d credits now)"
+msgstr[0] "%1$s (nyt %2$d vapaalippu)"
+msgstr[1] "%1$s (nyt %2$d vapaalippua)"
+
+#: src/Telegram/GuestListService.php:217
+#. translators: %d: number of guests
+msgid "%d guest"
+msgid_plural "%d guests"
+msgstr[0] "%d vieras"
+msgstr[1] "%d vierasta"
+
+#: src/Telegram/GuestListService.php:221
+#. translators: %d: number of people including plus-ones
+msgid "%d person in all"
+msgid_plural "%d people in all"
+msgstr[0] "yhteensä %d henki"
+msgstr[1] "yhteensä %d henkeä"
+
+#: src/Telegram/HelpService.php:103
+msgid "/board – show the open tasks"
+msgstr "/board – näytä avoimet tehtävät"
+
+#: src/Telegram/HelpService.php:113
+msgid "/cancel – stop the question I asked you"
+msgstr "/cancel – lopeta kysymys, jonka esitin"
+
+#: src/Telegram/HelpService.php:135
+msgid "/eligible – who may hold each role"
+msgstr "/eligible – kuka voi saada minkäkin roolin"
+
+#: src/Telegram/HelpService.php:133
+msgid "/gift – give free-entry credits"
+msgstr "/gift – anna vapaalippuja"
+
+#: src/Telegram/HelpService.php:123
+msgid "/guest [date] – the guest list"
+msgstr "/guest [päivä] – vieraslista"
+
+#: src/Telegram/HelpService.php:132
+msgid "/guest add [date] Name +N ; note – add a guest (also edit, remove)"
+msgstr "/guest add [päivä] Nimi +N ; huomio – lisää vieras (myös edit, remove)"
+
+#: src/Telegram/HelpService.php:112
+msgid "/language – change the language"
+msgstr "/language – vaihda kieli"
+
+#: src/Telegram/HelpService.php:105
+msgid "/me history – your past tasks"
+msgstr "/me history – menneet tehtäväsi"
+
+#: src/Telegram/HelpService.php:106
+msgid "/me tickets – your tickets for coming nights"
+msgstr "/me tickets – lippusi tuleviin iltoihin"
+
+#: src/Telegram/HelpService.php:104
+msgid "/me – your tasks, credits and standing"
+msgstr "/me – tehtäväsi, vapaalippusi ja luotettavuutesi"
+
+#: src/Telegram/HelpService.php:111
+msgid "/notifications – choose which messages you get"
+msgstr "/notifications – valitse, mitä viestejä saat"
+
+#: src/Telegram/HelpService.php:108
+msgid "/replace – take over someone’s task"
+msgstr "/replace – ota jonkun tehtävä hoitaaksesi"
+
+#: src/Telegram/HelpService.php:134
+msgid "/roles – give or take roles, organizer status and passes"
+msgstr "/roles – anna tai poista rooleja, järjestäjän oikeudet ja luvat"
+
+#: src/Telegram/HelpService.php:121
+msgid "/roster [date] – who works that night; mark ✓ done, ⏰ late, ✗ no-show"
+msgstr "/roster [päivä] – kuka on töissä sinä iltana; merkitse ✓ tehty, ⏰ myöhässä, ✗ ei saapunut"
+
+#: src/Telegram/HelpService.php:124
+msgid "/sales – open the sales desk"
+msgstr "/sales – avaa myyntipiste"
+
+#: src/Telegram/HelpService.php:136
+msgid "/tasks – also ➕ to put a person on a task"
+msgstr "/tasks – myös ➕ lisää henkilö tehtävään"
+
+#: src/Telegram/HelpService.php:109
+msgid "/tasks – tasks for your roles"
+msgstr "/tasks – roolejesi tehtävät"
+
+#: src/Telegram/HelpService.php:107
+msgid "/ticket – spend a credit on a free-entry ticket"
+msgstr "/ticket – käytä vapaalippu"
+
+#: src/Telegram/HelpService.php:122
+msgid "/tickets [date] – the door list"
+msgstr "/tickets [päivä] – ovilista"
+
+#: src/Telegram/HelpService.php:110
+msgid "/web – a sign-in link for the crew web page"
+msgstr "/web – kirjautumislinkki crew-sivulle"
+
+#: src/Telegram/TicketRedemptionService.php:160
+msgid "Credit spent — send /me tickets to see your ticket."
+msgstr "Vapaalippu käytetty — lähetä /me tickets, niin näet lippusi."
+
+#: src/Telegram/TicketRedemptionService.php:159
+msgid "Credit spent — your ticket is in the next message."
+msgstr "Vapaalippu käytetty — lippusi on seuraavassa viestissä."
+
+#: src/Support/DoorLinkSender.php:304
+msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /sales to the bot."
+msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? Lähetä botille /sales."
+
+#: src/Telegram/HelpService.php:96
+msgid "EventCrew bot – commands"
+msgstr "EventCrew-botti – komennot"
+
+#: src/Telegram/HelpService.php:102
+msgid "Everyone"
+msgstr "Kaikki"
+
+#: src/Telegram/PermissionService.php:178
+msgid "Give a one-time pass"
+msgstr "Anna kertaluontoinen lupa"
+
+#: src/Telegram/UnreadableDate.php:15
+msgid "I could not read that date. Write it like 1.8. or 2026-08-01."
+msgstr "En ymmärtänyt päivämäärää. Kirjoita se näin: 1.8. tai 2026-08-01."
+
+#: src/Telegram/GiftService.php:125
+msgid "I couldn’t find anyone by that name. Send /gift to try again, with their exact name or an @mention."
+msgstr "En löytänyt ketään tällä nimellä. Lähetä /gift ja yritä uudelleen koko nimellä tai @-maininnalla."
+
+#: src/Telegram/RoleTaskBot.php:113 src/Telegram/RoleTaskBot.php:388
+msgid "Nothing was added. Start again with /tasks."
+msgstr "Mitään ei lisätty. Aloita uudelleen komennolla /tasks."
+
+#: src/Telegram/HelpService.php:69
+msgid "Nothing was waiting for an answer."
+msgstr "Mikään ei odottanut vastausta."
+
+#: src/Telegram/NotificationSettingsService.php:115
+msgid "Notification"
+msgstr "Ilmoitus"
+
+#: src/Telegram/RosterService.php:169
+msgid "Only organizers and that night’s welcome crew can mark attendance."
+msgstr "Vain järjestäjät ja sen illan tervetulotiimi voivat merkitä läsnäolon."
+
+#: src/Telegram/GuestListService.php:288
+msgid "Only organizers and that night’s welcome crew can see the guest list."
+msgstr "Vain järjestäjät ja sen illan tervetulotiimi näkevät vieraslistan."
+
+#: src/Telegram/DoorListService.php:184
+msgid "Only organizers and that night’s welcome crew can see who has a ticket."
+msgstr "Vain järjestäjät ja sen illan tervetulotiimi näkevät, kenellä on lippu."
+
+#: src/Support/SalesDeskGate.php:210
+msgid "Only organizers and tonight’s welcome crew can open it."
+msgstr "Vain järjestäjät ja tämän illan tervetulotiimi voivat avata sen."
+
+#: src/Telegram/HelpService.php:131
+msgid "Organizers"
+msgstr "Järjestäjät"
+
+#: templates/public/door.php:284
+msgid "Organizers, and tonight’s welcome crew once marked arrived."
+msgstr "Järjestäjät sekä tämän illan tervetulotiimi, kun se on merkitty saapuneeksi."
+
+#: src/Telegram/PermissionService.php:161
+#. translators: %s: person's name
+msgid "Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk. It only gives a pass; it cannot take one away."
+msgstr "Henkilön %s roolit. Napauta roolia antaaksesi tai poistaaksesi sen. ✅ = hänellä on se.\n🎟 antaa kertaluontoisen luvan ilmoittautua riskitasolla. Se vain antaa luvan; se ei voi poistaa sitä."
+
+#: src/Telegram/ProfileService.php:102
+msgid "Send /me history to see everything you’ve done."
+msgstr "Lähetä /me history, niin näet kaiken, mitä olet tehnyt."
+
+#: src/Telegram/HelpService.php:79
+msgid "Send me /help in a private chat for more."
+msgstr "Lähetä minulle /help yksityisviestinä, niin näet lisää."
+
+#: src/Telegram/HelpService.php:68
+msgid "Stopped. Nothing is waiting for an answer."
+msgstr "Lopetettu. Mikään ei odota vastausta."
+
+#: src/Telegram/RoleTaskBot.php:258
+msgid "Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel"
+msgstr "Roolejesi tehtävät. Ne eivät näy ryhmän taululla.\n✋ = ilmoittaudu · ❌ = peru"
+
+#: src/Telegram/PermissionService.php:228 src/Telegram/PermissionService.php:356
+msgid "That button no longer works. Send /roles again."
+msgstr "Tämä painike ei enää toimi. Lähetä /roles uudelleen."
+
+#: src/Telegram/GiftService.php:169
+msgid "That person is no longer in EventCrew. Send /gift to pick someone else."
+msgstr "Tämä henkilö ei ole enää EventCrew’ssa. Lähetä /gift ja valitse joku muu."
+
+#: src/Telegram/PermissionService.php:238
+msgid "That person is no longer in EventCrew. Send /roles to pick someone else."
+msgstr "Tämä henkilö ei ole enää EventCrew’ssa. Lähetä /roles ja valitse joku muu."
+
+#: src/Telegram/RosterService.php:125
+msgid "That sign-up no longer exists. Send /roster again to see the current list."
+msgstr "Tätä ilmoittautumista ei enää ole. Lähetä /roster uudelleen, niin näet nykyisen listan."
+
+#: src/Telegram/RoleTaskBot.php:223
+msgid "There are no upcoming tasks for your roles."
+msgstr "Rooleillesi ei ole tulevia tehtäviä."
+
+#: src/Support/DoorHandoff.php:118
+msgid "This person cannot run the sales desk tonight. Only organizers, and the welcome crew once marked arrived tonight, can."
+msgstr "Tämä henkilö ei voi hoitaa myyntipistettä tänä iltana. Vain järjestäjät ja tämän illan saapuneeksi merkitty tervetulotiimi voivat."
+
+#: src/Telegram/HelpService.php:120
+msgid "Welcome crew  (date: 1.8. or 2026-08-01; default: next night)"
+msgstr "Tervetulotiimi  (päivä: 1.8. tai 2026-08-01; oletus: seuraava ilta)"
+
+#: src/Support/WelcomeSender.php:432
+msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
+msgstr "Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja /me tickets listaa kaikki lippusi."
+
+#: src/Telegram/TicketRedemptionService.php:74
+#. translators: %d: tasks a person completes to earn one free-entry credit
+msgid "You have no free-entry credits yet — you earn one for every task you complete."
+msgid_plural "You have no free-entry credits yet — you earn one for every %d tasks you complete."
+msgstr[0] "Sinulla ei ole vielä vapaalippuja — saat yhden jokaisesta tekemästäsi tehtävästä."
+msgstr[1] "Sinulla ei ole vielä vapaalippuja — saat yhden jokaista %d tekemääsi tehtävää kohden."
+
+#: src/Telegram/PermissionService.php:369
+#. translators: %s: role name, such as DJ
+msgid "You now have the role %s. Its tasks are shown to you with /tasks in the bot and on the crew page, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät botissa komennolla /tasks ja crew-sivulla, ja voit ilmoittautua niihin."
+
+#: src/Telegram/BoardService.php:538 src/Telegram/RoleTaskBot.php:324
+msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
+msgstr "Viimeaikaisen läsnäolosi vuoksi ilmoittautumisesi on toistaiseksi keskeytetty — lähetä viesti jollekin järjestäjälle."
+
+#: src/Support/ClaimNotifier.php:63
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /tasks, or tap Cancel in your reminder. Or ask someone to type /replace to take it over."
+msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla /tasks, tai napauta Peru muistutuksessasi. Tai pyydä jotakuta kirjoittamaan /replace, niin hän ottaa tehtävän."
+
+#: src/Telegram/RosterService.php:350
+msgid "✓ done · ⏰ late · ✗ no-show"
+msgstr "✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
+
+#: src/Telegram/NotificationSettingsService.php:101
+msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."
+msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram tai ✉ sähköposti menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina molempia kanavia."

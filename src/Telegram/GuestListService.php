@@ -213,9 +213,12 @@ final class GuestListService
         } else {
             $people = array_sum(array_map(static fn (Guest $guest): int => $guest->headcount(), $guests));
             $lines[] = sprintf(
-                /* translators: 1: number of guests, 2: number of people including plus-ones */
-                __('%1$d guests, %2$d people in all', 'eventcrew'),
-                count($guests),
+                /* translators: %d: number of guests */
+                _n('%d guest', '%d guests', count($guests), 'eventcrew'),
+                count($guests)
+            ) . ', ' . sprintf(
+                /* translators: %d: number of people including plus-ones */
+                _n('%d person in all', '%d people in all', $people, 'eventcrew'),
                 $people
             );
             $lines[] = '';
@@ -261,7 +264,7 @@ final class GuestListService
     private function errorMessage(string $error): string
     {
         return match ($error) {
-            'date' => __('I could not read that date. Try 1.8. or 2026-08-01.', 'eventcrew'),
+            'date' => UnreadableDate::text(),
             'number' => __('Give the guest’s number from the list, e.g. /guest remove 2', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'name' => __('Give the guest’s name, e.g. /guest add Anna Virtanen ; DJ’s partner (no extra people), or /guest add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)', 'eventcrew'),
@@ -282,6 +285,6 @@ final class GuestListService
 
     private function deniedViewMessage(): string
     {
-        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can see the guest list.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('Only organizers and that night’s welcome crew can see the guest list.', 'eventcrew');
     }
 }

@@ -98,11 +98,16 @@ final class VerificationController
             ? __('You can return to Telegram and sign up for tasks.', 'eventcrew')
             : __('Ask the bot for a fresh one by sending it /start.', 'eventcrew');
 
+        // The page is written in the person's language; outside a run() that is
+        // WordPress's own.
+        $lang = Language::current() ?? str_replace('_', '-', (string) get_bloginfo('language'));
+
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-            '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:32em;margin:4em auto;padding:0 1em;text-align:center"><h1>%1$s</h1><p>%2$s</p></body></html>',
+            '<!doctype html><html lang="%3$s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:32em;margin:4em auto;padding:0 1em;text-align:center"><h1>%1$s</h1><p>%2$s</p></body></html>',
             esc_html($heading),
-            esc_html($detail)
+            esc_html($detail),
+            esc_attr($lang)
         );
     }
 }

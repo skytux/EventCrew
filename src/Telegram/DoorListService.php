@@ -55,10 +55,7 @@ final class DoorListService
             $date = Dates::parseUserDate($payload, current_time('Y-m-d'));
 
             if ('' === $date) {
-                $this->telegram->sendMessage(
-                    $chatId,
-                    __('I could not read that date. Try /tickets 1.8. or /tickets 2026-08-01.', 'eventcrew')
-                );
+                $this->telegram->sendMessage($chatId, UnreadableDate::text());
 
                 return;
             }
@@ -184,6 +181,6 @@ final class DoorListService
 
     private function deniedMessage(): string
     {
-        return __('Only organizers, and the crew on that night’s tasks that open the sales desk, can see who has a ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('Only organizers and that night’s welcome crew can see who has a ticket.', 'eventcrew');
     }
 }

@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
@@ -52,10 +53,7 @@ final class ReplacementService
 
         if (null === $cover || ! $cover->isEmailVerified()) {
             // A harmless nudge, so it goes back to wherever they asked.
-            $this->telegram->sendMessage(
-                $chatId,
-                __('Set yourself up first, then you can cover someone’s task.', 'eventcrew')
-            );
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
 
             return;
         }
@@ -71,6 +69,17 @@ final class ReplacementService
     public function isAwaitingTarget(int $telegramUserId): bool
     {
         return false !== get_transient(self::AWAIT_PREFIX . $telegramUserId);
+    }
+
+    /**
+     * /cancel: forgets the "whose task?" question. True when one was waiting.
+     */
+    public function cancelPending(int $telegramUserId): bool
+    {
+        $waiting = $this->isAwaitingTarget($telegramUserId);
+        delete_transient(self::AWAIT_PREFIX . $telegramUserId);
+
+        return $waiting;
     }
 
     /**
@@ -110,7 +119,7 @@ final class ReplacementService
                     'text' => sprintf(
                         '%s · %s · %s · %s',
                         $person->name(),
-                        $task->taskDate,
+                        Dates::dayLabel($task->taskDate),
                         $task->roleLabel(),
                         $task->eventName()
                     ),
@@ -150,7 +159,7 @@ final class ReplacementService
         $cover = $this->people->findByTelegramUserId($coverTelegramId);
 
         if (null === $cover || ! $cover->isEmailVerified()) {
-            $this->telegram->answerCallbackQuery($callbackId, __('Set yourself up first.', 'eventcrew'), true);
+            $this->telegram->answerCallbackQuery($callbackId, SetupNudge::text(), true);
 
             return;
         }

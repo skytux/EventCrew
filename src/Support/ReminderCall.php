@@ -181,8 +181,9 @@ final class ReminderCall
     private function whenText(Task $task): string
     {
         $time = $task->timeRange();
+        $day = Dates::dayLabel($task->taskDate);
 
-        return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
+        return '' === $time ? $day : $day . ' ' . $time;
     }
 
     /**
