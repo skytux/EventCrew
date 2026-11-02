@@ -49,9 +49,17 @@ final class SignupController
     public const REVOKE_ACTION = 'eventcrew_web_revoke_sessions';
     public const SALES_ACTION = 'eventcrew_web_sales';
     public const LANGUAGE_ACTION = 'eventcrew_web_language';
+    public const PROFILE_ACTION = 'eventcrew_web_profile';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
+
+    /** The link that confirms a new email address from the Settings tab. */
+    private const EMAIL_PURPOSE = 'email_change';
+    private const EMAIL_TTL = DAY_IN_SECONDS;
+
+    /** Holds the new address, keyed by a hash of the link's token. */
+    private const EMAIL_PENDING_PREFIX = 'eventcrew_email_change_';
 
     /** Composes the board's view model; the presentation half of this class. */
     private readonly SignupBoardView $boardView;
@@ -96,7 +104,20 @@ final class SignupController
         add_action('template_redirect', [$this, 'preventCachingWhenSignedIn']);
         add_filter('w3tc_minify_css_do_tag_minification', [$this, 'keepStyleOutOfMinify'], 10, 2);
 
-        foreach ([self::LOGIN_ACTION, self::CLAIM_ACTION, self::DROP_ACTION, self::LOGOUT_ACTION, self::REDEEM_ACTION, self::PREFS_ACTION, self::REVOKE_ACTION, self::SALES_ACTION, self::LANGUAGE_ACTION] as $action) {
+        $actions = [
+            self::LOGIN_ACTION,
+            self::CLAIM_ACTION,
+            self::DROP_ACTION,
+            self::LOGOUT_ACTION,
+            self::REDEEM_ACTION,
+            self::PREFS_ACTION,
+            self::REVOKE_ACTION,
+            self::SALES_ACTION,
+            self::LANGUAGE_ACTION,
+            self::PROFILE_ACTION,
+        ];
+
+        foreach ($actions as $action) {
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
@@ -320,6 +341,7 @@ final class SignupController
             'sales_action' => self::SALES_ACTION,
             'sales_desk' => null !== $person && $this->canOpenSalesDesk($person),
             'language_action' => self::LANGUAGE_ACTION,
+            'profile_action' => self::PROFILE_ACTION,
             'language' => null === $person ? null : ($person->language ?? Language::ENGLISH),
         ];
     }
@@ -404,22 +426,36 @@ final class SignupController
         $isNew = null === $person;
         $personId = $isNew ? $this->people->create(['email' => $email]) : $person->id;
 
+        // No account yet: nobody has ever confirmed this address, by a link or
+        // through the bot. The mail then says the link creates the account.
+        $hasAccount = null !== $person && ($person->isEmailVerified() || null !== $person->telegramUserId);
+
         // The link mail is in the language the person chose; a new one is
         // English until they choose.
-        Language::forPerson($person, fn () => $this->sendLoginLink($personId, $email, $isNew));
+        Language::forPerson($person, fn () => $this->sendLoginLink($personId, $email, $isNew, $hasAccount));
 
         return 'check_email';
     }
 
-    private function sendLoginLink(int $personId, string $email, bool $isNew): void
+    private function sendLoginLink(int $personId, string $email, bool $isNew, bool $hasAccount = true): void
     {
-        $body = __(
-            "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
-            'eventcrew'
-        );
+        // A comment inside __() hides the string from make-pot, so the
+        // long-line sniff is switched off around the whole statement instead.
+        // phpcs:disable Generic.Files.LineLength.TooLong
+        $body = $hasAccount
+            ? __(
+                "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
+                'eventcrew'
+            )
+            : __(
+                "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email.",
+                'eventcrew'
+            );
+        // phpcs:enable Generic.Files.LineLength.TooLong
 
         $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
-        $actions = [['label' => __('Sign in', 'eventcrew'), 'url' => $this->loginUrl($raw)]];
+        $label = $hasAccount ? __('Sign in', 'eventcrew') : __('Create my account', 'eventcrew');
+        $actions = [['label' => $label, 'url' => $this->loginUrl($raw)]];
 
         if ($isNew) {
             $body .= "\n\n" . PrivacyPolicy::noticeLine();
@@ -433,10 +469,127 @@ final class SignupController
         $this->mailer->toPerson(
             $personId,
             $email,
-            __('Your EventCrew sign-in link', 'eventcrew'),
+            $hasAccount ? __('Your EventCrew sign-in link', 'eventcrew') : __('Create your crew account', 'eventcrew'),
             $body,
             $actions
         );
+    }
+
+    /**
+     * The Settings tab's "Your details" form. A new name is saved at once. A
+     * new email address is not: a link goes to the new address, and the
+     * address changes only when that link is opened (confirmEmailChange). The
+     * notice code says which of these happened.
+     */
+    public function updateProfile(Person $person, string $name, string $email): string
+    {
+        $name = trim($name);
+        $email = sanitize_email($email);
+
+        if ('' === $name) {
+            return 'profile_no_name';
+        }
+
+        $current = Person::isPlaceholderEmail($person->email) ? '' : $person->email;
+        $emailChanged = '' !== $email && 0 !== strcasecmp($email, $current);
+
+        if ($emailChanged && ! is_email($email)) {
+            return 'bad_email';
+        }
+
+        if ($emailChanged) {
+            $owner = $this->people->findByEmail($email);
+
+            if (null !== $owner && $owner->id !== $person->id) {
+                return 'email_taken';
+            }
+        }
+
+        $nameChanged = $name !== $person->displayName;
+
+        if ($nameChanged) {
+            $this->people->update($person->id, ['display_name' => mb_substr($name, 0, 191)]);
+        }
+
+        if (! $emailChanged) {
+            return $nameChanged ? 'profile_saved' : 'profile_unchanged';
+        }
+
+        $raw = $this->tokens->issue($person->id, self::EMAIL_PURPOSE, self::EMAIL_TTL);
+        set_transient(self::EMAIL_PENDING_PREFIX . $this->pendingKey($raw), $email, self::EMAIL_TTL);
+
+        $url = add_query_arg(
+            [
+                'action' => self::PROFILE_ACTION,
+                'token' => $raw,
+                'redirect_to' => rawurlencode($this->safeRedirect()),
+            ],
+            admin_url('admin-ajax.php')
+        );
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- a comment inside __() would hide the string from make-pot.
+        $this->mailer->toUnconfirmedAddress(
+            $email,
+            __('Confirm your new email address', 'eventcrew'),
+            __(
+                "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email.",
+                'eventcrew'
+            ),
+            [['label' => __('Confirm new email', 'eventcrew'), 'url' => $url]]
+        );
+        // phpcs:enable Generic.Files.LineLength.TooLong
+
+        return $nameChanged ? 'profile_saved_email_sent' : 'email_sent';
+    }
+
+    /**
+     * Opens the link from updateProfile(): moves the account to the new
+     * address, counts it as confirmed, and tells the old address. Returns the
+     * notice code.
+     */
+    public function confirmEmailChange(string $token): string
+    {
+        $key = self::EMAIL_PENDING_PREFIX . $this->pendingKey($token);
+        $email = get_transient($key);
+        $personId = is_string($email) && '' !== $email ? $this->tokens->consume($token, self::EMAIL_PURPOSE) : null;
+        $person = null === $personId ? null : $this->people->find($personId);
+
+        if (null === $person || ! is_string($email)) {
+            return 'bad_email_link';
+        }
+
+        delete_transient($key);
+
+        // Someone else may have taken the address in the 24 hours since.
+        $owner = $this->people->findByEmail($email);
+
+        if (null !== $owner && $owner->id !== $person->id) {
+            return 'email_taken';
+        }
+
+        $this->people->update($person->id, ['email' => $email]);
+        $this->people->markEmailVerified($person->id);
+
+        Language::forPerson($person, function () use ($person, $email): void {
+            $this->mailer->toPerson(
+                $person->id,
+                $person->email,
+                __('Your crew account email was changed', 'eventcrew'),
+                sprintf(
+                    /* translators: %s: the new email address */
+                    __("The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer.", 'eventcrew'),
+                    $email
+                )
+            );
+        });
+
+        return 'email_changed';
+    }
+
+    /** The token is only ever stored hashed; the transient key follows suit. */
+    private function pendingKey(string $rawToken): string
+    {
+        return substr(hash('sha256', trim($rawToken)), 0, 32);
     }
 
     /**
@@ -578,6 +731,12 @@ final class SignupController
             $this->redirect($redirect, $notice);
         }
 
+        if (self::PROFILE_ACTION === $action && isset($_GET['token'])) {
+            // The link from the new address's mailbox. It needs no session: the
+            // token names the person, and only the new mailbox has it.
+            $this->redirect($redirect, $this->confirmEmailChange(sanitize_text_field(wp_unslash($_GET['token']))));
+        }
+
         if (self::LOGIN_ACTION === $action) {
             // The CAPTCHA is checked before a link is issued or mailed, so a
             // script that never solved it cannot make the form send mail at
@@ -614,6 +773,12 @@ final class SignupController
         if (self::LANGUAGE_ACTION === $action) {
             $chosen = isset($_POST['language']) ? sanitize_key(wp_unslash($_POST['language'])) : '';
             $this->redirect($redirect, $this->chooseLanguage($person->id, $chosen));
+        }
+
+        if (self::PROFILE_ACTION === $action) {
+            $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+            $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+            $this->redirect($redirect, $this->updateProfile($person, $name, $email));
         }
 
         if (self::LOGOUT_ACTION === $action) {
@@ -748,6 +913,16 @@ final class SignupController
             'ticket_already_redeemed' => __('You already have a free-entry ticket for that night.', 'eventcrew'),
             'ticket_not_eligible' => __('That event is no longer available.', 'eventcrew'),
             'blocked' => __('Your account is blocked. Talk to an organizer.', 'eventcrew'),
+            'profile_saved' => __('Your name is saved.', 'eventcrew'),
+            'profile_unchanged' => __('Nothing was changed.', 'eventcrew'),
+            'profile_no_name' => __('Your name cannot be empty.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'email_sent' => __('We sent a link to the new address. Your email changes when you open it.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'profile_saved_email_sent' => __('Your name is saved. We sent a link to the new address. Your email changes when you open it.', 'eventcrew'),
+            'email_taken' => __('That email address belongs to another crew account.', 'eventcrew'),
+            'email_changed' => __('Your email address is changed.', 'eventcrew'),
+            'bad_email_link' => __('That email change link is invalid or has expired.', 'eventcrew'),
         ];
 
         // The Admin tab's outcomes are worded by its own controller.

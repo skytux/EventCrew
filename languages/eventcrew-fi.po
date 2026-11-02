@@ -3768,3 +3768,66 @@ msgid "🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free
 msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events."
 msgstr[0] "🎁 Sait %d vapaalipun. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää sen tulevaan tapahtumaan."
 msgstr[1] "🎁 Sait %d vapaalippua. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää ne tuleviin tapahtumiin."
+
+msgid "A new email address takes effect when you open the link we send to it."
+msgstr "Uusi sähköpostiosoite otetaan käyttöön, kun avaat linkin, jonka lähetämme siihen."
+
+msgid "Confirm new email"
+msgstr "Vahvista uusi sähköposti"
+
+msgid "Confirm your new email address"
+msgstr "Vahvista uusi sähköpostiosoitteesi"
+
+msgid "Create my account"
+msgstr "Luo tilini"
+
+msgid "Create your crew account"
+msgstr "Luo crew-tilisi"
+
+msgid "New to the crew? Use the same field. If the address has no account yet, the link creates one."
+msgstr "Uusi crew’ssa? Käytä samaa kenttää. Jos osoitteella ei vielä ole tiliä, linkki luo sen."
+
+msgid "Nothing was changed."
+msgstr "Mitään ei muutettu."
+
+msgid "Save details"
+msgstr "Tallenna tiedot"
+
+msgid "Sign in or sign up"
+msgstr "Kirjaudu tai liity"
+
+msgid "That email address belongs to another crew account."
+msgstr "Tämä sähköpostiosoite kuuluu toiseen crew-tiliin."
+
+msgid "That email change link is invalid or has expired."
+msgstr "Sähköpostin vaihtolinkki on virheellinen tai vanhentunut."
+
+msgid "The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer."
+msgstr "Crew-tilisi sähköpostiosoite on nyt %s. Crew’n viestit menevät sinne tästä lähtien.\n\nJos et tehnyt tätä itse, kerro järjestäjälle."
+
+msgid "We sent a link to the new address. Your email changes when you open it."
+msgstr "Lähetimme linkin uuteen osoitteeseen. Sähköpostisi vaihtuu, kun avaat sen."
+
+msgid "Your crew account email was changed"
+msgstr "Crew-tilisi sähköposti vaihdettiin"
+
+msgid "Your details"
+msgstr "Omat tiedot"
+
+msgid "Your email address is changed."
+msgstr "Sähköpostiosoitteesi on vaihdettu."
+
+msgid "Your name cannot be empty."
+msgstr "Nimi ei voi olla tyhjä."
+
+msgid "Your name is saved."
+msgstr "Nimesi on tallennettu."
+
+msgid "Your name is saved. We sent a link to the new address. Your email changes when you open it."
+msgstr "Nimesi on tallennettu. Lähetimme linkin uuteen osoitteeseen. Sähköpostisi vaihtuu, kun avaat sen."
+
+msgid "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email."
+msgstr "Tällä sähköpostiosoitteella ei ole vielä crew-tiliä. Alla oleva painike luo tilisi ja kirjaa sinut sisään.\n\nLinkki on voimassa 30 minuuttia ja toimii kerran. Jos et pyytänyt tätä, voit jättää viestin huomiotta."
+
+msgid "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email."
+msgstr "Alla olevalla painikkeella tästä tulee crew-tilisi sähköpostiosoite.\n\nLinkki on voimassa 24 tuntia ja toimii kerran. Siihen asti tilisi pitää vanhan osoitteensa. Jos et pyytänyt tätä, voit jättää viestin huomiotta."

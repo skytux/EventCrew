@@ -80,7 +80,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         ?>
         <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card">
             <header class="eventcrew-event-head">
-                <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in', 'eventcrew'); ?></h2>
+                <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in or sign up', 'eventcrew'); ?></h2>
             </header>
             <div class="eventcrew-card-body">
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
@@ -112,10 +112,23 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
                             data-theme="auto"
                             data-size="flexible"></div>
+                        <script>
+                        // Turnstile's flexible widget is never narrower than
+                        // 300px and spills out of a narrower card. Its compact
+                        // size fits 150px. This runs before api.js is loaded,
+                        // so the widget is drawn at the right size first time.
+                        (function () {
+                            var box = document.currentScript.previousElementSibling;
+                            if (box && box.clientWidth < 300) {
+                                box.setAttribute('data-size', 'compact');
+                            }
+                        }());
+                        </script>
                     <?php endif; ?>
                     <button type="submit" class="wp-element-button"><?php esc_html_e('Email me a sign-in link', 'eventcrew'); ?></button>
                 </div>
                 <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('No password — we email you a link, good for 30 minutes.', 'eventcrew'); ?></p>
+                <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('New to the crew? Use the same field. If the address has no account yet, the link creates one.', 'eventcrew'); ?></p>
                 <?php
                 /*
                  * The privacy line sits with the field it is about, not in a
@@ -391,6 +404,32 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
         <section class="eventcrew-panel" id="eventcrew-panel-settings" data-eventcrew-panel="settings" aria-labelledby="eventcrew-tab-settings">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Settings', 'eventcrew'); ?></h2>
+
+            <?php
+            $eventcrew_profile_action = (string) ($view['profile_action'] ?? '');
+
+            if ('' !== $eventcrew_profile_action && null !== $eventcrew_person) :
+                $eventcrew_profile_email = \EventCrew\Models\Person::isPlaceholderEmail($eventcrew_person->email) ? '' : $eventcrew_person->email;
+                ?>
+                <section class="eventcrew-event eventcrew-me-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Your details', 'eventcrew'); ?></h3>
+                </header>
+                <form class="eventcrew-card-body eventcrew-profile" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_profile_action); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <label for="eventcrew-profile-name"><?php esc_html_e('Name', 'eventcrew'); ?></label>
+                    <input type="text" id="eventcrew-profile-name" name="name" required maxlength="191" autocomplete="name"
+                        class="wp-element-input" value="<?php echo esc_attr($eventcrew_person->displayName); ?>">
+                    <label for="eventcrew-profile-email"><?php esc_html_e('Email', 'eventcrew'); ?></label>
+                    <input type="email" id="eventcrew-profile-email" name="email" autocomplete="email"
+                        class="wp-element-input" value="<?php echo esc_attr($eventcrew_profile_email); ?>">
+                    <p class="eventcrew-muted"><?php esc_html_e('A new email address takes effect when you open the link we send to it.', 'eventcrew'); ?></p>
+                    <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-settings-btn"><?php esc_html_e('Save details', 'eventcrew'); ?></button>
+                </form>
+                </section>
+            <?php endif; ?>
 
             <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
                 <section class="eventcrew-event eventcrew-me-card">

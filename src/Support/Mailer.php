@@ -57,6 +57,30 @@ final class Mailer
     }
 
     /**
+     * A mail to an address nobody has confirmed yet, such as the new address in
+     * an email change. Unlike toPerson() the footer carries no sign-in link:
+     * a mistyped address would otherwise hand a stranger a way into the
+     * account. The footer points at the public page instead.
+     *
+     * @param array<int, array{label: string, url: string}> $actions
+     */
+    public function toUnconfirmedAddress(string $to, string $subject, string $body, array $actions = []): bool
+    {
+        $board = $this->boardUrl();
+        $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($board);
+
+        $sent = EmailTemplate::enabled()
+            ? $this->sendHtml($to, $subject, $body, $actions, $board, $text)
+            : (bool) wp_mail($to, $subject, $text);
+
+        if (! $sent) {
+            $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
+        }
+
+        return $sent;
+    }
+
+    /**
      * A sample of the real thing, for the Settings button that proves the
      * template and the site's mail setup work before anyone relies on them.
      */
