@@ -256,12 +256,20 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['plus_ones' => 1], $this->wpdb->updates[0]['data']);
     }
 
-    public function testThePlusOnesOfATicketBuyerCanBeChanged(): void
+    public function testThePlusOnesOfATicketSoldAtTheDoorCanBeChanged(): void
+    {
+        $this->wpdb->nextResults[] = [['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'door']];
+
+        self::assertTrue($this->desk()->setPlusOnes(self::NIGHT, CheckinRepository::KIND_BUYER, 9, 3));
+        self::assertSame(['plus_ones' => 3], $this->wpdb->updates[0]['data']);
+    }
+
+    public function testAHolviTicketHasNoPlusOnes(): void
     {
         $this->wpdb->nextResults[] = [['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'paste']];
 
         self::assertTrue($this->desk()->setPlusOnes(self::NIGHT, CheckinRepository::KIND_BUYER, 9, 3));
-        self::assertSame(['plus_ones' => 3], $this->wpdb->updates[0]['data']);
+        self::assertSame(['plus_ones' => 0], $this->wpdb->updates[0]['data']);
     }
 
     public function testADoorTicketIsRecordedAndCheckedIn(): void
@@ -334,6 +342,9 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['Holvi · ada@example.com', 'Holvi'], array_column($sections[3]['rows'], 'detail'));
         self::assertTrue($sections[3]['rows'][0]['in']);
         self::assertSame(['Cy'], array_column($sections[4]['rows'], 'name'));
+        // Holvi tickets get no +1 on the desk; a ticket sold at the door does.
+        self::assertSame([0, 0], array_column($sections[3]['rows'], 'max'));
+        self::assertSame([CheckinRepository::MAX_PLUS_ONES], array_column($sections[4]['rows'], 'max'));
     }
 
     public function testTheCountWithoutANameIsChangedInsideTheDatabaseInOneStatement(): void

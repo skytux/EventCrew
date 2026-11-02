@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.64.0
+Stable tag: 1.64.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.64.1 =
+Sales desk: Holvi ticket rows no longer show the +1 buttons. A Holvi ticket admits one person. Tickets sold at the door keep their +1.
 
 = 1.64.0 =
 Sales desk: ticket QR scans are taken only inside a time window, by default from 60 minutes before the event starts until the event ends (Settings: "Ticket scans open" and "Ticket scans close"). A scan outside it says when scanning opens or that it closed. A max number of people per event (Settings: "Max people per event"): the header reads "x of n (z max)", x turns green when everyone expected is in, n turns orange from 90% of the max and red at the max, and adding stops at the max. With "Allow going over the max" ticked, adding goes on and the desk shows a warning after every action over the max.
@@ -756,6 +759,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.64.1 =
+No upgrade steps.
 
 = 1.64.0 =
 No upgrade steps. There is no max until one is set in Settings.
