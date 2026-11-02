@@ -1798,7 +1798,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
         self::assertStringContainsString(CrewAdminController::PERSON_ACTION, $html);
-        self::assertStringContainsString('Send me the sales desk link', $html);
+        self::assertStringContainsString('Send me the link', $html);
     }
 
     public function testTheRosterScreenShowsEveryCardForTheDate(): void
