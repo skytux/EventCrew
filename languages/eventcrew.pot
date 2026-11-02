@@ -1938,7 +1938,7 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
-#: templates/public/door.php:291 templates/public/door.php:295
+#: templates/public/door.php:290 templates/public/door.php:295
 msgid "Login as"
 msgstr ""
 
@@ -2464,7 +2464,7 @@ msgstr ""
 msgid "Open EventCrew in wp-admin:"
 msgstr ""
 
-#: templates/public/door.php:73 templates/public/door.php:290
+#: templates/public/door.php:73 templates/public/door.php:291
 msgid "Open on other device"
 msgstr ""
 

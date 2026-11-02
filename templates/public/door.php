@@ -287,8 +287,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     <p class="ec-msg" id="ec-other-msg" role="status"></p>
 
     <div id="ec-other-choose" class="ec-stack">
-        <button type="button" id="ec-pick-own"><?php esc_html_e('Open on other device', 'eventcrew'); ?></button>
         <button type="button" id="ec-pick-as"><?php esc_html_e('Login as', 'eventcrew'); ?></button>
+        <button type="button" id="ec-pick-own"><?php esc_html_e('Open on other device', 'eventcrew'); ?></button>
     </div>
 
     <div id="ec-other-people" hidden>
