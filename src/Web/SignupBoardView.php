@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
@@ -212,7 +213,7 @@ final class SignupBoardView
      * @param array<int, Task> $tasks
      * @param array<int, int> $occupancy
      * @param array<int, bool> $mine
-     * @return array<int, array{title: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string}>}>
+     * @return array<int, array{title: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool}>}>
      */
     private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
@@ -222,9 +223,10 @@ final class SignupBoardView
         $personRefusal = null === $person ? '' : $this->signup->personRefusal($person->id);
 
         foreach ($tasks as $task) {
-            // A restricted task is shown only to people holding its role,
-            // signed in; SignupService refuses anyone else's claim on it too.
-            if (SignupService::blocksRestrictedSlot($task, $person)) {
+            // Signed out, the board shows what the Telegram group board shows.
+            // Signed in, also the tasks of the person's roles; organizers see
+            // every task (BoardVisibility).
+            if (! BoardVisibility::visibleTo($task, $person)) {
                 continue;
             }
 
@@ -245,6 +247,9 @@ final class SignupBoardView
                 'taken' => $occupancy[$task->id] ?? 0,
                 'mine' => isset($mine[$task->id]),
                 'blocked' => $this->blockedReason($task, $person, $personRefusal),
+                // An organizer sees a restricted task of a role they do not
+                // hold, with a disabled "DJ only" button.
+                'role_only' => BoardVisibility::roleOnly($task, $person),
             ];
         }
 

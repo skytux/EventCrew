@@ -208,6 +208,10 @@ msgstr ""
 msgid "%s is now an organizer."
 msgstr ""
 
+#: templates/public/signup-board.php:202
+msgid "%s only"
+msgstr ""
+
 #: templates/admin/people.php:193
 #. translators: %s: the date the record was stripped
 msgid "%s — retention period passed"
@@ -232,7 +236,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1146
+#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1147
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:267
 #: src/Web/CrewAdminTasks.php:382
 msgid "(deleted person)"
@@ -753,7 +757,7 @@ msgstr ""
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
-#: templates/admin/people.php:120 templates/admin/tasks.php:269 templates/public/signup-board.php:204 templates/public/signup.php:713
+#: templates/admin/people.php:120 templates/admin/tasks.php:269 templates/public/signup-board.php:214 templates/public/signup.php:713
 #: templates/public/signup.php:1347
 msgid "Cancel"
 msgstr ""
@@ -959,7 +963,7 @@ msgstr ""
 msgid "Count one person in without a name"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:139 src/Telegram/RoleTaskBot.php:306 templates/public/door.php:64 templates/public/signup-board.php:220
+#: src/Telegram/RoleTaskBot.php:139 src/Telegram/RoleTaskBot.php:306 templates/public/door.php:64 templates/public/signup-board.php:230
 #: templates/public/signup.php:879
 msgid "Count toward free-entry credit?"
 msgstr ""
@@ -1509,7 +1513,7 @@ msgstr ""
 msgid "Free-entry ticket ready"
 msgstr ""
 
-#: templates/public/signup-board.php:209
+#: templates/public/signup-board.php:219
 msgid "Full"
 msgstr ""
 
@@ -1635,6 +1639,10 @@ msgstr ""
 
 #: src/Admin/RosterPage.php:399 src/Web/CrewAdminRoster.php:413
 msgid "Guest saved."
+msgstr ""
+
+#: templates/public/signup-board.php:54
+msgid "Guest view. Sign in above to take a task and see all tasks."
 msgstr ""
 
 #: src/Support/DoorDesk.php:206 src/Telegram/DoorListService.php:151
@@ -2109,7 +2117,7 @@ msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:113 src/Telegram/RoleTaskBot.php:279 templates/admin/people.php:146 templates/public/door.php:66
-#: templates/public/signup-board.php:221 templates/public/signup.php:730 templates/public/signup.php:883
+#: templates/public/signup-board.php:231 templates/public/signup.php:730 templates/public/signup.php:883
 msgid "No"
 msgstr ""
 
@@ -2179,7 +2187,7 @@ msgstr ""
 msgid "No name"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:84 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:85 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -2492,7 +2500,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:92
+#: src/Telegram/BoardRenderer.php:93
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
@@ -3115,7 +3123,7 @@ msgstr ""
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:93
+#: src/Telegram/BoardRenderer.php:94
 msgid "Send /me in a DM to get your summary."
 msgstr ""
 
@@ -3235,7 +3243,7 @@ msgid "Show QR code"
 msgstr ""
 
 #: templates/admin/settings.php:292 templates/public/signup.php:1583
-msgid "Show on the Telegram board"
+msgid "Show on the guest board (Telegram group and the web page when signed out)"
 msgstr ""
 
 #: src/Telegram/CommandMenu.php:293
@@ -3254,10 +3262,6 @@ msgstr ""
 msgid "Sign in"
 msgstr ""
 
-#: templates/public/signup-board.php:54
-msgid "Sign in above to take a task."
-msgstr ""
-
 #: templates/public/signup.php:207
 msgid "Sign out"
 msgstr ""
@@ -3270,7 +3274,7 @@ msgstr ""
 msgid "Sign out everywhere, including here?"
 msgstr ""
 
-#: templates/public/door.php:62 templates/public/signup-board.php:219 templates/public/signup-board.php:242
+#: templates/public/door.php:62 templates/public/signup-board.php:229 templates/public/signup-board.php:252
 msgid "Sign up"
 msgstr ""
 
@@ -4607,7 +4611,7 @@ msgid "Working: %s"
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:112 src/Telegram/RoleTaskBot.php:278 templates/admin/people.php:145 templates/public/door.php:65
-#: templates/public/signup-board.php:221 templates/public/signup.php:730 templates/public/signup.php:732 templates/public/signup.php:882
+#: templates/public/signup-board.php:231 templates/public/signup.php:730 templates/public/signup.php:732 templates/public/signup.php:882
 msgid "Yes"
 msgstr ""
 
@@ -4940,7 +4944,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:228
+#: src/Telegram/BoardRenderer.php:229
 msgid "full"
 msgstr ""
 
@@ -5167,11 +5171,11 @@ msgstr ""
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:119
+#: src/Telegram/BoardRenderer.php:120
 msgid "👋 New here? Sign up →"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:120
+#: src/Telegram/BoardRenderer.php:121
 msgid "👤 See my info →"
 msgstr ""
 
