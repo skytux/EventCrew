@@ -346,7 +346,7 @@
 .eventcrew-signup .eventcrew-admin-pair { display: flex; flex-wrap: wrap; gap: .7em; }
 .eventcrew-signup .eventcrew-admin-pair > span { flex: 1 1 10em; min-width: 0; }
 .eventcrew-signup .eventcrew-admin-pair > span:first-child:has(input[type="number"]) { flex: 0 0 6em; }
-.eventcrew-signup .eventcrew-admin-actions { display: flex; flex-wrap: wrap; gap: .5em; }
+.eventcrew-signup .eventcrew-admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; }
 .eventcrew-signup .eventcrew-admin-actions form { margin: 0; }
 /* Role holders: name, the role boxes and Save on one line each. */
 .eventcrew-signup .eventcrew-admin-holders { border-top: 1px solid var(--eventcrew-line); }
