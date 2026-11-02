@@ -99,6 +99,18 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString("scanMessage(text.arrived.replace('%s', row.name), false, true);", $html);
     }
 
+    public function testATicketAlreadyUsedIsSaidInRed(): void
+    {
+        $html = $this->page();
+
+        self::assertStringContainsString('"used":"%s: this ticket was already used tonight."', $html);
+        self::assertStringContainsString(
+            "scanMessage(scanRow.in ? text.used.replace('%s', scanRow.name) : '', true);",
+            $html
+        );
+        self::assertStringNotContainsString('ec-scan-already', $html);
+    }
+
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void
     {
         $html = $this->page();
