@@ -27,8 +27,8 @@
  * there is one, and otherwise by the bundled decoder of the qr library
  * (assets/vendor/qr-decode, MIT), which is loaded only when Scan is tapped.
  *
- * The "Other device" button opens a popup that shows a one-time login link as
- * a QR code: for this person on a second phone, or ("Login as") for another
+ * The "Switch" button (two opposite arrows) opens the "Other device" popup,
+ * which shows a one-time login link as a QR code: for this person on a second phone, or ("Login as") for another
  * organizer or sales-desk crew member (Support\DoorHandoff). The QR code
  * is drawn here as SVG by the bundled qrcode-generator library
  * (assets/vendor/qrcode-generator), the one file this page loads besides
@@ -45,7 +45,6 @@ if (! defined('ABSPATH')) {
 }
 
 $eventcrew_text = [
-    'in' => __('✓ In', 'eventcrew'),
     'out' => __('Check in', 'eventcrew'),
     'guests' => __('guests', 'eventcrew'),
     'credits' => __('credits', 'eventcrew'),
@@ -121,13 +120,26 @@ button{font:inherit;border:1px solid var(--line);background:var(--card);color:va
 button:disabled{opacity:.5}
 .ec-plus{display:flex;align-items:center;gap:4px}
 .ec-plus span{min-width:4.5em;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
-.ec-toggle.is-in{background:var(--in-bg);border-color:var(--in);color:var(--in);font-weight:700}
+.ec-toggle{width:48px;padding:0;color:var(--muted)}
+.ec-toggle svg{display:block;width:24px;height:24px;margin:auto}
+.ec-toggle.is-in{background:var(--in);border-color:var(--in);color:var(--bg)}
+.ec-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:58px;min-height:52px;padding:5px 6px}
+.ec-tile svg{display:block;width:24px;height:24px}
+.ec-tile span{font-size:11px;line-height:1.1;white-space:nowrap}
+.ec-spin{display:inline-block;width:20px;height:20px;border:2.5px solid var(--muted);border-right-color:transparent;border-radius:50%;animation:ec-spin .8s linear infinite}
+@keyframes ec-spin{to{transform:rotate(360deg)}}
+button.is-busy{position:relative;color:transparent!important}
+button.is-busy:disabled{opacity:1}
+button.is-busy::after{content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;border:2.5px solid var(--fg);border-right-color:transparent;border-radius:50%;animation:ec-spin .8s linear infinite}
+.ec-primary.is-busy::after,.ec-toggle.is-in.is-busy::after{border-color:var(--bg);border-right-color:transparent}
+li.ec-loading{justify-content:center;border-bottom:0;padding:16px 0}
+.ec-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
 .ec-anon-label{color:var(--muted);margin-right:auto}
-.ec-busy{margin-top:6px;padding:4px 10px;border-radius:10px;background:var(--card);color:var(--muted);font-size:14px}
+.ec-busy{display:flex;justify-content:center;margin-top:6px}
 #ec-anon-count{min-width:2ch;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .ec-primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
 dialog{width:calc(100% - 32px);max-width:480px;margin:16px auto auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--fg)}
@@ -166,9 +178,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     ?></small></div>
     </div>
     <div class="ec-buttons">
-    <button type="button" id="ec-scan-open"><?php esc_html_e('📷 Scan', 'eventcrew'); ?></button>
-    <button type="button" id="ec-other-open"><?php esc_html_e('📱 Other device', 'eventcrew'); ?></button>
-    <button type="button" class="ec-primary" id="ec-add-open"><?php esc_html_e('Add', 'eventcrew'); ?></button>
+    <button type="button" class="ec-tile" id="ec-scan-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17v4h-1"/></svg><span><?php esc_html_e('Scan', 'eventcrew'); ?></span></button>
+    <button type="button" class="ec-tile" id="ec-other-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3 3 7l4 4M3 7h14M17 13l4 4-4 4M21 17H7"/></svg><span><?php esc_html_e('Switch', 'eventcrew'); ?></span></button>
+    <button type="button" class="ec-tile ec-primary" id="ec-add-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><?php esc_html_e('Add', 'eventcrew'); ?></span></button>
     </div>
     </div>
     <div class="ec-anon">
@@ -180,7 +192,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <span id="ec-anon-count" aria-live="polite">0</span>
         <button type="button" id="ec-anon-more" aria-label="<?php esc_attr_e('Count one person in without a name', 'eventcrew'); ?>">+1</button>
     </div>
-    <div class="ec-busy" id="ec-busy" role="status" hidden><?php esc_html_e('⏳ Loading…', 'eventcrew'); ?></div>
+    <div class="ec-busy" id="ec-busy" role="status" hidden><span class="ec-spin" aria-hidden="true"></span><span class="ec-sr"><?php esc_html_e('Loading…', 'eventcrew'); ?></span></div>
     <input type="search" id="ec-filter" placeholder="<?php esc_attr_e('Find a name on the list', 'eventcrew'); ?>" autocomplete="off">
 </header>
 <main>
@@ -351,6 +363,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     var el = function (id) { return document.getElementById(id); };
 
+    // A fixed string, no data in it, so innerHTML is safe.
+    var tickIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"'
+        + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+
     function node(tag, cls, content) {
         var n = document.createElement(tag);
         if (cls) { n.className = cls; }
@@ -358,41 +374,67 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         return n;
     }
 
-    // While a request is out for more than a moment, "Loading…" shows: in
-    // the header, or inside the open popup, which covers the header.
-    var pending = 0;
-    var busyTimer = null;
+    // While a request is out for more than a moment, a spinner shows where
+    // the person tapped: on the button itself. A request no tap started gets
+    // the spinner line instead, inside the open popup (which covers the
+    // header) or in the header.
+    var tapped = null;
+    var lineCount = 0;
 
-    function busy(change) {
+    // Capture runs before the button's own handler, the bubbling listener
+    // after it, so a post() made inside a click handler sees its button.
+    document.addEventListener('click', function (event) {
+        tapped = event.target.closest ? event.target.closest('button') : null;
+    }, true);
+    document.addEventListener('click', function () { tapped = null; });
+
+    function showLine() {
         var line = el('ec-busy');
+        var open = document.querySelector('dialog[open]');
+        var head = open ? open.querySelector('.ec-dialog-head') : null;
 
-        pending = Math.max(0, pending + change);
-        clearTimeout(busyTimer);
-        busyTimer = null;
-
-        if (0 === pending) {
-            line.hidden = true;
-            return;
+        if (head) {
+            head.after(line);
+        } else if (open) {
+            open.prepend(line);
+        } else {
+            document.querySelector('header').insertBefore(line, el('ec-filter'));
         }
 
-        busyTimer = setTimeout(function () {
-            var open = document.querySelector('dialog[open]');
-            var head = open ? open.querySelector('.ec-dialog-head') : null;
+        line.hidden = false;
+    }
 
-            if (head) {
-                head.after(line);
-            } else if (open) {
-                open.prepend(line);
-            } else {
-                document.querySelector('header').insertBefore(line, el('ec-filter'));
+    // Starts the spinner for one request; the function it returns stops it.
+    function busy(source) {
+        var shown = '';
+        var wait = setTimeout(function () {
+            if (source && source.isConnected) {
+                source.classList.add('is-busy');
+                source.setAttribute('aria-busy', 'true');
+                shown = 'button';
+                return;
             }
 
-            line.hidden = false;
+            lineCount++;
+            shown = 'line';
+            showLine();
         }, 300);
+
+        return function () {
+            clearTimeout(wait);
+
+            if ('button' === shown) {
+                source.classList.remove('is-busy');
+                source.removeAttribute('aria-busy');
+            } else if ('line' === shown) {
+                lineCount = Math.max(0, lineCount - 1);
+                el('ec-busy').hidden = 0 === lineCount;
+            }
+        };
     }
 
     // A list request that did not go through: the list stops saying
-    // "Loading…" and says that instead, then the usual handler runs.
+    // spinning and says that instead, then the usual handler runs.
     function listFailed(list, handler) {
         return function (error) {
             if (!error || 'session' !== error.message) {
@@ -404,10 +446,15 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         };
     }
 
-    // A list waiting for its answer says so.
+    // A list waiting for its answer shows a spinner in its middle.
     function listLoading(list) {
+        var li = node('li', 'ec-loading');
+
+        li.setAttribute('role', 'status');
+        li.appendChild(node('span', 'ec-spin')).setAttribute('aria-hidden', 'true');
+        li.appendChild(node('span', 'ec-sr', text.loading));
         list.textContent = '';
-        list.appendChild(node('li', 'ec-muted', text.loading));
+        list.appendChild(li);
     }
 
     function post(action, fields) {
@@ -416,14 +463,14 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         body.append('csrf', config.csrf);
         Object.keys(fields).forEach(function (k) { body.append(k, fields[k]); });
 
-        busy(1);
+        var done = busy(tapped);
 
         return fetch(config.ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
-                busy(-1);
+                done();
                 return answer(response);
             }, function (error) {
-                busy(-1);
+                done();
                 throw error;
             });
     }
@@ -493,7 +540,13 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         var count = plusOf(row);
         var less = node('button', '', '−');
         var more = node('button', '', '+');
-        var toggle = node('button', 'ec-toggle' + (row.in ? ' is-in' : ''), row.in ? text.in : text.out);
+        var toggle = node('button', 'ec-toggle' + (row.in ? ' is-in' : ''));
+
+        // A tick: grey outline until the person is in, then green. The name
+        // stays "Check in"; aria-pressed says whether they are in, and a tap
+        // on a green tick undoes it.
+        toggle.innerHTML = tickIcon;
+        toggle.setAttribute('aria-label', text.out);
 
         who.appendChild(node('div', 'ec-name', row.name));
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }

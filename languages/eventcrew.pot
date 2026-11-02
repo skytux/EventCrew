@@ -195,7 +195,7 @@ msgstr ""
 msgid "%s has a one-time sign-up pass."
 msgstr ""
 
-#: templates/public/door.php:93
+#: templates/public/door.php:92
 msgid "%s is marked arrived."
 msgstr ""
 
@@ -439,7 +439,7 @@ msgstr ""
 msgid "Account"
 msgstr ""
 
-#: templates/public/door.php:171 templates/public/door.php:193
+#: templates/public/door.php:183 templates/public/door.php:205
 msgid "Add"
 msgstr ""
 
@@ -468,11 +468,11 @@ msgstr ""
 msgid "Add a person to a task"
 msgstr ""
 
-#: templates/admin/tasks.php:113 templates/public/door.php:57 templates/public/signup.php:1270
+#: templates/admin/tasks.php:113 templates/public/door.php:56 templates/public/signup.php:1270
 msgid "Add a task"
 msgstr ""
 
-#: templates/public/door.php:210 templates/public/door.php:222 templates/public/door.php:237
+#: templates/public/door.php:222 templates/public/door.php:234 templates/public/door.php:249
 msgid "Add and check in"
 msgstr ""
 
@@ -480,7 +480,7 @@ msgstr ""
 msgid "Add guest"
 msgstr ""
 
-#: templates/public/door.php:252
+#: templates/public/door.php:264
 msgid "Add new member"
 msgstr ""
 
@@ -563,11 +563,11 @@ msgstr ""
 msgid "All tables present at schema version %s."
 msgstr ""
 
-#: templates/public/door.php:91 templates/public/door.php:313
+#: templates/public/door.php:90 templates/public/door.php:325
 msgid "Already marked arrived."
 msgstr ""
 
-#: templates/public/door.php:55
+#: templates/public/door.php:54
 msgid "Already on tonight’s list: %s"
 msgstr ""
 
@@ -749,7 +749,7 @@ msgstr ""
 msgid "Bot token"
 msgstr ""
 
-#: templates/public/door.php:200 templates/public/door.php:215
+#: templates/public/door.php:212 templates/public/door.php:227
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
@@ -814,7 +814,7 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
-#: templates/public/door.php:49
+#: templates/public/door.php:48
 msgid "Check in"
 msgstr ""
 
@@ -846,7 +846,7 @@ msgstr ""
 msgid "Checking you’re human…"
 msgstr ""
 
-#: templates/public/door.php:53
+#: templates/public/door.php:52
 msgid "Choose"
 msgstr ""
 
@@ -862,7 +862,7 @@ msgstr ""
 msgid "Clean"
 msgstr ""
 
-#: templates/public/door.php:194 templates/public/door.php:273 templates/public/door.php:301
+#: templates/public/door.php:206 templates/public/door.php:285 templates/public/door.php:313
 msgid "Close"
 msgstr ""
 
@@ -943,7 +943,7 @@ msgstr ""
 msgid "Contents"
 msgstr ""
 
-#: templates/public/door.php:294
+#: templates/public/door.php:306
 msgid "Copy link"
 msgstr ""
 
@@ -955,11 +955,11 @@ msgstr ""
 msgid "Couldn’t verify you’re human — please try again."
 msgstr ""
 
-#: templates/public/door.php:181
+#: templates/public/door.php:193
 msgid "Count one person in without a name"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:139 src/Telegram/RoleTaskBot.php:306 templates/public/door.php:65 templates/public/signup-board.php:220
+#: src/Telegram/RoleTaskBot.php:139 src/Telegram/RoleTaskBot.php:306 templates/public/door.php:64 templates/public/signup-board.php:220
 #: templates/public/signup.php:879
 msgid "Count toward free-entry credit?"
 msgstr ""
@@ -1057,7 +1057,7 @@ msgstr ""
 msgid "Crew guide"
 msgstr ""
 
-#: templates/public/door.php:202 templates/public/door.php:242
+#: templates/public/door.php:214 templates/public/door.php:254
 msgid "Crew member"
 msgstr ""
 
@@ -1230,7 +1230,7 @@ msgid "Edit the email template"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:108 templates/admin/people.php:51
-#: templates/admin/settings.php:69 templates/admin/settings.php:613 templates/public/door.php:249 templates/public/signup.php:99
+#: templates/admin/settings.php:69 templates/admin/settings.php:613 templates/public/door.php:261 templates/public/signup.php:99
 #: templates/public/signup.php:409 templates/public/signup.php:686
 msgid "Email"
 msgstr ""
@@ -1239,7 +1239,7 @@ msgstr ""
 msgid "Email (new person only, optional)"
 msgstr ""
 
-#: templates/public/door.php:218
+#: templates/public/door.php:230
 msgid "Email (optional)"
 msgstr ""
 
@@ -1411,7 +1411,7 @@ msgstr ""
 msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own crew page and, if you use the bot, under /notifications. There is no penalty for switching any of them off."
 msgstr ""
 
-#: templates/public/door.php:230
+#: templates/public/door.php:242
 msgid "Extra people they may bring (0 = just the guest):"
 msgstr ""
 
@@ -1424,7 +1424,7 @@ msgstr ""
 msgid "Filled"
 msgstr ""
 
-#: templates/public/door.php:184
+#: templates/public/door.php:196
 msgid "Find a name on the list"
 msgstr ""
 
@@ -1556,7 +1556,7 @@ msgstr ""
 msgid "Give the guest’s name, e.g. /guest add Anna Virtanen ; DJ’s partner (no extra people), or /guest add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)"
 msgstr ""
 
-#: src/Web/DoorController.php:225 templates/public/door.php:68
+#: src/Web/DoorController.php:225 templates/public/door.php:67
 msgid "Give the guest’s name."
 msgstr ""
 
@@ -1596,7 +1596,7 @@ msgstr ""
 msgid "Group lock"
 msgstr ""
 
-#: templates/public/door.php:201 templates/public/door.php:227
+#: templates/public/door.php:213 templates/public/door.php:239
 msgid "Guest"
 msgstr ""
 
@@ -1922,7 +1922,7 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
-#: templates/public/door.php:83
+#: templates/public/door.php:82
 msgid "Link copied."
 msgstr ""
 
@@ -1934,19 +1934,19 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: templates/public/door.php:87
+#: templates/public/door.php:86 templates/public/door.php:195
 msgid "Loading…"
 msgstr ""
 
-#: templates/public/door.php:279 templates/public/door.php:283
+#: templates/public/door.php:291 templates/public/door.php:295
 msgid "Login as"
 msgstr ""
 
-#: templates/public/door.php:76
+#: templates/public/door.php:75
 msgid "Login as %s"
 msgstr ""
 
-#: templates/public/door.php:292
+#: templates/public/door.php:304
 msgid "Login link"
 msgstr ""
 
@@ -1979,7 +1979,7 @@ msgstr ""
 msgid "Mark all completed"
 msgstr ""
 
-#: templates/public/door.php:320
+#: templates/public/door.php:332
 msgid "Mark arrived"
 msgstr ""
 
@@ -2011,7 +2011,7 @@ msgstr ""
 msgid "Member added. They got an email to confirm their address and join the Telegram group."
 msgstr ""
 
-#: templates/public/door.php:243
+#: templates/public/door.php:255
 msgid "Member name or email"
 msgstr ""
 
@@ -2050,7 +2050,7 @@ msgid "My tasks"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:107 templates/admin/people.php:62 templates/admin/roster.php:186
-#: templates/admin/roster.php:196 templates/admin/roster.php:218 templates/public/door.php:228 templates/public/door.php:247
+#: templates/admin/roster.php:196 templates/admin/roster.php:218 templates/public/door.php:240 templates/public/door.php:259
 #: templates/public/signup.php:691 templates/public/signup.php:1109 templates/public/signup.php:1137
 msgid "Name"
 msgstr ""
@@ -2059,7 +2059,7 @@ msgstr ""
 msgid "Name (new person only)"
 msgstr ""
 
-#: templates/public/door.php:207 templates/public/door.php:216
+#: templates/public/door.php:219 templates/public/door.php:228
 msgid "Name (optional)"
 msgstr ""
 
@@ -2075,7 +2075,7 @@ msgstr ""
 msgid "New guest’s name"
 msgstr ""
 
-#: templates/public/door.php:245
+#: templates/public/door.php:257
 msgid "New member"
 msgstr ""
 
@@ -2092,7 +2092,7 @@ msgstr ""
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:113 src/Telegram/RoleTaskBot.php:279 templates/admin/people.php:146 templates/public/door.php:67
+#: src/Support/PrivacyExporter.php:113 src/Telegram/RoleTaskBot.php:279 templates/admin/people.php:146 templates/public/door.php:66
 #: templates/public/signup-board.php:221 templates/public/signup.php:730 templates/public/signup.php:883
 msgid "No"
 msgstr ""
@@ -2125,7 +2125,7 @@ msgstr ""
 msgid "No changes to save."
 msgstr ""
 
-#: templates/public/door.php:60
+#: templates/public/door.php:59
 msgid "No credit to use"
 msgstr ""
 
@@ -2155,7 +2155,7 @@ msgstr ""
 msgid "No member has the email address %s. Sign up as a member with this address first."
 msgstr ""
 
-#: templates/public/door.php:52
+#: templates/public/door.php:51
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
@@ -2207,7 +2207,7 @@ msgstr ""
 msgid "No site admin email is set, so wp_mail has no default sender."
 msgstr ""
 
-#: templates/public/door.php:61
+#: templates/public/door.php:60
 msgid "No task tonight has a free place."
 msgstr ""
 
@@ -2239,7 +2239,7 @@ msgstr ""
 msgid "No-show"
 msgstr ""
 
-#: templates/public/door.php:85
+#: templates/public/door.php:84
 msgid "Nobody else can run the sales desk tonight yet."
 msgstr ""
 
@@ -2259,7 +2259,7 @@ msgstr ""
 msgid "Nobody on the door list yet."
 msgstr ""
 
-#: templates/public/door.php:70
+#: templates/public/door.php:69
 msgid "Nobody on this list."
 msgstr ""
 
@@ -2368,15 +2368,15 @@ msgstr ""
 msgid "On the night: roster and sales desk"
 msgstr ""
 
-#: templates/public/door.php:232
+#: templates/public/door.php:244
 msgid "One fewer"
 msgstr ""
 
-#: templates/public/door.php:72 templates/public/door.php:315
+#: templates/public/door.php:71 templates/public/door.php:327
 msgid "One guest fewer"
 msgstr ""
 
-#: templates/public/door.php:73 templates/public/door.php:317
+#: templates/public/door.php:72 templates/public/door.php:329
 msgid "One guest more"
 msgstr ""
 
@@ -2384,7 +2384,7 @@ msgstr ""
 msgid "One link for every role, shown as a named \"Crew guide\" button or link - on the Telegram board, on the web page, and in the signup confirmation and the reminder. Leave blank to show no guide link. Make sure everyone with the link can open it."
 msgstr ""
 
-#: templates/public/door.php:234
+#: templates/public/door.php:246
 msgid "One more"
 msgstr ""
 
@@ -2464,7 +2464,7 @@ msgstr ""
 msgid "Open EventCrew in wp-admin:"
 msgstr ""
 
-#: templates/public/door.php:74 templates/public/door.php:278
+#: templates/public/door.php:73 templates/public/door.php:290
 msgid "Open on other device"
 msgstr ""
 
@@ -2594,7 +2594,7 @@ msgstr ""
 msgid "Organizers can mark attendance from the bot."
 msgstr ""
 
-#: templates/public/door.php:284
+#: templates/public/door.php:296
 msgid "Organizers, and tonight’s welcome crew once marked arrived."
 msgstr ""
 
@@ -2602,7 +2602,7 @@ msgstr ""
 msgid "Other (type a name)"
 msgstr ""
 
-#: templates/public/door.php:272
+#: templates/public/door.php:284
 msgid "Other device"
 msgstr ""
 
@@ -2731,7 +2731,7 @@ msgstr ""
 msgid "Plus-ones"
 msgstr ""
 
-#: templates/public/door.php:307
+#: templates/public/door.php:319
 msgid "Point the camera at the QR code on the ticket."
 msgstr ""
 
@@ -2783,7 +2783,7 @@ msgstr ""
 msgid "Put this in the mail poller’s settings as IMPORT_SECRET."
 msgstr ""
 
-#: templates/public/door.php:81
+#: templates/public/door.php:80
 msgid "QR code of the login link"
 msgstr ""
 
@@ -2993,7 +2993,7 @@ msgstr ""
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
-#: src/Web/DoorController.php:377 templates/public/door.php:101 templates/public/signup.php:291 templates/public/signup.php:548
+#: src/Web/DoorController.php:377 templates/public/door.php:100 templates/public/signup.php:291 templates/public/signup.php:548
 msgid "Sales desk"
 msgstr ""
 
@@ -3042,15 +3042,19 @@ msgstr ""
 msgid "Say what to change, e.g. /guest edit 2 +3 or /guest edit 2 ; new note"
 msgstr ""
 
-#: templates/public/door.php:321
+#: templates/public/door.php:181
+msgid "Scan"
+msgstr ""
+
+#: templates/public/door.php:333
 msgid "Scan another"
 msgstr ""
 
-#: templates/public/door.php:78
+#: templates/public/door.php:77
 msgid "Scan this QR code with the camera of the other phone. The link works once and stops working after 15 minutes."
 msgstr ""
 
-#: templates/public/door.php:300
+#: templates/public/door.php:312
 msgid "Scan ticket"
 msgstr ""
 
@@ -3205,7 +3209,7 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: templates/public/door.php:86
+#: templates/public/door.php:85
 msgid "Show QR code"
 msgstr ""
 
@@ -3245,7 +3249,7 @@ msgstr ""
 msgid "Sign out everywhere, including here?"
 msgstr ""
 
-#: templates/public/door.php:63 templates/public/signup-board.php:219 templates/public/signup-board.php:242
+#: templates/public/door.php:62 templates/public/signup-board.php:219 templates/public/signup-board.php:242
 msgid "Sign up"
 msgstr ""
 
@@ -3403,15 +3407,19 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
+#: templates/public/door.php:182
+msgid "Switch"
+msgstr ""
+
 #: templates/admin/people.php:181
 msgid "Switched off"
 msgstr ""
 
-#: templates/public/door.php:56
+#: templates/public/door.php:55
 msgid "Take a task instead"
 msgstr ""
 
-#: templates/public/door.php:179
+#: templates/public/door.php:191
 msgid "Take one person off the count without a name"
 msgstr ""
 
@@ -3580,7 +3588,7 @@ msgstr ""
 msgid "That date could not be read. Use the date picker and try again."
 msgstr ""
 
-#: templates/public/door.php:71
+#: templates/public/door.php:70
 msgid "That did not go through. Check the connection and try again."
 msgstr ""
 
@@ -3701,7 +3709,7 @@ msgstr ""
 msgid "The Organize task is not in the list above. New Organize tasks copy this number."
 msgstr ""
 
-#: templates/public/door.php:82
+#: templates/public/door.php:81
 msgid "The QR code could not be drawn. Use Copy link instead."
 msgstr ""
 
@@ -3741,7 +3749,7 @@ msgstr ""
 msgid "The board in the Telegram group lists the open tasks under each event and date. Each task is a button that shows its role, time and places taken; a member taps it to sign up. It updates itself whenever something changes. /board in the group posts a new copy at the bottom. Settings > Telegram bot > Refresh the board redraws it in place."
 msgstr ""
 
-#: templates/public/door.php:89
+#: templates/public/door.php:88
 msgid "The camera could not be opened. Allow the camera for this page, or find the name on the list instead."
 msgstr ""
 
@@ -3787,7 +3795,7 @@ msgstr ""
 msgid "The door list"
 msgstr ""
 
-#: templates/public/door.php:220
+#: templates/public/door.php:232
 msgid "The email is only shown on the list. Nothing is sent to it."
 msgstr ""
 
@@ -3855,7 +3863,7 @@ msgstr ""
 msgid "The kinds of job a task can be. \"People needed\" is only the default for new tasks - each task keeps its own number."
 msgstr ""
 
-#: templates/public/door.php:84
+#: templates/public/door.php:83
 msgid "The link is selected. Copy it with the copy command of your phone."
 msgstr ""
 
@@ -3883,7 +3891,7 @@ msgstr ""
 msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom."
 msgstr ""
 
-#: templates/public/door.php:80
+#: templates/public/door.php:79
 msgid "The other phone opens the sales desk as %s."
 msgstr ""
 
@@ -4050,7 +4058,7 @@ msgstr ""
 msgid "They could not be signed up for that task."
 msgstr ""
 
-#: templates/public/door.php:246
+#: templates/public/door.php:258
 msgid "They get an email to confirm their address and join the Telegram group."
 msgstr ""
 
@@ -4124,7 +4132,7 @@ msgstr ""
 msgid "This person cannot run the sales desk tonight. Only organizers, and the welcome crew once marked arrived tonight, can."
 msgstr ""
 
-#: templates/public/door.php:90
+#: templates/public/door.php:89
 msgid "This phone cannot read QR codes here. Find the name on the list instead."
 msgstr ""
 
@@ -4148,7 +4156,7 @@ msgstr ""
 msgid "Tick at least one task."
 msgstr ""
 
-#: templates/public/door.php:199 templates/public/signup.php:316
+#: templates/public/door.php:211 templates/public/signup.php:316
 msgid "Ticket"
 msgstr ""
 
@@ -4185,7 +4193,7 @@ msgstr ""
 msgid "Ticket page"
 msgstr ""
 
-#: templates/public/door.php:206
+#: templates/public/door.php:218
 msgid "Ticket sold at the door"
 msgstr ""
 
@@ -4290,7 +4298,7 @@ msgstr ""
 msgid "Update task"
 msgstr ""
 
-#: templates/public/door.php:59
+#: templates/public/door.php:58
 msgid "Use a credit (%d left)"
 msgstr ""
 
@@ -4455,7 +4463,7 @@ msgstr ""
 msgid "Which of their tasks are you covering?"
 msgstr ""
 
-#: templates/public/door.php:265
+#: templates/public/door.php:277
 msgid "Which task?"
 msgstr ""
 
@@ -4523,7 +4531,7 @@ msgstr ""
 msgid "With header:"
 msgstr ""
 
-#: templates/public/door.php:177
+#: templates/public/door.php:189
 #. translators: label before the count of people let in without a name, and its -1 and +1 buttons.
 msgid "Without a name:"
 msgstr ""
@@ -4537,7 +4545,7 @@ msgstr ""
 msgid "WordPress version"
 msgstr ""
 
-#: templates/public/door.php:260
+#: templates/public/door.php:272
 msgid "Working tonight: pick a task"
 msgstr ""
 
@@ -4546,7 +4554,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:112 src/Telegram/RoleTaskBot.php:278 templates/admin/people.php:145 templates/public/door.php:66
+#: src/Support/PrivacyExporter.php:112 src/Telegram/RoleTaskBot.php:278 templates/admin/people.php:145 templates/public/door.php:65
 #: templates/public/signup-board.php:221 templates/public/signup.php:730 templates/public/signup.php:732 templates/public/signup.php:882
 msgid "Yes"
 msgstr ""
@@ -4848,7 +4856,7 @@ msgstr ""
 msgid "at least %1$d different roles, %2$d times each"
 msgstr ""
 
-#: templates/public/door.php:51
+#: templates/public/door.php:50
 msgid "credits"
 msgstr ""
 
@@ -4868,7 +4876,7 @@ msgstr ""
 msgid "email"
 msgstr ""
 
-#: templates/public/door.php:69
+#: templates/public/door.php:68
 msgid "extra"
 msgstr ""
 
@@ -4876,7 +4884,7 @@ msgstr ""
 msgid "finished tasks"
 msgstr ""
 
-#: templates/public/door.php:62
+#: templates/public/door.php:61
 msgid "free"
 msgstr ""
 
@@ -4884,7 +4892,7 @@ msgstr ""
 msgid "full"
 msgstr ""
 
-#: templates/public/door.php:50
+#: templates/public/door.php:49
 msgid "guests"
 msgstr ""
 
@@ -4936,7 +4944,7 @@ msgstr ""
 msgid "nothing"
 msgstr ""
 
-#: templates/public/door.php:165
+#: templates/public/door.php:177
 msgid "of %s checked in"
 msgstr ""
 
@@ -5015,7 +5023,7 @@ msgstr ""
 msgid "• %1$s — %2$d%%"
 msgstr ""
 
-#: templates/public/door.php:192 templates/public/door.php:271
+#: templates/public/door.php:204 templates/public/door.php:283
 msgid "‹ Back"
 msgstr ""
 
@@ -5026,10 +5034,6 @@ msgstr ""
 #: src/Support/ReminderCall.php:117
 #. translators: 1: role, 2: event, 3: date/time
 msgid "⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!"
-msgstr ""
-
-#: templates/public/door.php:183
-msgid "⏳ Loading…"
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:163
@@ -5063,11 +5067,7 @@ msgstr ""
 msgid "✓ %s"
 msgstr ""
 
-#: templates/public/door.php:48
-msgid "✓ In"
-msgstr ""
-
-#: templates/public/door.php:64
+#: templates/public/door.php:63
 msgid "✓ Signed up"
 msgstr ""
 
@@ -5137,14 +5137,6 @@ msgstr ""
 
 #: src/Telegram/GroupBreadcrumb.php:28
 msgid "📬 Sent you a DM."
-msgstr ""
-
-#: templates/public/door.php:170
-msgid "📱 Other device"
-msgstr ""
-
-#: templates/public/door.php:169
-msgid "📷 Scan"
 msgstr ""
 
 #: src/Telegram/ProfileService.php:225

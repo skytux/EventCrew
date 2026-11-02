@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.62.0
+Stable tag: 1.63.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.63.0 =
+Sales desk: the top buttons are icons with one word under them (Scan, Switch, Add), Check in is a tick that turns green once the person is in, and the Loading texts are now a spinner on the button that was tapped or in the list that is waiting.
 
 = 1.62.0 =
 The bot's command menu now shows each person only the commands they may use: group chats, everyone, welcome crew and organizers each get their own list, in English and Finnish.
@@ -738,6 +741,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.63.0 =
+None.
 
 = 1.62.0 =
 After updating, open any wp-admin page once: the webhook is reinstalled on a version change and sends the new command menus. Personal menus are also refreshed once a day.
