@@ -27,6 +27,7 @@ use EventCrew\Support\SendWindow;
 use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketFormats;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
@@ -156,6 +157,8 @@ final class SettingsPage
                 'import_secret' => BuyerImportController::ensureSecret(),
                 'import_url' => BuyerImportController::endpointUrl(),
                 'import_mailbox' => BuyerImportController::mailbox(),
+                'import_senders' => BuyerImportController::extraSenders(),
+                'ticket_formats' => TicketFormats::all(),
                 'mail_fetch' => MailFetchSettings::get(),
                 'mail_fetch_status' => MailFetchSettings::status(),
                 'telegram' => $this->telegramView(),
@@ -954,12 +957,17 @@ final class SettingsPage
     }
 
     /**
-     * Saves the address organizers mail ticket buyer lists to. Empty removes
-     * it, and the guide and the Roster page then leave the email import out.
+     * Saves the import settings: the address organizers mail ticket buyer
+     * lists to, the extra sender addresses and the ticket file formats. An
+     * empty mailbox removes it, and the guide and the Roster page then leave
+     * the email import out.
      */
     public function saveImportMailbox(): void
     {
         Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
+
+        $this->saveImportSenders();
+        $this->saveTicketFormats();
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked by assertCanSave().
         $posted = wp_unslash((string) ($_POST['import_mailbox'] ?? ''));
@@ -967,21 +975,92 @@ final class SettingsPage
 
         if ('' === $address) {
             delete_option(BuyerImportController::MAILBOX_OPTION);
-            Admin::redirectTo(self::PAGE_SLUG, __('The import mailbox was removed.', 'eventcrew'));
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('The import settings were saved. There is no import mailbox.', 'eventcrew')
+            );
             return;
         }
 
         if (false === filter_var($address, FILTER_VALIDATE_EMAIL)) {
             Admin::redirectTo(
                 self::PAGE_SLUG,
-                __('That is not an email address. The import mailbox was not changed.', 'eventcrew'),
+                __(
+                    'The import mailbox is not an email address, so it was not changed. The other import settings were saved.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    'eventcrew'
+                ),
                 'error'
             );
             return;
         }
 
         update_option(BuyerImportController::MAILBOX_OPTION, $address, false);
-        Admin::redirectTo(self::PAGE_SLUG, __('The import mailbox was saved.', 'eventcrew'));
+        Admin::redirectTo(self::PAGE_SLUG, __('The import settings were saved.', 'eventcrew'));
+    }
+
+    /**
+     * The extra sender addresses, one per line. Lines that are not an email
+     * address are dropped. Only when the form sent the field.
+     */
+    private function saveImportSenders(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked by assertCanSave() in the caller.
+        if (! isset($_POST['import_senders'])) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked by assertCanSave(); each line is validated as an email address below.
+        $posted = (string) wp_unslash((string) $_POST['import_senders']);
+        $senders = [];
+
+        foreach (preg_split('/[\s,;]+/', strtolower($posted)) ?: [] as $address) {
+            if (false !== filter_var($address, FILTER_VALIDATE_EMAIL) && ! in_array($address, $senders, true)) {
+                $senders[] = $address;
+            }
+        }
+
+        update_option(BuyerImportController::SENDERS_OPTION, $senders, false);
+    }
+
+    /**
+     * The ticket file formats from the form. A header field holds one header
+     * text, or several accepted ones separated by "|". A format with "Remove"
+     * ticked is left out. The decoder is stored exactly as typed: only users
+     * who may manage the site's options reach this, and it is only ever
+     * printed escaped. Only when the form sent the field.
+     */
+    private function saveTicketFormats(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked by assertCanSave() in the caller.
+        if (! isset($_POST['ticket_formats']) || ! is_array($_POST['ticket_formats'])) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked by assertCanSave(); each field is sanitized below, the decoder is stored as typed on purpose.
+        $posted = (array) wp_unslash($_POST['ticket_formats']);
+        $text = static fn (array $row, string $key): string => sanitize_text_field((string) ($row[$key] ?? ''));
+        $formats = [];
+
+        foreach ($posted as $row) {
+            if (! is_array($row) || ! empty($row['remove'])) {
+                continue;
+            }
+
+            $columns = [];
+
+            foreach (TicketFormats::COLUMNS as $column) {
+                $columns[$column] = explode('|', $text($row, 'col_' . $column));
+            }
+
+            $formats[] = [
+                'id' => $text($row, 'id'),
+                'name' => $text($row, 'name'),
+                'columns' => $columns,
+                'decoder_js' => str_replace("\r\n", "\n", (string) ($row['decoder_js'] ?? '')),
+            ];
+        }
+
+        TicketFormats::save($formats);
     }
 
     /**

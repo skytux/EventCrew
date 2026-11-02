@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\TicketFileException;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -19,8 +20,8 @@ use WP_REST_Response;
  * The poller cannot send a WordPress nonce or log in, so the request is
  * authenticated by an HMAC of its raw body under a secret shared with the
  * poller (shown in Settings → Email). The sender is checked again here: the
- * list is only taken from an organizer's address. It always goes to the next
- * event night.
+ * list is only taken from an organizer's address or one of the extra sender
+ * addresses. It always goes to the next event night.
  */
 final class BuyerImportController
 {
@@ -31,6 +32,12 @@ final class BuyerImportController
 
     /** The address organizers mail their lists to, set in Settings → Email. */
     public const MAILBOX_OPTION = 'eventcrew_import_mailbox';
+
+    /**
+     * Addresses besides the organizers' that may mail a list in, such as the
+     * shop's own address, set in Settings → Email. A list of strings.
+     */
+    public const SENDERS_OPTION = 'eventcrew_import_senders';
 
     /** Carries "sha256=<hex HMAC-SHA256 of the raw body>". */
     private const SIGNATURE_HEADER = 'X-EventCrew-Signature';
@@ -134,18 +141,46 @@ final class BuyerImportController
     }
 
     /**
-     * Takes one mailed list: checks the sender is an organizer, adds the names
-     * to the next event and mails the organizer a confirmation. Shared by the
-     * signed endpoint and the site's own mailbox reader (MailImporter).
+     * The addresses, besides the organizers', that may mail a list in, set in
+     * Settings → Email. Lower-case, each a valid address.
      *
+     * @return array<int, string>
+     */
+    public static function extraSenders(): array
+    {
+        $stored = get_option(self::SENDERS_OPTION, []);
+        $senders = [];
+
+        foreach (is_array($stored) ? $stored : [] as $address) {
+            $address = strtolower(trim((string) $address));
+
+            if (false !== filter_var($address, FILTER_VALIDATE_EMAIL) && ! in_array($address, $senders, true)) {
+                $senders[] = $address;
+            }
+        }
+
+        return $senders;
+    }
+
+    /**
+     * Takes one mailed list: checks the sender is an organizer or one of the
+     * extra sender addresses, adds the tickets to the next event and mails
+     * every organizer a notice. Shared by the signed endpoint and the site's
+     * own mailbox reader (MailImporter).
+     *
+     * With $file (an .xlsx or .csv attachment) the tickets come from the file
+     * and $text is not read; without it, $text is one name per line.
+     *
+     * @param array{filename: string, bytes: string}|null $file
      * @return array{status: int, body: array<string, mixed>}
      */
-    public function importList(string $from, string $text, string $messageId): array
+    public function importList(string $from, string $text, string $messageId, ?array $file = null): array
     {
         $from = strtolower(trim($from));
         $person = '' === $from ? null : $this->people->findByEmail($from);
+        $isOrganizer = null !== $person && $person->isOrganizer;
 
-        if (null === $person || ! $person->isOrganizer) {
+        if (! $isOrganizer && ('' === $from || ! in_array($from, self::extraSenders(), true))) {
             return ['status' => 403, 'body' => ['ok' => false, 'error' => 'not_organizer']];
         }
 
@@ -162,11 +197,30 @@ final class BuyerImportController
             ];
         }
 
-        $result = $this->import->import($date, $text, 'email', BuyerImport::batchFor($messageId, $text));
+        if (null === $file) {
+            $result = $this->import->import($date, $text, 'email', BuyerImport::batchFor($messageId, $text));
+        } else {
+            try {
+                $result = $this->import->importFile(
+                    $date,
+                    $file['filename'],
+                    $file['bytes'],
+                    'email',
+                    BuyerImport::batchFor($messageId, $file['bytes'])
+                );
+            } catch (TicketFileException $exception) {
+                $this->notifyFailure($from, $exception->getMessage());
 
-        // The same mail delivered again was confirmed the first time.
+                return [
+                    'status' => 400,
+                    'body' => ['ok' => false, 'error' => 'bad_file', 'message' => $exception->getMessage()],
+                ];
+            }
+        }
+
+        // The same mail delivered again was announced the first time.
         if (! $result['duplicate']) {
-            $this->confirm($person->id, $person->email, $date, $result['added'], $result['skipped']);
+            $this->confirm($from, $date, $result['added'], $result['skipped'], null !== $file);
         }
 
         return [
@@ -182,26 +236,46 @@ final class BuyerImportController
     }
 
     /**
-     * Tells the organizer who mailed the list what came of it.
+     * Tells every organizer, and the sender when they are not one, what came
+     * of a mailed list.
      */
-    private function confirm(int $personId, string $email, string $date, int $added, int $skipped): void
+    private function confirm(string $from, string $date, int $added, int $skipped, bool $fromFile): void
     {
         $day = Dates::dayLabel($date);
 
-        $body = sprintf(
-            /* translators: 1: number of names added, 2: the event day, e.g. "Sat 1 Aug" */
-            __('%1$d ticket buyers were added to the door list for %2$s.', 'eventcrew'),
-            $added,
-            $day
-        );
+        $body = $fromFile
+            ? sprintf(
+                /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
+                __('%1$d tickets were imported for %2$s.', 'eventcrew'),
+                $added,
+                $day
+            )
+            : sprintf(
+                /* translators: 1: number of names added, 2: the event day, e.g. "Sat 1 Aug" */
+                __('%1$d ticket buyers were added to the door list for %2$s.', 'eventcrew'),
+                $added,
+                $day
+            );
 
         if ($skipped > 0) {
-            $body .= "\n\n" . sprintf(
-                /* translators: %d: number of names skipped */
-                __('%d names were skipped because they were already on the list.', 'eventcrew'),
-                $skipped
-            );
+            $body .= "\n\n" . ($fromFile
+                ? sprintf(
+                    /* translators: %d: number of tickets skipped */
+                    __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
+                    $skipped
+                )
+                : sprintf(
+                    /* translators: %d: number of names skipped */
+                    __('%d names were skipped because they were already on the list.', 'eventcrew'),
+                    $skipped
+                ));
         }
+
+        $body .= "\n\n" . sprintf(
+            /* translators: %s: the email address the list was sent from */
+            __('The list was sent from %s.', 'eventcrew'),
+            $from
+        );
 
         // The Admin tab's Roster screen on the crew page: organizers run the
         // night from their phone, not from wp-admin. wp-admin's Roster page
@@ -214,9 +288,8 @@ final class BuyerImportController
                 admin_url('admin.php')
             );
 
-        $this->mailer->toPerson(
-            $personId,
-            $email,
+        $this->tellOrganizers(
+            $from,
             sprintf(
                 /* translators: %s: the event day, e.g. "Sat 1 Aug" */
                 __('Ticket buyers imported for %s', 'eventcrew'),
@@ -225,5 +298,50 @@ final class BuyerImportController
             $body,
             [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]]
         );
+    }
+
+    /**
+     * Tells every organizer, and the sender when they are not one, that a
+     * mailed ticket file could not be imported, and why.
+     */
+    private function notifyFailure(string $from, string $reason): void
+    {
+        $this->tellOrganizers(
+            $from,
+            __('The ticket list could not be imported', 'eventcrew'),
+            $reason . "\n\n"
+                . __('Nothing was added to the door list.', 'eventcrew') . "\n\n"
+                . sprintf(
+                    /* translators: %s: the email address the list was sent from */
+                    __('The list was sent from %s.', 'eventcrew'),
+                    $from
+                )
+        );
+    }
+
+    /**
+     * One email to each organizer, and one to $from when it is not an
+     * organizer's address (an extra sender address).
+     *
+     * @param array<int, array{label: string, url: string}> $actions
+     */
+    private function tellOrganizers(string $from, string $subject, string $body, array $actions = []): void
+    {
+        $sent = [];
+
+        foreach ($this->people->organizers() as $organizer) {
+            $address = strtolower(trim($organizer->email));
+
+            if (isset($sent[$address])) {
+                continue;
+            }
+
+            $sent[$address] = true;
+            $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
+        }
+
+        if ('' !== $from && ! isset($sent[$from])) {
+            $this->mailer->toUnconfirmedAddress($from, $subject, $body, $actions);
+        }
     }
 }

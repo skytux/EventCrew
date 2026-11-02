@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '21';
+    public const DB_VERSION = '22';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -520,9 +520,14 @@ final class Schema
             // with where it came from (source) and which import added it
             // (batch), so one import can be told apart from the next.
             //
-            // email is only filled for a Holvi buyer added by hand at the
-            // sales desk because they were missing from the imported list.
-            // It is shown on the door list and nothing is ever sent to it.
+            // email is filled from an imported ticket file, and for a Holvi
+            // buyer added by hand at the sales desk because they were missing
+            // from the imported list. It is shown on the door list and
+            // nothing is ever sent to it.
+            //
+            // ticket_code is the code from the ticket file (for Holvi, the
+            // order code). Several tickets of one order share it, so it is
+            // not unique. NULL for names imported without a file.
             "CREATE TABLE {$ticketBuyers} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
@@ -530,9 +535,11 @@ final class Schema
                 email varchar(191) DEFAULT NULL,
                 source varchar(20) NOT NULL DEFAULT 'paste',
                 batch varchar(64) NOT NULL DEFAULT '',
+                ticket_code varchar(191) DEFAULT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
-                KEY event_date (event_date)
+                KEY event_date (event_date),
+                KEY ticket_code (ticket_code)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

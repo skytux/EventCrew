@@ -18,6 +18,7 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\BuyerImportController;
 
@@ -160,6 +161,31 @@ final class MailImporterTest extends TestCase
         self::assertSame($status, $this->options[MailFetchSettings::STATUS_OPTION]);
         // The organizer got the confirmation; nobody else was mailed.
         self::assertSame(['lou@example.com'], $this->mails);
+    }
+
+    public function testAnXlsxAttachmentIsImportedOneRowPerTicket(): void
+    {
+        $pass = self::AUTHSERV . '; dmarc=pass header.from=example.com';
+        $mail = "Authentication-Results: {$pass}\nFrom: lou@example.com\nMessage-ID: <x1@example.com>\n"
+            . "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"b1\"\n\n"
+            . "--b1\nContent-Type: text/plain\n\nThe list is attached.\n"
+            . "--b1\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n"
+            . "Content-Disposition: attachment; filename=\"Tickets.xlsx\"\nContent-Transfer-Encoding: base64\n\n"
+            . chunk_split(base64_encode(TinyXlsx::holvi()), 76, "\n")
+            . "--b1--\n";
+        $mailbox = $this->fakeMailbox(['21' => $mail]);
+
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'lou@example.com', 'display_name' => 'Lou', 'is_organizer' => 1];
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextVars[] = '0';
+        $this->wpdb->nextResults[] = [];
+
+        $status = $this->importer($mailbox)->run();
+
+        self::assertSame(['imported 21'], $mailbox->moves);
+        self::assertTrue($status['ok']);
+        $codes = array_map(static fn (array $insert): mixed => $insert['data']['ticket_code'] ?? null, $this->wpdb->inserts);
+        self::assertSame(['A1', 'A1', 'B2'], $codes);
     }
 
     public function testAMailboxThatCannotBeReachedIsStoredAsAFailedCheck(): void

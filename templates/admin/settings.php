@@ -52,6 +52,8 @@
  * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
  * @var string $import_url The REST URL the mail poller posts buyer lists to.
  * @var string $import_mailbox The address organizers mail buyer lists to; '' when none is set.
+ * @var array<int, string> $import_senders Addresses besides the organizers' that may mail a list in.
+ * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
@@ -1556,8 +1558,66 @@ if (! defined('ABSPATH')) {
                     <p class="description"><?php esc_html_e('The address organizers send their lists to. Leave it empty if this site has no import mailbox.', 'eventcrew'); ?></p>
                 </td>
             </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-import-senders"><?php esc_html_e('Extra sender addresses', 'eventcrew'); ?></label></th>
+                <td>
+                    <textarea name="import_senders" id="eventcrew-import-senders" rows="3" class="regular-text" spellcheck="false"><?php echo esc_textarea(implode("\n", $import_senders)); ?></textarea>
+                    <p class="description"><?php esc_html_e('One email address per line. Lists mailed from these addresses are imported too, besides lists from organizers. The import notice goes to every organizer and to the sender.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Ticket file formats', 'eventcrew'); ?></th>
+                <td>
+                    <p class="description" style="margin-top:0"><?php esc_html_e('When a mailed list has an .xlsx or .csv file attached, the file is read instead of the mail text. Its first row must hold the column headers of one of these formats. In a header field, separate accepted header texts with "|", and join columns with "+", as in "Etunimi + Sukunimi". Upper and lower case do not matter.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <?php
+                    // The stored formats, then one empty format to add a new one.
+                    $ec_format_rows = $ticket_formats;
+                    $ec_format_rows[] = ['id' => '', 'name' => '', 'columns' => [], 'decoder_js' => ''];
+                    $ec_header_field = static fn (array $format, string $column): string => implode(
+                        ' | ',
+                        \EventCrew\Support\TicketFormats::headerTexts($format['columns'][$column] ?? '')
+                    );
+                    foreach ($ec_format_rows as $ec_index => $ec_format) :
+                        $ec_is_new = '' === $ec_format['id'];
+                        $ec_field = 'ticket_formats[' . (int) $ec_index . ']';
+                        ?>
+                        <fieldset style="border:1px solid #c3c4c7;padding:.5em 1em;margin:1em 0">
+                            <legend style="font-weight:600">
+                                <?php echo $ec_is_new ? esc_html__('Add a format', 'eventcrew') : esc_html($ec_format['name']); ?>
+                            </legend>
+                            <input type="hidden" name="<?php echo esc_attr($ec_field . '[id]'); ?>" value="<?php echo esc_attr($ec_format['id']); ?>">
+                            <p>
+                                <label><?php esc_html_e('Name', 'eventcrew'); ?><br>
+                                <input type="text" class="regular-text" name="<?php echo esc_attr($ec_field . '[name]'); ?>" value="<?php echo esc_attr($ec_format['name']); ?>"></label>
+                            </p>
+                            <p>
+                                <label><?php esc_html_e('Name column header', 'eventcrew'); ?><br>
+                                <input type="text" class="regular-text" name="<?php echo esc_attr($ec_field . '[col_name]'); ?>" value="<?php echo esc_attr($ec_header_field($ec_format, 'name')); ?>"></label>
+                            </p>
+                            <p>
+                                <label><?php esc_html_e('Email column header', 'eventcrew'); ?><br>
+                                <input type="text" class="regular-text" name="<?php echo esc_attr($ec_field . '[col_email]'); ?>" value="<?php echo esc_attr($ec_header_field($ec_format, 'email')); ?>"></label>
+                            </p>
+                            <p>
+                                <label><?php esc_html_e('Ticket code column header', 'eventcrew'); ?><br>
+                                <input type="text" class="regular-text" name="<?php echo esc_attr($ec_field . '[col_code]'); ?>" value="<?php echo esc_attr($ec_header_field($ec_format, 'code')); ?>"></label>
+                            </p>
+                            <p>
+                                <label><?php esc_html_e('Decoder (JavaScript)', 'eventcrew'); ?><br>
+                                <textarea class="large-text code" rows="3" spellcheck="false" name="<?php echo esc_attr($ec_field . '[decoder_js]'); ?>"><?php echo esc_textarea($ec_format['decoder_js']); ?></textarea></label>
+                            </p>
+                            <?php if (! $ec_is_new) : ?>
+                                <p>
+                                    <label><input type="checkbox" name="<?php echo esc_attr($ec_field . '[remove]'); ?>" value="1"> <?php esc_html_e('Remove this format', 'eventcrew'); ?></label>
+                                </p>
+                            <?php endif; ?>
+                        </fieldset>
+                    <?php endforeach; ?>
+                    <p class="description"><?php esc_html_e('With no format left, the Holvi format is used.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
         </table>
-        <?php submit_button(__('Save the import mailbox', 'eventcrew'), 'secondary', 'submit', false); ?>
+        <?php submit_button(__('Save the import settings', 'eventcrew'), 'secondary', 'submit', false); ?>
     </form>
 
     <h3><?php esc_html_e('Read the mailbox from this site', 'eventcrew'); ?></h3>
