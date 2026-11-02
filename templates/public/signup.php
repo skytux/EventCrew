@@ -923,7 +923,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <span class="eventcrew-muted eventcrew-admin-hint"><?php esc_html_e('Asked only for a role task; every other task always counts.', 'eventcrew'); ?></span></p>
                         <div class="eventcrew-admin-actions">
                             <button type="submit" name="counts_credit" value="1" class="wp-element-button"><?php esc_html_e('Yes', 'eventcrew'); ?></button>
-                            <button type="submit" name="counts_credit" value="0" class="wp-element-button is-style-outline"><?php esc_html_e('No', 'eventcrew'); ?></button>
+                            <button type="submit" name="counts_credit" value="0" class="eventcrew-textlink"><?php esc_html_e('No', 'eventcrew'); ?></button>
                         </div>
                     </form>
                 </section>
@@ -1016,9 +1016,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                                         <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
                                         <input type="hidden" name="assignment_id" value="<?php echo esc_attr((string) $eventcrew_roster_entry['assignment_id']); ?>">
-                                        <button type="submit" name="mark" value="arrived" class="wp-element-button is-style-outline"><?php esc_html_e('Arrived', 'eventcrew'); ?></button>
-                                        <button type="submit" name="mark" value="completed" class="wp-element-button is-style-outline"><?php esc_html_e('Completed', 'eventcrew'); ?></button>
-                                        <button type="submit" name="mark" value="no_show" class="wp-element-button is-style-outline"><?php esc_html_e('No-show', 'eventcrew'); ?></button>
+                                        <button type="submit" name="mark" value="arrived" class="eventcrew-textlink"><?php esc_html_e('Arrived', 'eventcrew'); ?></button>
+                                        <button type="submit" name="mark" value="completed" class="eventcrew-textlink"><?php esc_html_e('Completed', 'eventcrew'); ?></button>
+                                        <button type="submit" name="mark" value="no_show" class="eventcrew-textlink"><?php esc_html_e('No-show', 'eventcrew'); ?></button>
                                     </form>
                                 <?php endif; ?>
                             </li>
@@ -1032,8 +1032,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_roster_task['task_id']); ?>">
                             <button type="submit" class="wp-element-button"><?php esc_html_e('Update attendance', 'eventcrew'); ?></button>
-                            <button type="submit" name="mark_all" value="arrived" class="wp-element-button is-style-outline"><?php esc_html_e('Mark all arrived', 'eventcrew'); ?></button>
-                            <button type="submit" name="mark_all" value="completed" class="wp-element-button is-style-outline"><?php esc_html_e('Mark all completed', 'eventcrew'); ?></button>
+                            <button type="submit" name="mark_all" value="arrived" class="eventcrew-textlink"><?php esc_html_e('Mark all arrived', 'eventcrew'); ?></button>
+                            <button type="submit" name="mark_all" value="completed" class="eventcrew-textlink"><?php esc_html_e('Mark all completed', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
                 <?php endforeach; ?>
@@ -1072,7 +1072,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
                             <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
-                            <button type="submit" name="op" value="toggle" class="wp-element-button is-style-outline">
+                            <button type="submit" name="op" value="toggle" class="eventcrew-textlink">
                                 <?php echo $eventcrew_night['closed_by_hand']
                                     ? esc_html__('Reopen free entry', 'eventcrew')
                                     : esc_html__('Close free entry (sold out)', 'eventcrew'); ?>
@@ -1098,7 +1098,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
                                             <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
                                             <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_entrant['redemption_id']); ?>">
-                                            <button type="submit" name="op" value="unredeem" class="wp-element-button is-style-outline"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                            <button type="submit" name="op" value="unredeem" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
                                         </form>
                                     <?php endif; ?>
                                 </li>
@@ -1162,8 +1162,8 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                         <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-note" type="text" name="guest_note" maxlength="191" value="<?php echo esc_attr($eventcrew_guest['note']); ?>">
                                     </p>
                                     <div class="eventcrew-admin-actions">
-                                        <button type="submit" name="op" value="save" class="wp-element-button is-style-outline"><?php esc_html_e('Save', 'eventcrew'); ?></button>
-                                        <button type="submit" name="op" value="remove" formnovalidate class="wp-element-button is-style-outline"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                        <button type="submit" name="op" value="save" class="eventcrew-textlink"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                                        <button type="submit" name="op" value="remove" formnovalidate class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
                                     </div>
                                 </form>
                             </li>
@@ -1485,7 +1485,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
                             <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task_item->id); ?>">
-                            <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Delete', 'eventcrew'); ?></button>
+                            <button type="submit" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Delete', 'eventcrew'); ?></button>
                         </form>
                     </div>
                 <?php endforeach; ?>

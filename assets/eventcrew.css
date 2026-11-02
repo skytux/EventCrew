@@ -367,7 +367,7 @@
 .eventcrew-signup .eventcrew-admin-task { margin: 0; padding: .7em 1em .1em; font-size: .95em; text-wrap: wrap; }
 .eventcrew-signup .eventcrew-admin-nobody { margin: 0; padding: .2em 1em .5em; }
 .eventcrew-signup .eventcrew-admin-roster li { gap: .4em; }
-.eventcrew-signup .eventcrew-admin-roster form { margin: 0; display: flex; flex-wrap: wrap; gap: .4em; }
+.eventcrew-signup .eventcrew-admin-roster form { margin: 0; display: flex; flex-wrap: wrap; gap: .4em .9em; }
 .eventcrew-signup .eventcrew-admin-roster .wp-element-button { padding: .4em .8em; font-size: .85em; }
 /* The Roster screen's date picker, each task's Update / Mark all buttons, guests and ticket buyers. */
 .eventcrew-signup .eventcrew-admin-card textarea {
