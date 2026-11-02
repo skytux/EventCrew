@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.79.2
+Stable tag: 1.80.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,13 @@ you configure it, and no analytics or personal data is sent anywhere for trackin
   "DNS bypass" option, for hosts whose DNS cannot resolve `api.telegram.org`. It
   sends that hostname to Cloudflare's resolver to obtain an IP. Same Cloudflare
   terms and privacy links as above.
+* **A language model server of your choice** — used only when you switch on
+  "Plain messages" under Settings → Telegram bot and enter its address. No
+  server is built in; you choose one with an OpenAI-style chat completions API
+  (it can run on your own network). Data sent: the text of a bot message that is
+  not a command, whether the sender is an organizer, and the open tasks, coming
+  events and the text of the chosen site pages. The message text is not stored.
+  The terms and privacy policy are those of the server you choose.
 
 == Installation ==
 
@@ -131,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.80.0 =
+The Telegram bot understands plain messages (optional). Under Settings → Telegram bot → Plain messages, set the address and model of a language model server with an OpenAI-style API, and an API key if it needs one (stored encrypted, never shown again; Test connection checks it). In a private chat, every message that is not a command gets an answer in the language it was written in, using the open tasks, coming events and the text of the site's menu pages (or the pages you choose). The bot can also do what the person could do with a command, with the same permission checks: showing runs straight away, and signing up for a task, leaving one or changing the guest list waits for a tap on Confirm (10 minutes). In the group, it answers only messages meant for the bot that it can answer, and stays silent otherwise. Limits: 20 messages per person and 60 per group per hour (settable). Message text is not stored or logged. Privacy notice, organizer guide and README updated. With the switch off, nothing changes.
 
 = 1.79.2 =
 Ticket emails now include the ticket note from Settings (door code and address), under the ticket, like the web ticket.
@@ -853,6 +863,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.80.0 =
+No database change. New options for the language model (not autoloaded); the API key is stored encrypted.
 
 = 1.79.2 =
 No database change.

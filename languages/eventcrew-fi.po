@@ -5545,3 +5545,143 @@ msgstr "Saat tämän viestin, koska sinulla on lippu tähän tapahtumaan."
 
 msgid "Your ticket"
 msgstr "Lippusi"
+
+msgid "A key is stored (encrypted). Leave the field empty to keep it."
+msgstr "Avain on tallennettu (salattuna). Jätä kenttä tyhjäksi, niin se säilyy."
+
+msgid "API key"
+msgstr "API-avain"
+
+msgid "Answer plain messages with the language model"
+msgstr "Vastaa tavallisiin viesteihin kielimallin avulla"
+
+msgid "Cancelled."
+msgstr "Peruttu."
+
+msgid "Choose pages"
+msgstr "Valitse sivut"
+
+msgid "Confirm"
+msgstr "Vahvista"
+
+msgid "Enter the LLM API URL and the model, and save, before testing."
+msgstr "Anna LLM-API:n osoite ja malli ja tallenna ennen testiä."
+
+msgid "EventCrew: the stored LLM API key cannot be decrypted, so the bot sends no key. Enter the key again in Settings > Telegram bot."
+msgstr "EventCrew: tallennettua LLM-API-avainta ei voi purkaa, joten botti ei lähetä avainta. Anna avain uudelleen kohdassa Asetukset > Telegram-botti."
+
+msgid "First sign up with /start."
+msgstr "Rekisteröidy ensin komennolla /start."
+
+msgid "I cannot do that for you. /help lists what you can do."
+msgstr "En voi tehdä sitä puolestasi. /help kertoo, mitä voit tehdä."
+
+msgid "I do not know that. /help lists the commands, or ask an organizer."
+msgstr "En tiedä sitä. /help listaa komennot, tai kysy järjestäjältä."
+
+msgid "If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events and the site's pages, and can sign a member up for a task or take them off one; it asks them to confirm with a button first. In the group it answers only when the message is meant for the bot and it knows the answer."
+msgstr "Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista ja sivuston sivuista, ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen."
+
+msgid "LLM API URL"
+msgstr "LLM-API:n osoite"
+
+msgid "Language model"
+msgstr "Kielimalli"
+
+msgid "Limits per hour"
+msgstr "Rajat tunnissa"
+
+msgid "Messages over the limit get no answer from the model. Commands always work."
+msgstr "Rajan ylittäviin viesteihin malli ei vastaa. Komennot toimivat aina."
+
+msgid "Model"
+msgstr "Malli"
+
+msgid "No key is stored. Leave it empty if your server does not ask for one."
+msgstr "Avainta ei ole tallennettu. Jätä tyhjäksi, jos palvelin ei vaadi sitä."
+
+msgid "Pages it may read"
+msgstr "Sivut, joita se saa lukea"
+
+msgid "People"
+msgstr "Ihmiset"
+
+msgid "Plain messages (language model)"
+msgstr "Tavalliset viestit (kielimalli)"
+
+msgid "Privacy: the text of these messages, whether the sender is an organizer, and the open tasks, events and chosen pages are sent to that server. EventCrew does not store the message text."
+msgstr "Tietosuoja: näiden viestien teksti, tieto siitä, onko lähettäjä järjestäjä, sekä avoimet tehtävät, tapahtumat ja valitut sivut lähetetään tälle palvelimelle. EventCrew ei tallenna viestien tekstiä."
+
+msgid "Remove key"
+msgstr "Poista avain"
+
+msgid "Right now I only understand commands: /help"
+msgstr "Ymmärrän juuri nyt vain komentoja: /help"
+
+msgid "Roster"
+msgstr "Läsnäolo"
+
+msgid "Save first. The test sends one tiny request with the saved settings."
+msgstr "Tallenna ensin. Testi lähettää yhden pienen pyynnön tallennetuilla asetuksilla."
+
+msgid "Settings saved, except the LLM API URL: it must start with http:// or https://."
+msgstr "Asetukset tallennettu, paitsi LLM-API:n osoite: sen täytyy alkaa http:// tai https://."
+
+msgid "Test"
+msgstr "Testaa"
+
+msgid "Test connection"
+msgstr "Testaa yhteys"
+
+msgid "That can no longer be done. /help lists what you can do."
+msgstr "Sitä ei voi enää tehdä. /help kertoo, mitä voit tehdä."
+
+msgid "That is all I can answer this hour. Commands still work: /help"
+msgstr "En vastaa enempää tämän tunnin aikana. Komennot toimivat yhä: /help"
+
+msgid "The API key was removed."
+msgstr "API-avain poistettiin."
+
+msgid "The base address of the API, ending before /chat/completions."
+msgstr "API:n perusosoite, joka päättyy ennen osaa /chat/completions."
+
+#, php-format
+msgid "The connection test failed: %s."
+msgstr "Yhteyden testi epäonnistui: %s."
+
+msgid "The language model answered. The connection is OK."
+msgstr "Kielimalli vastasi. Yhteys toimii."
+
+msgid "The model name exactly as the server lists it."
+msgstr "Mallin nimi täsmälleen niin kuin palvelin sen listaa."
+
+msgid "The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, and whether you are an organizer, are sent there to work out the answer. We do not store the text, and the bot never changes anything for you without asking you to confirm."
+msgstr "Kielimallin palvelin, joka auttaa bottia vastaamaan, jos kirjoitat botille viestin, joka ei ole komento — viestin teksti ja tieto siitä, oletko järjestäjä, lähetetään sinne vastauksen laatimista varten. Emme tallenna tekstiä, eikä botti muuta mitään puolestasi pyytämättä ensin vahvistusta."
+
+msgid "The stored API key cannot be decrypted (the site's security keys have changed). Enter the key again."
+msgstr "Tallennettua API-avainta ei voi purkaa (sivuston suojausavaimet ovat muuttuneet). Anna avain uudelleen."
+
+msgid "The stored key cannot be read."
+msgstr "Tallennettua avainta ei voi lukea."
+
+msgid "There are no published pages."
+msgstr "Julkaistuja sivuja ei ole."
+
+msgid "This question has expired. Please write again."
+msgstr "Tämä kysymys on vanhentunut. Kirjoita uudelleen."
+
+msgid "When this is on, the bot answers messages that are not commands with the help of a language model on a server you choose. Its API must accept OpenAI-style chat completions. In a private chat the bot answers every such message. In the group it answers only messages meant for the bot that it can answer, and stays silent otherwise. Changes (signing up for a task, leaving it, the guest list) always ask the person to confirm with a button first."
+msgstr "Kun tämä on päällä, botti vastaa viesteihin, jotka eivät ole komentoja, valitsemallasi palvelimella toimivan kielimallin avulla. Sen API:n täytyy hyväksyä OpenAI-tyyliset chat completions -pyynnöt. Yksityisessä keskustelussa botti vastaa jokaiseen tällaiseen viestiin. Ryhmässä se vastaa vain botille tarkoitettuihin viesteihin, joihin se osaa vastata, ja on muuten hiljaa. Muutokset (tehtävään ilmoittautuminen, siitä luopuminen, vieraslista) pyytävät aina ensin vahvistuksen painikkeella."
+
+msgid "With none chosen, it reads the pages in the site menu, or every published page if there is no menu. Pages with a password are never read."
+msgstr "Jos mitään ei ole valittu, se lukee sivuston valikon sivut, tai kaikki julkaistut sivut, jos valikkoa ei ole. Salasanalla suojattuja sivuja ei lueta koskaan."
+
+#, php-format
+msgid "With none chosen, now: %s"
+msgstr "Kun mitään ei ole valittu, nyt: %s"
+
+msgid "messages per group"
+msgstr "viestiä ryhmää kohden"
+
+msgid "messages per person in a private chat"
+msgstr "viestiä henkilöä kohden yksityiskeskustelussa"

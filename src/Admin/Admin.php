@@ -86,6 +86,18 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_assistant_test',
+            [$this->container->get(SettingsPage::class), 'testAssistant']
+        );
+
+        add_action(
+            'admin_post_eventcrew_assistant_remove_key',
+            [$this->container->get(SettingsPage::class), 'removeAssistantKey']
+        );
+
+        add_action('admin_notices', [$this->container->get(SettingsPage::class), 'unreadableKeyNotice']);
+
+        add_action(
             'admin_post_eventcrew_send_open_task',
             [$this->container->get(TasksPage::class), 'sendOpenTaskEmail']
         );

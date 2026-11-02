@@ -6,6 +6,8 @@ namespace EventCrew\Admin;
 
 use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AssistantKnowledge;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
@@ -15,6 +17,8 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\HelpPage;
+use EventCrew\Support\LlmClient;
+use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
@@ -58,6 +62,12 @@ final class SettingsPage
     private const WELCOME_NONCE_ACTION = 'eventcrew_welcome_test';
     private const PRIVACY_NONCE_ACTION = 'eventcrew_privacy_page';
 
+    /** The language-model helper's Test connection and Remove key links. */
+    private const ASSISTANT_NONCE_ACTION = 'eventcrew_assistant';
+
+    /** How many published pages the page choice lists. */
+    private const ASSISTANT_PAGE_CHOICES = 100;
+
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
 
@@ -79,7 +89,8 @@ final class SettingsPage
         private readonly BoardService $board,
         private readonly WelcomeSender $welcome,
         private readonly PersonRepository $people,
-        private readonly CommandMenu $commandMenu
+        private readonly CommandMenu $commandMenu,
+        private readonly ?LlmClient $llm = null
     ) {
     }
 
@@ -163,6 +174,7 @@ final class SettingsPage
                 'mail_fetch' => MailFetchSettings::get(),
                 'mail_fetch_status' => MailFetchSettings::status(),
                 'telegram' => $this->telegramView(),
+                'assistant' => $this->assistantView(),
                 'privacy' => $this->privacyView(),
             ]
         );
@@ -290,6 +302,55 @@ final class SettingsPage
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
+        ];
+    }
+
+    /**
+     * The language-model helper's fields. The API key itself is never part of
+     * it: only whether one is stored and readable.
+     *
+     * @return array<string, mixed>
+     */
+    private function assistantView(): array
+    {
+        $pages = get_posts([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'numberposts' => self::ASSISTANT_PAGE_CHOICES,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'has_password' => false,
+        ]);
+
+        $choices = [];
+
+        foreach (is_array($pages) ? $pages : [] as $page) {
+            $choices[(int) $page->ID] = (string) $page->post_title;
+        }
+
+        $defaults = [];
+
+        foreach (AssistantKnowledge::defaultPageIds() as $id) {
+            $defaults[] = (string) get_the_title($id);
+        }
+
+        $link = static fn (string $action): string => wp_nonce_url(
+            add_query_arg('action', $action, admin_url('admin-post.php')),
+            self::ASSISTANT_NONCE_ACTION
+        );
+
+        return [
+            'enabled' => AssistantSettings::isEnabled(),
+            'url' => AssistantSettings::url(),
+            'model' => AssistantSettings::model(),
+            'key_status' => AssistantSettings::keyStatus(),
+            'private_limit' => AssistantSettings::privateLimit(),
+            'group_limit' => AssistantSettings::groupLimit(),
+            'pages' => AssistantSettings::pageIds(),
+            'page_choices' => $choices,
+            'default_pages' => $defaults,
+            'test_url' => $link('eventcrew_assistant_test'),
+            'remove_key_url' => $link('eventcrew_assistant_remove_key'),
         ];
     }
 
@@ -571,6 +632,7 @@ final class SettingsPage
             update_option(PwaController::ACCENT_OPTION, $accentColor);
         }
         $this->savePrivacy();
+        $assistantError = $this->saveAssistant();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         // Telegram is still posting to the old URL until it is told otherwise,
@@ -594,9 +656,139 @@ final class SettingsPage
             );
         }
 
+        if ('' !== $assistantError) {
+            Admin::redirectTo(self::PAGE_SLUG, $assistantError, 'error');
+        }
+
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Settings saved.', 'eventcrew')
+        );
+    }
+
+    /**
+     * The language-model helper's fields on the Telegram bot tab. An empty
+     * key field keeps the stored key. Returns an error to show, or ''.
+     *
+     * Nothing changes when the fields were not posted at all, so a form from
+     * before this section existed cannot switch the helper off.
+     */
+    private function saveAssistant(): string
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        if (! isset($_POST['assistant_url'])) {
+            return '';
+        }
+
+        update_option(AssistantSettings::ENABLED_OPTION, isset($_POST['assistant_enabled']), false);
+
+        $rawUrl = trim(sanitize_text_field(wp_unslash((string) $_POST['assistant_url'])));
+        $model = isset($_POST['assistant_model'])
+            ? sanitize_text_field(wp_unslash((string) $_POST['assistant_model']))
+            : '';
+        // Not sanitize_text_field(): it would eat a "%xx" or "<" inside a key.
+        // A key has no spaces or control characters, so those are dropped.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- cleaned by the preg_replace.
+        $rawKey = isset($_POST['assistant_key']) ? wp_unslash((string) $_POST['assistant_key']) : '';
+        $key = (string) preg_replace('/[\x00-\x20\x7F]+/', '', $rawKey);
+
+        foreach (
+            [
+                'assistant_private_limit' => AssistantSettings::PRIVATE_LIMIT_OPTION,
+                'assistant_group_limit' => AssistantSettings::GROUP_LIMIT_OPTION,
+            ] as $field => $option
+        ) {
+            if (isset($_POST[$field]) && is_numeric(wp_unslash((string) $_POST[$field]))) {
+                update_option($option, min(10000, absint(wp_unslash((string) $_POST[$field]))), false);
+            }
+        }
+
+        $pages = isset($_POST['assistant_pages']) && is_array($_POST['assistant_pages'])
+            ? array_values(array_filter(array_map('absint', wp_unslash($_POST['assistant_pages']))))
+            : [];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        update_option(AssistantSettings::PAGES_OPTION, $pages, false);
+        update_option(AssistantSettings::MODEL_OPTION, trim($model), false);
+
+        if ('' !== $key) {
+            AssistantSettings::saveKey($key);
+        }
+
+        AssistantKnowledge::flush();
+
+        $url = AssistantSettings::normalizeUrl($rawUrl);
+
+        if ('' !== $rawUrl && '' === $url) {
+            return __('Settings saved, except the LLM API URL: it must start with http:// or https://.', 'eventcrew');
+        }
+
+        update_option(AssistantSettings::URL_OPTION, $url, false);
+
+        return '';
+    }
+
+    /**
+     * Test connection: one tiny request to the language model, reported as OK
+     * or as the kind of error.
+     */
+    public function testAssistant(): void
+    {
+        Admin::assertCanSave(self::ASSISTANT_NONCE_ACTION);
+
+        if (! AssistantSettings::isConfigured()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Enter the LLM API URL and the model, and save, before testing.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $error = ($this->llm ?? new LlmClient(new Logger()))->test();
+
+        if ('' === $error) {
+            Admin::redirectTo(self::PAGE_SLUG, __('The language model answered. The connection is OK.', 'eventcrew'));
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            /* translators: %s: the kind of error, e.g. timeout or http_401 */
+            sprintf(__('The connection test failed: %s.', 'eventcrew'), $error),
+            'error'
+        );
+    }
+
+    /** Remove key: deletes the stored API key. */
+    public function removeAssistantKey(): void
+    {
+        Admin::assertCanSave(self::ASSISTANT_NONCE_ACTION);
+
+        AssistantSettings::removeKey();
+
+        Admin::redirectTo(self::PAGE_SLUG, __('The API key was removed.', 'eventcrew'));
+    }
+
+    /**
+     * The admin notice for a stored API key that can no longer be decrypted
+     * (the site's salts changed, or the database came from another site).
+     * Shown to administrators on every wp-admin page while the helper is on.
+     */
+    public function unreadableKeyNotice(): void
+    {
+        if (
+            ! current_user_can(Admin::CAPABILITY)
+            || ! AssistantSettings::isEnabled()
+            || AssistantSettings::KEY_UNREADABLE !== AssistantSettings::keyStatus()
+        ) {
+            return;
+        }
+
+        printf(
+            '<div class="notice notice-error"><p>%s</p></div>',
+            esc_html__(
+                'EventCrew: the stored LLM API key cannot be decrypted, so the bot sends no key. Enter the key again in Settings > Telegram bot.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'eventcrew'
+            )
         );
     }
 

@@ -45,21 +45,38 @@ final class HelpService
             return;
         }
 
-        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
-        $organizer = null !== $person && $person->isOrganizer;
-        $welcomeCrew = $organizer || (null !== $person && $this->doorAccess->isWelcomeCrew($person));
-
+        $audience = $this->audience($telegramUserId);
         $sections = [$this->title(), $this->everyone()];
 
-        if ($welcomeCrew) {
+        if ($audience['welcomeCrew']) {
             $sections[] = $this->welcomeCrew();
         }
 
-        if ($organizer) {
+        if ($audience['organizer']) {
             $sections[] = $this->organizers();
         }
 
         $this->telegram->sendMessage($chatId, implode("\n\n", $sections));
+    }
+
+    /**
+     * Which /help sections this Telegram user gets: organizer, welcome crew
+     * (every organizer is also welcome crew), and whether they have a person
+     * record with a confirmed email. The language-model helper offers actions
+     * by the same rule.
+     *
+     * @return array{organizer: bool, welcomeCrew: bool, verified: bool}
+     */
+    public function audience(int $telegramUserId): array
+    {
+        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
+        $organizer = null !== $person && $person->isOrganizer;
+
+        return [
+            'organizer' => $organizer,
+            'welcomeCrew' => $organizer || (null !== $person && $this->doorAccess->isWelcomeCrew($person)),
+            'verified' => null !== $person && $person->isEmailVerified(),
+        ];
     }
 
     /**
