@@ -252,6 +252,15 @@ final class UpdateRouter
             return;
         }
 
+        // Any other command - mistyped, or one the bot no longer has - gets the
+        // /help answer, so the person sees what they can type. In a group, a
+        // command addressed to another bot (/x@otherbot) is left alone.
+        if (null !== $this->help && str_starts_with($text, '/') && ! $this->isForAnotherBot($text)) {
+            $this->help->onHelp($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
         // A plain private message is only meaningful as the answer to a question
         // the bot just asked - who the cover is standing in for, who to gift a
         // credit, or the onboarding email.
@@ -440,6 +449,21 @@ final class UpdateRouter
     private function isCommand(string $text, string $command): bool
     {
         return 1 === preg_match('#^/' . preg_quote($command, '#') . '(@\w+)?($|\s)#i', $text);
+    }
+
+    /**
+     * True for "/cmd@name" when name is not this bot's username. When the
+     * username is not known, any addressed command counts as another bot's.
+     */
+    private function isForAnotherBot(string $text): bool
+    {
+        if (1 !== preg_match('#^/\w+@(\w+)#', $text, $m)) {
+            return false;
+        }
+
+        $own = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
+
+        return '' === $own || 0 !== strcasecmp($own, $m[1]);
     }
 
     /**

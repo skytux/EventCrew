@@ -127,6 +127,36 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertStringContainsString('/board in a private chat – also ➕ to put a person on a task', $text);
     }
 
+    public function testAnUnknownCommandGetsTheHelpAnswer(): void
+    {
+        $this->person();
+        $this->wpdb->nextCols[] = [];                                                               // nearbyDates
+
+        $this->send('/shifts');
+
+        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n/board", $this->lastText());
+    }
+
+    public function testAGroupCommandForAnotherBotIsLeftAlone(): void
+    {
+        $this->options['eventcrew_telegram_bot_username'] = 'CrewBot';
+
+        $this->send('/poll@OtherBot', ['id' => -100, 'type' => 'supergroup']);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+    }
+
+    public function testAnUnknownGroupCommandForThisBotGetsTheGroupHelp(): void
+    {
+        $this->options['eventcrew_telegram_bot_username'] = 'CrewBot';
+
+        $this->send('/shifts@crewbot', ['id' => -100, 'type' => 'supergroup']);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(-100, $sent['chat_id']);
+        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n", $sent['text']);
+    }
+
     public function testInTheGroupHelpIsTheEveryoneSectionInEnglish(): void
     {
         Language::run('fi', function (): void {

@@ -205,15 +205,22 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
     }
 
-    public function testARemovedCommandGetsNoAnswer(): void
+    public function testARemovedCommandGetsTheHelpAnswer(): void
     {
-        foreach (['/ticket', '/tickets', '/replace', '/gift', '/roles', '/tasks', '/cancel', '/language'] as $old) {
+        $old = ['/ticket', '/tickets', '/replace', '/gift', '/roles', '/tasks', '/cancel', '/language'];
+
+        foreach ($old as $command) {
             $this->router()->dispatch([
-                'message' => ['text' => $old, 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+                'message' => ['text' => $command, 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
             ]);
         }
 
-        self::assertSame([], $this->telegramCalls);
+        $answers = array_filter($this->telegramCalls, static fn (array $c): bool => 'sendMessage' === $c['method']);
+        self::assertCount(count($old), $answers);
+
+        foreach ($answers as $call) {
+            self::assertStringStartsWith('EventCrew bot – commands', $call['body']['text']);
+        }
     }
 
     public function testTicketCallbackReachesTheTicketService(): void

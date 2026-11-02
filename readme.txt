@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.71.0
+Stable tag: 1.72.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.72.0 =
+The bot answers any unknown or removed command with the /help list. In a group, a command addressed to another bot is left alone.
 
 = 1.71.0 =
 On a narrow phone the Cloudflare check is centred under the email field instead of sitting at the left edge.
@@ -784,6 +787,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.72.0 =
+No action needed.
 
 = 1.71.0 =
 Nothing to do.
