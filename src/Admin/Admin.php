@@ -7,6 +7,7 @@ namespace EventCrew\Admin;
 use EventCrew\Core\Container;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Scheduler;
 
 /**
  * Single manifest of every admin hook, and the only place the required
@@ -33,8 +34,11 @@ final class Admin
         add_action('admin_enqueue_scripts', [$this, 'enqueueStyles']);
 
         // Re-publish the webhook and command menu once after a plugin update, so
-        // a release that changes a bot command takes effect on its own.
+        // a release that changes a bot command takes effect on its own: on the
+        // next wp-admin request, or else on the next hourly WP-Cron run, so it
+        // does not wait for someone to open wp-admin.
         add_action('admin_init', [$this->container->get(SettingsPage::class), 'installOnUpdate']);
+        add_action(Scheduler::HOOK, [$this->container->get(SettingsPage::class), 'installOnUpdate']);
 
         add_action(
             'admin_post_eventcrew_save_settings',
