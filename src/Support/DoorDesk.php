@@ -192,7 +192,8 @@ final class DoorDesk
      *     date: string, day: string, in: int, expected: int, anonymous: int, max: int, over_allowed: bool,
      *     version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
-     *         key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
+     *         key: string, kind: string, ref: int, name: string, first: string, detail: string,
+     *         plus: int, max: int, in: bool
      *     }>}>
      * }
      */
@@ -447,7 +448,7 @@ final class DoorDesk
      * tickets in one at a time through mark().
      *
      * @param array<int, string> $codes
-     * @return array<int, array{key: string, kind: string, ref: int, name: string, in: bool}>
+     * @return array<int, array{key: string, kind: string, ref: int, name: string, first: string, in: bool}>
      */
     public function ticketsByCode(string $date, array $codes): array
     {
@@ -468,12 +469,24 @@ final class DoorDesk
                     'kind' => CheckinRepository::KIND_BUYER,
                     'ref' => $buyer->id,
                     'name' => '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name,
+                    'first' => self::firstName($buyer->name),
                     'in' => array_key_exists($key, $checkins),
                 ];
             }
         }
 
         return array_values($tickets);
+    }
+
+    /**
+     * The first word of a name, for the desk's "Welcome" line: the list keeps
+     * the full name, the greeting uses only the first name. '' for no name.
+     */
+    public static function firstName(string $name): string
+    {
+        $words = preg_split('/\s+/u', trim($name), 2);
+
+        return is_array($words) ? (string) $words[0] : '';
     }
 
     /** The line the desk shows when a scanned ticket code matches no ticket tonight. */
@@ -1122,7 +1135,8 @@ final class DoorDesk
      * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
      * @param array<string, int> $checkins
      * @return array{key: string, title: string, rows: array<int, array{
-     *     key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
+     *     key: string, kind: string, ref: int, name: string, first: string, detail: string,
+     *     plus: int, max: int, in: bool
      * }>}
      */
     private function section(string $key, string $title, array $rows, array $checkins): array
@@ -1138,6 +1152,7 @@ final class DoorDesk
                 'kind' => $row['kind'],
                 'ref' => $row['ref'],
                 'name' => $row['name'],
+                'first' => self::firstName($row['name']),
                 'detail' => $row['detail'],
                 'plus' => $in ? $checkins[$rowKey] : $row['plus'],
                 'max' => $row['max'],
