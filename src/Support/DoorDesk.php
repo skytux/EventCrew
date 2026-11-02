@@ -59,6 +59,9 @@ final class DoorDesk
     public const SCAN_TOO_EARLY = 'too_early';
     public const SCAN_CLOSED = 'closed';
 
+    /** Most ticket codes one scan may look up (one per ticket format). */
+    public const TICKET_CODES_MAX = 10;
+
     /**
      * The option that holds one night's count of people let in without a
      * name (the "+1" button), followed by the date (YYYY-MM-DD).
@@ -432,6 +435,75 @@ final class DoorDesk
             self::SCAN_OK => '',
             default => __('This QR code is not one of our tickets.', 'eventcrew'),
         };
+    }
+
+    /**
+     * The tickets on tonight's list that carry one of these ticket codes:
+     * the shop's order code, read from a QR code the desk scanned and
+     * decoded on the page. One order of several tickets has one row per
+     * ticket, so this can answer several. Each answer is the row's key on
+     * tonight's list ("buyer:12"), the name, and whether that ticket is
+     * already checked in. Nothing is marked here: the desk checks the
+     * tickets in one at a time through mark().
+     *
+     * @param array<int, string> $codes
+     * @return array<int, array{key: string, kind: string, ref: int, name: string, in: bool}>
+     */
+    public function ticketsByCode(string $date, array $codes): array
+    {
+        $tickets = [];
+        $checkins = null;
+
+        foreach (array_slice(array_values($codes), 0, self::TICKET_CODES_MAX) as $code) {
+            foreach ($this->buyers->findByTicketCode($date, (string) $code) as $buyer) {
+                $key = CheckinRepository::KIND_BUYER . ':' . $buyer->id;
+
+                if (isset($tickets[$key])) {
+                    continue;
+                }
+
+                $checkins ??= $this->checkins->forDate($date);
+                $tickets[$key] = [
+                    'key' => $key,
+                    'kind' => CheckinRepository::KIND_BUYER,
+                    'ref' => $buyer->id,
+                    'name' => '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name,
+                    'in' => array_key_exists($key, $checkins),
+                ];
+            }
+        }
+
+        return array_values($tickets);
+    }
+
+    /** The line the desk shows when a scanned ticket code matches no ticket tonight. */
+    public function noTicketCodeText(): string
+    {
+        return __('No ticket on tonight’s list has this code.', 'eventcrew');
+    }
+
+    /**
+     * The ticket code decoders the door page runs on a scanned QR code that
+     * is not one of our own tickets: the decoder_js of each ticket format, as
+     * written by an organizer. An empty string stands for a format without a
+     * decoder, whose ticket code is the scanned text itself. Each one is
+     * listed once.
+     *
+     * @return array<int, string>
+     */
+    public static function ticketDecoders(): array
+    {
+        $decoders = [];
+
+        foreach (TicketFormats::all() as $format) {
+            $decoder = trim((string) ($format['decoder_js'] ?? ''));
+
+            if (! in_array($decoder, $decoders, true)) {
+                $decoders[] = $decoder;
+            }
+        }
+
+        return $decoders;
     }
 
     /**

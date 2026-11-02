@@ -14,7 +14,10 @@ use EventCrew\Tests\TestCase;
  */
 final class DoorPageTest extends TestCase
 {
-    private function page(): string
+    /**
+     * @param array<string, mixed> $extraConfig Added to the page's config.
+     */
+    private function page(array $extraConfig = []): string
     {
         Functions\when('esc_html_e')->alias(static function (string $text): void {
             echo htmlspecialchars($text, ENT_QUOTES);
@@ -27,7 +30,8 @@ final class DoorPageTest extends TestCase
         );
 
         $eventcrew_state = ['day' => 'Sat 14 Nov', 'in' => 0, 'expected' => 0, 'anonymous' => 0, 'sections' => []];
-        $eventcrew_config = ['ajaxUrl' => 'https://site.test/wp-admin/admin-ajax.php', 'csrf' => 'x', 'actions' => []];
+        $eventcrew_config = ['ajaxUrl' => 'https://site.test/wp-admin/admin-ajax.php', 'csrf' => 'x', 'actions' => []]
+            + $extraConfig;
 
         ob_start();
         include EVENTCREW_PLUGIN_DIR . 'templates/public/door.php';
@@ -183,5 +187,30 @@ final class DoorPageTest extends TestCase
             '<span class="ec-spin" aria-hidden="true"></span><span class="ec-sr">Loading…</span>',
             $html
         );
+    }
+
+    public function testTheTicketDecodersArriveAsDataInTheConfig(): void
+    {
+        // A decoder that tries to close the script element stays data.
+        $decoders = ['return text.split("/").pop(); // </script><b>', ''];
+        $html = $this->page(['ticketDecoders' => $decoders]);
+
+        self::assertStringContainsString(
+            '"ticketDecoders":' . json_encode($decoders, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+            $html
+        );
+        self::assertStringNotContainsString('</script><b>', $html);
+        // Each one becomes a function on the page only when a scan needs it.
+        self::assertStringContainsString("ticketDecoders = (config.ticketDecoders || []).map(function (body) {", $html);
+        self::assertStringContainsString("return new Function('text', body);", $html);
+        self::assertStringContainsString("post('ticketCode', { codes: JSON.stringify(codes) })", $html);
+    }
+
+    public function testTheDoorControllerPassesTheTicketDecodersToThePage(): void
+    {
+        $source = (string) file_get_contents(EVENTCREW_PLUGIN_DIR . 'src/Web/DoorController.php');
+
+        self::assertStringContainsString("'ticketDecoders' => DoorDesk::ticketDecoders(),", $source);
+        self::assertStringContainsString("'ticketCode' => self::TICKET_CODE_ACTION,", $source);
     }
 }
