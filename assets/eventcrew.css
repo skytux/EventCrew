@@ -73,6 +73,8 @@
     text-wrap: balance;
 }
 .eventcrew-signup .eventcrew-turnstile { margin-top: .75em; }
+.eventcrew-signup .eventcrew-profile label { display: block; margin-top: .75em; font-weight: 600; }
+.eventcrew-signup .eventcrew-profile .wp-element-input { display: block; width: 100%; max-width: 28em; box-sizing: border-box; }
 /*
  * Name on the left, Sign out on the right. The form is a block element, so
  * without the flex it drops to its own row and ends up nowhere near the name it

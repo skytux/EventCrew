@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.67.0
+Stable tag: 1.68.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.68.0 =
+Sign-in: the form says it also signs up, and an address with no account gets a 'Create your crew account' email. The Turnstile check turns compact in a card narrower than 300px. Settings has a 'Your details' card: the name changes at once; a new email address changes only after the link sent to it is opened, and the old address is told.
 
 = 1.67.0 =
 * Telegram has fewer commands. Everyone has /board, /me and /help. /me has buttons for the free-entry ticket, taking over a task, web sign-in, notifications and language. /board in a private chat also lists the tasks of your roles (it replaces /tasks).
@@ -772,6 +775,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.68.0 =
+No database changes.
 
 = 1.67.0 =
 Telegram commands are reduced to /board, /me and /help, plus /roster, /door and /people for welcome crew and organizers. The old commands are removed.

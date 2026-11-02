@@ -32,11 +32,19 @@ final class SignupControllerTest extends TestCase
     /** @var array<int, string> */
     private array $mails = [];
 
+    /** @var array<int, array{to: string, subject: string}> */
+    private array $sent = [];
+
+    /** @var array<string, mixed> */
+    private array $transients = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mails = [];
+        $this->sent = [];
+        $this->transients = [];
         $_COOKIE = [];
         $_REQUEST = [];
 
@@ -61,6 +69,18 @@ final class SignupControllerTest extends TestCase
         );
         Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
             $this->mails[] = $body;
+            $this->sent[] = ['to' => $to, 'subject' => $subject];
+
+            return true;
+        });
+        Functions\when('set_transient')->alias(function (string $key, $value): bool {
+            $this->transients[$key] = $value;
+
+            return true;
+        });
+        Functions\when('get_transient')->alias(fn (string $key) => $this->transients[$key] ?? false);
+        Functions\when('delete_transient')->alias(function (string $key): bool {
+            unset($this->transients[$key]);
 
             return true;
         });
@@ -265,6 +285,118 @@ final class SignupControllerTest extends TestCase
         self::assertGreaterThanOrEqual(2, count($this->wpdb->inserts));
         self::assertCount(1, $this->mails);
         self::assertStringContainsString('action=' . SignupController::LOGIN_ACTION, $this->mails[0]);
+    }
+
+    public function testANewAddressIsToldTheLinkCreatesAnAccount(): void
+    {
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        $this->controller()->loginByEmail('new@example.com');
+
+        self::assertSame('Create your crew account', $this->sent[0]['subject']);
+        self::assertStringContainsString('There is no crew account for this email address yet.', $this->mails[0]);
+        self::assertStringContainsString('Create my account', $this->mails[0]);
+    }
+
+    public function testAnExistingAccountGetsThePlainSignInEmail(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+
+        $this->controller()->loginByEmail('sam@example.com');
+
+        self::assertNotSame('Create your crew account', $this->sent[0]['subject']);
+        self::assertStringNotContainsString('There is no crew account', $this->mails[0]);
+    }
+
+    private function sam(): \EventCrew\Models\Person
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+
+        return (new PersonRepository())->find(7);
+    }
+
+    public function testANewNameIsSavedAtOnce(): void
+    {
+        $sam = $this->sam();
+
+        self::assertSame('profile_saved', $this->controller()->updateProfile($sam, 'Sammy', 'sam@example.com'));
+        self::assertSame('Sammy', $this->wpdb->updates[0]['data']['display_name']);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAnEmptyNameIsRefused(): void
+    {
+        $sam = $this->sam();
+
+        self::assertSame('profile_no_name', $this->controller()->updateProfile($sam, '  ', 'sam@example.com'));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testANewEmailIsOnlyMailedAConfirmLinkAndNotSavedYet(): void
+    {
+        // With a public page, toPerson()'s footer would be a sign-in link.
+        Functions\when('get_option')->alias(
+            static fn (string $name, $default = false) => 'eventcrew_signup_page_id' === $name ? 12 : $default
+        );
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $sam = $this->sam();
+        $this->wpdb->nextRows[] = null; // findByEmail(new) -> free
+
+        self::assertSame('email_sent', $this->controller()->updateProfile($sam, 'Sam', 'sam2@example.com'));
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('sam2@example.com', $this->sent[0]['to']);
+        self::assertSame('Confirm your new email address', $this->sent[0]['subject']);
+        self::assertStringContainsString('action=' . SignupController::PROFILE_ACTION, $this->mails[0]);
+        // The new address is not confirmed yet, so no sign-in link goes to it.
+        self::assertStringNotContainsString(SignupController::LOGIN_ACTION, $this->mails[0]);
+        self::assertStringNotContainsString('eventcrew_login', $this->mails[0]);
+        self::assertSame(['sam2@example.com'], array_values($this->transients));
+    }
+
+    public function testAnEmailThatBelongsToSomeoneElseIsRefused(): void
+    {
+        $sam = $this->sam();
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
+
+        self::assertSame('email_taken', $this->controller()->updateProfile($sam, 'Sam', 'kim@example.com'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->transients);
+    }
+
+    public function testTheConfirmLinkMovesTheAccountAndTellsTheOldAddress(): void
+    {
+        $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'sam2@example.com';
+        $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = null; // findByEmail(new) -> still free
+
+        self::assertSame('email_changed', $this->controller()->confirmEmailChange('raw1'));
+
+        self::assertContains('sam2@example.com', array_column(array_column($this->wpdb->updates, 'data'), 'email'));
+        self::assertSame([], $this->transients);
+        self::assertSame('sam@example.com', $this->sent[0]['to']);
+        self::assertStringContainsString('sam2@example.com', $this->mails[0]);
+    }
+
+    public function testAConfirmLinkWithNothingPendingChangesNothing(): void
+    {
+        // A valid token alone is not enough: the pending address is gone.
+        $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        self::assertSame('bad_email_link', $this->controller()->confirmEmailChange('raw1'));
+        self::assertSame([], array_filter(array_column(array_column($this->wpdb->updates, 'data'), 'email')));
+        self::assertSame([], $this->mails);
     }
 
     public function testLoginByEmailRejectsABadAddress(): void
