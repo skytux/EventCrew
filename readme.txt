@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.74.0
+Stable tag: 1.75.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.75.0 =
+Finnish for the 465 strings that had none: wp-admin, the organizer guide, the privacy notice, Diagnostics and the ticket-buyer import. Roster is now Läsnäolo in Finnish (was Vuorolista).
 
 = 1.74.0 =
 After an update, the webhook and the bot's command menus are reinstalled on the next hourly WP-Cron run as well as on the next wp-admin request, so they no longer wait for someone to open wp-admin.
@@ -793,6 +796,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.75.0 =
+No action needed.
 
 = 1.74.0 =
 No action needed.
