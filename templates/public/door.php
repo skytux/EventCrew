@@ -89,7 +89,7 @@ $eventcrew_text = [
     'noDecoder' => __('This phone cannot read QR codes here. Find the name on the list instead.', 'eventcrew'),
     'already' => __('Already marked arrived.', 'eventcrew'),
     /* translators: %s: the name of the person just marked arrived */
-    'arrived' => __('%s is marked arrived.', 'eventcrew'),
+    'arrived' => __('Welcome %s', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -161,6 +161,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-scan-video{display:block;width:100%;max-height:55vh;object-fit:cover;border-radius:10px;background:#000}
 #ec-scan-name{font-size:32px;line-height:1.2;font-weight:700;margin:12px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ec-msg.is-error{background:var(--err-bg);border:2px solid var(--err);color:var(--err);font-weight:700}
+.ec-msg.is-welcome{background:var(--in-bg);border:2px solid var(--in);color:var(--in);font-size:26px;line-height:1.2;font-weight:700;text-align:center}
 #ec-scan-already{color:var(--in);font-weight:700}
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -1077,12 +1078,14 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     var scanLast = '';
     var scanLastAt = 0;
 
-    // isError colours the message red, so a failed scan stands out.
-    function scanMessage(message, isError) {
+    // isError colours the message red, so a failed scan stands out;
+    // isWelcome makes it big on green, for a person just marked arrived.
+    function scanMessage(message, isError, isWelcome) {
         var line = el('ec-scan-msg');
 
         line.textContent = message || '';
         line.classList.toggle('is-error', !!message && !!isError);
+        line.classList.toggle('is-welcome', !!message && !isError && !!isWelcome);
     }
 
     // The name on one line: from 32px down to 18px until it fits, then
@@ -1294,7 +1297,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             if (data && data.ok) {
                 // Ready for the next person in the queue.
                 startCamera();
-                scanMessage(text.arrived.replace('%s', row.name));
+                scanMessage(text.arrived.replace('%s', row.name), false, true);
                 return;
             }
 
