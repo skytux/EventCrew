@@ -87,11 +87,12 @@ final class Mailer
     public function sendTest(string $to): bool
     {
         $subject = __('EventCrew test email', 'eventcrew');
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         $body = __(
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it.",
             'eventcrew'
         );
+        // phpcs:enable Generic.Files.LineLength.TooLong
 
         // No token in a test: it is not addressed to a crew member, so there is
         // nobody to sign in as. The button points at the public page instead.

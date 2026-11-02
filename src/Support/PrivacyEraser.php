@@ -77,17 +77,18 @@ final class PrivacyEraser
 
         $this->eraser->erase($person->id);
 
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         return [
             'items_removed' => true,
             'items_retained' => false,
             'messages' => [
                 __(
-                    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     'The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links.',
                     'eventcrew'
                 ),
             ],
             'done' => true,
         ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 }

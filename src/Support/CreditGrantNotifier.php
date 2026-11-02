@@ -36,15 +36,13 @@ final class CreditGrantNotifier
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
+            // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, sprintf(
                     /* translators: %d: number of free-entry credits granted */
-                    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     _n(
-                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                         '🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event.',
-                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                         '🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events.',
                         $credits,
                         'eventcrew'
@@ -52,6 +50,7 @@ final class CreditGrantNotifier
                     $credits
                 ))
             );
+            // phpcs:enable Generic.Files.LineLength.TooLong
         }
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::CREDIT)) {
