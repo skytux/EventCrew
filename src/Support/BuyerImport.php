@@ -53,6 +53,10 @@ final class BuyerImport
 
         $added = $this->buyers->addMany($date, $names, $source, $batch);
 
+        if ($added > 0) {
+            TicketMail::schedule();
+        }
+
         return ['added' => $added, 'skipped' => count($names) - $added, 'duplicate' => false];
     }
 
@@ -72,6 +76,11 @@ final class BuyerImport
         }
 
         $added = $this->buyers->addTickets($date, $tickets, $source, $batch);
+
+        // The new tickets are emailed to their buyers by the next cron run.
+        if ($added > 0) {
+            TicketMail::schedule();
+        }
 
         return ['added' => $added, 'skipped' => count($tickets) - $added, 'duplicate' => false];
     }

@@ -61,14 +61,52 @@ final class BuyerListParserTest extends TestCase
 
         self::assertSame(
             [
-                ['name' => 'Anna Virtanen', 'plus_ones' => 2],
-                ['name' => 'Bo', 'plus_ones' => 12],
-                ['name' => 'Cy', 'plus_ones' => 0],
-                ['name' => '+3', 'plus_ones' => 0],
-                ['name' => 'Dee +1 late', 'plus_ones' => 0],
-                ['name' => 'Ed +1000', 'plus_ones' => 0],
+                ['name' => 'Anna Virtanen', 'plus_ones' => 2, 'email' => ''],
+                ['name' => 'Bo', 'plus_ones' => 12, 'email' => ''],
+                ['name' => 'Cy', 'plus_ones' => 0, 'email' => ''],
+                ['name' => '+3', 'plus_ones' => 0, 'email' => ''],
+                ['name' => 'Dee +1 late', 'plus_ones' => 0, 'email' => ''],
+                ['name' => 'Ed +1000', 'plus_ones' => 0, 'email' => ''],
             ],
             $guests
+        );
+    }
+
+    /**
+     * The three shapes of a guest line with an email: the address is taken
+     * out of the name and saved with the guest, and +N still counts.
+     */
+    public function testGuestsTakeAnEmailAddressOutOfTheName(): void
+    {
+        $guests = BuyerListParser::guests(
+            "Anna Virtanen <Anna.V@Example.fi> +2\nBo Berg, bo@example.fi\nCy Cole cy.cole@mail.example.fi +1"
+        );
+
+        self::assertSame(
+            [
+                ['name' => 'Anna Virtanen', 'plus_ones' => 2, 'email' => 'anna.v@example.fi'],
+                ['name' => 'Bo Berg', 'plus_ones' => 0, 'email' => 'bo@example.fi'],
+                ['name' => 'Cy Cole', 'plus_ones' => 1, 'email' => 'cy.cole@mail.example.fi'],
+            ],
+            $guests
+        );
+    }
+
+    /** A line that is only an address keeps the address's first part as the name. */
+    public function testAGuestLineWithOnlyAnEmailUsesItsFirstPartAsTheName(): void
+    {
+        self::assertSame(
+            [['name' => 'dee', 'plus_ones' => 0, 'email' => 'dee@example.fi']],
+            BuyerListParser::guests('dee@example.fi')
+        );
+    }
+
+    /** A line with no address works as before and saves no email. */
+    public function testAGuestLineWithNoEmailSavesNone(): void
+    {
+        self::assertSame(
+            [['name' => 'Ed Ek', 'plus_ones' => 3, 'email' => '']],
+            BuyerListParser::guests('Ed Ek +3')
         );
     }
 }

@@ -6,7 +6,9 @@ namespace EventCrew\Models;
 
 /**
  * One name on a night's guest list: someone let in free who is not a crew
- * member, with the number of people they bring along.
+ * member, with the number of people they bring along. A guest from a mailed
+ * guest list may carry an email address, which is emailed their ticket once;
+ * mailStatus is '' (not sent), 'sent' or 'failed'.
  */
 final class Guest
 {
@@ -16,7 +18,10 @@ final class Guest
         public readonly string $name,
         public readonly int $plusOnes = 0,
         public readonly string $note = '',
-        public readonly ?int $addedBy = null
+        public readonly ?int $addedBy = null,
+        public readonly string $email = '',
+        public readonly string $mailStatus = '',
+        public readonly string $mailedAt = ''
     ) {
     }
 
@@ -33,7 +38,10 @@ final class Guest
             (string) ($row['name'] ?? ''),
             (int) ($row['plus_ones'] ?? 0),
             (string) ($row['note'] ?? ''),
-            null === $addedBy || '' === $addedBy ? null : (int) $addedBy
+            null === $addedBy || '' === $addedBy ? null : (int) $addedBy,
+            (string) ($row['email'] ?? ''),
+            (string) ($row['ticket_mail_status'] ?? ''),
+            (string) ($row['ticket_mailed_at'] ?? '')
         );
     }
 

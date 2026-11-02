@@ -55,6 +55,17 @@ final class OrganizerGuideTest extends TelegramTestCase
         self::assertStringContainsString('email the ticket file to import.edh@haissous.name', OrganizerGuide::short());
         self::assertStringContainsString('Or email the Holvi ticket file (.xlsx or .csv) to import.edh@haissous.name', OrganizerGuide::full());
         self::assertStringContainsString('go to that event’s guest list instead; write "+2" after a name for two plus-ones', OrganizerGuide::full());
+        self::assertStringContainsString('are emailed to the buyers', OrganizerGuide::short());
+        self::assertStringContainsString('the guest gets a ticket by email', OrganizerGuide::full());
+    }
+
+    public function testTheGuideSaysTicketsAreEmailedAutomaticallyAfterImport(): void
+    {
+        $full = OrganizerGuide::full();
+
+        self::assertStringContainsString('every imported ticket with an email address is emailed to its buyer automatically', $full);
+        self::assertStringContainsString('"Send a test to me"', $full);
+        self::assertStringContainsString('"Send the rest now"', $full);
     }
 
     public function testWithoutAnImportMailboxTheGuideLeavesTheEmailImportOut(): void

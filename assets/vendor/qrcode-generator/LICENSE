@@ -1,4 +1,6 @@
 qrcode-generator 1.4.4 (qrcode.js), https://github.com/kazuhikoarase/qrcode-generator
+qrcode.php: php/qrcode.php from the same repository (master, 2026-11-02),
+namespaced for EventCrew; same author and licence.
 
 The MIT License (MIT)
 

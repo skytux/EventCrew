@@ -114,6 +114,68 @@ final class TicketControllerTest extends TestCase
         self::assertNull($this->controller()->ticketFor(SignedLink::sign('credit_ticket', 3)));
     }
 
+    /** @return array<string, mixed> */
+    private function buyerRow(string $code): array
+    {
+        return [
+            'id' => 4, 'event_date' => '2026-08-01', 'name' => 'Bo Buyer', 'source' => 'holvi',
+            'email' => 'bo@example.test', 'ticket_code' => $code,
+        ];
+    }
+
+    /**
+     * An emailed buyer ticket opens the page; its QR code holds the ticket
+     * code, which is written out under it.
+     */
+    public function testResolvesAnEmailedBuyerTicket(): void
+    {
+        $this->wpdb->nextRows[] = $this->buyerRow('AB12CD');
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('buyer_ticket|AB12CD', 4));
+
+        self::assertNotNull($ticket);
+        self::assertTrue($ticket['valid']);
+        self::assertSame('Bo Buyer', $ticket['name']);
+        self::assertSame('AB12CD', $ticket['qr']);
+        self::assertSame('AB12CD', $ticket['code']);
+        self::assertSame('Test Site', $ticket['event']);
+    }
+
+    /** Once the ticket code is deleted (RetentionPurge, erasure) the link dies. */
+    public function testAnEmailedBuyerTicketDiesWithItsCode(): void
+    {
+        $token = SignedLink::sign('buyer_ticket|AB12CD', 4);
+
+        $this->wpdb->nextRows[] = ['ticket_code' => null, 'email' => null, 'name' => ''] + $this->buyerRow('');
+        self::assertNull($this->controller()->ticketFor($token));
+
+        // A different code on the row (a forged id) does not verify either.
+        $this->wpdb->nextRows[] = $this->buyerRow('ZZ99');
+        self::assertNull($this->controller()->ticketFor($token));
+    }
+
+    public function testResolvesAnEmailedGuestTicket(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 12, 'event_date' => '2026-08-01', 'name' => 'Cy Cole', 'plus_ones' => 2,
+            'email' => 'cy@example.test',
+        ];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('guest_ticket', 12));
+
+        self::assertNotNull($ticket);
+        self::assertSame('Cy Cole', $ticket['name']);
+        self::assertSame('Guest list, +2 people', $ticket['role']);
+        self::assertArrayNotHasKey('qr', $ticket);
+    }
+
+    public function testAGuestTicketWithItsEmailDeletedIsNotFound(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 12, 'event_date' => '2026-08-01', 'name' => 'Cy Cole', 'email' => null];
+
+        self::assertNull($this->controller()->ticketFor(SignedLink::sign('guest_ticket', 12)));
+    }
+
     public function testRenderPageShowsTheLiveClock(): void
     {
         $ticket = [

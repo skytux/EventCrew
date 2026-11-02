@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
@@ -42,7 +44,9 @@ final class TicketController
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
-        private readonly RedemptionRepository $redemptions
+        private readonly RedemptionRepository $redemptions,
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
+        private readonly GuestRepository $guests = new GuestRepository()
     ) {
     }
 
@@ -84,14 +88,117 @@ final class TicketController
 
     /**
      * The ticket's details, or null when the link is bad or the record it names
-     * (assignment or redemption), or its task or person, is gone. A token is
-     * tried as a rostered-slot ticket first, then as a free-entry-credit one.
+     * (assignment, redemption, ticket buyer or guest), or its task or person,
+     * is gone. A token is tried as a rostered-slot ticket first, then as a
+     * free-entry-credit one, then as an emailed ticket (TicketMail).
      *
-     * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null
+     * 'qr' is what the QR code holds when it is not the page's own link: a
+     * ticket buyer's ticket code. 'code' is written out under the QR code.
+     *
+     * @return array{
+     *     valid: bool, name: string, event: string, date: string, role: string, time: string,
+     *     issued: string, language: ?string, image?: string, qr?: string, code?: string
+     * }|null
      */
     public function ticketFor(string $token): ?array
     {
-        return $this->assignmentTicket($token) ?? $this->creditTicket($token);
+        return $this->assignmentTicket($token)
+            ?? $this->creditTicket($token)
+            ?? $this->guestTicket($token)
+            ?? $this->buyerTicket($token);
+    }
+
+    /**
+     * An imported ticket buyer's emailed ticket. The ticket code is part of
+     * what the link signs, so once the code is deleted (60 days after the
+     * event, or on an erasure request) the link no longer resolves.
+     *
+     * @return array{
+     *     valid: bool, name: string, event: string, date: string, role: string, time: string,
+     *     issued: string, language: ?string, image?: string, qr?: string, code?: string
+     * }|null
+     */
+    private function buyerTicket(string $token): ?array
+    {
+        $id = SignedLink::idOf($token);
+        $buyer = null === $id ? null : $this->buyers->find($id);
+
+        if (null === $buyer || '' === $buyer->ticketCode || '' === $buyer->email) {
+            return null;
+        }
+
+        if ($id !== SignedLink::verify('buyer_ticket|' . $buyer->ticketCode, $token)) {
+            return null;
+        }
+
+        $role = static fn (): string => __('Ticket', 'eventcrew');
+
+        return $this->emailedTicket($buyer->eventDate, $buyer->name, $role) + [
+            'qr' => $buyer->ticketCode,
+            'code' => $buyer->ticketCode,
+        ];
+    }
+
+    /**
+     * A guest's emailed ticket. Works while the guest is on the list with an
+     * email address; the address is deleted 60 days after the event.
+     *
+     * @return array{
+     *     valid: bool, name: string, event: string, date: string, role: string, time: string,
+     *     issued: string, language: ?string, image?: string
+     * }|null
+     */
+    private function guestTicket(string $token): ?array
+    {
+        $id = SignedLink::verify('guest_ticket', $token);
+        $guest = null === $id ? null : $this->guests->find($id);
+
+        if (null === $guest || '' === $guest->email) {
+            return null;
+        }
+
+        $plusOnes = $guest->plusOnes;
+        $role = static fn (): string => $plusOnes > 0
+            ? sprintf(
+                /* translators: %d: how many people the guest may bring */
+                _n('Guest list, +%d person', 'Guest list, +%d people', $plusOnes, 'eventcrew'),
+                $plusOnes
+            )
+            : __('Guest list', 'eventcrew');
+
+        return $this->emailedTicket($guest->eventDate, $guest->name, $role);
+    }
+
+    /**
+     * The common part of an emailed ticket: the night's event (its first
+     * task's), and the page in the language the browser asks for. $role
+     * returns the line under the name, in the current language.
+     *
+     * @param callable(): string $role
+     * @return array{
+     *     valid: bool, name: string, event: string, date: string, role: string, time: string,
+     *     issued: string, language: ?string, image: string
+     * }
+     */
+    private function emailedTicket(string $date, string $name, callable $role): array
+    {
+        $task = $this->tasks->forDate($date)[0] ?? null;
+        $accept = isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])
+            ? sanitize_text_field(wp_unslash((string) $_SERVER['HTTP_ACCEPT_LANGUAGE']))
+            : null;
+        $language = Language::fromBrowser($accept);
+
+        return [
+            'valid' => true,
+            'name' => $name,
+            'event' => null === $task ? (string) get_bloginfo('name') : $task->eventName(),
+            'date' => $date,
+            'role' => Language::run($language, $role),
+            'time' => '',
+            'issued' => '',
+            'language' => $language,
+            'image' => null === $task ? '' : SignupBoardView::eventImage($task->eventPostId),
+        ];
     }
 
     /**
@@ -220,7 +327,8 @@ final class TicketController
             $title,
             $this->headBlock($title, $ticket['event'], $ticket['date'], (string) ($ticket['image'] ?? ''))
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
-            . $body . $band . $this->qrBlock() . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
+            . $body . $band . $this->qrBlock($ticket['qr'] ?? '') . $this->codeBlock($ticket['code'] ?? '')
+            . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
             . '</div>'
         );
     }
@@ -258,8 +366,11 @@ final class TicketController
      * browser by the bundled qrcode-generator, at error correction level H:
      * up to 30% of the code can be covered and it still scans, and the logo
      * covers about 5%. No library, no code: the box is removed.
+     *
+     * $data, when given, is what the code holds instead of the page's link: a
+     * ticket buyer's ticket code, which is what the desk looks up.
      */
-    private function qrBlock(): string
+    private function qrBlock(string $data = ''): string
     {
         if (! defined('EVENTCREW_PLUGIN_URL')) {
             return '';
@@ -268,11 +379,18 @@ final class TicketController
         $logo = EmailTemplate::qrMarkUrl();
         $img = '' === $logo ? '' : '<img class="t-qr-logo" src="' . esc_url($logo) . '" alt="">';
         $lib = EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION;
+        $content = '' === $data ? 'location.href' : (string) wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP);
 
         return '<div class="t-qr" id="ec-qr">' . $img . '</div>'
             . '<script src="' . esc_url($lib) . '"></script>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-            . '<script>(function(){var h=document.getElementById("ec-qr");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);return;}var q=window.qrcode(0,"H");q.addData(location.href);q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));})();</script>';
+            . '<script>(function(){var h=document.getElementById("ec-qr");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));})();</script>';
+    }
+
+    /** The ticket code written out under the QR code, or '' when there is none. */
+    private function codeBlock(string $code): string
+    {
+        return '' === $code ? '' : '<p class="t-code">' . esc_html($code) . '</p>';
     }
 
     /**
@@ -357,6 +475,8 @@ final class TicketController
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
             . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'
             . '.t-qr svg+.t-qr-logo{display:block}'
+            . '.t-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.4em;font-weight:700;'
+            . 'letter-spacing:.08em;margin:-.4em 0 1em}'
             . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
             . '.t-small{opacity:.7;font-size:.82em}';
 

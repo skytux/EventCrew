@@ -209,6 +209,24 @@ final class RetentionPurgeTest extends TestCase
     }
 
     /**
+     * A guest's email address goes after the same period as a buyer's; the
+     * guest's name stays on the list and no row is deleted.
+     */
+    public function testGuestEmailsGoAfterTheSamePeriodAndTheNameStays(): void
+    {
+        $this->withOptions([PrivacyPolicy::PURGE_OPTION => '0']);
+        $this->wpdb->nextQueryResults[] = 2;
+
+        self::assertSame(2, $this->purge()->purgeGuestEmails());
+
+        $sql = $this->wpdb->lastQuery();
+        self::assertStringContainsString('UPDATE wp_eventcrew_guests SET email = NULL', $sql);
+        self::assertStringContainsString("event_date < '2026-05-21'", $sql);
+        self::assertStringNotContainsString('name', $sql);
+        self::assertSame([], $this->wpdb->deletes);
+    }
+
+    /**
      * There is no newsletter yet, so no address is kept and the query has no
      * exception list.
      */

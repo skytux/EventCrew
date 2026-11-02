@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 
@@ -41,8 +42,26 @@ final class RetentionPurge
     public function __construct(
         private readonly PersonRepository $people,
         private readonly PersonEraser $eraser,
-        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
+        private readonly GuestRepository $guests = new GuestRepository()
     ) {
+    }
+
+    /**
+     * Deletes the email addresses of guests from a mailed guest list once the
+     * event is more than PrivacyPolicy::BUYER_EMAIL_DAYS days ago, the same
+     * period as ticket buyers. The guest's name stays on the guest list.
+     * Always on, like purgeBuyers(). Returns how many rows changed.
+     */
+    public function purgeGuestEmails(): int
+    {
+        $cutoff = $this->buyerEmailCutoff();
+
+        if ('' === $cutoff) {
+            return 0;
+        }
+
+        return $this->guests->anonymizeEmailsBefore($cutoff);
     }
 
     /**

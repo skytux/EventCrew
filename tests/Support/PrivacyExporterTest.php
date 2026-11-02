@@ -100,8 +100,40 @@ final class PrivacyExporterTest extends TestCase
         self::assertSame('Bo Buyer', $values['Name']);
         self::assertSame('bo@example.test', $values['Email']);
         self::assertSame('T-123', $values['Ticket code']);
-        self::assertStringContainsString(
-            "wp_eventcrew_ticket_buyers WHERE email = 'bo@example.test'",
+        self::assertContains(
+            "SELECT * FROM wp_eventcrew_ticket_buyers WHERE email = 'bo@example.test' ORDER BY event_date ASC, id ASC",
+            $this->wpdb->queries
+        );
+    }
+
+    /** A guest from a mailed guest list gets their guest list place. */
+    public function testAGuestWithAnEmailGetsTheirGuestListPlace(): void
+    {
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextResults[] = []; // no ticket buyer rows
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 7,
+                'event_date' => '2026-08-01',
+                'name' => 'Cy Guest',
+                'plus_ones' => 2,
+                'note' => '',
+                'email' => 'cy@example.test',
+            ],
+        ];
+
+        $result = $this->exporter()->export('cy@example.test');
+
+        self::assertCount(1, $result['data']);
+        self::assertSame('eventcrew-guest-list', $result['data'][0]['group_id']);
+
+        $values = array_column($result['data'][0]['data'], 'value', 'name');
+        self::assertSame('2026-08-01', $values['Event date']);
+        self::assertSame('Cy Guest', $values['Name']);
+        self::assertSame('cy@example.test', $values['Email']);
+        self::assertSame('2', $values['Plus-ones']);
+        self::assertSame(
+            "SELECT * FROM wp_eventcrew_guests WHERE email = 'cy@example.test' ORDER BY event_date ASC, id ASC",
             $this->wpdb->lastQuery()
         );
     }

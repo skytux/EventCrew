@@ -12,6 +12,7 @@ use EventCrew\Support\BuyerListParser;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\TicketFileException;
+use EventCrew\Support\TicketMail;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -262,6 +263,7 @@ final class BuyerImportController
         $added = 0;
         $skipped = 0;
         $plusOnes = 0;
+        $withEmail = 0;
 
         foreach (BuyerListParser::guests($text) as $guest) {
             $key = self::guestKey($guest['name']);
@@ -274,10 +276,16 @@ final class BuyerImportController
 
             $seen[$key] = true;
 
-            if ($this->guests->add($date, $guest['name'], $guest['plus_ones'], '', $addedBy) > 0) {
+            if ($this->guests->add($date, $guest['name'], $guest['plus_ones'], '', $addedBy, $guest['email']) > 0) {
                 ++$added;
                 $plusOnes += min($guest['plus_ones'], GuestRepository::MAX_PLUS_ONES);
+                $withEmail += '' === $guest['email'] ? 0 : 1;
             }
+        }
+
+        // A guest with an email address is emailed a ticket by the next cron run.
+        if ($withEmail > 0) {
+            TicketMail::schedule();
         }
 
         return ['added' => $added, 'skipped' => $skipped, 'duplicate' => false, 'plus_ones' => $plusOnes];

@@ -146,6 +146,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_send_ticket_test',
+            [$this->container->get(RosterPage::class), 'sendTicketTest']
+        );
+
+        add_action(
+            'admin_post_eventcrew_send_tickets_now',
+            [$this->container->get(RosterPage::class), 'sendTicketsNow']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_import_mailbox',
             [$this->container->get(SettingsPage::class), 'saveImportMailbox']
         );

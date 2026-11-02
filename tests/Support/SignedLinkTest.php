@@ -38,6 +38,13 @@ final class SignedLinkTest extends TestCase
         self::assertNull(SignedLink::verify('ticket', ''));
     }
 
+    public function testIdOfReadsTheIdWithoutVerifying(): void
+    {
+        self::assertSame(42, SignedLink::idOf(SignedLink::sign('buyer_ticket|AB12', 42)));
+        self::assertNull(SignedLink::idOf('not-a-token'));
+        self::assertNull(SignedLink::idOf(''));
+    }
+
     public function testADifferentIdProducesADifferentSignature(): void
     {
         self::assertNotSame(SignedLink::sign('ticket', 1), SignedLink::sign('ticket', 2));

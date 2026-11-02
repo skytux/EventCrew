@@ -388,9 +388,38 @@ final class DoorDesk
             if (null !== $redemptionId) {
                 return $this->scanRedemption($date, $redemptionId);
             }
+
+            $guestId = SignedLink::verify('guest_ticket', $token);
+
+            if (null !== $guestId) {
+                return $this->scanGuest($date, $guestId);
+            }
         }
 
         return self::scanAnswer(self::SCAN_NOT_OURS);
+    }
+
+    /**
+     * A guest's emailed ticket (TicketMail): the guest's row on the guest
+     * list. A guest who was removed from the list, or whose email address was
+     * deleted, no longer has a ticket.
+     *
+     * @return array{code: string, key: string, name: string, date: string, at: string}
+     */
+    private function scanGuest(string $date, int $guestId): array
+    {
+        $guest = $this->guests->find($guestId);
+
+        if (null === $guest || '' === $guest->email) {
+            return self::scanAnswer(self::SCAN_DISABLED, '', null === $guest ? '' : $guest->name);
+        }
+
+        if ($guest->eventDate !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $guest->name, $guest->eventDate);
+        }
+
+        return $this->inScanWindow($date)
+            ?? self::scanAnswer(self::SCAN_OK, CheckinRepository::KIND_GUEST . ':' . $guest->id, $guest->name, $date);
     }
 
     /**

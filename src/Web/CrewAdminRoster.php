@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Admin\RosterPage;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Models\Guest;
@@ -21,6 +22,7 @@ use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -53,7 +55,8 @@ final class CrewAdminRoster
         private readonly GuestRepository $guests,
         private readonly TicketBuyerRepository $ticketBuyers,
         private readonly BuyerImport $buyerImport,
-        private readonly MailImporter $mailImporter
+        private readonly MailImporter $mailImporter,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -107,6 +110,8 @@ final class CrewAdminRoster
      *     event_reason: string,
      *     guests: list<array{id: int, name: string, plus_ones: int, note: string}>,
      *     buyers: list<string>,
+     *     ticket_mail_buyers: string,
+     *     ticket_mail_guests: string,
      *     mailbox: string,
      *     mail_last: string
      * }
@@ -120,6 +125,8 @@ final class CrewAdminRoster
             'event_reason' => '',
             'guests' => [],
             'buyers' => [],
+            'ticket_mail_buyers' => '',
+            'ticket_mail_guests' => '',
             'mailbox' => BuyerImportController::mailbox(),
             'mail_last' => self::lastMailCheck(),
         ];
@@ -157,6 +164,15 @@ final class CrewAdminRoster
             if ($buyer instanceof TicketBuyer && ! $buyer->isDoorSale()) {
                 $view['buyers'][] = $buyer->name;
             }
+        }
+
+        if (null !== $this->ticketMail) {
+            $view['ticket_mail_buyers'] = TicketMail::statusLine(
+                $this->ticketMail->counts($date, TicketMail::KIND_BUYERS)
+            );
+            $view['ticket_mail_guests'] = TicketMail::statusLine(
+                $this->ticketMail->counts($date, TicketMail::KIND_GUESTS)
+            );
         }
 
         return $view;
@@ -357,6 +373,38 @@ final class CrewAdminRoster
     }
 
     /**
+     * "Send a test to me": one ticket email, built from the night's first
+     * ticket, to the organizer's own address. No row's status changes.
+     */
+    public function sendTicketTest(string $date, Person $organizer): string
+    {
+        if (! self::isValidDate($date) || null === $this->ticketMail) {
+            return 'admin_change_failed';
+        }
+
+        return 'admin_tickets_test_' . $this->ticketMail->sendTest($date, $organizer->email);
+    }
+
+    /**
+     * "Send the rest now": up to one batch of the night's ticket emails that
+     * have not gone out, failed ones included. $kind is "buyers" or "guests".
+     */
+    public function sendTicketsRest(string $date, string $kind): string
+    {
+        if (! self::isValidDate($date) || null === $this->ticketMail) {
+            return 'admin_change_failed';
+        }
+
+        $result = $this->ticketMail->sendRest(
+            $date,
+            TicketMail::KIND_GUESTS === $kind ? TicketMail::KIND_GUESTS : TicketMail::KIND_BUYERS
+        );
+
+        return sprintf('admin_tickets_sent_%d_%d', $result['sent'], $result['failed'])
+            . ($result['more'] ? '_more' : '');
+    }
+
+    /**
      * "Check the mailbox now": one run of the mail import, as the button in
      * wp-admin Settings does. The text of the result is read back from the
      * stored status when the page shows the notice.
@@ -427,6 +475,9 @@ final class CrewAdminRoster
             'admin_guest_saved' => __('Guest saved.', 'eventcrew'),
             'admin_guest_removed' => __('Guest removed.', 'eventcrew'),
             'admin_buyers_failed' => __('That list could not be imported.', 'eventcrew'),
+            'admin_tickets_test_sent' => __('A test ticket email was sent to your own address.', 'eventcrew'),
+            'admin_tickets_test_failed' => RosterPage::ticketTestMessage(TicketMail::TEST_FAILED, ''),
+            'admin_tickets_test_none' => RosterPage::ticketTestMessage(TicketMail::TEST_NONE, ''),
             'admin_mail_off' => __(
                 'Reading the mailbox is switched off, or the server, user name or password is missing.',
                 'eventcrew'
@@ -453,6 +504,10 @@ final class CrewAdminRoster
                 (int) $m[1],
                 (int) $m[2]
             );
+        }
+
+        if (1 === preg_match('/^admin_tickets_sent_(\d+)_(\d+)(_more)?$/', $code, $m)) {
+            return RosterPage::ticketsSentMessage((int) $m[1], (int) $m[2], isset($m[3]) && '' !== $m[3]);
         }
 
         if (1 === preg_match('/^admin_buyers_deleted_(\d+)$/', $code, $m)) {

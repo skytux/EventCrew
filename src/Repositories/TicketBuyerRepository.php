@@ -413,4 +413,157 @@ final class TicketBuyerRepository
 
         return false === $changed ? 0 : (int) $changed;
     }
+
+    /**
+     * One row by id, or null when there is none.
+     */
+    public function find(int $id): ?TicketBuyer
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id = %d", $id),
+            ARRAY_A
+        );
+
+        return is_array($row) ? TicketBuyer::fromRow($row) : null;
+    }
+
+    /**
+     * The tickets that are emailed automatically and have not been tried yet:
+     * events on $fromDate or later, oldest event first. A 'failed' row is not
+     * among them; only an organizer's "Send the rest now" tries it again.
+     *
+     * @return array<int, TicketBuyer>
+     */
+    public function unsentFrom(string $fromDate, int $limit): array
+    {
+        return $this->mailRows(
+            "event_date >= %s AND ticket_mail_status = ''",
+            [$fromDate],
+            'event_date ASC, id ASC',
+            $limit
+        );
+    }
+
+    /**
+     * The tickets on $date whose email has not gone out: not tried yet first,
+     * then the failed ones - "Send the rest now".
+     *
+     * @return array<int, TicketBuyer>
+     */
+    public function notSentOn(string $date, int $limit): array
+    {
+        return $this->mailRows(
+            'event_date = %s AND ticket_mail_status <> %s',
+            [$date, 'sent'],
+            "(ticket_mail_status = 'failed') ASC, id ASC",
+            $limit
+        );
+    }
+
+    /**
+     * The first ticket on $date that can be emailed, whatever its status -
+     * the model for "Send a test to me". Null when there is none.
+     */
+    public function firstMailableOn(string $date): ?TicketBuyer
+    {
+        return $this->mailRows('event_date = %s', [$date], 'id ASC', 1)[0] ?? null;
+    }
+
+    /**
+     * How many of $date's emailable tickets were sent, failed and are not
+     * sent yet.
+     *
+     * @return array{sent: int, failed: int, unsent: int}
+     */
+    public function mailCounts(string $date): array
+    {
+        global $wpdb;
+
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- placeholders only; the table name comes from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ticket_mail_status AS status, COUNT(*) AS n FROM {$this->table()}"
+                    . ' WHERE event_date = %s AND ' . self::MAILABLE
+                    . ' GROUP BY ticket_mail_status',
+                $date,
+                self::SOURCE_DOOR,
+                self::SOURCE_DESK
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+
+        return self::countsFrom(is_array($rows) ? $rows : []);
+    }
+
+    /**
+     * Records what happened to a ticket's email: 'sent' or 'failed', and now.
+     */
+    public function setMailStatus(int $id, string $status): void
+    {
+        global $wpdb;
+
+        $wpdb->update(
+            $this->table(),
+            ['ticket_mail_status' => $status, 'ticket_mailed_at' => current_time('mysql')],
+            ['id' => $id],
+            ['%s', '%s'],
+            ['%d']
+        );
+    }
+
+    /**
+     * The rows that can be emailed a ticket: imported (not a door sale and
+     * not added at the desk), with an email address and a ticket code. The
+     * two %s are the door and desk sources.
+     */
+    private const MAILABLE = 'source NOT IN (%s, %s)'
+        . " AND email IS NOT NULL AND email <> '' AND ticket_code IS NOT NULL AND ticket_code <> ''";
+
+    /**
+     * @param array<int, string> $args The values of $where's placeholders.
+     * @return array<int, TicketBuyer>
+     */
+    private function mailRows(string $where, array $args, string $order, int $limit): array
+    {
+        global $wpdb;
+
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- placeholders only; the table name comes from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE {$where} AND " . self::MAILABLE
+                    . " ORDER BY {$order} LIMIT %d",
+                ...array_merge($args, [self::SOURCE_DOOR, self::SOURCE_DESK, max(1, $limit)])
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+
+        return array_map(
+            static fn (array $row): TicketBuyer => TicketBuyer::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
+    }
+
+    /**
+     * Status counts out of "status, n" rows. Any status other than 'sent' and
+     * 'failed' counts as not sent.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array{sent: int, failed: int, unsent: int}
+     */
+    public static function countsFrom(array $rows): array
+    {
+        $counts = ['sent' => 0, 'failed' => 0, 'unsent' => 0];
+
+        foreach ($rows as $row) {
+            $status = (string) ($row['status'] ?? '');
+            $key = 'sent' === $status || 'failed' === $status ? $status : 'unsent';
+            $counts[$key] += (int) ($row['n'] ?? 0);
+        }
+
+        return $counts;
+    }
 }

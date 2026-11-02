@@ -17,6 +17,7 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Web\BuyerImportController;
 
@@ -45,7 +46,8 @@ final class RosterPage
         private readonly TicketRedemptionService $tickets,
         private readonly GuestRepository $guests,
         private readonly TicketBuyerRepository $ticketBuyers,
-        private readonly BuyerImport $buyerImport
+        private readonly BuyerImport $buyerImport,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -80,6 +82,12 @@ final class RosterPage
                     static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()
                 )),
                 'import_mailbox' => BuyerImportController::mailbox(),
+                'ticket_mail_buyers' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
+                    $this->ticketMail->counts($selected, TicketMail::KIND_BUYERS)
+                ),
+                'ticket_mail_guests' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
+                    $this->ticketMail->counts($selected, TicketMail::KIND_GUESTS)
+                ),
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
                 'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),
                 'statuses' => $this->statusChoices(),
@@ -485,6 +493,87 @@ final class RosterPage
             'success',
             $this->dateArg($date)
         );
+    }
+
+    /**
+     * "Send a test to me": one ticket email, built from the night's first
+     * ticket, to the signed-in organizer's own address. No status changes.
+     */
+    public function sendTicketTest(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $to = (string) wp_get_current_user()->user_email;
+        $result = $this->isValidDate($date) && null !== $this->ticketMail
+            ? $this->ticketMail->sendTest($date, $to)
+            : TicketMail::TEST_NONE;
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            self::ticketTestMessage($result, $to),
+            TicketMail::TEST_SENT === $result ? 'success' : 'error',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * "Send the rest now": up to one batch of the night's ticket emails that
+     * have not gone out, failed ones included. ticket_kind is "buyers" or
+     * "guests".
+     */
+    public function sendTicketsNow(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        $kind = isset($_POST['ticket_kind']) ? sanitize_key(wp_unslash($_POST['ticket_kind'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $result = $this->isValidDate($date) && null !== $this->ticketMail
+            ? $this->ticketMail->sendRest($date, TicketMail::KIND_GUESTS === $kind ? $kind : TicketMail::KIND_BUYERS)
+            : ['sent' => 0, 'failed' => 0, 'more' => false];
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            self::ticketsSentMessage($result['sent'], $result['failed'], $result['more']),
+            0 === $result['failed'] ? 'success' : 'error',
+            $this->dateArg($date)
+        );
+    }
+
+    /** The notice after "Send a test to me". Shared with the crew app. */
+    public static function ticketTestMessage(string $result, string $to): string
+    {
+        return match ($result) {
+            TicketMail::TEST_SENT => sprintf(
+                /* translators: %s: the organizer's own email address */
+                __('A test ticket email was sent to %s.', 'eventcrew'),
+                $to
+            ),
+            TicketMail::TEST_FAILED => __(
+                'The test email could not be sent. Check the site’s email setup.',
+                'eventcrew'
+            ),
+            default => __('This night has no ticket with an email address to make a test from.', 'eventcrew'),
+        };
+    }
+
+    /** The notice after "Send the rest now". Shared with the crew app. */
+    public static function ticketsSentMessage(int $sent, int $failed, bool $more): string
+    {
+        $message = sprintf(
+            /* translators: 1: ticket emails sent, 2: ticket emails that failed */
+            __('Ticket emails: %1$d sent, %2$d failed.', 'eventcrew'),
+            $sent,
+            $failed
+        );
+
+        return $more ? $message . ' ' . __('Press again to send the rest.', 'eventcrew') : $message;
     }
 
     /**
