@@ -1020,7 +1020,8 @@ final class DoorDesk
             // shown as plain text.
             $detail = __('Holvi', 'eventcrew');
             $detail = '' === $buyer->email ? $detail : $detail . ' · ' . $buyer->email;
-            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, $detail);
+            // A Holvi ticket admits one person: the desk shows no +1 for it.
+            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, $detail, 0);
         }
 
         return [$holvi, $door];
@@ -1029,8 +1030,8 @@ final class DoorDesk
     /**
      * A list row. $max is how many extra people the entry may bring: a
      * guest's allowance, the sum of a crew person's tasks' "+1 allowed",
-     * none for a free-entry credit (the credit covers one person), the general
-     * cap for a ticket.
+     * none for a free-entry credit (the credit covers one person) or a Holvi
+     * ticket, the general cap for a ticket sold at the door.
      *
      * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}
      */
