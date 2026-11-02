@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.69.0
+Stable tag: 1.70.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.70.0 =
+The organizers' message when someone is given a role now says who gave it. Being made an organizer is announced to the other organizers too, with who did it. In wp-admin the giver is the WordPress user's name.
 
 = 1.69.0 =
 Settings > Accent colour: the selected tab, sub tab and admin tab, the panel underline and the field outline now use their own colour, so they stay visible when the theme colour (the Crew app page background) is dark. Unset, the accent is the theme colour, as before.
@@ -778,6 +781,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.70.0 =
+Nothing to do.
 
 = 1.69.0 =
 No database changes. Optional: set EventCrew > Settings > Accent colour.

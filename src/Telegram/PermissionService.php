@@ -244,8 +244,8 @@ final class PermissionService
         }
 
         [$answer, $dmKind] = 'role' === $action
-            ? $this->toggleRole($person, $slug)
-            : $this->apply($action, $person->id, $person->name(), $person->isOrganizer);
+            ? $this->toggleRole($person, $slug, $organizer->name())
+            : $this->apply($action, $person->id, $person->name(), $person->isOrganizer, $organizer->name());
         $this->telegram->answerCallbackQuery($callbackId, $answer);
         $this->refreshMenu($callbackQuery, $person->id);
 
@@ -285,7 +285,7 @@ final class PermissionService
      *
      * @return array{0: string, 1: string}
      */
-    private function toggleRole(Person $person, string $slug): array
+    private function toggleRole(Person $person, string $slug, string $giverName): array
     {
         if (! in_array($slug, array_column(Roles::assignable(), 'slug'), true)) {
             return [__('That role is no longer offered.', 'eventcrew'), ''];
@@ -301,7 +301,7 @@ final class PermissionService
         }
 
         $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]));
-        RoleNotifier::rolesChanged($person->id, $person->roleSlugs, [$slug]);
+        RoleNotifier::rolesChanged($person->id, $person->roleSlugs, [$slug], $giverName);
 
         /* translators: 1: person's name, 2: role name */
         return [sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label), 'role:' . $slug];
@@ -340,7 +340,7 @@ final class PermissionService
      *
      * @return array{0: string, 1: string}
      */
-    private function apply(string $action, int $personId, string $name, bool $isOrganizer): array
+    private function apply(string $action, int $personId, string $name, bool $isOrganizer, string $giverName): array
     {
         switch ($action) {
             case 'pass':
@@ -350,6 +350,10 @@ final class PermissionService
             case 'admin':
                 $this->people->setOrganizer($personId, ! $isOrganizer);
                 do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $personId);
+
+                if (! $isOrganizer) {
+                    RoleNotifier::madeOrganizer($personId, $giverName);
+                }
 
                 return $isOrganizer
                     ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']

@@ -188,7 +188,15 @@ final class Kernel
         // from the bot, the crew page and wp-admin, so it listens everywhere.
         add_action(
             RoleNotifier::GIVEN_HOOK,
-            fn (int $personId, string $slug) => $this->container->get(RoleNotifier::class)->roleGiven($personId, $slug),
+            fn (int $personId, string $slug, string $giver = '')
+                => $this->container->get(RoleNotifier::class)->roleGiven($personId, $slug, $giver),
+            10,
+            3
+        );
+        add_action(
+            RoleNotifier::ORGANIZER_HOOK,
+            fn (int $personId, string $giver = '')
+                => $this->container->get(RoleNotifier::class)->organizerGiven($personId, $giver),
             10,
             2
         );

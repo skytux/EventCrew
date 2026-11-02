@@ -3831,3 +3831,15 @@ msgstr "Tällä sähköpostiosoitteella ei ole vielä crew-tiliä. Alla oleva pa
 
 msgid "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email."
 msgstr "Alla olevalla painikkeella tästä tulee crew-tilisi sähköpostiosoite.\n\nLinkki on voimassa 24 tuntia ja toimii kerran. Siihen asti tilisi pitää vanhan osoitteensa. Jos et pyytänyt tätä, voit jättää viestin huomiotta."
+
+msgid "%1$s was given the role %2$s by %3$s."
+msgstr "%1$s sai roolin %2$s. Roolin antoi %3$s."
+
+msgid "%1$s was made an organizer by %2$s."
+msgstr "%1$s on nyt järjestäjä. Järjestäjäksi teki %2$s."
+
+msgid "%s was made an organizer."
+msgstr "%s on nyt järjestäjä."
+
+msgid "Someone was made an organizer"
+msgstr "Joku tehtiin järjestäjäksi"

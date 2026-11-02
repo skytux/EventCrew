@@ -102,8 +102,14 @@ final class CrewAdminPeople
      *
      * @param array<int, string> $ticked The role slugs ticked on the form.
      */
-    public function save(int $personId, string $email, string $name, string $notes, array $ticked): string
-    {
+    public function save(
+        int $personId,
+        string $email,
+        string $name,
+        string $notes,
+        array $ticked,
+        string $giverName = ''
+    ): string {
         if ($personId < 0) {
             return 'admin_no_person';
         }
@@ -142,7 +148,7 @@ final class CrewAdminPeople
 
         if (null !== $before) {
             $this->people->update($before->id, $data);
-            RoleNotifier::rolesChanged($before->id, $before->roleSlugs, $roles);
+            RoleNotifier::rolesChanged($before->id, $before->roleSlugs, $roles, $giverName);
 
             return 'admin_person_updated';
         }
@@ -152,7 +158,7 @@ final class CrewAdminPeople
         $newId = $this->people->create(['role_slugs' => $roles] + $data);
 
         if ($newId > 0) {
-            RoleNotifier::rolesChanged($newId, [], $roles);
+            RoleNotifier::rolesChanged($newId, [], $roles, $giverName);
         }
 
         return 'admin_person_added';

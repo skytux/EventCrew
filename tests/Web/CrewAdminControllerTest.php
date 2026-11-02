@@ -1510,6 +1510,22 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('', $this->wpdb->updates[1]['data']['role_slugs']);
     }
 
+    public function testTheRoleGivenOnTheCrewPageCarriesTheOrganizersName(): void
+    {
+        $this->djTask();
+        $this->signIn(['display_name' => 'Lou'] + $this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        $this->post(CrewAdminController::ROLES_ACTION, ['person_id' => '8', 'add_role' => 'dj']);
+
+        self::assertContains([\EventCrew\Support\RoleNotifier::GIVEN_HOOK, [8, 'dj', 'Lou']], $fired);
+    }
+
     // --- a forged request from a signed-in member -------------------------
 
     public function testAMemberSendingAnAdminRequestIsBlockedAndOrganizersAreTold(): void

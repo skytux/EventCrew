@@ -159,8 +159,60 @@ final class RoleNotifierTest extends TelegramTestCase
             $fired[] = [$hook, ...$args];
         });
 
-        RoleNotifier::rolesChanged(8, ['dj'], ['dj', 'leader', Roles::ORGANIZE_SLUG]);
+        RoleNotifier::rolesChanged(8, ['dj'], ['dj', 'leader', Roles::ORGANIZE_SLUG], 'Lou');
 
-        self::assertSame([[RoleNotifier::GIVEN_HOOK, 8, 'leader']], $fired);
+        self::assertSame([[RoleNotifier::GIVEN_HOOK, 8, 'leader', 'Lou']], $fired);
+    }
+
+    public function testTheRoleNoticeNamesWhoGaveTheRole(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+        $this->wpdb->nextResults[] = [$this->organizerRow()];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        $this->notifier()->roleGiven(8, 'leader', 'Sam');
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('Jo was given the role Crew leader by Sam.', $text);
+        self::assertStringContainsString('by Sam', $this->mails[0]['body']);
+    }
+
+    public function testBeingMadeAnOrganizerIsAnnouncedToTheOtherOrganizersWithWhoDidIt(): void
+    {
+        // find(person); organizers() - Jo is one by now; markRoleNotice's find.
+        $jo = [
+            'id' => 8,
+            'display_name' => 'Jo',
+            'email' => 'jo@example.com',
+            'is_organizer' => 1,
+            'telegram_chat_id' => 800,
+        ];
+        $this->wpdb->nextRows[] = $jo;
+        $this->wpdb->nextResults[] = [$this->organizerRow(), $jo];
+        $this->wpdb->nextRows[] = $jo;
+
+        $this->notifier()->organizerGiven(8, 'Sam');
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(500, $sent['chat_id']);
+        self::assertStringContainsString('Jo was made an organizer by Sam.', $sent['text']);
+        self::assertCount(1, $this->mails);
+        self::assertSame('lou@example.com', $this->mails[0]['to']);
+        self::assertArrayHasKey('made:organizer', json_decode($this->wpdb->updates[0]['data']['role_notices'], true));
+    }
+
+    public function testBeingMadeAnOrganizerAgainIsNotAnnounced(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 8,
+            'display_name' => 'Jo',
+            'email' => 'jo@example.com',
+            'role_notices' => '{"made:organizer":"2026-07-01 12:00:00"}',
+        ];
+
+        $this->notifier()->organizerGiven(8, 'Sam');
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
     }
 }

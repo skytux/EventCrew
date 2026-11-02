@@ -250,7 +250,8 @@ final class CrewAdminController
                 sanitize_email((string) ($post['email'] ?? '')),
                 sanitize_text_field((string) ($post['display_name'] ?? '')),
                 sanitize_textarea_field((string) ($post['notes'] ?? '')),
-                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : []
+                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : [],
+                $organizer->name()
             ),
             self::PASS_ACTION => $this->peopleScreen->grantPass((int) ($post['person_id'] ?? 0)),
             self::UNBAN_ACTION => $this->peopleScreen->unban((int) ($post['person_id'] ?? 0)),
@@ -262,7 +263,8 @@ final class CrewAdminController
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
-                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : []
+                is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : [],
+                $organizer->name()
             ),
             self::ADD_ACTION => $this->addPerson(
                 $organizer,
@@ -471,7 +473,7 @@ final class CrewAdminController
      * @param list<string>|null $add
      * @param list<string> $roles
      */
-    public function saveRoles(int $personId, ?array $add, array $roles): string
+    public function saveRoles(int $personId, ?array $add, array $roles, string $giverName = ''): string
     {
         $member = $personId > 0 ? $this->people->find($personId) : null;
 
@@ -485,7 +487,7 @@ final class CrewAdminController
 
         $roles = array_merge($kept, array_intersect($chosen, $shown));
         $this->people->setRoles($member->id, $roles);
-        RoleNotifier::rolesChanged($member->id, $member->roleSlugs, $roles);
+        RoleNotifier::rolesChanged($member->id, $member->roleSlugs, $roles, $giverName);
 
         return 'admin_roles_saved';
     }

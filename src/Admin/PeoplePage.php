@@ -180,12 +180,19 @@ final class PeoplePage
             'role_slugs' => PersonRepository::encodeRoles($roles),
         ];
 
+        // The wp-admin user's own name stands for who made the change.
+        $giverName = (string) wp_get_current_user()->display_name;
+
         if ($id > 0) {
             $this->people->update($id, $data);
-            RoleNotifier::rolesChanged($id, $before, $roles);
+            RoleNotifier::rolesChanged($id, $before, $roles, $giverName);
 
             if ((bool) $previous?->isOrganizer !== $isOrganizer) {
                 do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $id);
+            }
+
+            if ($isOrganizer && ! (bool) $previous?->isOrganizer) {
+                RoleNotifier::madeOrganizer($id, $giverName);
             }
 
             Admin::redirectTo(self::PAGE_SLUG, __('Person updated.', 'eventcrew'));
@@ -200,10 +207,11 @@ final class PeoplePage
         $newId = $this->people->create(['role_slugs' => $roles] + $data);
 
         if ($newId > 0) {
-            RoleNotifier::rolesChanged($newId, [], $roles);
+            RoleNotifier::rolesChanged($newId, [], $roles, $giverName);
 
             if ($isOrganizer) {
                 do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $newId);
+                RoleNotifier::madeOrganizer($newId, $giverName);
             }
         }
 

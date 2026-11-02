@@ -86,6 +86,38 @@ final class PermissionServiceTest extends TelegramTestCase
 
         self::assertSame(0, (int) $this->wpdb->updates[0]['data']['is_organizer']);
         self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
+        self::assertNotContains(\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, array_column($fired, 0));
+    }
+
+    public function testMakingSomeoneAnOrganizerAnnouncesItWithTheOrganizersName(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Lou', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 0, 'telegram_chat_id' => 999];
+
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:admin:8']);
+
+        self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Lou']], $fired);
+    }
+
+    public function testGivingARoleNamesTheOrganizerWhoGaveIt(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Lou', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999, 'role_slugs' => ''];
+
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
+
+        self::assertContains([\EventCrew\Support\RoleNotifier::GIVEN_HOOK, [8, 'dj', 'Lou']], $fired);
     }
 
     public function testEligibleListsWhoMeetsEachRolesConditionsForAnOrganizer(): void
