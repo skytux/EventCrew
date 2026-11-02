@@ -20,11 +20,13 @@ use EventCrew\Repositories\TicketBuyerRepository;
  * texts are the plugin's own English strings: the Finnish block is composed
  * inside Language::run('fi'), so it comes from languages/eventcrew-fi.mo.
  *
- * The QR code is drawn on the server (TicketQr) and attached to the email as
- * an inline image (a "cid:" reference), because Gmail does not show images
- * written into the HTML as data. Without PHP's GD extension it is drawn as an
- * HTML table instead. The email has no clock: the live clock is on the ticket
- * page the link opens, for a desk that checks tickets by eye.
+ * The QR code is drawn on the server (TicketQr) as HTML tables of black and
+ * white cells. It is not an image: Gmail does not show images written into
+ * the HTML as data, the host answers image fetchers such as Gmail's image
+ * proxy with a script challenge instead of the image, and an inline (cid:)
+ * attachment breaks a mail plugin that reads every attachment from a file
+ * (FluentSMTP's API providers). The email has no clock: the live clock is on
+ * the ticket page the link opens, for a desk that checks tickets by eye.
  *
  * Sending is a WP-Cron event, scheduled by every import that adds rows. Each
  * run sends up to BATCH emails and schedules itself again while rows remain.
@@ -50,9 +52,6 @@ final class TicketMail
     public const TEST_SENT = 'sent';
     public const TEST_FAILED = 'failed';
     public const TEST_NONE = 'none';
-
-    /** The content id of the inline QR image. */
-    public const QR_CID = 'eventcrew-ticket-qr';
 
     /** The REST route of the ticket page (Telegram\TicketController). */
     private const PAGE_ROUTE = 'eventcrew/v1/ticket';
@@ -214,21 +213,42 @@ final class TicketMail
 
     /**
      * What the QR code holds: a buyer's ticket code, which the desk looks up
-     * as it does the code in a Holvi ticket; a guest's ticket page link, which
-     * the desk reads like a crew member's ticket link.
+     * as it does the code in a Holvi ticket; a guest's short signed code
+     * (guestCode()), which the desk verifies. The guest's code is short so
+     * that its QR, drawn as table cells, keeps the email small.
      */
     public static function qrData(TicketBuyer|Guest $row): string
     {
-        return $row instanceof Guest ? self::guestUrl($row->id) : $row->ticketCode;
+        return $row instanceof Guest ? self::guestCode($row->id) : $row->ticketCode;
+    }
+
+    /** "EC-G12-0123456789abcdef": a guest's id and a short signature of it. */
+    public static function guestCode(int $guestId): string
+    {
+        return 'EC-G' . $guestId . '-' . SignedLink::shortSignature('guest_ticket', $guestId);
+    }
+
+    /**
+     * The guest id in a code made by guestCode(), or null when $text is not
+     * such a code or its signature does not verify.
+     */
+    public static function guestIdFromCode(string $text): ?int
+    {
+        if (1 !== preg_match('/^EC-G([1-9]\d{0,18})-([0-9a-f]{16})$/', trim($text), $match)) {
+            return null;
+        }
+
+        $id = (int) $match[1];
+
+        return hash_equals(SignedLink::shortSignature('guest_ticket', $id), $match[2]) ? $id : null;
     }
 
     /**
      * The email for one ticket: subject, the HTML content that goes into the
-     * email template, the plain-text alternative, and the PNG of the QR code
-     * that the HTML refers to as cid:QR_CID (null when the code is drawn as a
-     * table in the HTML instead).
+     * email template (the QR code drawn in it as tables), and the plain-text
+     * alternative.
      *
-     * @return array{subject: string, html: string, text: string, png: ?string}
+     * @return array{subject: string, html: string, text: string}
      */
     public function compose(TicketBuyer|Guest $row): array
     {
@@ -239,8 +259,6 @@ final class TicketMail
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
 
         $url = $row instanceof Guest ? self::guestUrl($row->id) : self::buyerUrl($row);
-        $data = self::qrData($row);
-        $png = $this->qr->png($data);
         $code = $row instanceof Guest ? '' : $row->ticketCode;
         $holder = '' === trim($row->name) ? '' : $row->name;
 
@@ -248,14 +266,7 @@ final class TicketMail
             $holder = trim($holder . ' +' . $row->plusOnes);
         }
 
-        $qrHtml = null === $png
-            ? $this->qr->table($data)
-            : sprintf(
-                '<img src="cid:%1$s" width="240" height="240" alt="%2$s"'
-                    . ' style="display:block;margin:0 auto;width:240px;height:240px;border:0">',
-                self::QR_CID,
-                esc_attr($both('qr'))
-            );
+        $qrHtml = $this->qr->table(self::qrData($row));
 
         $muted = 'font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b6b70';
         $ticket = '<div style="margin:24px 0 8px;padding:20px 12px;border:1px solid #d9d9de;border-radius:12px;'
@@ -293,7 +304,6 @@ final class TicketMail
             'subject' => $both('subject') . ' – ' . $date,
             'html' => $html,
             'text' => $text,
-            'png' => $png,
         ];
     }
 
@@ -342,16 +352,14 @@ final class TicketMail
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            $this->footer(),
-            $mail['png'],
-            self::QR_CID
+            $this->footer()
         );
     }
 
     /**
      * One language's words for one ticket, composed in the current language.
      *
-     * @return array{body: string, subject: string, open: string, code: string, qr: string}
+     * @return array{body: string, subject: string, open: string, code: string}
      */
     private function words(TicketBuyer|Guest $row, string $event, string $date): array
     {
@@ -390,7 +398,6 @@ final class TicketMail
             'subject' => __('Your ticket', 'eventcrew'),
             'open' => __('Open the ticket in your browser', 'eventcrew'),
             'code' => __('Ticket code', 'eventcrew'),
-            'qr' => __('Ticket QR code', 'eventcrew'),
         ];
     }
 

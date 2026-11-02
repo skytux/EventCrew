@@ -78,7 +78,8 @@ affected.
 After every import, each imported ticket with an email address and a ticket
 code is emailed to its buyer automatically: one thank-you message with the
 ticket, Finnish first and English below it. The message carries the ticket's QR
-code as an inline image (the code printed under it) and a link to the ticket's
+code drawn in the HTML as black and white table cells, not as an image (the
+code printed under it), and a link to the ticket's
 page on the site. The desk scans that QR code like any other ticket code. A
 guest from a mailed guest list whose line holds an email address
 (`Anna Virtanen <anna@example.com> +2`) gets a ticket email the same way; the

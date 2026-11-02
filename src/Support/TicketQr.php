@@ -14,9 +14,7 @@ use const EventCrew\Vendor\QrCodeGenerator\QR_ERROR_CORRECT_LEVEL_M;
  *
  * The code itself comes from the bundled PHP copy of qrcode-generator
  * (assets/vendor/qrcode-generator/qrcode.php, by the author of the qrcode.js
- * beside it). png() needs PHP's GD extension; without it, table() draws the
- * same code as an HTML table of black and white cells, which every email
- * client shows.
+ * beside it). table() draws it as HTML tables of black and white cells.
  */
 class TicketQr
 {
@@ -46,103 +44,87 @@ class TicketQr
     }
 
     /**
-     * The code as PNG bytes, $scale pixels per module, or null when GD is not
-     * installed.
+     * The code as HTML tables, $cell pixels per module, which every email
+     * client shows: no image, so nothing to attach and nothing to fetch.
+     *
+     * One outer table holds one row per module row. Each module row is its
+     * own table, so its cells never have to line up with another row's
+     * columns: a run of same-coloured modules is one cell $run * $cell pixels
+     * wide, which keeps the markup small. Every cell has its size in pixels
+     * and its colour twice (bgcolor for Outlook, background-color for the
+     * rest), font-size and line-height 0 and no text, so nothing stretches it.
+     * The white quiet zone of MARGIN modules is a white row above and below
+     * and part of the first and last cell of every module row.
      */
-    public function png(string $data, int $scale = 6): ?string
-    {
-        if (! function_exists('imagecreate') || ! function_exists('imagepng')) {
-            return null;
-        }
-
-        $matrix = $this->matrix($data);
-        $size = (count($matrix) + 2 * self::MARGIN) * $scale;
-        $image = imagecreate($size, $size);
-
-        if (false === $image) {
-            return null;
-        }
-
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $black = imagecolorallocate($image, 0, 0, 0);
-
-        if (false === $white || false === $black) {
-            return null;
-        }
-
-        imagefill($image, 0, 0, $white);
-
-        foreach ($matrix as $row => $cells) {
-            foreach ($cells as $col => $dark) {
-                if ($dark) {
-                    $x = ($col + self::MARGIN) * $scale;
-                    $y = ($row + self::MARGIN) * $scale;
-                    imagefilledrectangle($image, $x, $y, $x + $scale - 1, $y + $scale - 1, $black);
-                }
-            }
-        }
-
-        ob_start();
-        imagepng($image);
-        $png = (string) ob_get_clean();
-
-        return '' === $png ? null : $png;
-    }
-
-    /**
-     * The code as an HTML table, $cell pixels per module, for an email when
-     * there is no PNG. Each row is one table row; a run of same-coloured
-     * modules is one cell with a colspan, which keeps the markup small.
-     */
-    public function table(string $data, int $cell = 4): string
+    public function table(string $data, int $cell = 6): string
     {
         $matrix = $this->matrix($data);
-        $width = count($matrix) + 2 * self::MARGIN;
-        $blank = array_fill(0, $width, false);
-        $rows = array_merge(
-            array_fill(0, self::MARGIN, $blank),
-            array_map(
-                static fn (array $cells): array => array_merge(
-                    array_fill(0, self::MARGIN, false),
-                    $cells,
-                    array_fill(0, self::MARGIN, false)
-                ),
-                $matrix
-            ),
-            array_fill(0, self::MARGIN, $blank)
-        );
+        $width = (count($matrix) + 2 * self::MARGIN) * $cell;
+        $quiet = self::MARGIN * $cell;
 
         $html = sprintf(
-            '<table role="presentation" cellpadding="0" cellspacing="0" border="0"'
-                . ' style="border-collapse:collapse;margin:0 auto;background:#ffffff" width="%1$d">',
-            $width * $cell
-        );
+            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="%1$d" align="center"'
+                . ' bgcolor="#ffffff"'
+                . ' style="border-collapse:collapse;margin:0 auto;width:%1$dpx;background-color:#ffffff">',
+            $width
+        ) . self::row([[$width, false]], $width, $quiet);
 
-        foreach ($rows as $cells) {
-            $html .= '<tr>';
-            $run = 0;
+        foreach ($matrix as $modules) {
+            $runs = [];
+            $run = self::MARGIN;
+            $last = false;
 
-            foreach ($cells as $i => $dark) {
-                $run++;
-
-                if (isset($cells[$i + 1]) && $cells[$i + 1] === $dark) {
+            foreach ($modules as $dark) {
+                if ($dark === $last) {
+                    $run++;
                     continue;
                 }
 
-                $html .= sprintf(
-                    '<td%1$s style="width:%2$dpx;height:%3$dpx;padding:0;background:%4$s"></td>',
-                    $run > 1 ? ' colspan="' . $run . '"' : '',
-                    $run * $cell,
-                    $cell,
-                    $dark ? '#000000' : '#ffffff'
-                );
-                $run = 0;
+                $runs[] = [$run * $cell, $last];
+                $run = 1;
+                $last = $dark;
             }
 
-            $html .= '</tr>';
+            $runs[] = [($last ? $run * $cell : ($run + self::MARGIN) * $cell), $last];
+
+            if ($last) {
+                $runs[] = [$quiet, false];
+            }
+
+            $html .= self::row($runs, $width, $cell);
         }
 
-        return $html . '</table>';
+        return $html . self::row([[$width, false]], $width, $quiet) . '</table>';
+    }
+
+    /**
+     * One row of the outer table: a table of $width pixels whose cells are
+     * $runs, each [width in pixels, dark], all $height pixels high.
+     *
+     * @param list<array{0: int, 1: bool}> $runs
+     */
+    private static function row(array $runs, int $width, int $height): string
+    {
+        $zero = 'padding:0;font-size:0;line-height:0;mso-line-height-rule:exactly';
+        $html = sprintf(
+            '<tr><td style="%2$s"><table cellpadding="0" cellspacing="0" border="0"'
+                . ' width="%1$d" style="border-collapse:collapse"><tr>',
+            $width,
+            $zero
+        );
+
+        foreach ($runs as [$px, $dark]) {
+            $html .= sprintf(
+                '<td width="%1$d" height="%2$d" bgcolor="%3$s"'
+                    . ' style="background-color:%4$s;font-size:0;line-height:0"></td>',
+                $px,
+                $height,
+                $dark ? '#000000' : '#ffffff',
+                $dark ? '#000' : '#fff'
+            );
+        }
+
+        return $html . '</tr></table></td></tr>';
     }
 
     private static function load(): void

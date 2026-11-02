@@ -61,26 +61,14 @@ final class TicketMailTest extends TestCase
         });
     }
 
-    private function ticketMail(?TicketQr $qr = null): TicketMail
+    private function ticketMail(): TicketMail
     {
         return new TicketMail(
             new TicketBuyerRepository(),
             new GuestRepository(),
             new TaskRepository(),
-            new Mailer(new Logger(), new EmailTemplate(new Logger())),
-            $qr ?? new TicketQr()
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
         );
-    }
-
-    /** A QR drawer that answers a PNG, as on a server with GD. */
-    private function pngQr(): TicketQr
-    {
-        return new class () extends TicketQr {
-            public function png(string $data, int $scale = 6): ?string
-            {
-                return "\x89PNG-fake";
-            }
-        };
     }
 
     /** @return array<string, mixed> */
@@ -226,18 +214,21 @@ final class TicketMailTest extends TestCase
     }
 
     /**
-     * With GD the QR is an inline image (cid:), never a data: URI; the code is
-     * written under it; the email has no clock or other anti-fraud markup;
-     * the subject is Finnish first, then English, then the date.
+     * The QR is drawn as tables in the HTML: no image at all, so no data: URI
+     * and no cid: attachment; the code is written under it; the email has no
+     * clock or other anti-fraud markup; the subject is Finnish first, then
+     * English, then the date.
      */
-    public function testTheEmailCarriesTheQrInlineAndNoClock(): void
+    public function testTheEmailDrawsTheQrAsTablesAndNoClock(): void
     {
         $buyer = TicketBuyer::fromRow($this->buyerRow(1));
-        $mail = $this->ticketMail($this->pngQr())->compose($buyer);
+        $mail = $this->ticketMail()->compose($buyer);
 
-        self::assertStringContainsString('src="cid:' . TicketMail::QR_CID . '"', $mail['html']);
+        self::assertSame(['subject', 'html', 'text'], array_keys($mail));
+        self::assertStringContainsString('<table', $mail['html']);
+        self::assertStringNotContainsString('<img', $mail['html']);
         self::assertStringNotContainsString('data:image', $mail['html']);
-        self::assertSame("\x89PNG-fake", $mail['png']);
+        self::assertStringNotContainsString('cid:', $mail['html']);
         self::assertStringContainsString('AB12CD1', $mail['html']);
         self::assertStringContainsString('Open the ticket in your browser', $mail['html']);
         self::assertStringContainsString('Thank you for buying a ticket!', $mail['html']);
@@ -256,36 +247,184 @@ final class TicketMailTest extends TestCase
         self::assertLessThan($en, $fi);
     }
 
-    /** Without GD the QR is drawn as a table and no image is attached. */
-    public function testWithoutGdTheQrIsATable(): void
+    /**
+     * Every cell of the QR has its size in pixels and its colour twice, no
+     * text, and nothing that could stretch it; read back cell by cell, the
+     * tables give exactly the code's modules inside a white quiet zone of 4
+     * modules, 6 pixels each.
+     */
+    public function testTheQrTablesDrawEveryModuleInFixedCells(): void
     {
-        $noGd = new class () extends TicketQr {
-            public function png(string $data, int $scale = 6): ?string
-            {
-                return null;
+        $qr = new TicketQr();
+        $data = 'TESTI-0000-EVENTCREW';
+        $html = $qr->table($data);
+        $matrix = $qr->matrix($data);
+        $side = count($matrix) + 8;
+
+        self::assertStringNotContainsString('&nbsp;', $html);
+        self::assertStringStartsWith(
+            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="' . ($side * 6) . '"',
+            $html
+        );
+
+        $cells = '/<td width="(\d+)" height="(\d+)" bgcolor="(#000000|#ffffff)"'
+            . ' style="background-color:(#000|#fff);font-size:0;line-height:0"><\/td>/';
+        self::assertSame(
+            substr_count($html, '<td width='),
+            preg_match_all($cells, $html, $all, PREG_SET_ORDER),
+            'every QR cell has a fixed size, both colours and no text'
+        );
+        foreach ($all as $cell) {
+            self::assertSame(substr($cell[3], 0, 4), $cell[4], 'both colours of a cell agree');
+        }
+        self::assertSame(0, preg_match('/<td[^>]*>[^<]/', $html), 'no cell holds text');
+
+        // Error correction level M: the two level bits of the format
+        // information, at column 8 of the last two rows (mask 0b10 applied).
+        $n = count($matrix);
+        self::assertSame(0, (((int) $matrix[$n - 1][8] ^ 1) << 1) | (int) $matrix[$n - 2][8]);
+
+        // Read the modules back: one inner table per row.
+        preg_match_all('/<table cellpadding[^>]*><tr>(.*?)<\/tr><\/table>/', $html, $rows);
+        $drawn = [];
+
+        foreach ($rows[1] as $row) {
+            preg_match_all($cells, $row, $runs, PREG_SET_ORDER);
+            $modules = [];
+            $height = (int) $runs[0][2];
+
+            foreach ($runs as $run) {
+                self::assertSame($height, (int) $run[2]);
+                $modules = array_merge($modules, array_fill(0, intdiv((int) $run[1], 6), '#000000' === $run[3]));
             }
-        };
 
-        $mail = $this->ticketMail($noGd)->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+            self::assertCount($side, $modules);
+            self::assertSame(0, $height % 6);
 
-        self::assertNull($mail['png']);
-        self::assertStringContainsString('<table', $mail['html']);
-        self::assertStringNotContainsString('cid:', $mail['html']);
+            for ($i = 0; $i < $height / 6; $i++) {
+                $drawn[] = $modules;
+            }
+        }
+
+        $white = array_fill(0, $side, false);
+        $quiet = array_fill(0, 4, false);
+        $expected = array_merge(
+            array_fill(0, 4, $white),
+            array_map(static fn (array $row): array => array_merge($quiet, $row, $quiet), $matrix),
+            array_fill(0, 4, $white)
+        );
+        self::assertSame($expected, $drawn);
     }
 
-    /** A guest's QR holds their ticket page link, which the desk accepts. */
-    public function testAGuestsQrHoldsTheirSignedTicketLink(): void
+    /**
+     * Gmail clips a message over 102 KB, which would hide the QR. The whole
+     * HTML of a buyer's email stays under 60 KB, with a 32-character code in
+     * lower case (byte mode, the largest QR such a code makes).
+     */
+    public function testTheWholeBuyerEmailStaysSmall(): void
+    {
+        $buyer = $this->buyerRow(1);
+        $buyer['ticket_code'] = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+        $this->wpdb->nextResults[] = [$buyer];
+
+        $this->ticketMail()->run();
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('<table', $this->mails[0]['body']);
+        self::assertStringNotContainsString('cid:', $this->mails[0]['body']);
+        self::assertLessThan(60 * 1024, strlen($this->mails[0]['body']));
+    }
+
+    /**
+     * The same for a guest with a large id, on a long site address (the
+     * ticket page link is in the email too; the QR holds the short code).
+     */
+    public function testTheWholeGuestEmailStaysSmall(): void
+    {
+        Functions\when('rest_url')->alias(
+            static fn (string $p = ''): string => 'https://tanssit.example-dance-events.fi/wp-json/' . $p
+        );
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$this->guestRow(123456)];
+
+        $this->ticketMail()->run();
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('<table', $this->mails[0]['body']);
+        self::assertStringNotContainsString('cid:', $this->mails[0]['body']);
+
+        self::assertLessThan(60 * 1024, strlen($this->mails[0]['body']));
+    }
+
+    /**
+     * A mail plugin that throws from inside wp_mail (FluentSMTP reading a
+     * string attachment as a file path did) fails that row only: it is
+     * recorded as failed, the next row is still sent, and the log names
+     * neither the address nor the ticket code.
+     */
+    public function testAThrowingMailPluginFailsOneRowAndTheBatchGoesOn(): void
+    {
+        $logged = [];
+        Functions\when('update_option')->alias(static function (string $name, mixed $value) use (&$logged): bool {
+            $logged[] = (string) json_encode($value);
+
+            return true;
+        });
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
+            $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
+
+            if ('anna1@example.test' === $to) {
+                throw new \ValueError('realpath(): Argument #1 ($path) must not contain any null bytes');
+            }
+
+            return true;
+        });
+
+        $this->wpdb->nextResults[] = [$this->buyerRow(1), $this->buyerRow(2)];
+
+        self::assertSame(2, $this->ticketMail()->run());
+        self::assertSame(['anna1@example.test', 'anna2@example.test'], array_column($this->mails, 'to'));
+
+        $updates = $this->updates();
+        self::assertSame(['id' => 1], $updates[0]['where']);
+        self::assertSame('failed', $updates[0]['data']['ticket_mail_status']);
+        self::assertSame(['id' => 2], $updates[1]['where']);
+        self::assertSame('sent', $updates[1]['data']['ticket_mail_status']);
+
+        $log = implode("\n", $logged);
+        self::assertStringContainsString('ValueError', $log);
+        self::assertStringNotContainsString('anna1', $log);
+        self::assertStringNotContainsString('AB12CD1', $log);
+    }
+
+    /**
+     * A guest's QR holds a short signed code, which only verifies unchanged;
+     * the link under it is still the full signed ticket page link.
+     */
+    public function testAGuestsQrHoldsTheirShortSignedCode(): void
     {
         $guest = Guest::fromRow($this->guestRow(9));
         $data = TicketMail::qrData($guest);
 
-        parse_str((string) parse_url($data, PHP_URL_QUERY), $query);
-        self::assertStringStartsWith('https://site.test/wp-json/eventcrew/v1/ticket?', $data);
-        self::assertSame(9, SignedLink::verify('guest_ticket', (string) $query['token']));
+        self::assertMatchesRegularExpression('/^EC-G9-[0-9a-f]{16}$/', $data);
+        self::assertSame(
+            substr(hash_hmac('sha256', 'guest_ticket|9', 'eventcrew-test-key'), 0, 16),
+            substr($data, -16)
+        );
+        self::assertSame(9, TicketMail::guestIdFromCode($data));
+        self::assertNull(TicketMail::guestIdFromCode('EC-G8-' . substr($data, -16)));
+        self::assertNull(TicketMail::guestIdFromCode(substr($data, 0, -1) . ('0' === substr($data, -1) ? '1' : '0')));
+        self::assertNull(TicketMail::guestIdFromCode('AB12CD1'));
 
-        $mail = $this->ticketMail($this->pngQr())->compose($guest);
+        $mail = $this->ticketMail()->compose($guest);
         self::assertStringContainsString('Cy Cole +2', $mail['html']);
         self::assertStringContainsString('Thank you for coming!', $mail['html']);
+
+        preg_match('/href="([^"]+)"/', $mail['html'], $link);
+        $url = html_entity_decode($link[1]);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        self::assertStringStartsWith('https://site.test/wp-json/eventcrew/v1/ticket?', $url);
+        self::assertSame(9, SignedLink::verify('guest_ticket', (string) $query['token']));
     }
 
     /**

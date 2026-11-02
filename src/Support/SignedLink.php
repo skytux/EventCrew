@@ -69,6 +69,16 @@ final class SignedLink
         return ctype_digit($id) ? (int) $id : null;
     }
 
+    /**
+     * A short signature for a code that has to fit in a small QR code: the
+     * first 16 hex characters of the HMAC of "$purpose|$id". Check one with
+     * hash_equals() against a freshly made one.
+     */
+    public static function shortSignature(string $purpose, int $id): string
+    {
+        return substr(self::mac($purpose, (string) $id), 0, 16);
+    }
+
     private static function mac(string $purpose, string $body): string
     {
         $key = function_exists('wp_salt') ? wp_salt('auth') : 'eventcrew-test-key';
