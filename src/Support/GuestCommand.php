@@ -24,6 +24,9 @@ final class GuestCommand
     public const EDIT = 'edit';
     public const REMOVE = 'remove';
 
+    /** One "+N" token: the number of people a guest brings, 1 to 3 digits. */
+    public const PLUS_ONES_TOKEN = '#^\+(\d{1,3})$#';
+
     /**
      * @return array{
      *     action: string, date: string, number: int,
@@ -106,7 +109,7 @@ final class GuestCommand
         $plusOnes = null;
 
         foreach ($tokens as $token) {
-            if (null === $plusOnes && 1 === preg_match('#^\+(\d{1,3})$#', $token, $m)) {
+            if (null === $plusOnes && 1 === preg_match(self::PLUS_ONES_TOKEN, $token, $m)) {
                 $plusOnes = (int) $m[1];
 
                 continue;

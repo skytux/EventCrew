@@ -21,6 +21,11 @@ msgstr ""
 msgid "\"Opens the sales desk\": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster."
 msgstr ""
 
+#: src/Web/BuyerImportController.php:317
+#. translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug"
+msgid "%1$d guests were added to the guest list for %2$s."
+msgstr ""
+
 #: templates/public/signup-board.php:114
 msgid "%1$d of %2$d"
 msgstr ""
@@ -37,12 +42,7 @@ msgstr[1] ""
 msgid "%1$d ticket buyers added, %2$d skipped (already on the list)."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:255
-#. translators: 1: number of names added, 2: the event day, e.g. "Sat 1 Aug"
-msgid "%1$d ticket buyers were added to the door list for %2$s."
-msgstr ""
-
-#: src/Web/BuyerImportController.php:249
+#: src/Web/BuyerImportController.php:310
 #. translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug"
 msgid "%1$d tickets were imported for %2$s."
 msgstr ""
@@ -150,9 +150,9 @@ msgid_plural "%d guests"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Web/BuyerImportController.php:269
+#: src/Web/BuyerImportController.php:340
 #. translators: %d: number of names skipped
-msgid "%d names were skipped because they were already on the list."
+msgid "%d names were skipped because they were already on the guest list."
 msgstr ""
 
 #: src/Telegram/DoorListService.php:137 templates/public/signup.php:659
@@ -200,7 +200,7 @@ msgid_plural "%d ticket buyers deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Web/BuyerImportController.php:264
+#: src/Web/BuyerImportController.php:335
 #. translators: %d: number of tickets skipped
 msgid "%d tickets were skipped because they were already on the list."
 msgstr ""
@@ -1703,6 +1703,11 @@ msgstr ""
 msgid "Guests"
 msgstr ""
 
+#: src/Web/BuyerImportController.php:372
+#. translators: %s: the event day, e.g. "Sat 1 Aug"
+msgid "Guests added for %s"
+msgstr ""
+
 #: templates/admin/settings.php:575
 msgid "Heads-up (hours before)"
 msgstr ""
@@ -2411,7 +2416,7 @@ msgstr ""
 msgid "Nothing to send: no open tasks, or everyone eligible already has it."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:313
+#: src/Web/BuyerImportController.php:390
 msgid "Nothing was added to the door list."
 msgstr ""
 
@@ -2603,7 +2608,7 @@ msgstr ""
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:299
+#: src/Web/BuyerImportController.php:376
 msgid "Open the Roster page"
 msgstr ""
 
@@ -4049,7 +4054,7 @@ msgstr ""
 msgid "The link is selected. Copy it with the copy command of your phone."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:276 src/Web/BuyerImportController.php:316
+#: src/Web/BuyerImportController.php:347 src/Web/BuyerImportController.php:393
 #. translators: %s: the email address the list was sent from
 msgid "The list was sent from %s."
 msgstr ""
@@ -4214,7 +4219,7 @@ msgstr ""
 msgid "The ticket could not be added. Try again."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:311
+#: src/Web/BuyerImportController.php:388
 msgid "The ticket list could not be imported"
 msgstr ""
 
@@ -4273,6 +4278,11 @@ msgstr ""
 
 #: src/Support/DoorDesk.php:992
 msgid "They already have free entry tonight."
+msgstr ""
+
+#: src/Web/BuyerImportController.php:325
+#. translators: %d: total number of plus-ones the added guests bring
+msgid "They bring %d plus-ones in total."
 msgstr ""
 
 #: src/Support/DoorDesk.php:967
@@ -4409,7 +4419,7 @@ msgstr ""
 msgid "Ticket buyer privacy page created and selected."
 msgstr ""
 
-#: src/Web/BuyerImportController.php:295
+#: src/Web/BuyerImportController.php:367
 #. translators: %s: the event day, e.g. "Sat 1 Aug"
 msgid "Ticket buyers imported for %s"
 msgstr ""
