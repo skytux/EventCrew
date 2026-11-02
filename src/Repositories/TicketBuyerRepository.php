@@ -106,6 +106,81 @@ final class TicketBuyerRepository
     }
 
     /**
+     * Adds the tickets read from a ticket file to $date, one row per ticket,
+     * and returns how many were added.
+     *
+     * Two tickets with the same name and ticket code are both kept: a Holvi
+     * order of two tickets is two rows. Importing an updated file again adds
+     * only what is new: a ticket is skipped while $date already holds as
+     * many imported tickets with the same ticket code, name and email as the
+     * file has so far. A ticket with neither a name nor a code is skipped.
+     *
+     * @param array<int, array{name: string, email: string, code: string}> $tickets
+     */
+    public function addTickets(string $date, array $tickets, string $source, string $batch): int
+    {
+        global $wpdb;
+
+        $stored = [];
+
+        foreach ($this->forDate($date) as $buyer) {
+            if (! $buyer->isDoorSale()) {
+                $key = self::ticketKey($buyer->ticketCode, $buyer->name, $buyer->email);
+                $stored[$key] = ($stored[$key] ?? 0) + 1;
+            }
+        }
+
+        $createdAt = current_time('mysql');
+        $added = 0;
+
+        foreach ($tickets as $ticket) {
+            $name = self::clean((string) ($ticket['name'] ?? ''));
+            $email = mb_substr(trim((string) ($ticket['email'] ?? '')), 0, self::MAX_NAME_LENGTH);
+            $code = mb_substr(trim((string) ($ticket['code'] ?? '')), 0, self::MAX_NAME_LENGTH);
+
+            if ('' === $name && '' === $code) {
+                continue;
+            }
+
+            $key = self::ticketKey($code, $name, $email);
+
+            if (($stored[$key] ?? 0) > 0) {
+                --$stored[$key];
+                continue;
+            }
+
+            $inserted = $wpdb->insert(
+                $this->table(),
+                [
+                    'event_date' => $date,
+                    'name' => $name,
+                    'email' => '' === $email ? null : $email,
+                    'ticket_code' => '' === $code ? null : $code,
+                    'source' => $source,
+                    'batch' => $batch,
+                    'created_at' => $createdAt,
+                ],
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
+            );
+
+            if (false !== $inserted && (int) $inserted > 0) {
+                ++$added;
+            }
+        }
+
+        return $added;
+    }
+
+    /** The form two imported tickets are compared in. */
+    private static function ticketKey(string $code, string $name, string $email): string
+    {
+        $email = trim($email);
+
+        return trim($code) . "\n" . self::key($name) . "\n"
+            . (function_exists('mb_strtolower') ? mb_strtolower($email) : strtolower($email));
+    }
+
+    /**
      * Records one ticket sold at the door on $date and returns its id, or 0
      * when the write failed. The name may be empty, and two tickets may carry
      * the same name: each one is a person paying at the door.

@@ -223,13 +223,14 @@ final class MailImporter
             return ['rejected', sprintf('rejected %s: %s', '' === $sender ? '?' : $sender, $reason)];
         }
 
-        $text = ImportMessage::listText($message);
+        $file = ImportMessage::ticketFile($message);
+        $text = null === $file ? ImportMessage::listText($message) : '';
 
-        if ('' === trim($text)) {
-            return ['rejected', sprintf('rejected %s: no text/plain body and no .txt/.csv attachment', $sender)];
+        if (null === $file && '' === trim($text)) {
+            return ['rejected', sprintf('rejected %s: no text/plain body and no .xlsx/.csv/.txt attachment', $sender)];
         }
 
-        $answer = $this->import->importList($sender, $text, $message->messageId());
+        $answer = $this->import->importList($sender, $text, $message->messageId(), $file);
         $status = $answer['status'];
 
         if (200 === $status) {
