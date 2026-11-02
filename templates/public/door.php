@@ -99,8 +99,8 @@ $eventcrew_text = [
 <meta name="robots" content="noindex, nofollow">
 <title><?php esc_html_e('Sales desk', 'eventcrew'); ?></title>
 <style>
-:root{--fg:#1d1d1f;--muted:#6e6e73;--bg:#fff;--card:#f5f5f7;--line:#d2d2d7;--in:#1a7f37;--in-bg:#dafbe1;--accent:#0b57d0}
-@media (prefers-color-scheme:dark){:root{--fg:#f5f5f7;--muted:#a1a1a6;--bg:#111;--card:#1c1c1e;--line:#38383a;--in:#4ac26b;--in-bg:#12361e;--accent:#8ab4f8}}
+:root{--fg:#1d1d1f;--muted:#6e6e73;--bg:#fff;--card:#f5f5f7;--line:#d2d2d7;--in:#1a7f37;--in-bg:#dafbe1;--accent:#0b57d0;--err:#b3261e;--err-bg:#fde7e7}
+@media (prefers-color-scheme:dark){:root{--fg:#f5f5f7;--muted:#a1a1a6;--bg:#111;--card:#1c1c1e;--line:#38383a;--in:#4ac26b;--in-bg:#12361e;--accent:#8ab4f8;--err:#ff8a80;--err-bg:#3b1414}}
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg)}
 header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 12px 8px}
@@ -159,7 +159,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-qr svg{display:block;width:100%;height:auto}
 #ec-qr-link{width:100%;font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
 #ec-scan-video{display:block;width:100%;max-height:55vh;object-fit:cover;border-radius:10px;background:#000}
-#ec-scan-name{font-size:22px;font-weight:700;margin:12px 0 0;overflow-wrap:anywhere}
+#ec-scan-name{font-size:32px;line-height:1.2;font-weight:700;margin:12px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec-msg.is-error{background:var(--err-bg);border:2px solid var(--err);color:var(--err);font-weight:700}
 #ec-scan-already{color:var(--in);font-weight:700}
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -493,7 +494,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         if (el('ec-add').open) {
             target = 'ec-add-msg';
         } else if (el('ec-scan').open) {
-            target = 'ec-scan-msg';
+            // Only failures reach say() while the scan popup is open.
+            scanMessage(message, true);
+            return;
         }
 
         el(target).textContent = message || '';
@@ -1074,8 +1077,26 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     var scanLast = '';
     var scanLastAt = 0;
 
-    function scanMessage(message) {
-        el('ec-scan-msg').textContent = message || '';
+    // isError colours the message red, so a failed scan stands out.
+    function scanMessage(message, isError) {
+        var line = el('ec-scan-msg');
+
+        line.textContent = message || '';
+        line.classList.toggle('is-error', !!message && !!isError);
+    }
+
+    // The name on one line: from 32px down to 18px until it fits, then
+    // cut with "…".
+    function fitScanName() {
+        var name = el('ec-scan-name');
+        var size = 32;
+
+        name.style.fontSize = size + 'px';
+
+        while (size > 18 && name.scrollWidth > name.clientWidth) {
+            size -= 1;
+            name.style.fontSize = size + 'px';
+        }
     }
 
     function stopCamera() {
@@ -1143,7 +1164,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         scanRow = null;
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            scanMessage(text.noCamera);
+            scanMessage(text.noCamera, true);
             return;
         }
 
@@ -1164,10 +1185,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                     scanLoop(read);
                 }, function () {
                     stopCamera();
-                    scanMessage(text.noDecoder);
+                    scanMessage(text.noDecoder, true);
                 });
             }, function () {
-                scanMessage(text.noCamera);
+                scanMessage(text.noCamera, true);
             });
     }
 
@@ -1220,7 +1241,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         scanRow = data && data.ok ? findRow(data.key) : null;
 
         if (!scanRow) {
-            scanMessage(data ? data.message : text.failed);
+            scanMessage(data ? data.message : text.failed, true);
             startCamera();
             return;
         }
@@ -1229,6 +1250,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-scan-camera').hidden = true;
         el('ec-scan-result').hidden = false;
         el('ec-scan-name').textContent = scanRow.name;
+        fitScanName();
         el('ec-scan-detail').textContent = scanRow.detail || '';
         el('ec-scan-already').hidden = !scanRow.in;
         el('ec-scan-plus').hidden = scanRow.max <= 0;
@@ -1277,7 +1299,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             }
 
             el('ec-scan-mark').disabled = false;
-            scanMessage(text.failed);
+            scanMessage(text.failed, true);
         }, function (error) {
             el('ec-scan-mark').disabled = false;
             failed(error);
