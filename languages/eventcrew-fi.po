@@ -2089,8 +2089,6 @@ msgid "✓ %s"
 msgstr "✓ %s"
 
 #: templates/public/door.php:40
-msgid "✓ In"
-msgstr "✓ Sisällä"
 
 #: src/Telegram/RosterService.php:348
 #, php-format
@@ -2153,8 +2151,8 @@ msgid "📬 Sent you a DM."
 msgstr "📬 Lähetin sinulle yksityisviestin."
 
 #: templates/public/door.php:142
-msgid "📱 Other device"
-msgstr "📱 Toinen laite"
+msgid "Switch"
+msgstr "Vaihda"
 
 #: src/Telegram/ProfileService.php:235
 msgid "🔑 Sign in on the web"
@@ -2194,8 +2192,6 @@ msgid "Loading…"
 msgstr "Ladataan…"
 
 #: templates/public/door.php:157
-msgid "⏳ Loading…"
-msgstr "⏳ Ladataan…"
 
 #: src/Support/Roles.php:275
 msgid "Organize"
@@ -2425,8 +2421,8 @@ msgstr "Tämä puhelin ei pysty lukemaan QR-koodeja tässä. Etsi nimi listalta.
 msgid "Already marked arrived."
 msgstr "Merkitty jo saapuneeksi."
 
-msgid "📷 Scan"
-msgstr "📷 Skannaa"
+msgid "Scan"
+msgstr "Skannaa"
 
 msgid "Scan ticket"
 msgstr "Skannaa lippu"
