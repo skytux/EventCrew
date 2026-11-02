@@ -5373,14 +5373,14 @@ msgstr "Emme myy tietojasi emmekä käytä niitä mainontaan."
 msgid "The web shop where you bought your ticket holds your order under its own privacy policy. Our email is delivered by an email service, since every message we send leaves this site as an email."
 msgstr "Verkkokauppa, josta ostit lippusi, säilyttää tilauksesi oman tietosuojakäytäntönsä mukaisesti. Sähköpostimme välittää sähköpostipalvelu, koska jokainen lähettämämme viesti lähtee tältä sivustolta sähköpostina."
 
-msgid "We delete your email address %d days after the event, unless you have joined our newsletter. This happens automatically."
-msgstr "Poistamme sähköpostiosoitteesi %d päivän kuluttua tapahtumasta, ellet ole liittynyt uutiskirjeeseemme. Tämä tapahtuu automaattisesti."
+msgid "We delete your email address, your name and your ticket code %d days after the event, unless you have joined our newsletter. This happens automatically."
+msgstr "Poistamme sähköpostiosoitteesi, nimesi ja lippukoodisi %d päivän kuluttua tapahtumasta, ellet ole liittynyt uutiskirjeeseemme. Tämä tapahtuu automaattisesti."
 
 msgid "If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time."
 msgstr "Jos liityt uutiskirjeeseen, säilytämme sähköpostiosoitettasi uutiskirjettä varten, kunnes eroat siitä. Voit erota milloin tahansa."
 
-msgid "Your name, your ticket code and whether you came in stay on that night's door list, as our record of the tickets sold for it."
-msgstr "Nimesi, lippukoodisi ja tieto siitä, tulitko sisään, jäävät kyseisen illan ovilistalle merkinnäksi illan myydyistä lipuista."
+msgid "Until then, your name, your ticket code and whether you came in are on that night's door list. After that, the list keeps only how many tickets were sold and used."
+msgstr "Siihen asti nimesi, lippukoodisi ja tieto siitä, tulitko sisään, ovat kyseisen illan ovilistalla. Sen jälkeen listalle jää vain myytyjen ja käytettyjen lippujen määrä."
 
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr "Voit pyytää kopion tiedoista, joita meillä on sinusta, pyytää meitä korjaamaan tai poistamaan ne ja vastustaa niiden käyttöä."
@@ -5400,8 +5400,8 @@ msgstr "Lipunostajien tietosuojasivu luotu ja valittu."
 msgid "Ticket buyer privacy page"
 msgstr "Lipunostajien tietosuojasivu"
 
-msgid "The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop's order export, that buyers can type a dash instead of their address in the shop, and that their email address is deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop."
-msgstr "Sivu, jolla on lyhytkoodi %1$s: julkinen seloste verkkokaupasta lipun ostaneille. Se kertoo, mitä kaupan tilausviennistä otetaan, että ostajat voivat kirjoittaa kaupassa osoitteensa sijaan viivan ja että heidän sähköpostiosoitteensa poistetaan %2$d päivän kuluttua tapahtumasta, elleivät he ole liittyneet uutiskirjeeseen. Linkitä siihen kaupastasi."
+msgid "The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop's order export, that buyers can type a dash instead of their address in the shop, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop."
+msgstr "Sivu, jolla on lyhytkoodi %1$s: julkinen seloste verkkokaupasta lipun ostaneille. Se kertoo, mitä kaupan tilausviennistä otetaan, että ostajat voivat kirjoittaa kaupassa osoitteensa sijaan viivan ja että heidän sähköpostiosoitteensa, nimensä ja lippukoodinsa poistetaan %2$d päivän kuluttua tapahtumasta, elleivät he ole liittyneet uutiskirjeeseen. Linkitä siihen kaupastasi."
 
 msgid "Create the ticket buyer privacy page"
 msgstr "Luo lipunostajien tietosuojasivu"

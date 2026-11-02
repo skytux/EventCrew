@@ -242,18 +242,18 @@ final class TicketBuyerRepositoryTest extends TestCase
     /**
      * The newsletter release passes its subscribers here; their emails stay.
      */
-    public function testBlankEmailsBeforeSkipsTheAddressesToKeep(): void
+    public function testAnonymizeBeforeSkipsTheAddressesToKeep(): void
     {
         $this->wpdb->nextQueryResults[] = 2;
 
-        $changed = (new TicketBuyerRepository())->blankEmailsBefore(
+        $changed = (new TicketBuyerRepository())->anonymizeBefore(
             '2026-05-21',
             ['keep@example.test', '', 'also@example.test']
         );
 
         self::assertSame(2, $changed);
         self::assertStringContainsString(
-            "event_date < '2026-05-21' AND email IS NOT NULL AND email <> '' AND email NOT IN ('keep@example.test', 'also@example.test')",
+            "AND (email IS NULL OR email NOT IN ('keep@example.test', 'also@example.test'))",
             $this->wpdb->lastQuery()
         );
     }

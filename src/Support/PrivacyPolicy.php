@@ -42,8 +42,9 @@ final class PrivacyPolicy
     public const BUYER_PAGE_OPTION = 'eventcrew_privacy_buyer_page_id';
 
     /**
-     * How many days after the event a ticket buyer's email address is deleted,
-     * unless they joined the newsletter. RetentionPurge enforces it and the
+     * How many days after the event a ticket buyer's email address, name and
+     * ticket code are deleted, unless they joined the newsletter.
+     * RetentionPurge enforces it and the
      * ticket buyer notice states it, both from this one number.
      */
     public const BUYER_EMAIL_DAYS = 60;
@@ -664,7 +665,7 @@ final class PrivacyPolicy
             sprintf(
                 /* translators: %d: number of days */
                 __(
-                    'We delete your email address %d days after the event, unless you have joined our newsletter. This happens automatically.',
+                    'We delete your email address, your name and your ticket code %d days after the event, unless you have joined our newsletter. This happens automatically.',
                     'eventcrew'
                 ),
                 self::BUYER_EMAIL_DAYS
@@ -674,7 +675,7 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'Your name, your ticket code and whether you came in stay on that night\'s door list, as our record of the tickets sold for it.',
+                'Until then, your name, your ticket code and whether you came in are on that night\'s door list. After that, the list keeps only how many tickets were sold and used.',
                 'eventcrew'
             ),
         ];

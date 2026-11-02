@@ -163,27 +163,30 @@ final class RetentionPurgeTest extends TestCase
 
         $this->wpdb->nextQueryResults[] = 3;
 
-        self::assertSame(3, $this->purge()->purgeBuyerEmails());
+        self::assertSame(3, $this->purge()->purgeBuyers());
         self::assertStringContainsString("event_date < '2026-05-21'", $this->wpdb->lastQuery());
     }
 
     /**
-     * Only the email column is written, rows that already have no email are
-     * not touched, and nothing is deleted.
+     * Q057: the email, the name and the ticket code are blanked; rows with
+     * none of them left are not touched, and no row is deleted.
      */
-    public function testTheBuyerPurgeBlanksOnlyTheEmailOfRowsThatStillHaveOne(): void
+    public function testTheBuyerPurgeBlanksEmailNameAndTicketCodeButKeepsTheRow(): void
     {
         $this->withOptions([]);
 
-        $this->purge()->purgeBuyerEmails();
+        $this->purge()->purgeBuyers();
 
         $sql = $this->wpdb->lastQuery();
 
-        self::assertStringContainsString('UPDATE wp_eventcrew_ticket_buyers SET email = NULL WHERE', $sql);
-        self::assertStringContainsString('email IS NOT NULL', $sql);
-        self::assertStringContainsString("email <> ''", $sql);
-        self::assertStringNotContainsString('name', $sql);
-        self::assertStringNotContainsString('ticket_code', $sql);
+        self::assertStringContainsString(
+            "UPDATE wp_eventcrew_ticket_buyers SET email = NULL, name = '', ticket_code = NULL WHERE",
+            $sql
+        );
+        self::assertStringContainsString(
+            "AND ((email IS NOT NULL AND email <> '') OR name <> '' OR ticket_code IS NOT NULL)",
+            $sql
+        );
         self::assertStringNotContainsString('DELETE', $sql);
         self::assertSame([], $this->wpdb->deletes);
         self::assertSame([], $this->wpdb->updates);
@@ -201,7 +204,7 @@ final class RetentionPurgeTest extends TestCase
         self::assertSame(0, $purge->run());
         self::assertSame([], $this->wpdb->queries);
 
-        $purge->purgeBuyerEmails();
+        $purge->purgeBuyers();
         self::assertCount(1, $this->wpdb->queries);
     }
 
@@ -215,7 +218,7 @@ final class RetentionPurgeTest extends TestCase
 
         self::assertSame([], $this->purge()->buyerEmailsToKeep());
 
-        $this->purge()->purgeBuyerEmails();
+        $this->purge()->purgeBuyers();
         self::assertStringNotContainsString('NOT IN', $this->wpdb->lastQuery());
     }
 }

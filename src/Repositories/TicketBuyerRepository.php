@@ -336,24 +336,26 @@ final class TicketBuyerRepository
     }
 
     /**
-     * Sets email to NULL on every row whose event_date is before $cutoffDate
-     * (Y-m-d) and that still has an email, except rows whose email is in
-     * $keep. Returns how many rows changed. Only the email column is written:
-     * the name, the ticket code and the check-ins stay.
+     * Blanks the personal data of every row whose event_date is before
+     * $cutoffDate (Y-m-d): email to NULL, name to '', ticket_code to NULL.
+     * Rows whose email is in $keep are left whole. Returns how many rows
+     * changed. The rows stay, with their date, source and check-in, so the
+     * counts of tickets sold and used still add up.
      *
-     * @param array<int, string> $keep Email addresses that must not be blanked.
+     * @param array<int, string> $keep Email addresses whose rows must not be blanked.
      */
-    public function blankEmailsBefore(string $cutoffDate, array $keep = []): int
+    public function anonymizeBefore(string $cutoffDate, array $keep = []): int
     {
         global $wpdb;
 
-        $sql = "UPDATE {$this->table()} SET email = NULL"
-            . " WHERE event_date < %s AND email IS NOT NULL AND email <> ''";
+        $sql = "UPDATE {$this->table()} SET email = NULL, name = '', ticket_code = NULL"
+            . " WHERE event_date < %s"
+            . " AND ((email IS NOT NULL AND email <> '') OR name <> '' OR ticket_code IS NOT NULL)";
         $args = [$cutoffDate];
         $keep = array_values(array_filter(array_map('strval', $keep), static fn (string $e): bool => '' !== $e));
 
         if ([] !== $keep) {
-            $sql .= ' AND email NOT IN (' . implode(', ', array_fill(0, count($keep), '%s')) . ')';
+            $sql .= ' AND (email IS NULL OR email NOT IN (' . implode(', ', array_fill(0, count($keep), '%s')) . '))';
             $args = array_merge($args, $keep);
         }
 

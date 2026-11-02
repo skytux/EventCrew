@@ -1235,7 +1235,7 @@ if (! defined('ABSPATH')) {
                         <?php
                         printf(
                             /* translators: 1: the shortcode, already wrapped in <code>, 2: number of days */
-                            esc_html__('The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop\'s order export, that buyers can type a dash instead of their address in the shop, and that their email address is deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop.', 'eventcrew'),
+                            esc_html__('The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop\'s order export, that buyers can type a dash instead of their address in the shop, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop.', 'eventcrew'),
                             '<code>[eventcrew_ticket_privacy]</code>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
                             (int) \EventCrew\Support\PrivacyPolicy::BUYER_EMAIL_DAYS
                         );
