@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -25,6 +26,9 @@ use EventCrew\Support\RosterAssembler;
  * bot. Organizers additionally get a pair of one-tap buttons per person to mark
  * them completed or no-show on the running event, the same write the wp-admin
  * roster offers.
+ *
+ * Under the roster, a row of buttons for the next event days switches the same
+ * message to another day's roster (rd:<Y-m-d>), the way /door switches nights.
  */
 final class RosterService
 {
@@ -32,6 +36,13 @@ final class RosterService
 
     /** Callback data prefix for a marking tap: rm:<assignment_id>:<c|n>. */
     private const MARK_PREFIX = 'rm:';
+
+    /** Callback data prefix for a day button under the roster: rd:<Y-m-d>. */
+    public const SELECT_PREFIX = 'rd:';
+
+    /** How many upcoming days the day buttons offer, and how many per row. */
+    private const PICKER_DATES = 6;
+    private const PICKER_PER_ROW = 3;
 
     public function __construct(
         private readonly RosterAssembler $assembler,
@@ -90,8 +101,46 @@ final class RosterService
 
         $canMark = $person->isOrganizer || $this->isOnSalesDesk($person->id, $date);
         $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer);
-        $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($rendered['keyboard']));
+        $keyboard = array_merge($rendered['keyboard'], $this->pickerRows($person, $date));
+        $this->telegram->sendMessage($telegramUserId, $rendered['text'], $this->markup($keyboard));
         $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * A day button tap: shows that day's roster in the same message, with the
+     * same access rule as /roster with a date typed after it.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onSelect(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+        $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
+
+        if (1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date) || 0 === $chatId || 0 === $messageId) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || (! $person->isOrganizer && ! $this->isRosteredOn($person->id, $date))) {
+            $this->telegram->answerCallbackQuery($callbackId, $this->deniedMessage(), true);
+
+            return;
+        }
+
+        $canMark = $person->isOrganizer || $this->isOnSalesDesk($person->id, $date);
+        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer);
+        $keyboard = array_merge($rendered['keyboard'], $this->pickerRows($person, $date));
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], ['inline_keyboard' => $keyboard]);
     }
 
     /**
@@ -160,7 +209,7 @@ final class RosterService
             }
         );
 
-        $this->refreshRosterMessage($callbackQuery, $assignment->taskId, $person->isOrganizer);
+        $this->refreshRosterMessage($callbackQuery, $assignment->taskId, $person);
     }
 
     private function deniedMessage(): string
@@ -202,7 +251,7 @@ final class RosterService
      *
      * @param array<string, mixed> $callbackQuery
      */
-    private function refreshRosterMessage(array $callbackQuery, int $taskId, bool $isOrganizer): void
+    private function refreshRosterMessage(array $callbackQuery, int $taskId, Person $person): void
     {
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
@@ -219,14 +268,14 @@ final class RosterService
             return;
         }
 
-        $rendered = $this->render($date, $this->assembler->forDate($date), true, $isOrganizer);
+        $rendered = $this->render($date, $this->assembler->forDate($date), true, $person->isOrganizer);
         // An empty inline_keyboard clears the buttons when nobody is left to
         // mark, rather than leaving stale taps on an already-closed event.
         $this->telegram->editMessageText(
             $chatId,
             $messageId,
             $rendered['text'],
-            ['inline_keyboard' => $rendered['keyboard']]
+            ['inline_keyboard' => array_merge($rendered['keyboard'], $this->pickerRows($person, $date))]
         );
     }
 
@@ -259,6 +308,36 @@ final class RosterService
     private function markup(array $keyboard): ?array
     {
         return [] === $keyboard ? null : ['inline_keyboard' => $keyboard];
+    }
+
+    /**
+     * The day buttons under the roster: the next upcoming days with tasks, the
+     * shown one marked with ▶. Someone who is not an organizer gets only the
+     * days they are rostered on, since those are the only ones they may open.
+     *
+     * @return array<int, array<int, array{text: string, callback_data: string}>>
+     */
+    private function pickerRows(Person $person, string $shown): array
+    {
+        $buttons = [];
+
+        foreach ($this->tasks->upcomingDates(self::PICKER_DATES) as $date) {
+            if (! $person->isOrganizer && ! $this->isRosteredOn($person->id, $date)) {
+                continue;
+            }
+
+            $buttons[] = [
+                'text' => ($date === $shown ? '▶ ' : '') . $this->dateLabel($date),
+                'callback_data' => self::SELECT_PREFIX . $date,
+            ];
+        }
+
+        // One button that is the day already shown switches to nothing.
+        if (1 === count($buttons) && self::SELECT_PREFIX . $shown === $buttons[0]['callback_data']) {
+            return [];
+        }
+
+        return array_chunk($buttons, self::PICKER_PER_ROW);
     }
 
     /**
@@ -297,7 +376,7 @@ final class RosterService
      *
      * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
-     *     status_label: string, occupying: bool, marked_by: string}>}> $roster
+     *     status_label: string, occupying: bool, marked_by: string, signed_up_at?: string}>}> $roster
      * @return array{text: string, keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
     private function render(string $date, array $roster, bool $canMark, bool $isOrganizer): array
@@ -330,11 +409,12 @@ final class RosterService
                 $standing = $person['standing'] ?? null;
                 $reliability = null === $standing ? '' : ' — ' . $standing->ratedSummary();
                 $lines[] = sprintf(
-                    '  %s %s (%s)%s',
+                    '  %s %s (%s)%s%s',
                     $mark,
                     $person['name'],
                     $person['status_label'],
-                    $reliability
+                    $reliability,
+                    $this->signedUpNote((string) ($person['signed_up_at'] ?? ''))
                 );
 
                 if ('' !== ($person['marked_by'] ?? '')) {
@@ -388,6 +468,27 @@ final class RosterService
                 'callback_data' => self::MARK_PREFIX . $assignmentId . ':n',
             ],
         ];
+    }
+
+    /**
+     * " · signed up 2 Nov 14:05", or '' for a row with no sign-up time. The
+     * stored time is already site-local, so it is formatted as UTC to keep its
+     * digits (the same rule as Dates::dayLabel); wp_date translates the month.
+     */
+    private function signedUpNote(string $signedUpAt): string
+    {
+        $timestamp = '' === $signedUpAt ? false : strtotime($signedUpAt . ' UTC');
+
+        if (false === $timestamp) {
+            return '';
+        }
+
+        $when = function_exists('wp_date')
+            ? (string) wp_date('j M H:i', $timestamp, new \DateTimeZone('UTC'))
+            : gmdate('j M H:i', $timestamp);
+
+        /* translators: %s: when the person signed up, e.g. "2 Nov 14:05" */
+        return ' · ' . sprintf(__('signed up %s', 'eventcrew'), $when);
     }
 
     private function dateLabel(string $date): string

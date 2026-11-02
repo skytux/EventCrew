@@ -79,6 +79,13 @@ final class BoardService
      */
     public const LOCK_OPTION = 'eventcrew_telegram_group_lock';
 
+    /**
+     * Callback data prefix for a day button under the board: bd:<Y-m-d>, or a
+     * bare bd: for the next event. In the group it changes the one shared
+     * message for everyone - Telegram has no per-person view of a message.
+     */
+    public const PICK_PREFIX = 'bd:';
+
     /** Composes the board text + keyboard; the pure "what it looks like" half. */
     private readonly BoardRenderer $renderer;
 
@@ -230,8 +237,10 @@ final class BoardService
      * answer, and "nothing appeared to happen" is the one answer that helps
      * nobody. An unchanged board counts as success: Telegram's "message is not
      * modified" is a benign error TelegramClient already treats as one.
+     *
+     * $date is the day to show; '' (every automatic redraw) is the next event.
      */
-    public function refresh(): bool
+    public function refresh(string $date = ''): bool
     {
         if (! $this->telegram->isConfigured()) {
             return false;
@@ -244,7 +253,7 @@ final class BoardService
             return false;
         }
 
-        $rendered = $this->render();
+        $rendered = $this->render($date);
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
         $messageId = (int) ($board['message_id'] ?? 0);
 
@@ -380,7 +389,7 @@ final class BoardService
      *
      * @param array<string, mixed> $callbackQuery
      */
-    private function refreshPrivateCopy(array $callbackQuery): void
+    private function refreshPrivateCopy(array $callbackQuery, string $date): void
     {
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chat = is_array($message['chat'] ?? null) ? $message['chat'] : [];
@@ -391,10 +400,53 @@ final class BoardService
             return;
         }
 
-        $rendered = $this->render();
+        $rendered = $this->render($date);
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
 
         $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+    }
+
+    /**
+     * A day button tap: redraws the message it was tapped on - the group's
+     * board or a private copy - showing that day ('' = the next event).
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onPickDate(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+        $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::PICK_PREFIX));
+
+        $this->telegram->answerCallbackQuery($callbackId);
+
+        if (('' !== $date && 1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date)) || 0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $rendered = $this->render($date);
+        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+
+        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+    }
+
+    /**
+     * Whether the tap came from the group's own board message, so a redraw
+     * may keep the day it shows; a tap on a private copy must not move the
+     * group's board off the next event.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function isGroupBoard(array $callbackQuery): bool
+    {
+        $board = $this->board();
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+
+        return 0 !== (int) ($board['message_id'] ?? 0)
+            && (int) ($message['chat']['id'] ?? 0) === (int) ($board['chat_id'] ?? 0)
+            && (int) ($message['message_id'] ?? 0) === (int) ($board['message_id'] ?? 0);
     }
 
     /**
@@ -422,9 +474,9 @@ final class BoardService
      *
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function render(): array
+    public function render(string $date = ''): array
     {
-        return Language::run(Language::ENGLISH, fn (): array => $this->renderer->render());
+        return Language::run(Language::ENGLISH, fn (): array => $this->renderer->render($date));
     }
 
     /**
@@ -472,7 +524,7 @@ final class BoardService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        [$action, $taskId] = $this->parseData((string) ($callbackQuery['data'] ?? ''));
+        [$action, $taskId, $date] = $this->parseData((string) ($callbackQuery['data'] ?? ''));
 
         if ('' === $action || 0 === $taskId || 0 === $telegramUserId) {
             $this->telegram->answerCallbackQuery($callbackId);
@@ -501,9 +553,10 @@ final class BoardService
             default => $this->handleToggle($callbackId, $taskId, $person),
         };
 
+        // The day shown comes with the tap, so the redraw stays on it.
         if ($changed) {
-            $this->refresh();
-            $this->refreshPrivateCopy($callbackQuery);
+            $this->refresh($this->isGroupBoard($callbackQuery) ? $date : '');
+            $this->refreshPrivateCopy($callbackQuery, $date);
         }
     }
 
@@ -584,15 +637,18 @@ final class BoardService
      * not of this shape, so a tap on one lands here, matches nothing, and ends
      * as a bare answerCallbackQuery - spinner stopped, nothing changed.
      *
-     * @return array{0: string, 1: int} action ('j'|'l'|'t'|''), task id
+     * A task button on a picked day carries that day after the id
+     * (t:<id>:<Y-m-d>); the plain forms are the next event, and old boards.
+     *
+     * @return array{0: string, 1: int, 2: string} action ('j'|'l'|'t'|''), task id, day shown ('' = next)
      */
     private function parseData(string $data): array
     {
-        if (1 !== preg_match('/^([jlt]):(\d+)$/', $data, $matches)) {
-            return ['', 0];
+        if (1 !== preg_match('/^([jlt]):(\d+)(?::(\d{4}-\d{2}-\d{2}))?$/', $data, $matches)) {
+            return ['', 0, ''];
         }
 
-        return [$matches[1], (int) $matches[2]];
+        return [$matches[1], (int) $matches[2], $matches[3] ?? ''];
     }
 
     /**

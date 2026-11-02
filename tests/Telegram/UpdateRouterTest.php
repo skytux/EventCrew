@@ -67,6 +67,35 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertContains('answerCallbackQuery', $this->calledMethods());
     }
 
+    public function testABoardDayButtonRedrawsTheBoard(): void
+    {
+        $this->router()->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'message' => ['message_id' => 5, 'chat' => ['id' => 100]],
+                'data' => 'bd:2026-08-08',
+            ],
+        ]);
+
+        self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
+    }
+
+    public function testARosterDayButtonGoesToTheRoster(): void
+    {
+        $this->router()->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+                'data' => 'rd:2026-08-08',
+            ],
+        ]);
+
+        // No linked person -> the roster's refusal, proof the roster handled it.
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
     public function testPrivateStartBeginsOnboarding(): void
     {
         $this->router()->dispatch([
