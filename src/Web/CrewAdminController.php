@@ -727,7 +727,7 @@ final class CrewAdminController
     {
         $map = [
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'admin_sales_sent' => __('The sales desk link is sent to your email, and to Telegram if you use the bot.', 'eventcrew'),
+            'admin_sales_sent' => __('Sent. Check your email, or Telegram if you use the bot.', 'eventcrew'),
             'admin_board_posted' => __('A new board is posted in the Telegram group.', 'eventcrew'),
             'admin_board_no_group' => __('No Telegram group is set up for the board yet.', 'eventcrew'),
             'admin_credit_given' => __('Credit given. The member is told.', 'eventcrew'),
