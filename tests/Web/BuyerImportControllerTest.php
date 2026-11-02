@@ -244,6 +244,36 @@ final class BuyerImportControllerTest extends TestCase
         self::assertStringContainsString('They bring 3 plus-ones in total.', $this->mails[0]['body']);
     }
 
+    public function testNothingFromTheSignatureLineDownIsAGuest(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            "Anna +2\nBen\n-- \nLou\nphone 040 123 4567\n",
+            '<g4@example.com>'
+        );
+
+        self::assertSame(200, $answer['status']);
+        self::assertSame(
+            [['Anna', 2], ['Ben', 0]],
+            array_map(static fn (array $i): array => [$i['data']['name'], $i['data']['plus_ones']], $this->guestInserts())
+        );
+    }
+
+    public function testASignatureLineWithMoreTrailingWhitespaceEndsTheGuestListToo(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $this->controller()->importList('owner@example.com', "Owner\n--  \t\nKim\n", '<g5@example.com>');
+
+        self::assertSame(['Owner'], array_map(static fn (array $i): mixed => $i['data']['name'], $this->guestInserts()));
+    }
+
     public function testASecondDeliverySkipsTheNamesAlreadyOnTheGuestList(): void
     {
         $this->queueOrganizer();
