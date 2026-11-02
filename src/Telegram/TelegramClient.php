@@ -48,6 +48,9 @@ final class TelegramClient
     /** The description from the most recent failed call, for the admin to see. */
     private string $lastError = '';
 
+    /** Telegram's retry_after seconds from the most recent failed call; 0 when it gave none. */
+    private int $lastRetryAfter = 0;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly DohResolver $resolver
@@ -70,6 +73,16 @@ final class TelegramClient
     }
 
     /**
+     * How many seconds Telegram asked to wait before trying the last call again
+     * ("Too Many Requests: retry after N"). 0 when the last call succeeded or
+     * failed for any other reason.
+     */
+    public function lastRetryAfter(): int
+    {
+        return $this->lastRetryAfter;
+    }
+
+    /**
      * Calls one Bot API method. Returns the `result` payload on success (an
      * empty array when the result is a bare `true`, as setWebhook and
      * answerCallbackQuery return), or null on any transport or API error.
@@ -85,6 +98,7 @@ final class TelegramClient
     public function call(string $method, array $params = [], bool $quiet = false): ?array
     {
         $this->lastError = '';
+        $this->lastRetryAfter = 0;
         $token = self::token();
 
         if ('' === $token) {
@@ -129,6 +143,7 @@ final class TelegramClient
             }
 
             $this->lastError = $description;
+            $this->lastRetryAfter = is_array($decoded) ? max(0, (int) ($decoded['parameters']['retry_after'] ?? 0)) : 0;
             $message = sprintf('Telegram %s returned an error: %s', $method, $this->lastError);
             $quiet ? $this->logger->info($message) : $this->logger->warning($message);
 

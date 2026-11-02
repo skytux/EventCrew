@@ -60,6 +60,16 @@ final class SettingsPage
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
 
+    /** When the last automatic install failed; installOnUpdate() waits WEBHOOK_RETRY_GAP after it. */
+    private const WEBHOOK_FAILED_OPTION = 'eventcrew_webhook_failed_at';
+
+    private const WEBHOOK_RETRY_GAP = 10 * 60;
+
+    /** setWebhook attempts when Telegram answers "retry after N", and the longest wait between them. */
+    private const WEBHOOK_TRIES = 3;
+
+    private const WEBHOOK_MAX_WAIT = 5;
+
     public function __construct(
         private readonly View $view,
         private readonly TelegramClient $telegram,
@@ -1044,12 +1054,26 @@ final class SettingsPage
             return;
         }
 
-        $this->installWebhook();
+        // A failed install is tried again, but not on every admin page load:
+        // at most once per WEBHOOK_RETRY_GAP, by the next admin page or the
+        // hourly cron run after that.
+        $failedAt = (int) get_option(self::WEBHOOK_FAILED_OPTION, 0);
 
-        // Stamp regardless of outcome, so a persistent misconfiguration (a
-        // non-HTTPS site) is attempted once per release rather than on every
-        // admin page load.
-        update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
+        if ($failedAt > 0 && time() - $failedAt < self::WEBHOOK_RETRY_GAP) {
+            return;
+        }
+
+        // Stamp only on success. A failed install leaves the webhook deleted
+        // (installWebhook() removes it first), so the bot receives nothing until
+        // an install works; stamping a failure would stop every retry.
+        if ($this->installWebhook()['ok']) {
+            update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
+            update_option(self::WEBHOOK_FAILED_OPTION, 0);
+
+            return;
+        }
+
+        update_option(self::WEBHOOK_FAILED_OPTION, time());
     }
 
     /**
@@ -1100,7 +1124,7 @@ final class SettingsPage
         // clean. Pending updates are preserved (deleteWebhook drops none).
         $this->telegram->deleteWebhook();
 
-        $installed = $this->telegram->setWebhook($url, $secret);
+        $installed = $this->setWebhookWithRetry($url, $secret);
 
         if (null === $installed) {
             return [
@@ -1133,6 +1157,28 @@ final class SettingsPage
         $this->commandMenu->install();
 
         return ['ok' => true, 'error' => ''];
+    }
+
+    /**
+     * setWebhook, tried again when Telegram rate-limits it. A setWebhook sent
+     * right after the deleteWebhook above is sometimes answered "Too Many
+     * Requests: retry after 1"; without a retry the webhook stays deleted and
+     * the bot goes silent.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function setWebhookWithRetry(string $url, string $secret): ?array
+    {
+        for ($try = 1;; $try++) {
+            $installed = $this->telegram->setWebhook($url, $secret);
+            $wait = $this->telegram->lastRetryAfter();
+
+            if (null !== $installed || 0 === $wait || $try >= self::WEBHOOK_TRIES) {
+                return $installed;
+            }
+
+            sleep(min($wait, self::WEBHOOK_MAX_WAIT));
+        }
     }
 
     /**
