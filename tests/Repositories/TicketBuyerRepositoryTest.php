@@ -216,4 +216,26 @@ final class TicketBuyerRepositoryTest extends TestCase
         self::assertSame(7, (new TicketBuyerRepository())->countForDate('2026-08-01'));
         self::assertStringContainsString("event_date = '2026-08-01'", $this->wpdb->lastQuery());
     }
+
+    public function testFindByTicketCodeReadsEveryTicketOfThatCodeOnThatDate(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'event_date' => '2026-08-01', 'name' => 'Anna', 'source' => 'email'],
+            ['id' => 5, 'event_date' => '2026-08-01', 'name' => 'Anna', 'source' => 'email'],
+        ];
+
+        $buyers = (new TicketBuyerRepository())->findByTicketCode('2026-08-01', ' AB12 ');
+
+        self::assertSame([4, 5], array_map(static fn ($buyer): int => $buyer->id, $buyers));
+        self::assertStringContainsString(
+            "WHERE event_date = '2026-08-01' AND ticket_code = 'AB12' ORDER BY id ASC",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    public function testFindByTicketCodeWithAnEmptyCodeAsksNothing(): void
+    {
+        self::assertSame([], (new TicketBuyerRepository())->findByTicketCode('2026-08-01', '  '));
+        self::assertSame([], $this->wpdb->queries);
+    }
 }

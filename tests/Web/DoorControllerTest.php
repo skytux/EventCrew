@@ -265,4 +265,167 @@ final class DoorControllerTest extends SalesDeskTestCase
         self::assertSame(200, $status);
         self::assertSame([], $this->wpdb->inserts);
     }
+
+    /**
+     * Posts a ticket code lookup with the page's token and answers the
+     * status and the JSON body sent. The body is caught as wp_json_encode()
+     * is asked to write it, before the exit that follows.
+     *
+     * @param array<int, string> $codes
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function lookUp(array $codes): array
+    {
+        $status = 0;
+
+        Functions\when('status_header')->alias(
+            static function (int $code) use (&$status): void {
+                $status = $code;
+            }
+        );
+        Functions\when('wp_json_encode')->alias(
+            static function (mixed $data): string {
+                if (is_array($data) && array_key_exists('tickets', $data)) {
+                    throw new RuntimeException((string) json_encode($data));
+                }
+
+                return (string) json_encode($data);
+            }
+        );
+
+        $fields = ['csrf' => DoorSession::csrfToken($this->cookie), 'codes' => (string) json_encode($codes)];
+        $_POST = $fields;
+        $_REQUEST = ['action' => DoorController::TICKET_CODE_ACTION] + $fields;
+        $this->wpdb->nextRows[] = $this->personRow(1, true);
+
+        try {
+            $this->controller()->dispatch();
+        } catch (RuntimeException $answer) {
+            return [$status, (array) json_decode($answer->getMessage(), true)];
+        }
+
+        self::fail('The controller sent no answer.');
+    }
+
+    /**
+     * The lookups of a ticket code among the statements run.
+     *
+     * @return array<int, string>
+     */
+    private function codeQueries(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'ticket_code =')
+        ));
+    }
+
+    /**
+     * A ticket buyer row on tonight's date.
+     *
+     * @return array<string, mixed>
+     */
+    private function buyerRow(int $id, string $name): array
+    {
+        return ['id' => $id, 'event_date' => self::NIGHT, 'name' => $name, 'source' => 'email'];
+    }
+
+    public function testATicketCodeLookupAnswersTheTicketWithThatCode(): void
+    {
+        $this->wpdb->nextResults[] = [$this->buyerRow(12, 'Ada')]; // findByTicketCode
+        $this->wpdb->nextResults[] = [];                           // check-ins
+
+        [$status, $answer] = $this->lookUp(['AB12']);
+
+        self::assertSame(200, $status);
+        self::assertTrue($answer['ok']);
+        self::assertSame(
+            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'in' => false]],
+            $answer['tickets']
+        );
+        self::assertSame('', $answer['message']);
+        self::assertArrayHasKey('state', $answer);
+        self::assertStringContainsString("event_date = '" . self::NIGHT . "' AND ticket_code = 'AB12'", $this->codeQueries()[0]);
+        // Only looked up: nothing is checked in.
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testATicketCodeLookupAnswersEveryTicketOnTheCodeAndWhichAreIn(): void
+    {
+        $this->wpdb->nextResults[] = [$this->buyerRow(12, 'Ada'), $this->buyerRow(13, 'Ada')];
+        $this->wpdb->nextResults[] = [['kind' => 'buyer', 'ref_id' => 13, 'plus_ones' => 0]];
+
+        [, $answer] = $this->lookUp(['AB12']);
+
+        self::assertTrue($answer['ok']);
+        self::assertSame(['buyer:12', 'buyer:13'], array_column($answer['tickets'], 'key'));
+        self::assertSame([false, true], array_column($answer['tickets'], 'in'));
+    }
+
+    public function testATicketCodeThatMatchesNothingSaysSo(): void
+    {
+        [$status, $answer] = $this->lookUp(['NOPE']);
+
+        self::assertSame(200, $status);
+        self::assertFalse($answer['ok']);
+        self::assertSame([], $answer['tickets']);
+        self::assertSame('No ticket on tonight’s list has this code.', $answer['message']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testATicketCodeLookupWithABadTokenIsRefused(): void
+    {
+        $status = $this->post(DoorController::TICKET_CODE_ACTION, ['csrf' => 'not-the-token', 'codes' => '["AB12"]']);
+
+        self::assertSame(403, $status);
+        self::assertSame([], $this->codeQueries());
+    }
+
+    public function testATicketCodeLookupWithoutTheDoorCookieIsRefused(): void
+    {
+        unset($_COOKIE[DoorSession::COOKIE]);
+
+        $status = $this->post(
+            DoorController::TICKET_CODE_ACTION,
+            ['csrf' => DoorSession::csrfToken($this->cookie), 'codes' => '["AB12"]']
+        );
+
+        self::assertSame(401, $status);
+        self::assertSame([], $this->codeQueries());
+    }
+
+    public function testAScanAnswerSaysWhenTheCodeIsNotOneOfOurTickets(): void
+    {
+        $status = 0;
+        $sent = [];
+
+        Functions\when('status_header')->alias(
+            static function (int $code) use (&$status): void {
+                $status = $code;
+            }
+        );
+        Functions\when('wp_json_encode')->alias(
+            static function (mixed $data): string {
+                if (is_array($data) && array_key_exists('key', $data)) {
+                    throw new RuntimeException((string) json_encode($data));
+                }
+
+                return (string) json_encode($data);
+            }
+        );
+
+        $fields = ['csrf' => DoorSession::csrfToken($this->cookie), 'text' => 'SHOP-ORDER-AB12'];
+        $_POST = $fields;
+        $_REQUEST = ['action' => DoorController::SCAN_ACTION] + $fields;
+        $this->wpdb->nextRows[] = $this->personRow(1, true);
+
+        try {
+            $this->controller()->dispatch();
+        } catch (RuntimeException $answer) {
+            $sent = (array) json_decode($answer->getMessage(), true);
+        }
+
+        self::assertSame(200, $status);
+        self::assertSame(DoorDesk::SCAN_NOT_OURS, $sent['code'] ?? null);
+    }
 }
