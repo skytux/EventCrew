@@ -10,7 +10,7 @@
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
- * @var string $import_mailbox The address organizers can mail a buyer list to; '' when none is set.
+ * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var array<string, string> $statuses Status slug => label, for the pickers.
@@ -264,7 +264,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 if ('' !== $import_mailbox) {
                     printf(
                         /* translators: %s: the import email address */
-                        esc_html__('You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
+                        esc_html__('You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list.', 'eventcrew'),
                         '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
                     );
                 }

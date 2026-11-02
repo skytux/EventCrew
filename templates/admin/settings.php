@@ -51,8 +51,8 @@
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
  * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
- * @var string $import_url The REST URL the mail poller posts buyer lists to.
- * @var string $import_mailbox The address organizers mail buyer lists to; '' when none is set.
+ * @var string $import_url The REST URL the mail poller posts mailed lists to.
+ * @var string $import_mailbox The address organizers mail ticket files and guest lists to; '' when none is set.
  * @var array<int, string> $import_senders Addresses besides the organizers' that may mail a list in.
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
@@ -1603,7 +1603,7 @@ if (! defined('ABSPATH')) {
 
     <h2><?php esc_html_e('Ticket buyer import by email', 'eventcrew'); ?></h2>
     <p class="description">
-        <?php esc_html_e('Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        <?php esc_html_e('Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and "+2" after a name adds two plus-ones. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
     </p>
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="eventcrew_save_import_mailbox">

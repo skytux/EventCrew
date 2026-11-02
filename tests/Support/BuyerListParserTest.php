@@ -52,4 +52,23 @@ final class BuyerListParserTest extends TestCase
     {
         self::assertSame([], BuyerListParser::names(''));
     }
+
+    public function testGuestsTakeALastPlusNWordAsPlusOnes(): void
+    {
+        $guests = BuyerListParser::guests(
+            "Anna Virtanen +2\n\n> quoted +1\nBo +12\nCy\n+3\nDee +1 late\nEd +1000\n-- \nSig +1"
+        );
+
+        self::assertSame(
+            [
+                ['name' => 'Anna Virtanen', 'plus_ones' => 2],
+                ['name' => 'Bo', 'plus_ones' => 12],
+                ['name' => 'Cy', 'plus_ones' => 0],
+                ['name' => '+3', 'plus_ones' => 0],
+                ['name' => 'Dee +1 late', 'plus_ones' => 0],
+                ['name' => 'Ed +1000', 'plus_ones' => 0],
+            ],
+            $guests
+        );
+    }
 }

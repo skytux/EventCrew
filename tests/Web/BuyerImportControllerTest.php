@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Web;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -74,7 +75,8 @@ final class BuyerImportControllerTest extends TestCase
                 new TicketBuyerRepository(),
                 new DoorAccess(new TaskRepository(), new AssignmentRepository())
             ),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new GuestRepository()
         );
     }
 
@@ -120,6 +122,17 @@ final class BuyerImportControllerTest extends TestCase
         return array_values(array_filter(
             $this->wpdb->inserts,
             static fn (array $insert): bool => str_ends_with($insert['table'], 'eventcrew_ticket_buyers')
+        ));
+    }
+
+    /**
+     * @return array<int, array{table: string, data: array<string, mixed>}>
+     */
+    private function guestInserts(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->inserts,
+            static fn (array $insert): bool => str_ends_with($insert['table'], 'eventcrew_guests')
         ));
     }
 
@@ -173,12 +186,11 @@ final class BuyerImportControllerTest extends TestCase
 
     // --- handling ----------------------------------------------------------
 
-    public function testAnOrganizersListIsImportedToTheNextNightAndConfirmed(): void
+    public function testAnOrganizersPlainListGoesToTheNextNightsGuestListAndIsConfirmed(): void
     {
         $this->queueOrganizer();
         $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-10']; // datesWithTasks
-        $this->wpdb->nextVars[] = '0'; // hasBatch: new mail
-        $this->wpdb->nextResults[] = []; // nobody on the list yet
+        $this->wpdb->nextResults[] = []; // nobody on the guest list yet
 
         $response = $this->controller()->handle($this->request($this->payload()));
 
@@ -188,17 +200,114 @@ final class BuyerImportControllerTest extends TestCase
             $response->data
         );
 
-        $inserts = $this->buyerInserts();
+        self::assertSame([], $this->buyerInserts());
+        $inserts = $this->guestInserts();
         self::assertCount(2, $inserts);
         self::assertSame('2026-08-01', $inserts[0]['data']['event_date']);
-        self::assertSame('email', $inserts[0]['data']['source']);
-        self::assertSame(BuyerImport::batchFor('<m1@example.com>', ''), $inserts[0]['data']['batch']);
+        self::assertSame(['Anna', 'Bo'], array_map(static fn (array $i): mixed => $i['data']['name'], $inserts));
+        self::assertSame(0, $inserts[0]['data']['plus_ones']);
+        self::assertSame('', $inserts[0]['data']['note']);
+        self::assertSame(9, $inserts[0]['data']['added_by']);
 
         self::assertCount(1, $this->mails);
         self::assertSame('owner@example.com', $this->mails[0]['to']);
-        self::assertStringContainsString('2 ticket buyers were added', $this->mails[0]['body']);
+        self::assertStringStartsWith('Guests added for ', $this->mails[0]['subject']);
+        self::assertStringContainsString('2 guests were added to the guest list for', $this->mails[0]['body']);
+        self::assertStringNotContainsString('plus-ones', $this->mails[0]['body']);
+        self::assertStringContainsString('The list was sent from owner@example.com.', $this->mails[0]['body']);
         self::assertStringContainsString('page=eventcrew-roster', $this->mails[0]['body']);
         self::assertStringContainsString('roster_date=2026-08-01', $this->mails[0]['body']);
+    }
+
+    public function testAPlusNAfterANameIsTakenAsPlusOnes(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            "Anna +2\nBo Virtanen  +1\n- Cy +x\nDee 3\n",
+            '<g1@example.com>'
+        );
+
+        self::assertSame(200, $answer['status']);
+        self::assertSame(4, $answer['body']['added']);
+        self::assertSame([], $this->buyerInserts());
+        $inserts = $this->guestInserts();
+        self::assertSame(
+            [['Anna', 2], ['Bo Virtanen', 1], ['- Cy +x', 0], ['Dee 3', 0]],
+            array_map(static fn (array $i): array => [$i['data']['name'], $i['data']['plus_ones']], $inserts)
+        );
+
+        self::assertStringContainsString('4 guests were added to the guest list for', $this->mails[0]['body']);
+        self::assertStringContainsString('They bring 3 plus-ones in total.', $this->mails[0]['body']);
+    }
+
+    public function testNothingFromTheSignatureLineDownIsAGuest(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            "Anna +2\nBen\n-- \nLou\nphone 040 123 4567\n",
+            '<g4@example.com>'
+        );
+
+        self::assertSame(200, $answer['status']);
+        self::assertSame(
+            [['Anna', 2], ['Ben', 0]],
+            array_map(static fn (array $i): array => [$i['data']['name'], $i['data']['plus_ones']], $this->guestInserts())
+        );
+    }
+
+    public function testASignatureLineWithMoreTrailingWhitespaceEndsTheGuestListToo(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $this->controller()->importList('owner@example.com', "Owner\n--  \t\nKim\n", '<g5@example.com>');
+
+        self::assertSame(['Owner'], array_map(static fn (array $i): mixed => $i['data']['name'], $this->guestInserts()));
+    }
+
+    public function testASecondDeliverySkipsTheNamesAlreadyOnTheGuestList(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        // The first delivery's guests are on the list already.
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'plus_ones' => 2, 'note' => '', 'added_by' => 9],
+        ];
+
+        $answer = $this->controller()->importList('owner@example.com', "anna +2\n Bo \nBO +1\n", '<g2@example.com>');
+
+        self::assertSame(200, $answer['status']);
+        self::assertSame(1, $answer['body']['added']);
+        self::assertSame(2, $answer['body']['skipped']);
+        self::assertSame(['Bo'], array_map(static fn (array $i): mixed => $i['data']['name'], $this->guestInserts()));
+        self::assertStringContainsString('1 guests were added', $this->mails[0]['body']);
+        self::assertStringContainsString(
+            '2 names were skipped because they were already on the guest list.',
+            $this->mails[0]['body']
+        );
+    }
+
+    public function testAnExtraSendersPlainListHasNoAddedBy(): void
+    {
+        $this->options[BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+
+        $answer = $this->controller()->importList('shop@example.com', "Anna +1\n", '<g3@example.com>');
+
+        self::assertSame(200, $answer['status']);
+        $inserts = $this->guestInserts();
+        self::assertCount(1, $inserts);
+        self::assertArrayNotHasKey('added_by', $inserts[0]['data']);
     }
 
     public function testTheConfirmationLinksToTheAdminTabRosterWhenThereIsACrewPage(): void
@@ -207,8 +316,7 @@ final class BuyerImportControllerTest extends TestCase
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         $this->queueOrganizer();
         $this->wpdb->nextCols[] = ['2026-08-01']; // datesWithTasks
-        $this->wpdb->nextVars[] = '0'; // hasBatch: new mail
-        $this->wpdb->nextResults[] = []; // nobody on the list yet
+        $this->wpdb->nextResults[] = []; // nobody on the guest list yet
 
         $this->controller()->handle($this->request($this->payload()));
 
@@ -238,17 +346,22 @@ final class BuyerImportControllerTest extends TestCase
         self::assertSame([], $this->buyerInserts());
     }
 
-    public function testTheSameMailTwiceAddsNothingAndSendsNoSecondConfirmation(): void
+    public function testTheSameTicketFileMailTwiceAddsNothingAndSendsNoSecondConfirmation(): void
     {
         $this->queueOrganizer();
         $this->wpdb->nextCols[] = ['2026-08-01'];
         $this->wpdb->nextVars[] = '2'; // hasBatch: this Message-ID was imported already
 
-        $response = $this->controller()->handle($this->request($this->payload()));
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            '',
+            '<m1@example.com>',
+            ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]
+        );
 
-        self::assertSame(200, $response->get_status());
-        self::assertSame(0, $response->data['added']);
-        self::assertTrue($response->data['duplicate']);
+        self::assertSame(200, $answer['status']);
+        self::assertSame(0, $answer['body']['added']);
+        self::assertTrue($answer['body']['duplicate']);
         self::assertSame([], $this->buyerInserts());
         self::assertSame([], $this->mails);
     }
@@ -312,8 +425,10 @@ final class BuyerImportControllerTest extends TestCase
         self::assertSame('anna@example.com', $inserts[0]['data']['email']);
         self::assertSame('A1', $inserts[1]['data']['ticket_code']);
         self::assertSame('B2', $inserts[2]['data']['ticket_code']);
+        self::assertSame([], $this->guestInserts());
 
         self::assertSame(['owner@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertStringStartsWith('Ticket buyers imported for ', $this->mails[1]['subject']);
         self::assertStringContainsString('3 tickets were imported for', $this->mails[1]['body']);
         self::assertStringContainsString('The list was sent from owner@example.com.', $this->mails[1]['body']);
     }

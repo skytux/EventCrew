@@ -1233,7 +1233,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             if ('' !== $eventcrew_night['mailbox']) {
                                 printf(
                                     /* translators: %s: the import email address */
-                                    esc_html__('You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted.', 'eventcrew'),
+                                    esc_html__('You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list.', 'eventcrew'),
                                     '<code>' . esc_html($eventcrew_night['mailbox']) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
                                 );
                             }

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Admin\RosterPage;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BuyerImport;
+use EventCrew\Support\BuyerListParser;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\TicketFileException;
@@ -45,7 +47,8 @@ final class BuyerImportController
     public function __construct(
         private readonly PersonRepository $people,
         private readonly BuyerImport $import,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly GuestRepository $guests
     ) {
     }
 
@@ -164,12 +167,13 @@ final class BuyerImportController
 
     /**
      * Takes one mailed list: checks the sender is an organizer or one of the
-     * extra sender addresses, adds the tickets to the next event and mails
-     * every organizer a notice. Shared by the signed endpoint and the site's
-     * own mailbox reader (MailImporter).
+     * extra sender addresses, adds the list to the next event and mails every
+     * organizer a notice. Shared by the signed endpoint and the site's own
+     * mailbox reader (MailImporter).
      *
-     * With $file (an .xlsx or .csv attachment) the tickets come from the file
-     * and $text is not read; without it, $text is one name per line.
+     * With $file (an .xlsx or .csv attachment) the ticket buyers come from the
+     * file and $text is not read; without it, $text is one guest per line,
+     * "Name" or "Name +N", added to the guest list.
      *
      * @param array{filename: string, bytes: string}|null $file
      * @return array{status: int, body: array<string, mixed>}
@@ -197,8 +201,11 @@ final class BuyerImportController
             ];
         }
 
+        $plusOnes = 0;
+
         if (null === $file) {
-            $result = $this->import->import($date, $text, 'email', BuyerImport::batchFor($messageId, $text));
+            $result = $this->importGuests($date, $text, $person?->id);
+            $plusOnes = $result['plus_ones'];
         } else {
             try {
                 $result = $this->import->importFile(
@@ -220,7 +227,7 @@ final class BuyerImportController
 
         // The same mail delivered again was announced the first time.
         if (! $result['duplicate']) {
-            $this->confirm($from, $date, $result['added'], $result['skipped'], null !== $file);
+            $this->confirm($from, $date, $result['added'], $result['skipped'], null !== $file, $plusOnes);
         }
 
         return [
@@ -236,26 +243,90 @@ final class BuyerImportController
     }
 
     /**
-     * Tells every organizer, and the sender when they are not one, what came
-     * of a mailed list.
+     * Adds the guests in a plain-text mail to $date's guest list. The guest
+     * list has no batch to recognise a mail delivered twice, so a name already
+     * on that date's list (or earlier in the same mail), compared trimmed and
+     * without regard to case, is skipped instead.
+     *
+     * @return array{added: int, skipped: int, duplicate: bool, plus_ones: int}
+     *     plus_ones is the total the added guests bring.
      */
-    private function confirm(string $from, string $date, int $added, int $skipped, bool $fromFile): void
+    private function importGuests(string $date, string $text, ?int $addedBy): array
     {
+        $seen = [];
+
+        foreach ($this->guests->forDate($date) as $guest) {
+            $seen[self::guestKey($guest->name)] = true;
+        }
+
+        $added = 0;
+        $skipped = 0;
+        $plusOnes = 0;
+
+        foreach (BuyerListParser::guests($text) as $guest) {
+            $key = self::guestKey($guest['name']);
+
+            if (isset($seen[$key])) {
+                ++$skipped;
+
+                continue;
+            }
+
+            $seen[$key] = true;
+
+            if ($this->guests->add($date, $guest['name'], $guest['plus_ones'], '', $addedBy) > 0) {
+                ++$added;
+                $plusOnes += min($guest['plus_ones'], GuestRepository::MAX_PLUS_ONES);
+            }
+        }
+
+        return ['added' => $added, 'skipped' => $skipped, 'duplicate' => false, 'plus_ones' => $plusOnes];
+    }
+
+    private static function guestKey(string $name): string
+    {
+        $name = trim($name);
+
+        return function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
+    }
+
+    /**
+     * Tells every organizer, and the sender when they are not one, what came
+     * of a mailed list: tickets from a file, or guests from a plain-text mail.
+     */
+    private function confirm(
+        string $from,
+        string $date,
+        int $added,
+        int $skipped,
+        bool $fromFile,
+        int $plusOnes = 0
+    ): void {
         $day = Dates::dayLabel($date);
 
-        $body = $fromFile
-            ? sprintf(
+        if ($fromFile) {
+            $body = sprintf(
                 /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
                 __('%1$d tickets were imported for %2$s.', 'eventcrew'),
                 $added,
                 $day
-            )
-            : sprintf(
-                /* translators: 1: number of names added, 2: the event day, e.g. "Sat 1 Aug" */
-                __('%1$d ticket buyers were added to the door list for %2$s.', 'eventcrew'),
+            );
+        } else {
+            $body = sprintf(
+                /* translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug" */
+                __('%1$d guests were added to the guest list for %2$s.', 'eventcrew'),
                 $added,
                 $day
             );
+
+            if ($plusOnes > 0) {
+                $body .= ' ' . sprintf(
+                    /* translators: %d: total number of plus-ones the added guests bring */
+                    __('They bring %d plus-ones in total.', 'eventcrew'),
+                    $plusOnes
+                );
+            }
+        }
 
         if ($skipped > 0) {
             $body .= "\n\n" . ($fromFile
@@ -266,7 +337,7 @@ final class BuyerImportController
                 )
                 : sprintf(
                     /* translators: %d: number of names skipped */
-                    __('%d names were skipped because they were already on the list.', 'eventcrew'),
+                    __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
                     $skipped
                 ));
         }
@@ -290,11 +361,17 @@ final class BuyerImportController
 
         $this->tellOrganizers(
             $from,
-            sprintf(
-                /* translators: %s: the event day, e.g. "Sat 1 Aug" */
-                __('Ticket buyers imported for %s', 'eventcrew'),
-                $day
-            ),
+            $fromFile
+                ? sprintf(
+                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
+                    __('Ticket buyers imported for %s', 'eventcrew'),
+                    $day
+                )
+                : sprintf(
+                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
+                    __('Guests added for %s', 'eventcrew'),
+                    $day
+                ),
             $body,
             [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]]
         );
