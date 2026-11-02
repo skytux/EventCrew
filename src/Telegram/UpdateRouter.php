@@ -13,9 +13,11 @@ use EventCrew\Support\Language;
  * Button taps go to the service that owns their prefix. The commands are
  * /board, /me, /help, and /roster, /door and /people for the welcome crew and
  * organizers; everything else is a button under them (MenuButtons), including
- * the Cancel button under each question. A plain private message is read only
- * as the answer to such a question. Anything else is ignored - the webhook still answers 200,
- * it just does nothing.
+ * the Cancel button under each question. A plain private message is first the
+ * answer to such a question; any other plain message goes to the
+ * language-model helper (AssistantService), which does nothing while it is
+ * switched off. Anything else is ignored - the webhook still answers 200, it
+ * just does nothing.
  *
  * Every update is handled in the language its sender chose, so their DMs and
  * popups read in it. A private command from someone who has not chosen is held
@@ -41,7 +43,8 @@ final class UpdateRouter
         private readonly SalesLinkService $salesLink,
         private readonly ?LanguageService $language = null,
         private readonly ?RoleTaskBot $roleTasks = null,
-        private readonly ?HelpService $help = null
+        private readonly ?HelpService $help = null,
+        private readonly ?AssistantService $assistant = null
     ) {
     }
 
@@ -109,6 +112,8 @@ final class UpdateRouter
                 $this->doorList->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gl:')) {
                 $this->guestList->onSelect($callbackQuery);
+            } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
+                $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
                 $this->board->onJoinLeave($callbackQuery);
             }
@@ -281,8 +286,30 @@ final class UpdateRouter
                 $this->roleTasks->capturePerson($fromId, $chatId, $text);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
+            } else {
+                $this->assistant?->onMessage($message, $chosen, $this->runner($chosen));
             }
+
+            return;
         }
+
+        // A plain group message: only the language-model helper reads it, and
+        // only when it is switched on; it stays silent unless the message was
+        // written to the bot.
+        $this->assistant?->onMessage($message, $chosen, $this->runner($chosen));
+    }
+
+    /**
+     * How the language-model helper runs an action: a made-up update sent
+     * through route(), exactly like a typed command or a tapped button.
+     *
+     * @return callable(array<string, mixed>): void
+     */
+    private function runner(?string $chosen): callable
+    {
+        return function (array $update) use ($chosen): void {
+            $this->route($update, $chosen);
+        };
     }
 
     /**

@@ -1,0 +1,618 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Telegram;
+
+use EventCrew\Support\AssistantKnowledge;
+use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\Language;
+use EventCrew\Support\LlmClient;
+use EventCrew\Support\Logger;
+
+/**
+ * Plain messages to the bot, read by a language model.
+ *
+ * The router hands over a message only when nothing else wants it: it is not
+ * a command, and in a private chat it does not answer a question the bot is
+ * waiting on. When the helper is switched off or not configured, this class
+ * does nothing and the bot behaves as it always has.
+ *
+ * Private chat: every such message gets an answer. Group: the model decides
+ * whether the message was written to the bot and whether the facts answer it;
+ * if not, or if anything goes wrong, the bot stays silent in the group.
+ *
+ * The model answers with one JSON object (see parseReply()). Its "action" is
+ * checked by AssistantActions and runs through the router exactly as if the
+ * person had typed the command or tapped the button. An action that changes
+ * data is first shown with Confirm and Cancel; what to run is kept on the
+ * server for ten minutes under a random id, bound to the person's Telegram
+ * id, and checked again when Confirm is tapped.
+ *
+ * The message text goes to the configured server and is not stored or logged.
+ *
+ * The model is asked after the webhook has answered Telegram (on shutdown,
+ * after fastcgi_finish_request() or litespeed_finish_request() where the
+ * server has one), so a slow model never holds up the webhook.
+ */
+final class AssistantService
+{
+    /** Callback data prefix: ai:ok:<id> or ai:no:<id>. */
+    public const PREFIX = 'ai:';
+
+    public const PENDING_PREFIX = 'eventcrew_ai_pending_';
+    public const PENDING_TTL = 10 * MINUTE_IN_SECONDS;
+
+    public const RATE_PREFIX = 'eventcrew_ai_rate_';
+
+    /** Characters of the person's message sent to the model. */
+    private const MAX_INPUT_CHARS = 2000;
+
+    /** Characters of the model's reply sent on to Telegram. */
+    private const MAX_REPLY_CHARS = 3500;
+
+    public function __construct(
+        private readonly TelegramClient $telegram,
+        private readonly LlmClient $llm,
+        private readonly AssistantKnowledge $knowledge,
+        private readonly HelpService $help,
+        private readonly Logger $logger,
+        private readonly bool $defer = true
+    ) {
+    }
+
+    /**
+     * A plain message nothing else took. Returns true when the helper took it
+     * (it may still stay silent), false when it is not for the helper.
+     *
+     * $run sends a made-up update through the router: it is how an action runs.
+     *
+     * @param array<string, mixed> $message
+     * @param string|null $chosen The sender's saved language.
+     * @param callable(array<string, mixed>): void $run
+     */
+    public function onMessage(array $message, ?string $chosen, callable $run): bool
+    {
+        if (! self::wants($message)) {
+            return false;
+        }
+
+        $chatId = (int) $message['chat']['id'];
+        $fromId = (int) $message['from']['id'];
+        $isPrivate = 'private' === $message['chat']['type'];
+
+        $limit = $this->countAgainstLimit($isPrivate, $fromId, $chatId);
+
+        if ('notice' === $limit && $isPrivate) {
+            $this->telegram->sendMessage($chatId, Language::run($chosen, static fn (): string => __(
+                'That is all I can answer this hour. Commands still work: /help',
+                'eventcrew'
+            )));
+        }
+
+        if ('ok' !== $limit) {
+            return true;
+        }
+
+        $work = function () use ($message, $chosen, $run): void {
+            Language::run($chosen, function () use ($message, $chosen, $run): void {
+                $this->answer($message, $chosen, $run);
+            });
+        };
+
+        if (! $this->defer) {
+            $work();
+
+            return true;
+        }
+
+        // After the response is out: priority 20 runs after WordPress flushes
+        // its output buffers on shutdown.
+        add_action('shutdown', function () use ($work): void {
+            $this->finishResponse();
+            $work();
+        }, 20);
+
+        return true;
+    }
+
+    /**
+     * Whether a message is one the helper reads at all: switched on, plain
+     * text (no command), from a person (not a bot), in a private chat or a
+     * group.
+     *
+     * @param array<string, mixed> $message
+     */
+    public static function wants(array $message): bool
+    {
+        if (! AssistantSettings::isActive()) {
+            return false;
+        }
+
+        $text = trim((string) ($message['text'] ?? ''));
+        $type = (string) ($message['chat']['type'] ?? '');
+
+        return '' !== $text
+            && ! str_starts_with($text, '/')
+            && 0 !== (int) ($message['chat']['id'] ?? 0)
+            && 0 !== (int) ($message['from']['id'] ?? 0)
+            && empty($message['from']['is_bot'])
+            && in_array($type, ['private', 'group', 'supergroup'], true);
+    }
+
+    /**
+     * A Confirm or Cancel tap under a proposed action.
+     *
+     * @param array<string, mixed> $callbackQuery
+     * @param callable(array<string, mixed>): void $run
+     */
+    public function onConfirm(array $callbackQuery, callable $run): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $fromId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? $fromId);
+        $messageId = (int) ($message['message_id'] ?? 0);
+        $shown = (string) ($message['text'] ?? '');
+
+        if (1 !== preg_match('/^ai:(ok|no):([0-9a-f]{16})$/', (string) ($callbackQuery['data'] ?? ''), $m)) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        $key = self::PENDING_PREFIX . $m[2];
+        $pending = get_transient($key);
+
+        if (! is_array($pending) || (int) ($pending['user'] ?? 0) !== $fromId || 0 === $fromId) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('This question has expired. Please write again.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        // Used once, whichever button it was.
+        delete_transient($key);
+
+        if ('no' === $m[1]) {
+            $this->telegram->answerCallbackQuery($callbackId, __('Cancelled.', 'eventcrew'));
+            $this->closeQuestion($chatId, $messageId, $shown, '✖️ ' . __('Cancelled.', 'eventcrew'));
+
+            return;
+        }
+
+        // Checked again: who may do what can change in ten minutes.
+        $checked = AssistantActions::validate(
+            (string) ($pending['action'] ?? ''),
+            $this->help->audience($fromId),
+            null,
+            (string) current_time('Y-m-d'),
+            $this->knowledge->offeredTaskIds()
+        );
+
+        if (! $checked['ok']) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That can no longer be done. /help lists what you can do.', 'eventcrew'),
+                true
+            );
+            $this->closeQuestion($chatId, $messageId, $shown, '');
+
+            return;
+        }
+
+        $chat = is_array($message['chat'] ?? null) ? $message['chat'] : ['id' => $chatId, 'type' => 'private'];
+        $from = is_array($callbackQuery['from'] ?? null) ? $callbackQuery['from'] : ['id' => $fromId];
+
+        if (AssistantActions::RUN_TAP === $checked['run']) {
+            // The board's own join/leave: it answers this tap with its usual
+            // popup and redraws this message as the board.
+            $run(['callback_query' => [
+                'id' => $callbackId,
+                'from' => $from,
+                'message' => $message,
+                'data' => $checked['payload'],
+            ]]);
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $this->closeQuestion($chatId, $messageId, $shown, '✅');
+        $run(['message' => [
+            'message_id' => $messageId,
+            'from' => $from,
+            'chat' => $chat,
+            'text' => $checked['payload'],
+        ]]);
+    }
+
+    /**
+     * Reads the model's answer: one JSON object, with or without text or a
+     * code fence around it. Null when it is not usable.
+     *
+     * @return array{aimed: bool, known: bool, lang: string, reply: string, action: ?string}|null
+     */
+    public static function parseReply(string $content): ?array
+    {
+        $start = strpos($content, '{');
+        $end = strrpos($content, '}');
+
+        if (false === $start || false === $end || $end < $start) {
+            return null;
+        }
+
+        $data = json_decode(substr($content, $start, $end - $start + 1), true);
+
+        if (
+            ! is_array($data)
+            || ! is_bool($data['aimed'] ?? null)
+            || ! is_bool($data['known'] ?? null)
+            || ! is_string($data['reply'] ?? null)
+        ) {
+            return null;
+        }
+
+        $action = $data['action'] ?? null;
+
+        if (null !== $action && ! is_string($action)) {
+            return null;
+        }
+
+        $action = null === $action ? '' : trim($action);
+
+        return [
+            'aimed' => $data['aimed'],
+            'known' => $data['known'],
+            'lang' => is_string($data['lang'] ?? null) ? strtolower(trim($data['lang'])) : '',
+            'reply' => trim($data['reply']),
+            'action' => '' === $action || 'null' === strtolower($action) ? null : $action,
+        ];
+    }
+
+    /**
+     * Asks the model and acts on its answer.
+     *
+     * @param array<string, mixed> $message
+     * @param callable(array<string, mixed>): void $run
+     */
+    private function answer(array $message, ?string $chosen, callable $run): void
+    {
+        $chatId = (int) $message['chat']['id'];
+        $fromId = (int) $message['from']['id'];
+        $isPrivate = 'private' === $message['chat']['type'];
+        $text = trim((string) $message['text']);
+
+        if ($isPrivate) {
+            $this->telegram->call('sendChatAction', ['chat_id' => $chatId, 'action' => 'typing'], true);
+        }
+
+        $audience = $this->help->audience($fromId);
+        $knowledge = $this->knowledge->build();
+
+        $result = $this->llm->chat([
+            ['role' => 'system', 'content' => $this->instructions($message, $audience, $knowledge['facts'])],
+            ['role' => 'user', 'content' => mb_substr($text, 0, self::MAX_INPUT_CHARS)],
+        ]);
+
+        $parsed = $result['ok'] ? self::parseReply($result['content']) : null;
+
+        if (null === $parsed) {
+            if ($result['ok']) {
+                // The kind only; the answer itself is never logged.
+                $this->logger->warning('Assistant: the language model answer was not the expected JSON (bad_json).');
+            }
+
+            if ($isPrivate) {
+                $this->telegram->sendMessage($chatId, $this->fixed($chosen, 'fallback'));
+            }
+
+            return;
+        }
+
+        $language = Language::normalize($parsed['lang']) ?? $chosen;
+
+        if (! $isPrivate) {
+            $this->answerGroup($message, $parsed);
+
+            return;
+        }
+
+        if (null !== $parsed['action']) {
+            $this->offerAction($message, $parsed, $language, $audience, $knowledge['tasks'], $run);
+
+            return;
+        }
+
+        if ($parsed['known'] && '' !== $parsed['reply']) {
+            $this->telegram->sendMessage($chatId, $this->clip($parsed['reply']));
+
+            return;
+        }
+
+        // Not known: the model's own words if it wrote some (in the person's
+        // language), always with /help in them.
+        $reply = $parsed['reply'];
+
+        if ('' === $reply) {
+            $reply = $this->fixed($language, 'unknown');
+        } elseif (! str_contains($reply, '/help')) {
+            $reply .= "\n\n/help";
+        }
+
+        $this->telegram->sendMessage($chatId, $this->clip($reply));
+    }
+
+    /**
+     * In the group: answer only what was written to the bot and is known,
+     * as a reply to that message. Never an action.
+     *
+     * @param array<string, mixed> $message
+     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string} $parsed
+     */
+    private function answerGroup(array $message, array $parsed): void
+    {
+        if (! $parsed['aimed'] || ! $parsed['known'] || '' === $parsed['reply']) {
+            return;
+        }
+
+        $params = [
+            'chat_id' => (int) $message['chat']['id'],
+            'text' => $this->clip($parsed['reply']),
+        ];
+
+        if (isset($message['message_id'])) {
+            $params['reply_parameters'] = [
+                'message_id' => (int) $message['message_id'],
+                'allow_sending_without_reply' => true,
+            ];
+        }
+
+        $this->telegram->call('sendMessage', $params);
+    }
+
+    /**
+     * An action the model chose, in a private chat: checked, then run
+     * straight away when it only shows something, or put to the person with
+     * Confirm and Cancel when it changes something.
+     *
+     * @param array<string, mixed> $message
+     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string} $parsed
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @param array<int, int> $offeredTasks
+     * @param callable(array<string, mixed>): void $run
+     */
+    private function offerAction(
+        array $message,
+        array $parsed,
+        ?string $language,
+        array $audience,
+        array $offeredTasks,
+        callable $run
+    ): void {
+        $chatId = (int) $message['chat']['id'];
+        $fromId = (int) $message['from']['id'];
+
+        $checked = AssistantActions::validate(
+            (string) $parsed['action'],
+            $audience,
+            (string) $message['text'],
+            (string) current_time('Y-m-d'),
+            $offeredTasks
+        );
+
+        if (! $checked['ok']) {
+            $this->telegram->sendMessage(
+                $chatId,
+                $this->fixed(
+                    $language,
+                    AssistantActions::ERROR_NOT_REGISTERED === $checked['error'] ? 'register' : 'cannot'
+                )
+            );
+
+            return;
+        }
+
+        if (! $checked['confirm']) {
+            if ('' !== $parsed['reply']) {
+                $this->telegram->sendMessage($chatId, $this->clip($parsed['reply']));
+            }
+
+            if (AssistantActions::RUN_TAP === $checked['run']) {
+                $run(['callback_query' => [
+                    'id' => '',
+                    'from' => $message['from'],
+                    'message' => ['chat' => $message['chat']],
+                    'data' => $checked['payload'],
+                ]]);
+
+                return;
+            }
+
+            $run(['message' => [
+                'message_id' => (int) ($message['message_id'] ?? 0),
+                'from' => $message['from'],
+                'chat' => $message['chat'],
+                'text' => $checked['payload'],
+            ]]);
+
+            return;
+        }
+
+        $id = bin2hex(random_bytes(8));
+        set_transient(
+            self::PENDING_PREFIX . $id,
+            ['user' => $fromId, 'action' => $checked['action']],
+            self::PENDING_TTL
+        );
+
+        $text = ('' !== $parsed['reply'] ? $this->clip($parsed['reply']) . "\n\n" : '') . '➡️ ' . $checked['action'];
+
+        $buttons = Language::run($language, static fn (): array => [
+            ['text' => '✅ ' . __('Confirm', 'eventcrew'), 'callback_data' => self::PREFIX . 'ok:' . $id],
+            ['text' => '✖️ ' . __('Cancel', 'eventcrew'), 'callback_data' => self::PREFIX . 'no:' . $id],
+        ]);
+
+        $this->telegram->sendMessage($chatId, $text, ['inline_keyboard' => [$buttons]]);
+    }
+
+    /**
+     * The instructions for the model: the answer format, the rules, the
+     * actions this person may ask for, and the facts.
+     *
+     * @param array<string, mixed> $message
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     */
+    private function instructions(array $message, array $audience, string $facts): string
+    {
+        $isPrivate = 'private' === $message['chat']['type'];
+        $yes = static fn (bool $value): string => $value ? 'yes' : 'no';
+
+        $lines = [
+            'You are the Telegram bot of EventCrew, the crew of a recurring event. People earn free entry'
+                . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.',
+            'Answer the person\'s message with ONE JSON object and nothing else:',
+            '{"aimed": true or false, "known": true or false, "lang": "<two-letter code of the language'
+                . ' the message is written in>", "reply": "<your answer>", "action": "<one action line>" or null}',
+            '',
+            'Rules:',
+            '- "reply" is in the language the message is written in. Plain text, no Markdown, at most 600 characters.',
+            '- Use only the FACTS below. Never make up dates, times, prices, codes, names, links or numbers.',
+            '- "known" is true when the FACTS answer the message, or when it needs no facts (a greeting, thanks).'
+                . ' Otherwise "known" is false and "reply" says you do not know and points to /help or an organizer.',
+            '- "action" is null, or exactly one line from ACTIONS with its <...> and [...] parts filled in from'
+                . ' the message or the FACTS. Never use a command, task number or guest number that is not'
+                . ' in ACTIONS, the FACTS or the message.',
+            '- When the person asks for something an action does, give that action and keep "reply" short.'
+                . ' Actions marked (asks to confirm) are shown with a Confirm button first: "reply" then says'
+                . ' what will happen.',
+            '- Dates in actions are written like 1.8. or 2026-08-01.',
+        ];
+
+        if ($isPrivate) {
+            $lines[] = '- This is a private chat with one person: "aimed" is true.';
+        } else {
+            $lines[] = '- This is the crew\'s group chat. "aimed" is true only when the message is written to the'
+                . ' bot: it mentions the bot, replies to the bot, or asks the bot something. Messages between'
+                . ' people are not for you: "aimed" is false. When unsure, "aimed" is false. In the group'
+                . ' "action" is always null.';
+            $lines[] = '- The message mentions the bot: ' . $yes($this->mentionsBot($message))
+                . '. It replies to a message of the bot: ' . $yes($this->repliesToBot($message)) . '.';
+        }
+
+        $lines[] = '';
+        $lines[] = sprintf(
+            'The person: signed up with a confirmed email: %s. Organizer: %s. Welcome crew: %s.',
+            $yes($audience['verified']),
+            $yes($audience['organizer']),
+            $yes($audience['welcomeCrew'])
+        );
+
+        if ($isPrivate) {
+            $lines[] = '';
+            $lines[] = 'ACTIONS:';
+
+            foreach (AssistantActions::catalogue($audience) as $entry) {
+                $lines[] = '- ' . $entry['usage'] . ' : ' . $entry['what']
+                    . ($entry['confirm'] ? ' (asks to confirm)' : '');
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'FACTS:';
+        $lines[] = $facts;
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     */
+    private function mentionsBot(array $message): bool
+    {
+        $own = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
+
+        return '' !== $own && false !== stripos((string) ($message['text'] ?? ''), '@' . $own);
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     */
+    private function repliesToBot(array $message): bool
+    {
+        $from = $message['reply_to_message']['from'] ?? null;
+
+        if (! is_array($from) || empty($from['is_bot'])) {
+            return false;
+        }
+
+        $own = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
+
+        return '' === $own || 0 === strcasecmp($own, (string) ($from['username'] ?? ''));
+    }
+
+    /**
+     * Counts this message against the hourly limit. 'ok' while under it,
+     * 'notice' for the first message over it (a private chat is told once),
+     * 'silent' after that.
+     */
+    private function countAgainstLimit(bool $isPrivate, int $fromId, int $chatId): string
+    {
+        $limit = $isPrivate ? AssistantSettings::privateLimit() : AssistantSettings::groupLimit();
+        $who = $isPrivate ? 'p' . $fromId : 'g' . abs($chatId);
+        $key = self::RATE_PREFIX . $who . '_' . intdiv(time(), HOUR_IN_SECONDS);
+
+        $count = (int) get_transient($key) + 1;
+        set_transient($key, $count, HOUR_IN_SECONDS);
+
+        if ($count <= $limit) {
+            return 'ok';
+        }
+
+        return $limit + 1 === $count ? 'notice' : 'silent';
+    }
+
+    /**
+     * Takes the Confirm and Cancel buttons off the question, adding $note.
+     */
+    private function closeQuestion(int $chatId, int $messageId, string $shown, string $note): void
+    {
+        if (0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $text = trim($shown . ('' !== $note ? "\n\n" . $note : ''));
+        $this->telegram->editMessageText($chatId, $messageId, '' !== $text ? $text : '…');
+    }
+
+    /** One of the helper's own sentences, in $language. */
+    private function fixed(?string $language, string $which): string
+    {
+        return Language::run($language, static fn (): string => match ($which) {
+            'unknown' => __('I do not know that. /help lists the commands, or ask an organizer.', 'eventcrew'),
+            'cannot' => __('I cannot do that for you. /help lists what you can do.', 'eventcrew'),
+            'register' => __('First sign up with /start.', 'eventcrew'),
+            default => __('Right now I only understand commands: /help', 'eventcrew'),
+        });
+    }
+
+    private function clip(string $text): string
+    {
+        return mb_substr($text, 0, self::MAX_REPLY_CHARS);
+    }
+
+    /** Sends the webhook's answer to Telegram now, so the rest runs after it. */
+    private function finishResponse(): void
+    {
+        ignore_user_abort(true);
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        } elseif (function_exists('litespeed_finish_request')) {
+            litespeed_finish_request();
+        }
+    }
+}

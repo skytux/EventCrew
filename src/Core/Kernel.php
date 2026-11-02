@@ -22,6 +22,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
@@ -37,6 +38,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
+use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
@@ -61,6 +63,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\Turnstile;
+use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
@@ -137,6 +140,10 @@ final class Kernel
         // only in wp-admin, because the notification cron renders the template
         // with nobody logged in.
         $this->container->get(EmailTemplate::class)->boot();
+
+        // The language-model helper's cached page text is dropped whenever a
+        // post or a menu is saved, from wp-admin or anywhere else.
+        $this->container->get(AssistantKnowledge::class)->boot();
 
         // The bot's endpoints and board refresh live on the front/cron path
         // for the same reason: Telegram posts updates to a REST route with
@@ -951,7 +958,29 @@ final class Kernel
                 $container->get(SalesLinkService::class),
                 $container->get(LanguageService::class),
                 $container->get(RoleTaskBot::class),
-                $container->get(HelpService::class)
+                $container->get(HelpService::class),
+                $container->get(AssistantService::class)
+            )
+        );
+
+        $this->container->singleton(
+            LlmClient::class,
+            fn (Container $container) => new LlmClient($container->get(Logger::class))
+        );
+
+        $this->container->singleton(
+            AssistantKnowledge::class,
+            fn (Container $container) => new AssistantKnowledge($container->get(TaskRepository::class))
+        );
+
+        $this->container->singleton(
+            AssistantService::class,
+            fn (Container $container) => new AssistantService(
+                $container->get(TelegramClient::class),
+                $container->get(LlmClient::class),
+                $container->get(AssistantKnowledge::class),
+                $container->get(HelpService::class),
+                $container->get(Logger::class)
             )
         );
 
@@ -1058,7 +1087,8 @@ final class Kernel
                 $container->get(BoardService::class),
                 $container->get(WelcomeSender::class),
                 $container->get(PersonRepository::class),
-                $container->get(CommandMenu::class)
+                $container->get(CommandMenu::class),
+                $container->get(LlmClient::class)
             )
         );
 

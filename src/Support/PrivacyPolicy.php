@@ -468,6 +468,13 @@ final class PrivacyPolicy
             );
         }
 
+        if (self::telegramEnabled() && AssistantSettings::isActive()) {
+            $processors[] = __(
+                'The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, and whether you are an organizer, are sent there to work out the answer. We do not store the text, and the bot never changes anything for you without asking you to confirm.',
+                'eventcrew'
+            );
+        }
+
         if (self::turnstileEnabled()) {
             $processors[] = __(
                 'Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record.',

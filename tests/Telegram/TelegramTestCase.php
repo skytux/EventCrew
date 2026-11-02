@@ -184,7 +184,10 @@ abstract class TelegramTestCase extends TestCase
      * Without $language the router asks nobody to choose, as most routing
      * tests want; the language tests pass one in.
      */
-    protected function updateRouter(?LanguageService $language = null): UpdateRouter
+    protected function updateRouter(
+        ?LanguageService $language = null,
+        ?\EventCrew\Telegram\AssistantService $assistant = null
+    ): UpdateRouter
     {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
 
@@ -245,7 +248,8 @@ abstract class TelegramTestCase extends TestCase
                 new PersonRepository(),
                 new DoorAccess(new TaskRepository(), new AssignmentRepository()),
                 $this->client()
-            )
+            ),
+            $assistant
         );
     }
 

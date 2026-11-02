@@ -125,6 +125,31 @@ to the DM with a breadcrumb left behind.
 | `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
 | `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
 
+### Plain messages (optional language model)
+
+Under **Settings → Telegram bot → Plain messages** an admin can point the bot at
+a language model server with an OpenAI-style `/chat/completions` API (URL, model,
+optional API key; the key is stored encrypted and never shown again). With it on,
+messages that are not commands and do not answer a question the bot asked go to
+the model:
+
+- **Private chat:** every such message gets an answer, in the language it was
+  written in. The model knows the open tasks, coming events (EventMesh, when
+  installed) and the text of chosen pages (default: the menu pages). If it does
+  not know, it says so and points to `/help`. It may also suggest one action the
+  person could do themselves with a command; the plugin checks it with the same
+  permission rules. Signing up for a task, leaving one and changing the guest
+  list need a tap on ✅ Confirm (the offer expires after 10 minutes); showing
+  something runs straight away.
+- **Group:** the bot answers only when the message is meant for it and it knows
+  the answer; otherwise it stays silent. It never acts in the group.
+- Limits: 20 messages per person per hour in private and 60 per group per hour
+  (both settable). Message text is not stored or logged. With the switch off or
+  no server set, the bot behaves exactly as before.
+
+`\EventCrew\Support\AssistantSettings::saveConnection($url, $model, $apiKey, $enabled)` sets the
+connection from a one-off script (`wp eval`).
+
 The board itself is grouped by event: two inert heading rows — `📅` and the
 event's name, then its date — introduce each group, and its tasks follow as
 Join/leave buttons leading with the job (`🎈 Decorate · 17:00–18:30 · 1/3`).

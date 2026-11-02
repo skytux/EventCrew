@@ -58,6 +58,7 @@
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{enabled: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
@@ -1552,6 +1553,121 @@ if (! defined('ABSPATH')) {
                 <?php endif; ?>
             </details>
         <?php endif; ?>
+
+        <h2 id="ec-assistant"><?php esc_html_e('Plain messages (language model)', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('When this is on, the bot answers messages that are not commands with the help of a language model on a server you choose. Its API must accept OpenAI-style chat completions. In a private chat the bot answers every such message. In the group it answers only messages meant for the bot that it can answer, and stays silent otherwise. Changes (signing up for a task, leaving it, the guest list) always ask the person to confirm with a button first.', 'eventcrew'); ?>
+        </p>
+        <p class="description">
+            <?php esc_html_e('Privacy: the text of these messages, whether the sender is an organizer, and the open tasks, events and chosen pages are sent to that server. EventCrew does not store the message text.', 'eventcrew'); ?>
+        </p>
+        <?php if (\EventCrew\Support\AssistantSettings::KEY_UNREADABLE === $assistant['key_status']) : ?>
+            <div class="notice notice-error inline"><p>
+                <?php esc_html_e('The stored API key cannot be decrypted (the site\'s security keys have changed). Enter the key again.', 'eventcrew'); ?>
+            </p></div>
+        <?php endif; ?>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Language model', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="assistant_enabled" value="1" <?php checked($assistant['enabled']); ?>>
+                        <?php esc_html_e('Answer plain messages with the language model', 'eventcrew'); ?>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="ec-assistant-url"><?php esc_html_e('LLM API URL', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="url" id="ec-assistant-url" name="assistant_url" class="regular-text code" value="<?php echo esc_attr($assistant['url']); ?>">
+                    <p class="description">
+                        <?php esc_html_e('The base address of the API, ending before /chat/completions.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="ec-assistant-model"><?php esc_html_e('Model', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="text" id="ec-assistant-model" name="assistant_model" class="regular-text code" value="<?php echo esc_attr($assistant['model']); ?>">
+                    <p class="description">
+                        <?php esc_html_e('The model name exactly as the server lists it.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="ec-assistant-key"><?php esc_html_e('API key', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="password" id="ec-assistant-key" name="assistant_key" class="regular-text" value="" autocomplete="new-password">
+                    <p class="description">
+                        <?php if (\EventCrew\Support\AssistantSettings::KEY_OK === $assistant['key_status']) : ?>
+                            <?php esc_html_e('A key is stored (encrypted). Leave the field empty to keep it.', 'eventcrew'); ?>
+                            <a href="<?php echo esc_url($assistant['remove_key_url']); ?>"><?php esc_html_e('Remove key', 'eventcrew'); ?></a>
+                        <?php elseif (\EventCrew\Support\AssistantSettings::KEY_UNREADABLE === $assistant['key_status']) : ?>
+                            <?php esc_html_e('The stored key cannot be read.', 'eventcrew'); ?>
+                            <a href="<?php echo esc_url($assistant['remove_key_url']); ?>"><?php esc_html_e('Remove key', 'eventcrew'); ?></a>
+                        <?php else : ?>
+                            <?php esc_html_e('No key is stored. Leave it empty if your server does not ask for one.', 'eventcrew'); ?>
+                        <?php endif; ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Limits per hour', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="number" min="0" max="10000" name="assistant_private_limit" class="small-text" value="<?php echo esc_attr((string) $assistant['private_limit']); ?>">
+                        <?php esc_html_e('messages per person in a private chat', 'eventcrew'); ?>
+                    </label><br>
+                    <label>
+                        <input type="number" min="0" max="10000" name="assistant_group_limit" class="small-text" value="<?php echo esc_attr((string) $assistant['group_limit']); ?>">
+                        <?php esc_html_e('messages per group', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Messages over the limit get no answer from the model. Commands always work.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Pages it may read', 'eventcrew'); ?></th>
+                <td>
+                    <?php if ([] === $assistant['page_choices']) : ?>
+                        <p class="description"><?php esc_html_e('There are no published pages.', 'eventcrew'); ?></p>
+                    <?php else : ?>
+                        <details>
+                            <summary><?php esc_html_e('Choose pages', 'eventcrew'); ?></summary>
+                            <?php foreach ($assistant['page_choices'] as $pageId => $pageTitle) : ?>
+                                <label style="display:block">
+                                    <input type="checkbox" name="assistant_pages[]" value="<?php echo esc_attr((string) $pageId); ?>" <?php checked(in_array($pageId, $assistant['pages'], true)); ?>>
+                                    <?php echo esc_html('' !== $pageTitle ? $pageTitle : '#' . $pageId); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </details>
+                    <?php endif; ?>
+                    <p class="description">
+                        <?php esc_html_e('With none chosen, it reads the pages in the site menu, or every published page if there is no menu. Pages with a password are never read.', 'eventcrew'); ?>
+                        <?php if ([] !== $assistant['default_pages']) : ?>
+                            <br>
+                            <?php
+                            printf(
+                                /* translators: %s: comma-separated page titles */
+                                esc_html__('With none chosen, now: %s', 'eventcrew'),
+                                esc_html(implode(', ', $assistant['default_pages']))
+                            );
+                            ?>
+                        <?php endif; ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Test', 'eventcrew'); ?></th>
+                <td>
+                    <a class="button" href="<?php echo esc_url($assistant['test_url']); ?>"><?php esc_html_e('Test connection', 'eventcrew'); ?></a>
+                    <p class="description">
+                        <?php esc_html_e('Save first. The test sends one tiny request with the saved settings.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
 
         </div>
         <?php submit_button(__('Save settings', 'eventcrew')); ?>
