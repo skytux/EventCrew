@@ -249,7 +249,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     ?>
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" class="wp-element-button is-style-outline eventcrew-linkbtn"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
                 </form>
             </header>
             <?php if (null !== $eventcrew_standing) : ?>
@@ -490,7 +490,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_revoke_action); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-settings-btn"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
                 </form>
                 </div>
                 </section>
@@ -507,7 +507,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     onsubmit="return confirm('<?php echo esc_js(__('Delete your account and all your history? This cannot be undone.', 'eventcrew')); ?>');">
                     <input type="hidden" name="token" value="<?php echo esc_attr($eventcrew_manage_token); ?>">
                     <input type="hidden" name="action" value="delete">
-                    <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-linkbtn-danger eventcrew-settings-btn"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Delete my data', 'eventcrew'); ?></button>
                 </form>
                 </div>
                 </section>
@@ -527,7 +527,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 
             <?php if ($eventcrew_person->isOrganizer) : ?>
                 <p class="eventcrew-links eventcrew-help-orglink">
-                    <a class="wp-element-button is-style-outline eventcrew-link-secondary" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
+                    <a class="eventcrew-textlink" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
                 </p>
             <?php endif; ?>
 
@@ -602,7 +602,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
+                            <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
                 </div>
@@ -699,7 +699,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php if ($eventcrew_people['pages'] > 1) : ?>
                         <p class="eventcrew-admin-actions">
                             <?php if ($eventcrew_people['page'] > 1) : ?>
-                                <a class="wp-element-button is-style-outline" href="<?php echo esc_url(add_query_arg(['people_page' => $eventcrew_people['page'] - 1] + $eventcrew_people_args, $eventcrew_here) . '#eventcrew-admin-people'); ?>"><?php esc_html_e('Previous', 'eventcrew'); ?></a>
+                                <a class="eventcrew-textlink" href="<?php echo esc_url(add_query_arg(['people_page' => $eventcrew_people['page'] - 1] + $eventcrew_people_args, $eventcrew_here) . '#eventcrew-admin-people'); ?>"><?php esc_html_e('Previous', 'eventcrew'); ?></a>
                             <?php endif; ?>
                             <span class="eventcrew-muted">
                                 <?php
@@ -708,7 +708,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 ?>
                             </span>
                             <?php if ($eventcrew_people['page'] < $eventcrew_people['pages']) : ?>
-                                <a class="wp-element-button is-style-outline" href="<?php echo esc_url(add_query_arg(['people_page' => $eventcrew_people['page'] + 1] + $eventcrew_people_args, $eventcrew_here) . '#eventcrew-admin-people'); ?>"><?php esc_html_e('Next', 'eventcrew'); ?></a>
+                                <a class="eventcrew-textlink" href="<?php echo esc_url(add_query_arg(['people_page' => $eventcrew_people['page'] + 1] + $eventcrew_people_args, $eventcrew_here) . '#eventcrew-admin-people'); ?>"><?php esc_html_e('Next', 'eventcrew'); ?></a>
                             <?php endif; ?>
                         </p>
                     <?php endif; ?>
@@ -753,7 +753,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <div class="eventcrew-admin-actions">
                         <button type="submit" class="wp-element-button"><?php null === $eventcrew_edit_person ? esc_html_e('Add person', 'eventcrew') : esc_html_e('Update person', 'eventcrew'); ?></button>
                         <?php if (null !== $eventcrew_edit_person) : ?>
-                            <a class="wp-element-button is-style-outline" href="<?php echo esc_url($eventcrew_people_list); ?>"><?php esc_html_e('Cancel', 'eventcrew'); ?></a>
+                            <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_people_list); ?>"><?php esc_html_e('Cancel', 'eventcrew'); ?></a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -1244,7 +1244,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
                             <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
-                            <button type="submit" name="op" value="reset" class="wp-element-button is-style-outline"><?php esc_html_e('Reset import', 'eventcrew'); ?></button>
+                            <button type="submit" name="op" value="reset" class="eventcrew-textlink"><?php esc_html_e('Reset import', 'eventcrew'); ?></button>
                         </form>
                         <?php if ('' !== $eventcrew_night['mail_last']) : ?>
                             <p class="eventcrew-muted"><?php echo esc_html($eventcrew_night['mail_last']); ?></p>
@@ -1253,7 +1253,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['mail_action']); ?>">
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_roster_here); ?>">
-                            <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Check the mailbox now', 'eventcrew'); ?></button>
+                            <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Check the mailbox now', 'eventcrew'); ?></button>
                         </form>
                     </div>
                 </section>
@@ -1387,7 +1387,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <p class="eventcrew-admin-actions">
                         <button type="submit" class="wp-element-button"><?php echo $eventcrew_task_is_edit ? esc_html__('Update task', 'eventcrew') : esc_html__('Add task', 'eventcrew'); ?></button>
                         <?php if ($eventcrew_task_is_edit) : ?>
-                            <a class="wp-element-button is-style-outline" href="<?php echo esc_url($eventcrew_tasks_here); ?>"><?php esc_html_e('Cancel', 'eventcrew'); ?></a>
+                            <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_tasks_here); ?>"><?php esc_html_e('Cancel', 'eventcrew'); ?></a>
                         <?php endif; ?>
                     </p>
                 </form>
@@ -1478,7 +1478,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         </ul>
                     <?php endif; ?>
                     <div class="eventcrew-admin-actions eventcrew-admin-attend">
-                        <a class="wp-element-button is-style-outline" href="<?php echo esc_url(add_query_arg(['tasks_task' => $eventcrew_task_item->id] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks'); ?>"><?php esc_html_e('Edit', 'eventcrew'); ?></a>
+                        <a class="eventcrew-textlink" href="<?php echo esc_url(add_query_arg(['tasks_task' => $eventcrew_task_item->id] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks'); ?>"><?php esc_html_e('Edit', 'eventcrew'); ?></a>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
                             onsubmit="return confirm('<?php echo esc_js(__('Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED.', 'eventcrew')); ?>');">
                             <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['task_delete_action']); ?>">
@@ -1539,7 +1539,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['open_task_action']); ?>">
                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                         <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
-                        <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Send open-task email now', 'eventcrew'); ?></button>
+                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Send open-task email now', 'eventcrew'); ?></button>
                     </form>
                 </div>
             </section>

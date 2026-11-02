@@ -1,8 +1,8 @@
 <?php
 
 /**
- * The buttons at the top of the crew page: the crew's Telegram group (the main button,
- * filled) and the crew guide (a second, outlined button beside it). Signed out
+ * The links at the top of the crew page: the crew's Telegram group (the main button,
+ * filled) and the crew guide (a text link beside it). Signed out
  * there is no group link, so only the guide shows. Nothing is drawn when
  * neither is set.
  *
@@ -29,7 +29,7 @@ if ('' === $eventcrew_group_link && null === $eventcrew_guide) {
         </a>
     <?php endif; ?>
     <?php if (null !== $eventcrew_guide) : ?>
-        <a class="wp-element-button is-style-outline eventcrew-link-secondary" href="<?php echo esc_url($eventcrew_guide['url']); ?>" target="_blank" rel="noopener">
+        <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_guide['url']); ?>" target="_blank" rel="noopener">
             <?php echo esc_html($eventcrew_guide['label']); ?>
         </a>
     <?php endif; ?>

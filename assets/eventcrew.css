@@ -559,32 +559,32 @@
     cursor: pointer;
 }
 
-/*
- * Delete carries the danger colour as its background, with white on top.
- *
- * This is the one arrangement where the deep red works: as a surface it is
- * chosen against the white it carries, not against a page it has never seen,
- * so the contrast is fixed whatever is behind the widget. It is the same
- * pairing .eventcrew-btn-stop already uses for Cancel, which keeps the two
- * destructive controls reading alike. Only the colours are set, so the shape
- * stays whatever the theme makes it.
- *
- * Specific enough to beat the theme's own .wp-element-button colours, which is
- * the whole point of layering it on top of them.
- */
-.eventcrew-signup button.eventcrew-linkbtn-danger {
-    background: var(--eventcrew-stop);
-    border-color: var(--eventcrew-stop);
-    color: #fff;
-}
-
-/* filter, not color-mix: nothing to drop if it is not understood. */
-.eventcrew-signup button.eventcrew-linkbtn-danger:hover,
-.eventcrew-signup button.eventcrew-linkbtn-danger:focus-visible {
-    background: var(--eventcrew-stop);
-    filter: brightness(.9);
-}
 .eventcrew-signup .eventcrew-danger { margin: .4em 0; }
+/*
+ * Text links: the less-used actions (Sign out, Cancel, Edit, Previous/Next,
+ * Reset import…), drawn as underlined text so the page has few buttons. The
+ * same look for a link and for a form's submit button. The page's own text
+ * colour, so it reads on any background, as the Suomi | English links do. At
+ * least 44px tall to tap.
+ *
+ * Delete my data keeps a thick red underline rather than red text: red text
+ * that is readable on a dark page turns pink, and red enough to mean danger
+ * cannot be read there (see the note on --eventcrew-stop).
+ */
+.eventcrew-signup .eventcrew-textlink {
+    display: inline-flex; align-items: center; min-height: 44px;
+    margin: 0; padding: 0 .1em; background: none; border: 0; border-radius: 0;
+    box-shadow: none; font: inherit; color: inherit; letter-spacing: normal;
+    text-transform: none; text-decoration: underline; text-underline-offset: .2em;
+    cursor: pointer; opacity: .9;
+}
+.eventcrew-signup .eventcrew-textlink:hover,
+.eventcrew-signup .eventcrew-textlink:focus-visible { opacity: 1; text-decoration-thickness: 2px; }
+.eventcrew-signup .eventcrew-textlink-danger,
+.eventcrew-signup .eventcrew-textlink-danger:hover,
+.eventcrew-signup .eventcrew-textlink-danger:focus-visible {
+    text-decoration-color: #e53935; text-decoration-thickness: 3px;
+}
 /*
  * The Settings cards' buttons: one size, centred in their card. Save and Sign
  * out everywhere are outlined in the page's text colour (the theme's filled
@@ -601,29 +601,8 @@
 .eventcrew-signup button.eventcrew-settings-btn:focus-visible {
     background: color-mix(in srgb, currentColor 10%, transparent);
 }
-.eventcrew-signup button.eventcrew-settings-btn.eventcrew-linkbtn-danger,
-.eventcrew-signup button.eventcrew-settings-btn.eventcrew-linkbtn-danger:hover,
-.eventcrew-signup button.eventcrew-settings-btn.eventcrew-linkbtn-danger:focus-visible {
-    background: var(--eventcrew-stop); border-color: var(--eventcrew-stop); color: #fff;
-}
 /* Pushed to the far end of the identity row, whatever the name's length. */
 .eventcrew-signup .eventcrew-signout { margin: 0 0 0 auto; }
-/*
- * Sign out is an outline button the height of the Suomi | English links beside
- * it: the page's own text colour for the label and a thin border, no fill. The
- * theme's outline style only reaches a button inside a block wrapper, so the
- * is-style-outline class alone drew it filled. Being the page's text colour, it
- * reads on whatever background the page has, like the language links do.
- */
-.eventcrew-signup .eventcrew-signout button.eventcrew-linkbtn {
-    background: transparent; color: inherit;
-    border: 1px solid currentColor; border-radius: var(--eventcrew-radius);
-    padding: .2em .8em; font: inherit; line-height: 1.4;
-}
-.eventcrew-signup .eventcrew-signout button.eventcrew-linkbtn:hover,
-.eventcrew-signup .eventcrew-signout button.eventcrew-linkbtn:focus-visible {
-    background: color-mix(in srgb, currentColor 10%, transparent);
-}
 /*
  * Suomi | English, between the name and Sign out. It takes the push to the far
  * end itself and Sign out sits right after it. Plain text buttons: the one in
@@ -704,13 +683,6 @@
     flex: 1 1 12em; max-width: 18em; white-space: nowrap;
 }
 .eventcrew-signup .eventcrew-links .eventcrew-link-icon { flex: none; width: 1.2em; height: 1.2em; }
-.eventcrew-signup .eventcrew-links .eventcrew-link-secondary {
-    background: transparent; color: inherit; border: 1px solid currentColor;
-}
-.eventcrew-signup .eventcrew-links .eventcrew-link-secondary:hover,
-.eventcrew-signup .eventcrew-links .eventcrew-link-secondary:focus-visible {
-    background: color-mix(in srgb, currentColor 10%, transparent); color: inherit;
-}
 
 /*
  * Spending a credit. A stacked block rather than a cramped inline row: label,

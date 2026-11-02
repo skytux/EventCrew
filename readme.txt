@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.76.0
+Stable tag: 1.77.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.77.0 =
+Fewer buttons in the Crew app: Sign out, Sign out everywhere, Delete my data, the Crew guide and Organizer guide links, Previous/Next, Cancel, Edit, Open the sales desk on this device (Admin), Reset import, Check the mailbox now and Send open-task email now are now underlined text links. Delete my data has a thick red underline.
 
 = 1.76.0 =
 The Crew app's tab bar (Board, Me, Settings, Help, Admin) is now the first thing on the page: a flat menu bar that stays at the top of the screen while you scroll. The Telegram and guide buttons and the "Signed in as" card now sit under it, and the card is narrower. The Admin screens (Roster, Tasks, Door, People, Telegram) are now small text links with a line under the open one, instead of rounded buttons.
@@ -799,6 +802,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.77.0 =
+Nothing to do.
 
 = 1.76.0 =
 Nothing to do.
