@@ -91,6 +91,58 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertStringContainsString('not an email address', $notice);
     }
 
+    public function testTheExtraSenderAddressesAreSavedOnePerLine(): void
+    {
+        $this->save([
+            'import_mailbox' => 'lists@example.org',
+            'import_senders' => "Shop@Example.com\r\nnot an address\n\nshop@example.com, other@example.net",
+        ]);
+
+        self::assertSame(
+            ['shop@example.com', 'other@example.net'],
+            $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION]
+        );
+    }
+
+    public function testTicketFormatsAreSavedRemovedAndAddedInOneForm(): void
+    {
+        $decoder = "if (code < 2) {\r\n  return '<b>' + code;\r\n}";
+
+        $this->save([
+            'import_mailbox' => 'lists@example.org',
+            'ticket_formats' => [
+                [
+                    'id' => 'holvi',
+                    'name' => 'Holvi',
+                    'col_name' => 'Etunimi + Sukunimi',
+                    'col_email' => 'Sähköposti',
+                    'col_code' => 'Tilauskoodi',
+                    'decoder_js' => $decoder,
+                ],
+                ['id' => 'old', 'name' => 'Old', 'col_name' => 'Name', 'remove' => '1'],
+                ['id' => '', 'name' => 'Shop', 'col_name' => 'Name|Buyer', 'col_email' => '', 'col_code' => 'Order'],
+                ['id' => '', 'name' => '', 'col_name' => '', 'col_email' => '', 'col_code' => '', 'decoder_js' => ''],
+            ],
+        ]);
+
+        $stored = $this->options[\EventCrew\Support\TicketFormats::OPTION];
+
+        self::assertSame(['holvi', 'shop'], array_column($stored, 'id'));
+        self::assertSame("if (code < 2) {\n  return '<b>' + code;\n}", $stored[0]['decoder_js']);
+        self::assertSame(['Name', 'Buyer'], $stored[1]['columns']['name']);
+        self::assertSame('Order', $stored[1]['columns']['code']);
+    }
+
+    public function testAFormWithoutTheNewFieldsLeavesThemAsTheyWere(): void
+    {
+        $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+
+        $this->save(['import_mailbox' => 'lists@example.org']);
+
+        self::assertSame(['shop@example.com'], $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION]);
+        self::assertArrayNotHasKey(\EventCrew\Support\TicketFormats::OPTION, $this->options);
+    }
+
     private function page(): SettingsPage
     {
         $logger = new Logger();

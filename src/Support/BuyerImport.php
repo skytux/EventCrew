@@ -55,6 +55,26 @@ final class BuyerImport
     }
 
     /**
+     * Adds the tickets of a ticket file (.xlsx or .csv) to $date, one row per
+     * ticket. A batch already imported for that date adds nothing.
+     *
+     * @return array{added: int, skipped: int, duplicate: bool}
+     * @throws TicketFileException When the file cannot be read or matches no format.
+     */
+    public function importFile(string $date, string $filename, string $bytes, string $source, string $batch = ''): array
+    {
+        $tickets = TicketFormats::tickets(TicketFile::rows($filename, $bytes))['tickets'];
+
+        if ($this->buyers->hasBatch($date, $batch)) {
+            return ['added' => 0, 'skipped' => count($tickets), 'duplicate' => true];
+        }
+
+        $added = $this->buyers->addTickets($date, $tickets, $source, $batch);
+
+        return ['added' => $added, 'skipped' => count($tickets) - $added, 'duplicate' => false];
+    }
+
+    /**
      * The batch id of a mail: a short hash of its Message-ID, or of its text
      * when it has none.
      */

@@ -140,6 +140,75 @@ final class TicketBuyerRepositoryTest extends TestCase
         self::assertSame('Ada Lovelace', $this->wpdb->inserts[1]['data']['name']);
     }
 
+    public function testAddTicketsKeepsOneRowPerTicketEvenWithTheSameName(): void
+    {
+        $this->wpdb->nextResults[] = [];
+
+        $added = (new TicketBuyerRepository())->addTickets(
+            '2026-08-01',
+            [
+                ['name' => 'Anna Tester', 'email' => 'anna@example.com', 'code' => 'A1'],
+                ['name' => 'Anna Tester', 'email' => 'anna@example.com', 'code' => 'A1'],
+                ['name' => '', 'email' => '', 'code' => ''],
+                ['name' => '', 'email' => '', 'code' => 'C3'],
+            ],
+            'email',
+            'b1'
+        );
+
+        self::assertSame(3, $added);
+        self::assertSame(
+            [
+                'event_date' => '2026-08-01',
+                'name' => 'Anna Tester',
+                'email' => 'anna@example.com',
+                'ticket_code' => 'A1',
+                'source' => 'email',
+                'batch' => 'b1',
+                'created_at' => '2026-07-20 12:00:00',
+            ],
+            $this->wpdb->inserts[1]['data']
+        );
+        self::assertNull($this->wpdb->inserts[2]['data']['email']);
+        self::assertSame('C3', $this->wpdb->inserts[2]['data']['ticket_code']);
+    }
+
+    public function testAddTicketsAgainAddsOnlyTheNewTickets(): void
+    {
+        // One of Anna's two A1 tickets is stored already; a door sale with the
+        // same name does not count.
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna Tester', 'email' => 'anna@example.com', 'ticket_code' => 'A1', 'source' => 'email'],
+            ['id' => 2, 'event_date' => '2026-08-01', 'name' => 'Bo', 'email' => null, 'ticket_code' => null, 'source' => 'door'],
+        ];
+
+        $added = (new TicketBuyerRepository())->addTickets(
+            '2026-08-01',
+            [
+                ['name' => 'Anna Tester', 'email' => 'ANNA@example.com', 'code' => 'A1'],
+                ['name' => 'Anna Tester', 'email' => 'anna@example.com', 'code' => 'A1'],
+                ['name' => 'Bo', 'email' => '', 'code' => ''],
+            ],
+            'email',
+            'b2'
+        );
+
+        self::assertSame(2, $added);
+        self::assertSame(['Anna Tester', 'Bo'], array_map(
+            static fn (array $insert): string => (string) $insert['data']['name'],
+            $this->wpdb->inserts
+        ));
+    }
+
+    public function testForDateReadsTheTicketCode(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'ticket_code' => 'A1', 'source' => 'email'],
+        ];
+
+        self::assertSame('A1', (new TicketBuyerRepository())->forDate('2026-08-01')[0]->ticketCode);
+    }
+
     public function testCountForDate(): void
     {
         $this->wpdb->nextVars[] = '7';
