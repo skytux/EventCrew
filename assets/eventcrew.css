@@ -363,10 +363,29 @@
 .eventcrew-signup .eventcrew-admin-tasks label {
     display: flex; gap: .5em; align-items: baseline; padding: .3em 0; line-height: 1.35;
 }
-/* Tonight's crew: each task a small heading, each person a row with three small buttons. */
+/* Tonight's crew: each task a small heading, each person a row with a status menu that saves on change. */
 .eventcrew-signup .eventcrew-admin-task { margin: 0; padding: .7em 1em .1em; font-size: .95em; text-wrap: wrap; }
 .eventcrew-signup .eventcrew-admin-nobody { margin: 0; padding: .2em 1em .5em; }
 .eventcrew-signup .eventcrew-admin-roster li { gap: .4em; }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-roster select { width: auto; max-width: 100%; }
+/* "+ Add a person" under the crew: a text link that opens the form below it. */
+.eventcrew-signup .eventcrew-admin-add { padding: 0 1em .7em; }
+.eventcrew-signup .eventcrew-admin-add summary { list-style: none; }
+.eventcrew-signup .eventcrew-admin-add summary::-webkit-details-marker { display: none; }
+.eventcrew-signup .eventcrew-admin-add > form { padding-left: 0; padding-right: 0; }
+/* The date bar of the Roster and Door screens: ‹ date menu ›, centred. */
+.eventcrew-signup .eventcrew-admin-datebar {
+    display: flex; align-items: center; justify-content: center; gap: .4em; margin: 0 0 1em;
+}
+.eventcrew-signup .eventcrew-admin-datebar select {
+    flex: 0 1 14em; min-width: 0; min-height: 44px; padding: .4em .6em;
+    font: inherit; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
+    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
+}
+.eventcrew-signup .eventcrew-admin-datebar select option { color: #222; background: #fff; }
+.eventcrew-signup .eventcrew-admin-datebar-arrow {
+    display: inline-flex; justify-content: center; min-width: 44px; font-size: 1.5em; text-decoration: none;
+}
 .eventcrew-signup .eventcrew-admin-roster form { margin: 0; display: flex; flex-wrap: wrap; gap: .4em .9em; }
 .eventcrew-signup .eventcrew-admin-roster .wp-element-button { padding: .4em .8em; font-size: .85em; }
 /* The Roster screen's date picker, each task's Update / Mark all buttons, guests and ticket buyers. */
