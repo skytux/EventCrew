@@ -6,9 +6,9 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Models\Task;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
 use EventCrew\Support\RoleGuide;
-use EventCrew\Support\Roles;
 
 /**
  * Turns the open tasks into the board's text and inline keyboard - the pure
@@ -73,10 +73,11 @@ final class BoardRenderer
         // The board is one message the whole group reads, so a restricted task
         // (Organize, DJ, ...) cannot be on it at all; the people holding its
         // role take it on the crew page or in a private chat with the bot.
-        // A role switched off "Show on the Telegram board" is left off too.
+        // A role switched off "Show on the guest board" is left off too. The
+        // web page shows the same tasks when signed out (BoardVisibility).
         $tasks = array_values(array_filter(
             $this->tasks->upcoming(),
-            static fn (Task $task): bool => ! $task->isRestricted() && Roles::onBoard($task->roleSlug)
+            static fn (Task $task): bool => BoardVisibility::onGuestBoard($task)
         ));
 
         if ([] === $tasks) {

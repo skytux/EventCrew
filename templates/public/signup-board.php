@@ -51,7 +51,7 @@ endif; ?>
  */
 if (null === $eventcrew_person && [] !== $view['groups']) :
     ?>
-    <p class="eventcrew-board-note"><?php esc_html_e('Sign in above to take a task.', 'eventcrew'); ?></p>
+    <p class="eventcrew-board-note"><?php esc_html_e('Guest view. Sign in above to take a task and see all tasks.', 'eventcrew'); ?></p>
     <?php
 endif; ?>
 
@@ -192,6 +192,16 @@ endif; ?>
                         echo esc_html(__('On hold — talk to an organizer', 'eventcrew'));
                         ?>
                     </span>
+                    <?php
+                elseif (! $eventcrew_row['mine'] && ! empty($eventcrew_row['role_only'])) :
+                    // An organizer sees a task of a role they do not hold.
+                    ?>
+                    <button type="button" class="wp-element-button eventcrew-btn-full" disabled>
+                        <?php
+                        /* translators: %s: a role name, e.g. DJ */
+                        echo esc_html(sprintf(__('%s only', 'eventcrew'), $eventcrew_task->roleLabel()));
+                        ?>
+                    </button>
                     <?php
                 elseif ($eventcrew_row['mine']) :
                     ?>

@@ -368,29 +368,40 @@ final class SignupControllerTest extends TestCase
                 ? [
                     ['slug' => 'decorate', 'label' => 'Decorate'],
                     ['slug' => 'dj', 'label' => 'DJ', 'emoji' => '🎧', 'restricted' => true],
+                    ['slug' => 'random', 'label' => 'Random', 'emoji' => '🎲', 'on_board' => false],
                 ]
                 : false
         );
     }
 
     /**
-     * The crew page board for person 7, with a decorate task (5) and a DJ
-     * task (6) already holding three people.
+     * The crew page board for person 7, with a decorate task (5), a DJ
+     * task (6) already holding three people and a Random task (8), a role
+     * left off the guest board.
      *
      * @return array<int, int> The task ids on the board.
      */
-    private function boardFor(string $roleSlugs): array
+    private function boardFor(string $roleSlugs, int $organizer = 0): array
+    {
+        return array_keys($this->boardRowsFor($roleSlugs, $organizer));
+    }
+
+    /**
+     * @return array<int, array<string, mixed>> The board rows by task id.
+     */
+    private function boardRowsFor(string $roleSlugs, int $organizer = 0): array
     {
         $this->withDjRole();
         $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
 
         $this->wpdb->nextRows[] = [
             'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
-            'email_verified_at' => '2026-07-01 00:00:00', 'is_organizer' => 0, 'role_slugs' => $roleSlugs,
+            'email_verified_at' => '2026-07-01 00:00:00', 'is_organizer' => $organizer, 'role_slugs' => $roleSlugs,
         ];
         $this->wpdb->nextResults[] = [
             $this->taskRow(),
             array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'dj', 'capacity' => 1]),
+            array_merge($this->taskRow(), ['id' => 8, 'role_slug' => 'random', 'capacity' => 2]),
         ];
         $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 3]];
         $this->wpdb->nextResults[] = [];
@@ -399,13 +410,43 @@ final class SignupControllerTest extends TestCase
 
         $view = $this->controller()->viewModel();
 
-        return array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']);
+        return array_combine(
+            array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']),
+            $view['groups'][0]['tasks']
+        );
     }
 
     public function testTheBoardShowsARestrictedTaskOnlyToSomeoneWithItsRole(): void
     {
         self::assertSame([5], $this->boardFor(''));
         self::assertSame([5, 6], $this->boardFor('dj'));
+    }
+
+    public function testAnOrganizerSeesEveryTaskWithARoleOnlyButtonOnRolesTheyLack(): void
+    {
+        $rows = $this->boardRowsFor('', 1);
+
+        self::assertSame([5, 6, 8], array_keys($rows));
+        self::assertFalse($rows[5]['role_only']);
+        self::assertTrue($rows[6]['role_only']);
+        self::assertFalse($rows[8]['role_only']);
+
+        self::assertFalse($this->boardRowsFor('dj', 1)[6]['role_only']);
+    }
+
+    public function testSignedOutTheBoardShowsWhatTheTelegramGroupBoardShows(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(),
+            array_merge($this->taskRow(), ['id' => 6, 'role_slug' => 'dj', 'capacity' => 1]),
+            array_merge($this->taskRow(), ['id' => 8, 'role_slug' => 'random', 'capacity' => 2]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $view = $this->controller()->viewModel();
+
+        self::assertSame([5], array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']));
     }
 
     public function testClaimingARestrictedTaskNeedsTheRoleThenTheCreditAnswer(): void

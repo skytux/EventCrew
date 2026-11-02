@@ -3157,8 +3157,8 @@ msgid "Settings saved."
 msgstr "Asetukset tallennettu."
 
 #: templates/admin/settings.php:288 templates/public/signup.php:1672
-msgid "Show on the Telegram board"
-msgstr "Näytä Telegram-taululla"
+msgid "Show on the guest board (Telegram group and the web page when signed out)"
+msgstr "Näytä vierastaululla (Telegram-ryhmä ja verkkosivu kirjautumattomana)"
 
 #: templates/admin/settings.php:171 templates/public/signup.php:1634
 msgid "Slug"
@@ -3542,3 +3542,10 @@ msgstr "Anna tai poista rooleja, järjestäjän oikeudet ja luvat"
 #: src/Telegram/CommandMenu.php:308
 msgid "Who may hold each role"
 msgstr "Kuka voi saada minkäkin roolin"
+
+msgid "Guest view. Sign in above to take a task and see all tasks."
+msgstr "Vierasnäkymä. Kirjaudu yllä, niin voit ottaa tehtävän ja näet kaikki tehtävät."
+
+#. translators: %s: a role name, e.g. DJ
+msgid "%s only"
+msgstr "Vain %s"

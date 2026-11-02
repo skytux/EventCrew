@@ -289,7 +289,7 @@ if (! defined('ABSPATH')) {
                                     name="role_on_board[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['on_board']); ?>>
-                                <?php esc_html_e('Show on the Telegram board', 'eventcrew'); ?>
+                                <?php esc_html_e('Show on the guest board (Telegram group and the web page when signed out)', 'eventcrew'); ?>
                             </label>
                         </td>
                     </tr>

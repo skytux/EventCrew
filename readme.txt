@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.64.1
+Stable tag: 1.65.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.65.0 =
+Guest board: the web page signed out shows the same tasks as the Telegram group board. Signed in, members also see the tasks of their roles; organizers see every task, with a disabled "DJ only" button on roles they do not hold. The role setting is now "Show on the guest board".
 
 = 1.64.1 =
 Sales desk: Holvi ticket rows no longer show the +1 buttons. A Holvi ticket admits one person. Tickets sold at the door keep their +1.
@@ -759,6 +762,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.65.0 =
+The web board signed out now hides restricted roles and roles not shown on the guest board.
 
 = 1.64.1 =
 No upgrade steps.
