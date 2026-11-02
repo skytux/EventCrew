@@ -277,9 +277,13 @@ final class SignupController
      */
     private function accentStyle(): string
     {
-        // Mirrors Web\PwaController::COLOR_OPTION; kept literal here for the
-        // same reason the Support layer does it.
-        $color = sanitize_hex_color((string) get_option('eventcrew_app_theme_color', ''));
+        // The accent option first; an install that never set one keeps the
+        // theme colour, as before the accent had a setting of its own.
+        $color = sanitize_hex_color((string) get_option(PwaController::ACCENT_OPTION, ''));
+
+        if (! is_string($color) || '' === $color) {
+            $color = sanitize_hex_color((string) get_option(PwaController::COLOR_OPTION, ''));
+        }
 
         if (! is_string($color) || '' === $color) {
             return '';

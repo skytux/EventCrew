@@ -129,6 +129,10 @@ final class SettingsPage
                 'orphan_signup_page' => $this->unselectedSignupPage(),
                 'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
+                'app_accent_color' => (string) (
+                    get_option(PwaController::ACCENT_OPTION, '')
+                    ?: get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR)
+                ),
                 'signature' => Signature::text(),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
@@ -533,6 +537,14 @@ final class SettingsPage
             PwaController::COLOR_OPTION,
             '' === (string) $appColor ? PwaController::DEFAULT_COLOR : $appColor
         );
+
+        $accentColor = isset($_POST['app_accent_color'])
+            ? sanitize_hex_color(wp_unslash($_POST['app_accent_color']))
+            : '';
+
+        if ('' !== (string) $accentColor) {
+            update_option(PwaController::ACCENT_OPTION, $accentColor);
+        }
         $this->savePrivacy();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
