@@ -23,8 +23,14 @@
  * crew, free-entry or (later) buyer ticket. The server finds the person on
  * tonight's list (DoorDesk::scan) without marking them; the popup then shows
  * the name, a +1 counter up to what that person may bring, and "Mark
- * arrived". The QR code is read by the browser's own BarcodeDetector where
- * there is one, and otherwise by the bundled decoder of the qr library
+ * arrived". A QR code that is not one of our own tickets is read as a shop
+ * ticket: each ticket format's decoder (config.ticketDecoders, JavaScript an
+ * organizer wrote in the settings) turns the scanned text into a ticket
+ * code, and a format without a decoder takes the text itself. The server
+ * finds tonight's tickets with that code (DoorDesk::ticketsByCode); an
+ * order of several tickets is listed, and "Mark arrived" checks in the
+ * next ticket not in yet. The QR code is read by the browser's own
+ * BarcodeDetector where there is one, and otherwise by the bundled decoder of the qr library
  * (assets/vendor/qr-decode, MIT), which is loaded only when Scan is tapped.
  *
  * The "Switch" button (two opposite arrows) opens the "Other device" popup,
@@ -35,7 +41,7 @@
  * itself.
  *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
- * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions, qrDecodeUrl
+ * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions, qrDecodeUrl, ticketDecoders
  */
 
 declare(strict_types=1);
@@ -91,6 +97,11 @@ $eventcrew_text = [
     'used' => __('%s: this ticket was already used tonight.', 'eventcrew'),
     /* translators: %s: the name of the person just marked arrived */
     'arrived' => __('Welcome %s', 'eventcrew'),
+    'allUsed' => __('Every ticket with this code was already used tonight.', 'eventcrew'),
+    /* translators: %d: how many tickets carry the scanned code, always 2 or more */
+    'ticketCount' => __('%d tickets with this code. Mark them arrived one at a time.', 'eventcrew'),
+    'ticketIn' => __('checked in', 'eventcrew'),
+    'ticketOut' => __('not checked in yet', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -170,6 +181,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 #ec-scan-mark{min-height:64px;font-size:20px}
+#ec-scan-tickets{list-style:none;margin:8px 0 0;padding:0}
+#ec-scan-tickets li{padding:6px 0;border-bottom:1px solid var(--line)}
+#ec-scan-tickets li.is-in{color:var(--in)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -338,6 +352,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     <div id="ec-scan-result" hidden>
         <p id="ec-scan-name"></p>
         <p class="ec-muted" id="ec-scan-detail"></p>
+        <ul id="ec-scan-tickets" hidden></ul>
         <div class="ec-scan-plus" id="ec-scan-plus">
             <button type="button" id="ec-scan-less" aria-label="<?php esc_attr_e('One guest fewer', 'eventcrew'); ?>">−</button>
             <span id="ec-scan-count" aria-live="polite">+0</span>
@@ -1123,6 +1138,54 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     var scanPlus = 0;
     var scanLast = '';
     var scanLastAt = 0;
+    // The keys of the tickets on one scanned ticket code, or null.
+    var scanTickets = null;
+    // The ticket code decoders as functions, made on the first use.
+    var ticketDecoders = null;
+
+    // The ticket codes in a scanned text that is not one of our own tickets:
+    // for each ticket format, what its decoder returns, or the text itself
+    // for a format without a decoder. A decoder that fails, or returns
+    // anything but text, gives no code.
+    function ticketCodes(found) {
+        var codes = [];
+
+        if (null === ticketDecoders) {
+            ticketDecoders = (config.ticketDecoders || []).map(function (body) {
+                if ('' === body) {
+                    return null;
+                }
+
+                try {
+                    return new Function('text', body);
+                } catch (error) {
+                    return false;
+                }
+            });
+        }
+
+        ticketDecoders.forEach(function (decode) {
+            var code = '';
+
+            if (null === decode) {
+                code = found;
+            } else if (decode) {
+                try {
+                    code = decode(found);
+                } catch (error) {
+                    code = '';
+                }
+            }
+
+            code = 'string' === typeof code ? code.trim() : '';
+
+            if ('' !== code && -1 === codes.indexOf(code)) {
+                codes.push(code);
+            }
+        });
+
+        return codes;
+    }
 
     // isError colours the message red, so a failed scan stands out;
     // isWelcome makes it big on green, for a person just marked arrived.
@@ -1211,6 +1274,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-scan-camera').hidden = false;
         el('ec-scan-result').hidden = true;
         scanRow = null;
+        scanTickets = null;
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             scanMessage(text.noCamera, true);
@@ -1286,8 +1350,24 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     }
 
     function showScan(data) {
+        var codes;
+
         apply(data);
         scanRow = data && data.ok ? findRow(data.key) : null;
+
+        // Not one of our own tickets: look for a shop ticket with the code
+        // in it.
+        if (!scanRow && data && 'not_ours' === data.code) {
+            codes = ticketCodes(scanLast);
+
+            if (codes.length) {
+                post('ticketCode', { codes: JSON.stringify(codes) }).then(showTickets, function (error) {
+                    failed(error);
+                    startCamera();
+                });
+                return;
+            }
+        }
 
         if (!scanRow) {
             scanMessage(data ? data.message : text.failed, true);
@@ -1303,6 +1383,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-scan-name').textContent = scanRow.name;
         fitScanName();
         el('ec-scan-detail').textContent = scanRow.detail || '';
+        el('ec-scan-tickets').hidden = true;
         el('ec-scan-plus').hidden = scanRow.max <= 0;
         el('ec-scan-mark').disabled = false;
         // Someone already in keeps the guests counted for them; anyone else
@@ -1317,6 +1398,79 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-scan-more').disabled = !scanRow || scanPlus >= scanRow.max;
     }
 
+    // The tickets found for a scanned ticket code. A code that matches
+    // nothing says so and the camera goes on.
+    function showTickets(data) {
+        apply(data);
+
+        if (!data || !data.ok || !data.tickets || !data.tickets.length) {
+            scanMessage(data && data.message ? data.message : text.failed, true);
+            startCamera();
+            return;
+        }
+
+        scanTickets = data.tickets.map(function (ticket) { return ticket.key; });
+        drawTickets('');
+    }
+
+    // The tickets as they stand on the list now. "Mark arrived" checks in
+    // the first one not in yet. welcome is the name just marked arrived, or ''.
+    function drawTickets(welcome) {
+        var rows = [];
+        var next = null;
+        var list = el('ec-scan-tickets');
+
+        scanTickets.forEach(function (key) {
+            var row = findRow(key);
+
+            if (row) {
+                rows.push(row);
+                next = next || (row.in ? null : row);
+            }
+        });
+
+        if (!rows.length) {
+            scanMessage(text.failed, true);
+            startCamera();
+            return;
+        }
+
+        scanRow = next || rows[0];
+        list.textContent = '';
+        rows.forEach(function (row) {
+            list.appendChild(node('li', row.in ? 'is-in' : '', row.name + ' · ' + (row.in ? text.ticketIn : text.ticketOut)));
+        });
+        list.hidden = rows.length < 2;
+
+        if (welcome) {
+            scanMessage(text.arrived.replace('%s', welcome), false, true);
+        } else if (!next) {
+            scanMessage(1 === rows.length ? text.used.replace('%s', rows[0].name) : text.allUsed, true);
+        } else {
+            scanMessage('');
+        }
+
+        el('ec-scan-camera').hidden = true;
+        el('ec-scan-result').hidden = false;
+        el('ec-scan-name').textContent = scanRow.name;
+        fitScanName();
+        el('ec-scan-detail').textContent = rows.length > 1
+            ? text.ticketCount.replace('%d', rows.length)
+            : scanRow.detail || '';
+        el('ec-scan-plus').hidden = true;
+        el('ec-scan-mark').disabled = !next;
+        setScanPlus(0);
+    }
+
+    // Whether a ticket of the scanned code is still not in.
+    function ticketsLeft() {
+        return !!scanTickets && scanTickets.some(function (key) {
+            var row = findRow(key);
+
+            return row && !row.in;
+        });
+    }
+
     el('ec-scan-open').addEventListener('click', function () {
         scanMessage('');
         scanLast = '';
@@ -1327,6 +1481,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     el('ec-scan').addEventListener('close', function () {
         stopCamera();
         scanRow = null;
+        scanTickets = null;
     });
     el('ec-scan-less').addEventListener('click', function () { setScanPlus(scanPlus - 1); });
     el('ec-scan-more').addEventListener('click', function () { setScanPlus(scanPlus + 1); });
@@ -1342,6 +1497,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             apply(data);
 
             if (data && data.ok) {
+                // More tickets on the same code: the next one is ready.
+                if (ticketsLeft()) {
+                    drawTickets(row.name);
+                    return;
+                }
+
                 // Ready for the next person in the queue.
                 startCamera();
                 scanMessage(text.arrived.replace('%s', row.name), false, true);

@@ -45,6 +45,7 @@ final class DoorController
     public const PEOPLE_ACTION = 'eventcrew_door_people';
     public const HANDOFF_ACTION = 'eventcrew_door_handoff';
     public const SCAN_ACTION = 'eventcrew_door_scan';
+    public const TICKET_CODE_ACTION = 'eventcrew_door_ticket_code';
 
     /** The actions that can add people, with DoorQuota::adding()'s name for each. */
     private const QUOTA_ACTIONS = [
@@ -90,6 +91,7 @@ final class DoorController
             self::PEOPLE_ACTION,
             self::HANDOFF_ACTION,
             self::SCAN_ACTION,
+            self::TICKET_CODE_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -289,9 +291,28 @@ final class DoorController
                 $scan = $this->desk->scan($date, $text);
                 $this->json([
                     'ok' => DoorDesk::SCAN_OK === $scan['code'],
+                    // The page reads 'not_ours' as "try the ticket codes".
+                    'code' => $scan['code'],
                     'key' => $scan['key'],
                     'name' => $scan['name'],
                     'message' => $this->desk->scanText($scan['code'], $scan['name'], $scan['date'], $scan['at']),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::TICKET_CODE_ACTION:
+                // The ticket codes the page decoded from a QR code that is
+                // not one of our own tickets, as a JSON list. Only looks the
+                // tickets up: the desk marks each one through MARK_ACTION.
+                $codes = isset($_POST['codes'])
+                    ? json_decode(sanitize_text_field(wp_unslash($_POST['codes'])), true)
+                    : null;
+                $codes = is_array($codes) ? array_values(array_filter($codes, 'is_string')) : [];
+                $tickets = $this->desk->ticketsByCode($date, $codes);
+                $this->json([
+                    'ok' => [] !== $tickets,
+                    'tickets' => $tickets,
+                    'message' => [] === $tickets ? $this->desk->noTicketCodeText() : '',
                     'state' => $this->desk->state($date),
                 ]);
                 // No break: json() exits.
@@ -401,10 +422,14 @@ final class DoorController
                 'people' => self::PEOPLE_ACTION,
                 'handoff' => self::HANDOFF_ACTION,
                 'scan' => self::SCAN_ACTION,
+                'ticketCode' => self::TICKET_CODE_ACTION,
             ],
             // The QR decoder for phones without BarcodeDetector, loaded only
             // when Scan is tapped.
             'qrDecodeUrl' => EVENTCREW_PLUGIN_URL . 'assets/vendor/qr-decode/decode.js?ver=' . EVENTCREW_VERSION,
+            // The organizers' ticket code decoders (DoorDesk::ticketDecoders()),
+            // as data: the page turns each into a function itself.
+            'ticketDecoders' => DoorDesk::ticketDecoders(),
         ];
 
         status_header(200);
