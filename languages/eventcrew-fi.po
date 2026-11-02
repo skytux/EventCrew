@@ -995,7 +995,7 @@ msgstr "Vain järjestäjät voivat asettaa oikeuksia."
 
 #: src/Telegram/RosterService.php:144
 msgid "Only organizers or people rostered on the day can see the roster."
-msgstr "Vain järjestäjät tai päivän tehtäviin merkityt näkevät vuorolistan."
+msgstr "Vain järjestäjät tai päivän tehtäviin merkityt näkevät läsnäololistan."
 
 #: src/Telegram/RosterService.php:150
 msgid "Only organizers, and the crew on that night’s tasks that open the sales desk, can mark attendance."
@@ -1391,7 +1391,7 @@ msgstr "Henkilöä ei enää ole."
 
 #: src/Web/CrewAdminController.php:347
 msgid "That roster entry was not found."
-msgstr "Vuorolistan merkintää ei löytynyt."
+msgstr "Läsnäololistan merkintää ei löytynyt."
 
 #: src/Web/SignupController.php:690
 msgid "That sign-in link is invalid or has expired."
@@ -2382,7 +2382,7 @@ msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen 
 
 msgctxt "Admin tab screen"
 msgid "Roster"
-msgstr "Vuorolista"
+msgstr "Läsnäolo"
 
 msgctxt "Admin tab screen"
 msgid "People"
@@ -2572,7 +2572,7 @@ msgstr "Liitä nimet, yksi per rivi"
 
 #: templates/admin/roster.php:57 templates/public/signup.php:745
 msgid "No tasks have been created yet, so there is nothing to take a roster for."
-msgstr "Tehtäviä ei ole vielä luotu, joten vuorolistaa ei ole."
+msgstr "Tehtäviä ei ole vielä luotu, joten läsnäololistaa ei ole."
 
 #: templates/admin/roster.php:286 templates/public/signup.php:773
 msgid "No tasks on that date."
@@ -3855,3 +3855,1400 @@ msgstr "Tämän osoitteen EventCrew-tiedot poistettiin, mukaan lukien tehtäväh
 
 msgid "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours."
 msgstr "Sinut lisättiin crew’hun ovella. Tervetuloa!\n\nEnsimmäinen painike vahvistaa sähköpostiosoitteesi ja kirjaa sinut sisään. Se toimii kerran, 24 tunnin ajan."
+
+msgid "Email template"
+msgstr "Sähköpostipohja"
+
+msgid "Diagnostics"
+msgstr "Diagnostiikka"
+
+msgid "You do not have permission to do this."
+msgstr "Sinulla ei ole oikeutta tehdä tätä."
+
+msgid "Delete this person and their whole task history?"
+msgstr "Poistetaanko tämä henkilö ja koko hänen tehtävähistoriansa?"
+
+msgid "That credit could not be granted."
+msgstr "Vapaalippua ei voitu antaa."
+
+msgid "Credit granted."
+msgstr "Vapaalippu annettu."
+
+msgid "That pass could not be granted."
+msgstr "Lupaa ei voitu antaa."
+
+msgid "That person could not be unbanned."
+msgstr "Henkilön estoa ei voitu poistaa."
+
+msgid "Person deleted."
+msgstr "Henkilö poistettu."
+
+msgid "The mailbox settings were saved."
+msgstr "Postilaatikon asetukset tallennettiin."
+
+msgid "A new import secret was generated. Copy it into the mail poller’s settings."
+msgstr "Uusi tuontisalaisuus luotiin. Kopioi se postinhakijan asetuksiin."
+
+msgid "Add a bot token and save before installing the webhook."
+msgstr "Lisää botin token ja tallenna ennen webhookin asentamista."
+
+msgid "WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy's forwarded-protocol header - and try again."
+msgstr "WordPress loi webhookin osoitteen %s, joka ei ole HTTPS, joten Telegram hylkää sen. Aseta WordPressin osoite ja sivuston osoite (Asetukset → Yleiset) https://-muotoon - tai korjaa käänteisen välityspalvelimen forwarded-protocol-otsake - ja yritä uudelleen."
+
+msgid "Telegram refused the webhook: %s"
+msgstr "Telegram hylkäsi webhookin: %s"
+
+msgid "Settings saved, and the webhook was re-installed on the new address."
+msgstr "Asetukset tallennettiin, ja webhook asennettiin uudelleen uuteen osoitteeseen."
+
+msgid "Settings saved, but the webhook could not be re-installed: %s"
+msgstr "Asetukset tallennettiin, mutta webhookia ei voitu asentaa uudelleen: %s"
+
+msgid "A privacy page is already chosen."
+msgstr "Tietosuojasivu on jo valittu."
+
+msgid "Crew privacy notice"
+msgstr "Crew’n tietosuojaseloste"
+
+msgid "The privacy page could not be created."
+msgstr "Tietosuojasivua ei voitu luoda."
+
+msgid "Privacy page created and selected."
+msgstr "Tietosuojasivu luotiin ja valittiin."
+
+msgid "Your user account has no email address to send to."
+msgstr "Käyttäjätililläsi ei ole sähköpostiosoitetta, johon lähettää."
+
+msgid "Test email sent to %s."
+msgstr "Testisähköposti lähetettiin osoitteeseen %s."
+
+msgid "The test email could not be sent. Check the site’s mail configuration, then look at Diagnostics for the logged reason."
+msgstr "Testisähköpostia ei voitu lähettää. Tarkista sivuston sähköpostiasetukset ja katso sitten kirjattu syy Diagnostiikasta."
+
+msgid "No member has the email address %s. Sign up as a member with this address first."
+msgstr "Kenelläkään jäsenellä ei ole sähköpostiosoitetta %s. Ilmoittaudu ensin jäseneksi tällä osoitteella."
+
+msgid "member email"
+msgstr "jäsenen sähköposti"
+
+msgid "member Telegram message"
+msgstr "jäsenen Telegram-viesti"
+
+msgid "organizer email"
+msgstr "järjestäjän sähköposti"
+
+msgid "organizer Telegram message"
+msgstr "järjestäjän Telegram-viesti"
+
+msgid "Sent to %2$s: %1$s."
+msgstr "Lähetetty osoitteeseen %2$s: %1$s."
+
+msgid "nothing"
+msgstr "ei mitään"
+
+msgid "Failed: %s. Diagnostics shows the logged reason."
+msgstr "Epäonnistui: %s. Diagnostiikka näyttää kirjatun syyn."
+
+msgid "The email template was reset to the built-in design."
+msgstr "Sähköpostipohja palautettiin sisäänrakennettuun ulkoasuun."
+
+msgid "The email template could not be reset."
+msgstr "Sähköpostipohjaa ei voitu palauttaa."
+
+msgid "Webhook installed. Add the bot to your group and the board will appear there on its own."
+msgstr "Webhook asennettu. Lisää botti ryhmääsi, niin taulu ilmestyy sinne itsestään."
+
+msgid "Add a bot token first, then install the webhook."
+msgstr "Lisää ensin botin token ja asenna sitten webhook."
+
+msgid "The board has no home yet. Add the bot to your group and send /board there once; after that this button redraws it."
+msgstr "Taululla ei ole vielä paikkaa. Lisää botti ryhmääsi ja lähetä siellä kerran /board; sen jälkeen tämä painike piirtää taulun uudelleen."
+
+msgid "The board has been redrawn."
+msgstr "Taulu piirrettiin uudelleen."
+
+msgid "The board could not be redrawn — it may have been deleted from the group. Send /board there to post a fresh one. Diagnostics has the logged reason."
+msgstr "Taulua ei voitu piirtää uudelleen — se on ehkä poistettu ryhmästä. Lähetä siellä /board, niin uusi taulu julkaistaan. Diagnostiikassa on kirjattu syy."
+
+msgid "A new webhook secret was generated and installed. Any copy of the old one — in a server log, for instance — is now useless."
+msgstr "Uusi webhook-salaisuus luotiin ja asennettiin. Vanhan salaisuuden kopiot — esimerkiksi palvelimen lokissa — ovat nyt hyödyttömiä."
+
+msgid "The import mailbox was removed."
+msgstr "Tuontipostilaatikko poistettiin."
+
+msgid "That is not an email address. The import mailbox was not changed."
+msgstr "Tämä ei ole sähköpostiosoite. Tuontipostilaatikkoa ei muutettu."
+
+msgid "The import mailbox was saved."
+msgstr "Tuontipostilaatikko tallennettiin."
+
+msgid "No tasks yet. Add one to get started."
+msgstr "Ei vielä tehtäviä. Aloita lisäämällä tehtävä."
+
+msgid "Time"
+msgstr "Aika"
+
+msgid "Filled"
+msgstr "Täytetty"
+
+msgid "The requested EventCrew admin view could not be loaded."
+msgstr "Pyydettyä EventCrew-ylläpitonäkymää ei voitu ladata."
+
+msgid "EventCrew email template"
+msgstr "EventCrew-sähköpostipohja"
+
+msgid "Email templates"
+msgstr "Sähköpostipohjat"
+
+msgid "Edit the email template"
+msgstr "Muokkaa sähköpostipohjaa"
+
+msgid "Connected — auto-creating tasks for new events"
+msgstr "Yhdistetty — uusille tapahtumille luodaan tehtävät automaattisesti"
+
+msgid "Connected — auto-create off, tasks added manually"
+msgstr "Yhdistetty — automaattinen luonti pois, tehtävät lisätään käsin"
+
+msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
+msgstr "Tallennettu tietokantaversio on %1$s, mutta odotettu on %2$s; se päivitetään seuraavalla latauksella."
+
+msgid "All tables present at schema version %s."
+msgstr "Kaikki taulut ovat olemassa, tietokantaversio %s."
+
+msgid "Telegram bot"
+msgstr "Telegram-botti"
+
+msgid "No bot token set. The bot is optional — add one in Settings to run the group board."
+msgstr "Botin tokenia ei ole asetettu. Botti on valinnainen — lisää token Asetuksissa, jos haluat ryhmän taulun."
+
+msgid "Token set, but the webhook is not installed — install it from the Settings page."
+msgstr "Token on asetettu, mutta webhookia ei ole asennettu — asenna se Asetukset-sivulta."
+
+msgid "Token set and webhook installed. The live status is on the Settings page."
+msgstr "Token on asetettu ja webhook asennettu. Ajantasainen tila näkyy Asetukset-sivulla."
+
+msgid "The hourly job has not run yet; the on-request fallback will run it on a visit."
+msgstr "Tunnin välein ajettava työ ei ole vielä käynyt; pyyntöön perustuva varajärjestelmä ajaa sen sivukäynnin yhteydessä."
+
+msgid "The hourly job has never run. If it stays so, enable the fallback in Settings."
+msgstr "Tunnin välein ajettava työ ei ole koskaan käynyt. Jos tilanne ei muutu, ota varajärjestelmä käyttöön Asetuksissa."
+
+msgid "Last run %s ago; WP-Cron may not be firing. Consider the on-request fallback."
+msgstr "Edellinen ajo %s sitten; WP-Cron ei ehkä käynnisty. Harkitse pyyntöön perustuvaa varajärjestelmää."
+
+msgid "Reminders and the open-task call ran %s ago."
+msgstr "Muistutukset ja avointen tehtävien kutsu ajettiin %s sitten."
+
+msgid "Signup page"
+msgstr "Ilmoittautumissivu"
+
+msgid "No page chosen for web signup / the mobile app. Set one in Settings → Mobile app."
+msgstr "Verkkoilmoittautumiselle / mobiilisovellukselle ei ole valittu sivua. Valitse se kohdassa Asetukset → Mobiilisovellus."
+
+msgid "The chosen signup page is missing or not published."
+msgstr "Valittu ilmoittautumissivu puuttuu tai sitä ei ole julkaistu."
+
+msgid "The chosen page has no [eventcrew_signup] shortcode or EventCrew signup block."
+msgstr "Valitulla sivulla ei ole [eventcrew_signup]-lyhytkoodia eikä EventCrew-ilmoittautumislohkoa."
+
+msgid "“%s” is published and carries the signup board."
+msgstr "“%s” on julkaistu, ja siinä on ilmoittautumistaulu."
+
+msgid "App icons"
+msgstr "Sovelluksen kuvakkeet"
+
+msgid "Using the WordPress Site Icon for the installed app."
+msgstr "Asennettu sovellus käyttää WordPressin sivuston kuvaketta."
+
+msgid "No Site Icon set; a lettered icon is generated with GD."
+msgstr "Sivuston kuvaketta ei ole asetettu; kirjainkuvake luodaan GD:llä."
+
+msgid "No Site Icon and GD unavailable, so the app has no icon. Set one in Settings → General."
+msgstr "Sivuston kuvaketta ei ole eikä GD ole käytettävissä, joten sovelluksella ei ole kuvaketta. Aseta kuvake kohdassa Asetukset → Yleiset."
+
+msgid "No site admin email is set, so wp_mail has no default sender."
+msgstr "Sivuston ylläpitäjän sähköpostiosoitetta ei ole asetettu, joten wp_mail-funktiolla ei ole oletuslähettäjää."
+
+msgid "Mail sends via wp_mail (admin: %s). Deliverability depends on the host and SPF/DKIM."
+msgstr "Sähköposti lähtee wp_mail-funktiolla (ylläpitäjä: %s). Perillemeno riippuu palvelimesta ja SPF/DKIM-asetuksista."
+
+msgid "Database"
+msgstr "Tietokanta"
+
+msgid "Missing tables: %s. Deactivate and reactivate the plugin to run the migration."
+msgstr "Puuttuvat taulut: %s. Poista lisäosa käytöstä ja ota se uudelleen käyttöön, niin tietokanta päivitetään."
+
+msgid "Open the signup page"
+msgstr "Avaa ilmoittautumissivu"
+
+msgid "EventCrew test email"
+msgstr "EventCrew-testisähköposti"
+
+msgid "Tasks and events"
+msgstr "Tehtävät ja tapahtumat"
+
+msgid "A role is a kind of job, for example Welcome or Clean. You set the roles in Settings: name, emoji, a short description, how many people, and when it starts and ends compared to the event."
+msgstr "Rooli on työn laji, esimerkiksi Vastaanotto tai Siivous. Roolit asetetaan Asetuksissa: nimi, emoji, lyhyt kuvaus, montako ihmistä tarvitaan sekä milloin rooli alkaa ja päättyy suhteessa tapahtumaan."
+
+msgid "A task is one role on one date. In EventCrew > Tasks you create tasks one by one, or all the tasks of a night at once from the roles. A task can be linked to an event, so it shows under the event's name. A task set to 0 people stays saved but leaves the board."
+msgstr "Tehtävä on yksi rooli yhtenä päivänä. Kohdassa EventCrew > Tehtävät luot tehtävät yksi kerrallaan tai illan kaikki tehtävät kerralla roolien pohjalta. Tehtävän voi liittää tapahtumaan, jolloin se näkyy tapahtuman nimen alla. Tehtävä, jonka paikkamäärä on 0, pysyy tallessa mutta poistuu taululta."
+
+msgid "The board and sign-up"
+msgstr "Taulu ja ilmoittautuminen"
+
+msgid "The board in the Telegram group lists the open tasks under each event and date. Each task is a button that shows its role, time and places taken; a member taps it to sign up. It updates itself whenever something changes. /board in the group posts a new copy at the bottom. Settings > Telegram bot > Refresh the board redraws it in place."
+msgstr "Telegram-ryhmän taulu listaa avoimet tehtävät kunkin tapahtuman ja päivän alla. Jokainen tehtävä on painike, joka näyttää roolin, ajan ja varatut paikat; jäsen ilmoittautuu napauttamalla sitä. Taulu päivittyy itsestään aina, kun jokin muuttuu. Ryhmässä /board julkaisee uuden kopion alimmaksi. Asetukset > Telegram-botti > Päivitä taulu piirtää sen uudelleen samaan paikkaan."
+
+msgid "A new member sends /start to the bot in a private chat and confirms their email address. On the web sign-up page they sign in with a link sent to their email. Both follow the same rules."
+msgstr "Uusi jäsen lähettää botille /start yksityisviestinä ja vahvistaa sähköpostiosoitteensa. Verkon ilmoittautumissivulla hän kirjautuu sähköpostiin lähetetyllä linkillä. Molemmissa pätevät samat säännöt."
+
+msgid "On the night: roster and sales desk"
+msgstr "Illan aikana: läsnäolo ja myyntipiste"
+
+msgid "/roster in a private chat with the bot shows the night's crew. Mark each person arrived, arrived late, completed or no-show, one by one or a whole crew at once. EventCrew > Roster in wp-admin does the same for any date. The night's welcome crew can mark the crew too."
+msgstr "/roster yksityisviestissä botin kanssa näyttää illan crew’n. Merkitse jokainen saapuneeksi, myöhässä saapuneeksi, tehdyksi tai ei saapuneeksi, yksi kerrallaan tai koko crew kerralla. Wp-adminin EventCrew > Läsnäolo tekee saman mille tahansa päivälle. Illan vastaanottocrew voi myös merkitä crew’n."
+
+msgid "The sales desk is a web page for the door. It shows tonight's list: the crew, members with a free-entry ticket, guests and Holvi ticket buyers. You mark people in and out and say how many people they brought. Add sells a ticket at the door, adds a guest, or adds a member who spends a credit or takes one of tonight's tasks."
+msgstr "Myyntipiste on verkkosivu ovelle. Se näyttää illan listan: crew’n, jäsenet, joilla on vapaalippu, vieraat ja Holvin lipunostajat. Merkitset ihmiset sisään ja ulos ja kerrot, montako ihmistä he toivat mukanaan. Lisää myy lipun ovella, lisää vieraan tai lisää jäsenen, joka käyttää vapaalipun tai ottaa jonkin illan tehtävistä."
+
+msgid "Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under \"Holvi ticket buyers\". A name already on the list is skipped."
+msgstr "Holvin lipunostajat: valitse kohdassa EventCrew > Läsnäolo päivä ja liitä nimet, yksi per rivi, kohtaan \"Holvin lipunostajat\". Listalla jo oleva nimi ohitetaan."
+
+msgid "Holvi ticket buyers: email the list of names to %s from your EventCrew email address. The names go on the sales desk list of the next event."
+msgstr "Holvin lipunostajat: lähetä nimilista sähköpostilla osoitteeseen %s EventCrew-sähköpostiosoitteestasi. Nimet menevät seuraavan tapahtuman myyntipisteen listalle."
+
+msgid "Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead."
+msgstr "Tai lähetä lista sähköpostilla osoitteeseen %s. Lähetä se siitä sähköpostiosoitteesta, joka sinulla on EventCrew’ssa; muista osoitteista tulevaa postia ei käytetä. Kirjoita viestiin yksi nimi per rivi tai liitä .txt- tai .csv-tiedosto, jonka ensimmäisessä sarakkeessa ovat nimet. Nimet menevät seuraavaan tapahtumaan, jolla pitää jo olla tehtävät. Listalla jo oleva nimi ohitetaan. Muutaman minuutin kuluessa saat sähköpostin, jossa kerrotaan, montako nimeä lisättiin ja montako ohitettiin. Jos sähköpostia ei tule, lisää nimet sen sijaan kohdassa EventCrew > Läsnäolo."
+
+msgid "Tickets, credits and standing"
+msgstr "Liput, vapaaliput ja luotettavuus"
+
+msgid "Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot."
+msgstr "Tehtävään ilmoittautuminen antaa jäsenelle vapaalipun sille illalle. Lippu on verkkosivu, jossa on käyvä kello. Kello, joka ei liiku, on kuvakaappaus."
+
+msgid "Standing is worked out again each time from how a member's past tasks went; recent tasks count more. A member gets a rating after %1$d finished tasks. %2$d%% or higher is good standing. Settings > Reputation holds the weights and limits."
+msgstr "Luotettavuus lasketaan joka kerta uudelleen siitä, miten jäsenen aiemmat tehtävät menivät; tuoreet tehtävät painavat enemmän. Jäsen saa arvion %1$d tehdyn tehtävän jälkeen. %2$d%% tai enemmän on hyvä luotettavuus. Painot ja rajat ovat kohdassa Asetukset > Luotettavuus."
+
+msgid "Organizer guide: how EventCrew works"
+msgstr "Järjestäjän opas: näin EventCrew toimii"
+
+msgid "Roles and permissions"
+msgstr "Roolit ja oikeudet"
+
+msgid "Automatic messages"
+msgstr "Automaattiset viestit"
+
+msgid "Sign-up and cancellation confirmations, at once."
+msgstr "Ilmoittautumis- ja perumisvahvistukset heti."
+
+msgid "A reminder %d hours before each task."
+msgstr "Muistutus %d tuntia ennen jokaista tehtävää."
+
+msgid "A call to all members when tasks still need people."
+msgstr "Kutsu kaikille jäsenille, kun tehtäviin tarvitaan vielä ihmisiä."
+
+msgid "Notices about standing, credits, tickets and permissions."
+msgstr "Ilmoitukset luotettavuudesta, vapaalipuista, lipuista ja oikeuksista."
+
+msgid "The sales desk link on the night."
+msgstr "Myyntipisteen linkki illan aikana."
+
+msgid "A welcome message to each new member when they confirm their email, and this guide to each organizer."
+msgstr "Tervetuloviesti jokaiselle uudelle jäsenelle, kun hän vahvistaa sähköpostinsa, ja tämä opas jokaiselle järjestäjälle."
+
+msgid "The wp-admin pages"
+msgstr "Wp-adminin sivut"
+
+msgid "Tasks: create, change and remove tasks."
+msgstr "Tehtävät: tehtävien luonti, muuttaminen ja poisto."
+
+msgid "People: members, their history and credits, the credit log, organizers, and the Role conditions tab."
+msgstr "Ihmiset: jäsenet, heidän historiansa ja vapaalippunsa, vapaalippuloki, järjestäjät sekä Roolien ehdot -välilehti."
+
+msgid "Roster: attendance and the door list for any date, and the Holvi ticket buyers."
+msgstr "Läsnäolo: osallistuminen ja ovilista mille tahansa päivälle sekä Holvin lipunostajat."
+
+msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
+msgstr "Asetukset: roolit, luotettavuus, ilmoitukset ja niiden ajat, Telegram-botti, sähköposti, tietosuoja ja tervetuloviesti."
+
+msgid "Email template: how every email looks."
+msgstr "Sähköpostipohja: miltä jokainen sähköposti näyttää."
+
+msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
+msgstr "Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus."
+
+msgid "Open EventCrew in wp-admin:"
+msgstr "Avaa EventCrew wp-adminissa:"
+
+msgid "Contents"
+msgstr "Sisältö"
+
+msgid "Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night."
+msgstr "Tehtävät: luot ne wp-adminissa kohdassa EventCrew > Tehtävät. Yhdellä napsautuksella syntyvät illan kaikki tehtävät."
+
+msgid "Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group."
+msgstr "Ilmoittautuminen: jäsenet napauttavat tehtävää Telegram-ryhmän taululla tai käyttävät verkon ilmoittautumissivua. /board julkaisee ryhmään uuden taulun."
+
+msgid "Standing: %d%% or higher is good standing. It comes from how each member's past tasks went."
+msgstr "Luotettavuus: %d%% tai enemmän on hyvä luotettavuus. Se perustuu siihen, miten kunkin jäsenen aiemmat tehtävät menivät."
+
+msgid "Messages: reminders and calls go out by themselves, only between %1$s and %2$s."
+msgstr "Viestit: muistutukset ja kutsut lähtevät itsestään, vain klo %1$s–%2$s."
+
+msgid "wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running."
+msgstr "Wp-adminin EventCrew > Asetukset muuttaa toimintaa. EventCrew > Diagnostiikka näyttää, toimiiko kaikki."
+
+msgid "In short"
+msgstr "Lyhyesti"
+
+msgid "Telegram account linked"
+msgstr "Telegram-tili yhdistetty"
+
+msgid "Tasks completed"
+msgstr "Tehdyt tehtävät"
+
+msgid "EventCrew profile"
+msgstr "EventCrew-profiili"
+
+msgid "EventCrew tasks"
+msgstr "EventCrew-tehtävät"
+
+msgid "Outcome"
+msgstr "Tulos"
+
+msgid "EventCrew free entry"
+msgstr "EventCrew-vapaalippu"
+
+msgid "Event date"
+msgstr "Tapahtuman päivä"
+
+msgid "We store your email to run the crew."
+msgstr "Tallennamme sähköpostiosoitteesi crew’n pyörittämiseksi."
+
+msgid "Privacy"
+msgstr "Tietosuoja"
+
+msgid "Who is responsible for your data"
+msgstr "Kuka vastaa tiedoistasi"
+
+msgid "What we hold about you"
+msgstr "Mitä tietoja sinusta on"
+
+msgid "Why we hold it"
+msgstr "Miksi tiedot säilytetään"
+
+msgid "Who else can see it"
+msgstr "Kuka muu näkee ne"
+
+msgid "How long we keep it"
+msgstr "Kuinka kauan tiedot säilytetään"
+
+msgid "Your rights"
+msgstr "Oikeutesi"
+
+msgid "The data controller for the crew records described here is %1$s, %2$s. You can reach us at %3$s."
+msgstr "Tässä kuvattujen crew-tietojen rekisterinpitäjä on %1$s, %2$s. Tavoitat meidät osoitteesta %3$s."
+
+msgid "The data controller for the crew records described here is %1$s. You can reach us at %2$s."
+msgstr "Tässä kuvattujen crew-tietojen rekisterinpitäjä on %1$s. Tavoitat meidät osoitteesta %2$s."
+
+msgid "Our data protection officer is %1$s, who you can contact directly at %2$s about anything on this page."
+msgstr "Tietosuojavastaavamme on %1$s, johon voit ottaa yhteyttä suoraan osoitteessa %2$s kaikissa tämän sivun asioissa."
+
+msgid "Our data protection officer can be contacted directly at %s about anything on this page."
+msgstr "Tietosuojavastaavaamme voi ottaa yhteyttä suoraan osoitteessa %s kaikissa tämän sivun asioissa."
+
+msgid "We have not designated a data protection officer. We are not a public authority, our work does not involve monitoring people on a large scale, and we hold no special-category data — so none of the cases that require one apply. Write to the contact address above instead."
+msgstr "Emme ole nimenneet tietosuojavastaavaa. Emme ole viranomainen, työhömme ei kuulu ihmisten laajamittainen seuranta, emmekä käsittele erityisiä henkilötietoryhmiä — joten mikään tietosuojavastaavaa edellyttävä tilanne ei koske meitä. Kirjoita sen sijaan yllä olevaan yhteysosoitteeseen."
+
+msgid "Your email address, which is how we know who you are — there is no account and no password. A display name, if you gave one or if it came from your Telegram profile."
+msgstr "Sähköpostiosoitteesi, josta tunnistamme sinut — tiliä tai salasanaa ei ole. Näyttönimi, jos annoit sellaisen tai jos se tuli Telegram-profiilistasi."
+
+msgid "Your email address, which is how we know who you are — there is no account and no password. A display name, if you gave one."
+msgstr "Sähköpostiosoitteesi, josta tunnistamme sinut — tiliä tai salasanaa ei ole. Näyttönimi, jos annoit sellaisen."
+
+msgid "Every task you signed up for, when you signed up, and how it turned out: completed, covered by someone else, cancelled late, or not turned up to. Free-entry credits you have earned, been given or spent, and the events they were spent on."
+msgstr "Jokainen tehtävä, johon ilmoittauduit, milloin ilmoittauduit ja miten se päättyi: tehty, jonkun muun hoitama, myöhään peruttu tai jätetty saapumatta. Vapaaliput, jotka olet ansainnut, saanut tai käyttänyt, sekä tapahtumat, joihin ne käytettiin."
+
+msgid "Which notifications you have chosen to receive and on which channel, a record of which scheduled notices we have already sent you so we do not send them twice, and any note an organizer has added to your record."
+msgstr "Mitkä ilmoitukset olet valinnut vastaanottaa ja millä kanavalla, kirjanpito ajastetuista ilmoituksista, jotka olemme jo lähettäneet sinulle, jotta emme lähetä niitä kahdesti, sekä järjestäjän tietoihisi lisäämät muistiinpanot."
+
+msgid "Sign-in links are stored only as a one-way hash, never as something that could be read back out of the database and used to sign in as you."
+msgstr "Kirjautumislinkit tallennetaan vain yksisuuntaisena tiivisteenä, ei koskaan muodossa, jonka voisi lukea tietokannasta ja käyttää kirjautumiseen sinuna."
+
+msgid "If you link a Telegram account, we store its numeric account and chat identifiers so the bot can recognise you and message you. We do not store your Telegram username or phone number."
+msgstr "Jos yhdistät Telegram-tilin, tallennamme sen numeeriset tili- ja keskustelutunnisteet, jotta botti tunnistaa sinut ja voi lähettää sinulle viestejä. Emme tallenna Telegram-käyttäjänimeäsi emmekä puhelinnumeroasi."
+
+msgid "We do not build a stored score of you. Your standing is recalculated from the outcomes above every time it is shown, so there is no hidden rating carried around in your record."
+msgstr "Emme tallenna sinusta pistemäärää. Luotettavuutesi lasketaan yllä mainituista tuloksista uudelleen aina, kun se näytetään, joten tiedoissasi ei kulje piilotettua arviota."
+
+msgid "We hold it to run the crew: to let you claim a task, to tell you about the tasks you claimed, to mark who arrived, and to work out who has earned free entry. Our legal basis is that this is necessary to do the thing you asked us to do when you signed up, and our legitimate interest in staffing our own events."
+msgstr "Säilytämme tietoja crew’n pyörittämiseksi: jotta voit varata tehtävän, jotta voimme kertoa sinulle varaamistasi tehtävistä, merkitä kuka saapui ja laskea, kuka on ansainnut vapaalipun. Oikeusperusteemme on, että tämä on välttämätöntä sen tekemiseksi, mitä pyysit ilmoittautuessasi, sekä oikeutettu etumme miehittää omat tapahtumamme."
+
+msgid "Confirmations of what you signed up for, and reminders about it, always send. They are how we deliver what you asked for, and switching them off would mean signing up for something we then never told you about."
+msgstr "Vahvistukset siitä, mihin ilmoittauduit, ja muistutukset siitä lähetetään aina. Niillä toimitamme sen, mitä pyysit, ja niiden poistaminen tarkoittaisi, että ilmoittaudut johonkin, mistä emme sitten koskaan kertoisi sinulle."
+
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
+msgstr "Kaikki muu on valinnaista ja poistettavissa käytöstä milloin tahansa — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, sijais- ja lupaviestit, kukin erikseen. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi. Minkään niistä poistamisesta ei seuraa haittaa."
+
+msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom."
+msgstr "Tapahtumiemme järjestäjät ja illan myyntipistettä hoitava crew näkevät nimesi, luotettavuutesi ja tehtävät, joissa olet mukana — eli läsnäololistan ja ovilistan. Muut crew’n jäsenet näkevät vain, että tehtävä on varattu, eivät koskaan kenen toimesta."
+
+msgid "We do not sell your data, we do not use it for advertising, and we do not profile you for anything beyond deciding whether you can claim a task."
+msgstr "Emme myy tietojasi, emme käytä niitä mainontaan emmekä profiloi sinua mihinkään muuhun kuin sen päättämiseen, voitko varata tehtävän."
+
+msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy). Linking is entirely optional; the web page does everything the bot does."
+msgstr "Telegram, jos päätät yhdistää Telegram-tilin — botin sinulle lähettämät viestit kulkevat heidän palvelunsa kautta heidän oman tietosuojakäytäntönsä mukaisesti (https://telegram.org/privacy). Yhdistäminen on täysin valinnaista; verkkosivu tekee kaiken, minkä botti tekee."
+
+msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
+msgstr "Cloudflare, jonka Turnstile-tarkistus suojaa kirjautumislomaketta boteilta (https://www.cloudflare.com/privacypolicy/). Se näkee pyynnön, ei crew-tietojasi."
+
+msgid "Whoever delivers our email, since every notice we send you is an email leaving this site."
+msgstr "Sähköpostimme toimittaja, koska jokainen sinulle lähettämämme ilmoitus on tältä sivustolta lähtevä sähköposti."
+
+msgid "Beyond that, the only others involved are:"
+msgstr "Tämän lisäksi mukana ovat vain:"
+
+msgid "We keep your record for %d year after your last activity — the last task you were on, credit you were given, or credit you spent."
+msgid_plural "We keep your record for %d years after your last activity — the last task you were on, credit you were given, or credit you spent."
+msgstr[0] "Säilytämme tietojasi %d vuoden ajan viimeisestä toiminnastasi — viimeisestä tehtävästä, jossa olit mukana, saamastasi vapaalipusta tai käyttämästäsi vapaalipusta."
+msgstr[1] "Säilytämme tietojasi %d vuoden ajan viimeisestä toiminnastasi — viimeisestä tehtävästä, jossa olit mukana, saamastasi vapaalipusta tai käyttämästäsi vapaalipusta."
+
+msgid "After that it is anonymised automatically, without anyone having to remember to do it: your email address, name, notes and any Telegram link are erased for good. What remains is an attendance record with nobody attached to it, which is no longer information about you."
+msgstr "Sen jälkeen tiedot anonymisoidaan automaattisesti, ilman että kenenkään tarvitsee muistaa tehdä sitä: sähköpostiosoitteesi, nimesi, muistiinpanot ja mahdollinen Telegram-yhteys poistetaan pysyvästi. Jäljelle jää osallistumistieto, johon ei liity ketään, eikä se ole enää tietoa sinusta."
+
+msgid "Records past that age are reviewed and cleared by hand. You do not have to wait for that — you can erase yours yourself at any time, as below."
+msgstr "Tätä vanhemmat tiedot tarkistetaan ja poistetaan käsin. Sinun ei tarvitse odottaa sitä — voit poistaa omat tietosi itse milloin tahansa alla kuvatulla tavalla."
+
+msgid "Two exceptions. Organizers keep their record for as long as they hold the role, because it is what our events are administered through; it follows the schedule above once they no longer do. And sign-in links are not kept at all — they are deleted within the hour of being used or expiring, whichever comes first."
+msgstr "Kaksi poikkeusta. Järjestäjien tiedot säilytetään niin kauan kuin heillä on järjestäjän rooli, koska tapahtumiamme hallinnoidaan niiden kautta; kun roolia ei enää ole, noudatetaan yllä olevaa aikataulua. Kirjautumislinkkejä taas ei säilytetä lainkaan — ne poistetaan tunnin kuluessa käytöstä tai vanhenemisesta sen mukaan, kumpi tapahtuu ensin."
+
+msgid "You can ask for a copy of everything we hold about you, ask us to correct it, ask us to delete it, ask us to restrict or stop a particular use of it, and object to us holding it at all. You can also take it elsewhere in a machine-readable form."
+msgstr "Voit pyytää kopion kaikista sinusta säilyttämistämme tiedoista, pyytää meitä korjaamaan ne, pyytää meitä poistamaan ne, pyytää meitä rajoittamaan tai lopettamaan niiden tietyn käytön ja vastustaa sitä, että säilytämme niitä lainkaan. Voit myös siirtää ne muualle koneluettavassa muodossa."
+
+msgid "Two of those you can do yourself, immediately and without asking anyone: your Crew app has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message."
+msgstr "Kaksi näistä voit tehdä itse, heti ja kysymättä keneltäkään: Crew-sovelluksessasi on Poista-painike, joka poistaa tietosi ja niiden historian pysyvästi, ja jokainen lähettämämme sähköposti sisältää linkin sinne. Samalla sivulla olevilla ilmoitusasetuksilla voit lopettaa kaikki valinnaiset viestit."
+
+msgid "For anything else, write to %s and we will answer within one month."
+msgstr "Kaikissa muissa asioissa kirjoita osoitteeseen %s, niin vastaamme kuukauden kuluessa."
+
+msgid "If you think we have handled your data badly, you can complain to your national data protection authority. In the EU you can complain to the one where you live, work, or where the problem happened."
+msgstr "Jos katsot, että olemme käsitelleet tietojasi väärin, voit tehdä valituksen oman maasi tietosuojaviranomaiselle. EU:ssa voit valittaa sen maan viranomaiselle, jossa asut tai työskentelet tai jossa ongelma tapahtui."
+
+msgid "This calendar link is not valid."
+msgstr "Tämä kalenterilinkki ei ole kelvollinen."
+
+msgid "%1$d ticket buyers were added to the door list for %2$s."
+msgstr "%1$d lipunostajaa lisättiin ovilistaan päivälle %2$s."
+
+msgid "%d names were skipped because they were already on the list."
+msgstr "%d nimeä ohitettiin, koska ne olivat jo listalla."
+
+msgid "Ticket buyers imported for %s"
+msgstr "Lipunostajat tuotu päivälle %s"
+
+msgid "Open the Roster page"
+msgstr "Avaa Läsnäolo-sivu"
+
+msgid "Recent activity"
+msgstr "Viimeaikaiset tapahtumat"
+
+msgid "Last Telegram update processed: #%s."
+msgstr "Viimeisin käsitelty Telegram-päivitys: #%s."
+
+msgid "No Telegram update has reached the site yet."
+msgstr "Sivustolle ei ole vielä saapunut yhtään Telegram-päivitystä."
+
+msgid "Nothing logged recently. Errors from the bot, mail and boot will appear here."
+msgstr "Lokiin ei ole kirjattu mitään viime aikoina. Botin, sähköpostin ja käynnistyksen virheet näkyvät tässä."
+
+msgid "Level"
+msgstr "Taso"
+
+msgid "When"
+msgstr "Milloin"
+
+msgid "Message"
+msgstr "Viesti"
+
+msgid "%s ago"
+msgstr "%s sitten"
+
+msgid "Environment"
+msgstr "Ympäristö"
+
+msgid "EventCrew version"
+msgstr "EventCrew-versio"
+
+msgid "WordPress version"
+msgstr "WordPress-versio"
+
+msgid "PHP version"
+msgstr "PHP-versio"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Check"
+msgstr "Tarkista"
+
+msgid "Problem"
+msgstr "Ongelma"
+
+msgid "Info"
+msgstr "Tieto"
+
+msgid "EventCrew Diagnostics"
+msgstr "EventCrew-diagnostiikka"
+
+msgid "A read-only health check. Anything flagged is fixed on the Settings page — nothing here changes your site."
+msgstr "Pelkkä tilan tarkistus. Merkityt kohdat korjataan Asetukset-sivulla — mikään tällä sivulla ei muuta sivustoasi."
+
+msgid "Problems found — see the flagged rows below."
+msgstr "Ongelmia löytyi — katso merkityt rivit alla."
+
+msgid "Needs attention — some checks want a look."
+msgstr "Vaatii huomiota — osa tarkistuksista kannattaa katsoa."
+
+msgid "All systems go."
+msgstr "Kaikki kunnossa."
+
+msgid "Detail"
+msgstr "Lisätieto"
+
+msgid "email"
+msgstr "sähköposti"
+
+msgid "Switched off"
+msgstr "Pois päältä"
+
+msgid " and "
+msgstr " ja "
+
+msgid "%s — retention period passed"
+msgstr "%s — säilytysaika umpeutui"
+
+msgid "Role conditions"
+msgstr "Roolien ehdot"
+
+msgid "Recent credit grants"
+msgstr "Viimeksi annetut vapaaliput"
+
+msgid "Reason"
+msgstr "Syy"
+
+msgid "No role has conditions set."
+msgstr "Millekään roolille ei ole asetettu ehtoja."
+
+msgid "Nobody meets them yet."
+msgstr "Kukaan ei vielä täytä niitä."
+
+msgid "Organizers can mark attendance from the bot."
+msgstr "Järjestäjät voivat merkitä läsnäolon botin kautta."
+
+msgid "Saves every status picker below at once."
+msgstr "Tallentaa kaikki alla olevat tilavalinnat kerralla."
+
+msgid "Ticket page"
+msgstr "Lippusivu"
+
+msgid "Ticket background"
+msgstr "Lipun tausta"
+
+msgid "The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket."
+msgstr "Kuvan URL-osoite, esimerkiksi sivustosi taustakuva, joka näytetään haaleana lipun takana. Jätä tyhjäksi, jos haluat pelkän valkoisen lipun."
+
+msgid "Ticket note"
+msgstr "Lipun teksti"
+
+msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
+msgstr "Teksti, joka näytetään jokaisessa lipussa VALID-rivin alla, esimerkiksi ovikoodi ja osoite. Rivinvaihdot säilyvät. Jätä tyhjäksi, jos et halua näyttää mitään."
+
+msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
+msgstr "Miten tätä sivustoa ylläpidetään: missä se on hostattu, mitä kiertoteitä se tarvitsee, miten sähköposti kulkee, mitä ulkopuolisia palveluita on käytössä. Näytetään vain järjestäjille Crew-sovelluksen Ohje-välilehdellä. Merkeillä \"## \" alkava rivi on otsikko, merkeillä \"- \" alkavat rivit ovat luettelo, ja tyhjä rivi aloittaa uuden kappaleen. Älä kirjoita tähän salasanoja tai avaimia. Jätä tyhjäksi, jos et halua näyttää mitään."
+
+msgid "Who is responsible for the data"
+msgstr "Kuka vastaa tiedoista"
+
+msgid "EventCrew holds real people’s email addresses and a record of what they did for you, which makes whoever runs these events the data controller for it. Fill this in and the plugin writes the privacy notice for you — the public page, and the suggested text for WordPress’s own privacy policy — describing what this install actually does, including whether the Telegram bot and the Cloudflare check are in use."
+msgstr "EventCrew säilyttää oikeiden ihmisten sähköpostiosoitteita ja tietoa siitä, mitä he ovat tehneet hyväksesi, joten näiden tapahtumien järjestäjä on näiden tietojen rekisterinpitäjä. Täytä nämä kentät, niin lisäosa kirjoittaa tietosuojaselosteen puolestasi — julkisen sivun ja ehdotetun tekstin WordPressin omaan tietosuojakäytäntöön — ja kuvaa siinä, mitä tämä asennus todella tekee, myös sen, ovatko Telegram-botti ja Cloudflare-tarkistus käytössä."
+
+msgid "The privacy notice is not published yet. Until an organisation and a contact address are filled in below, the public page stays blank and nothing is added to your site’s privacy policy — a notice that cannot say who is answerable would be worse than none."
+msgstr "Tietosuojaselostetta ei ole vielä julkaistu. Ennen kuin alle on täytetty organisaatio ja yhteysosoite, julkinen sivu pysyy tyhjänä eikä sivustosi tietosuojakäytäntöön lisätä mitään — seloste, joka ei kerro, kuka vastaa tiedoista, olisi huonompi kuin ei selostetta lainkaan."
+
+msgid "Organisation"
+msgstr "Organisaatio"
+
+msgid "The club, association or person answerable for these records. Required."
+msgstr "Kerho, yhdistys tai henkilö, joka vastaa näistä tiedoista. Pakollinen."
+
+msgid "Contact address"
+msgstr "Yhteysosoite"
+
+msgid "Where people write about their data. Required, and it must be an address somebody actually reads — a request has to be answered within a month."
+msgstr "Osoite, johon ihmiset kirjoittavat tiedoistaan. Pakollinen, ja sen on oltava osoite, jota joku oikeasti lukee — pyyntöön on vastattava kuukauden kuluessa."
+
+msgid "Postal address"
+msgstr "Postiosoite"
+
+msgid "Optional, and left out of the notice when blank."
+msgstr "Valinnainen. Jätetään pois selosteesta, jos kenttä on tyhjä."
+
+msgid "Data protection officer"
+msgstr "Tietosuojavastaava"
+
+msgid "Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful."
+msgstr "Useimmat tapahtumanjärjestäjät eivät tarvitse tietosuojavastaavaa. Se vaaditaan vain viranomaisilta, niiltä, jotka seuraavat ihmisiä järjestelmällisesti laajassa mittakaavassa, ja niiltä, jotka käsittelevät erityisiin henkilötietoryhmiin kuuluvia tietoja laajassa mittakaavassa — eikä tämä lisäosa tee mitään näistä. Jätä molemmat kentät tyhjiksi, niin seloste kertoo tämän suoraan ja ohjaa ihmiset yllä olevaan yhteysosoitteeseen. Jos täytät yhteystiedon, se julkaistaan tietosuojavastaavan yhteystietona, ja vasta se tekee nimeämisestä merkityksellisen."
+
+msgid "Officer’s name"
+msgstr "Vastaavan nimi"
+
+msgid "Officer’s contact"
+msgstr "Vastaavan yhteystieto"
+
+msgid "An address or phone number people can use directly. This is the field that decides whether a DPO is published at all."
+msgstr "Osoite tai puhelinnumero, johon ihmiset voivat ottaa yhteyttä suoraan. Tämä kenttä ratkaisee, julkaistaanko tietosuojavastaava lainkaan."
+
+msgid "How long records are kept"
+msgstr "Kuinka kauan tietoja säilytetään"
+
+msgid "Retention period"
+msgstr "Säilytysaika"
+
+msgid "years after someone’s last activity"
+msgstr "vuotta henkilön viimeisestä toiminnasta"
+
+msgid "Counted from the last task they were on, credit they were given, or credit they spent — or from the day they joined if none of those ever happened. This is what the notice publishes."
+msgstr "Lasketaan viimeisestä tehtävästä, jossa henkilö oli mukana, viimeisestä hänelle annetusta vapaalipusta tai viimeisestä hänen käyttämästään vapaalipusta — tai liittymispäivästä, jos mitään näistä ei ole tapahtunut. Tämä aika julkaistaan selosteessa."
+
+msgid "Enforce it"
+msgstr "Noudata sitä"
+
+msgid "Anonymise expired records automatically"
+msgstr "Anonymisoi vanhentuneet tiedot automaattisesti"
+
+msgid "The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers are never touched while they hold the role."
+msgstr "Tunnin välein ajettava tarkistus poistaa kaiken, mikä on yllä olevaa aikaa vanhempaa: sähköpostiosoite, nimi, muistiinpanot ja mahdollinen Telegram-linkitys poistetaan pysyvästi, mutta läsnäolorivit jäävät, joten tieto ”yhdeksän ihmistä teki töitä sinä iltana” säilyy ilman nimiä. Järjestäjien tietoihin ei kosketa niin kauan kuin heillä on järjestäjän rooli."
+
+msgid "This cannot be undone."
+msgstr "Tätä ei voi perua."
+
+msgid "Leave it off and the period is a promise you keep by hand — which is a perfectly good answer, and the one to pick if you are unsure."
+msgstr "Jos jätät tämän pois päältä, säilytysaika on lupaus, jota noudatat käsin — se on täysin hyvä vaihtoehto, ja valitse se, jos olet epävarma."
+
+msgid "The public notice"
+msgstr "Julkinen seloste"
+
+msgid "Privacy page"
+msgstr "Tietosuojasivu"
+
+msgid "— None —"
+msgstr "— Ei mitään —"
+
+msgid "The page carrying the %s shortcode or the “EventCrew privacy notice” block. Signing-up links to it. If you have no such page yet, there is a button below that makes one."
+msgstr "Sivu, jolla on lyhytkoodi %s tai lohko ”EventCrew privacy notice”. Ilmoittautumisessa on linkki sille. Jos sinulla ei vielä ole tällaista sivua, alla on painike, joka luo sen."
+
+msgid "View the notice people are shown"
+msgstr "Katso seloste, jonka ihmiset näkevät"
+
+msgid "Notification emails"
+msgstr "Ilmoitussähköpostit"
+
+msgid "Every notification goes out as a designed HTML email with your logo on top and a button for whatever it is asking people to do — show a ticket, sign in, take an open slot. A plain-text copy travels with each one, so a mail client that will not show HTML still gets the whole message."
+msgstr "Jokainen ilmoitus lähetetään muotoiltuna HTML-sähköpostina, jonka yläreunassa on logosi ja jossa on painike sille, mitä viesti pyytää tekemään — näyttämään lipun, kirjautumaan tai ottamaan vapaan paikan. Jokaisen mukana lähtee myös pelkkä tekstiversio, joten sähköpostiohjelma, joka ei näytä HTML:ää, saa silti koko viestin."
+
+msgid "Signature"
+msgstr "Allekirjoitus"
+
+msgid "Barefoot and with ♥ — the Example crew"
+msgstr "Paljain jaloin ja ♥:llä — Example-crew"
+
+msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
+msgstr "Teksti, jolla crew’si lopettaa viestit. Se on jokaisen ilmoitussähköpostin lopussa sekä kaikille lähtevissä Telegram-viesteissä — avoimien tehtävien kutsussa, muistutuksissa ja ”paikka vapautui” -ilmoituksessa. Jätä tyhjäksi, jos et halua lopputervehdystä."
+
+msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
+msgstr "Sitä ei tarkoituksella lisätä viesteihin, jotka vastaavat komentoon, koska henkilö on silloin keskellä keskustelua, eikä luotettavuusilmoituksiin, joihin lämmin lopputervehdys ei sovi."
+
+msgid "Format"
+msgstr "Muoto"
+
+msgid "Send notifications as HTML"
+msgstr "Lähetä ilmoitukset HTML-muodossa"
+
+msgid "Turn this off to send plain text only."
+msgstr "Poista tämä käytöstä, jos haluat lähettää vain pelkkää tekstiä."
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "The image at the top of every email. Leave this blank to use your site’s own logo, falling back to the Site Icon, then to your site’s name in text. Paste a URL here to use a different image — a wide banner works as well as a square logo."
+msgstr "Kuva jokaisen sähköpostin yläreunassa. Jätä tyhjäksi, niin käytetään sivustosi omaa logoa, sen puuttuessa sivuston kuvaketta ja sen puuttuessa sivustosi nimeä tekstinä. Liitä tähän URL-osoite, jos haluat käyttää eri kuvaa — leveä banneri toimii yhtä hyvin kuin neliön muotoinen logo."
+
+msgid "The image is linked, so the mail client fetches it from wherever it is hosted when the email is opened. If it does not appear, check that the file is reachable without being logged in — some hosts refuse to serve images to anything that is not a browser."
+msgstr "Kuva on linkitetty, joten sähköpostiohjelma hakee sen sen sijaintipaikasta, kun sähköposti avataan. Jos kuva ei näy, tarkista, että tiedostoon pääsee kirjautumatta — jotkin palveluntarjoajat eivät anna kuvia muille kuin selaimille."
+
+msgid "Design"
+msgstr "Ulkoasu"
+
+msgid "Opens the template in the normal editor, with revisions and undo. It is the frame around each message, not the wording: keep %s where the message should appear, and use the other tags wherever you want them."
+msgstr "Avaa pohjan tavalliseen editoriin, jossa on versiohistoria ja kumoaminen. Pohja on jokaisen viestin kehys, ei sen sanamuoto: pidä %s kohdassa, jossa viestin pitää näkyä, ja käytä muita tageja missä haluat."
+
+msgid "Available tags:"
+msgstr "Käytettävissä olevat tagit:"
+
+msgid "The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent."
+msgstr "Yläpalkki, painikkeet ja varalla käytettävä tekstilogo käyttävät kaikki samaa korostusväriä: kohdassa ”Verkkosivu” asetettua väriä tai — jos sitä ei ole asetettu — teemasi omaa tunnusväriä sen tyyliasetuksista. Palkki on värillinen, jotta valkoinen logo, jollainen useimmilla sivustoilla on tummaa yläpalkkia varten, näkyy eikä ole valkoista valkoisella. Painikkeiden ja tekstilogon teksti muuttuu itsestään tummaksi, jos korostusväri on vaalea."
+
+msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
+msgstr "Pohjasi säilyttää sen ulkoasun, jolla se luotiin. Ota nykyinen sisäänrakennettu ulkoasu käyttöön alla olevalla ”Palauta pohja” -painikkeella."
+
+msgid "Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group."
+msgstr "Luo botti Telegramissa @BotFatherin avulla, liitä sen antama tunnus tähän ja tallenna. Asenna sitten alla oleva webhook ja lisää botti ryhmääsi."
+
+msgid "Bot token"
+msgstr "Botin tunnus"
+
+msgid "Kept private on your server. Clearing it disconnects the bot."
+msgstr "Säilytetään yksityisenä palvelimellasi. Tyhjentäminen katkaisee yhteyden bottiin."
+
+msgid "You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field."
+msgstr "Voit sen sijaan määrittää EVENTCREW_TELEGRAM_TOKEN-vakion wp-config.php-tiedostossa, jolloin tunnus ei ole tietokannassa; vakio ohittaa tämän kentän."
+
+msgid "DNS workaround"
+msgstr "DNS-kiertotie"
+
+msgid "Resolve Telegram’s address via Cloudflare (1.1.1.1)"
+msgstr "Selvitä Telegramin osoite Cloudflaren kautta (1.1.1.1)"
+
+msgid "Only enable this if installing the webhook fails with “Could not resolve host: api.telegram.org”. It looks the address up over HTTPS instead of the server’s own DNS, which some shared hosts block. Leave off on a normal host."
+msgstr "Ota tämä käyttöön vain, jos webhookin asennus epäonnistuu virheellä ”Could not resolve host: api.telegram.org”. Osoite haetaan HTTPS:n kautta palvelimen oman DNS:n sijaan, jonka jotkin jaetut palveluntarjoajat estävät. Jätä pois päältä tavallisella palvelimella."
+
+msgid "Group link"
+msgstr "Ryhmän linkki"
+
+msgid "Optional. Your group’s invite link (t.me/yourgroup, or a t.me/+… private invite — copy it from Telegram’s group info). When there is a link, the web signup page, the open-task emails and the open-task DMs all offer a way straight into the group."
+msgstr "Valinnainen. Ryhmäsi kutsulinkki (t.me/ryhmasi tai yksityinen kutsu t.me/+… — kopioi se Telegramin ryhmän tiedoista). Kun linkki on olemassa, ilmoittautumissivu, avoimien tehtävien sähköpostit ja avoimien tehtävien yksityisviestit tarjoavat suoran pääsyn ryhmään."
+
+msgid "Leave this blank and EventCrew uses the link it found by asking Telegram: %s. Anything you type here wins over it."
+msgstr "Jos jätät tämän tyhjäksi, EventCrew käyttää linkkiä, jonka se sai Telegramilta: %s. Tähän kirjoittamasi linkki ohittaa sen."
+
+msgid "Left blank, EventCrew asks Telegram for one. That works for a public group, or a private one where the bot is an administrator; otherwise paste your own here."
+msgstr "Jos kenttä on tyhjä, EventCrew pyytää linkin Telegramilta. Se toimii julkisessa ryhmässä tai yksityisessä ryhmässä, jossa botti on ylläpitäjä; muussa tapauksessa liitä oma linkkisi tähän."
+
+msgid "Group lock"
+msgstr "Ryhmälukitus"
+
+msgid "+ Add a role"
+msgstr "+ Lisää rooli"
+
+msgid "Keep the board locked to the first group the bot joins"
+msgstr "Pidä taulu lukittuna ensimmäiseen ryhmään, johon botti liittyy"
+
+msgid "On by default. While locked, adding the bot to another group — or running /board there — will not move the board, so no one can hijack it into a different chat. To move the board on purpose (for example, going live): untick this, save, add the bot to the new group (or run /board in it), then tick it again and save."
+msgstr "Oletuksena päällä. Kun lukitus on päällä, botin lisääminen toiseen ryhmään — tai /board-komennon ajaminen siellä — ei siirrä taulua, joten kukaan ei voi kaapata sitä toiseen keskusteluun. Jos haluat siirtää taulun tarkoituksella (esimerkiksi tuotantokäyttöön siirryttäessä): poista valinta, tallenna, lisää botti uuteen ryhmään (tai aja siellä /board), valitse sitten tämä uudelleen ja tallenna."
+
+msgid "REST workaround"
+msgstr "REST-kiertotie"
+
+msgid "Receive updates through admin-ajax.php instead of the REST API"
+msgstr "Vastaanota päivitykset admin-ajax.php:n kautta REST API:n sijaan"
+
+msgid "Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Saving re-installs the webhook for you. Leave off on a normal host."
+msgstr "Ota tämä käyttöön, jos webhookin tila näyttää ”Wrong response from the webhook: 400/403”. Jotkin palveluntarjoajat ja tietoturvalisäosat estävät /wp-json REST API:n anonyymeiltä pyynnöiltä; tämä ohjaa Telegramin admin-ajax.php:n kautta, joka on lähes aina avoinna. Tallentaminen asentaa webhookin uudelleen puolestasi. Jätä pois päältä tavallisella palvelimella."
+
+msgid "Secret in the URL"
+msgstr "Salaisuus URL-osoitteessa"
+
+msgid "Also send the webhook secret as a URL parameter"
+msgstr "Lähetä webhookin salaisuus myös URL-parametrina"
+
+msgid "Telegram always sends the secret as a header; this sends a second copy in the address as well. That is only needed on hosts or proxies that strip custom headers — and it means the secret is written into your server’s access log on every update the bot receives."
+msgstr "Telegram lähettää salaisuuden aina otsakkeena; tämä lähettää toisen kopion myös osoitteessa. Sitä tarvitaan vain palvelimilla tai välityspalvelimilla, jotka poistavat omat otsakkeet — ja se tarkoittaa, että salaisuus kirjoitetaan palvelimesi käyttölokiin jokaisesta botin vastaanottamasta päivityksestä."
+
+msgid "Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save."
+msgstr "Poista tämä käytöstä, jos voit: avaa alta ”Testaa päätepiste käsin” ja lähetä ensin pelkällä otsakkeella tehty pyyntö. Vastaus 200 tarkoittaa, että palvelimesi säilyttää otsakkeen ja tämän valinnan voi turvallisesti poistaa. Tallentaminen asentaa webhookin uudelleen joka tapauksessa, ja jos botti lakkaa vastaamasta, valitse tämä uudelleen ja tallenna."
+
+msgid "Archived"
+msgstr "Arkistoitu"
+
+msgid "The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included."
+msgstr "Webhookin salaisuus kulkee nyt URL-osoitteessa, joten se on palvelimesi käyttölokeissa. Kuka tahansa, joka voi lukea nuo lokit, voi esiintyä botille kenä tahansa crew’si jäsenenä, myös järjestäjänä."
+
+msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
+msgstr "Poista yllä oleva valinta, jos pelkän otsakkeen testi onnistuu — ja vaihda salaisuus sen jälkeen, sillä valinnan poistaminen ei poista sitä, mitä lokeissa jo on."
+
+msgid "Test the endpoint by hand"
+msgstr "Testaa päätepiste käsin"
+
+msgid "Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot."
+msgstr "Lähetä täsmälleen tämä POST-pyyntö tarkistaaksesi, mitä palvelimesi palauttaa Telegramille (200 = hyvä). Vastaus 400/403/404 tässä toistaa sen, mitä Telegram näkee, ilman että sinun tarvitsee odottaa bottia."
+
+msgid "Telegram is posting to:"
+msgstr "Telegram lähettää osoitteeseen:"
+
+msgid "With header:"
+msgstr "Otsakkeella:"
+
+msgid "And this JSON body (Content-Type: application/json):"
+msgstr "Ja tällä JSON-sisällöllä (Content-Type: application/json):"
+
+msgid "Role holders only"
+msgstr "Vain roolin haltijat"
+
+msgid "Before turning off “Secret in the URL”, try this:"
+msgstr "Ennen kuin poistat käytöstä asetuksen ”Salaisuus URL-osoitteessa”, kokeile tätä:"
+
+msgid "The same request with the secret in the header instead of the address. A 200 means your host keeps the header, so the URL copy can be switched off safely. Anything else means leave it on."
+msgstr "Sama pyyntö, mutta salaisuus on otsakkeessa osoitteen sijaan. Vastaus 200 tarkoittaa, että palvelimesi säilyttää otsakkeen, joten URL-kopion voi turvallisesti poistaa käytöstä. Mikä tahansa muu vastaus tarkoittaa, että jätä se päälle."
+
+msgid "POST to:"
+msgstr "POST osoitteeseen:"
+
+msgid "Save settings"
+msgstr "Tallenna asetukset"
+
+msgid "Check the welcome message"
+msgstr "Tarkista tervetuloviesti"
+
+msgid "Sends every welcome message to the member with your address, %s, by email and Telegram, with the live settings and open tasks. It works while the welcome message is off, and nobody else gets anything."
+msgstr "Lähettää jokaisen tervetuloviestin jäsenelle, jolla on osoitteesi %s, sähköpostilla ja Telegramissa, nykyisillä asetuksilla ja avoimilla tehtävillä. Tämä toimii myös silloin, kun tervetuloviesti on pois päältä, eikä kukaan muu saa mitään."
+
+msgid "Send me the welcome message"
+msgstr "Lähetä minulle tervetuloviesti"
+
+msgid "Check it"
+msgstr "Tarkista"
+
+msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
+msgstr "Lähetä itsellesi viesti osoitteeseen %s nähdäksesi pohjan, jossa on logosi ja painike. Tallenna ensin yllä tekemäsi muutokset."
+
+msgid "Send a test email"
+msgstr "Lähetä testisähköposti"
+
+msgid "Replace the template with the built-in design? Your version stays in the template’s revisions."
+msgstr "Korvataanko pohja sisäänrakennetulla ulkoasulla? Oma versiosi säilyy pohjan versiohistoriassa."
+
+msgid "Reset the template"
+msgstr "Palauta pohja"
+
+msgid "Ticket buyer import by email"
+msgstr "Lipunostajien tuonti sähköpostilla"
+
+msgid "Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
+msgstr "Järjestäjät voivat lähettää Holvin lipunostajien listan, yksi nimi riviä kohden, sähköpostilla tuontipostilaatikkoon. Tämä sivusto lukee postilaatikkoa itse, tai sähköpostipalvelimella toimiva noutaja lähettää jokaisen listan tänne alla olevalla salaisuudella allekirjoitettuna. Lista menee seuraavaan tapahtumaan. Niin kauan kuin postilaatikkoa ei ole asetettu, järjestäjän ohje ja Läsnäolo-sivu eivät mainitse sähköpostituontia."
+
+msgid "Import mailbox"
+msgstr "Tuontipostilaatikko"
+
+msgid "The address organizers send their lists to. Leave it empty if this site has no import mailbox."
+msgstr "Osoite, johon järjestäjät lähettävät listansa. Jätä tyhjäksi, jos tällä sivustolla ei ole tuontipostilaatikkoa."
+
+msgid "Save the import mailbox"
+msgstr "Tallenna tuontipostilaatikko"
+
+msgid "Read the mailbox from this site"
+msgstr "Lue postilaatikkoa tältä sivustolta"
+
+msgid "The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
+msgstr "Sivusto voi lukea tuontipostilaatikkoa itse viiden minuutin välein sähköpostipalvelimella toimivan noutajan sijaan. Käytä JMAP:ia, jos palveluntarjoajasi estää IMAP-portit; monet jaetut palveluntarjoajat estävät. Kun viesti on käsitelty, se merkitään luetuksi ja siirretään kansioon Imported tai Rejected."
+
+msgid "Read the mailbox"
+msgstr "Lue postilaatikko"
+
+msgid "Off"
+msgstr "Pois"
+
+msgid "JMAP (over HTTPS)"
+msgstr "JMAP (HTTPS:n kautta)"
+
+msgid "IMAP"
+msgstr "IMAP"
+
+msgid "Server"
+msgstr "Palvelin"
+
+msgid "IMAP: the host name, for example imap.example.org. JMAP: the host name, or the full session URL if it is not at /.well-known/jmap."
+msgstr "IMAP: palvelimen nimi, esimerkiksi imap.example.org. JMAP: palvelimen nimi tai koko istunnon URL-osoite, jos se ei ole osoitteessa /.well-known/jmap."
+
+msgid "IMAP port and security"
+msgstr "IMAP-portti ja suojaus"
+
+msgid "SSL/TLS (usually port 993)"
+msgstr "SSL/TLS (yleensä portti 993)"
+
+msgid "STARTTLS (usually port 143)"
+msgstr "STARTTLS (yleensä portti 143)"
+
+msgid "Not used for JMAP."
+msgstr "Ei käytössä JMAP:ssa."
+
+msgid "User name"
+msgstr "Käyttäjätunnus"
+
+msgid "Password"
+msgstr "Salasana"
+
+msgid "No password is saved."
+msgstr "Salasanaa ei ole tallennettu."
+
+msgid "A password is saved. Leave this empty to keep it."
+msgstr "Salasana on tallennettu. Jätä tämä tyhjäksi, niin se säilyy."
+
+msgid "Folders"
+msgstr "Kansiot"
+
+msgid "The folder to read. INBOX is the inbox."
+msgstr "Luettava kansio. INBOX on saapuneet-kansio."
+
+msgid "Imported folder"
+msgstr "Tuotujen kansio"
+
+msgid "Where imported lists go. Created if missing."
+msgstr "Kansio, johon tuodut listat siirretään. Luodaan, jos sitä ei ole."
+
+msgid "Rejected folder"
+msgstr "Hylättyjen kansio"
+
+msgid "Where refused messages go. Created if missing."
+msgstr "Kansio, johon hylätyt viestit siirretään. Luodaan, jos sitä ei ole."
+
+msgid "Trusted mail server"
+msgstr "Luotettu sähköpostipalvelin"
+
+msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one."
+msgstr "Oman sähköpostipalvelimesi lisäämän Authentication-Results-otsakkeen ensimmäinen sana, esimerkiksi mx.example.org. DMARC-tarkistuksessa luotetaan vain tähän otsakkeeseen. Tyhjänä luotetaan ylimpään."
+
+msgid "Save the mailbox settings"
+msgstr "Tallenna postilaatikon asetukset"
+
+msgid "Or: a mail poller on the mail server"
+msgstr "Tai: postinhakija sähköpostipalvelimella"
+
+msgid "Endpoint"
+msgstr "Päätepiste"
+
+msgid "Secret"
+msgstr "Salaisuus"
+
+msgid "Put this in the mail poller’s settings as IMPORT_SECRET."
+msgstr "Laita tämä postinhakijan asetuksiin arvoksi IMPORT_SECRET."
+
+msgid "Generate a new import secret? The mail poller stops working until it is given the new one."
+msgstr "Luodaanko uusi tuontisalaisuus? Postinhakija lakkaa toimimasta, kunnes sille annetaan uusi salaisuus."
+
+msgid "Generate a new secret"
+msgstr "Luo uusi salaisuus"
+
+msgid "Publish it"
+msgstr "Julkaise se"
+
+msgid "Creates a published page called “Crew privacy notice” holding the shortcode, and selects it above. Edit or rename it afterwards like any other page — the notice itself comes from the fields on this tab, not from the page’s text."
+msgstr "Luo julkaistun sivun nimeltä ”Crew privacy notice”, jossa on lyhytkoodi, ja valitsee sen yllä. Voit muokata tai nimetä sen uudelleen jälkeenpäin kuten minkä tahansa sivun — itse seloste tulee tämän välilehden kentistä, ei sivun tekstistä."
+
+msgid "Create the privacy page"
+msgstr "Luo tietosuojasivu"
+
+msgid "A privacy page is chosen. Save any changes above and they appear on it immediately — there is nothing to re-publish."
+msgstr "Tietosuojasivu on valittu. Tallenna yllä tehdyt muutokset, niin ne näkyvät sivulla heti — mitään ei tarvitse julkaista uudelleen."
+
+msgid "Your site’s own privacy policy"
+msgstr "Sivustosi oma tietosuojaseloste"
+
+msgid "The same notice is offered to WordPress as suggested policy text, so the site’s main policy can cover the crew data too. Review and paste it in under %s. WordPress will tell you there whenever a new version of this plugin rewords it."
+msgstr "Sama seloste tarjotaan WordPressille ehdotetuksi selostetekstiksi, jotta sivuston pääseloste voi kattaa myös crew’n tiedot. Tarkista se ja liitä se kohdassa %s. WordPress kertoo siellä aina, kun tämän lisäosan uusi versio muuttaa sen sanamuotoa."
+
+msgid "Settings → Privacy"
+msgstr "Asetukset → Tietosuoja"
+
+msgid "Requests from people"
+msgstr "Ihmisten pyynnöt"
+
+msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
+msgstr "Crew’n jäsenet eivät ole WordPress-käyttäjiä, joten tämä lisäosa rekisteröi omat käsittelijänsä työkaluille %1$s ja %2$s: kirjoita sinne jäsenen sähköpostiosoite, niin hänen tietonsa viedään tai poistetaan kaikkine niihin liittyvine tietoineen. Useimmat eivät koskaan tarvitse sinua tähän — heidän omassa Crew-sovelluksessaan on Poista-painike, ja jokainen sähköposti linkittää siihen."
+
+msgid "Tools → Export Personal Data"
+msgstr "Työkalut → Vie henkilötiedot"
+
+msgid "Tools → Erase Personal Data"
+msgstr "Työkalut → Poista henkilötiedot"
+
+msgid "Webhook"
+msgstr "Webhook"
+
+msgid "Add a bot token above and save before installing the webhook."
+msgstr "Lisää botin tunniste yllä ja tallenna ennen kuin asennat webhookin."
+
+msgid "Telegram will post updates to %s. This needs HTTPS with a valid certificate - Telegram refuses plain HTTP and self-signed certificates."
+msgstr "Telegram lähettää päivitykset osoitteeseen %s. Tämä vaatii HTTPS:n ja voimassa olevan varmenteen - Telegram ei hyväksy pelkkää HTTP:tä eikä itse allekirjoitettuja varmenteita."
+
+msgid "Installed"
+msgstr "Asennettu"
+
+msgid "Not installed"
+msgstr "Ei asennettu"
+
+msgid "Pending updates"
+msgstr "Odottavat päivitykset"
+
+msgid "Last error"
+msgstr "Viimeisin virhe"
+
+msgid "(%s ago)"
+msgstr "(%s sitten)"
+
+msgid "Telegram keeps only the most recent error and never clears it on a successful delivery. If Pending updates is 0 and this predates your last fix, it is stale — reinstall the webhook to clear it."
+msgstr "Telegram säilyttää vain viimeisimmän virheen eikä koskaan tyhjennä sitä onnistuneen toimituksen jälkeen. Jos Odottavat päivitykset on 0 ja tämä on vanhempi kuin viimeisin korjauksesi, virhe on vanhentunut — asenna webhook uudelleen, niin se tyhjenee."
+
+msgid "Bot"
+msgstr "Botti"
+
+msgid "Board group"
+msgstr "Taulun ryhmä"
+
+msgid "Not set yet - run /board in the group once."
+msgstr "Ei vielä asetettu - suorita /board ryhmässä kerran."
+
+msgid "Could not read the webhook status from Telegram. Check the token."
+msgstr "Webhookin tilaa ei voitu lukea Telegramista. Tarkista tunniste."
+
+msgid "Install / refresh webhook"
+msgstr "Asenna / päivitä webhook"
+
+msgid "Generate a new webhook secret and re-install? The bot is unreachable for the moment in between, and any old copy of the secret stops working."
+msgstr "Luodaanko uusi webhook-salaisuus ja asennetaanko uudelleen? Botti ei ole tavoitettavissa välissä olevan hetken, ja salaisuuden vanhat kopiot lakkaavat toimimasta."
+
+msgid "Rotate the webhook secret"
+msgstr "Vaihda webhook-salaisuus"
+
+msgid "The secret is what proves an incoming update really came from Telegram — it is the bot’s only authentication. Rotate it if it may have been seen: in a server log, a screenshot, or a support ticket. The bot keeps working; only the old secret stops."
+msgstr "Salaisuus todistaa, että saapuva päivitys todella tuli Telegramista — se on botin ainoa tunnistautuminen. Vaihda se, jos joku on voinut nähdä sen: palvelimen lokissa, kuvakaappauksessa tai tukipyynnössä. Botti toimii edelleen; vain vanha salaisuus lakkaa toimimasta."
+
+msgid "The board"
+msgstr "Taulu"
+
+msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
+msgstr "Ryhmän taulu piirtyy uudelleen aina, kun siinä muuttuu jotain — joku ilmoittautuu tai peruu, muokkaat tehtävää tai tunneittainen tarkistus huomaa tehtävän menneen. Tämä painike tekee sen heti, mitä tarvitset päivityksen jälkeen (uusi versio voi asetella taulun eri tavalla) tai kun haluat nähdä muutoksen odottamatta."
+
+msgid "It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there."
+msgstr "Se muokkaa taulua sen nykyisellä paikalla, joten kukaan ryhmässä ei saa ilmoitusta. Jos haluat sen sijaan uuden kopion ryhmän alimmaiseksi, lähetä /board ryhmään."
+
+msgid "There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it."
+msgstr "Taulua ei ole vielä. Lisää botti ryhmääsi ja lähetä /board sinne kerran — sen jälkeen taululla on paikka, ja tämä painike voi piirtää sen uudelleen."
+
+msgid "Refresh the board"
+msgstr "Päivitä taulu"
+
+msgid "Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was."
+msgstr "Arkistointi poistaa roolin tehtävälomakkeesta ja uusista tapahtumista, mutta jättää kaikki siihen jo kirjatut tehtävät ja vapaaliput ennalleen ja oikein nimetyiksi. Rooleja ei koskaan poisteta, koska kuukausia sitten luodun tehtävän on yhä voitava kertoa, mikä se oli."
+
+msgid "\"Opens the sales desk\": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster."
+msgstr "\"Avaa myyntipisteen\": tämän roolin tehtävässä sinä iltana olevat ihmiset ovat tervetulotiimi. Kun heidät on merkitty saapuneiksi, he saavat myyntipisteen linkin, näkevät, kenellä on lippu, ja vieraslistan, ja voivat merkitä crew’n komennolla /roster."
+
+msgid "The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder."
+msgstr "Kuvaus on lause tai kaksi siitä, mitä tehtävään kuuluu. Se näytetään tehtävän alla verkkosivulla sekä ilmoittautumisvahvistuksessa ja muistutuksessa."
+
+msgid "Organize task: +1 allowed"
+msgstr "Järjestelyt-tehtävä: +1 sallittu"
+
+msgid "The Organize task is not in the list above. New Organize tasks copy this number."
+msgstr "Järjestelyt-tehtävä ei ole yllä olevassa listassa. Uudet Järjestelyt-tehtävät saavat tämän luvun."
+
+msgid "Crew guide"
+msgstr "Crew-opas"
+
+msgid "Link to the full guide"
+msgstr "Linkki koko oppaaseen"
+
+msgid "One link for every role, shown as a named \"Crew guide\" button or link - on the Telegram board, on the web page, and in the signup confirmation and the reminder. Leave blank to show no guide link. Make sure everyone with the link can open it."
+msgstr "Yksi linkki kaikille rooleille, näytetään \"Crew-opas\"-painikkeena tai -linkkinä - Telegram-taululla, verkkosivulla sekä ilmoittautumisvahvistuksessa ja muistutuksessa. Jätä tyhjäksi, jos opaslinkkiä ei näytetä. Varmista, että kaikki, joilla on linkki, voivat avata sen."
+
+msgid "EventMesh"
+msgstr "EventMesh"
+
+msgid "Automatically create tasks when a new event is synced from EventMesh"
+msgstr "Luo tehtävät automaattisesti, kun uusi tapahtuma synkronoidaan EventMeshistä"
+
+msgid "Uses the active roles' offsets, exactly like \"Create an event's tasks\" on the Tasks page. Only ever runs the first time an event is synced - a later re-sync that corrects its time never touches tasks that may already have signups or edits on them. Use the button on the Tasks page for any event synced before this was turned on."
+msgstr "Käyttää aktiivisten roolien siirtymiä, täsmälleen kuten \"Luo tapahtuman tehtävät\" Tehtävät-sivulla. Toimii vain, kun tapahtuma synkronoidaan ensimmäisen kerran - myöhempi uudelleensynkronointi, joka korjaa sen ajan, ei koskaan koske tehtäviin, joissa voi jo olla ilmoittautumisia tai muokkauksia. Käytä Tehtävät-sivun painiketta tapahtumille, jotka synkronoitiin ennen kuin tämä otettiin käyttöön."
+
+msgid "EventMesh is not active, so there is nothing to sync tasks from."
+msgstr "EventMesh ei ole käytössä, joten tehtäviä ei ole mistä synkronoida."
+
+msgid "Cancellations"
+msgstr "Peruutukset"
+
+msgid "Late-cancel window (hours)"
+msgstr "Myöhäisen peruutuksen raja (tuntia)"
+
+msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
+msgstr "Peruutus enintään näin monta tuntia ennen tehtävän alkua kirjataan myöhäiseksi peruutukseksi, joka laskee luotettavuutta; aiemmasta peruutuksesta ei seuraa mitään. Oletus 48."
+
+msgid "Board reminders"
+msgstr "Taulun muistutukset"
+
+msgid "Auto re-post the board"
+msgstr "Julkaise taulu automaattisesti uudelleen"
+
+msgid "Re-post the group board as an open event approaches"
+msgstr "Julkaise ryhmän taulu uudelleen, kun avoin tapahtuma lähestyy"
+
+msgid "When on, the board is re-posted into the group at each lead time below (deleting the previous one), so it resurfaces instead of sitting buried. It reaches the whole group and cannot be muted per person."
+msgstr "Kun tämä on päällä, taulu julkaistaan ryhmään uudelleen kunakin alla olevana ajankohtana (edellinen poistetaan), jotta se nousee näkyviin eikä jää viestien alle. Se näkyy koko ryhmälle, eikä yksittäinen ihminen voi mykistää sitä."
+
+msgid "First reminder (hours before)"
+msgstr "Ensimmäinen muistutus (tuntia ennen)"
+
+msgid "How far ahead of an open event the first re-post goes out. Default 168 (one week). Set to 0 to skip this one."
+msgstr "Kuinka paljon ennen avointa tapahtumaa ensimmäinen uudelleenjulkaisu lähtee. Oletus 168 (viikko). Aseta 0, jos tätä ei lähetetä."
+
+msgid "Second reminder (hours before)"
+msgstr "Toinen muistutus (tuntia ennen)"
+
+msgid "The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one."
+msgstr "Myöhempi uudelleenjulkaisu, lähempänä tapahtumaa. Oletus 48. Aseta 0, jos tätä ei lähetetä."
+
+msgid "When notifications go out"
+msgstr "Milloin ilmoitukset lähtevät"
+
+msgid "Scheduled messages — task reminders, the open-task call, standing notices and the board re-post — are held until this hour and go out over the twelve hours that follow. Without it they left the moment they came due, which for a task starting at three in the morning meant a reminder at three in the morning."
+msgstr "Ajastetut viestit — tehtävämuistutukset, avoimien tehtävien kutsu, luotettavuusilmoitukset ja taulun uudelleenjulkaisu — pidätetään tähän kellonaikaan asti, ja ne lähtevät sitä seuraavien kahdentoista tunnin aikana. Ilman tätä ne lähtivät heti erääntyessään, mikä kello kolmelta yöllä alkavan tehtävän kohdalla tarkoitti muistutusta kello kolmelta yöllä."
+
+msgid "Messages that answer something a person just did — a signup confirmation, a freed slot, a ticket — are never held. Nor is a reminder for a task that starts before the next window opens: missing it entirely would be worse than an awkward hour."
+msgstr "Viestejä, jotka vastaavat johonkin, minkä ihminen juuri teki — ilmoittautumisvahvistus, vapautunut paikka, lippu — ei koskaan pidätetä. Ei myöskään muistutusta tehtävästä, joka alkaa ennen seuraavan lähetysajan alkua: sen jääminen kokonaan saamatta olisi huonompi kuin hankala kellonaika."
+
+msgid "Start sending at"
+msgstr "Aloita lähetys klo"
+
+msgid "Your site’s time (%s). Default 09:00."
+msgstr "Sivustosi aika (%s). Oletus 09:00."
+
+msgid "Open-task call"
+msgstr "Avoimien tehtävien kutsu"
+
+msgid "The personal “some tasks still need people” notice, sent by email and Telegram DM to everyone active. It goes out at the two lead times below — a heads-up while there is still time to rearrange a weekend, then a last call — and again if a job is added to a date after people have already been told about it."
+msgstr "Henkilökohtainen ”joihinkin tehtäviin tarvitaan vielä ihmisiä” -ilmoitus, joka lähetetään sähköpostilla ja Telegramin yksityisviestillä kaikille aktiivisille. Se lähtee kahtena alla olevana ajankohtana — ennakkotieto, kun viikonloppua ehtii vielä järjestellä, ja sitten viimeinen kutsu — ja uudelleen, jos päivälle lisätään tehtävä sen jälkeen, kun ihmisille on jo kerrottu siitä."
+
+msgid "Nobody gets more than one of these a day, however many dates are open: they are gathered into a single message."
+msgstr "Kukaan ei saa näitä yhtä enempää päivässä, vaikka avoimia päiviä olisi monta: ne kootaan yhteen viestiin."
+
+msgid "Heads-up (hours before)"
+msgstr "Ennakkotieto (tuntia ennen)"
+
+msgid "Default 168 (one week). Set to 0 to skip it and send only the last call."
+msgstr "Oletus 168 (viikko). Aseta 0, jos tätä ei lähetetä ja lähetetään vain viimeinen kutsu."
+
+msgid "Last call (hours before)"
+msgstr "Viimeinen kutsu (tuntia ennen)"
+
+msgid "Default 48. Set to 0 to skip it. A date that first appears inside both windows gets one message, not two."
+msgstr "Oletus 48. Aseta 0, jos tätä ei lähetetä. Päivästä, joka ilmestyy ensimmäisen kerran kummankin ajankohdan sisällä, lähtee yksi viesti, ei kahta."
+
+msgid "Sales desk link, organizers (minutes before)"
+msgstr "Myyntipisteen linkki, järjestäjät (minuuttia ennen)"
+
+msgid "Default 30. Counted back from the night’s first task start, or from 17:00 when no task has a start time."
+msgstr "Oletus 30. Lasketaan taaksepäin illan ensimmäisen tehtävän alusta tai kello 17:00:sta, jos millään tehtävällä ei ole alkamisaikaa."
+
+msgid "Organizer notice channels"
+msgstr "Järjestäjäilmoitusten kanavat"
+
+msgid "Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the Crew app’s Admin tab. Untick both to send nothing."
+msgstr "Vain illan Järjestelyt-tehtävään ilmoittautuneet järjestäjät saavat sen: myyntipisteen linkin ja painikkeen Crew-sovelluksen Ylläpito-välilehdelle. Poista molemmat valinnat, jos mitään ei lähetetä."
+
+msgid "Sales desk link, welcome crew (minutes before)"
+msgstr "Myyntipisteen linkki, tervetulotiimi (minuuttia ennen)"
+
+msgid "Default 10. Counted back from their own task’s start; the link comes only once they are marked arrived, and stops working when the event ends."
+msgstr "Oletus 10. Lasketaan taaksepäin heidän oman tehtävänsä alusta; linkki tulee vasta, kun heidät on merkitty saapuneiksi, ja lakkaa toimimasta tapahtuman päättyessä."
+
+msgid "EventCrew Settings"
+msgstr "EventCrew-asetukset"
+
+msgid "Welcome message"
+msgstr "Tervetuloviesti"
+
+msgid "Send the welcome message"
+msgstr "Lähetä tervetuloviesti"
+
+msgid "On"
+msgstr "Päällä"
+
+msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
+msgstr "Miten tehtävät, liput, vapaaliput ja luotettavuus toimivat, sähköpostilla ja Telegramissa, kerran jokaiselle jäsenelle. Järjestäjät saavat lisäksi järjestäjän oppaan. Uudet jäsenet saavat sen vahvistaessaan sähköpostinsa; kaikki muut tunneittaisessa ajossa ilmoitusaikojen sisällä, 25 ihmistä tunnissa. Tarkista se ensin alla olevalla painikkeella \"Lähetä tervetuloviesti minulle\"."
+
+msgid "Reputation"
+msgstr "Luotettavuus"
+
+msgid "Good-standing threshold"
+msgstr "Hyvän tason raja"
+
+msgid "Web page"
+msgstr "Verkkosivu"
+
+msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6."
+msgstr "Jäsenen pisteet, joissa tuoreet tehtävät painavat enemmän, ovat välillä 0–1. Tällä rajalla tai sen yläpuolella jäsen on hyvällä tasolla, sen alapuolella vaarassa. Ihmisiä, joilla on alle kolme päättynyttä tehtävää, ei arvioida. Oletus 0,6."
+
+msgid "Outcome weights"
+msgstr "Lopputulosten painot"
+
+msgid "Adjust what each outcome is worth (advanced)"
+msgstr "Säädä kunkin lopputuloksen arvo (edistynyt)"
+
+msgid "Reputation & alerts"
+msgstr "Luotettavuus ja hälytykset"
+
+msgid "What each finished task is worth toward the score, 0–100%. Recent tasks still count for more than old ones. Defaults: completed 100, replacement found 80, cancelled late 40, no-show 0."
+msgstr "Kuinka paljon kukin päättynyt tehtävä vaikuttaa pisteisiin, 0–100 %. Tuoreet tehtävät painavat silti enemmän kuin vanhat. Oletukset: tehty 100, löysi tuuraajan 80, peruttu myöhään 40, ei saapunut 0."
+
+msgid "Tasks per credit"
+msgstr "Tehtäviä per vapaalippu"
+
+msgid "Completed tasks a member works to earn one free-entry credit. Default 2."
+msgstr "Kuinka monta tehtävää jäsenen on tehtävä ansaitakseen yhden vapaalipun. Oletus 2."
+
+msgid "Rated after"
+msgstr "Arvioidaan, kun"
+
+msgid "finished tasks"
+msgstr "päättynyttä tehtävää"
+
+msgid "Below this a member is “New” (unrated); at or above it they are scored. Default 3."
+msgstr "Tätä vähemmällä jäsen on ”Uusi” (ei arvioitu); tällä määrällä tai enemmällä hänet pisteytetään. Oletus 3."
+
+msgid "Recency half-life"
+msgstr "Puoliintumisaika"
+
+msgid "days"
+msgstr "päivää"
+
+msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
+msgstr "Näin monta päivää vanha lopputulos vaikuttaa pisteisiin puolet siitä, mitä saman päivän lopputulos. Oletus 180."
+
+msgid "Sign-up gate"
+msgstr "Ilmoittautumisen esto"
+
+msgid "Stop at-risk members from signing up for new tasks"
+msgstr "Estä vaarassa olevia jäseniä ilmoittautumasta uusiin tehtäviin"
+
+msgid "When on, an at-risk member who taps Join is asked to talk to you instead. New and good-standing members are never affected."
+msgstr "Kun tämä on päällä, vaarassa olevaa jäsentä, joka painaa Ilmoittaudu, pyydetään sen sijaan puhumaan kanssasi. Tämä ei koskaan koske uusia jäseniä eikä hyvällä tasolla olevia jäseniä."
+
+msgid "Task reminders (24h before) and the open-task email (48h before) are sent by an hourly background job."
+msgstr "Tehtävämuistutukset (24 h ennen) ja avoimien tehtävien sähköpostin (48 h ennen) lähettää tunneittain ajettava taustatyö."
+
+msgid "never"
+msgstr "ei koskaan"
+
+msgid "Background job"
+msgstr "Taustatyö"
+
+msgid "Next run: %1$s. Last run: %2$s."
+msgstr "Seuraava ajo: %1$s. Viimeisin ajo: %2$s."
+
+msgid "not scheduled"
+msgstr "ei ajastettu"
+
+msgid "Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)"
+msgstr "Suorita erääntyneet lähetykset myös tavallisten sivulatausten yhteydessä (ota käyttöön, jos WP-Cron ei käynnisty tällä palvelimella)"
+
+msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
+msgstr "WP-Cron tarvitsee sivuston pyynnön itselleen, jonka jotkin jaetut palvelimet estävät. Jos \"Viimeisin ajo\" pysyy arvossa \"ei koskaan\" tai jää tunteja jälkeen, ota tämä käyttöön — silloin mikä tahansa käynti (myös botin webhook) suorittaa kaiken erääntyneen."
+
+msgid "The kinds of job a task can be. \"People needed\" is only the default for new tasks - each task keeps its own number."
+msgstr "Tehtävien lajit. \"Tarvittavat henkilöt\" on vain uusien tehtävien oletus - jokainen tehtävä säilyttää oman lukunsa."
+
+msgid "Public signup page"
+msgstr "Julkinen ilmoittautumissivu"
+
+msgid "Add the open-task board to any page with the %s shortcode, or the \"EventCrew signup\" block. Visitors sign in by email — no account needed — and signing up respects the same rules as the bot."
+msgstr "Lisää avoimien tehtävien taulu mille tahansa sivulle lyhytkoodilla %s tai lohkolla \"EventCrew signup\". Kävijät kirjautuvat sähköpostilla — tiliä ei tarvita — ja ilmoittautumisessa noudatetaan samoja sääntöjä kuin botissa."
+
+msgid "Spam protection"
+msgstr "Roskapostisuojaus"
+
+msgid "Add a Cloudflare Turnstile CAPTCHA to the public sign-in form so bots cannot use it to send sign-in emails. Create a free widget at %s and paste its two keys here. Leave both blank to turn it off."
+msgstr "Lisää julkiseen kirjautumislomakkeeseen Cloudflare Turnstile -CAPTCHA, jotta botit eivät voi käyttää lomaketta kirjautumissähköpostien lähettämiseen. Luo ilmainen widget osoitteessa %s ja liitä sen kaksi avainta tähän. Jätä molemmat tyhjiksi, niin suojaus on pois päältä."
+
+msgid "Site key"
+msgstr "Sivuston avain"
+
+msgid "The timing columns are what \"Create an event's tasks\" uses. Offsets are in minutes from the chosen anchor, negative for before it: decorating might run -120 to 0 from the start, cleaning 0 to 60 from the end. Leave both blank for a role whose timing varies - its tasks are created without times for you to fill in."
+msgstr "Ajoitussarakkeita käyttää \"Luo tapahtuman tehtävät\". Siirtymät ovat minuutteja valitusta kiintopisteestä, negatiivinen tarkoittaa ennen sitä: koristelu voi olla -120…0 alusta, siivous 0…60 lopusta. Jätä molemmat tyhjiksi roolille, jonka ajoitus vaihtelee - sen tehtävät luodaan ilman aikoja, ja täytät ne itse."
+
+msgid "The public key that renders the widget. Safe to expose in the page."
+msgstr "Julkinen avain, jolla widget näytetään. Sen saa näyttää sivulla."
+
+msgid "Secret key"
+msgstr "Salainen avain"
+
+msgid "Kept private on your server; used to verify each submission with Cloudflare."
+msgstr "Pysyy vain palvelimellasi; sillä tarkistetaan jokainen lähetys Cloudflarelta."
+
+msgid "Mobile app"
+msgstr "Mobiilisovellus"
+
+msgid "Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android)."
+msgstr "Tee ilmoittautumissivusta asennettava sovellus. Valitse sivu, jolla lyhytkoodi on, avaa se puhelimella ja valitse ”Lisää Koti-valikkoon” (iPhone) tai ”Asenna sovellus” (Android)."
+
+msgid "The page “%s” has the signup shortcode on it, but no page is picked below. Pick it: the setting does more than the mobile app."
+msgstr "Sivulla ”%s” on ilmoittautumisen lyhytkoodi, mutta alla ei ole valittu sivua. Valitse se: asetus vaikuttaa muuhunkin kuin mobiilisovellukseen."
+
+msgid "While it is unset, the “manage your data” link at the foot of every email cannot point at your signup page, so it falls back to a plain standalone page reached by a link that never expires. Picking the page below switches those links to one-time ones that stop working after 30 minutes."
+msgstr "Niin kauan kuin sitä ei ole valittu, jokaisen sähköpostin lopussa oleva ”hallitse tietojasi” -linkki ei voi osoittaa ilmoittautumissivullesi, joten se vie erilliselle yksinkertaiselle sivulle linkillä, joka ei koskaan vanhene. Kun valitset sivun alta, linkit muuttuvat kertakäyttöisiksi ja lakkaavat toimimasta 30 minuutin jälkeen."
+
+msgid "— None (app disabled) —"
+msgstr "— Ei mitään (sovellus pois käytöstä) —"
+
+msgid "Also where the “manage your data” link in your emails sends people. With a page picked they get a one-time link good for 30 minutes; with none, a standalone page on a link that never expires."
+msgstr "Myös sivu, jolle sähköpostiesi ”hallitse tietojasi” -linkki vie. Kun sivu on valittu, ihmiset saavat 30 minuuttia voimassa olevan kertakäyttöisen linkin; ilman sitä erillisen sivun linkillä, joka ei koskaan vanhene."
+
+msgid "App name"
+msgstr "Sovelluksen nimi"
+
+msgid "Shown under the home-screen icon. Blank uses the site name."
+msgstr "Näkyy aloitusnäytön kuvakkeen alla. Tyhjänä käytetään sivuston nimeä."
+
+msgid "Theme colour"
+msgstr "Teemaväri"
+
+msgid "The Crew app page background, the email buttons, and the fallback icon’s background."
+msgstr "Crew-sovelluksen sivun tausta, sähköpostien painikkeet ja varakuvakkeen tausta."
+
+msgid "Accent colour"
+msgstr "Korostusväri"
+
+msgid "The selected tab and the outline of the field you type in. Pick a colour that stands out from the theme colour."
+msgstr "Valittu välilehti ja kirjoitettavan kentän reunus. Valitse väri, joka erottuu teemaväristä."
+
+msgid "Getting started"
+msgstr "Aloitus"
+
+msgid "Connect a channel"
+msgstr "Yhdistä kanava"
+
+msgid "add a Telegram bot token, or set a public signup page, in Settings."
+msgstr "lisää Telegram-botin tunniste tai aseta julkinen ilmoittautumissivu Asetuksissa."
+
+msgid "Create your first task"
+msgstr "Luo ensimmäinen tehtäväsi"
+
+msgid "use the form on the left, or generate a whole event’s tasks from a linked event."
+msgstr "käytä vasemmalla olevaa lomaketta tai luo koko tapahtuman tehtävät linkitetystä tapahtumasta."
+
+msgid "Put it in front of your crew"
+msgstr "Näytä se crew’llesi"
+
+msgid "add the bot to your Telegram group (the board appears on its own), or share your signup page link."
+msgstr "lisää botti Telegram-ryhmääsi (taulu ilmestyy itsestään) tai jaa ilmoittautumissivusi linkki."
+
+msgid "EventCrew privacy notice — not yet filled in."
+msgstr "EventCrew-tietosuojaseloste — ei vielä täytetty."
+
+msgid "Set who is responsible for the crew's data under %s, and this page will publish itself. Only you can see this message."
+msgstr "Aseta kohdassa %s, kuka vastaa crew’n tiedoista, niin tämä sivu julkaisee itsensä. Vain sinä näet tämän viestin."
+
+msgid "EventCrew → Settings → Privacy"
+msgstr "EventCrew → Asetukset → Tietosuoja"
+
+msgid "This notice was last updated on %s."
+msgstr "Tätä selostetta on viimeksi päivitetty %s."
