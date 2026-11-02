@@ -9,6 +9,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 
 /**
  * Hands a person everything this plugin knows about them, through WordPress's
@@ -32,7 +33,8 @@ final class PrivacyExporter
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
         private readonly RedemptionRepository $redemptions,
-        private readonly CreditGrantRepository $credits
+        private readonly CreditGrantRepository $credits,
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
     ) {
     }
 
@@ -68,19 +70,29 @@ final class PrivacyExporter
      */
     public function export(string $email, int $page = 1): array
     {
-        $person = $this->people->findByEmail($email);
-
-        if (null === $person || $page > 1) {
+        if ($page > 1) {
             return ['data' => [], 'done' => true];
         }
 
-        $data = [$this->profile($person->id, $email)];
+        $person = $this->people->findByEmail($email);
+        $data = [];
 
-        foreach ($this->history($person->id) as $item) {
-            $data[] = $item;
+        if (null !== $person) {
+            $data[] = $this->profile($person->id, $email);
+
+            foreach ($this->history($person->id) as $item) {
+                $data[] = $item;
+            }
+
+            foreach ($this->tickets($person->id) as $item) {
+                $data[] = $item;
+            }
         }
 
-        foreach ($this->tickets($person->id) as $item) {
+        // A ticket buyer from the web shop is usually not a crew member, so
+        // their ticket rows are looked up by email whether or not a crew
+        // record exists.
+        foreach ($this->boughtTickets($email) as $item) {
             $data[] = $item;
         }
 
@@ -163,6 +175,33 @@ final class PrivacyExporter
                         'value' => AssignmentStatus::label($assignment->status),
                     ],
                     ['name' => __('Signed up', 'eventcrew'), 'value' => $assignment->signedUpAt],
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Tickets bought in the web shop, or added at the sales desk, under this
+     * email address: one item per row of the ticket buyers table.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function boughtTickets(string $email): array
+    {
+        $items = [];
+
+        foreach ($this->buyers->rowsForEmail($email) as $index => $row) {
+            $items[] = [
+                'group_id' => self::GROUP . '-bought-tickets',
+                'group_label' => __('EventCrew bought tickets', 'eventcrew'),
+                'item_id' => self::GROUP . '-bought-ticket-' . $index,
+                'data' => [
+                    ['name' => __('Event date', 'eventcrew'), 'value' => (string) ($row['event_date'] ?? '')],
+                    ['name' => __('Name', 'eventcrew'), 'value' => (string) ($row['name'] ?? '')],
+                    ['name' => __('Email', 'eventcrew'), 'value' => (string) ($row['email'] ?? '')],
+                    ['name' => __('Ticket code', 'eventcrew'), 'value' => (string) ($row['ticket_code'] ?? '')],
                 ],
             ];
         }

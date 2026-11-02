@@ -91,4 +91,25 @@ final class PrivacyEraserTest extends TestCase
             $deletedTables
         );
     }
+
+    /**
+     * A ticket buyer who is not a crew member is erased from the ticket
+     * buyers table by email: name and email go, the row stays.
+     */
+    public function testATicketBuyerWithNoCrewRecordIsErased(): void
+    {
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 2;
+
+        $result = $this->eraser()->erase('bo@example.test');
+
+        self::assertTrue($result['items_removed']);
+        self::assertFalse($result['items_retained']);
+        self::assertCount(1, $result['messages']);
+        self::assertStringContainsString(
+            "UPDATE wp_eventcrew_ticket_buyers SET email = NULL, name = '' WHERE email = 'bo@example.test'",
+            $this->wpdb->lastQuery()
+        );
+        self::assertSame([], $this->wpdb->deletes);
+    }
 }

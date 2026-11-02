@@ -108,6 +108,26 @@ final class SchedulerTest extends TestCase
     }
 
     /**
+     * The hourly run deletes expired ticket buyer emails, with the crew purge
+     * setting at its default (off).
+     */
+    public function testRunPurgesExpiredTicketBuyerEmails(): void
+    {
+        $this->wpdb->nextResults[] = [];
+        Functions\when('get_option')->returnArg(2);
+        Functions\when('update_option')->justReturn(true);
+
+        $this->scheduler()->run();
+
+        $purges = array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_starts_with($sql, 'UPDATE wp_eventcrew_ticket_buyers SET email = NULL')
+        );
+
+        self::assertCount(1, $purges);
+    }
+
+    /**
      * WP-Cron and the visitor fallback can start a run at the same moment; the
      * second must not send anything, or every due message goes out twice.
      */

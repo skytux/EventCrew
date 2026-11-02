@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 
 /**
  * The other half of Tools -> Erase Personal Data, and the counterpart to
@@ -25,7 +26,8 @@ final class PrivacyEraser
 {
     public function __construct(
         private readonly PersonRepository $people,
-        private readonly PersonEraser $eraser
+        private readonly PersonEraser $eraser,
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
     ) {
     }
 
@@ -56,17 +58,16 @@ final class PrivacyEraser
      * record here is a handful of rows, so there is nothing to resume.
      *
      * `items_retained` stays false because nothing is kept back. The plugin has
-     * no legal obligation to hold any of it - there is no invoice, no ticket
-     * sale, no accounting record in here, only who signed up for what - so
-     * there is nothing to weigh against the request.
+     * no legal obligation to hold any of it - there is no invoice and no
+     * accounting record in here - so there is nothing to weigh against the
+     * request. Bought tickets keep their row with no name or email, which is
+     * no longer data about the person.
      *
      * @return array{items_removed: bool, items_retained: bool, messages: array<int, string>, done: bool}
      */
     public function erase(string $email, int $page = 1): array
     {
-        $person = $this->people->findByEmail($email);
-
-        if (null === $person || $page > 1) {
+        if ($page > 1) {
             return [
                 'items_removed' => false,
                 'items_retained' => false,
@@ -75,20 +76,34 @@ final class PrivacyEraser
             ];
         }
 
-        $this->eraser->erase($person->id);
+        $messages = [];
+        $person = $this->people->findByEmail($email);
 
-        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        if (null !== $person) {
+            $this->eraser->erase($person->id);
+            $messages[] = __(
+                'The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links.',
+                'eventcrew'
+            );
+        }
+
+        // Ticket buyers are looked up by email whether or not a crew record
+        // exists. The ticket rows stay with an empty name, so the night's
+        // ticket count does not change.
+        if ($this->buyers->eraseEmail($email) > 0) {
+            $messages[] = __(
+                'The name and email address were erased from the tickets bought with this address. The tickets stay on the door lists with no name.',
+                'eventcrew'
+            );
+        }
+        // phpcs:enable Generic.Files.LineLength.TooLong
+
         return [
-            'items_removed' => true,
+            'items_removed' => [] !== $messages,
             'items_retained' => false,
-            'messages' => [
-                __(
-                    'The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links.',
-                    'eventcrew'
-                ),
-            ],
+            'messages' => $messages,
             'done' => true,
         ];
-        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 }

@@ -708,7 +708,8 @@ final class Kernel
             RetentionPurge::class,
             fn (Container $container) => new RetentionPurge(
                 $container->get(PersonRepository::class),
-                $container->get(PersonEraser::class)
+                $container->get(PersonEraser::class),
+                $container->get(TicketBuyerRepository::class)
             )
         );
 
@@ -719,7 +720,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(TaskRepository::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(CreditGrantRepository::class)
+                $container->get(CreditGrantRepository::class),
+                $container->get(TicketBuyerRepository::class)
             )
         );
 
@@ -727,7 +729,8 @@ final class Kernel
             PrivacyEraser::class,
             fn (Container $container) => new PrivacyEraser(
                 $container->get(PersonRepository::class),
-                $container->get(PersonEraser::class)
+                $container->get(PersonEraser::class),
+                $container->get(TicketBuyerRepository::class)
             )
         );
 

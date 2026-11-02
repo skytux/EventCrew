@@ -137,6 +137,11 @@ final class Scheduler
         // it on, and a no-op thereafter on a database with nothing overdue.
         $this->retention->run();
 
+        // Delete ticket buyers' email addresses 60 days after the event, as
+        // the ticket buyer privacy notice says. Always on: the notice promises
+        // it, so it does not wait for the purge setting above.
+        $this->retention->purgeBuyerEmails();
+
         update_option(self::LAST_RUN_OPTION, time());
     }
 
