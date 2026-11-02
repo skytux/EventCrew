@@ -295,7 +295,7 @@ final class CommandMenu
             'ticket' => __('Spend a credit on a free-entry ticket', 'eventcrew'),
             'replace' => __('Take over someone’s task', 'eventcrew'),
             'tasks' => __('Tasks for your roles', 'eventcrew'),
-            'web' => __('A sign-in link for the crew web page', 'eventcrew'),
+            'web' => __('A sign-in link for the Crew app', 'eventcrew'),
             'notifications' => __('Choose which messages you get', 'eventcrew'),
             'language' => __('Change the language', 'eventcrew'),
             'cancel' => __('Stop the question I asked you', 'eventcrew'),

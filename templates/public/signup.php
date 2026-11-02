@@ -243,7 +243,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
          * them to a tablist in place.
          */
         ?>
-        <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your crew page', 'eventcrew'); ?>">
+        <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your Crew app', 'eventcrew'); ?>">
             <?php
             $eventcrew_tabs = [
                 'board' => __('Board', 'eventcrew'),

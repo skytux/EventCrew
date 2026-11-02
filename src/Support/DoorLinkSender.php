@@ -438,7 +438,7 @@ final class DoorLinkSender
     {
         return sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             Dates::dayLabel($date)
         );
     }

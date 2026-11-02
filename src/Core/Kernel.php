@@ -91,6 +91,7 @@ use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
+use EventCrew\Web\CrewAppPage;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
@@ -195,6 +196,9 @@ final class Kernel
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
         $this->container->get(PwaController::class)->boot();
+
+        // The Crew app as a page of its own, and old page addresses redirected.
+        $this->container->get(CrewAppPage::class)->boot();
 
         // The public privacy notice: its shortcode and block must exist for
         // logged-out visitors, which is the entire audience for a privacy
@@ -663,6 +667,14 @@ final class Kernel
         $this->container->singleton(
             PwaController::class,
             fn () => new PwaController()
+        );
+
+        $this->container->singleton(
+            CrewAppPage::class,
+            fn (Container $container) => new CrewAppPage(
+                $container->get(SignupController::class),
+                $container->get(PwaController::class)
+            )
         );
 
         $this->container->singleton(

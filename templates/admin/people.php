@@ -312,7 +312,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
 
     <div class="ec-tab-panel" data-ec-tab="conditions">
         <p class="description">
-            <?php esc_html_e('Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, on the crew page, or with the bot’s /roles. ✅ = already has the role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+            <?php esc_html_e('Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /roles. ✅ = already has the role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
 
         <?php if ([] === $condition_roles) : ?>

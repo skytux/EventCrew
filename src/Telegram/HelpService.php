@@ -95,7 +95,7 @@ final class HelpService
             __('/ticket – spend a credit on a free-entry ticket', 'eventcrew'),
             __('/replace – take over someone’s task', 'eventcrew'),
             __('/tasks – tasks for your roles', 'eventcrew'),
-            __('/web – a sign-in link for the crew web page', 'eventcrew'),
+            __('/web – a sign-in link for the Crew app', 'eventcrew'),
             __('/notifications – choose which messages you get', 'eventcrew'),
             __('/language – change the language', 'eventcrew'),
             __('/cancel – stop the question I asked you', 'eventcrew'),

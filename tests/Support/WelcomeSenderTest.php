@@ -346,7 +346,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        $line = 'This guide is also on the crew web page, in the Help tab, after you sign in: ';
+        $line = 'This guide is also in the Crew app, in the Help tab, after you sign in: ';
         self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-panel-help', $this->mails[0]['body']);
         self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-help-organizer', $this->mails[1]['body']);
         self::assertStringContainsString(

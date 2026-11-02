@@ -367,7 +367,7 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('Archiving takes a role out of the task form and out of new events, while leaving every task and credit already recorded against it intact and correctly named. Roles are never deleted, because a task created months ago still has to be able to say what it was.', 'eventcrew'); ?>
         </p>
         <p class="description">
-            <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+            <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /roles in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
             <?php esc_html_e('"Opens the sales desk": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
@@ -617,7 +617,7 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('Email', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the crew page’s Admin tab. Untick both to send nothing.', 'eventcrew'); ?>
+                        <?php esc_html_e('Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the Crew app’s Admin tab. Untick both to send nothing.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
@@ -1027,7 +1027,7 @@ if (! defined('ABSPATH')) {
                         name="infrastructure_note"
                         rows="12"
                         class="large-text"><?php echo esc_textarea($infrastructure_note); ?></textarea>
-                    <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the crew page. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>
@@ -1697,7 +1697,7 @@ if (! defined('ABSPATH')) {
         <?php
         printf(
             /* translators: 1: link to the export tool, 2: link to the erase tool, both already wrapped in anchor tags */
-            esc_html__('Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own crew page has a Delete button, and every email links to it.', 'eventcrew'),
+            esc_html__('Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it.', 'eventcrew'),
             '<a href="' . esc_url(admin_url('export-personal-data.php')) . '">'
                 . esc_html__('Tools → Export Personal Data', 'eventcrew')
                 . '</a>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.

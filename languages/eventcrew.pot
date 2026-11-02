@@ -307,7 +307,7 @@ msgid "/roles – give or take roles, organizer status and passes"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:242
-msgid "/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab on the crew page can do the same."
+msgid "/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
 msgstr ""
 
 #: src/Telegram/HelpService.php:109
@@ -339,7 +339,7 @@ msgid "/tickets [date] – the door list"
 msgstr ""
 
 #: src/Telegram/HelpService.php:98
-msgid "/web – a sign-in link for the crew web page"
+msgid "/web – a sign-in link for the Crew app"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:259
@@ -403,11 +403,11 @@ msgid "A role is a kind of job, for example Welcome or Clean. You set the roles 
 msgstr ""
 
 #: templates/admin/settings.php:370
-msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, on the crew page, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, on the crew page Admin tab, or with /roles in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
+msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /roles in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
 msgstr ""
 
 #: src/Telegram/CommandMenu.php:298
-msgid "A sign-in link for the crew web page"
+msgid "A sign-in link for the Crew app"
 msgstr ""
 
 #: src/Support/SlotFreedNotice.php:90
@@ -656,7 +656,7 @@ msgid "Arrived late, did the task"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:240
-msgid "As an organizer you can add anyone to any task of a night, with /tasks, on the crew page Admin tab, or at the sales desk."
+msgid "As an organizer you can add anyone to any task of a night, with /tasks, in the Crew app Admin tab, or at the sales desk."
 msgstr ""
 
 #: src/Telegram/VerificationController.php:99
@@ -1057,6 +1057,10 @@ msgstr ""
 msgid "Crew and attendance"
 msgstr ""
 
+#: src/Web/CrewAdminController.php:825
+msgid "Crew app: a member is blocked after a forged admin request"
+msgstr ""
+
 #: templates/admin/settings.php:398
 msgid "Crew guide"
 msgstr ""
@@ -1067,11 +1071,7 @@ msgstr ""
 
 #: templates/admin/settings.php:1700
 #. translators: 1: link to the export tool, 2: link to the erase tool, both already wrapped in anchor tags
-msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own crew page has a Delete button, and every email links to it."
-msgstr ""
-
-#: src/Web/CrewAdminController.php:825
-msgid "Crew page: a member is blocked after a forged admin request"
+msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:671
@@ -1420,11 +1420,11 @@ msgid "Everyone who gets in free that night — working the event, or spending a
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:364
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own crew page. There is no penalty for switching any of them off."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:360
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own crew page and, if you use the bot, under /notifications. There is no penalty for switching any of them off."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under /notifications. There is no penalty for switching any of them off."
 msgstr ""
 
 #: templates/public/door.php:257
@@ -1762,7 +1762,7 @@ msgid "How the %s crew works. Your own numbers are in the Me tab, and /me sends 
 msgstr ""
 
 #: templates/admin/settings.php:1030
-msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the crew page. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
+msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr ""
 
 #: templates/admin/settings.php:1225
@@ -2469,7 +2469,7 @@ msgid "Only organizers or people rostered on the day can see the roster."
 msgstr ""
 
 #: templates/admin/settings.php:620
-msgid "Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the crew page’s Admin tab. Untick both to send nothing."
+msgid "Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the Crew app’s Admin tab. Untick both to send nothing."
 msgstr ""
 
 #: templates/admin/people.php:97 templates/public/signup.php:704
@@ -2972,7 +2972,7 @@ msgid "Role holders only"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:88
-msgid "Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /tasks and on the crew page. You can add someone there, even a person who is not a crew member."
+msgid "Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /tasks and in the Crew app. You can add someone there, even a person who is not a crew member."
 msgstr ""
 
 #: templates/admin/people.php:86 templates/admin/settings.php:70 templates/admin/settings.php:83 templates/public/signup.php:696
@@ -3179,7 +3179,7 @@ msgstr ""
 
 #: src/Web/CrewAdminController.php:786
 #. translators: 1: the admin action's name, 2: date and time
-msgid "Sent an admin request from the crew page without being an organizer (%1$s, %2$s)."
+msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:775
@@ -4134,7 +4134,7 @@ msgstr ""
 
 #: src/Support/WelcomeSender.php:369
 #. translators: %s: link to the Help tab of the crew web page
-msgid "This guide is also on the crew web page, in the Help tab, after you sign in: %s"
+msgid "This guide is also in the Crew app, in the Help tab, after you sign in: %s"
 msgstr ""
 
 #: templates/admin/people.php:58 templates/public/signup.php:688
@@ -4315,7 +4315,7 @@ msgid "Two exceptions. Organizers keep their record for as long as they hold the
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:467
-msgid "Two of those you can do yourself, immediately and without asking anyone: your crew page has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message."
+msgid "Two of those you can do yourself, immediately and without asking anyone: your Crew app has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message."
 msgstr ""
 
 #: src/Web/CrewAdminController.php:170 templates/admin/people.php:267 templates/public/signup.php:764
@@ -4423,6 +4423,10 @@ msgstr ""
 
 #: src/Admin/SettingsPage.php:835
 msgid "Webhook installed. Add the bot to your group and the board will appear there on its own."
+msgstr ""
+
+#: templates/public/crew-app.php:57
+msgid "Website"
 msgstr ""
 
 #: src/Support/Roles.php:125
@@ -4548,7 +4552,7 @@ msgid "Who meets the conditions for each role. ✅ = they have the role. Give a 
 msgstr ""
 
 #: templates/admin/people.php:315
-msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, on the crew page, or with the bot’s /roles. ✅ = already has the role."
+msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /roles. ✅ = already has the role."
 msgstr ""
 
 #: src/Telegram/GiftService.php:64
@@ -4643,7 +4647,7 @@ msgstr ""
 
 #: src/Support/DoorLinkSender.php:441
 #. translators: %s: event day, e.g. "Sat 1 Aug"
-msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is on the crew page; sign in there if it asks. Need another sales desk link? Send /sales to the bot."
+msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /sales to the bot."
 msgstr ""
 
 #: templates/admin/roster.php:267 templates/public/signup.php:1192
@@ -4704,7 +4708,7 @@ msgstr[1] ""
 
 #: src/Telegram/PermissionService.php:370
 #. translators: %s: role name, such as DJ
-msgid "You now have the role %s. Its tasks are shown to you with /tasks in the bot and on the crew page, and you can sign up for them."
+msgid "You now have the role %s. Its tasks are shown to you with /tasks in the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
 #: src/Web/SignupController.php:734
@@ -4723,6 +4727,10 @@ msgstr ""
 msgid "You weren’t signed up for that one."
 msgstr ""
 
+#: templates/public/signup.php:246
+msgid "Your Crew app"
+msgstr ""
+
 #: src/Telegram/PermissionService.php:324
 msgid "Your EventCrew access changed"
 msgstr ""
@@ -4737,10 +4745,6 @@ msgstr ""
 
 #: src/Web/SignupController.php:750
 msgid "Your account is blocked. Talk to an organizer."
-msgstr ""
-
-#: templates/public/signup.php:246
-msgid "Your crew page"
 msgstr ""
 
 #: src/Telegram/ManageController.php:127

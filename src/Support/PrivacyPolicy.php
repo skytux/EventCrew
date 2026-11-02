@@ -358,11 +358,11 @@ final class PrivacyPolicy
             ),
             self::telegramEnabled()
                 ? __(
-                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own crew page and, if you use the bot, under /notifications. There is no penalty for switching any of them off.',
+                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under /notifications. There is no penalty for switching any of them off.',
                     'eventcrew'
                 )
                 : __(
-                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own crew page. There is no penalty for switching any of them off.',
+                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off.',
                     'eventcrew'
                 ),
         ];
@@ -465,7 +465,7 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'Two of those you can do yourself, immediately and without asking anyone: your crew page has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message.',
+                'Two of those you can do yourself, immediately and without asking anyone: your Crew app has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message.',
                 'eventcrew'
             ),
             sprintf(
