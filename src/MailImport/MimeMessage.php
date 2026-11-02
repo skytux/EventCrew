@@ -14,7 +14,8 @@ namespace EventCrew\MailImport;
  *
  * It reads only what the import needs: the From address, Message-ID, the
  * Authentication-Results headers, and the text of text parts and .txt/.csv
- * attachments. It is not a general mail library.
+ * attachments, and the bytes of an .xlsx attachment. It is not a general
+ * mail library.
  */
 final class MimeMessage
 {
@@ -23,7 +24,7 @@ final class MimeMessage
 
     /**
      * @param array<int, array{0: string, 1: string}> $headers [lower-case name, value] in order
-     * @param array<int, array{type: string, filename: string, disposition: string, text: string}> $parts
+     * @param array<int, array{type: string, filename: string, disposition: string, text: string, bytes: string}> $parts
      */
     private function __construct(
         private readonly array $headers,
@@ -89,7 +90,7 @@ final class MimeMessage
     /**
      * The leaf parts in document order.
      *
-     * @return array<int, array{type: string, filename: string, disposition: string, text: string}>
+     * @return array<int, array{type: string, filename: string, disposition: string, text: string, bytes: string}>
      */
     public function parts(): array
     {
@@ -124,7 +125,7 @@ final class MimeMessage
 
     /**
      * @param array<int, array{0: string, 1: string}> $headers
-     * @param array<int, array{type: string, filename: string, disposition: string, text: string}> $parts
+     * @param array<int, array{type: string, filename: string, disposition: string, text: string, bytes: string}> $parts
      */
     private static function collect(array $headers, string $body, array &$parts, int $depth): void
     {
@@ -170,6 +171,9 @@ final class MimeMessage
             'filename' => self::decodeWords($filename),
             'disposition' => $disposition,
             'text' => self::toUtf8($bytes, $typeParams['charset'] ?? 'utf-8'),
+            // The decoded bytes as they are, for a binary attachment such as
+            // an .xlsx file, which the UTF-8 text above would damage.
+            'bytes' => $bytes,
         ];
     }
 

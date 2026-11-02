@@ -117,4 +117,33 @@ final class MimeMessageTest extends TestCase
 
         self::assertFalse(ImportMessage::senderCheck($message, self::AUTHSERV)[0]);
     }
+
+    public function testTicketFileGivesAnXlsxAttachmentAsItsRawBytes(): void
+    {
+        $bytes = "PK\x03\x04\x00\xff binary";
+        $raw = "From: owner@example.com\r\n"
+            . "Content-Type: multipart/mixed; boundary=\"XYZ\"\r\n"
+            . "\r\n"
+            . "--XYZ\r\n"
+            . "Content-Type: text/plain; charset=utf-8\r\n"
+            . "\r\n"
+            . "Anna\r\n"
+            . "--XYZ\r\n"
+            . "Content-Type: application/octet-stream\r\n"
+            . "Content-Disposition: attachment; filename=\"Tickets.XLSX\"\r\n"
+            . "Content-Transfer-Encoding: base64\r\n"
+            . "\r\n"
+            . chunk_split(base64_encode($bytes), 76, "\r\n")
+            . "--XYZ--\r\n";
+
+        self::assertSame(
+            ['filename' => 'Tickets.XLSX', 'bytes' => $bytes],
+            ImportMessage::ticketFile(MimeMessage::parse($raw))
+        );
+    }
+
+    public function testTicketFileIsNullForAPlainTextMail(): void
+    {
+        self::assertNull(ImportMessage::ticketFile(MimeMessage::parse(self::message(self::AUTHSERV . '; dmarc=pass'))));
+    }
 }

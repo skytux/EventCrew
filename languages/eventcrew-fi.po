@@ -5252,3 +5252,75 @@ msgstr "EventCrew → Asetukset → Tietosuoja"
 
 msgid "This notice was last updated on %s."
 msgstr "Tätä selostetta on viimeksi päivitetty %s."
+
+msgid "The attached file is not an .xlsx or .csv file."
+msgstr "Liitetiedosto ei ole .xlsx- tai .csv-tiedosto."
+
+msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
+msgstr "Tämä sivusto ei pysty lukemaan .xlsx-tiedostoja, koska sen PHP:ssä ei ole zip- tai XML-tukea. Tallenna lista .csv-tiedostoksi ja lähetä se uudelleen, tai pyydä sivuston ylläpitäjää ottamaan PHP:n zip-laajennus käyttöön."
+
+msgid "The attached .xlsx file could not be read. Export it again from the shop and send it again."
+msgstr "Liitettyä .xlsx-tiedostoa ei voitu lukea. Vie se uudelleen kaupasta ja lähetä se uudelleen."
+
+msgid "The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: %s"
+msgstr "Liitetiedoston sarakkeet eivät vastaa yhtään lipputiedoston muotoa kohdassa Asetukset → Sähköposti. Tiedoston sarakkeet ovat: %s"
+
+msgid "%1$d tickets were imported for %2$s."
+msgstr "%1$d lippua tuotiin päivälle %2$s."
+
+msgid "%d tickets were skipped because they were already on the list."
+msgstr "%d lippua ohitettiin, koska ne olivat jo listalla."
+
+msgid "The list was sent from %s."
+msgstr "Lista lähetettiin osoitteesta %s."
+
+msgid "The ticket list could not be imported"
+msgstr "Lippulistaa ei voitu tuoda"
+
+msgid "Nothing was added to the door list."
+msgstr "Ovilistalle ei lisätty mitään."
+
+msgid "The import settings were saved. There is no import mailbox."
+msgstr "Tuontiasetukset tallennettiin. Tuontipostilaatikkoa ei ole."
+
+msgid "The import settings were saved."
+msgstr "Tuontiasetukset tallennettiin."
+
+msgid "The import mailbox is not an email address, so it was not changed. The other import settings were saved."
+msgstr "Tuontipostilaatikko ei ole sähköpostiosoite, joten sitä ei muutettu. Muut tuontiasetukset tallennettiin."
+
+msgid "Extra sender addresses"
+msgstr "Muut lähettäjäosoitteet"
+
+msgid "One email address per line. Lists mailed from these addresses are imported too, besides lists from organizers. The import notice goes to every organizer and to the sender."
+msgstr "Yksi sähköpostiosoite riviä kohden. Näistä osoitteista lähetetyt listat tuodaan järjestäjien listojen lisäksi. Ilmoitus tuonnista lähtee jokaiselle järjestäjälle ja lähettäjälle."
+
+msgid "Ticket file formats"
+msgstr "Lipputiedostojen muodot"
+
+msgid "When a mailed list has an .xlsx or .csv file attached, the file is read instead of the mail text. Its first row must hold the column headers of one of these formats. In a header field, separate accepted header texts with \"|\", and join columns with \"+\", as in \"Etunimi + Sukunimi\". Upper and lower case do not matter."
+msgstr "Kun sähköpostilla lähetetyssä listassa on liitteenä .xlsx- tai .csv-tiedosto, luetaan tiedosto viestin tekstin sijaan. Sen ensimmäisellä rivillä on oltava jonkin näistä muodoista sarakeotsikot. Erota otsikkokentässä hyväksytyt otsikot merkillä \"|\" ja yhdistä sarakkeita merkillä \"+\", esimerkiksi \"Etunimi + Sukunimi\". Isoilla ja pienillä kirjaimilla ei ole väliä."
+
+msgid "Add a format"
+msgstr "Lisää muoto"
+
+msgid "Name column header"
+msgstr "Nimisarakkeen otsikko"
+
+msgid "Email column header"
+msgstr "Sähköpostisarakkeen otsikko"
+
+msgid "Ticket code column header"
+msgstr "Lippukoodisarakkeen otsikko"
+
+msgid "Decoder (JavaScript)"
+msgstr "Purkaja (JavaScript)"
+
+msgid "Remove this format"
+msgstr "Poista tämä muoto"
+
+msgid "With no format left, the Holvi format is used."
+msgstr "Jos yhtään muotoa ei ole jäljellä, käytetään Holvin muotoa."
+
+msgid "Save the import settings"
+msgstr "Tallenna tuontiasetukset"

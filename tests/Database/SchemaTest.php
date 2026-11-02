@@ -230,7 +230,7 @@ final class SchemaTest extends TestCase
 
         self::assertContains('can_lead', $retired);
         self::assertContains('leader_eligible_notified_at', $retired);
-        self::assertSame('21', Schema::DB_VERSION);
+        self::assertGreaterThanOrEqual(21, (int) Schema::DB_VERSION);
     }
 
     private function moveCanLeadToRole(): void

@@ -14,6 +14,7 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\BuyerImportController;
 use WP_REST_Request;
@@ -263,6 +264,121 @@ final class BuyerImportControllerTest extends TestCase
         self::assertSame('no_upcoming_event', $response->data['error']);
         self::assertStringContainsString('no upcoming event', $response->data['message']);
         self::assertSame([], $this->buyerInserts());
+    }
+
+    // --- ticket files -----------------------------------------------------
+
+    /**
+     * @param array<int, array<string, mixed>> $organizers person rows
+     */
+    private function queueOrganizers(array $organizers): void
+    {
+        $this->wpdb->nextResults[] = $organizers;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function twoOrganizers(): array
+    {
+        return [
+            ['id' => 9, 'email' => 'owner@example.com', 'display_name' => 'Owner', 'is_organizer' => 1],
+            ['id' => 10, 'email' => 'kim@example.com', 'display_name' => 'Kim', 'is_organizer' => 1],
+        ];
+    }
+
+    public function testAnXlsxFileIsImportedOneRowPerTicketAndEveryOrganizerIsTold(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01']; // datesWithTasks
+        $this->wpdb->nextVars[] = '0'; // hasBatch: new mail
+        $this->wpdb->nextResults[] = []; // nobody on the list yet
+        $this->queueOrganizers(self::twoOrganizers());
+
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            '',
+            '<m2@example.com>',
+            ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]
+        );
+
+        self::assertSame(200, $answer['status']);
+        self::assertSame(3, $answer['body']['added']);
+
+        $inserts = $this->buyerInserts();
+        self::assertCount(3, $inserts);
+        self::assertSame('Anna Tester', $inserts[0]['data']['name']);
+        self::assertSame('Anna Tester', $inserts[1]['data']['name']);
+        self::assertSame('anna@example.com', $inserts[0]['data']['email']);
+        self::assertSame('A1', $inserts[1]['data']['ticket_code']);
+        self::assertSame('B2', $inserts[2]['data']['ticket_code']);
+
+        self::assertSame(['owner@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('3 tickets were imported for', $this->mails[1]['body']);
+        self::assertStringContainsString('The list was sent from owner@example.com.', $this->mails[1]['body']);
+    }
+
+    public function testAnExtraSenderAddressMayMailAListAndIsToldToo(): void
+    {
+        $this->options[BuyerImportController::SENDERS_OPTION] = ['Shop@Example.com'];
+        // No person row: the shop's address is not in the crew.
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextVars[] = '0';
+        $this->wpdb->nextResults[] = [];
+        $this->queueOrganizers(self::twoOrganizers());
+
+        $answer = $this->controller()->importList(
+            'shop@example.com',
+            '',
+            '<m3@example.com>',
+            ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]
+        );
+
+        self::assertSame(200, $answer['status']);
+        self::assertCount(3, $this->buyerInserts());
+        self::assertSame(
+            ['owner@example.com', 'kim@example.com', 'shop@example.com'],
+            array_column($this->mails, 'to')
+        );
+    }
+
+    public function testAnAddressThatIsNeitherAnOrganizerNorAnExtraSenderIsRefused(): void
+    {
+        $this->options[BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+
+        $answer = $this->controller()->importList(
+            'other@example.com',
+            '',
+            '<m4@example.com>',
+            ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]
+        );
+
+        self::assertSame(403, $answer['status']);
+        self::assertSame([], $this->buyerInserts());
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAFileMatchingNoFormatIsRefusedAndTheOrganizersAreTold(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueOrganizers(self::twoOrganizers());
+
+        $answer = $this->controller()->importList(
+            'owner@example.com',
+            '',
+            '<m5@example.com>',
+            ['filename' => 'list.csv', 'bytes' => "Tilaus;Maa\n1;FI\n"]
+        );
+
+        self::assertSame(400, $answer['status']);
+        self::assertSame('bad_file', $answer['body']['error']);
+        self::assertStringContainsString('Tilaus, Maa', $answer['body']['message']);
+        self::assertSame([], $this->buyerInserts());
+        self::assertSame(['owner@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('The ticket list could not be imported', $this->mails[0]['subject']);
+        self::assertStringContainsString('Tilaus, Maa', $this->mails[0]['body']);
+        self::assertStringContainsString('Nothing was added to the door list.', $this->mails[0]['body']);
     }
 
     public function testABodyThatIsNotJsonIsABadRequest(): void

@@ -12,8 +12,8 @@ namespace EventCrew\MailImport;
  * - the sender: the receiving mail server's Authentication-Results header
  *   must show dmarc=pass for the From domain, or spf=pass for it when no
  *   DMARC result is there at all;
- * - the list: a .txt or .csv attachment (first column of each row), or
- *   otherwise the plain-text body.
+ * - the list: a ticket file (.xlsx or .csv attachment, see ticketFile()),
+ *   or a .txt attachment, or otherwise the plain-text body.
  */
 final class ImportMessage
 {
@@ -62,6 +62,31 @@ final class ImportMessage
         }
 
         return [false, 'neither dmarc nor spf passed for ' . $domain];
+    }
+
+    /**
+     * The first .xlsx or .csv attachment, as a ticket file: its file name
+     * and contents. An .xlsx file is its bytes as they are; a .csv file is
+     * its text, already turned into UTF-8 from the charset the mail names.
+     * null when the message carries neither.
+     *
+     * @return array{filename: string, bytes: string}|null
+     */
+    public static function ticketFile(MimeMessage $message): ?array
+    {
+        foreach ($message->parts() as $part) {
+            $filename = strtolower($part['filename']);
+
+            if (str_ends_with($filename, '.xlsx')) {
+                return ['filename' => $part['filename'], 'bytes' => $part['bytes']];
+            }
+
+            if (str_ends_with($filename, '.csv')) {
+                return ['filename' => $part['filename'], 'bytes' => $part['text']];
+            }
+        }
+
+        return null;
     }
 
     /** The names: a .csv or .txt attachment if there is one, else the text body. */
