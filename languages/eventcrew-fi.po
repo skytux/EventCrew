@@ -2832,6 +2832,9 @@ msgstr "Antaa hänen ilmoittautua kerran, vaikka hänen luotettavuutensa on vaar
 msgid "Next"
 msgstr "Seuraava"
 
+msgid "Next date"
+msgstr "Seuraava päivä"
+
 #: templates/public/signup.php:812
 msgid "No credits given or spent yet."
 msgstr "Vapaalippuja ei ole vielä annettu eikä käytetty."
@@ -2883,6 +2886,9 @@ msgstr "Valitse vapaalippujen määrä, vähintään 1."
 #: templates/public/signup.php:658
 msgid "Previous"
 msgstr "Edellinen"
+
+msgid "Previous date"
+msgstr "Edellinen päivä"
 
 #: src/Support/PrivacyExporter.php:191 templates/public/signup.php:833
 msgid "Redeemed"
