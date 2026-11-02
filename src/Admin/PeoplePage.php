@@ -189,7 +189,9 @@ final class PeoplePage
         // someone's address is not that person confirming it, and consent to
         // open-task email cannot be given on another person's behalf - both
         // only happen when the person acts themselves.
-        $newId = $this->people->create($data);
+        // create() encodes the role list itself, so it gets the plain list:
+        // the already-encoded "dj,vj" would lose its comma and become "djvj".
+        $newId = $this->people->create(['role_slugs' => $roles] + $data);
 
         if ($newId > 0) {
             RoleNotifier::rolesChanged($newId, [], $roles);
