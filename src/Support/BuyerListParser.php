@@ -63,15 +63,28 @@ final class BuyerListParser
      * The same lines as names(), read as guests: a last word "+N" (as in
      * "Anna Virtanen +2", the /door add rule) is the number of plus-ones and
      * is taken off the name. A line with no such word has 0 plus-ones, and a
-     * line that is only "+N" stays a name.
+     * line that is only "+N" stays a name. Nothing from a signature line ("--"
+     * after trailing whitespace is removed) down is read.
      *
      * @return array<int, array{name: string, plus_ones: int}>
      */
     public static function guests(string $text): array
     {
         $guests = [];
+        $lines = preg_split('/\r\n|\r|\n/', $text);
+        $kept = [];
 
-        foreach (self::names($text) as $line) {
+        // A mail signature ends the list: a line that is "--" once trailing
+        // whitespace is taken off (names() only stops at "--" and "-- " exactly).
+        foreach (false === $lines ? [] : $lines as $line) {
+            if ('--' === rtrim($line)) {
+                break;
+            }
+
+            $kept[] = $line;
+        }
+
+        foreach (self::names(implode("\n", $kept)) as $line) {
             $words = explode(' ', $line);
             $plusOnes = 0;
 
