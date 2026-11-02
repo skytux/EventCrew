@@ -200,8 +200,8 @@ final class PrivacyPolicyTest extends TestCase
 
     /**
      * The ticket buyer notice says what is taken from the shop export, that
-     * the address can be a dash, and that the email goes 60 days after the
-     * event unless the buyer joined the newsletter.
+     * the address can be a dash, and that the email, name and ticket code go
+     * 60 days after the event unless the buyer joined the newsletter (Q057).
      */
     public function testTheTicketBuyerNoticeStatesWhatWhyAndHowLong(): void
     {
@@ -219,7 +219,7 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('a dash ("-") in the address field', $text);
         self::assertStringContainsString('check you in at the door', $text);
         self::assertStringContainsString('invites you to join our newsletter', $text);
-        self::assertStringContainsString('We delete your email address 60 days after the event', $text);
+        self::assertStringContainsString('We delete your email address, your name and your ticket code 60 days after the event', $text);
         self::assertStringContainsString('unless you have joined our newsletter', $text);
         self::assertStringContainsString('You can leave it at any time', $text);
 
@@ -241,7 +241,7 @@ final class PrivacyPolicyTest extends TestCase
         );
 
         self::assertStringContainsString('viivan ("-")', $text);
-        self::assertStringContainsString('Poistamme sähköpostiosoitteesi 60 päivän kuluttua tapahtumasta', $text);
+        self::assertStringContainsString('Poistamme sähköpostiosoitteesi, nimesi ja lippukoodisi 60 päivän kuluttua tapahtumasta', $text);
         self::assertStringContainsString('lipunostajien tietojen rekisterinpitäjä on Dance Club', $text);
     }
 

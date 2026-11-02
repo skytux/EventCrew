@@ -523,9 +523,9 @@ final class Schema
             // email is filled from an imported ticket file, and for a Holvi
             // buyer added by hand at the sales desk because they were missing
             // from the imported list. It is shown on the door list and
-            // nothing is ever sent to it. RetentionPurge blanks it 60 days
-            // after the event (PrivacyPolicy::BUYER_EMAIL_DAYS); the name,
-            // the ticket code and the check-in stay.
+            // nothing is ever sent to it. RetentionPurge blanks it, the name
+            // and the ticket code 60 days after the event
+            // (PrivacyPolicy::BUYER_EMAIL_DAYS); the row and its check-in stay.
             //
             // ticket_code is the code from the ticket file (for Holvi, the
             // order code). Several tickets of one order share it, so it is

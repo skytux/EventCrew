@@ -72,15 +72,16 @@ final class RetentionPurge
     }
 
     /**
-     * Deletes ticket buyers' email addresses once the event is more than
-     * PrivacyPolicy::BUYER_EMAIL_DAYS days ago, keeping the addresses that
-     * buyerEmailsToKeep() returns. Returns how many rows changed.
+     * Deletes ticket buyers' email addresses, names and ticket codes once the
+     * event is more than PrivacyPolicy::BUYER_EMAIL_DAYS days ago, except the
+     * rows of the addresses that buyerEmailsToKeep() returns. Returns how many
+     * rows changed.
      *
      * Not switched off by the purge setting above, unlike run(): the public
-     * ticket buyer notice promises this deletion, so it always happens. Only
-     * the email column is cleared; the rows stay.
+     * ticket buyer notice promises this deletion, so it always happens. The
+     * rows stay, without anything that names a person.
      */
-    public function purgeBuyerEmails(): int
+    public function purgeBuyers(): int
     {
         $cutoff = $this->buyerEmailCutoff();
 
@@ -88,7 +89,7 @@ final class RetentionPurge
             return 0;
         }
 
-        return $this->buyers->blankEmailsBefore($cutoff, $this->buyerEmailsToKeep());
+        return $this->buyers->anonymizeBefore($cutoff, $this->buyerEmailsToKeep());
     }
 
     /**
