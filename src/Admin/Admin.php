@@ -71,6 +71,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_create_buyer_privacy_page',
+            [$this->container->get(SettingsPage::class), 'createBuyerPrivacyPage']
+        );
+
+        add_action(
             'admin_post_eventcrew_refresh_board',
             [$this->container->get(SettingsPage::class), 'refreshBoard']
         );

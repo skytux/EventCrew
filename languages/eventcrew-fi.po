@@ -5339,3 +5339,81 @@ msgstr "sisällä"
 
 msgid "not checked in yet"
 msgstr "ei vielä sisällä"
+
+msgid "The data controller for the ticket buyer records described here is %1$s, %2$s. You can reach us at %3$s."
+msgstr "Tässä kuvattujen lipunostajien tietojen rekisterinpitäjä on %1$s, %2$s. Tavoitat meidät osoitteesta %3$s."
+
+msgid "The data controller for the ticket buyer records described here is %1$s. You can reach us at %2$s."
+msgstr "Tässä kuvattujen lipunostajien tietojen rekisterinpitäjä on %1$s. Tavoitat meidät osoitteesta %2$s."
+
+msgid "When you buy a ticket in our web shop, we take these details from the shop's order export: your name, your email address, and your order or ticket code. We also store the date of the event your ticket is for. We take nothing else from your order."
+msgstr "Kun ostat lipun verkkokaupastamme, otamme kaupan tilausviennistä nämä tiedot: nimesi, sähköpostiosoitteesi ja tilaus- tai lippukoodisi. Tallennamme myös sen tapahtuman päivämäärän, johon lippusi on. Muita tilauksesi tietoja emme ota."
+
+msgid "The shop asks for a postal address. We do not use it. You can type a dash (\"-\") in the address field instead of your real address."
+msgstr "Kauppa kysyy postiosoitetta. Emme käytä sitä. Voit kirjoittaa osoitekenttään viivan (\"-\") oikean osoitteesi sijaan."
+
+msgid "At the door we also note whether you came in."
+msgstr "Ovella merkitsemme myös, tulitko sisään."
+
+msgid "Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for."
+msgstr "Nimeäsi ja lippukoodiasi käytetään, kun sinut merkitään sisään ovella. Oikeusperuste on, että tämä on tarpeen, jotta saat sisäänpääsyn, josta maksoit."
+
+msgid "Your email address is used to send you one short message after the event: a thank-you if you came, or a sorry-we-missed-you if you did not. The same message invites you to join our newsletter. The legal basis is our legitimate interest in keeping in touch with the people who bought a ticket."
+msgstr "Sähköpostiosoitettasi käytetään yhden lyhyen viestin lähettämiseen tapahtuman jälkeen: kiitos, jos tulit, tai harmittelu, jos et päässyt paikalle. Samassa viestissä kutsumme sinut liittymään uutiskirjeeseemme. Oikeusperuste on oikeutettu etumme pitää yhteyttä lipun ostaneisiin."
+
+msgid "You are added to the newsletter only if you confirm that you want it. Not joining has no effect on your ticket."
+msgstr "Sinut lisätään uutiskirjeeseen vain, jos itse vahvistat haluavasi sen. Liittymättä jättäminen ei vaikuta lippuusi."
+
+msgid "The organizers of our events, and the crew working the door on the night, can see your name on the door list."
+msgstr "Tapahtumiemme järjestäjät ja illan ovella työskentelevä crew näkevät nimesi ovilistalla."
+
+msgid "We do not sell your data and we do not use it for advertising."
+msgstr "Emme myy tietojasi emmekä käytä niitä mainontaan."
+
+msgid "The web shop where you bought your ticket holds your order under its own privacy policy. Our email is delivered by an email service, since every message we send leaves this site as an email."
+msgstr "Verkkokauppa, josta ostit lippusi, säilyttää tilauksesi oman tietosuojakäytäntönsä mukaisesti. Sähköpostimme välittää sähköpostipalvelu, koska jokainen lähettämämme viesti lähtee tältä sivustolta sähköpostina."
+
+msgid "We delete your email address %d days after the event, unless you have joined our newsletter. This happens automatically."
+msgstr "Poistamme sähköpostiosoitteesi %d päivän kuluttua tapahtumasta, ellet ole liittynyt uutiskirjeeseemme. Tämä tapahtuu automaattisesti."
+
+msgid "If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time."
+msgstr "Jos liityt uutiskirjeeseen, säilytämme sähköpostiosoitettasi uutiskirjettä varten, kunnes eroat siitä. Voit erota milloin tahansa."
+
+msgid "Your name, your ticket code and whether you came in stay on that night's door list, as our record of the tickets sold for it."
+msgstr "Nimesi, lippukoodisi ja tieto siitä, tulitko sisään, jäävät kyseisen illan ovilistalle merkinnäksi illan myydyistä lipuista."
+
+msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
+msgstr "Voit pyytää kopion tiedoista, joita meillä on sinusta, pyytää meitä korjaamaan tai poistamaan ne ja vastustaa niiden käyttöä."
+
+msgid "To do any of these, write to %s and we will answer within one month."
+msgstr "Kirjoita näissä asioissa osoitteeseen %s, niin vastaamme kuukauden kuluessa."
+
+msgid "A ticket buyer privacy page is already chosen."
+msgstr "Lipunostajien tietosuojasivu on jo valittu."
+
+msgid "Ticket buyer privacy notice"
+msgstr "Lipunostajien tietosuojaseloste"
+
+msgid "Ticket buyer privacy page created and selected."
+msgstr "Lipunostajien tietosuojasivu luotu ja valittu."
+
+msgid "Ticket buyer privacy page"
+msgstr "Lipunostajien tietosuojasivu"
+
+msgid "The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop's order export, that buyers can type a dash instead of their address in the shop, and that their email address is deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop."
+msgstr "Sivu, jolla on lyhytkoodi %1$s: julkinen seloste verkkokaupasta lipun ostaneille. Se kertoo, mitä kaupan tilausviennistä otetaan, että ostajat voivat kirjoittaa kaupassa osoitteensa sijaan viivan ja että heidän sähköpostiosoitteensa poistetaan %2$d päivän kuluttua tapahtumasta, elleivät he ole liittyneet uutiskirjeeseen. Linkitä siihen kaupastasi."
+
+msgid "Create the ticket buyer privacy page"
+msgstr "Luo lipunostajien tietosuojasivu"
+
+msgid "View the ticket buyer notice"
+msgstr "Näytä lipunostajien seloste"
+
+msgid "EventCrew bought tickets"
+msgstr "EventCrew – ostetut liput"
+
+msgid "Ticket code"
+msgstr "Lippukoodi"
+
+msgid "The name and email address were erased from the tickets bought with this address. The tickets stay on the door lists with no name."
+msgstr "Nimi ja sähköpostiosoite poistettiin tällä osoitteella ostetuista lipuista. Liput jäävät ovilistoille ilman nimeä."

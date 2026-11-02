@@ -334,4 +334,81 @@ final class TicketBuyerRepository
             is_array($rows) ? $rows : []
         );
     }
+
+    /**
+     * Sets email to NULL on every row whose event_date is before $cutoffDate
+     * (Y-m-d) and that still has an email, except rows whose email is in
+     * $keep. Returns how many rows changed. Only the email column is written:
+     * the name, the ticket code and the check-ins stay.
+     *
+     * @param array<int, string> $keep Email addresses that must not be blanked.
+     */
+    public function blankEmailsBefore(string $cutoffDate, array $keep = []): int
+    {
+        global $wpdb;
+
+        $sql = "UPDATE {$this->table()} SET email = NULL"
+            . " WHERE event_date < %s AND email IS NOT NULL AND email <> ''";
+        $args = [$cutoffDate];
+        $keep = array_values(array_filter(array_map('strval', $keep), static fn (string $e): bool => '' !== $e));
+
+        if ([] !== $keep) {
+            $sql .= ' AND email NOT IN (' . implode(', ', array_fill(0, count($keep), '%s')) . ')';
+            $args = array_merge($args, $keep);
+        }
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders only; the table name comes from Schema.
+        $changed = $wpdb->query($wpdb->prepare($sql, ...$args));
+
+        return false === $changed ? 0 : (int) $changed;
+    }
+
+    /**
+     * Every row carrying $email, oldest event first, as raw rows - for the
+     * personal data export. Empty for an empty email.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function rowsForEmail(string $email): array
+    {
+        global $wpdb;
+
+        if ('' === $email) {
+            return [];
+        }
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE email = %s ORDER BY event_date ASC, id ASC",
+                $email
+            ),
+            ARRAY_A
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Erases a buyer's name and email on every row carrying $email, for an
+     * erasure request. The row stays, with an empty name, so the count of
+     * tickets sold and checked in for that night does not change. Returns how
+     * many rows changed.
+     */
+    public function eraseEmail(string $email): int
+    {
+        global $wpdb;
+
+        if ('' === $email) {
+            return 0;
+        }
+
+        $changed = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET email = NULL, name = '' WHERE email = %s",
+                $email
+            )
+        );
+
+        return false === $changed ? 0 : (int) $changed;
+    }
 }
