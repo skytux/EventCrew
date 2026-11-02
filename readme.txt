@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.63.1
+Stable tag: 1.63.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.63.2 =
+Sales desk scan: errors show in a red box, and the scanned name is bigger (up to 32px) and always on one line.
 
 = 1.63.1 =
 Sales desk: in the Switch popup, Login as now comes first and Open on other device second.
@@ -744,6 +747,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.63.2 =
+None.
 
 = 1.63.1 =
 None.
