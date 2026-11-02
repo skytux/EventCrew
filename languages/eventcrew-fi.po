@@ -5417,3 +5417,12 @@ msgstr "Lippukoodi"
 
 msgid "The name and email address were erased from the tickets bought with this address. The tickets stay on the door lists with no name."
 msgstr "Nimi ja sähköpostiosoite poistettiin tällä osoitteella ostetuista lipuista. Liput jäävät ovilistoille ilman nimeä."
+
+msgid "Sign-out closes %d minutes before the task starts. Tell an organizer if you cannot come."
+msgstr "Perumisen voi tehdä viimeistään %d minuuttia ennen tehtävän alkua. Kerro järjestäjälle, jos et pääse."
+
+msgid "Sign-out closes (minutes before the start)"
+msgstr "Perumisen takaraja (minuuttia ennen alkua)"
+
+msgid "From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5."
+msgstr "Näin monta minuuttia ennen tehtävän alkua ja alun jälkeen crew'n jäsenet eivät voi enää perua tehtävää itse. Järjestäjät voivat silti poistaa heidät. Tehtäviä ilman alkamisaikaa ei lukita koskaan. 0 poistaa tämän käytöstä. Oletus 5."

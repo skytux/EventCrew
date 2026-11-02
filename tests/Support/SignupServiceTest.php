@@ -308,4 +308,79 @@ final class SignupServiceTest extends TestCase
         self::assertContains($status, [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL]);
         self::assertNotSame([], $this->wpdb->updates);
     }
+    /**
+     * Queues what cancel() reads: the person's occupying row, then the task's
+     * start. The test clock is 2026-07-20 12:00:00.
+     */
+    private function queueDrop(?string $startsAt): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => $startsAt, 'task_date' => '2026-07-20'];
+    }
+
+    /** Q058: four minutes before the start, sign-out is refused and nothing is written. */
+    public function testSignOutIsRefusedInsideTheLockWindow(): void
+    {
+        $this->queueDrop('2026-07-20 12:04:00');
+
+        self::assertSame(AssignmentRepository::CANCEL_LOCKED, $this->service()->drop(9, 5));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** Q058: after the start, sign-out stays refused. */
+    public function testSignOutIsRefusedOnceTheTaskHasStarted(): void
+    {
+        $this->queueDrop('2026-07-20 11:00:00');
+
+        self::assertSame(AssignmentRepository::CANCEL_LOCKED, $this->service()->drop(9, 5));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** Six minutes before the start is outside the default 5-minute lock: a late cancel. */
+    public function testSignOutJustBeforeTheLockIsALateCancel(): void
+    {
+        $this->queueDrop('2026-07-20 12:06:00');
+
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
+        self::assertNotSame([], $this->wpdb->updates);
+    }
+
+    /** The window is the setting: 10 minutes locks a task six minutes away. */
+    public function testTheLockWindowIsTheSetting(): void
+    {
+        $this->options[SignupService::SIGNOUT_LOCK_OPTION] = '10';
+        $this->queueDrop('2026-07-20 12:06:00');
+
+        self::assertSame(AssignmentRepository::CANCEL_LOCKED, $this->service()->drop(9, 5));
+    }
+
+    /** 0 turns the lock off. */
+    public function testZeroTurnsTheLockOff(): void
+    {
+        $this->options[SignupService::SIGNOUT_LOCK_OPTION] = '0';
+        $this->queueDrop('2026-07-20 12:04:00');
+
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
+    }
+
+    /** A task without a start time is never locked. */
+    public function testATaskWithoutAStartTimeIsNeverLocked(): void
+    {
+        $this->queueDrop(null);
+
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
+    }
+
+    /** Someone not on the task is told so, not that sign-out is closed. */
+    public function testSomeoneNotSignedUpGetsNothingEvenInsideTheLock(): void
+    {
+        $this->wpdb->nextRows[] = null;
+
+        self::assertSame('', $this->service()->drop(9, 5));
+    }
+
+    public function testTheLockedAnswerNamesTheMinutes(): void
+    {
+        self::assertStringContainsString('5 minutes', SignupService::signoutLockedText());
+    }
 }

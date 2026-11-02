@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.78.3
+Stable tag: 1.78.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.78.4 =
+Sign-out lock: from 5 minutes before a task starts, and after the start, crew can no longer sign themselves out (web and Telegram); they are told to tell an organizer. The minutes are a setting (Settings: "Sign-out closes (minutes before the start)", 0 = off). Organizers can still take people off. Tasks without a start time are never locked.
 
 = 1.78.3 =
 Ticket buyers: 60 days after the event the name and ticket code are deleted too, not only the email address (rows stay, so the counts of tickets sold and used stay). The public ticket buyer notice and its Finnish version say so.
@@ -823,6 +826,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.78.4 =
+New setting eventcrew_signout_lock_minutes, default 5. No database change.
 
 = 1.78.3 =
 No database change. The next hourly job also blanks the names and ticket codes of buyers whose event is more than 60 days ago.

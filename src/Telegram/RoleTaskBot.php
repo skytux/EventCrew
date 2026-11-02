@@ -376,12 +376,13 @@ final class RoleTaskBot
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             AssignmentStatus::LATE_CANCEL => __('You’re out. This close to the event it counts as a late cancellation.', 'eventcrew'),
             AssignmentStatus::CANCELLED => __('You’re out. Thanks for the notice.', 'eventcrew'),
+            AssignmentRepository::CANCEL_LOCKED => SignupService::signoutLockedText(),
             default => __('You weren’t signed up for that one.', 'eventcrew'),
         };
 
-        $this->telegram->answerCallbackQuery($callbackId, $message);
+        $this->telegram->answerCallbackQuery($callbackId, $message, AssignmentRepository::CANCEL_LOCKED === $status);
 
-        if ('' !== $status) {
+        if ('' !== $status && AssignmentRepository::CANCEL_LOCKED !== $status) {
             $this->notifier->confirmCancellation($person, $taskId, $status);
             $this->refreshList($person, $chatId, $listMessageId);
         }

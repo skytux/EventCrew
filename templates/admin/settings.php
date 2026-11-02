@@ -10,6 +10,7 @@
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
+ * @var int $signout_lock_minutes Minutes before a task's start from which crew can no longer sign out (0 = off).
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
  * @var int $tasks_per_credit Completed tasks a member works to earn one free-entry credit.
@@ -453,6 +454,24 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-signout-lock"><?php esc_html_e('Sign-out closes (minutes before the start)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-signout-lock"
+                        name="signout_lock_minutes"
+                        value="<?php echo esc_attr((string) $signout_lock_minutes); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>
