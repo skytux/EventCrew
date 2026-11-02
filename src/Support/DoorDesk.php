@@ -365,7 +365,8 @@ final class DoorDesk
     /**
      * Reads what the camera found in a QR code at the desk. A ticket is the
      * signed ticket link (or its bare token) of a sign-up or of a spent
-     * free-entry credit. On SCAN_OK, key is the row on tonight's list
+     * free-entry credit, or a guest's emailed ticket: the short signed code in
+     * its QR, or its ticket page link. On SCAN_OK, key is the row on tonight's list
      * ("crew:8", "credit:8"), for the page to show with its +1 counter and
      * "Mark arrived" button; nothing is marked here. The other answers carry
      * the ticket holder's name and the ticket's night when they are known.
@@ -374,6 +375,13 @@ final class DoorDesk
      */
     public function scan(string $date, string $text): array
     {
+        // A guest's emailed ticket holds a short signed code (TicketMail).
+        $guestId = TicketMail::guestIdFromCode($text);
+
+        if (null !== $guestId) {
+            return $this->scanGuest($date, $guestId);
+        }
+
         $token = self::tokenFrom($text);
 
         if ('' !== $token) {

@@ -24,6 +24,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -920,6 +921,57 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('guest:12', $scan['key']);
         self::assertSame('Cy Cole', $scan['name']);
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** The short signed code in a guest's emailed QR scans to their row. */
+    public function testScanningAGuestsShortQrCodeFindsTheirGuestRow(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 12,
+            'event_date' => self::NIGHT,
+            'name' => 'Cy Cole',
+            'plus_ones' => 2,
+            'email' => 'cy@example.test',
+        ];
+
+        $scan = $this->desk()->scan(self::NIGHT, TicketMail::guestCode(12));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('guest:12', $scan['key']);
+        self::assertSame('Cy Cole', $scan['name']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** A guest code with a changed signature, or another guest's id, is not ours. */
+    public function testATamperedGuestCodeIsNotOneOfOurs(): void
+    {
+        $code = TicketMail::guestCode(12);
+        $last = substr($code, -1);
+        $desk = $this->desk();
+
+        foreach ([substr($code, 0, -1) . ('0' === $last ? '1' : '0'), 'EC-G13-' . substr($code, -16)] as $text) {
+            $scan = $desk->scan(self::NIGHT, $text);
+            self::assertSame(DoorDesk::SCAN_NOT_OURS, $scan['code'], $text);
+        }
+
+        self::assertSame([], $this->wpdb->queries, 'a forged code reads nothing');
+    }
+
+    public function testAGuestCodeForAnotherNightSaysWhichNight(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 12,
+            'event_date' => '2026-12-12',
+            'name' => 'Cy Cole',
+            'plus_ones' => 0,
+            'email' => 'cy@example.test',
+        ];
+
+        $scan = $this->desk()->scan(self::NIGHT, TicketMail::guestCode(12));
+
+        self::assertSame(DoorDesk::SCAN_OTHER_NIGHT, $scan['code']);
+        self::assertSame('2026-12-12', $scan['date']);
+        self::assertSame('Cy Cole', $scan['name']);
     }
 
     /** A guest whose email address was deleted no longer has a ticket. */
