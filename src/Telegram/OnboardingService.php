@@ -17,9 +17,15 @@ use EventCrew\Support\PrivacyPolicy;
  * A person's identity here is a verified email, never a WordPress user, so a
  * bot user who taps Join has to give one first. The flow is: /start in the
  * bot's private chat asks for an email; the next message is taken as that
- * email; a person row is created (or an existing one linked) and a single-use
+ * email; a person row is created if none has it yet, and a single-use
  * confirmation link is emailed. The slot itself stays out of reach until the
  * email is confirmed - that gate lives in BoardService.
+ *
+ * Typing an email links nothing. The Telegram account waits beside the token
+ * and is linked only when the emailed link is clicked (VerificationController),
+ * because the click is the only proof the typist owns the address. Linking on
+ * the typed address alone let anyone take over another person's account -
+ * their tasks, credits and free-entry tickets - by typing their email.
  */
 final class OnboardingService
 {
@@ -29,6 +35,7 @@ final class OnboardingService
     public const VERIFY_PURPOSE = 'email_verify';
 
     private const AWAIT_EMAIL_PREFIX = 'eventcrew_tg_await_email_';
+    private const PENDING_LINK_PREFIX = 'eventcrew_tg_pending_link_';
     private const TOKEN_TTL = DAY_IN_SECONDS;
 
     public function __construct(
@@ -157,8 +164,9 @@ final class OnboardingService
 
     /**
      * Handles the message that follows /start: the user's email. Validates it,
-     * creates or links the person, issues a confirmation token and sends the
-     * magic link.
+     * finds or creates the person, issues a confirmation token and sends the
+     * magic link. The Telegram account is only remembered next to the token;
+     * the click links it.
      */
     public function captureEmail(int $telegramUserId, int $chatId, string $text): void
     {
@@ -196,9 +204,14 @@ final class OnboardingService
         }
 
         $displayName = is_array($pending) ? (string) ($pending['name'] ?? '') : '';
-        $personId = $this->createOrLink($email, $displayName, $telegramUserId, $chatId);
+        $personId = $this->findOrCreate($email, $displayName);
 
         $rawToken = $this->tokens->issue($personId, self::VERIFY_PURPOSE, self::TOKEN_TTL);
+        set_transient(
+            self::pendingLinkKey($rawToken),
+            ['telegram_user_id' => $telegramUserId, 'telegram_chat_id' => $chatId],
+            self::TOKEN_TTL
+        );
         delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
 
         $this->sendVerificationEmail($personId, $email, $displayName, $rawToken);
@@ -209,7 +222,11 @@ final class OnboardingService
         );
     }
 
-    private function createOrLink(string $email, string $displayName, int $telegramUserId, int $chatId): int
+    /**
+     * A new email gets its person row straight away, but without Telegram ids:
+     * those are linked when the emailed link is clicked.
+     */
+    private function findOrCreate(string $email, string $displayName): int
     {
         $person = $this->people->findByEmail($email);
 
@@ -217,14 +234,45 @@ final class OnboardingService
             return $this->people->create([
                 'email' => $email,
                 'display_name' => $displayName,
-                'telegram_user_id' => $telegramUserId,
-                'telegram_chat_id' => $chatId,
             ]);
         }
 
-        $this->people->linkTelegram($person->id, $telegramUserId, $chatId);
-
         return $person->id;
+    }
+
+    /**
+     * Takes the Telegram account waiting on a confirmation token, and forgets
+     * it so it is used once. Null when nothing is waiting.
+     *
+     * Called only after the token itself has been consumed, so an expired,
+     * spent or unknown token never reaches a link.
+     *
+     * @return array{telegram_user_id: int, telegram_chat_id: int}|null
+     */
+    public static function takePendingLink(string $rawToken): ?array
+    {
+        $key = self::pendingLinkKey($rawToken);
+        $pending = get_transient($key);
+        delete_transient($key);
+
+        if (! is_array($pending) || 0 === (int) ($pending['telegram_user_id'] ?? 0)) {
+            return null;
+        }
+
+        return [
+            'telegram_user_id' => (int) $pending['telegram_user_id'],
+            'telegram_chat_id' => (int) ($pending['telegram_chat_id'] ?? 0),
+        ];
+    }
+
+    /**
+     * Keyed by the token's hash - the same value auth_tokens stores - so the
+     * raw token is never written down, and each emailed link carries only the
+     * Telegram account that asked for it.
+     */
+    private static function pendingLinkKey(string $rawToken): string
+    {
+        return self::PENDING_LINK_PREFIX . hash('sha256', trim($rawToken));
     }
 
     /**

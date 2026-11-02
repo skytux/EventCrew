@@ -669,7 +669,7 @@ msgstr ""
 msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:99
+#: src/Telegram/VerificationController.php:150
 msgid "Ask the bot for a fresh one by sending it /start."
 msgstr ""
 
@@ -844,7 +844,7 @@ msgstr ""
 msgid "Check the welcome message"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:208
+#: src/Telegram/OnboardingService.php:221
 msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
 msgstr ""
 
@@ -925,11 +925,11 @@ msgstr ""
 msgid "Confirm new email"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:253
+#: src/Telegram/OnboardingService.php:301
 msgid "Confirm your email"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:250
+#: src/Telegram/OnboardingService.php:298
 msgid "Confirm your email for EventCrew"
 msgstr ""
 
@@ -1289,7 +1289,7 @@ msgstr ""
 msgid "Email column header"
 msgstr ""
 
-#: src/Telegram/VerificationController.php:94
+#: src/Telegram/VerificationController.php:145
 msgid "Email confirmed"
 msgstr ""
 
@@ -1729,7 +1729,7 @@ msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. Yo
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/OnboardingService.php:243
+#: src/Telegram/OnboardingService.php:291
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
@@ -2001,7 +2001,7 @@ msgstr ""
 msgid "Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:150
+#: src/Telegram/OnboardingService.php:157
 msgid "Let’s set you up in a private chat — tap below to open the bot."
 msgstr ""
 
@@ -2612,7 +2612,7 @@ msgstr ""
 msgid "Open the Roster page"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:142
+#: src/Telegram/OnboardingService.php:149
 msgid "Open the bot in a private chat and send /start there to set up your account."
 msgstr ""
 
@@ -3320,7 +3320,7 @@ msgstr ""
 msgid "Server"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:152
+#: src/Telegram/OnboardingService.php:159
 msgid "Set me up →"
 msgstr ""
 
@@ -3751,7 +3751,7 @@ msgstr ""
 msgid "That did not go through. Check the connection and try again."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:176
+#: src/Telegram/OnboardingService.php:184
 msgid "That doesn't look like an email address. Try again?"
 msgstr ""
 
@@ -4317,7 +4317,7 @@ msgstr ""
 msgid "This QR code is not one of our tickets."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:191
+#: src/Telegram/OnboardingService.php:199 src/Telegram/VerificationController.php:121
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
@@ -4346,7 +4346,7 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:95
+#: src/Telegram/VerificationController.php:146
 msgid "This link is invalid or has expired"
 msgstr ""
 
@@ -4729,7 +4729,7 @@ msgstr ""
 msgid "Welcome to the crew: how tasks, tickets and credits work"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:82
+#: src/Telegram/OnboardingService.php:89
 msgid "Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks."
 msgstr ""
 
@@ -4906,7 +4906,7 @@ msgstr ""
 msgid "You are added to the newsletter only if you confirm that you want it. Not joining has no effect on your ticket."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:67
+#: src/Telegram/OnboardingService.php:74
 msgid "You are already set up. Tap a task on the board to sign up."
 msgstr ""
 
@@ -4950,7 +4950,7 @@ msgstr ""
 msgid "You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:98
+#: src/Telegram/VerificationController.php:149
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
@@ -5026,6 +5026,10 @@ msgstr ""
 msgid "Your EventCrew access changed"
 msgstr ""
 
+#: src/Telegram/VerificationController.php:137
+msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
+msgstr ""
+
 #: src/Web/SignupController.php:476
 msgid "Your EventCrew sign-in link"
 msgstr ""
@@ -5066,7 +5070,7 @@ msgstr ""
 msgid "Your email address, which is how we know who you are — there is no account and no password. A display name, if you gave one."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:84
+#: src/Telegram/VerificationController.php:91
 msgid "Your email is confirmed. Tap a task on the board to sign up."
 msgstr ""
 

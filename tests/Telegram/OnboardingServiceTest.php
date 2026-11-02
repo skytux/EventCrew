@@ -11,9 +11,14 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Telegram\OnboardingService;
+use EventCrew\Telegram\VerificationController;
 
 final class OnboardingServiceTest extends TelegramTestCase
 {
+    private const CONFIRMED = 'Your email is confirmed. Tap a task on the board to sign up.';
+    private const MOVED_AWAY = 'Your EventCrew account is now linked to another Telegram account.'
+        . " Contact an organizer if that wasn't you.";
+
     /** @var array<string, mixed> */
     private array $transients = [];
 
@@ -99,6 +104,9 @@ final class OnboardingServiceTest extends TelegramTestCase
         // One person insert, one auth-token insert.
         self::assertCount(2, $this->wpdb->inserts);
         self::assertSame('sam@example.com', $this->wpdb->inserts[0]['data']['email']);
+        // Created without Telegram ids: those wait for the click.
+        self::assertNull($this->wpdb->inserts[0]['data']['telegram_user_id']);
+        self::assertNull($this->wpdb->inserts[0]['data']['telegram_chat_id']);
 
         // The magic link was emailed and points at the verify endpoint.
         self::assertCount(1, $this->mails);
@@ -109,7 +117,7 @@ final class OnboardingServiceTest extends TelegramTestCase
         self::assertContains('sendMessage', $this->calledMethods());
     }
 
-    public function testCaptureEmailLinksAnExistingPersonRatherThanDuplicating(): void
+    public function testCaptureEmailReusesAnExistingPersonRatherThanDuplicating(): void
     {
         $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
 
@@ -124,10 +132,258 @@ final class OnboardingServiceTest extends TelegramTestCase
 
         $this->service()->captureEmail(555, 555, 'sam@example.com');
 
-        // No new person row - just the token insert - and the link update.
+        // No new person row - just the token insert - and nothing linked yet.
         self::assertCount(1, $this->wpdb->inserts);
-        self::assertNotSame([], $this->wpdb->updates);
+        self::assertSame([], $this->telegramLinkUpdates());
         self::assertCount(1, $this->mails);
+    }
+
+    /**
+     * The takeover this guards against: someone types another person's email.
+     * Before the click nothing changes on that person; the click links the new
+     * account and tells the old chat.
+     */
+    public function testAnExistingEmailIsLinkedToANewTelegramOnlyAfterTheClickAndTheOldChatIsTold(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+
+        // findByTelegramUserId(555) -> null; findByEmail -> Sam, verified, on Telegram 111.
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextRows[] = $this->sam(111);
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        // Typing the email linked nothing; the account waits on the token.
+        self::assertSame([], $this->telegramLinkUpdates());
+        self::assertCount(1, $this->pendingLinks());
+
+        $this->clickLink(9, $this->sam(111), null, $this->sam(555));
+
+        self::assertSame(
+            [['telegram_user_id' => 555, 'telegram_chat_id' => 555, 'id' => 9]],
+            $this->telegramLinkUpdates()
+        );
+        self::assertSame([], $this->pendingLinks());
+
+        $sent = $this->sentMessages();
+        self::assertContains([111, self::MOVED_AWAY], $sent);
+        self::assertContains([555, self::CONFIRMED], $sent);
+    }
+
+    public function testAnExistingEmailWithNoTelegramIsFilledAfterTheClick(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextRows[] = $this->sam(null);
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+        self::assertSame([], $this->telegramLinkUpdates());
+
+        $this->clickLink(9, $this->sam(null), null, $this->sam(555));
+
+        self::assertSame(
+            [['telegram_user_id' => 555, 'telegram_chat_id' => 555, 'id' => 9]],
+            $this->telegramLinkUpdates()
+        );
+        // Nobody to warn: only the "confirmed" nudge in the new chat.
+        self::assertSame([[555, self::CONFIRMED]], $this->sentMessages());
+    }
+
+    public function testANewEmailIsCreatedWithoutTelegramIdsAndLinkedAfterTheClick(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+
+        // findByTelegramUserId -> null, findByEmail -> null: a new person, id 1.
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        self::assertNull($this->wpdb->inserts[0]['data']['telegram_user_id']);
+        self::assertSame([], $this->telegramLinkUpdates());
+
+        $fresh = ['id' => 1, 'email' => 'sam@example.com', 'email_verified_at' => null, 'telegram_user_id' => null];
+        $this->clickLink(1, $fresh, null, ['telegram_user_id' => 555, 'telegram_chat_id' => 555] + $fresh);
+
+        self::assertSame(
+            [['telegram_user_id' => 555, 'telegram_chat_id' => 555, 'id' => 1]],
+            $this->telegramLinkUpdates()
+        );
+        self::assertSame([[555, self::CONFIRMED]], $this->sentMessages());
+    }
+
+    /**
+     * @return array<int, array{0: string, 1: ?string}>
+     */
+    public static function deadTokens(): array
+    {
+        return [
+            'expired' => ['1999-01-01 00:00:00', null],
+            'already used' => ['2999-01-01 00:00:00', '2026-07-01 00:00:00'],
+        ];
+    }
+
+    /**
+     * @dataProvider deadTokens
+     */
+    public function testAnExpiredOrUsedTokenLinksNothing(string $expiresAt, ?string $usedAt): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextRows[] = $this->sam(111);
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+        $this->telegramCalls = [];
+
+        $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 9, 'expires_at' => $expiresAt, 'used_at' => $usedAt];
+
+        self::assertFalse($this->verification()->verify($this->emailedToken()));
+        self::assertSame([], $this->telegramLinkUpdates());
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testTheClickRefusesATelegramAccountAlreadyLinkedToAnotherPerson(): void
+    {
+        // Telegram 555 typed Sam's email before it was linked anywhere ...
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextRows[] = $this->sam(null);
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        // ... and by the click 555 belongs to Alex (id 12), through another link.
+        $alex = [
+            'id' => 12,
+            'email' => 'alex@example.com',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 555,
+        ];
+        $this->clickLink(9, $this->sam(null), $alex, $this->sam(null));
+
+        // Not spliced: Sam stays unlinked, Alex keeps 555, and 555 is told why.
+        self::assertSame([], $this->telegramLinkUpdates());
+        self::assertSame(
+            [[555, 'This Telegram account is already linked to another email. Contact an organizer if that is wrong.']],
+            $this->sentMessages()
+        );
+    }
+
+    public function testRetypingTheEmailOfThisSameTelegramAccountWarnsNobody(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+
+        // findByTelegramUserId(555) -> Sam himself, so the "another email" check passes.
+        $this->wpdb->nextRows[] = $this->sam(555);
+        $this->wpdb->nextRows[] = $this->sam(555);
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+        self::assertSame([], $this->telegramLinkUpdates());
+
+        $this->clickLink(9, $this->sam(555), $this->sam(555), $this->sam(555));
+
+        // The same link written again; no "linked to another account" notice.
+        self::assertSame([[555, self::CONFIRMED]], $this->sentMessages());
+    }
+
+    /**
+     * Sam, person 9 with a verified email, on the given Telegram account (the
+     * private chat id equals the user id) or on none.
+     *
+     * @return array<string, mixed>
+     */
+    private function sam(?int $telegram): array
+    {
+        return [
+            'id' => 9,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => $telegram,
+            'telegram_chat_id' => $telegram,
+        ];
+    }
+
+    private function verification(): VerificationController
+    {
+        return new VerificationController(new AuthTokenRepository(), new PersonRepository(), $this->client());
+    }
+
+    /**
+     * Clicks the emailed link. The rows are what the database answers, in
+     * order: the person before linking, who holds the waiting Telegram id now,
+     * and the person after.
+     *
+     * @param array<string, mixed>      $before
+     * @param array<string, mixed>|null $holder
+     * @param array<string, mixed>      $after
+     */
+    private function clickLink(int $personId, array $before, ?array $holder, array $after): void
+    {
+        $this->telegramCalls = [];
+        $this->wpdb->nextRows[] = [
+            'id' => 3,
+            'person_id' => $personId,
+            'expires_at' => '2999-01-01 00:00:00',
+            'used_at' => null,
+        ];
+        $this->wpdb->nextRows[] = $before;
+        $this->wpdb->nextRows[] = $holder;
+        $this->wpdb->nextRows[] = $after;
+
+        self::assertTrue($this->verification()->verify($this->emailedToken()));
+    }
+
+    private function emailedToken(): string
+    {
+        self::assertSame(1, preg_match('/verify\?token=([0-9a-f]{64})/', $this->mails[0]['body'] ?? '', $match));
+
+        return $match[1];
+    }
+
+    /**
+     * Every write of Telegram ids onto a person, as data plus the row id.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function telegramLinkUpdates(): array
+    {
+        $links = [];
+
+        foreach ($this->wpdb->updates as $update) {
+            if (array_key_exists('telegram_user_id', $update['data'])) {
+                $links[] = [
+                    'telegram_user_id' => $update['data']['telegram_user_id'],
+                    'telegram_chat_id' => $update['data']['telegram_chat_id'] ?? null,
+                ] + $update['where'];
+            }
+        }
+
+        return $links;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function pendingLinks(): array
+    {
+        return array_filter(
+            $this->transients,
+            static fn (string $key): bool => str_starts_with($key, 'eventcrew_tg_pending_link_'),
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    /**
+     * @return array<int, array{0: mixed, 1: mixed}>
+     */
+    private function sentMessages(): array
+    {
+        $sent = [];
+
+        foreach ($this->telegramCalls as $call) {
+            if ('sendMessage' === $call['method']) {
+                $sent[] = [$call['body']['chat_id'] ?? null, $call['body']['text'] ?? null];
+            }
+        }
+
+        return $sent;
     }
 
     public function testCaptureEmailRejectsAnInvalidAddressAndKeepsWaiting(): void

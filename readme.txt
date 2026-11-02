@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.78.9
+Stable tag: 1.78.10
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.78.10 =
+Security: typing an email in the Telegram bot no longer links that Telegram account to the person straight away. The account is linked only when the emailed confirmation link is clicked; until then the bot does not know the user. When a click moves a person to a new Telegram account, the old Telegram chat is told.
 
 = 1.78.9 =
 Crew app Roster screen redesigned: a date bar with previous/next arrows (also on the Door screen), only the crew with a task heading like "DJ · 19:00–22:00 · 2 of 3", one status menu per person that saves on change, Mark all links per task, and "+ Add a person" as a link. The Door list, Guest list and Holvi cards moved to the Door screen.
@@ -841,6 +844,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.78.10 =
+No database change. Pending links wait in a transient for one day, like the confirmation token.
 
 = 1.78.9 =
 Roster screen redesign; no database change.
