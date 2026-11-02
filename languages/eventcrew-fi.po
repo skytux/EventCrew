@@ -5432,3 +5432,13 @@ msgstr "Lähetä minulle linkki"
 
 msgid "Sent. Check your email, or Telegram if you use the bot."
 msgstr "Lähetetty. Katso sähköpostisi tai Telegram, jos käytät bottia."
+
+#. translators: %s: when the person signed up, e.g. "2 Nov 14:05"
+msgid "signed up %s"
+msgstr "ilmoittautui %s"
+
+msgid "⬅ Back to the next event"
+msgstr "⬅ Seuraavaan tapahtumaan"
+
+msgid "🗓 Other dates"
+msgstr "🗓 Muut päivät"

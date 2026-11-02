@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.78.6
+Stable tag: 1.78.7
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.78.7 =
+Telegram: /roster has buttons for the next event days and shows when each person signed up. The board shows only the next event; buttons under it show another day, and a back button returns to the next event.
 
 = 1.78.6 =
 Admin Door tab: shorter texts. "Open the sales desk", "Send me the link", and "Sent. Check your email, or Telegram if you use the bot."
@@ -832,6 +835,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.78.7 =
+No database change.
 
 = 1.78.6 =
 No database change.

@@ -325,4 +325,99 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
         self::assertSame('Marked completed.', $this->lastCallTo('answerCallbackQuery')['text']);
     }
+
+    // --- day buttons and sign-up time ------------------------------------------
+
+    public function testTheRosterOffersTheUpcomingDaysWithTheShownOneMarked(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20'];               // defaultDate()
+        $this->wpdb->nextResults[] = [];                         // forDate(): no tasks
+        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // upcomingDates()
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        self::assertSame(
+            ['▶ Mon 20 Jul' => 'rd:2026-07-20', 'Mon 27 Jul' => 'rd:2026-07-27'],
+            array_column($buttons, 'callback_data', 'text')
+        );
+    }
+
+    public function testATypedDateStillWorks(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-27', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $this->service()->onRosterCommand(555, 555, true, '27.7.');
+
+        self::assertStringStartsWith('📋 Mon 27 Jul', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testPickingADayEditsTheMessageToThatDaysRoster(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextResults[] = [
+            ['id' => 6, 'task_date' => '2026-07-27', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 14, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // upcomingDates()
+
+        $this->service()->onSelect([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rd:2026-07-27',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(42, $edit['message_id']);
+        self::assertStringStartsWith('📋 Mon 27 Jul', $edit['text']);
+        self::assertStringContainsString('Sam', $edit['text']);
+        $buttons = array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data', 'text');
+        self::assertSame('rd:2026-07-27', $buttons['▶ Mon 27 Jul'] ?? null);
+        self::assertSame('rd:2026-07-20', $buttons['Mon 20 Jul'] ?? null);
+    }
+
+    public function testPickingADayIsRefusedToSomeoneNotRosteredThatDay(): void
+    {
+        $this->organizer(false);
+        $this->wpdb->nextCols[] = []; // personIdsAssignedOn() -> nobody
+
+        $this->service()->onSelect([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rd:2026-07-27',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertNotContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testEachPersonShowsWhenTheySignedUp(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up', 'signed_up_at' => '2026-07-02 14:05:00'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        self::assertStringContainsString(
+            'Sam (Signed up) — Beginner · signed up 2 Jul 14:05',
+            $this->lastCallTo('sendMessage')['text']
+        );
+    }
 }
