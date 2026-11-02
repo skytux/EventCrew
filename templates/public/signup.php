@@ -591,20 +591,21 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
                 </header>
                 <div class="eventcrew-card-body eventcrew-admin-actions">
-                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['sales_action']); ?>">
-                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                        <button type="submit" class="wp-element-button"><?php esc_html_e('Send me the sales desk link', 'eventcrew'); ?></button>
-                    </form>
-                    <?php if ('' !== (string) ($view['sales_action'] ?? '')) : ?>
+                    <?php $eventcrew_can_open_desk = '' !== (string) ($view['sales_action'] ?? ''); ?>
+                    <?php if ($eventcrew_can_open_desk) : ?>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
+                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['sales_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                        <button type="submit" class="<?php echo $eventcrew_can_open_desk ? 'eventcrew-textlink' : 'wp-element-button'; ?>"><?php esc_html_e('Send me the sales desk link', 'eventcrew'); ?></button>
+                    </form>
                 </div>
             </section>
             </div>
