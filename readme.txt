@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.77.3
+Stable tag: 1.78.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.78.0 =
+Ticket files (.xlsx or .csv) mailed to the import mailbox are imported with one row per ticket, holding the buyer's name, email and ticket code. Ticket file formats (with a Holvi preset), an optional JavaScript decoder per format, and extra sender addresses are set in Settings. Every organizer gets the import notice. The door desk can scan a ticket code to find the buyer. A public privacy notice for ticket buyers ([eventcrew_ticket_privacy]); buyer emails are removed 60 days after the event, and the personal data export and erasure tools now cover ticket buyers.
 
 = 1.77.3 =
 A signed-out visitor sees the crew page in their browser's language: Finnish when the browser ranks Finnish above English, English otherwise. Signed-in people keep their own choice.
@@ -811,6 +814,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.78.0 =
+Adds a ticket_code column to the ticket buyers table (database version 22). Buyer emails older than 60 days after their event are blanked by the hourly job.
 
 = 1.77.3 =
 No action needed.
