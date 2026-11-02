@@ -1765,7 +1765,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
-        self::assertStringContainsString(CrewAdminController::GIFT_ACTION, $html);
+        self::assertStringContainsString(CrewAdminController::PERSON_ACTION, $html);
         self::assertStringContainsString('Send me the sales desk link', $html);
     }
 
@@ -1794,7 +1794,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Check the mailbox now', $html);
     }
 
-    public function testThePeopleScreenHasTheListTheAddFormAndNoCreditLimit(): void
+    public function testThePeopleScreenHasTheListAndTheAddForm(): void
     {
         $html = $this->renderAs($this->organizerRow(1));
 
@@ -1803,8 +1803,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Add a person', $html);
         self::assertStringNotContainsString('Edit person', $html);
         self::assertStringNotContainsString('name="is_organizer"', $html);
-        self::assertMatchesRegularExpression('/name="credits" min="1" step="1" value="1" required>/', $html);
-        self::assertStringNotContainsString('max="5"', $html);
+        // The older "Give a credit" and "Roles" cards are gone: opening a
+        // person does both.
+        self::assertStringNotContainsString('value="' . CrewAdminController::GIFT_ACTION . '"', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::ROLES_ACTION . '"', $html);
+        self::assertStringNotContainsString('Give the role', $html);
     }
 
     public function testThePeopleScreenOpensAPersonForEditing(): void
@@ -1829,6 +1832,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Pass already granted — re-grant', $html);
         self::assertStringContainsString('value="' . CrewAdminController::UNBAN_ACTION . '"', $html);
         self::assertStringContainsString('Credit log', $html);
+        self::assertMatchesRegularExpression('/name="credits" min="1" step="1" value="1" required>/', $html);
+        self::assertStringNotContainsString('max="5"', $html);
         self::assertStringNotContainsString('name="is_organizer"', $html);
         // Every form sends the page back to this person.
         // (The add_query_arg stub keeps a false arg as 0; WordPress drops it.)

@@ -627,7 +627,6 @@ final class CrewAdminController
             'roles_action' => self::ROLES_ACTION,
             'add_action' => self::ADD_ACTION,
             'roles' => self::assignableRoles(),
-            'role_holders' => $this->roleHolders(),
             'add_tasks' => $this->addTaskChoices(),
             // Last, so its reads come after everything above.
             'person_action' => self::PERSON_ACTION,
@@ -695,26 +694,6 @@ final class CrewAdminController
         }
 
         return $roles;
-    }
-
-    /**
-     * Members who hold at least one restricted role, with those roles, by name.
-     *
-     * @return list<array{id: int, name: string, roles: list<string>}>
-     */
-    private function roleHolders(): array
-    {
-        $holders = [];
-
-        foreach ($this->people->all(['per_page' => 1000, 'orderby' => 'display_name']) as $member) {
-            if ([] === $member->roleSlugs || $member->isAnonymized()) {
-                continue;
-            }
-
-            $holders[] = ['id' => $member->id, 'name' => $member->name(), 'roles' => $member->roleSlugs];
-        }
-
-        return $holders;
     }
 
     /**
