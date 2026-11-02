@@ -254,6 +254,55 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, count($view['groups'][0]['tasks']));
     }
 
+    public function testASignedOutVisitorGetsTheBrowsersLanguage(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'fi-FI,fi;q=0.9,en;q=0.8';
+        self::assertSame('fi', $this->controller()->pageLanguage());
+
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-US,en;q=0.9,fi;q=0.8';
+        self::assertNull($this->controller()->pageLanguage());
+
+        unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        self::assertNull($this->controller()->pageLanguage());
+    }
+
+    public function testASignedOutVisitorWithAFinnishBrowserSeesTheCrewPageInFinnish(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'fi';
+
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        try {
+            $html = $this->controller()->renderShortcode();
+        } finally {
+            unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        }
+
+        // The sign-in form's "Checking you're human" label.
+        self::assertStringContainsString('Tarkistetaan', $html);
+        self::assertStringNotContainsString('Checking you', $html);
+    }
+
+    public function testASignedInPersonsOwnChoiceWinsOverTheBrowser(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'fi';
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        // currentPerson -> find(7): has not chosen, so English.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam', 'email_verified_at' => '2026-07-01 00:00:00'];
+
+        try {
+            self::assertNull($this->controller()->pageLanguage());
+        } finally {
+            unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        }
+    }
+
     public function testViewModelForASignedInPersonResolvesThemAndTheirStanding(): void
     {
         $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);

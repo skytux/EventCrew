@@ -311,8 +311,8 @@ final class SignupController
         $this->registerStyle();
         wp_enqueue_style(self::STYLE_HANDLE);
 
-        // In the signed-in person's language; English for a visitor.
-        return Language::forPerson($this->currentPerson(), function (): string {
+        // In the signed-in person's language; for a visitor, the browser's.
+        return Language::run($this->pageLanguage(), function (): string {
             $view = $this->viewModel();
             $view['admin'] = $this->adminView($view['person'] ?? null);
 
@@ -993,6 +993,31 @@ final class SignupController
         require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php';
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * The language the crew page is shown in: the signed-in person's choice
+     * (English until they choose), or for a signed-out visitor Finnish when
+     * the browser prefers Finnish over English, else English.
+     */
+    public function pageLanguage(): ?string
+    {
+        $person = $this->currentPerson();
+
+        if (null !== $person) {
+            return $person->language;
+        }
+
+        // The answer now depends on this header; tell caches so.
+        if (! headers_sent()) {
+            header('Vary: Accept-Language', false);
+        }
+
+        $header = isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])
+            ? sanitize_text_field(wp_unslash((string) $_SERVER['HTTP_ACCEPT_LANGUAGE']))
+            : null;
+
+        return Language::fromBrowser($header);
     }
 
     /**
