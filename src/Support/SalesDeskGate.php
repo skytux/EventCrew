@@ -31,6 +31,14 @@ final class SalesDeskGate
     public const CREW_MINUTES_OPTION = 'eventcrew_door_link_welcome_minutes';
     public const DEFAULT_CREW_MINUTES = 10;
 
+    /** Option and default for "ticket scans open N minutes before the event starts". */
+    public const SCAN_OPEN_OPTION = 'eventcrew_door_scan_open_minutes';
+    public const DEFAULT_SCAN_OPEN_MINUTES = 60;
+
+    /** Option and default for "ticket scans close N minutes after the event ends". */
+    public const SCAN_CLOSE_OPTION = 'eventcrew_door_scan_close_minutes';
+    public const DEFAULT_SCAN_CLOSE_MINUTES = 0;
+
     /** The start used for a night where no task has a start time. */
     private const FALLBACK_START = '17:00:00';
 
@@ -43,6 +51,72 @@ final class SalesDeskGate
     public static function crewMinutes(): int
     {
         return max(0, (int) get_option(self::CREW_MINUTES_OPTION, self::DEFAULT_CREW_MINUTES));
+    }
+
+    public static function scanOpenMinutes(): int
+    {
+        return max(0, (int) get_option(self::SCAN_OPEN_OPTION, self::DEFAULT_SCAN_OPEN_MINUTES));
+    }
+
+    public static function scanCloseMinutes(): int
+    {
+        return max(0, (int) get_option(self::SCAN_CLOSE_OPTION, self::DEFAULT_SCAN_CLOSE_MINUTES));
+    }
+
+    /**
+     * When ticket QR scans are taken on $date, as local "Y-m-d H:i:s" times.
+     * 'opens' is the event's start minus the set minutes, or '' when the
+     * start is not known (then there is no "too early"). 'closes' is the
+     * event's end (endOf()) plus the set minutes.
+     *
+     * @return array{opens: string, closes: string}
+     */
+    public function scanWindow(string $date): array
+    {
+        $tasks = $this->tasks->forDate($date);
+        $start = $this->startOf($tasks);
+
+        return [
+            'opens' => '' === $start
+                ? ''
+                : gmdate('Y-m-d H:i:s', self::toTime($start) - self::scanOpenMinutes() * MINUTE_IN_SECONDS),
+            'closes' => gmdate(
+                'Y-m-d H:i:s',
+                self::toTime($this->endOf($date, $tasks)) + self::scanCloseMinutes() * MINUTE_IN_SECONDS
+            ),
+        ];
+    }
+
+    /**
+     * When the event of a night starts, as a local "Y-m-d H:i:s": the linked
+     * EventMesh event's start, when a task that night is linked to one; else
+     * the earliest start of the night's sales-desk tasks; else ''.
+     *
+     * @param array<int, Task> $tasks the night's tasks
+     */
+    public function startOf(array $tasks): string
+    {
+        foreach ($tasks as $task) {
+            if (null === $task->eventPostId) {
+                continue;
+            }
+
+            $event = EventSource::describe($task->eventPostId);
+
+            if (null !== $event && '' !== $event['starts_at']) {
+                return $event['starts_at'];
+            }
+        }
+
+        $starts = [];
+
+        foreach ($tasks as $task) {
+            if (null !== $task->startsAt && Roles::opensSalesDesk($task->roleSlug)) {
+                $starts[] = $task->startsAt;
+            }
+        }
+
+        return [] === $starts ? '' : min($starts);
     }
 
     /**

@@ -56,6 +56,8 @@ final class DoorDesk
     public const SCAN_DISABLED = 'disabled';
     public const SCAN_NOT_ON_LIST = 'not_on_list';
     public const SCAN_NOT_OURS = 'not_ours';
+    public const SCAN_TOO_EARLY = 'too_early';
+    public const SCAN_CLOSED = 'closed';
 
     /**
      * The option that holds one night's count of people let in without a
@@ -184,7 +186,8 @@ final class DoorDesk
      * counted in without a name ('anonymous') are added to both sides.
      *
      * @return array{
-     *     date: string, day: string, in: int, expected: int, anonymous: int, version: string,
+     *     date: string, day: string, in: int, expected: int, anonymous: int, max: int, over_allowed: bool,
+     *     version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
      *         key: string, kind: string, ref: int, name: string, detail: string, plus: int, max: int, in: bool
      *     }>}>
@@ -224,6 +227,10 @@ final class DoorDesk
             'in' => $in + $anonymous,
             'expected' => $expected + $anonymous,
             'anonymous' => $anonymous,
+            // The most people allowed in (0: no max) and whether the desk may
+            // go over it with a warning (DoorQuota).
+            'max' => DoorQuota::max(),
+            'over_allowed' => DoorQuota::allowsOver(),
             'sections' => $sections,
         ];
 
@@ -359,7 +366,7 @@ final class DoorDesk
      * "Mark arrived" button; nothing is marked here. The other answers carry
      * the ticket holder's name and the ticket's night when they are known.
      *
-     * @return array{code: string, key: string, name: string, date: string}
+     * @return array{code: string, key: string, name: string, date: string, at: string}
      */
     public function scan(string $date, string $text): array
     {
@@ -385,7 +392,7 @@ final class DoorDesk
     /**
      * The line the desk shows for one of scan()'s answers other than SCAN_OK.
      */
-    public function scanText(string $code, string $name, string $date): string
+    public function scanText(string $code, string $name, string $date, string $at = ''): string
     {
         $who = '' === $name ? __('This ticket', 'eventcrew') : $name;
 
@@ -412,6 +419,16 @@ final class DoorDesk
                 __('%s is not on tonight’s list.', 'eventcrew'),
                 $who
             ),
+            self::SCAN_TOO_EARLY => sprintf(
+                /* translators: %s: a clock time, e.g. 19:00 */
+                __('Ticket scanning opens at %s.', 'eventcrew'),
+                substr($at, 11, 5)
+            ),
+            self::SCAN_CLOSED => sprintf(
+                /* translators: %s: a clock time, e.g. 02:00 */
+                __('Ticket scanning closed at %s.', 'eventcrew'),
+                substr($at, 11, 5)
+            ),
             self::SCAN_OK => '',
             default => __('This QR code is not one of our tickets.', 'eventcrew'),
         };
@@ -436,7 +453,7 @@ final class DoorDesk
     }
 
     /**
-     * @return array{code: string, key: string, name: string, date: string}
+     * @return array{code: string, key: string, name: string, date: string, at: string}
      */
     private function scanAssignment(string $date, int $assignmentId): array
     {
@@ -463,7 +480,7 @@ final class DoorDesk
     }
 
     /**
-     * @return array{code: string, key: string, name: string, date: string}
+     * @return array{code: string, key: string, name: string, date: string, at: string}
      */
     private function scanRedemption(string $date, int $redemptionId): array
     {
@@ -490,13 +507,14 @@ final class DoorDesk
      * The person's row on tonight's list: crew when they work tonight,
      * otherwise their free-entry credit, the same one-row rule as the list.
      *
-     * @return array{code: string, key: string, name: string, date: string}
+     * @return array{code: string, key: string, name: string, date: string, at: string}
      */
     private function scanPerson(string $date, int $personId, string $name): array
     {
         foreach (array_merge(...$this->entrants($date)) as $row) {
             if ($row['ref'] === $personId) {
-                return self::scanAnswer(self::SCAN_OK, $row['kind'] . ':' . $row['ref'], $row['name'], $date);
+                return $this->inScanWindow($date)
+                    ?? self::scanAnswer(self::SCAN_OK, $row['kind'] . ':' . $row['ref'], $row['name'], $date);
             }
         }
 
@@ -504,11 +522,38 @@ final class DoorDesk
     }
 
     /**
-     * @return array{code: string, key: string, name: string, date: string}
+     * @return array{code: string, key: string, name: string, date: string, at: string}
      */
-    private static function scanAnswer(string $code, string $key = '', string $name = '', string $date = ''): array
+    private static function scanAnswer(
+        string $code,
+        string $key = '',
+        string $name = '',
+        string $date = '',
+        string $at = ''
+    ): array {
+        return ['code' => $code, 'key' => $key, 'name' => $name, 'date' => $date, 'at' => $at];
+    }
+
+    /**
+     * Null while ticket scans are taken on $date; otherwise the answer that
+     * refuses the scan, with the time scanning opens or closed in 'at'.
+     *
+     * @return array{code: string, key: string, name: string, date: string, at: string}|null
+     */
+    private function inScanWindow(string $date): ?array
     {
-        return ['code' => $code, 'key' => $key, 'name' => $name, 'date' => $date];
+        $now = (string) current_time('mysql');
+        $window = $this->gate->scanWindow($date);
+
+        if ('' !== $window['opens'] && $now < $window['opens']) {
+            return self::scanAnswer(self::SCAN_TOO_EARLY, '', '', $date, $window['opens']);
+        }
+
+        if ($now >= $window['closes']) {
+            return self::scanAnswer(self::SCAN_CLOSED, '', '', $date, $window['closes']);
+        }
+
+        return null;
     }
 
     /**

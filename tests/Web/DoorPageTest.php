@@ -111,6 +111,52 @@ final class DoorPageTest extends TestCase
         self::assertStringNotContainsString('ec-scan-already', $html);
     }
 
+    public function testTheHeaderShowsTheMaxAndColoursTheNumbers(): void
+    {
+        $html = $this->page();
+
+        // "x of n" without a max, "x of n (z max)" with one.
+        self::assertStringContainsString(
+            '<small id="ec-of-max" hidden>of <span class="ec-n" id="ec-expected-max">0</span> (<span id="ec-max">0</span> max)</small>',
+            $html
+        );
+        self::assertStringContainsString("el('ec-of').hidden = max > 0;", $html);
+        self::assertStringContainsString("el('ec-of-max').hidden = max <= 0;", $html);
+        // x green when everyone expected is in; n orange from 90% of the max, red at it.
+        self::assertStringContainsString(
+            "el('ec-in').classList.toggle('is-full', state.expected > 0 && state.in === state.expected);",
+            $html
+        );
+        self::assertStringContainsString('var near = max > 0 && !atMax && state.expected >= max * 0.9;', $html);
+        self::assertStringContainsString('#ec-in.is-full{color:var(--in)}', $html);
+        self::assertStringContainsString('.ec-n.is-near{color:var(--warn);font-weight:700}', $html);
+        self::assertStringContainsString('.ec-n.is-max{color:var(--err);font-weight:700}', $html);
+    }
+
+    public function testAtTheMaxAddingStopsUnlessGoingOverIsAllowed(): void
+    {
+        $html = $this->page();
+
+        self::assertStringContainsString('var stop = atMax && !state.over_allowed;', $html);
+        self::assertStringContainsString("el('ec-add-open').disabled = stop;", $html);
+        self::assertStringContainsString("el('ec-anon-more').disabled = stop;", $html);
+    }
+
+    public function testTheOverTheMaxWarningShowsAfterEveryAction(): void
+    {
+        $html = $this->page();
+
+        self::assertSame(3, substr_count($html, 'class="ec-msg ec-quota"'));
+        self::assertStringContainsString(
+            "quotaLine(data.warning || (data.refused ? data.message : ''), !data.warning);",
+            $html
+        );
+        self::assertStringContainsString(
+            '.ec-msg.is-warn{background:var(--warn-bg);border:2px solid var(--warn);color:var(--warn);font-weight:700}',
+            $html
+        );
+    }
+
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void
     {
         $html = $this->page();

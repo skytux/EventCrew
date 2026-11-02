@@ -17,6 +17,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
+use EventCrew\Support\DoorQuota;
 use EventCrew\Support\DoorSession;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
@@ -176,6 +177,54 @@ final class DoorControllerTest extends SalesDeskTestCase
 
         self::assertSame(200, $status);
         self::assertSame(-1, $this->countChange());
+    }
+
+    public function testCountingOneMoreAtTheMaxIsRefused(): void
+    {
+        $this->options[DoorQuota::MAX_OPTION] = '100';
+        $this->options[$this->countOption()] = 100;
+
+        $status = $this->post(DoorController::COUNT_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
+
+        self::assertSame(200, $status);
+        self::assertNull($this->countChange());
+    }
+
+    public function testCountingOneMoreAtTheMaxGoesThroughWhenGoingOverIsAllowed(): void
+    {
+        $this->options[DoorQuota::MAX_OPTION] = '100';
+        $this->options[DoorQuota::OVER_OPTION] = '1';
+        $this->options[$this->countOption()] = 100;
+
+        $status = $this->post(DoorController::COUNT_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
+
+        self::assertSame(200, $status);
+        self::assertSame(1, $this->countChange());
+    }
+
+    public function testTakingOneOffAtTheMaxIsNotRefused(): void
+    {
+        $this->options[DoorQuota::MAX_OPTION] = '100';
+        $this->options[$this->countOption()] = 100;
+
+        $status = $this->post(
+            DoorController::COUNT_ACTION,
+            ['csrf' => DoorSession::csrfToken($this->cookie), 'step' => '-1']
+        );
+
+        self::assertSame(200, $status);
+        self::assertSame(-1, $this->countChange());
+    }
+
+    public function testCountingBelowTheMaxGoesThrough(): void
+    {
+        $this->options[DoorQuota::MAX_OPTION] = '100';
+        $this->options[$this->countOption()] = 99;
+
+        $status = $this->post(DoorController::COUNT_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
+
+        self::assertSame(200, $status);
+        self::assertSame(1, $this->countChange());
     }
 
     public function testCountingWithABadTokenIsRefused(): void

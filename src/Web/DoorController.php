@@ -8,6 +8,7 @@ use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
+use EventCrew\Support\DoorQuota;
 use EventCrew\Support\DoorSession;
 use EventCrew\Support\Language;
 use EventCrew\Telegram\TicketRedemptionService;
@@ -44,6 +45,21 @@ final class DoorController
     public const PEOPLE_ACTION = 'eventcrew_door_people';
     public const HANDOFF_ACTION = 'eventcrew_door_handoff';
     public const SCAN_ACTION = 'eventcrew_door_scan';
+
+    /** The actions that can add people, with DoorQuota::adding()'s name for each. */
+    private const QUOTA_ACTIONS = [
+        self::MARK_ACTION => 'mark',
+        self::PLUS_ACTION => 'plus',
+        self::GIVE_ACTION => 'give',
+        self::TICKET_ACTION => 'ticket',
+        self::HOLVI_ACTION => 'holvi',
+        self::COUNT_ACTION => 'count',
+        self::GUEST_ACTION => 'guest',
+        self::WORK_ACTION => 'work',
+    ];
+
+    /** Set by checkQuota(): the answer to this request carries the over-the-max warning. */
+    private bool $warnOverMax = false;
 
     /** How often the page asks for fresh state, in milliseconds. */
     public const POLL_MS = 4000;
@@ -160,6 +176,15 @@ final class DoorController
         $personId = isset($_POST['person']) ? (int) $_POST['person'] : 0;
         $doorPersonId = $session['person']->id;
 
+        $this->checkQuota($action, $date, [
+            'kind' => $kind,
+            'ref' => $ref,
+            'plus' => $plus,
+            'in' => isset($_POST['in']) && '1' === $_POST['in'],
+            'step' => isset($_POST['step']) && '-1' === $_POST['step'] ? -1 : 1,
+            'person' => $personId,
+        ]);
+
         switch ($action) {
             case self::MARK_ACTION:
                 $in = isset($_POST['in']) && '1' === $_POST['in'];
@@ -266,7 +291,7 @@ final class DoorController
                     'ok' => DoorDesk::SCAN_OK === $scan['code'],
                     'key' => $scan['key'],
                     'name' => $scan['name'],
-                    'message' => $this->desk->scanText($scan['code'], $scan['name'], $scan['date']),
+                    'message' => $this->desk->scanText($scan['code'], $scan['name'], $scan['date'], $scan['at']),
                     'state' => $this->desk->state($date),
                 ]);
                 // No break: json() exits.
@@ -289,6 +314,31 @@ final class DoorController
         // phpcs:enable WordPress.Security.NonceVerification
 
         $this->json(['error' => 'action'], 400);
+    }
+
+    /**
+     * The max people check (DoorQuota), made before an action runs. An action
+     * that would pass the max is answered with a refusal here, unless going
+     * over is allowed: then it runs and its answer carries a warning.
+     *
+     * @param array{kind: string, ref: int, plus: int, in: bool, step: int, person: int} $args
+     */
+    private function checkQuota(string $action, string $date, array $args): void
+    {
+        $short = self::QUOTA_ACTIONS[$action] ?? null;
+
+        if (null === $short || 0 === DoorQuota::max()) {
+            return;
+        }
+
+        $state = $this->desk->state($date);
+        $verdict = DoorQuota::verdict($state['expected'], DoorQuota::adding($state, $short, $args));
+
+        if (DoorQuota::REFUSED === $verdict) {
+            $this->json(['ok' => false, 'refused' => true, 'message' => DoorQuota::refusedText(), 'state' => $state]);
+        }
+
+        $this->warnOverMax = DoorQuota::WARN === $verdict;
     }
 
     /**
@@ -389,6 +439,10 @@ final class DoorController
     {
         status_header($status);
         header('Content-Type: application/json; charset=utf-8');
+
+        if ($this->warnOverMax && false !== ($data['ok'] ?? null) && isset($data['state']['expected'])) {
+            $data['warning'] = DoorQuota::warningText((int) $data['state']['expected']);
+        }
 
         echo wp_json_encode($data);
 
