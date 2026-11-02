@@ -1499,13 +1499,13 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             if (data && data.ok) {
                 // More tickets on the same code: the next one is ready.
                 if (ticketsLeft()) {
-                    drawTickets(row.name);
+                    drawTickets(row.first || row.name);
                     return;
                 }
 
                 // Ready for the next person in the queue.
                 startCamera();
-                scanMessage(text.arrived.replace('%s', row.name), false, true);
+                scanMessage(text.arrived.replace('%s', row.first || row.name), false, true);
                 return;
             }
 

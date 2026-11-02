@@ -1015,6 +1015,32 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['No name'], array_column($sections[4]['rows'], 'name'));
     }
 
+    public function testTheListKeepsTheFullNameAndTheWelcomeGetsTheFirstName(): void
+    {
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'event_date' => self::NIGHT, 'name' => 'Bea Virtanen', 'source' => 'paste'],
+        ];
+
+        $row = $this->desk()->state(self::NIGHT)['sections'][3]['rows'][0];
+
+        self::assertSame('Bea Virtanen', $row['name']);
+        self::assertSame('Bea', $row['first']);
+    }
+
+    public function testTheWelcomeUsesOnlyTheFirstName(): void
+    {
+        self::assertSame('Ada', DoorDesk::firstName('Ada Lovelace'));
+        self::assertSame('Anna', DoorDesk::firstName("  Anna \t Maria Virtanen "));
+        self::assertSame('Ada', DoorDesk::firstName('Ada'));
+        self::assertSame('Äijä', DoorDesk::firstName('Äijä Öljynen'));
+        self::assertSame('', DoorDesk::firstName(''));
+        self::assertSame('', DoorDesk::firstName('   '));
+    }
+
     /**
      * A ticket buyer row on tonight's date with a ticket code.
      *
@@ -1027,13 +1053,16 @@ final class DoorDeskTest extends SalesDeskTestCase
 
     public function testATicketCodeFindsItsTicketWithoutMarkingIt(): void
     {
-        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')]; // findByTicketCode
-        $this->wpdb->nextResults[] = [];                                // check-ins
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada Lovelace')]; // findByTicketCode
+        $this->wpdb->nextResults[] = [];                                         // check-ins
 
         $tickets = $this->desk()->ticketsByCode(self::NIGHT, ['AB12']);
 
         self::assertSame(
-            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'in' => false]],
+            [[
+                'key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12,
+                'name' => 'Ada Lovelace', 'first' => 'Ada', 'in' => false,
+            ]],
             $tickets
         );
         self::assertStringContainsString("ticket_code = 'AB12'", $this->wpdb->queries[0]);
