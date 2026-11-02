@@ -39,6 +39,7 @@
  * @var string $orphan_signup_page Title of a published shortcode page when none is selected, else ''.
  * @var string $app_name The installed app's name (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
+ * @var string $app_accent_color The Crew app's accent colour, as a hex string.
  * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
@@ -980,7 +981,20 @@ if (! defined('ABSPATH')) {
                         id="eventcrew-app-color"
                         name="app_theme_color"
                         value="<?php echo esc_attr($app_theme_color); ?>">
-                    <p class="description"><?php esc_html_e('The app’s accent colour, and the fallback icon’s background.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('The Crew app page background, the email buttons, and the fallback icon’s background.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-accent"><?php esc_html_e('Accent colour', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="color"
+                        id="eventcrew-app-accent"
+                        name="app_accent_color"
+                        value="<?php echo esc_attr($app_accent_color); ?>">
+                    <p class="description"><?php esc_html_e('The selected tab and the outline of the field you type in. Pick a colour that stands out from the theme colour.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>

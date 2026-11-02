@@ -24,6 +24,14 @@ final class PwaController
     public const NAME_OPTION = 'eventcrew_app_name';
     public const COLOR_OPTION = 'eventcrew_app_theme_color';
 
+    /**
+     * The Crew app's accent: the selected tab and sub tab, the panel underline
+     * and the focus ring. Separate from COLOR_OPTION, which is also the page
+     * background, so the selected tab never disappears into the page. Unset
+     * means the theme colour, as before this option existed.
+     */
+    public const ACCENT_OPTION = 'eventcrew_app_accent_color';
+
     public const DEFAULT_COLOR = '#4a6cf7';
 
     private const PARAM = 'eventcrew_pwa';

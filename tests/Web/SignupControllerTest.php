@@ -399,6 +399,33 @@ final class SignupControllerTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
+    private function accentStyle(): string
+    {
+        Functions\when('sanitize_hex_color')->returnArg(1);
+
+        return (string) (new \ReflectionMethod(SignupController::class, 'accentStyle'))->invoke($this->controller());
+    }
+
+    public function testTheAccentSettingColoursTheTabsNotTheThemeColour(): void
+    {
+        Functions\when('get_option')->alias(static fn (string $name, $default = false) => match ($name) {
+            'eventcrew_app_theme_color' => '#2a1f4f',
+            'eventcrew_app_accent_color' => '#f9b364',
+            default => $default,
+        });
+
+        self::assertStringContainsString('--eventcrew-accent:#f9b364;', $this->accentStyle());
+    }
+
+    public function testWithoutAnAccentSettingTheThemeColourIsTheAccent(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, $default = false) => 'eventcrew_app_theme_color' === $name ? '#2a1f4f' : $default
+        );
+
+        self::assertStringContainsString('--eventcrew-accent:#2a1f4f;', $this->accentStyle());
+    }
+
     public function testLoginByEmailRejectsABadAddress(): void
     {
         $code = $this->controller()->loginByEmail('not-an-email');
