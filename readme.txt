@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.77.1
+Stable tag: 1.77.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.77.2 =
+Telegram bot: after an update the bot no longer goes silent. When Telegram answers the webhook re-install with "Too Many Requests: retry after N", the plugin waits and tries again (up to 3 times), and an install that still fails is tried again 10 minutes later instead of being marked done.
 
 = 1.77.1 =
 Crew page: in admin rows that mix text links, buttons and plain text (the People pager, Save and Cancel), everything now sits on one line instead of the text riding higher than the links.
@@ -805,6 +808,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.77.2 =
+No action needed.
 
 = 1.77.1 =
 No action needed.

@@ -79,6 +79,14 @@ abstract class TelegramTestCase extends TestCase
      */
     protected array $telegramErrors = [];
 
+    /**
+     * Per-method count of calls answered "Too Many Requests: retry after 1"
+     * (with parameters.retry_after) before the method starts succeeding.
+     *
+     * @var array<string, int>
+     */
+    protected array $telegramRateLimits = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -94,6 +102,7 @@ abstract class TelegramTestCase extends TestCase
         ];
         $this->telegramResults = [];
         $this->telegramErrors = [];
+        $this->telegramRateLimits = [];
 
         Functions\when('get_option')->alias(
             fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
@@ -116,6 +125,17 @@ abstract class TelegramTestCase extends TestCase
                     'method' => $method,
                     'body' => (array) json_decode((string) $args['body'], true),
                 ];
+
+                if (($this->telegramRateLimits[$method] ?? 0) > 0) {
+                    $this->telegramRateLimits[$method]--;
+
+                    return (string) json_encode([
+                        'ok' => false,
+                        'error_code' => 429,
+                        'description' => 'Too Many Requests: retry after 1',
+                        'parameters' => ['retry_after' => 1],
+                    ]);
+                }
 
                 if (isset($this->telegramErrors[$method])) {
                     return (string) json_encode([

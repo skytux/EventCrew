@@ -143,6 +143,68 @@ final class SettingsPageTest extends TelegramTestCase
         );
     }
 
+    private function readyToInstall(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = 'secret';
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path
+        );
+    }
+
+    /** @return list<string> */
+    private function webhookCalls(): array
+    {
+        return array_values(array_filter(
+            array_map(static fn (array $call): string => $call['method'], $this->telegramCalls),
+            static fn (string $method): bool => str_ends_with($method, 'Webhook')
+        ));
+    }
+
+    public function testARateLimitedSetWebhookIsTriedAgain(): void
+    {
+        $this->readyToInstall();
+        // Telegram's answer to a setWebhook sent right after deleteWebhook.
+        $this->telegramRateLimits['setWebhook'] = 1;
+
+        $result = $this->page()->installWebhook();
+
+        self::assertTrue($result['ok']);
+        self::assertSame(['deleteWebhook', 'setWebhook', 'setWebhook'], $this->webhookCalls());
+    }
+
+    public function testInstallOnUpdateStampsTheVersionWhenTheInstallWorks(): void
+    {
+        $this->readyToInstall();
+
+        $this->page()->installOnUpdate();
+
+        self::assertSame(EVENTCREW_VERSION, $this->options[self::WEBHOOK_VERSION_OPTION] ?? null);
+    }
+
+    public function testAFailedInstallIsNotStampedAndIsTriedAgainLater(): void
+    {
+        $this->readyToInstall();
+        $this->telegramErrors['setWebhook'] = 'Bad Request: bad webhook';
+
+        $this->page()->installOnUpdate();
+
+        // Not stamped, so a later run tries again.
+        self::assertArrayNotHasKey(self::WEBHOOK_VERSION_OPTION, $this->options);
+        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+
+        // But not on the very next admin page load.
+        $this->telegramCalls = [];
+        $this->page()->installOnUpdate();
+        self::assertSame([], $this->telegramCalls);
+
+        // Once the gap has passed, it is tried again and, working now, stamped.
+        $this->options['eventcrew_webhook_failed_at'] = time() - 11 * 60;
+        unset($this->telegramErrors['setWebhook']);
+        $this->page()->installOnUpdate();
+        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+        self::assertSame(EVENTCREW_VERSION, $this->options[self::WEBHOOK_VERSION_OPTION] ?? null);
+    }
+
     public function testInstallOnUpdateSkipsAndDoesNotStampWhenUnconfigured(): void
     {
         // Version behind (the option is unset), but no bot token is configured.
