@@ -67,6 +67,38 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
 <div class="eventcrew-signup">
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
+    <?php if (null !== $eventcrew_person) : ?>
+    <?php
+    /*
+     * Real anchors, not buttons: with JavaScript off every panel stays
+     * visible and these degrade to jump links down one long page, which is
+     * the same posture the rest of this page takes. The script upgrades
+     * them to a tablist in place. The bar is the first thing on the page and
+     * stays at the top while scrolling; signed out there is nothing to tab
+     * between, so it is not drawn.
+     */
+    ?>
+    <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your Crew app', 'eventcrew'); ?>">
+        <?php
+        $eventcrew_tabs = [
+            'board' => __('Board', 'eventcrew'),
+            'me' => __('Me', 'eventcrew'),
+            'settings' => __('Settings', 'eventcrew'),
+            'help' => __('Help', 'eventcrew'),
+        ];
+        $eventcrew_tabs += null !== $eventcrew_admin ? ['admin' => __('Admin', 'eventcrew')] : [];
+        foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
+            ?>
+            <a
+                class="eventcrew-tab"
+                id="eventcrew-tab-<?php echo esc_attr($eventcrew_key); ?>"
+                href="#eventcrew-panel-<?php echo esc_attr($eventcrew_key); ?>"
+                data-eventcrew-tab="<?php echo esc_attr($eventcrew_key); ?>"
+            ><?php echo esc_html($eventcrew_label); ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <?php endif; ?>
+
     <?php
     // The Telegram group and crew guide buttons, at the top of the page so
     // they show above every tab. Signed out there is no group link.
@@ -170,7 +202,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
         ?>
         <?php
         /*
-         * The header card, above the tabs: who is signed in, the language
+         * The header card, under the tab bar: who is signed in, the language
          * switch and Sign out in its top bar, and the person's standing,
          * credits and the score explainer in its body. Sign out is here rather
          * than in Settings because it is the one thing you might want from any
@@ -247,34 +279,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </div>
             <?php endif; ?>
         </section>
-
-        <?php
-        /*
-         * Real anchors, not buttons: with JavaScript off every panel stays
-         * visible and these degrade to jump links down one long page, which is
-         * the same posture the rest of this page takes. The script upgrades
-         * them to a tablist in place.
-         */
-        ?>
-        <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your Crew app', 'eventcrew'); ?>">
-            <?php
-            $eventcrew_tabs = [
-                'board' => __('Board', 'eventcrew'),
-                'me' => __('Me', 'eventcrew'),
-                'settings' => __('Settings', 'eventcrew'),
-                'help' => __('Help', 'eventcrew'),
-            ];
-            $eventcrew_tabs += null !== $eventcrew_admin ? ['admin' => __('Admin', 'eventcrew')] : [];
-            foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
-                ?>
-                <a
-                    class="eventcrew-tab"
-                    id="eventcrew-tab-<?php echo esc_attr($eventcrew_key); ?>"
-                    href="#eventcrew-panel-<?php echo esc_attr($eventcrew_key); ?>"
-                    data-eventcrew-tab="<?php echo esc_attr($eventcrew_key); ?>"
-                ><?php echo esc_html($eventcrew_label); ?></a>
-            <?php endforeach; ?>
-        </nav>
 
         <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Board', 'eventcrew'); ?></h2>

@@ -28,6 +28,8 @@ $eventcrew_colors = $eventcrew_page->colors();
     body.eventcrew-crew-app {
         margin: 0;
         background: <?php echo esc_html($eventcrew_colors['background']); ?>;
+        /* The sticky tab bar paints this behind itself; see eventcrew.css. */
+        --eventcrew-page-bg: <?php echo esc_html($eventcrew_colors['background']); ?>;
         color: <?php echo esc_html($eventcrew_colors['text']); ?>;
     }
     .eventcrew-app-bar {

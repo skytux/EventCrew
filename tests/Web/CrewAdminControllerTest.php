@@ -1775,6 +1775,22 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringNotContainsString(CrewAdminController::GIFT_ACTION, $html);
     }
 
+    /**
+     * The tab bar is the first thing on the page: above the Telegram and
+     * guide buttons and above the "Signed in as" card.
+     */
+    public function testTheTabBarComesFirstOnThePage(): void
+    {
+        $html = $this->renderAs($this->personRow(8));
+
+        $nav = strpos($html, '<nav class="eventcrew-tabs"');
+        $card = strpos($html, 'eventcrew-header-card');
+
+        self::assertNotFalse($nav);
+        self::assertNotFalse($card);
+        self::assertLessThan($card, $nav);
+    }
+
     public function testTheTabIsInThePageForAnOrganizer(): void
     {
         $html = $this->renderAs($this->organizerRow(1));

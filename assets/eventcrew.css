@@ -114,73 +114,70 @@
  * Tabs. Everything here is inert until the script adds .is-tabbed: without it
  * every panel stays visible and the nav is a row of jump links, which is what a
  * JavaScript-less visitor gets.
+ *
+ * The tab bar is the first thing on the page, a flat menu bar that stays at
+ * the top of the screen while the page scrolls. It needs a solid background so
+ * the page does not show through it: --eventcrew-page-bg, which the Crew app
+ * page sets to its own background colour, or else the theme's base colour.
+ * The WordPress admin bar (signed-in WordPress users) is fixed at the top too,
+ * so the bar sits under it rather than behind it.
  */
 .eventcrew-signup .eventcrew-tabs {
-    display: flex; gap: .35em; flex-wrap: wrap;
+    position: sticky; top: var(--wp-admin--admin-bar--height, 0px); z-index: 50;
+    display: flex; flex-wrap: wrap; gap: 0 .25em;
     margin: 0 0 1.2em;
+    background: var(--eventcrew-page-bg, var(--wp--preset--color--base, Canvas));
     border-bottom: 1px solid var(--eventcrew-line);
 }
 /*
- * Each tab is a small raised box, so it reads as something to tap: a light
- * tint and a drop shadow. The selected tab is flat (no shadow), brighter, and
- * has a thick accent line under it. 44px tall to tap.
+ * Each tab is plain text in the bar, like a menu entry. The open tab is
+ * brighter and has a thick accent line under it. 44px tall to tap.
  */
 .eventcrew-signup .eventcrew-tab {
     box-sizing: border-box; padding: .3em .9em;
     color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
-    background: color-mix(in srgb, currentColor 8%, transparent);
-    border-radius: var(--eventcrew-radius) var(--eventcrew-radius) 0 0;
-    border-bottom: 3px solid transparent; opacity: .75;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, .45);
+    border-bottom: 3px solid transparent; margin-bottom: -1px; opacity: .7;
     min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
 }
 .eventcrew-signup .eventcrew-tab:hover { opacity: 1; }
 .eventcrew-signup .eventcrew-tab.is-active {
-    opacity: 1; box-shadow: none;
-    background: color-mix(in srgb, currentColor 20%, transparent);
+    opacity: 1;
     border-bottom-color: var(--eventcrew-accent);
 }
 /*
- * The Admin tab (organizers only) in the accent colour so it stands out:
- * accent text on an accent tint with an accent edge. Accent text rather than
- * text on a solid accent, because the configured on-accent colour is often
- * white, which is hard to read on a light accent.
+ * The Admin tab (organizers only) in the accent colour so it stands out.
+ * Accent text rather than text on a solid accent, because the configured
+ * on-accent colour is often white, which is hard to read on a light accent.
  */
 .eventcrew-signup .eventcrew-tab[data-eventcrew-tab="admin"] {
-    color: var(--eventcrew-accent); opacity: 1;
-    background: color-mix(in srgb, var(--eventcrew-accent) 16%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--eventcrew-accent) 60%, transparent), 0 2px 5px rgba(0, 0, 0, .45);
+    color: var(--eventcrew-accent); opacity: .85;
 }
-.eventcrew-signup .eventcrew-tab[data-eventcrew-tab="admin"].is-active {
-    background: color-mix(in srgb, var(--eventcrew-accent) 32%, transparent);
-    box-shadow: inset 0 0 0 1px var(--eventcrew-accent);
-}
+.eventcrew-signup .eventcrew-tab[data-eventcrew-tab="admin"].is-active { opacity: 1; }
 /*
- * The Admin tab's second row: Roster, Door, People, Telegram. Smaller pills
- * than the main tabs; the open one is drawn like the Admin tab (accent text
- * on an accent tint), for the same reason given above. Only
- * once the script has run (has-subtabs) are the other screens hidden, so
- * without JavaScript every Admin card stays on one page.
+ * The Admin tab's second row: Roster, Door, People, Telegram. Smaller, plain
+ * text links on the left, so they do not look like a second tab bar. The open
+ * one is in the accent colour with a thin accent line under it. Only once the
+ * script has run (has-subtabs) are the other screens hidden, so without
+ * JavaScript every Admin card stays on one page.
  */
 .eventcrew-signup .eventcrew-subtabs {
-    display: flex; flex-wrap: wrap; gap: .4em; justify-content: center; margin: 0 0 1em;
+    display: flex; flex-wrap: wrap; gap: .2em 1.2em; margin: 0 0 1em;
 }
 .eventcrew-signup .eventcrew-subtab {
-    padding: .3em .9em; border: 1px solid currentColor; border-radius: 999px;
-    color: inherit; text-decoration: none; opacity: .85; font-size: .9em;
+    padding: .25em 0; border-bottom: 2px solid transparent;
+    color: inherit; text-decoration: none; opacity: .75; font-size: .9em;
 }
+.eventcrew-signup .eventcrew-subtab:hover { opacity: 1; }
 .eventcrew-signup .eventcrew-subtab.is-active {
-    background: color-mix(in srgb, var(--eventcrew-accent) 32%, transparent);
-    border-color: var(--eventcrew-accent); color: var(--eventcrew-accent); opacity: 1;
+    border-bottom-color: var(--eventcrew-accent); color: var(--eventcrew-accent); opacity: 1;
 }
 .eventcrew-signup .has-subtabs [data-eventcrew-subpanel]:not(.is-active) { display: none; }
 /*
  * Phone: smaller text and padding so five tabs fit on one line in English; if
- * they still wrap (Finnish), the rows sit close together and each row's tabs
- * stretch to fill it evenly.
+ * they still wrap (Finnish), each row's tabs stretch to fill it evenly.
  */
 @media (max-width: 640px) {
-    .eventcrew-signup .eventcrew-tabs { gap: .25em; }
+    .eventcrew-signup .eventcrew-tabs { gap: 0; }
     .eventcrew-signup .eventcrew-tab { flex: 1 1 auto; padding: .3em .35em; font-size: .75em; }
 }
 /*
@@ -190,7 +187,7 @@
 .eventcrew-signup .eventcrew-tab:focus { outline: none; }
 .eventcrew-signup .eventcrew-tab:focus-visible {
     outline: none; opacity: 1;
-    border-bottom-width: 3px; border-bottom-color: var(--eventcrew-accent);
+    border-bottom-color: var(--eventcrew-accent);
 }
 
 .eventcrew-signup.is-tabbed .eventcrew-panel { display: none; }
@@ -759,12 +756,14 @@
 .eventcrew-signup .eventcrew-redeem button { align-self: center; min-height: 44px; }
 
 /* The collapsible disclosures. */
-/* Part of the header block above the tabs, so it sits tight under the name. */
+/* Part of the header card, so it sits tight under the name. */
 .eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; font-weight: 600; }
 /*
  * The header card: name, language and Sign out in its top bar, standing in
  * its body. The bar keeps the identity row's centring and its smaller text.
  */
+/* Narrower than the panels under it, and centred. */
+.eventcrew-signup .eventcrew-header-card { max-width: 32em; margin-inline: auto; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-identity { margin: 0; align-items: center; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-identity-name { font-weight: 600; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
