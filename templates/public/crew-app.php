@@ -18,8 +18,12 @@ if (null === $eventcrew_page) {
 // Rendered first, so the stylesheet it enqueues is printed by wp_head().
 $eventcrew_content = $eventcrew_page->content();
 $eventcrew_colors = $eventcrew_page->colors();
+// The frame around it (lang attribute, back link) in the same language.
+$eventcrew_language = $eventcrew_page->language();
 ?><!doctype html>
-<html <?php language_attributes(); ?>>
+<html <?php \EventCrew\Support\Language::run($eventcrew_language, static function (): void {
+    language_attributes();
+}); ?>>
 <head>
 <meta charset="<?php bloginfo('charset'); ?>">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,7 +60,7 @@ $eventcrew_colors = $eventcrew_page->colors();
 <body <?php body_class('eventcrew-crew-app'); ?>>
 <?php wp_body_open(); ?>
 <nav class="eventcrew-app-bar">
-    <a href="<?php echo esc_url(home_url('/')); ?>">← <?php esc_html_e('Website', 'eventcrew'); ?></a>
+    <a href="<?php echo esc_url(home_url('/')); ?>">← <?php echo esc_html(\EventCrew\Support\Language::run($eventcrew_language, static fn (): string => __('Website', 'eventcrew'))); ?></a>
 </nav>
 <main class="eventcrew-app-main">
     <?php

@@ -67,6 +67,12 @@ final class CrewAppPage
         return $this->signup->renderShortcode();
     }
 
+    /** The language the page is shown in; see SignupController::pageLanguage(). */
+    public function language(): ?string
+    {
+        return $this->signup->pageLanguage();
+    }
+
     /**
      * The page background and its text colour.
      *

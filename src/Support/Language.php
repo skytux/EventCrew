@@ -67,6 +67,55 @@ final class Language
     }
 
     /**
+     * The language a browser asks for in its Accept-Language header: 'fi' when
+     * it ranks Finnish above English, null (English) in every other case -
+     * no header, neither language listed, or English first.
+     */
+    public static function fromBrowser(?string $header): ?string
+    {
+        // Per language: its best q value, and where it was first listed.
+        $rank = [];
+
+        foreach (explode(',', (string) $header) as $position => $part) {
+            $pieces = explode(';', $part);
+            $primary = strtolower(trim(explode('-', $pieces[0])[0]));
+
+            if (! isset(self::LOCALES[$primary])) {
+                continue;
+            }
+
+            $quality = 1.0;
+
+            foreach (array_slice($pieces, 1) as $parameter) {
+                if (1 === preg_match('/^\s*q\s*=\s*([0-9.]+)\s*$/i', $parameter, $match)) {
+                    $quality = (float) $match[1];
+                }
+            }
+
+            if (! isset($rank[$primary]) || $quality > $rank[$primary]['q']) {
+                $rank[$primary] = ['q' => $quality, 'at' => $rank[$primary]['at'] ?? $position];
+            }
+        }
+
+        $finnish = $rank[self::FINNISH] ?? null;
+        $english = $rank[self::ENGLISH] ?? null;
+
+        if (null === $finnish || $finnish['q'] <= 0.0) {
+            return null;
+        }
+
+        if (
+            null === $english
+            || $finnish['q'] > $english['q']
+            || ($finnish['q'] === $english['q'] && $finnish['at'] < $english['at'])
+        ) {
+            return self::FINNISH;
+        }
+
+        return null;
+    }
+
+    /**
      * The language text is being composed in right now, or null outside any
      * run() - where WordPress's own language applies.
      */
