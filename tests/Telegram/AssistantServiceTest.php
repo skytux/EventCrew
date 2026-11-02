@@ -211,6 +211,17 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame(['Hello!'], $this->sentTexts());
     }
 
+    public function testTheModelIsToldToAskWhichOneInsteadOfPicking(): void
+    {
+        $this->reply(true, true, 'Which one?');
+
+        $this->ask(self::privateMessage('sign me up for a task'));
+
+        $body = json_decode((string) $this->llmCalls[0]['args']['body'], true);
+        self::assertStringContainsString('"action" is null and "reply" asks which one', $body['messages'][0]['content']);
+        self::assertStringContainsString('Never pick one for the person.', $body['messages'][0]['content']);
+    }
+
     public function testTheKeyIsSentAsABearerToken(): void
     {
         AssistantSettings::saveKey('sk-test');

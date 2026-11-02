@@ -489,6 +489,9 @@ final class AssistantService
             '- When the person asks for something an action does, give that action and keep "reply" short.'
                 . ' Actions marked (asks to confirm) are shown with a Confirm button first: "reply" then says'
                 . ' what will happen.',
+            '- When the message does not say exactly which task, guest or night it means and more than one'
+                . ' fits, "action" is null and "reply" asks which one, listing the choices. Never pick one'
+                . ' for the person.',
             '- Dates in actions are written like 1.8. or 2026-08-01.',
         ];
 
