@@ -97,7 +97,7 @@ final class DoorDesk
             'cookie' => null,
             'seconds' => 0,
             'message' => __(
-                'This link was already used — ask an organizer for a new one (/sales in Telegram).',
+                'This link was already used — ask an organizer for a new one (/door in Telegram, then 💳 Sales desk).',
                 'eventcrew'
             ),
         ];

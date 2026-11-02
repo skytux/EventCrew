@@ -13,7 +13,7 @@ use EventCrew\Repositories\TaskRepository;
  * Free entry is keyed on the event date throughout (the door list, the
  * redemptions table), so closing is too: a small set of Y-m-d strings in one
  * option. Both the organizer's "Redeem a credit" control and the self-service
- * /ticket flow consult this before letting a credit be spent.
+ * 🎟 ticket flow consult this before letting a credit be spent.
  *
  * A date also closes on its own when a task that night is linked to an
  * EventMesh event that stopped selling (see EventSource::closedReason()).

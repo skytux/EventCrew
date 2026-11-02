@@ -140,7 +140,7 @@ final class DoorController
             if (null === $session) {
                 $this->plainPage(
                     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    __('This device is not logged in to the sales desk. Ask an organizer for a new link (/sales in Telegram).', 'eventcrew')
+                    __('This device is not logged in to the sales desk. Ask an organizer for a new link (/door in Telegram, then 💳 Sales desk).', 'eventcrew')
                 );
             }
 

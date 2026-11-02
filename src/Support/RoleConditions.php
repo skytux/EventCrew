@@ -22,8 +22,8 @@ use EventCrew\Repositories\PersonRepository;
  *
  * Meeting the conditions does not let anyone sign up. It only drives the
  * notice to the organizers (RoleNotifier), the "Role conditions" tab on the
- * People page and the bot's /eligible. Giving the role is the organizer's
- * choice, with /roles, the crew page or the People page.
+ * People page and the bot's /people. Giving the role is the organizer's
+ * choice, with /people, the crew page or the People page.
  */
 final class RoleConditions
 {

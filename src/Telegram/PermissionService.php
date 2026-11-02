@@ -15,15 +15,15 @@ use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 
 /**
- * /roles and /eligible - the organizer's permission tools from Telegram.
+ * The organizer's permission tools from Telegram, the 🏷 and ✅ buttons under /people.
  *
- * /roles (its old name /allow still works) manages one person's roles: a
+ * 🏷 Roles, organizers and passes manages one person's roles: a
  * one-time at-risk pass (sign up once despite being at risk), organizer, and
  * each role set to "Only people with this role" in Settings > Roles (DJ, VJ,
- * Crew leader, ...). The flow mirrors /gift and /replace: ask who, send a name
+ * Crew leader, ...). The flow mirrors 🎁 Give credits and 🔁 Take over a task: ask who, send a name
  * or @mention, then one message per match with a button per role; a check mark
- * shows what the person has, and a tap switches it on or off. /eligible (its
- * old name /leaders still works) lists, for each role with conditions, who
+ * shows what the person has, and a tap switches it on or off. ✅ Who may hold
+ * each role lists, for each role with conditions, who
  * meets them and whether they have the role. Both are admin-only, answered in
  * the DM with a breadcrumb when asked in a group.
  */
@@ -57,7 +57,8 @@ final class PermissionService
         set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
             $telegramUserId,
-            __('Whose roles do you want to change? Send their name, or @mention them.', 'eventcrew')
+            __('Whose roles do you want to change? Send their name, or @mention them.', 'eventcrew'),
+            MenuButtons::cancel()
         );
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -68,7 +69,7 @@ final class PermissionService
     }
 
     /**
-     * /cancel: forgets the "whose roles?" question. True when one was waiting.
+     * The Cancel button: forgets the "whose roles?" question. True when one was waiting.
      */
     public function cancelPending(int $telegramUserId): bool
     {
@@ -79,7 +80,7 @@ final class PermissionService
     }
 
     /**
-     * /eligible: for each role with conditions, who meets them, with ✅ on
+     * ✅ Who may hold each role: for each role with conditions, who meets them, with ✅ on
      * those who already have the role. Answered privately, admin-only.
      */
     public function onEligible(int $telegramUserId, int $chatId, bool $isPrivate = true): void
@@ -103,7 +104,7 @@ final class PermissionService
             ];
         } else {
             $lines = [
-                __('Who meets the conditions for each role. ✅ = they have the role. Give a role with /roles.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Who meets the conditions for each role. ✅ = they have the role. Give a role with /people.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ];
 
             foreach ($report as $slug => $rows) {
@@ -225,7 +226,7 @@ final class PermissionService
         if ('' === $action) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('That button no longer works. Send /roles again.', 'eventcrew'),
+                __('That button no longer works. Send /people again.', 'eventcrew'),
                 true
             );
 
@@ -235,7 +236,7 @@ final class PermissionService
         if (null === $person) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('That person is no longer in EventCrew. Send /roles to pick someone else.', 'eventcrew'),
+                __('That person is no longer in EventCrew. Send /people to pick someone else.', 'eventcrew'),
                 true
             );
 
@@ -354,7 +355,7 @@ final class PermissionService
                     ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']
                     : [sprintf(__('%s is now an organizer.', 'eventcrew'), $name), 'admin'];
             default:
-                return [__('That button no longer works. Send /roles again.', 'eventcrew'), ''];
+                return [__('That button no longer works. Send /people again.', 'eventcrew'), ''];
         }
     }
 
@@ -367,7 +368,7 @@ final class PermissionService
         if (str_starts_with($dmKind, 'role:')) {
             return sprintf(
                 /* translators: %s: role name, such as DJ */
-                __('You now have the role %s. Its tasks are shown to you with /tasks in the bot and in the Crew app, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 Roles::label(substr($dmKind, strlen('role:')))
             );
         }

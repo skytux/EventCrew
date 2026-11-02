@@ -67,7 +67,7 @@ final class RoleTaskService
     /**
      * Every upcoming task, for an organizer adding someone. Organize tasks are
      * left out: putting a new person on one would make them an organizer,
-     * which is done in wp-admin or with /roles, not here.
+     * which is done in wp-admin or with /people, not here.
      *
      * @return list<Task>
      */

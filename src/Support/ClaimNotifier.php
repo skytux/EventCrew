@@ -60,7 +60,7 @@ final class ClaimNotifier
             sprintf(
                 /* translators: 1: role, 2: event, 3: date/time */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /tasks, or tap Cancel in your reminder. Or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.", 'eventcrew'),
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task)
@@ -80,7 +80,7 @@ final class ClaimNotifier
             sprintf(
                 /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to type /replace to take it over.", 'eventcrew'),
+                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
                 $person->name(),
                 $task->roleLabel(),
                 $task->eventName(),
@@ -149,7 +149,7 @@ final class ClaimNotifier
 
         $note = AssignmentStatus::LATE_CANCEL === $status
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with /replace, keeps it clear next time.", 'eventcrew')
+            ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time.", 'eventcrew')
             : __('Thanks for the notice.', 'eventcrew');
 
         $standingLine = $this->standingLine($person);

@@ -146,7 +146,7 @@ final class RosterPage
         }
 
         // Transactional: hand the person their door-ticket link on both channels,
-        // the same as the self-service /ticket flow does.
+        // the same as the self-service 🎟 ticket flow does.
         $this->tickets->notifyRedemption($personId, $date, $redemptionId);
 
         Admin::redirectTo(
@@ -184,7 +184,7 @@ final class RosterPage
     /**
      * Closes or reopens free entry for the roster's date - a sold-out night, or
      * a special event that credits can't be spent on. While closed, neither this
-     * page's "Redeem a credit" nor the self-service /ticket flow will spend a
+     * page's "Redeem a credit" nor the self-service 🎟 ticket flow will spend a
      * credit for that date.
      */
     public function toggleTicketClosed(): void
@@ -368,7 +368,7 @@ final class RosterPage
 
     /**
      * Adds a guest to the roster's date (guest_id 0) or saves the changes to
-     * an existing one - the same list the /guest bot command keeps.
+     * an existing one - the same list the bot's /door keeps.
      */
     public function saveGuest(): void
     {

@@ -273,7 +273,7 @@ final class CrewAdminRoster
 
     /**
      * Adds a guest to $date ($guestId 0) or saves an existing guest. The added
-     * guest records the organizer as the one who added them, as /guest does.
+     * guest records the organizer as the one who added them, as /door add does.
      */
     public function saveGuest(
         Person $organizer,

@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
 
 /**
  * Reads one Telegram update and sends it to the right place.
  *
- * Button taps go to the service that owns their prefix. Commands go to their
- * service; /help lists them for the asker and /cancel drops any question the
- * bot is waiting on. A plain private message is read only as the answer to
- * such a question. Anything else is ignored - the webhook still answers 200,
+ * Button taps go to the service that owns their prefix. The commands are
+ * /board, /me, /help, and /roster, /door and /people for the welcome crew and
+ * organizers; everything else is a button under them (MenuButtons), including
+ * the Cancel button under each question. A plain private message is read only
+ * as the answer to such a question. Anything else is ignored - the webhook still answers 200,
  * it just does nothing.
  *
  * Every update is handled in the language its sender chose, so their DMs and
@@ -83,6 +85,8 @@ final class UpdateRouter
 
             if (null !== $this->language && str_starts_with($data, LanguageService::PREFIX)) {
                 $this->onLanguageChosen($callbackQuery);
+            } elseif (str_starts_with($data, MenuButtons::PREFIX)) {
+                $this->onMenuTap($callbackQuery);
             } elseif (str_starts_with($data, 'rep:')) {
                 $this->replacement->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'rm:')) {
@@ -136,14 +140,6 @@ final class UpdateRouter
         $fromId = (int) ($message['from']['id'] ?? 0);
         $isPrivate = 'private' === ($message['chat']['type'] ?? '');
 
-        if (null !== $this->language && 0 !== $fromId && $this->isCommand($text, 'language')) {
-            // Asked in the group, the question still goes to the DM: the
-            // buttons are personal, and the group sees English either way.
-            $this->language->ask($fromId, $isPrivate ? $chatId : $fromId);
-
-            return;
-        }
-
         // Someone who has not chosen a language yet is asked before their first
         // private command runs; the command waits behind the question and runs
         // as soon as they tap an answer. Group commands and plain replies are
@@ -164,21 +160,6 @@ final class UpdateRouter
         // /help: the commands this person may use.
         if (null !== $this->help && $this->isCommand($text, 'help')) {
             $this->help->onHelp($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /cancel: drop every question the bot is waiting on for this person.
-        // Each one is asked to stop, so none is left behind by a short-circuit.
-        if (null !== $this->help && 0 !== $fromId && $this->isCommand($text, 'cancel')) {
-            $stopped = [
-                $this->replacement->cancelPending($fromId),
-                $this->gift->cancelPending($fromId),
-                $this->permissions->cancelPending($fromId),
-                null !== $this->roleTasks && $this->roleTasks->cancelPending($fromId),
-                $this->onboarding->cancelPending($fromId),
-            ];
-            $this->help->onCancel($chatId, $isPrivate, in_array(true, $stopped, true));
 
             return;
         }
@@ -208,86 +189,25 @@ final class UpdateRouter
             return;
         }
 
-        if ($this->isCommand($text, 'replace')) {
-            $this->replacement->start($fromId, $chatId, $isPrivate);
+        // /door: buttons for the door list, the guest list and the sales desk
+        // (each checks who may open it). An optional date picks the night.
+        // "/door add|edit|remove ..." changes the guest list directly.
+        if ($this->isCommand($text, 'door')) {
+            $arguments = $this->commandArguments($text, 'door');
+
+            if (GuestCommand::SHOW !== GuestCommand::parse($arguments, current_time('Y-m-d'))['action']) {
+                $this->guestList->onGuestCommand($fromId, $chatId, $isPrivate, $arguments);
+            } elseif (null !== $this->help) {
+                $this->help->onDoor($fromId, $chatId, $isPrivate, $arguments);
+            }
 
             return;
         }
 
-        // /gift is organizers-only and answers in the DM, like /ticket; the
-        // service refuses anyone who is not a linked organizer.
-        if ($this->isCommand($text, 'gift')) {
-            $this->gift->start($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /roles (organizers only) gives and takes away roles: the one-time
-        // pass, organizer, and the restricted roles (DJ, VJ, Crew leader, ...).
-        // /allow is its old name and still runs it.
-        if ($this->isCommand($text, 'roles') || $this->isCommand($text, 'allow')) {
-            $this->permissions->start($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /tasks: the restricted-role tasks this person may take, which are
-        // never on the group board; organizers can also add someone there.
-        // /roletasks is its old name and still runs it.
-        if (
-            null !== $this->roleTasks
-            && ($this->isCommand($text, 'tasks') || $this->isCommand($text, 'roletasks'))
-        ) {
-            $this->roleTasks->start($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /eligible (organizers only): who meets each role's conditions.
-        // /leaders is its old name and still runs it.
-        if ($this->isCommand($text, 'eligible') || $this->isCommand($text, 'leaders')) {
-            $this->permissions->onEligible($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /notifications: the per-person channel preferences menu.
-        if ($this->isCommand($text, 'notifications')) {
-            $this->notifications->start($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /ticket is a personal, credit-spending action, so its answer - the
-        // spendable buttons - always goes to the DM, never into the group. Asked
-        // in the group it still works: the person gets the DM and a breadcrumb
-        // points them at it, the same way /me does.
-        if ($this->isCommand($text, 'ticket')) {
-            $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /tickets: who has a ticket for a night, for organizers and that
-        // night's welcome crew. Answered in the DM; an optional date picks the night.
-        if ($this->isCommand($text, 'tickets')) {
-            $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $this->commandPayload($text, 'tickets'));
-
-            return;
-        }
-
-        // /sales: a fresh login link for the sales desk, in the DM. Organizers,
-        // and people on the night's task of a sales-desk role once arrived.
-        if ($this->isCommand($text, 'sales')) {
-            $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /guest: show, add, edit or remove a night's guest list. Organizers
-        // change it; the night's welcome crew can look. Answered in the DM.
-        if ($this->isCommand($text, 'guest')) {
-            $this->guestList->onGuestCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'guest'));
+        // /people (organizers only): buttons for credits, roles and who may
+        // hold each role.
+        if (null !== $this->help && $this->isCommand($text, 'people')) {
+            $this->help->onPeople($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -295,27 +215,6 @@ final class UpdateRouter
         // /me, /me history and /me tickets work from either the group or a
         // private chat; the service always answers in the asker's DM so a
         // personal summary is never printed in front of the whole crew.
-        // /myhistory and /mytickets are their old names and still run them.
-        if ($this->isCommand($text, 'myhistory')) {
-            $this->profile->onMyHistory($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        if ($this->isCommand($text, 'mytickets')) {
-            $this->profile->onMyTickets($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
-        // /web DMs a one-time link that signs the person in to the web board, so
-        // a Telegram member can hop to the web without typing their email.
-        if ($this->isCommand($text, 'web')) {
-            $this->profile->onWeb($fromId, $chatId, $isPrivate);
-
-            return;
-        }
-
         if ($this->isCommand($text, 'me')) {
             $part = strtolower($this->commandPayload($text, 'me'));
 
@@ -344,6 +243,12 @@ final class UpdateRouter
             // group's board stays where it is.
             $this->board->sendPrivate($chatId);
 
+            // Then the tasks of the roles this person holds, which are never
+            // on the board (and for organizers, ➕ to put someone on a task).
+            if (null !== $this->roleTasks && 0 !== $fromId) {
+                $this->roleTasks->sendIfAny($fromId);
+            }
+
             return;
         }
 
@@ -365,6 +270,75 @@ final class UpdateRouter
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
             }
         }
+    }
+
+    /**
+     * A tap on a MenuButtons button: opens what the old command opened, in the
+     * chat the button is in (always the private chat).
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function onMenuTap(array $callbackQuery): void
+    {
+        $data = (string) ($callbackQuery['data'] ?? '');
+        $fromId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $chat = is_array($callbackQuery['message']['chat'] ?? null) ? $callbackQuery['message']['chat'] : [];
+        $chatId = (int) ($chat['id'] ?? $fromId);
+        $isPrivate = 'private' === ($chat['type'] ?? 'private');
+
+        if (null !== $this->help) {
+            $this->help->answerTap((string) ($callbackQuery['id'] ?? ''));
+        }
+
+        if (0 === $fromId) {
+            return;
+        }
+
+        if (str_starts_with($data, MenuButtons::DOOR_LIST)) {
+            $date = substr($data, strlen(MenuButtons::DOOR_LIST));
+            $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $date);
+
+            return;
+        }
+
+        if (str_starts_with($data, MenuButtons::GUEST_LIST)) {
+            $date = substr($data, strlen(MenuButtons::GUEST_LIST));
+            $this->guestList->onGuestCommand($fromId, $chatId, $isPrivate, $date);
+
+            return;
+        }
+
+        match ($data) {
+            MenuButtons::TICKET => $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate),
+            MenuButtons::REPLACE => $this->replacement->start($fromId, $chatId, $isPrivate),
+            MenuButtons::WEB => $this->profile->onWeb($fromId, $chatId, $isPrivate),
+            MenuButtons::NOTIFICATIONS => $this->notifications->start($fromId, $chatId, $isPrivate),
+            MenuButtons::LANGUAGE => $this->language?->ask($fromId, $chatId),
+            MenuButtons::SALES => $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate),
+            MenuButtons::GIFT => $this->gift->start($fromId, $chatId, $isPrivate),
+            MenuButtons::ROLES => $this->permissions->start($fromId, $chatId, $isPrivate),
+            MenuButtons::ELIGIBLE => $this->permissions->onEligible($fromId, $chatId, $isPrivate),
+            MenuButtons::CANCEL => $this->cancelQuestions($fromId, $chatId, $isPrivate),
+            default => null,
+        };
+    }
+
+    /**
+     * The Cancel button: drops every question the bot is waiting on for this
+     * person. Each one is asked to stop, so none is left behind by a
+     * short-circuit.
+     */
+    private function cancelQuestions(int $fromId, int $chatId, bool $isPrivate): void
+    {
+        $stopped = [
+            $this->replacement->cancelPending($fromId),
+            $this->gift->cancelPending($fromId),
+            $this->permissions->cancelPending($fromId),
+            null !== $this->roleTasks && $this->roleTasks->cancelPending($fromId),
+            $this->onboarding->cancelPending($fromId),
+        ];
+
+        $this->help?->onCancel($chatId, $isPrivate, in_array(true, $stopped, true));
     }
 
     /**
@@ -484,7 +458,7 @@ final class UpdateRouter
 
     /**
      * Everything after a command, e.g. "add Anna +1 ; DJ" from
-     * "/guest add Anna +1 ; DJ". Empty when the command carries no argument.
+     * "/door add Anna +1 ; DJ". Empty when the command carries no argument.
      */
     private function commandArguments(string $text, string $command): string
     {

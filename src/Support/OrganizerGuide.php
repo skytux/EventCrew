@@ -72,11 +72,11 @@ final class OrganizerGuide
         $lines = [
             '- 🗓️ ' . __('Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             '- ✋ ' . __('Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            '- 🌙 ' . __('On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /sales sends you the link.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🌙 ' . __('On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /door, then 💳 Sales desk, sends you the link.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ...self::mailImportShort(),
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
-                '- 🎁 ' . __('Credits: members earn 1 free-entry credit per %d completed tasks. /gift gives credits by hand.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                '- 🎁 ' . __('Credits: members earn 1 free-entry credit per %d completed tasks. /people, then 🎁 Give credits, gives credits by hand.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
             sprintf(
@@ -84,8 +84,8 @@ final class OrganizerGuide
                 '- 📈 ' . __('Standing: %d%% or higher is good standing. It comes from how each member\'s past tasks went.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 (int) round($settings->threshold() * 100)
             ),
-            '- 🔑 ' . __('Roles: /roles makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            '- 🎧 ' . __('Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /tasks and in the Crew app. You can add someone there, even a person who is not a crew member.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🔑 ' . __('Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🎧 ' . __('Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /board in a private chat and in the Crew app. You can add someone there, even a person who is not a crew member.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00 */
                 '- 🔔 ' . __('Messages: reminders and calls go out by themselves, only between %1$s and %2$s.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -134,7 +134,7 @@ final class OrganizerGuide
             __('A new member sends /start to the bot in a private chat and confirms their email address. On the web sign-up page they sign in with a link sent to their email. Both follow the same rules.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: %d: hours of notice, e.g. 48 */
-                __('Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with /replace.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with 🔁 Take over a task under /me.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $noticeHours
             ),
         ];
@@ -149,7 +149,7 @@ final class OrganizerGuide
             __('The sales desk is a web page for the door. It shows tonight\'s list: the crew, members with a free-entry ticket, guests and Holvi ticket buyers. You mark people in and out and say how many people they brought. Add sells a ticket at the door, adds a guest, or adds a member who spends a credit or takes one of tonight\'s tasks.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: %d: minutes before the night's first task */
-                __('When you are signed up for the night\'s Organize task, you get the sales desk link %d minutes before the night\'s first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked "Opens the sales desk") get it once they are marked arrived. /sales sends a new link any time. /tickets lists who has a ticket and /guest shows the guest list.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('When you are signed up for the night\'s Organize task, you get the sales desk link %d minutes before the night\'s first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked "Opens the sales desk") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 DoorLinkSender::leadMinutes()
             ),
             __('Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under "Holvi ticket buyers". A name already on the list is skipped.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -209,7 +209,7 @@ final class OrganizerGuide
             __('Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
-                __('Members earn 1 free-entry credit per %d completed tasks and spend it with /ticket or on the web page. You give credits with /gift, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
             sprintf(
@@ -223,7 +223,7 @@ final class OrganizerGuide
         if ((bool) get_option(SignupService::GATE_OPTION, true)) {
             $lines[] = sprintf(
                 /* translators: %d: good-standing percentage */
-                __('The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /roles can give them a one-time pass.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /people can give them a one-time pass.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $threshold
             );
         }
@@ -236,10 +236,10 @@ final class OrganizerGuide
     {
         $lines = ['## 🔑 ' . __('Roles and permissions', 'eventcrew')];
 
-        $lines[] = __('A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role\'s conditions and the first time someone is given a role. /eligible lists who meets the conditions of each role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        $lines[] = __('As an organizer you can add anyone to any task of a night, with /tasks, in the Crew app Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role\'s conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
-        $lines[] = __('/roles, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
         return $lines;
     }
@@ -263,7 +263,7 @@ final class OrganizerGuide
             ]),
             sprintf(
                 /* translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00 */
-                __('The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /notifications; confirmations and reminders always go.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 self::windowStart(),
                 self::windowEnd()
             ),

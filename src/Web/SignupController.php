@@ -755,7 +755,7 @@ final class SignupController
             return CrewAdminController::noticeText($code);
         }
 
-        // The sales desk refusals share SalesDeskGate's wording with /sales.
+        // The sales desk refusals share SalesDeskGate's wording with the bot's sales desk button.
         if (! isset($map[$code]) && str_starts_with($code, 'sales_')) {
             return SalesDeskGate::message(substr($code, strlen('sales_')));
         }

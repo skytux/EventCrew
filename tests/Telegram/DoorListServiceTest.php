@@ -166,11 +166,8 @@ final class DoorListServiceTest extends TelegramTestCase
     {
         $this->updateRouter()->dispatch([
             'update_id' => 1,
-            'message' => [
-                'text' => '/tickets',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
+            'callback_query' => ['id' => 'cbq0', 'from' => ['id' => 555], 'data' => 'mn:dl:',
+                'message' => ['chat' => ['id' => 555, 'type' => 'private'], 'message_id' => 41]],
         ]);
 
         self::assertStringStartsWith('Only organizers', $this->lastCallTo('sendMessage')['text']);

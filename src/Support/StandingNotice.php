@@ -131,7 +131,7 @@ final class StandingNotice
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ? __("You were marked as a no-show for %2\$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it.", 'eventcrew')
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            : __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with /replace, keeps it clear.", 'eventcrew');
+            : __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear.", 'eventcrew');
 
         return sprintf(
             /* translators: 1: name, 2: role at event, date */

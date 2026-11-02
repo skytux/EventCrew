@@ -113,7 +113,7 @@ final class DoorHandoff
     {
         return match ($code) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            self::NO_SESSION => __('This device is not logged in to the sales desk. Ask an organizer for a new link (/sales in Telegram).', 'eventcrew'),
+            self::NO_SESSION => __('This device is not logged in to the sales desk. Ask an organizer for a new link (/door in Telegram, then 💳 Sales desk).', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             default => __('This person cannot run the sales desk tonight. Only organizers, and the welcome crew once marked arrived tonight, can.', 'eventcrew'),
         };

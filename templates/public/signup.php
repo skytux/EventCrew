@@ -1093,7 +1093,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <h3 class="eventcrew-event-title"><?php esc_html_e('Guest list', 'eventcrew'); ?></h3>
                         <span class="eventcrew-muted"><?php echo esc_html($eventcrew_admin['roster_label']); ?></span>
                     </header>
-                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('People let in free who are not crew members. The /guest bot command keeps the same list.', 'eventcrew'); ?></p>
+                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('People let in free who are not crew members. The bot’s /door command keeps the same list.', 'eventcrew'); ?></p>
                     <ul class="eventcrew-plain-list eventcrew-admin-guests">
                         <?php foreach ($eventcrew_night['guests'] as $eventcrew_guest) : ?>
                             <?php $eventcrew_guest_field = 'eventcrew-admin-guest-' . $eventcrew_guest['id']; ?>

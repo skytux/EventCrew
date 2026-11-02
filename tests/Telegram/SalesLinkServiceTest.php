@@ -183,13 +183,11 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
 
     public function testTheRouterSendsSalesHere(): void
     {
-        // Nobody with this Telegram account: the refusal proves /sales ran.
+        // Nobody with this Telegram account: the refusal proves the 💳 Sales
+        // desk button under /door ran.
         $this->updateRouter()->dispatch([
-            'message' => [
-                'text' => '/sales',
-                'chat' => ['id' => 777, 'type' => 'private'],
-                'from' => ['id' => 777, 'first_name' => 'Sam'],
-            ],
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 777], 'data' => 'mn:sales',
+                'message' => ['chat' => ['id' => 777, 'type' => 'private']]],
         ]);
 
         self::assertSame(

@@ -28,7 +28,7 @@ use EventCrew\Telegram\TelegramClient;
  * Each person gets one link per night, recorded in the notifications ledger.
  * These sends ignore the send window and the notification preferences: the
  * link is a work tool for that evening, and a door crew member who had muted
- * their reminders still needs it. /sales in Telegram, and the button on the
+ * their reminders still needs it. /door in Telegram (💳 Sales desk), and the button on the
  * member's web page, hand out another link whenever one is needed.
  *
  * The check runs at most every five minutes: from its own WP-Cron event, and
@@ -223,7 +223,7 @@ final class DoorLinkSender
     /**
      * Sends one person a fresh link for $date by email and, when they have a
      * DM chat with the bot, by DM - with no ledger check and no access check;
-     * the caller has decided. /sales uses this for a link asked for by hand,
+     * the caller has decided. 💳 Sales desk uses this for a link asked for by hand,
      * DM only, to $dmChatId. Returns false when the link would already be dead
      * (the night has closed for this person), and then sends nothing.
      */
@@ -247,7 +247,7 @@ final class DoorLinkSender
         $label = self::buttonLabel();
 
         // The DM goes to the chat the person opened with the bot, or - for an
-        // answer to /sales - to the chat the command came from.
+        // answer to 💳 Sales desk - to the chat the command came from.
         $chatId = $dmChatId ?? $person->telegramChatId;
 
         if (null !== $chatId) {
@@ -300,7 +300,7 @@ final class DoorLinkSender
     {
         return sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             Dates::dayLabel($date)
         );
     }
@@ -438,7 +438,7 @@ final class DoorLinkSender
     {
         return sprintf(
             /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /sales to the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             Dates::dayLabel($date)
         );
     }

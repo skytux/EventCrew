@@ -44,7 +44,7 @@ final class RosterService
 
     /**
      * @param string $payload An optional date after the command ("1.8." or
-     *                        "2026-08-01"), read the same way /tickets reads
+     *                        "2026-08-01"), read the same way the door list reads
      *                        it. Empty means the default day.
      */
     public function onRosterCommand(

@@ -16,8 +16,8 @@ use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\SignupService;
 
 /**
- * /tasks (old name /roletasks) - the restricted-role tasks (Organize, DJ, VJ,
- * ...) in the bot.
+ * The restricted-role tasks (Organize, DJ, VJ, ...) in the bot, sent under
+ * the board when /board is asked in a private chat.
  *
  * These tasks are never on the group board. A person who holds the role gets
  * them here, in the DM: one button per task to sign up or cancel. Signing up
@@ -56,7 +56,7 @@ final class RoleTaskBot
     }
 
     /**
-     * /tasks: the list, in the DM.
+     * The list, in the DM.
      */
     public function start(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
@@ -73,6 +73,25 @@ final class RoleTaskBot
         $this->sentDmNote($chatId, $isPrivate);
     }
 
+    /**
+     * After /board in a private chat: the list, but only when it has a task
+     * in it, so people with no roles get just the board.
+     */
+    public function sendIfAny(int $telegramUserId): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            return;
+        }
+
+        [$text, $markup] = $this->buildList($person);
+
+        if (null !== $markup) {
+            $this->telegram->sendMessage($telegramUserId, $text, $markup);
+        }
+    }
+
     public function isAwaitingPerson(int $telegramUserId): bool
     {
         $pending = get_transient(self::AWAIT_PREFIX . $telegramUserId);
@@ -81,7 +100,7 @@ final class RoleTaskBot
     }
 
     /**
-     * /cancel: forgets the "who should be added?" question, and the credit
+     * The Cancel button: forgets the "who should be added?" question, and the credit
      * question that follows it. True when one was waiting.
      */
     public function cancelPending(int $telegramUserId): bool
@@ -110,7 +129,7 @@ final class RoleTaskBot
 
         if (0 === $taskId || ('' === $name && '' === $email)) {
             delete_transient(self::AWAIT_PREFIX . $telegramUserId);
-            $this->telegram->sendMessage($chatId, __('Nothing was added. Start again with /tasks.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, __('Nothing was added. Start again with /board.', 'eventcrew'));
 
             return;
         }
@@ -137,7 +156,7 @@ final class RoleTaskBot
         $this->telegram->sendMessage(
             $chatId,
             __('Count toward free-entry credit?', 'eventcrew'),
-            $this->creditKeyboard('ay', 'an', $taskId)
+            $this->creditKeyboard('ay', 'an', $taskId, 0, true)
         );
     }
 
@@ -217,11 +236,11 @@ final class RoleTaskBot
         }
 
         if ([] === $byId) {
-            // Only an organizer can run /roles, so only they are pointed at it.
+            // Only an organizer can use /people, so only they are pointed at it.
             return [
                 $person->isOrganizer
                     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    ? __('There are no upcoming tasks for your roles. An organizer gives roles with /roles.', 'eventcrew')
+                    ? __('There are no upcoming tasks for your roles. An organizer gives roles with /people.', 'eventcrew')
                     : __('There are no upcoming tasks for your roles.', 'eventcrew'),
                 null,
             ];
@@ -270,14 +289,25 @@ final class RoleTaskBot
     /**
      * @return array<string, mixed>
      */
-    private function creditKeyboard(string $yes, string $no, int $taskId, int $listMessageId = 0): array
-    {
+    private function creditKeyboard(
+        string $yes,
+        string $no,
+        int $taskId,
+        int $listMessageId = 0,
+        bool $withCancel = false
+    ): array {
         $suffix = $taskId . ($listMessageId > 0 ? ':' . $listMessageId : '');
-
-        return ['inline_keyboard' => [[
+        $rows = [[
             ['text' => __('Yes', 'eventcrew'), 'callback_data' => self::PREFIX . $yes . ':' . $suffix],
             ['text' => __('No', 'eventcrew'), 'callback_data' => self::PREFIX . $no . ':' . $suffix],
-        ]]];
+        ]];
+
+        // The add-someone question waits for an answer, so it can be cancelled.
+        if ($withCancel) {
+            $rows[] = MenuButtons::cancelRow();
+        }
+
+        return ['inline_keyboard' => $rows];
     }
 
     /** The task, if it is still a restricted task this person may take. */
@@ -374,7 +404,8 @@ final class RoleTaskBot
         $this->telegram->sendMessage(
             $chatId,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member.", 'eventcrew')
+            __("Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member.", 'eventcrew'),
+            MenuButtons::cancel()
         );
     }
 
@@ -387,7 +418,7 @@ final class RoleTaskBot
         if (! is_array($pending) || $taskId !== (int) ($pending['task'] ?? 0) || ! isset($pending['name'])) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('Nothing was added. Start again with /tasks.', 'eventcrew'),
+                __('Nothing was added. Start again with /board.', 'eventcrew'),
                 true
             );
 

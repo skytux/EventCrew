@@ -20,7 +20,7 @@ use EventCrew\Support\SignupService;
  * "I'll cover for someone" - the person stepping in drives it, and it completes
  * itself with no organizer in the loop.
  *
- * The cover runs /replace, names the person they are covering, and the bot
+ * The cover taps 🔁 Take over a task under /me, names the person they are covering, and the bot
  * lists that person's upcoming tasks. Picking one swaps the two in a single
  * step: the original is marked `replaced` (which frees the slot and earns them
  * the reputation credit for arranging cover), and the cover is signed up in
@@ -43,7 +43,7 @@ final class ReplacementService
     }
 
     /**
-     * /replace: asks who the cover is standing in for. The exchange is personal
+     * 🔁 Take over a task: asks who the cover is standing in for. The exchange is personal
      * (it lists another member's tasks), so it runs in the DM - asked in a group
      * the prompt goes to the DM and a breadcrumb points there.
      */
@@ -61,7 +61,8 @@ final class ReplacementService
         set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
             $telegramUserId,
-            __('Whose task are you covering? Send their name, or @mention them.', 'eventcrew')
+            __('Whose task are you covering? Send their name, or @mention them.', 'eventcrew'),
+            MenuButtons::cancel()
         );
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -72,7 +73,7 @@ final class ReplacementService
     }
 
     /**
-     * /cancel: forgets the "whose task?" question. True when one was waiting.
+     * The Cancel button: forgets the "whose task?" question. True when one was waiting.
      */
     public function cancelPending(int $telegramUserId): bool
     {

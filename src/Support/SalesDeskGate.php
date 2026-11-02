@@ -15,7 +15,7 @@ use EventCrew\Repositories\TaskRepository;
  * Organizers may, for any night, until 06:00 the morning after it. People on
  * that night's task of a role with "Sales desk" ticked in Settings (Welcome
  * ships with it) may from a few minutes before their own task starts, once
- * they are marked arrived, and only until the event ends. The same rule decides the automatic link, the /sales command, the button on the
+ * they are marked arrived, and only until the event ends. The same rule decides the automatic link, the 💳 Sales desk button under /door, the button on the
  * member's web page, and - for the end time - every request the page makes.
  */
 final class SalesDeskGate

@@ -6,7 +6,7 @@ namespace EventCrew\Telegram;
 
 /**
  * The one reply for a date the bot could not read, shared by /roster,
- * /tickets and /guest so all three say the same thing.
+ * the door list and the guest list so all three say the same thing.
  */
 final class UnreadableDate
 {

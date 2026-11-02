@@ -17,7 +17,8 @@ use EventCrew\Support\TicketList;
 /**
  * /me, /me history and /me tickets: a person's own standing, what they're
  * signed up for next, everything they've done and their tickets - sent to
- * their private chat. /myhistory and /mytickets are the old names.
+ * their private chat. /me has buttons for the actions that used to be
+ * commands of their own (MenuButtons::me()).
  *
  * The one self-service window into the reputation and credits the organizer
  * sees on the People list - read-only, so it exposes what someone has earned
@@ -75,8 +76,8 @@ final class ProfileService
             $lines[] = sprintf(
                 /* translators: %d: number of free-entry credits the person holds */
                 _n(
-                    'You have %d free-entry credit — send /ticket to spend it on a free ticket.',
-                    'You have %d free-entry credits — send /ticket to spend one on a free ticket.',
+                    'You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it.',
+                    'You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one.',
                     $standing->creditBalance,
                     'eventcrew'
                 ),
@@ -101,7 +102,7 @@ final class ProfileService
         $lines[] = '';
         $lines[] = __('Send /me history to see everything you’ve done.', 'eventcrew');
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines));
+        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines), MenuButtons::me());
     }
 
     /**
@@ -179,7 +180,7 @@ final class ProfileService
 
     /**
      * DMs the person a one-time link that signs them in to the web board -
-     * asked with /web. It is the same single-use, 30-minute magic link the web
+     * asked with the 🔑 Web sign-in button under /me. It is the same single-use, 30-minute magic link the web
      * sign-in form and the email footer issue (purpose 'web_login', consumed on
      * the signup page via ?eventcrew_login), so a Telegram member can hop to the
      * web without typing their email. The link is personal, so it only ever goes

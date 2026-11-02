@@ -114,7 +114,7 @@ final class PeoplePage
 
     /**
      * A granter's display name, in order of specificity: the granting person
-     * (a /gift from Telegram), a WordPress user (a wp-admin grant), or "the
+     * (🎁 Give credits in Telegram), a WordPress user (a wp-admin grant), or "the
      * system" only when neither was recorded.
      */
     private function granterName(?int $personId, ?int $userId): string
@@ -251,7 +251,7 @@ final class PeoplePage
 
         $this->grants->record($personId, $credits, $note, get_current_user_id());
 
-        // Tell them on both channels, the same as a gift from the bot's /gift.
+        // Tell them on both channels, the same as a gift from the bot.
         $this->notifier->notify($person, $credits);
 
         Admin::redirectTo(
@@ -264,7 +264,7 @@ final class PeoplePage
 
     /**
      * Gives a person a one-time pass to sign up despite being at risk - the
-     * wp-admin mirror of the bot's /roles pass. Spent on their next successful
+     * wp-admin mirror of the bot's pass (/people). Spent on their next successful
      * signup (SignupService::claim).
      */
     public function grantPass(): void
