@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.79.1
+Stable tag: 1.79.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.79.2 =
+Ticket emails now include the ticket note from Settings (door code and address), under the ticket, like the web ticket.
 
 = 1.79.1 =
 Fix: ticket emails could not be sent through FluentSMTP's API providers (Brevo), which read every attachment as a file and threw on the inline QR image. The QR is now drawn in the email as a table of cells, with no attachment and no image to load, and it shows in every mail app. A guest's QR holds a short signed code (EC-G<id>-<signature>) that the door desk accepts, so the guest email stays small. A mail error now marks that ticket as failed and the batch goes on. The ticket mail warning no longer logs the address.
@@ -850,6 +853,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.79.2 =
+No database change.
 
 = 1.79.1 =
 No database change.

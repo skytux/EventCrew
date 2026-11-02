@@ -247,6 +247,28 @@ final class TicketMailTest extends TestCase
         self::assertLessThan($en, $fi);
     }
 
+    public function testTheEmailShowsTheTicketNoteUnderTheTicket(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_ticket_note' === $name
+                ? "Door code 1234\nSome street 5 <b>"
+                : $default
+        );
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringContainsString("Door code 1234\nSome street 5 &lt;b&gt;", $mail['html']);
+        self::assertStringContainsString('white-space:pre-line', $mail['html']);
+        self::assertLessThan(strpos($mail['html'], 'Door code'), (int) strpos($mail['html'], 'AB12CD1'));
+        self::assertStringContainsString("Door code 1234\nSome street 5 <b>", $mail['text']);
+    }
+
+    public function testWithoutATicketNoteTheEmailHasNoNoteBlock(): void
+    {
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringNotContainsString('pre-line', $mail['html']);
+    }
+
     /**
      * Every cell of the QR has its size in pixels and its colour twice, no
      * text, and nothing that could stretch it; read back cell by cell, the
