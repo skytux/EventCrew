@@ -106,8 +106,30 @@ final class PrivacyEraserTest extends TestCase
         self::assertTrue($result['items_removed']);
         self::assertFalse($result['items_retained']);
         self::assertCount(1, $result['messages']);
-        self::assertStringContainsString(
+        self::assertContains(
             "UPDATE wp_eventcrew_ticket_buyers SET email = NULL, name = '' WHERE email = 'bo@example.test'",
+            $this->wpdb->queries
+        );
+        self::assertSame([], $this->wpdb->deletes);
+    }
+
+    /**
+     * A guest from a mailed guest list is erased by email too: name and
+     * email go, the guest row stays.
+     */
+    public function testAGuestWithAnEmailIsErased(): void
+    {
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 0; // no ticket buyer rows
+        $this->wpdb->nextQueryResults[] = 1; // one guest row
+
+        $result = $this->eraser()->erase('cy@example.test');
+
+        self::assertTrue($result['items_removed']);
+        self::assertCount(1, $result['messages']);
+        self::assertStringContainsString('guest list', $result['messages'][0]);
+        self::assertSame(
+            "UPDATE wp_eventcrew_guests SET email = NULL, name = '' WHERE email = 'cy@example.test'",
             $this->wpdb->lastQuery()
         );
         self::assertSame([], $this->wpdb->deletes);

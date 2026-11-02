@@ -625,6 +625,14 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
+                'When your ticket is added to our door list, we email you a thank-you message with your ticket: a QR code, your ticket code and a link to your ticket page. You show the QR code at the door. The legal basis is the same: it is necessary to give you the entry you paid for.',
+                'eventcrew'
+            ),
+            __(
+                'If an organizer puts you on a guest list with your email address, we store your name, your email address, how many people you bring and the date of the event. We email you a thank-you message with your ticket in the same way, and use the rest to check you in at the door.',
+                'eventcrew'
+            ),
+            __(
                 'Your email address is used to send you one short message after the event: a thank-you if you came, or a sorry-we-missed-you if you did not. The same message invites you to join our newsletter. The legal basis is our legitimate interest in keeping in touch with the people who bought a ticket.',
                 'eventcrew'
             ),
@@ -666,6 +674,14 @@ final class PrivacyPolicy
                 /* translators: %d: number of days */
                 __(
                     'We delete your email address, your name and your ticket code %d days after the event, unless you have joined our newsletter. This happens automatically.',
+                    'eventcrew'
+                ),
+                self::BUYER_EMAIL_DAYS
+            ),
+            sprintf(
+                /* translators: %d: number of days */
+                __(
+                    'A guest\'s email address is deleted %d days after the event too. The guest\'s name stays on that night\'s guest list.',
                     'eventcrew'
                 ),
                 self::BUYER_EMAIL_DAYS

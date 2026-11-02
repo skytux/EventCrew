@@ -18,6 +18,12 @@ final class BuyerListParser
     public const MAX_LENGTH = 191;
 
     /**
+     * An email address in a guest line, with the "<>" or "()" around it when
+     * there are any. Group 1 is the address.
+     */
+    private const EMAIL = '/[<(]?([A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,})[>)]?/';
+
+    /**
      * One name per line: each line trimmed, inner whitespace collapsed to one
      * space, and cut to MAX_LENGTH. Empty lines are dropped, so are quoted mail
      * lines (starting with ">") and everything from a mail signature separator
@@ -66,7 +72,13 @@ final class BuyerListParser
      * line that is only "+N" stays a name. Nothing from a signature line ("--"
      * after trailing whitespace is removed) down is read.
      *
-     * @return array<int, array{name: string, plus_ones: int}>
+     * An email address on a line ("Anna <anna@example.fi> +2", "Anna,
+     * anna@example.fi", "Anna anna@example.fi +1") is taken out of the name,
+     * with the brackets and commas around it, and returned as 'email' in
+     * lower case; '' when the line has none. A line that is only an address
+     * gets the part before the "@" as its name.
+     *
+     * @return array<int, array{name: string, plus_ones: int, email: string}>
      */
     public static function guests(string $text): array
     {
@@ -85,6 +97,19 @@ final class BuyerListParser
         }
 
         foreach (self::names(implode("\n", $kept)) as $line) {
+            $email = '';
+
+            if (1 === preg_match(self::EMAIL, $line, $found)) {
+                $email = strtolower($found[1]);
+                $rest = str_replace($found[0], ' ', $line);
+                $rest = trim((string) preg_replace('/\s*[,;]\s*/', ' ', $rest));
+                $line = trim((string) preg_replace('/\s+/', ' ', $rest), " \t,;:-");
+
+                if ('' === $line || 1 === preg_match(GuestCommand::PLUS_ONES_TOKEN, $line)) {
+                    $line = trim(strstr($email, '@', true) . ' ' . $line);
+                }
+            }
+
             $words = explode(' ', $line);
             $plusOnes = 0;
 
@@ -93,7 +118,7 @@ final class BuyerListParser
                 $plusOnes = (int) $m[1];
             }
 
-            $guests[] = ['name' => implode(' ', $words), 'plus_ones' => $plusOnes];
+            $guests[] = ['name' => implode(' ', $words), 'plus_ones' => $plusOnes, 'email' => $email];
         }
 
         return $guests;

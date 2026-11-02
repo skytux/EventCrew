@@ -120,5 +120,8 @@ abstract class TestCase extends PHPUnitTestCase
         Functions\when('wp_insert_post')->justReturn(123);
         Functions\when('update_option')->justReturn(true);
         Functions\when('is_wp_error')->justReturn(false);
+        // An import asks WP-Cron to email the tickets (TicketMail::schedule).
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        Functions\when('wp_schedule_single_event')->justReturn(true);
     }
 }

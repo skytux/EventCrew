@@ -75,6 +75,22 @@ updated list adds only the new buyers. "Reset import" on the Roster page deletes
 all imported ticket buyers for that date; the crew and the guest list are not
 affected.
 
+After every import, each imported ticket with an email address and a ticket
+code is emailed to its buyer automatically: one thank-you message with the
+ticket, Finnish first and English below it. The message carries the ticket's QR
+code as an inline image (the code printed under it) and a link to the ticket's
+page on the site. The desk scans that QR code like any other ticket code. A
+guest from a mailed guest list whose line holds an email address
+(`Anna Virtanen <anna@example.com> +2`) gets a ticket email the same way; the
+desk scanner accepts the guest's QR code too. WP-Cron sends up to 25 emails per
+run and keeps going while some are left; a failed email is not retried by
+itself. The Holvi card on the Roster page (and on the crew page's Admin tab)
+shows "N sent · N failed · N not sent", with "Send a test to me" (one ticket of
+that date to your own address, no status changes) and "Send the rest now"
+(every ticket not sent yet, failed ones too). Door sales and buyers added at
+the sales desk are never emailed. The email address is deleted 60 days after
+the event, which ends the ticket page link.
+
 For the email route, something has to read the import mailbox. Either:
 
 - the site reads it itself, every five minutes: Settings > Email > "Read the

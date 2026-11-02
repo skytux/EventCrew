@@ -81,6 +81,53 @@ final class Mailer
     }
 
     /**
+     * A ticket email to a ticket buyer or a guest (TicketMail). They have no
+     * account, so the footer is $footer, a line saying why they get it, linked
+     * to the public page. Always sent as HTML, whatever the template setting,
+     * because the ticket's QR code is an image.
+     *
+     * $content is ready HTML for the template's content slot. $png, when
+     * given, is attached as an inline image that $content refers to as
+     * "cid:$cid". Like the plain-text part, the attachment is added on
+     * phpmailer_init, so a mail plugin that bypasses PHPMailer sends the
+     * message without it - the ticket link and the written-out code are in
+     * the text for that case.
+     */
+    public function toTicketHolder(
+        string $to,
+        string $subject,
+        string $content,
+        string $text,
+        string $footer,
+        ?string $png = null,
+        string $cid = ''
+    ): bool {
+        $board = $this->boardUrl();
+        $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $board ? '' : ': ' . $board);
+        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board));
+
+        $parts = static function ($phpmailer) use ($text, $png, $cid): void {
+            $phpmailer->AltBody = $text;
+
+            if (null !== $png && '' !== $cid && method_exists($phpmailer, 'addStringEmbeddedImage')) {
+                $phpmailer->addStringEmbeddedImage($png, $cid, 'ticket-qr.png', 'base64', 'image/png');
+            }
+        };
+
+        add_action('phpmailer_init', $parts);
+
+        $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+
+        remove_action('phpmailer_init', $parts);
+
+        if (! $sent) {
+            $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
+        }
+
+        return $sent;
+    }
+
+    /**
      * A sample of the real thing, for the Settings button that proves the
      * template and the site's mail setup work before anyone relies on them.
      */

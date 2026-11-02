@@ -2625,8 +2625,8 @@ msgstr "Nimet lisätään yllä näkyvälle päivälle. Listalla jo oleva nimi o
 
 #: templates/admin/roster.php:267 templates/public/signup.php:1023
 #. translators: %s: the import email address
-msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list."
-msgstr "Voit myös lähettää lipputiedoston (.xlsx tai .csv) osoitteeseen %s. Se menee aina seuraavaan tapahtumaan, ja vain järjestäjän osoitteesta tuleva posti hyväksytään. Viestiin kirjoitetut nimet menevät vieraslistalle."
+msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list; a guest with an email address on the line gets a ticket by email."
+msgstr "Voit myös lähettää lipputiedoston (.xlsx tai .csv) osoitteeseen %s. Se menee aina seuraavaan tapahtumaan, ja vain järjestäjän osoitteesta tuleva posti hyväksytään. Viestiin kirjoitetut nimet menevät vieraslistalle; vieras, jonka rivillä on sähköpostiosoite, saa lipun sähköpostilla."
 
 #: templates/admin/roster.php:277 templates/public/signup.php:1030
 msgid "Delete all imported ticket buyers for this date? Guests and the crew are not affected."
@@ -4124,11 +4124,11 @@ msgstr "Myyntipiste on verkkosivu ovelle. Se näyttää illan listan: crew’n, 
 msgid "Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under \"Holvi ticket buyers\". A name already on the list is skipped."
 msgstr "Holvin lipunostajat: valitse kohdassa EventCrew > Läsnäolo päivä ja liitä nimet, yksi per rivi, kohtaan \"Holvin lipunostajat\". Listalla jo oleva nimi ohitetaan."
 
-msgid "Holvi ticket buyers: email the ticket file to %s from your EventCrew email address. The tickets go on the sales desk list of the next event. Names typed in the mail go on its guest list."
-msgstr "Holvin lipunostajat: lähetä lipputiedosto osoitteeseen %s EventCrew-sähköpostiosoitteestasi. Liput menevät seuraavan tapahtuman myyntipisteen listalle. Viestiin kirjoitetut nimet menevät sen vieraslistalle."
+msgid "Holvi ticket buyers: email the ticket file to %s from your EventCrew email address. The tickets go on the sales desk list of the next event and are emailed to the buyers. Names typed in the mail go on its guest list."
+msgstr "Holvin lipunostajat: lähetä lipputiedosto osoitteeseen %s EventCrew-sähköpostiosoitteestasi. Liput menevät seuraavan tapahtuman myyntipisteen listalle ja lähetetään ostajille sähköpostilla. Viestiin kirjoitetut nimet menevät sen vieraslistalle."
 
-msgid "Or email the Holvi ticket file (.xlsx or .csv) to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. The tickets go to the next event, which must already have its tasks. Names typed in the message itself, one per line, go to that event’s guest list instead; write \"+2\" after a name for two plus-ones. Lines after a signature line (--) are ignored. A name already on the list is skipped. Within a few minutes you get an email saying what was added and what was skipped. If no email comes, add the names in EventCrew > Roster instead."
-msgstr "Tai lähetä Holvin lipputiedosto (.xlsx tai .csv) osoitteeseen %s. Lähetä se siitä sähköpostiosoitteesta, joka sinulla on EventCrew’ssa; muista osoitteista tulevaa postia ei käytetä. Liput menevät seuraavaan tapahtumaan, jolla pitää jo olla tehtävänsä. Viestiin itse kirjoitetut nimet, yksi per rivi, menevät sen sijaan tapahtuman vieraslistalle; kirjoita \"+2\" nimen perään, niin mukaan tulee kaksi aveca. Allekirjoitusrivin (--) jälkeiset rivit ohitetaan. Listalla jo oleva nimi ohitetaan. Muutaman minuutin kuluttua saat sähköpostin, jossa kerrotaan, mitä lisättiin ja mitä ohitettiin. Jos sähköpostia ei tule, lisää nimet kohdassa EventCrew > Roster."
+msgid "Or email the Holvi ticket file (.xlsx or .csv) to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. The tickets go to the next event, which must already have its tasks. Names typed in the message itself, one per line, go to that event’s guest list instead; write \"+2\" after a name for two plus-ones. Put an email address on the line too (Anna Virtanen <anna@example.com> +2) and the guest gets a ticket by email. Lines after a signature line (--) are ignored. A name already on the list is skipped. Within a few minutes you get an email saying what was added and what was skipped. If no email comes, add the names in EventCrew > Roster instead."
+msgstr "Tai lähetä Holvin lipputiedosto (.xlsx tai .csv) osoitteeseen %s. Lähetä se siitä sähköpostiosoitteesta, joka sinulla on EventCrew’ssa; muista osoitteista tulevaa postia ei käytetä. Liput menevät seuraavaan tapahtumaan, jolla pitää jo olla tehtävänsä. Viestiin itse kirjoitetut nimet, yksi per rivi, menevät sen sijaan tapahtuman vieraslistalle; kirjoita \"+2\" nimen perään, niin mukaan tulee kaksi aveca. Kirjoita riville myös sähköpostiosoite (Anna Virtanen <anna@example.com> +2), niin vieras saa lipun sähköpostilla. Allekirjoitusrivin (--) jälkeiset rivit ohitetaan. Listalla jo oleva nimi ohitetaan. Muutaman minuutin kuluttua saat sähköpostin, jossa kerrotaan, mitä lisättiin ja mitä ohitettiin. Jos sähköpostia ei tule, lisää nimet kohdassa EventCrew > Roster."
 
 msgid "Tickets, credits and standing"
 msgstr "Liput, vapaaliput ja luotettavuus"
@@ -5416,8 +5416,8 @@ msgstr "Lipunostajien tietosuojasivu luotu ja valittu."
 msgid "Ticket buyer privacy page"
 msgstr "Lipunostajien tietosuojasivu"
 
-msgid "The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop's order export, that buyers can type a dash instead of their address in the shop, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop."
-msgstr "Sivu, jolla on lyhytkoodi %1$s: julkinen seloste verkkokaupasta lipun ostaneille. Se kertoo, mitä kaupan tilausviennistä otetaan, että ostajat voivat kirjoittaa kaupassa osoitteensa sijaan viivan ja että heidän sähköpostiosoitteensa, nimensä ja lippukoodinsa poistetaan %2$d päivän kuluttua tapahtumasta, elleivät he ole liittyneet uutiskirjeeseen. Linkitä siihen kaupastasi."
+msgid "The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop's order export, that buyers can type a dash instead of their address in the shop, that they are emailed a thank-you message with their ticket after the import, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop."
+msgstr "Sivu, jolla on lyhytkoodi %1$s: julkinen seloste verkkokaupasta lipun ostaneille. Se kertoo, mitä kaupan tilausviennistä otetaan, että ostajat voivat kirjoittaa kaupassa osoitteensa sijaan viivan, että heille lähetetään tuonnin jälkeen kiitosviesti ja lippu sähköpostilla ja että heidän sähköpostiosoitteensa, nimensä ja lippukoodinsa poistetaan %2$d päivän kuluttua tapahtumasta, elleivät he ole liittyneet uutiskirjeeseen. Linkitä siihen kaupastasi."
 
 msgid "Create the ticket buyer privacy page"
 msgstr "Luo lipunostajien tietosuojasivu"
@@ -5458,3 +5458,90 @@ msgstr "⬅ Seuraavaan tapahtumaan"
 
 msgid "🗓 Other dates"
 msgstr "🗓 Muut päivät"
+
+msgid "A guest's email address is deleted %d days after the event too. The guest's name stays on that night's guest list."
+msgstr "Myös vieraan sähköpostiosoite poistetaan %d päivän kuluttua tapahtumasta. Vieraan nimi jää illan vieraslistalle."
+
+msgid "A test ticket email was sent to %s."
+msgstr "Testilippu lähetettiin sähköpostilla osoitteeseen %s."
+
+msgid "A test ticket email was sent to your own address."
+msgstr "Testilippu lähetettiin sähköpostilla omaan osoitteeseesi."
+
+msgid "After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket's QR code, in Finnish and English. Roster and the Admin tab show how many were sent, failed or not sent yet. \"Send a test to me\" sends one to your own address; \"Send the rest now\" sends every ticket not sent yet, failed ones too."
+msgstr "Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi suomeksi ja englanniksi. Roster ja Admin-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. \"Lähetä testi minulle\" lähettää yhden omaan osoitteeseesi; \"Lähetä loput nyt\" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet."
+
+msgid "Email their tickets now to the buyers who have not got one?"
+msgstr "Lähetetäänkö liput nyt niille ostajille, jotka eivät ole vielä saaneet lippua?"
+
+msgid "Email their tickets now to the guests who have not got one?"
+msgstr "Lähetetäänkö liput nyt niille vieraille, jotka eivät ole vielä saaneet lippua?"
+
+msgid "EventCrew guest list"
+msgstr "EventCrew-vieraslista"
+
+#, php-format
+msgid "Guest list, +%d person"
+msgid_plural "Guest list, +%d people"
+msgstr[0] "Vieraslista, +%d henkilö"
+msgstr[1] "Vieraslista, +%d henkilöä"
+
+msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
+msgstr "Tässä on lippusi tapahtumaan %1$s %2$s. Näytä alla oleva QR-koodi ovella."
+
+msgid "Hi,"
+msgstr "Hei,"
+
+msgid "If an organizer puts you on a guest list with your email address, we store your name, your email address, how many people you bring and the date of the event. We email you a thank-you message with your ticket in the same way, and use the rest to check you in at the door."
+msgstr "Jos järjestäjä lisää sinut vieraslistalle sähköpostiosoitteesi kanssa, tallennamme nimesi, sähköpostiosoitteesi, montako henkilöä tuot mukanasi ja tapahtuman päivämäärän. Lähetämme sinulle samalla tavalla kiitosviestin ja lipun, ja muita tietoja käytetään, kun sinut merkitään sisään ovella."
+
+msgid "Open the ticket in your browser"
+msgstr "Avaa lippu selaimessa"
+
+msgid "Press again to send the rest."
+msgstr "Paina uudelleen, niin loput lähetetään."
+
+msgid "Send a test to me"
+msgstr "Lähetä testi minulle"
+
+msgid "Send the rest now"
+msgstr "Lähetä loput nyt"
+
+msgid "Thank you for buying a ticket!"
+msgstr "Kiitos, että ostit lipun!"
+
+msgid "Thank you for coming! You are on the guest list."
+msgstr "Kiitos, että tulet! Olet vieraslistalla."
+
+msgid "The name and email address were erased from the guest list places under this address. The places stay on the guest list with no name."
+msgstr "Nimi ja sähköpostiosoite poistettiin tämän osoitteen vieraslistapaikoista. Paikat jäävät vieraslistalle ilman nimeä."
+
+msgid "The test email could not be sent. Check the site’s email setup."
+msgstr "Testiviestiä ei voitu lähettää. Tarkista sivuston sähköpostiasetukset."
+
+msgid "This night has no ticket with an email address to make a test from."
+msgstr "Tällä illalla ei ole lippua, jolla on sähköpostiosoite, joten testiä ei voi tehdä."
+
+msgid "Ticket QR code"
+msgstr "Lipun QR-koodi"
+
+msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
+msgstr "Lippuviestit: %1$d lähetetty · %2$d epäonnistui · %3$d lähettämättä"
+
+msgid "Ticket emails: %1$d sent, %2$d failed."
+msgstr "Lippuviestit: %1$d lähetetty, %2$d epäonnistui."
+
+msgid "When your ticket is added to our door list, we email you a thank-you message with your ticket: a QR code, your ticket code and a link to your ticket page. You show the QR code at the door. The legal basis is the same: it is necessary to give you the entry you paid for."
+msgstr "Kun lippusi lisätään ovilistallemme, lähetämme sinulle sähköpostilla kiitosviestin ja lippusi: QR-koodin, lippukoodisi ja linkin lippusivullesi. Näytät QR-koodin ovella. Oikeusperuste on sama: tämä on tarpeen, jotta saat sisäänpääsyn, josta maksoit."
+
+#, php-format
+msgid "You can bring %d person with you."
+msgid_plural "You can bring %d people with you."
+msgstr[0] "Voit tuoda mukanasi %d henkilön."
+msgstr[1] "Voit tuoda mukanasi %d henkilöä."
+
+msgid "You get this email because you have a ticket to this event."
+msgstr "Saat tämän viestin, koska sinulla on lippu tähän tapahtumaan."
+
+msgid "Your ticket"
+msgstr "Lippusi"

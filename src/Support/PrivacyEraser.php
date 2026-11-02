@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 
@@ -27,7 +28,8 @@ final class PrivacyEraser
     public function __construct(
         private readonly PersonRepository $people,
         private readonly PersonEraser $eraser,
-        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
+        private readonly GuestRepository $guests = new GuestRepository()
     ) {
     }
 
@@ -94,6 +96,15 @@ final class PrivacyEraser
         if ($this->buyers->eraseEmail($email) > 0) {
             $messages[] = __(
                 'The name and email address were erased from the tickets bought with this address. The tickets stay on the door lists with no name.',
+                'eventcrew'
+            );
+        }
+
+        // Guests from a mailed guest list: the row stays with no name, so the
+        // night's head count does not change.
+        if ($this->guests->eraseEmail($email) > 0) {
+            $messages[] = __(
+                'The name and email address were erased from the guest list places under this address. The places stay on the guest list with no name.',
                 'eventcrew'
             );
         }

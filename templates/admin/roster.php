@@ -11,6 +11,8 @@
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
  * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
+ * @var string $ticket_mail_buyers "Ticket emails: 38 sent · 2 failed · 2 not sent" for the buyers; '' when none can be emailed.
+ * @var string $ticket_mail_guests The same for guests with an email address; '' when there are none.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var array<string, string> $statuses Status slug => label, for the pickers.
@@ -230,6 +232,20 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     </tr>
                 </tbody>
             </table>
+            <?php if ('' !== $ticket_mail_guests) : ?>
+                <p><?php echo esc_html($ticket_mail_guests); ?></p>
+                <form
+                    method="post"
+                    action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                    style="margin:0 0 1em"
+                    onsubmit="return confirm('<?php echo esc_js(__('Email their tickets now to the guests who have not got one?', 'eventcrew')); ?>');">
+                    <input type="hidden" name="action" value="eventcrew_send_tickets_now">
+                    <?php wp_nonce_field($nonce_action); ?>
+                    <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                    <input type="hidden" name="ticket_kind" value="guests">
+                    <button type="submit" class="button"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button>
+                </form>
+            <?php endif; ?>
 
             <h2><?php esc_html_e('Holvi ticket buyers', 'eventcrew'); ?></h2>
             <p class="description">
@@ -248,6 +264,27 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+            <?php if ('' !== $ticket_mail_buyers) : ?>
+                <p><?php echo esc_html($ticket_mail_buyers); ?></p>
+                <div style="display:flex;flex-wrap:wrap;gap:.5em;margin:0 0 1em">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <input type="hidden" name="action" value="eventcrew_send_ticket_test">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                        <button type="submit" class="button"><?php esc_html_e('Send a test to me', 'eventcrew'); ?></button>
+                    </form>
+                    <form
+                        method="post"
+                        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                        onsubmit="return confirm('<?php echo esc_js(__('Email their tickets now to the buyers who have not got one?', 'eventcrew')); ?>');">
+                        <input type="hidden" name="action" value="eventcrew_send_tickets_now">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                        <input type="hidden" name="ticket_kind" value="buyers">
+                        <button type="submit" class="button"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button>
+                    </form>
+                </div>
+            <?php endif; ?>
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:820px">
                 <input type="hidden" name="action" value="eventcrew_import_buyers">
                 <?php wp_nonce_field($nonce_action); ?>
@@ -264,7 +301,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                 if ('' !== $import_mailbox) {
                     printf(
                         /* translators: %s: the import email address */
-                        esc_html__('You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list.', 'eventcrew'),
+                        esc_html__('You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list; a guest with an email address on the line gets a ticket by email.', 'eventcrew'),
                         '<code>' . esc_html($import_mailbox) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
                     );
                 }

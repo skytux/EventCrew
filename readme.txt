@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.78.10
+Stable tag: 1.79.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.79.0 =
+Ticket emails: after every import, each ticket buyer (and each guest listed with an email address) automatically gets one email with a thank-you and their ticket, Finnish first then English, with the QR code inside the email and a link to the web ticket page (which keeps the clock). Sending runs in batches of 25 through WP-Cron; each row records sent/failed/not sent and the time. The Holvi and Guest list cards show the counts, "Send a test to me" and "Send the rest now" (also retries failed ones). Mailed guest lists: an email address on a line is saved with the guest ("Name <a@b.fi> +2", "Name, a@b.fi", "Name a@b.fi +1"). The door desk accepts the guest ticket QR. Privacy notice and organizer guide updated.
 
 = 1.78.10 =
 Security: typing an email in the Telegram bot no longer links that Telegram account to the person straight away. The account is linked only when the emailed confirmation link is clicked; until then the bot does not know the user. When a click moves a person to a new Telegram account, the old Telegram chat is told.
@@ -844,6 +847,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.79.0 =
+Database version 23: ticket_buyers gets ticket_mail_status and ticket_mailed_at; guests gets email, ticket_mail_status and ticket_mailed_at. Guest emails are exported, erased and deleted 60 days after the event like buyer emails.
 
 = 1.78.10 =
 No database change. Pending links wait in a transient for one day, like the confirmation token.

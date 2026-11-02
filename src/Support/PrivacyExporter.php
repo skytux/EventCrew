@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -34,7 +35,8 @@ final class PrivacyExporter
         private readonly TaskRepository $tasks,
         private readonly RedemptionRepository $redemptions,
         private readonly CreditGrantRepository $credits,
-        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository()
+        private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
+        private readonly GuestRepository $guests = new GuestRepository()
     ) {
     }
 
@@ -93,6 +95,11 @@ final class PrivacyExporter
         // their ticket rows are looked up by email whether or not a crew
         // record exists.
         foreach ($this->boughtTickets($email) as $item) {
+            $data[] = $item;
+        }
+
+        // Guests from a mailed guest list that carried their email address.
+        foreach ($this->guestTickets($email) as $item) {
             $data[] = $item;
         }
 
@@ -202,6 +209,32 @@ final class PrivacyExporter
                     ['name' => __('Name', 'eventcrew'), 'value' => (string) ($row['name'] ?? '')],
                     ['name' => __('Email', 'eventcrew'), 'value' => (string) ($row['email'] ?? '')],
                     ['name' => __('Ticket code', 'eventcrew'), 'value' => (string) ($row['ticket_code'] ?? '')],
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Guest list places under this email address: one item per guest row.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function guestTickets(string $email): array
+    {
+        $items = [];
+
+        foreach ($this->guests->rowsForEmail($email) as $index => $guest) {
+            $items[] = [
+                'group_id' => self::GROUP . '-guest-list',
+                'group_label' => __('EventCrew guest list', 'eventcrew'),
+                'item_id' => self::GROUP . '-guest-' . $index,
+                'data' => [
+                    ['name' => __('Event date', 'eventcrew'), 'value' => $guest->eventDate],
+                    ['name' => __('Name', 'eventcrew'), 'value' => $guest->name],
+                    ['name' => __('Email', 'eventcrew'), 'value' => $guest->email],
+                    ['name' => __('Plus-ones', 'eventcrew'), 'value' => (string) $guest->plusOnes],
                 ],
             ];
         }

@@ -902,6 +902,37 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(DoorDesk::SCAN_OK, $this->desk()->scan(self::NIGHT, SignedLink::sign('ticket', 30))['code']);
     }
 
+    /** A guest's emailed ticket link scans to their row on the guest list. */
+    public function testScanningAGuestsEmailedTicketFindsTheirGuestRow(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 12,
+            'event_date' => self::NIGHT,
+            'name' => 'Cy Cole',
+            'plus_ones' => 2,
+            'email' => 'cy@example.test',
+        ];
+
+        $url = 'https://site.test/wp-json/eventcrew/v1/ticket?token=' . SignedLink::sign('guest_ticket', 12);
+        $scan = $this->desk()->scan(self::NIGHT, $url);
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('guest:12', $scan['key']);
+        self::assertSame('Cy Cole', $scan['name']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** A guest whose email address was deleted no longer has a ticket. */
+    public function testAGuestTicketWithItsEmailDeletedNoLongerScans(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 12, 'event_date' => self::NIGHT, 'name' => 'Cy Cole', 'email' => null];
+
+        $scan = $this->desk()->scan(self::NIGHT, SignedLink::sign('guest_ticket', 12));
+
+        self::assertSame(DoorDesk::SCAN_DISABLED, $scan['code']);
+        self::assertSame('', $scan['key']);
+    }
+
     public function testATicketForAnotherNightSaysWhichNight(): void
     {
         $other = ['task_date' => '2026-12-12'] + $this->taskRow(5, 'decorate');

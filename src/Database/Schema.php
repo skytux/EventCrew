@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '22';
+    public const DB_VERSION = '23';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -485,6 +485,13 @@ final class Schema
             // crew members - a DJ's partner, a press guest. Just a name typed
             // by an organizer, so no person row; plus_ones counts the people
             // they bring. added_by is the organizer's person id, for the record.
+            //
+            // email is set only for a guest from a mailed guest list whose
+            // line held an email address. That guest is sent a thank-you
+            // message with their ticket after the import (TicketMail);
+            // ticket_mail_status is '' (not sent), 'sent'
+            // or 'failed', and ticket_mailed_at is when it was tried.
+            // RetentionPurge blanks the email 60 days after the event.
             "CREATE TABLE {$guests} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
@@ -492,6 +499,9 @@ final class Schema
                 plus_ones smallint(5) unsigned NOT NULL DEFAULT 0,
                 note varchar(191) NOT NULL DEFAULT '',
                 added_by bigint(20) unsigned DEFAULT NULL,
+                email varchar(191) DEFAULT NULL,
+                ticket_mail_status varchar(10) NOT NULL DEFAULT '',
+                ticket_mailed_at datetime DEFAULT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 KEY event_date (event_date)
@@ -522,14 +532,19 @@ final class Schema
             //
             // email is filled from an imported ticket file, and for a Holvi
             // buyer added by hand at the sales desk because they were missing
-            // from the imported list. It is shown on the door list and
-            // nothing is ever sent to it. RetentionPurge blanks it, the name
-            // and the ticket code 60 days after the event
+            // from the imported list. It is shown on the door list. An
+            // imported ticket with an email and a ticket code is sent a
+            // thank-you message with its ticket, automatically after the
+            // import (TicketMail). RetentionPurge blanks it, the
+            // name and the ticket code 60 days after the event
             // (PrivacyPolicy::BUYER_EMAIL_DAYS); the row and its check-in stay.
             //
             // ticket_code is the code from the ticket file (for Holvi, the
             // order code). Several tickets of one order share it, so it is
             // not unique. NULL for names imported without a file.
+            //
+            // ticket_mail_status is '' (not sent), 'sent' or 'failed' (what
+            // wp_mail answered), and ticket_mailed_at is when it was tried.
             "CREATE TABLE {$ticketBuyers} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
@@ -538,6 +553,8 @@ final class Schema
                 source varchar(20) NOT NULL DEFAULT 'paste',
                 batch varchar(64) NOT NULL DEFAULT '',
                 ticket_code varchar(191) DEFAULT NULL,
+                ticket_mail_status varchar(10) NOT NULL DEFAULT '',
+                ticket_mailed_at datetime DEFAULT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 KEY event_date (event_date),

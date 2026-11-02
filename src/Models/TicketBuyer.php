@@ -9,7 +9,8 @@ namespace EventCrew\Models;
  * the door. Just the name (a door ticket may have none), which is all the door
  * needs to tick them off. A ticket imported from a ticket file also carries
  * the buyer's email address and the ticket code; a Holvi buyer added by hand
- * at the sales desk may carry an email address.
+ * at the sales desk may carry an email address. mailStatus is whether the
+ * ticket email went out: '' (not sent), 'sent' or 'failed'.
  */
 final class TicketBuyer
 {
@@ -29,7 +30,9 @@ final class TicketBuyer
         public readonly string $source = 'paste',
         public readonly string $batch = '',
         public readonly string $email = '',
-        public readonly string $ticketCode = ''
+        public readonly string $ticketCode = '',
+        public readonly string $mailStatus = '',
+        public readonly string $mailedAt = ''
     ) {
     }
 
@@ -45,7 +48,9 @@ final class TicketBuyer
             (string) ($row['source'] ?? 'paste'),
             (string) ($row['batch'] ?? ''),
             (string) ($row['email'] ?? ''),
-            (string) ($row['ticket_code'] ?? '')
+            (string) ($row['ticket_code'] ?? ''),
+            (string) ($row['ticket_mail_status'] ?? ''),
+            (string) ($row['ticket_mailed_at'] ?? '')
         );
     }
 

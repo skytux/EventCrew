@@ -142,6 +142,9 @@ final class Scheduler
         // notice promises it, so it does not wait for the purge setting above.
         $this->retention->purgeBuyers();
 
+        // The same for the email addresses of guests from a mailed guest list.
+        $this->retention->purgeGuestEmails();
+
         update_option(self::LAST_RUN_OPTION, time());
     }
 
@@ -179,5 +182,6 @@ final class Scheduler
         // the deactivation hook in the main plugin file covers it as well.
         wp_clear_scheduled_hook(DoorLinkSender::HOOK);
         wp_clear_scheduled_hook(MailImporter::HOOK);
+        wp_clear_scheduled_hook(TicketMail::HOOK);
     }
 }

@@ -59,6 +59,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Support\TicketMail;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
@@ -163,6 +164,10 @@ final class Kernel
         // request when a host's WP-Cron never fires.
         $this->container->get(Scheduler::class)->boot();
         $this->container->get(CronFallbackTrigger::class)->boot();
+
+        // The ticket emails after an import: a single cron event that sends
+        // one batch and schedules the next while rows remain.
+        $this->container->get(TicketMail::class)->boot();
 
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
@@ -575,7 +580,18 @@ final class Kernel
                 $container->get(GuestRepository::class),
                 $container->get(TicketBuyerRepository::class),
                 $container->get(BuyerImport::class),
-                $container->get(MailImporter::class)
+                $container->get(MailImporter::class),
+                $container->get(TicketMail::class)
+            )
+        );
+
+        $this->container->singleton(
+            TicketMail::class,
+            fn (Container $container) => new TicketMail(
+                $container->get(TicketBuyerRepository::class),
+                $container->get(GuestRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(Mailer::class)
             )
         );
 
@@ -709,7 +725,8 @@ final class Kernel
             fn (Container $container) => new RetentionPurge(
                 $container->get(PersonRepository::class),
                 $container->get(PersonEraser::class),
-                $container->get(TicketBuyerRepository::class)
+                $container->get(TicketBuyerRepository::class),
+                $container->get(GuestRepository::class)
             )
         );
 
@@ -721,7 +738,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(CreditGrantRepository::class),
-                $container->get(TicketBuyerRepository::class)
+                $container->get(TicketBuyerRepository::class),
+                $container->get(GuestRepository::class)
             )
         );
 
@@ -730,7 +748,8 @@ final class Kernel
             fn (Container $container) => new PrivacyEraser(
                 $container->get(PersonRepository::class),
                 $container->get(PersonEraser::class),
-                $container->get(TicketBuyerRepository::class)
+                $container->get(TicketBuyerRepository::class),
+                $container->get(GuestRepository::class)
             )
         );
 
@@ -991,7 +1010,9 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
-                $container->get(RedemptionRepository::class)
+                $container->get(RedemptionRepository::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(GuestRepository::class)
             )
         );
 
@@ -1102,7 +1123,8 @@ final class Kernel
                 $container->get(TicketRedemptionService::class),
                 $container->get(GuestRepository::class),
                 $container->get(TicketBuyerRepository::class),
-                $container->get(BuyerImport::class)
+                $container->get(BuyerImport::class),
+                $container->get(TicketMail::class)
             )
         );
 

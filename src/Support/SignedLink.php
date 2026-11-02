@@ -50,6 +50,25 @@ final class SignedLink
         return ctype_digit($id) ? (int) $id : null;
     }
 
+    /**
+     * The id written in a token, NOT verified: for a purpose that includes a
+     * value of the record itself (a buyer ticket signs its ticket code), the
+     * record must be read before verify() can be called. Null when malformed.
+     */
+    public static function idOf(string $token): ?int
+    {
+        $token = trim($token);
+        $dot = strrpos($token, '.');
+
+        if (false === $dot) {
+            return null;
+        }
+
+        $id = self::decode(substr($token, 0, $dot));
+
+        return ctype_digit($id) ? (int) $id : null;
+    }
+
     private static function mac(string $purpose, string $body): string
     {
         $key = function_exists('wp_salt') ? wp_salt('auth') : 'eventcrew-test-key';

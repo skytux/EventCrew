@@ -448,6 +448,7 @@ final class CrewAdminController
                     sanitize_text_field((string) ($post['guest_note'] ?? ''))
                 ),
                 'remove' => $this->rosterScreen->removeGuest((int) ($post['guest_id'] ?? 0)),
+                'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'guests'),
                 default => 'admin_change_failed',
             },
             self::BUYERS_ACTION => match ($op) {
@@ -457,6 +458,8 @@ final class CrewAdminController
                     sanitize_textarea_field((string) ($post['buyer_names'] ?? ''))
                 ),
                 'reset' => $this->rosterScreen->resetBuyers($date),
+                'mail_test' => $this->rosterScreen->sendTicketTest($date, $organizer),
+                'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'buyers'),
                 default => 'admin_change_failed',
             },
             default => $this->rosterScreen->checkMail(),

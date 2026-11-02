@@ -222,7 +222,9 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('We delete your email address, your name and your ticket code 60 days after the event', $text);
         self::assertStringContainsString('unless you have joined our newsletter', $text);
         self::assertStringContainsString('You can leave it at any time', $text);
-
+        self::assertStringContainsString('we email you a thank-you message with your ticket', $text);
+        self::assertStringContainsString('guest list with your email address', $text);
+        self::assertStringContainsString('A guest\'s email address is deleted 60 days after the event too', $text);
         // Not the crew notice: nothing about tasks or the crew record.
         self::assertStringNotContainsString('crew records', $text);
         self::assertStringNotContainsString('claim a task', $text);
