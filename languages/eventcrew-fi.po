@@ -2621,8 +2621,8 @@ msgstr "Nimet lisätään yllä näkyvälle päivälle. Listalla jo oleva nimi o
 
 #: templates/admin/roster.php:267 templates/public/signup.php:1023
 #. translators: %s: the import email address
-msgid "You can also email the list, one name per line, to %s: a mailed list always goes to the next event, and only mail sent from an organizer’s address is accepted."
-msgstr "Voit myös lähettää listan sähköpostilla, yksi nimi per rivi, osoitteeseen %s: postitettu lista menee aina seuraavaan tapahtumaan, ja vain järjestäjän osoitteesta lähetetty posti hyväksytään."
+msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list."
+msgstr "Voit myös lähettää lipputiedoston (.xlsx tai .csv) osoitteeseen %s. Se menee aina seuraavaan tapahtumaan, ja vain järjestäjän osoitteesta tuleva posti hyväksytään. Viestiin kirjoitetut nimet menevät vieraslistalle."
 
 #: templates/admin/roster.php:277 templates/public/signup.php:1030
 msgid "Delete all imported ticket buyers for this date? Guests and the crew are not affected."
@@ -4114,11 +4114,11 @@ msgstr "Myyntipiste on verkkosivu ovelle. Se näyttää illan listan: crew’n, 
 msgid "Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under \"Holvi ticket buyers\". A name already on the list is skipped."
 msgstr "Holvin lipunostajat: valitse kohdassa EventCrew > Läsnäolo päivä ja liitä nimet, yksi per rivi, kohtaan \"Holvin lipunostajat\". Listalla jo oleva nimi ohitetaan."
 
-msgid "Holvi ticket buyers: email the list of names to %s from your EventCrew email address. The names go on the sales desk list of the next event."
-msgstr "Holvin lipunostajat: lähetä nimilista sähköpostilla osoitteeseen %s EventCrew-sähköpostiosoitteestasi. Nimet menevät seuraavan tapahtuman myyntipisteen listalle."
+msgid "Holvi ticket buyers: email the ticket file to %s from your EventCrew email address. The tickets go on the sales desk list of the next event. Names typed in the mail go on its guest list."
+msgstr "Holvin lipunostajat: lähetä lipputiedosto osoitteeseen %s EventCrew-sähköpostiosoitteestasi. Liput menevät seuraavan tapahtuman myyntipisteen listalle. Viestiin kirjoitetut nimet menevät sen vieraslistalle."
 
-msgid "Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead."
-msgstr "Tai lähetä lista sähköpostilla osoitteeseen %s. Lähetä se siitä sähköpostiosoitteesta, joka sinulla on EventCrew’ssa; muista osoitteista tulevaa postia ei käytetä. Kirjoita viestiin yksi nimi per rivi tai liitä .txt- tai .csv-tiedosto, jonka ensimmäisessä sarakkeessa ovat nimet. Nimet menevät seuraavaan tapahtumaan, jolla pitää jo olla tehtävät. Listalla jo oleva nimi ohitetaan. Muutaman minuutin kuluessa saat sähköpostin, jossa kerrotaan, montako nimeä lisättiin ja montako ohitettiin. Jos sähköpostia ei tule, lisää nimet sen sijaan kohdassa EventCrew > Läsnäolo."
+msgid "Or email the Holvi ticket file (.xlsx or .csv) to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. The tickets go to the next event, which must already have its tasks. Names typed in the message itself, one per line, go to that event’s guest list instead; write \"+2\" after a name for two plus-ones. Lines after a signature line (--) are ignored. A name already on the list is skipped. Within a few minutes you get an email saying what was added and what was skipped. If no email comes, add the names in EventCrew > Roster instead."
+msgstr "Tai lähetä Holvin lipputiedosto (.xlsx tai .csv) osoitteeseen %s. Lähetä se siitä sähköpostiosoitteesta, joka sinulla on EventCrew’ssa; muista osoitteista tulevaa postia ei käytetä. Liput menevät seuraavaan tapahtumaan, jolla pitää jo olla tehtävänsä. Viestiin itse kirjoitetut nimet, yksi per rivi, menevät sen sijaan tapahtuman vieraslistalle; kirjoita \"+2\" nimen perään, niin mukaan tulee kaksi aveca. Allekirjoitusrivin (--) jälkeiset rivit ohitetaan. Listalla jo oleva nimi ohitetaan. Muutaman minuutin kuluttua saat sähköpostin, jossa kerrotaan, mitä lisättiin ja mitä ohitettiin. Jos sähköpostia ei tule, lisää nimet kohdassa EventCrew > Roster."
 
 msgid "Tickets, credits and standing"
 msgstr "Liput, vapaaliput ja luotettavuus"
@@ -4338,11 +4338,17 @@ msgstr "Jos katsot, että olemme käsitelleet tietojasi väärin, voit tehdä va
 msgid "This calendar link is not valid."
 msgstr "Tämä kalenterilinkki ei ole kelvollinen."
 
-msgid "%1$d ticket buyers were added to the door list for %2$s."
-msgstr "%1$d lipunostajaa lisättiin ovilistaan päivälle %2$s."
+msgid "%1$d guests were added to the guest list for %2$s."
+msgstr "%1$d vierasta lisättiin vieraslistalle päivälle %2$s."
 
-msgid "%d names were skipped because they were already on the list."
-msgstr "%d nimeä ohitettiin, koska ne olivat jo listalla."
+msgid "They bring %d plus-ones in total."
+msgstr "Heillä on yhteensä %d aveceja."
+
+msgid "%d names were skipped because they were already on the guest list."
+msgstr "%d nimeä ohitettiin, koska ne olivat jo vieraslistalla."
+
+msgid "Guests added for %s"
+msgstr "Vieraat lisätty päivälle %s"
 
 msgid "Ticket buyers imported for %s"
 msgstr "Lipunostajat tuotu päivälle %s"
@@ -4734,8 +4740,8 @@ msgstr "Palauta pohja"
 msgid "Ticket buyer import by email"
 msgstr "Lipunostajien tuonti sähköpostilla"
 
-msgid "Organizers can email a list of Holvi ticket buyers, one name per line, to the import mailbox. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
-msgstr "Järjestäjät voivat lähettää Holvin lipunostajien listan, yksi nimi riviä kohden, sähköpostilla tuontipostilaatikkoon. Tämä sivusto lukee postilaatikkoa itse, tai sähköpostipalvelimella toimiva noutaja lähettää jokaisen listan tänne alla olevalla salaisuudella allekirjoitettuna. Lista menee seuraavaan tapahtumaan. Niin kauan kuin postilaatikkoa ei ole asetettu, järjestäjän ohje ja Läsnäolo-sivu eivät mainitse sähköpostituontia."
+msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
+msgstr "Järjestäjät voivat lähettää Holvin lipputiedoston (.xlsx tai .csv) tuontipostilaatikkoon; sen liput menevät ovilistalle. Viestiin kirjoitetut nimet, yksi per rivi, menevät vieraslistalle, ja \"+2\" nimen perässä lisää kaksi aveca. Tämä sivusto lukee postilaatikkoa itse, tai sähköpostipalvelimella toimiva noutaja lähettää jokaisen listan tänne alla olevalla salaisuudella allekirjoitettuna. Lista menee seuraavaan tapahtumaan. Niin kauan kuin postilaatikkoa ei ole asetettu, järjestäjän ohje ja Läsnäolo-sivu eivät mainitse sähköpostituontia."
 
 msgid "Import mailbox"
 msgstr "Tuontipostilaatikko"

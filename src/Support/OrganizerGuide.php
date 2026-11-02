@@ -173,7 +173,7 @@ final class OrganizerGuide
 
         return [sprintf(
             /* translators: %s: the import email address */
-            '- 📧 ' . __('Holvi ticket buyers: email the list of names to %s from your EventCrew email address. The names go on the sales desk list of the next event.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 📧 ' . __('Holvi ticket buyers: email the ticket file to %s from your EventCrew email address. The tickets go on the sales desk list of the next event. Names typed in the mail go on its guest list.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             $mailbox
         )];
     }
@@ -194,7 +194,7 @@ final class OrganizerGuide
 
         return [sprintf(
             /* translators: %s: the import email address */
-            __('Or email the list to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. Put one name per line in the message, or attach a .txt or .csv file with the names in the first column. The names go to the next event, which must already have its tasks. A name already on the list is skipped. Within a few minutes you get an email saying how many names were added and how many were skipped. If no email comes, add the names in EventCrew > Roster instead.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Or email the Holvi ticket file (.xlsx or .csv) to %s. Send it from the email address you have in EventCrew; mail from any other address is not used. The tickets go to the next event, which must already have its tasks. Names typed in the message itself, one per line, go to that event’s guest list instead; write "+2" after a name for two plus-ones. Lines after a signature line (--) are ignored. A name already on the list is skipped. Within a few minutes you get an email saying what was added and what was skipped. If no email comes, add the names in EventCrew > Roster instead.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             $mailbox
         )];
     }

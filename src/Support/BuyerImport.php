@@ -8,7 +8,9 @@ use EventCrew\Repositories\TicketBuyerRepository;
 
 /**
  * Imports a list of Holvi ticket buyers onto a night's door list - shared by
- * the wp-admin paste box and the import-by-email endpoint.
+ * the paste boxes (wp-admin and the crew page) and, for a mailed ticket file,
+ * the import-by-email endpoint. A mail with no ticket file goes to the guest
+ * list instead (BuyerImportController).
  */
 final class BuyerImport
 {
@@ -36,8 +38,8 @@ final class BuyerImport
     }
 
     /**
-     * Adds the names in $text to $date. A batch already imported for that date
-     * adds nothing, so the same mail delivered twice is harmless.
+     * Adds the names in $text (a pasted list) to $date. A batch already
+     * imported for that date adds nothing.
      *
      * @return array{added: int, skipped: int, duplicate: bool}
      */

@@ -52,9 +52,9 @@ final class OrganizerGuideTest extends TelegramTestCase
     {
         $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION] = 'import.edh@haissous.name';
 
-        self::assertStringContainsString('email the list of names to import.edh@haissous.name', OrganizerGuide::short());
-        self::assertStringContainsString('Or email the list to import.edh@haissous.name', OrganizerGuide::full());
-        self::assertStringContainsString('how many names were added and how many were skipped', OrganizerGuide::full());
+        self::assertStringContainsString('email the ticket file to import.edh@haissous.name', OrganizerGuide::short());
+        self::assertStringContainsString('Or email the Holvi ticket file (.xlsx or .csv) to import.edh@haissous.name', OrganizerGuide::full());
+        self::assertStringContainsString('go to that event’s guest list instead; write "+2" after a name for two plus-ones', OrganizerGuide::full());
     }
 
     public function testWithoutAnImportMailboxTheGuideLeavesTheEmailImportOut(): void
@@ -62,7 +62,7 @@ final class OrganizerGuideTest extends TelegramTestCase
         unset($this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION]);
 
         self::assertStringNotContainsString('📧', OrganizerGuide::short());
-        self::assertStringNotContainsString('Or email the list', OrganizerGuide::full());
+        self::assertStringNotContainsString('Or email the Holvi ticket file', OrganizerGuide::full());
         self::assertStringContainsString('paste the names, one per line', OrganizerGuide::full());
     }
 

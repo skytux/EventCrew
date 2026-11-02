@@ -10,6 +10,7 @@ use EventCrew\MailImport\MailboxException;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -128,7 +129,8 @@ final class MailImporterTest extends TestCase
                 new TicketBuyerRepository(),
                 new DoorAccess(new TaskRepository(), new AssignmentRepository())
             ),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new GuestRepository()
         );
 
         return new MailImporter($controller, new Logger(), static fn (): Mailbox => $mailbox);
@@ -145,10 +147,9 @@ final class MailImporterTest extends TestCase
             '14' => self::mail('lou@example.com', $pass, ''),
         ]);
 
-        // Message 11: an organizer, the next night is 1 Aug, a new mail, nobody listed yet.
+        // Message 11: an organizer, the next night is 1 Aug, nobody on its guest list yet.
         $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'lou@example.com', 'display_name' => 'Lou', 'is_organizer' => 1];
         $this->wpdb->nextCols[] = ['2026-08-01'];
-        $this->wpdb->nextVars[] = '0';
         $this->wpdb->nextResults[] = [];
         // Message 13: no such person (nothing queued).
 

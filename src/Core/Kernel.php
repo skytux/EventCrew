@@ -787,7 +787,8 @@ final class Kernel
             fn (Container $container) => new BuyerImportController(
                 $container->get(PersonRepository::class),
                 $container->get(BuyerImport::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(GuestRepository::class)
             )
         );
 
