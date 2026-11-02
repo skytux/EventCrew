@@ -93,4 +93,22 @@ final class Dates
 
         return false === $when ? $mysqlDatetime : $when->format($format);
     }
+
+    /**
+     * When someone signed up, like "2 Nov 14:05", or '' when it is not known.
+     * The stored value is site-local, so it is read as UTC and written in UTC:
+     * the digits stay as stored, and the month name is translated.
+     */
+    public static function signedUpLabel(string $signedUpAt): string
+    {
+        $timestamp = '' === $signedUpAt ? false : strtotime($signedUpAt . ' UTC');
+
+        if (false === $timestamp) {
+            return '';
+        }
+
+        return function_exists('wp_date')
+            ? (string) wp_date('j M H:i', $timestamp, new \DateTimeZone('UTC'))
+            : gmdate('j M H:i', $timestamp);
+    }
 }

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.78.8
+Stable tag: 1.78.9
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.78.9 =
+Crew app Roster screen redesigned: a date bar with previous/next arrows (also on the Door screen), only the crew with a task heading like "DJ · 19:00–22:00 · 2 of 3", one status menu per person that saves on change, Mark all links per task, and "+ Add a person" as a link. The Door list, Guest list and Holvi cards moved to the Door screen.
 
 = 1.78.8 =
 Email import: names typed in the mail itself now go to the next event's guest list instead of the ticket buyers. "+2" after a name adds two plus-ones, and lines after a signature line (--) are ignored. A Holvi .xlsx or .csv attachment still goes to the ticket buyers.
@@ -838,6 +841,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.78.9 =
+Roster screen redesign; no database change.
 
 = 1.78.8 =
 No database change.

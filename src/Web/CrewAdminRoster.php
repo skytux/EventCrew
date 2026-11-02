@@ -63,7 +63,16 @@ final class CrewAdminRoster
      * requested date is shown when it has tasks; otherwise the nearest
      * upcoming date, or the most recent past one when nothing is upcoming.
      *
-     * @return array{date: string, upcoming: array<string, string>, past: array<string, string>}
+     * 'prev' and 'next' are the dates with tasks just before and just after
+     * the one shown, for the arrows of the date bar ('' when there is none).
+     *
+     * @return array{
+     *     date: string,
+     *     upcoming: array<string, string>,
+     *     past: array<string, string>,
+     *     prev: string,
+     *     next: string
+     * }
      */
     public function dates(string $requested): array
     {
@@ -75,10 +84,15 @@ final class CrewAdminRoster
 
         $selected = in_array($requested, $dates, true) ? $requested : ($upcoming[0] ?? ($past[0] ?? ''));
 
+        $earlier = array_filter($dates, static fn (string $d): bool => '' !== $selected && $d < $selected);
+        $later = array_filter($dates, static fn (string $d): bool => '' !== $selected && $d > $selected);
+
         return [
             'date' => $selected,
             'upcoming' => self::labelled($upcoming),
             'past' => self::labelled($past),
+            'prev' => [] === $earlier ? '' : max($earlier),
+            'next' => [] === $later ? '' : min($later),
         ];
     }
 
