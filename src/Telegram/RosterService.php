@@ -472,20 +472,15 @@ final class RosterService
 
     /**
      * " · signed up 2 Nov 14:05", or '' for a row with no sign-up time. The
-     * stored time is already site-local, so it is formatted as UTC to keep its
-     * digits (the same rule as Dates::dayLabel); wp_date translates the month.
+     * time is formatted by Dates::signedUpLabel, as on the crew page roster.
      */
     private function signedUpNote(string $signedUpAt): string
     {
-        $timestamp = '' === $signedUpAt ? false : strtotime($signedUpAt . ' UTC');
+        $when = Dates::signedUpLabel($signedUpAt);
 
-        if (false === $timestamp) {
+        if ('' === $when) {
             return '';
         }
-
-        $when = function_exists('wp_date')
-            ? (string) wp_date('j M H:i', $timestamp, new \DateTimeZone('UTC'))
-            : gmdate('j M H:i', $timestamp);
 
         /* translators: %s: when the person signed up, e.g. "2 Nov 14:05" */
         return ' · ' . sprintf(__('signed up %s', 'eventcrew'), $when);

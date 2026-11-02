@@ -618,6 +618,8 @@ final class CrewAdminController
             'roster_date' => $date,
             'roster_upcoming' => $dates['upcoming'],
             'roster_past' => $dates['past'],
+            'roster_prev' => $dates['prev'],
+            'roster_next' => $dates['next'],
             'roster_action' => self::ROSTER_ACTION,
             'door_action' => self::DOOR_ACTION,
             'guest_action' => self::GUEST_ACTION,
@@ -857,13 +859,14 @@ final class CrewAdminController
      * whether each person still has buttons - only those signed up or arrived,
      * the same rows the bot's /roster offers buttons for.
      *
-     * Each person also carries their standing ('' for a deleted person) and
-     * whether it is at risk; each task its id, for "Mark all".
+     * Each person also carries their standing ('' for a deleted person),
+     * whether it is at risk, and when they signed up ('' when not known); each
+     * task its id, for "Mark all", and its heading: "DJ · 19:00–22:00 · 2 of 3".
      *
      * @return array<int, array{task_id: int, title: string, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
      *     status_label: string, marked_by: string, markable: bool,
-     *     standing: string, at_risk: bool}>}>
+     *     standing: string, at_risk: bool, signed_up: string}>}>
      */
     private function rosterRows(string $date): array
     {
@@ -872,8 +875,13 @@ final class CrewAdminController
         foreach ($this->roster->forDate($date) as $row) {
             $task = $row['task'];
             $people = [];
+            $taken = 0;
 
             foreach ($row['people'] as $entry) {
+                if ($entry['occupying']) {
+                    ++$taken;
+                }
+
                 $people[] = [
                     'assignment_id' => $entry['assignment_id'],
                     'name' => $entry['name'],
@@ -883,12 +891,25 @@ final class CrewAdminController
                     'markable' => in_array($entry['status'], self::MARKABLE, true),
                     'standing' => null === $entry['standing'] ? '' : $entry['standing']->ratedSummary(),
                     'at_risk' => null !== $entry['standing'] && $entry['standing']->isAtRisk(),
+                    'signed_up' => Dates::signedUpLabel($entry['signed_up_at']),
                 ];
             }
 
+            $title = [$task->roleDisplay()];
+
+            if ('' !== $task->timeRange()) {
+                $title[] = $task->timeRange();
+            }
+
+            $title[] = $task->hasNoLimit()
+                /* translators: %d: people signed up so far, for a task with no limit on people */
+                ? sprintf(__('%d signed up', 'eventcrew'), $taken)
+                /* translators: 1: people signed up so far, 2: people needed in total */
+                : sprintf(__('%1$d of %2$d', 'eventcrew'), $taken, $task->capacity);
+
             $rows[] = [
                 'task_id' => $task->id,
-                'title' => sprintf('%s — %s', $task->roleDisplay(), $task->eventName()),
+                'title' => implode(' · ', $title),
                 'people' => $people,
             ];
         }

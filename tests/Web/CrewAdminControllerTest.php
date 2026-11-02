@@ -1826,6 +1826,133 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('Check the mailbox now', $html);
     }
 
+    /**
+     * The Door list, Guest list and Holvi ticket buyers cards are on the Door
+     * screen, after the Sales desk and the date bar, and every form there
+     * sends the page back to the Door screen. The Roster screen has the crew
+     * only.
+     */
+    public function testTheDoorCardsAreOnTheDoorScreenNotTheRosterScreen(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+
+        $html = $this->renderAs($this->organizerRow(1));
+        $door = $this->subpanel($html, 'door');
+        $roster = $this->subpanel($html, 'roster');
+
+        foreach (['Door list', 'Guest list', 'Holvi ticket buyers'] as $card) {
+            self::assertStringContainsString('>' . $card . '</h3>', $door, $card);
+            self::assertStringNotContainsString('>' . $card . '</h3>', $roster, $card);
+        }
+        foreach ([CrewAdminController::DOOR_ACTION, CrewAdminController::GUEST_ACTION, CrewAdminController::BUYERS_ACTION] as $action) {
+            self::assertStringContainsString('value="' . $action . '"', $door, $action);
+            self::assertStringNotContainsString('value="' . $action . '"', $roster, $action);
+        }
+
+        // Sales desk first, then the date bar, then the cards.
+        $sales = strpos($door, 'Sales desk');
+        $bar = strpos($door, 'eventcrew-admin-datebar');
+        $list = strpos($door, 'Door list');
+        self::assertNotFalse($sales);
+        self::assertNotFalse($bar);
+        self::assertNotFalse($list);
+        self::assertLessThan($bar, $sales);
+        self::assertLessThan($list, $bar);
+
+        self::assertStringNotContainsString('#eventcrew-admin-roster"', $door);
+        self::assertMatchesRegularExpression(
+            '/name="redirect_to" value="[^"]*\?roster_date=2026-07-20#eventcrew-admin-door"/',
+            $door
+        );
+        self::assertStringNotContainsString('Add a person to a task', $html);
+        self::assertStringNotContainsString('Crew and attendance', $html);
+    }
+
+    /**
+     * One date bar on each of the Roster and Door screens: "‹ date ›", the
+     * arrows to the dates with tasks just before and just after, each back
+     * to its own screen.
+     */
+    public function testTheDateBarHasArrowsToThePreviousAndNextDate(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+
+        $html = $this->renderAs($this->organizerRow(1));
+
+        foreach (['roster', 'door'] as $screen) {
+            $panel = $this->subpanel($html, $screen);
+
+            self::assertSame(1, substr_count($panel, '<form class="eventcrew-admin-datebar"'), $screen);
+            self::assertStringContainsString('id="eventcrew-admin-' . $screen . '-date" name="roster_date"', $panel);
+            self::assertMatchesRegularExpression(
+                '/data-eventcrew-date-prev\s+href="[^"]*\?roster_date=2026-07-13#eventcrew-admin-' . $screen . '"/',
+                $panel
+            );
+            self::assertMatchesRegularExpression(
+                '/data-eventcrew-date-next\s+href="[^"]*\?roster_date=2026-07-27#eventcrew-admin-' . $screen . '"/',
+                $panel
+            );
+            self::assertMatchesRegularExpression('/<option value="2026-07-20" selected>/', $panel);
+        }
+    }
+
+    public function testTheDateBarHasNoArrowWhereThereIsNoOtherDate(): void
+    {
+        $this->wpdb->nextCols[] = [self::NIGHT];
+        $this->wpdb->nextCols[] = [self::NIGHT];
+
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('<form class="eventcrew-admin-datebar"', $html);
+        self::assertStringNotContainsString('data-eventcrew-date-prev', $html);
+        self::assertStringNotContainsString('data-eventcrew-date-next', $html);
+    }
+
+    /**
+     * Each person on the roster: name, when they signed up, and one status
+     * menu that saves on change. No Arrived / Completed / No-show buttons per
+     * person and no "Update attendance"; "Mark all" stays under each task.
+     */
+    public function testTheRosterLineShowsTheSignUpTimeAndOneStatusMenu(): void
+    {
+        // No wp_date stub: once defined it outlives the test, and the
+        // gmdate fallback gives the same text. The task is also upcoming, so the public board shows it too.
+        Functions\when('date_i18n')->alias(static fn (string $format, int $timestamp): string => gmdate($format, $timestamp));
+
+        $html = $this->renderAs($this->organizerRow(1), function (): void {
+            $this->routeRosterReads(
+                $this->taskRow(6, 'decorate', '19:00', '22:00'),
+                ['signed_up_at' => '2026-07-02 14:05:00'] + $this->assignmentRow(30, 6, 8, 'signed_up')
+            );
+        });
+        $roster = $this->subpanel($html, 'roster');
+
+        self::assertStringContainsString('Person 8', $roster);
+        self::assertStringContainsString('signed up 2 Jul 14:05', $roster);
+        self::assertMatchesRegularExpression('/<h4 class="eventcrew-admin-task">[^<]* · 19:00–22:00 · 1 of 3<\/h4>/u', $roster);
+        self::assertStringContainsString('name="status[30]" form="eventcrew-admin-attend-6"', $roster);
+        self::assertStringContainsString('requestSubmit', $roster);
+        self::assertStringContainsString('<noscript><button type="submit" form="eventcrew-admin-attend-6"', $roster);
+        self::assertStringNotContainsString('name="mark"', $roster);
+        self::assertStringNotContainsString('value="' . CrewAdminController::MARK_ACTION . '"', $roster);
+        self::assertStringNotContainsString('>No-show</button>', $roster);
+        self::assertStringNotContainsString('Update attendance', $roster);
+        self::assertStringContainsString('Mark all arrived', $roster);
+        self::assertStringContainsString('Mark all completed', $roster);
+        // "+ Add a person" is a text link under the crew that opens the form.
+        self::assertMatchesRegularExpression(
+            '/<details class="eventcrew-admin-add">\s*<summary class="eventcrew-textlink">\+ Add a person<\/summary>/',
+            $roster
+        );
+        self::assertLessThan(
+            strpos($roster, '<details class="eventcrew-admin-add">'),
+            strpos($roster, 'Mark all completed')
+        );
+        self::assertStringContainsString('value="' . CrewAdminController::ADD_ACTION . '"', $roster);
+    }
+
     public function testThePeopleScreenHasTheListAndTheAddForm(): void
     {
         $html = $this->renderAs($this->organizerRow(1));
@@ -2409,6 +2536,89 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         }
 
         return $this->signupController()->renderShortcode();
+    }
+
+    /**
+     * One Admin sub-panel's markup: from its opening tag to the next
+     * sub-panel (they are not nested) or the end of the page.
+     */
+    private function subpanel(string $html, string $key): string
+    {
+        $start = strpos($html, 'data-eventcrew-subpanel="' . $key . '"');
+        self::assertNotFalse($start, $key);
+
+        $end = strpos($html, '<div class="eventcrew-subpanel"', $start);
+
+        return false === $end ? substr($html, $start) : substr($html, $start, $end - $start);
+    }
+
+    /**
+     * Answers the reads behind the Roster screen by what they ask for rather
+     * than in queue order, since the page makes many reads before them: the
+     * dates with tasks, $task on its date and among the upcoming tasks (for
+     * the add form), $assignment on that task, and the
+     * people by id. Every other read falls through to the queue.
+     *
+     * @param array<string, mixed> $task
+     * @param array<string, mixed> $assignment
+     */
+    private function routeRosterReads(array $task, array $assignment): void
+    {
+        $rows = [
+            1 => $this->organizerRow(1),
+            (int) $assignment['person_id'] => $this->personRow((int) $assignment['person_id']),
+        ];
+        $wpdb = new class ($task, $assignment, $rows) extends \FakeWpdb {
+            /**
+             * @param array<string, mixed> $task
+             * @param array<string, mixed> $assignment
+             * @param array<int, array<string, mixed>> $people
+             */
+            public function __construct(
+                private readonly array $task,
+                private readonly array $assignment,
+                private readonly array $people
+            ) {
+            }
+
+            public function get_col(string $sql): mixed
+            {
+                return str_contains($sql, 'DISTINCT task_date') ? [$this->task['task_date']] : parent::get_col($sql);
+            }
+
+            public function get_results(string $sql, string $output = 'OBJECT'): mixed
+            {
+                if (
+                    str_contains($sql, 'eventcrew_tasks WHERE task_date = \'' . $this->task['task_date'] . '\'')
+                    || (str_contains($sql, 'eventcrew_tasks') && str_contains($sql, 'WHERE capacity > 0'))
+                ) {
+                    $this->queries[] = $sql;
+
+                    return [$this->task];
+                }
+
+                if (str_contains($sql, 'eventcrew_assignments WHERE task_id = ' . $this->assignment['task_id'] . ' ')) {
+                    $this->queries[] = $sql;
+
+                    return [$this->assignment];
+                }
+
+                return parent::get_results($sql, $output);
+            }
+
+            public function get_row(string $sql, string $output = 'OBJECT'): mixed
+            {
+                if (1 === preg_match('/eventcrew_people WHERE id = (\d+)$/', $sql, $m) && isset($this->people[(int) $m[1]])) {
+                    $this->queries[] = $sql;
+
+                    return $this->people[(int) $m[1]];
+                }
+
+                return parent::get_row($sql, $output);
+            }
+        };
+        $this->wpdb = $wpdb;
+        $GLOBALS['wpdb'] = $wpdb;
     }
 
     private function peoplePage(): PeoplePage
