@@ -13,9 +13,9 @@ use EventCrew\Support\Language;
 use EventCrew\Telegram\HelpService;
 
 /**
- * /help and /cancel, and the command names this release added or renamed
- * (/me history, /me tickets, /tasks, /roster with a date), driven through
- * the router so the routing decision is what is under test.
+ * /help, /door, /people, the Cancel button, /me history, /me tickets and
+ * /roster with a date, driven through the router so the routing decision is
+ * what is under test.
  */
 final class HelpServiceTest extends TelegramTestCase
 {
@@ -93,8 +93,8 @@ final class HelpServiceTest extends TelegramTestCase
         $this->send('/help');
 
         $text = $this->lastText();
-        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n/board – show the open tasks", $text);
-        self::assertStringContainsString('/cancel – stop the question I asked you', $text);
+        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n/board – the open tasks", $text);
+        self::assertStringContainsString('buttons: 🎟 free-entry ticket, 🔁 take over a task', $text);
         self::assertStringNotContainsString('Welcome crew', $text);
         self::assertStringNotContainsString('Organizers', $text);
     }
@@ -110,7 +110,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $text = $this->lastText();
         self::assertStringContainsString("Welcome crew  (date: 1.8. or 2026-08-01; default: next night)\n/roster [date]", $text);
-        self::assertStringContainsString('/sales – open the sales desk', $text);
+        self::assertStringContainsString('/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk', $text);
         self::assertStringNotContainsString('Organizers', $text);
     }
 
@@ -122,8 +122,9 @@ final class HelpServiceTest extends TelegramTestCase
 
         $text = $this->lastText();
         self::assertStringContainsString("\n\nWelcome crew  (date:", $text);
-        self::assertStringContainsString("\n\nOrganizers\n/guest add [date] Name +N ; note", $text);
-        self::assertStringContainsString('/tasks – also ➕ to put a person on a task', $text);
+        self::assertStringContainsString("\n\nOrganizers\n/door add [date] Name +N ; note", $text);
+        self::assertStringContainsString('/people – buttons: 🎁 give credits', $text);
+        self::assertStringContainsString('/board in a private chat – also ➕ to put a person on a task', $text);
     }
 
     public function testInTheGroupHelpIsTheEveryoneSectionInEnglish(): void
@@ -165,7 +166,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->transients['eventcrew_tg_await_replace_target_555'] = 1;
         $this->transients['eventcrew_tg_await_email_555'] = 1;
 
-        $this->send('/cancel');
+        $this->tapCancel();
 
         self::assertSame([], $this->transients);
         self::assertSame('Stopped. Nothing is waiting for an answer.', $this->lastText());
@@ -173,7 +174,7 @@ final class HelpServiceTest extends TelegramTestCase
 
     public function testCancelWithNothingWaitingSaysSo(): void
     {
-        $this->send('/cancel');
+        $this->tapCancel();
 
         self::assertSame('Nothing was waiting for an answer.', $this->lastText());
     }
@@ -197,25 +198,95 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertStringStartsWith('🎟 Your tickets', $this->lastText());
     }
 
-    public function testTheOldNamesStillWork(): void
+    private function tapCancel(): void
     {
-        $this->person();
-        $this->send('/mytickets');
-        self::assertStringStartsWith('🎟 Your tickets', $this->lastText());
+        $this->updateRouter()->dispatch(['callback_query' => [
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['chat' => ['id' => 555, 'type' => 'private']],
+            'data' => 'mn:cancel',
+        ]]);
+    }
 
+    /**
+     * @return array<int, string>
+     */
+    private function lastButtons(): array
+    {
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'] ?? [];
+
+        return array_column(array_merge(...$keyboard), 'callback_data');
+    }
+
+    public function testDoorFromSomeoneNotSetUpGetsTheNudge(): void
+    {
         $this->wpdb->nextRows[] = null; // nobody with this Telegram account
-        $this->send('/roletasks');
+
+        $this->send('/door');
+
         self::assertSame('Set yourself up first: send /start to the bot.', $this->lastText());
     }
 
-    public function testTasksOpensTheRoleTaskList(): void
+    public function testDoorFromAMemberWithoutAWelcomeTaskIsRefused(): void
     {
         $this->person();
-        $this->wpdb->nextResults[] = []; // no role tasks
+        $this->wpdb->nextCols[] = ['2026-08-01'];                                                   // nearbyDates
+        $this->wpdb->nextResults[] = [['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3]];
 
-        $this->send('/tasks');
+        $this->send('/door');
 
-        self::assertSame('There are no upcoming tasks for your roles.', $this->lastText());
+        self::assertSame(
+            'Only organizers and the welcome crew of a coming night can use /door.',
+            $this->lastText()
+        );
+    }
+
+    public function testDoorGivesAnOrganizerTheThreeButtonsWithTheNightTyped(): void
+    {
+        $this->person(true);
+
+        $this->send('/door 1.8.');
+
+        self::assertSame('🚪 The door on 1.8.: choose what to open.', $this->lastText());
+        self::assertSame(['mn:dl:1.8.', 'mn:gl:1.8.', 'mn:sales'], $this->lastButtons());
+    }
+
+    public function testDoorFromTheWelcomeCrewInTheGroupGoesToTheDm(): void
+    {
+        $this->person();
+        $this->wpdb->nextCols[] = ['2026-08-01'];                                                         // nearbyDates
+        $this->wpdb->nextResults[] = [['id' => 6, 'task_date' => '2026-08-01', 'role_slug' => 'welcome', 'capacity' => 2]];
+        $this->wpdb->nextRows[] = ['id' => 30, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up']; // findFor
+
+        $this->send('/door', ['id' => -100, 'type' => 'supergroup']);
+
+        $menu = $this->telegramCalls[0]['body'];
+        self::assertSame(555, $menu['chat_id']);
+        self::assertSame('🚪 The door: choose what to open.', $menu['text']);
+        self::assertSame(['mn:dl:', 'mn:gl:', 'mn:sales'], array_column(array_merge(...$menu['reply_markup']['inline_keyboard']), 'callback_data'));
+        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
+    }
+
+    public function testPeopleIsOnlyForOrganizers(): void
+    {
+        $this->person();
+        $this->send('/people');
+        self::assertSame('Only organizers can use /people.', $this->lastText());
+
+        $this->person(true);
+        $this->send('/people');
+        self::assertSame('👥 People: choose what to do.', $this->lastText());
+        self::assertSame(['mn:gift', 'mn:roles', 'mn:elig'], $this->lastButtons());
+    }
+
+    public function testMeComesWithItsButtons(): void
+    {
+        $this->person();
+        $this->wpdb->nextResults[] = [];
+
+        $this->send('/me');
+
+        self::assertSame(['mn:ticket', 'mn:replace', 'mn:web', 'mn:notif', 'mn:lang'], $this->lastButtons());
     }
 
     public function testRosterTakesADateAndExplainsTheMarks(): void

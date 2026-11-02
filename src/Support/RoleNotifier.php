@@ -14,7 +14,7 @@ use EventCrew\Telegram\TelegramClient;
  * per role:
  * - "met": the person meets the role's conditions (checked on the hourly
  *   tick; someone who already holds the role is not announced);
- * - "given": the person is given the role, from the bot's /roles, the crew
+ * - "given": the person is given the role, from the bot's /people, the crew
  *   page, the People page, or by being added to one of its tasks.
  *
  * The record of what was sent is the person's role_notices column
@@ -107,7 +107,7 @@ final class RoleNotifier
         if ('met' === $kind) {
             $line = sprintf(
                 /* translators: 1: the person's name, 2: the role */
-                __('%1$s now meets the conditions for the role %2$s. You can give them the role with /roles.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('%1$s now meets the conditions for the role %2$s. You can give them the role with /people.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $person->name(),
                 Roles::display($slug)
             );

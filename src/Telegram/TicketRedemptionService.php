@@ -47,7 +47,7 @@ final class TicketRedemptionService
     }
 
     /**
-     * /ticket in a DM: offer the upcoming events a credit can be spent on, as
+     * 🎟 Free-entry ticket (a button under /me): offer the upcoming events a credit can be spent on, as
      * tappable buttons, or explain why there is nothing to offer.
      */
     public function onTicketCommand(int $telegramUserId, int $chatId, bool $isPrivate = true): void

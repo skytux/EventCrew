@@ -60,7 +60,7 @@ final class GuestListServiceTest extends TelegramTestCase
         $this->updateRouter()->dispatch([
             'update_id' => 1,
             'message' => [
-                'text' => '/guest add 1.8. Anna Virtanen +2 ; DJ’s partner',
+                'text' => '/door add 1.8. Anna Virtanen +2 ; DJ’s partner',
                 'chat' => ['id' => 555, 'type' => 'private'],
                 'from' => ['id' => 555],
             ],

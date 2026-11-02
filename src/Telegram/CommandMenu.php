@@ -50,22 +50,11 @@ final class CommandMenu
 
     private const GROUP = ['board', 'help'];
 
-    private const EVERYONE = [
-        'help',
-        'board',
-        'me',
-        'ticket',
-        'replace',
-        'tasks',
-        'web',
-        'notifications',
-        'language',
-        'cancel',
-    ];
+    private const EVERYONE = ['board', 'me', 'help'];
 
-    private const WELCOME_CREW = ['roster', 'tickets', 'guest', 'sales'];
+    private const WELCOME_CREW = ['roster', 'door'];
 
-    private const ORGANIZER = ['roster', 'tickets', 'guest', 'sales', 'gift', 'roles', 'eligible'];
+    private const ORGANIZER = ['roster', 'door', 'people'];
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -291,21 +280,10 @@ final class CommandMenu
         return [
             'help' => __('The commands you can use', 'eventcrew'),
             'board' => __('Show the open tasks', 'eventcrew'),
-            'me' => __('Your tasks, credits and standing', 'eventcrew'),
-            'ticket' => __('Spend a credit on a free-entry ticket', 'eventcrew'),
-            'replace' => __('Take over someone’s task', 'eventcrew'),
-            'tasks' => __('Tasks for your roles', 'eventcrew'),
-            'web' => __('A sign-in link for the Crew app', 'eventcrew'),
-            'notifications' => __('Choose which messages you get', 'eventcrew'),
-            'language' => __('Change the language', 'eventcrew'),
-            'cancel' => __('Stop the question I asked you', 'eventcrew'),
+            'me' => __('Your tasks, credits, ticket, settings', 'eventcrew'),
             'roster' => __('Who works a night; mark done, late or no-show', 'eventcrew'),
-            'tickets' => __('The door list', 'eventcrew'),
-            'guest' => __('The guest list', 'eventcrew'),
-            'sales' => __('Open the sales desk', 'eventcrew'),
-            'gift' => __('Give free-entry credits', 'eventcrew'),
-            'roles' => __('Give or take roles, organizer status and passes', 'eventcrew'),
-            'eligible' => __('Who may hold each role', 'eventcrew'),
+            'door' => __('The door list, guest list and sales desk', 'eventcrew'),
+            'people' => __('Credits, roles, organizers and passes', 'eventcrew'),
         ];
     }
 

@@ -39,8 +39,8 @@ use EventCrew\Telegram\TelegramClient;
  * strangers send the organizers mail.
  *
  * The actions reuse the services behind the bot's commands: the sales desk link
- * (/sales), the board repost (/board), the credit grant and its notice (/gift),
- * and the roster with its status write (/roster), and /roles for the restricted
+ * (the sales desk button), the board repost (/board), the credit grant and its notice (🎁 Give credits),
+ * and the roster with its status write (/roster), and the bot's roles for the restricted
  * roles. "Add a person to a task" is the bot's "Add someone" button: it puts
  * anyone on any upcoming task, even someone who is not a crew member yet.
  * The People screen (CrewAdminPeople) is the wp-admin People page without the
@@ -348,8 +348,8 @@ final class CrewAdminController
     }
 
     /**
-     * "Give a credit": the /gift grant, recorded with the organizer's person id
-     * in the credit log, and the member told the way /gift tells them. Any
+     * "Give a credit": the 🎁 Give credits grant, recorded with the organizer's person id
+     * in the credit log, and the member told the way the bot's 🎁 Give credits tells them. Any
      * whole number from 1 up, as on the wp-admin People page.
      */
     public function giveCredit(Person $organizer, int $personId, int $credits, string $reason): string
@@ -681,7 +681,7 @@ final class CrewAdminController
 
     /**
      * The restricted roles a member can be given here, slug => label. Organize
-     * is not one: it is the organizer flag, set in wp-admin or with /roles.
+     * is not one: it is the organizer flag, set in wp-admin or with /people in the bot.
      *
      * @return array<string, string>
      */

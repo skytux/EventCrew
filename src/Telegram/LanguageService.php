@@ -123,7 +123,7 @@ final class LanguageService
             $this->telegram->answerCallbackQuery($callbackId, __('Saved.', 'eventcrew'));
             $this->telegram->sendMessage(
                 $chatId,
-                __('I will write to you in English. Send /language to change it.', 'eventcrew')
+                __('I will write to you in English. To change it, tap 🌐 Language under /me.', 'eventcrew')
             );
         });
 

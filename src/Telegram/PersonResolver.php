@@ -9,7 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 
 /**
  * Resolves the person a bot reply names: a Telegram text-mention if the message
- * carries one, otherwise a name search. Shared by /replace and /gift so the two
+ * carries one, otherwise a name search. Shared by 🔁 Take over a task and 🎁 Give credits so the two
  * pick people the same way and can't drift.
  *
  * A static helper taking the repository, rather than an injected collaborator,

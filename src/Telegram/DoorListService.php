@@ -13,13 +13,13 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorList;
 
 /**
- * /tickets: who has a ticket for one event night - everyone working it and
+ * 📋 Door list (a button under /door): who has a ticket for one event night - everyone working it and
  * everyone who spent a free-entry credit on it, the same list as the wp-admin
  * door list - followed by the night's guest list.
  *
  * Organizers can look at any night; people on a night's task of a sales-desk
  * role can look at their own night. The list always goes to the asker's DM.
- * A date can be given ("/tickets 1.8."), and buttons under the list switch between the
+ * A date can be given ("/door 1.8."), and buttons under the list switch between the
  * nearby nights by editing the message in place.
  */
 final class DoorListService

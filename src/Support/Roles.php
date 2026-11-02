@@ -61,7 +61,7 @@ use EventCrew\Models\Task;
  * are told they could be given this role - a count of completed tasks in named
  * roles, and/or a number of different roles done a number of times each. The
  * conditions never let anyone sign up; they only drive a notice to the
- * organizers and a list in wp-admin and the bot's /eligible. See RoleConditions.
+ * organizers and a list in wp-admin and the bot's /people. See RoleConditions.
  */
 final class Roles
 {

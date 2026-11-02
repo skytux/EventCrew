@@ -13,7 +13,7 @@ use EventCrew\Telegram\CommandMenu;
  */
 final class CommandMenuTest extends TelegramTestCase
 {
-    private const EVERYONE = ['help', 'board', 'me', 'ticket', 'replace', 'tasks', 'web', 'notifications', 'language', 'cancel'];
+    private const EVERYONE = ['board', 'me', 'help'];
 
     /**
      * @return array<string, mixed>
@@ -73,8 +73,8 @@ final class CommandMenuTest extends TelegramTestCase
 
         self::assertSame('Show the open tasks', $calls[0][4][0]);
         self::assertSame('Näytä avoimet tehtävät', $calls[1][4][0]);
-        self::assertSame('The commands you can use', $calls[2][4][0]);
-        self::assertSame('Komennot, joita voit käyttää', $calls[3][4][0]);
+        self::assertSame('The commands you can use', $calls[2][4][2]);
+        self::assertSame('Komennot, joita voit käyttää', $calls[3][4][2]);
 
         foreach ($calls as $call) {
             foreach ($call[4] as $description) {
@@ -99,12 +99,12 @@ final class CommandMenuTest extends TelegramTestCase
         $this->commandMenu()->install();
 
         $calls = array_slice($this->menuCalls(), 4);
-        $expected = array_merge(self::EVERYONE, ['roster', 'tickets', 'guest', 'sales', 'gift', 'roles', 'eligible']);
+        $expected = array_merge(self::EVERYONE, ['roster', 'door', 'people']);
 
         self::assertCount(2, $calls);
         self::assertSame(['setMyCommands', ['type' => 'chat', 'chat_id' => 555], '', $expected], array_slice($calls[0], 0, 4));
         self::assertSame(['setMyCommands', ['type' => 'chat', 'chat_id' => 555], 'fi', $expected], array_slice($calls[1], 0, 4));
-        self::assertSame('Anna vapaalippuja', $calls[1][4][array_search('gift', $expected, true)]);
+        self::assertSame('Vapaaliput, roolit, järjestäjät ja passit', $calls[1][4][array_search('people', $expected, true)]);
         self::assertSame([7], $this->options[CommandMenu::PEOPLE_OPTION]);
     }
 
@@ -120,7 +120,7 @@ final class CommandMenuTest extends TelegramTestCase
         $this->commandMenu()->refreshIfDue();
 
         $calls = $this->menuCalls();
-        $expected = array_merge(self::EVERYONE, ['roster', 'tickets', 'guest', 'sales']);
+        $expected = array_merge(self::EVERYONE, ['roster', 'door']);
 
         self::assertCount(2, $calls);
         self::assertSame(['setMyCommands', ['type' => 'chat', 'chat_id' => 555], '', $expected], array_slice($calls[0], 0, 4));
@@ -211,7 +211,7 @@ final class CommandMenuTest extends TelegramTestCase
         $calls = $this->menuCalls();
         self::assertCount(2, $calls);
         self::assertSame('setMyCommands', $calls[0][0]);
-        self::assertContains('eligible', $calls[0][3]);
+        self::assertContains('people', $calls[0][3]);
         self::assertSame([3, 7], $this->options[CommandMenu::PEOPLE_OPTION]);
     }
 
@@ -250,7 +250,7 @@ final class CommandMenuTest extends TelegramTestCase
 
         $calls = $this->menuCalls();
         self::assertCount(2, $calls);
-        self::assertSame(array_merge(self::EVERYONE, ['roster', 'tickets', 'guest', 'sales']), $calls[0][3]);
+        self::assertSame(array_merge(self::EVERYONE, ['roster', 'door']), $calls[0][3]);
         self::assertSame([7], $this->options[CommandMenu::PEOPLE_OPTION]);
     }
 

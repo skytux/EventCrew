@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * Reads what follows "/guest" in a chat message.
+ * Reads what follows "/door" in a chat message.
  *
- *   /guest [date]                                 show the list
- *   /guest add [date] Name [+N] [; note]          add a guest
- *   /guest edit [date] <number> [Name] [+N] [; note]
+ *   /door [date]                                  show the list
+ *   /door add [date] Name [+N] [; note]           add a guest
+ *   /door edit [date] <number> [Name] [+N] [; note]
  *                                                 change only the parts given
- *   /guest remove [date] <number>                 take a guest off
+ *   /door remove [date] <number>                  take a guest off
  *
  * The date is optional everywhere ("1.8." or "2026-08-01"); without one the
  * caller uses the next event. <number> is the guest's number in the shown list.

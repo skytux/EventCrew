@@ -8,7 +8,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\NotificationPreferences;
 
 /**
- * /notifications - a keyboard menu for a person to choose which notifications
+ * 🔔 Notifications (a button under /me) - a keyboard menu for a person to choose which notifications
  * reach them, and on which channel. Three columns per row, like the web tab: the
  * type's name (a no-op cell), a 📱 Telegram toggle and a ✉ email toggle; tapping
  * either toggle flips it and edits the message in place.

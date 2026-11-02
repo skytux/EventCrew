@@ -13,8 +13,8 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\GuestCommand;
 
 /**
- * /guest: the guest list of one event night - people let in free who are not
- * crew members.
+ * The guest list (👥 under /door; /door add|edit|remove changes it): the guest
+ * list of one event night - people let in free who are not crew members.
  *
  * Organizers add, edit and remove guests; people on a night's task of a
  * sales-desk role can see the list for their night. Every answer goes to the
@@ -61,7 +61,7 @@ final class GuestListService
         if ('' === $date) {
             $this->telegram->sendMessage(
                 $chatId,
-                __('No event is scheduled yet. Give a date: /guest add 1.8. Name', 'eventcrew')
+                __('No event is scheduled yet. Give a date: /door add 1.8. Name', 'eventcrew')
             );
 
             return;
@@ -230,12 +230,12 @@ final class GuestListService
 
         if ($person->isOrganizer) {
             $lines[] = '';
-            $lines[] = __('Add: /guest add Name ; note  (just the guest)', 'eventcrew');
-            $lines[] = __('Add with extra people: /guest add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
+            $lines[] = __('Add: /door add Name ; note  (just the guest)', 'eventcrew');
+            $lines[] = __('Add with extra people: /door add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
             $lines[] = __('No +N, or +0, means no extra people.', 'eventcrew');
-            $lines[] = __('Change: /guest edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
-            $lines[] = __('Remove: /guest remove 2', 'eventcrew');
-            $lines[] = __('Another night: put the date first, e.g. /guest add 1.8. Name', 'eventcrew');
+            $lines[] = __('Change: /door edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
+            $lines[] = __('Remove: /door remove 2', 'eventcrew');
+            $lines[] = __('Another night: put the date first, e.g. /door add 1.8. Name', 'eventcrew');
         }
 
         return implode("\n", $lines);
@@ -265,11 +265,12 @@ final class GuestListService
     {
         return match ($error) {
             'date' => UnreadableDate::text(),
-            'number' => __('Give the guest’s number from the list, e.g. /guest remove 2', 'eventcrew'),
+            'number' => __('Give the guest’s number from the list, e.g. /door remove 2', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'name' => __('Give the guest’s name, e.g. /guest add Anna Virtanen ; DJ’s partner (no extra people), or /guest add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)', 'eventcrew'),
-            'nothing' => __('Say what to change, e.g. /guest edit 2 +3 or /guest edit 2 ; new note', 'eventcrew'),
-            default => __('To see the list send /guest, or /guest 1.8. for another night.', 'eventcrew'),
+            'name' => __('Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)', 'eventcrew'),
+            'nothing' => __('Say what to change, e.g. /door edit 2 +3 or /door edit 2 ; new note', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            default => __('To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night.', 'eventcrew'),
         };
     }
 
@@ -277,7 +278,7 @@ final class GuestListService
     {
         return sprintf(
             /* translators: 1: a list number, 2: event day */
-            __('There is no guest number %1$d on %2$s. Send /guest to see the list.', 'eventcrew'),
+            __('There is no guest number %1$d on %2$s. Send /door and tap 👥 Guest list to see the list.', 'eventcrew'),
             $number,
             Dates::dayLabel($date)
         );

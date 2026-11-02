@@ -235,7 +235,7 @@ final class EmailBody
         $escaped = esc_html($text);
 
         // Commands as code that never breaks across lines: anything in
-        // `backticks`, and a bare bot command like /sales or /tickets 14.11
+        // `backticks`, and a bare bot command like /door or /roster 14.11
         // (a slash at the start of a word, so a/b and URLs are left alone).
         $code = '<code class="eventcrew-cmd" style="white-space:nowrap;font-family:monospace">%s</code>';
         $escaped = (string) preg_replace_callback(

@@ -132,7 +132,7 @@ final class CrewAdminPeople
         $kept = null === $before ? [] : array_diff($before->roleSlugs, $shown);
         $roles = array_values(array_merge($kept, array_intersect($shown, $ticked)));
 
-        // No is_organizer here: that flag is set in wp-admin or with /roles.
+        // No is_organizer here: that flag is set in wp-admin or with /people in the bot.
         $data = [
             'email' => $email,
             'display_name' => $name,
@@ -160,7 +160,7 @@ final class CrewAdminPeople
 
     /**
      * "Grant a one-time pass": lets the person sign up once even if their
-     * standing is at risk, as on the wp-admin People page and the bot's /roles.
+     * standing is at risk, as on the wp-admin People page and the bot's /people.
      */
     public function grantPass(int $personId): string
     {

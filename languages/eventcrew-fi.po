@@ -723,8 +723,8 @@ msgid "I couldn’t find anyone by that name. Try their exact name or @mention t
 msgstr "En löytänyt ketään tällä nimellä. Kokeile koko nimeä tai mainitse hänet @-merkillä."
 
 #: src/Telegram/LanguageService.php:126
-msgid "I will write to you in English. Send /language to change it."
-msgstr "Kirjoitan sinulle suomeksi. Vaihda kieli komennolla /language."
+msgid "I will write to you in English. To change it, tap 🌐 Language under /me."
+msgstr "Kirjoitan sinulle suomeksi. Voit vaihtaa kielen napilla 🌐 Kieli komennon /me alla."
 
 #. translators: %s: the date and time the ticket was issued
 #: src/Telegram/TicketController.php:223
@@ -3552,3 +3552,219 @@ msgstr "Vain %s"
 
 msgid "Website"
 msgstr "Verkkosivusto"
+
+msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
+msgstr "   painikkeet: 🎟 vapaalippu, 🔁 ota tehtävä, 🔑 verkkokirjautuminen, 🔔 ilmoitukset, 🌐 kieli"
+
+msgid "%1$s now meets the conditions for the role %2$s. You can give them the role with /people."
+msgstr "%1$s täyttää nyt roolin %2$s ehdot. Voit antaa hänelle roolin komennolla /people."
+
+msgid "/board in a private chat – also ➕ to put a person on a task"
+msgstr "/board yksityiskeskustelussa – myös ➕ lisää henkilö tehtävään"
+
+msgid "/board – the open tasks; in a private chat also the tasks of your roles"
+msgstr "/board – avoimet tehtävät; yksityiskeskustelussa myös roolejesi tehtävät"
+
+msgid "/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk"
+msgstr "/door [päivä] – painikkeet: 📋 ovilista, 👥 vieraslista, 💳 myyntipiste"
+
+msgid "/help – this list"
+msgstr "/help – tämä lista"
+
+msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role"
+msgstr "/people – painikkeet: 🎁 anna vapaalippuja, 🏷 roolit, järjestäjät ja passit, ✅ kuka voi saada minkäkin roolin"
+
+msgid "/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
+msgstr "/people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Admin-välilehti."
+
+msgid "A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role's conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role."
+msgstr "Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin roolin tehtävää jäsen on tehnyt. Ehtojen täyttyminen ei anna roolia. Saat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää roolin ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. /people ja sitten ✅ Kuka voi saada minkäkin roolin näyttää, kuka täyttää kunkin roolin ehdot."
+
+msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /people in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
+msgstr "Rooli, jossa on valittuna \"Only people with this role\" (DJ, VJ, seremonian vetäjä), näytetään vain niille, joilla rooli on: Crew-sovelluksessa, botissa ja myyntipisteessä. Sen tehtävillä ei ole ilmoittautumisrajaa, eikä niitä koskaan julkaista Telegram-ryhmän taululla. Anna rooli People-sivulla, Crew-sovelluksen Admin-välilehdellä tai botissa komennolla /people. Kun \"Add to every night\" on valittuna, jokainen tuleva ilta saa yhden tämän roolin tehtävän, myös jo olemassa olevat illat; valinnan poistaminen myöhemmin ei poista mitään."
+
+msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
+msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Admin-välilehdellä tai myyntipisteessä."
+
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with 🔁 Take over a task under /me."
+msgstr "Peruminen alle %d tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi pyytää jotakuta muuta ottamaan tehtävän napilla 🔁 Ota tehtävä komennon /me alla."
+
+msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
+msgstr "Ehdot: tehdyt tehtävät, jotka joku tarvitsee ennen kuin järjestäjät kuulevat hänestä. Aseta luku mille tahansa nimetylle roolille tai luku eri rooleja, joista kukin on tehty tietyn monta kertaa, tai molemmat. Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua. Järjestäjät saavat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. People-sivun Role conditions -välilehti ja botin /people näyttävät, kuka ne täyttää."
+
+msgid "Credits, roles, organizers and passes"
+msgstr "Vapaaliput, roolit, järjestäjät ja passit"
+
+msgid "Credits: members earn 1 free-entry credit per %d completed tasks. /people, then 🎁 Give credits, gives credits by hand."
+msgstr "Vapaaliput: jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtävästä. /people ja sitten 🎁 Anna vapaalippuja antaa vapaalippuja käsin."
+
+msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk."
+msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? Lähetä botille /door ja napauta 💳 Myyntipiste."
+
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
+msgstr "Kaikki muu on vapaaehtoista ja kytkettävissä pois milloin haluat — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, tuuraus- ja lupaviestit, kukin erikseen sähköpostille ja Telegramille. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi ja, jos käytät bottia, kohdassa 🔔 Ilmoitukset komennon /me alla. Minkään poiskytkemisestä ei seuraa mitään haittaa."
+
+msgid "Free-entry ticket"
+msgstr "Vapaalippu"
+
+msgid "Give credits"
+msgstr "Anna vapaalippuja"
+
+msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
+msgstr "Hei %1$s,\n\nmuistutus: olet tehtävässä %2$s, %3$s, %4$s.\n\nEtkö pääsekään? Avaa botti ja peru napauttamalla tehtävää, tai pyydä jotakuta ottamaan tehtävä botissa napilla 🔁 Ota tehtävä komennon /me alla."
+
+msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
+msgstr "Hei %1$s,\n\nolet ilmoittautunut tehtävään %2$s, %3$s, %4$s. Näytä lippusi ovella.\n\n%5$s\n\nEtkö pääsekään? Avaa botti ja peru napauttamalla tehtävää, tai pyydä jotakuta ottamaan tehtävä botissa napilla 🔁 Ota tehtävä komennon /me alla."
+
+msgid "I couldn’t find anyone by that name. Send /people to try again, with their exact name or an @mention."
+msgstr "En löytänyt ketään tällä nimellä. Lähetä /people ja yritä uudelleen koko nimellä tai @-maininnalla."
+
+msgid "Language"
+msgstr "Kieli"
+
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "Jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtävästä ja käyttävät sen napilla 🎟 Vapaalippu komennon /me alla tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä."
+
+msgid "Nothing was added. Start again with /board."
+msgstr "Mitään ei lisätty. Aloita uudelleen komennolla /board."
+
+msgid "On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /door, then 💳 Sales desk, sends you the link."
+msgstr "Illan aikana: /roster merkitsee, kuka saapui, kuka teki tehtävänsä ja kuka ei tullut. Myyntipisteen linkillä myydään lippuja ja kirjataan ihmiset sisään ovella; /door ja sitten 💳 Myyntipiste lähettää sinulle linkin."
+
+msgid "Only organizers and the welcome crew of a coming night can use /door."
+msgstr "Vain järjestäjät ja tulevan illan tervetulotiimi voivat käyttää komentoa /door."
+
+msgid "Only organizers can use /people."
+msgstr "Vain järjestäjät voivat käyttää komentoa /people."
+
+msgid "People let in free who are not crew members. The bot’s /door command keeps the same list."
+msgstr "Ilmaiseksi sisään päästettävät, jotka eivät ole tiimin jäseniä. Botin /door-komento käyttää samaa listaa."
+
+msgid "Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /board in a private chat and in the Crew app. You can add someone there, even a person who is not a crew member."
+msgstr "Roolitehtävät (DJ, VJ, Organize, ...) eivät ole ryhmän taululla. Ne, joilla rooli on, näkevät ne komennolla /board yksityiskeskustelussa ja Crew-sovelluksessa. Voit lisätä siellä jonkun, myös henkilön, joka ei ole tiimin jäsen."
+
+msgid "Roles, organizers and passes"
+msgstr "Roolit, järjestäjät ja passit"
+
+msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
+msgstr "Roolit: /people ja sitten 🏷 Roolit, järjestäjät ja passit tekee jostakusta järjestäjän, antaa kertaluvan ilmoittautumisrajan ohi ja antaa tai poistaa rooleja, kuten DJ."
+
+msgid "Take over a task"
+msgstr "Ota tehtävä"
+
+msgid "That button no longer works. Send /people again."
+msgstr "Tämä painike ei enää toimi. Lähetä /people uudelleen."
+
+msgid "That person is no longer in EventCrew. Send /people to pick someone else."
+msgstr "Tämä henkilö ei ole enää EventCrew’ssa. Lähetä /people ja valitse joku muu."
+
+msgid "The door list, guest list and sales desk"
+msgstr "Ovilista, vieraslista ja myyntipiste"
+
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
+msgstr "Ajastetut lähtevät vain klo %1$s–%2$s. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset napilla 🔔 Ilmoitukset komennon /me alla; vahvistukset ja muistutukset lähtevät aina."
+
+msgid "The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /people can give them a one-time pass."
+msgstr "Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle %d%%, ei voi ilmoittautua uusiin tehtäviin. /people voi antaa hänelle kertaluvan."
+
+msgid "There are no upcoming tasks for your roles. An organizer gives roles with /people."
+msgstr "Rooleillesi ei ole tulevia tehtäviä. Järjestäjä antaa rooleja komennolla /people."
+
+msgid "This device is not logged in to the sales desk. Ask an organizer for a new link (/door in Telegram, then 💳 Sales desk)."
+msgstr "Tämä laite ei ole kirjautunut myyntipisteeseen. Pyydä järjestäjältä uusi linkki (/door Telegramissa ja sitten 💳 Myyntipiste)."
+
+msgid "This link was already used — ask an organizer for a new one (/door in Telegram, then 💳 Sales desk)."
+msgstr "Linkki on jo käytetty — pyydä järjestäjältä uusi (/door Telegramissa ja sitten 💳 Myyntipiste)."
+
+msgid "This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time."
+msgstr "Tämä oli myöhäinen peruutus, joka heikentää luotettavuuttasi. Aikaisempi ilmoitus tai tuuraajan löytäminen napilla 🔁 Ota tehtävä komennon /me alla pitää tilanteen ensi kerralla puhtaana."
+
+msgid "Web sign-in"
+msgstr "Verkkokirjautuminen"
+
+msgid "When you are signed up for the night's Organize task, you get the sales desk link %d minutes before the night's first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked \"Opens the sales desk\") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list."
+msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Admin-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Opens the sales desk\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
+
+msgid "Who meets the conditions for each role. ✅ = they have the role. Give a role with /people."
+msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rooli komennolla /people."
+
+msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /people. ✅ = already has the role."
+msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua; se on vain merkki. Anna rooli muokkaamalla henkilöä, Crew-sovelluksessa tai botin komennolla /people. ✅ = rooli on jo."
+
+msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk."
+msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /door ja napauta 💳 Myyntipiste."
+
+msgid "You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
+msgstr "Saat 1 vapaalipun jokaisesta %d tekemästäsi tehtävästä. Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
+
+msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
+
+msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear."
+msgstr "Myöhäinen peruutuksesi tehtävästä %2$s on kirjattu.\n\nSe heikentää luotettavuuttasi. Aikaisempi ilmoitus ensi kerralla tai tuuraajan löytäminen napilla 🔁 Ota tehtävä komennon /me alla pitää tilanteen puhtaana."
+
+msgid "Your tasks, credits, ticket, settings"
+msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
+
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me."
+msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai pyydä jotakuta ottamaan tehtävä napilla 🔁 Ota tehtävä komennon /me alla."
+
+msgid "👥 People: choose what to do."
+msgstr "👥 Ihmiset: valitse, mitä teet."
+
+msgid "🚪 The door on %s: choose what to open."
+msgstr "🚪 Ovi %s: valitse, mitä avaat."
+
+msgid "🚪 The door: choose what to open."
+msgstr "🚪 Ovi: valitse, mitä avaat."
+
+msgid "/door add [date] Name +N ; note – add a guest (also edit, remove)"
+msgstr "/door add [päivä] Nimi +N ; huomio – lisää vieras (myös edit, remove)"
+
+msgid "Add with extra people: /door add Name +2 ; note  (the guest and 2 more)"
+msgstr "Lisää seuralaisten kanssa: /door add Nimi +2 ; huomautus  (vieras ja 2 muuta)"
+
+msgid "Add: /door add Name ; note  (just the guest)"
+msgstr "Lisää: /door add Nimi ; huomautus  (pelkkä vieras)"
+
+msgid "Another night: put the date first, e.g. /door add 1.8. Name"
+msgstr "Toinen ilta: laita päivämäärä ensin, esim. /door add 1.8. Nimi"
+
+msgid "Change: /door edit 2 +3  (number from the list; give only what changes)"
+msgstr "Muuta: /door edit 2 +3  (numero listalta; anna vain se, mikä muuttuu)"
+
+msgid "Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)"
+msgstr "Anna vieraan nimi, esim. /door add Anna Virtanen ; DJ:n kumppani (ei muita), tai /door add Anna Virtanen +2 ; DJ:n kumppani (Anna ja 2 muuta)"
+
+msgid "Give the guest’s number from the list, e.g. /door remove 2"
+msgstr "Anna vieraan numero listalta, esim. /door remove 2"
+
+msgid "No event is scheduled yet. Give a date: /door add 1.8. Name"
+msgstr "Tapahtumia ei ole vielä aikataulussa. Anna päivämäärä: /door add 1.8. Nimi"
+
+msgid "Remove: /door remove 2"
+msgstr "Poista: /door remove 2"
+
+msgid "Say what to change, e.g. /door edit 2 +3 or /door edit 2 ; new note"
+msgstr "Kerro, mitä muutetaan, esim. /door edit 2 +3 tai /door edit 2 ; uusi huomautus"
+
+msgid "There is no guest number %1$d on %2$s. Send /door and tap 👥 Guest list to see the list."
+msgstr "Vierasta numero %1$d ei ole päivälle %2$s. Lähetä /door ja napauta 👥 Vieraslista, niin näet listan."
+
+msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
+msgstr "Näet listan lähettämällä /door ja napauttamalla 👥 Vieraslista, tai /door 1.8. toiselle illalle."
+
+msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
+msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
+msgstr[0] "Hei %1$s,\n\njärjestäjä antoi sinulle vapaalipun. Voit käyttää sen mihin tahansa tulevaan tapahtumaan — avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
+msgstr[1] "Hei %1$s,\n\njärjestäjä antoi sinulle %2$d vapaalippua. Voit käyttää ne tuleviin tapahtumiin — avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
+
+msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
+msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
+msgstr[0] "Sinulla on %d vapaalippu — napauta alla 🎟 Vapaalippu, niin käytät sen."
+msgstr[1] "Sinulla on %d vapaalippua — napauta alla 🎟 Vapaalippu, niin käytät yhden."
+
+msgid "🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event."
+msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events."
+msgstr[0] "🎁 Sait %d vapaalipun. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää sen tulevaan tapahtumaan."
+msgstr[1] "🎁 Sait %d vapaalippua. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää ne tuleviin tapahtumiin."

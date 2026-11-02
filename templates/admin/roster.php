@@ -177,7 +177,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
 
             <h2><?php esc_html_e('Guest list', 'eventcrew'); ?></h2>
             <p class="description">
-                <?php esc_html_e('People let in free who are not crew members. The /guest bot command keeps the same list.', 'eventcrew'); ?>
+                <?php esc_html_e('People let in free who are not crew members. The bot’s /door command keeps the same list.', 'eventcrew'); ?>
             </p>
             <?php /* Each row's fields post into that row's own form by id, since a form cannot wrap a table row. */ ?>
             <table class="widefat striped eventcrew-stack" style="max-width:820px;margin-bottom:2em">

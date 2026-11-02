@@ -81,10 +81,13 @@ final class OnboardingService
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __("Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks.", 'eventcrew')
             . "\n\n" . PrivacyPolicy::noticeLine(),
-            '' === PrivacyPolicy::noticeUrl() ? null : ['inline_keyboard' => [[[
-                'text' => PrivacyPolicy::noticeLinkLabel(),
-                'url' => PrivacyPolicy::noticeUrl(),
-            ]]]]
+            ['inline_keyboard' => array_merge(
+                '' === PrivacyPolicy::noticeUrl() ? [] : [[[
+                    'text' => PrivacyPolicy::noticeLinkLabel(),
+                    'url' => PrivacyPolicy::noticeUrl(),
+                ]]],
+                [MenuButtons::cancelRow()]
+            )]
         );
     }
 
@@ -113,7 +116,7 @@ final class OnboardingService
     }
 
     /**
-     * /cancel: forgets the "what's your email?" question. True when it was
+     * The Cancel button: forgets the "what's your email?" question. True when it was
      * waiting.
      */
     public function cancelPending(int $telegramUserId): bool

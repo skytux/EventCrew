@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.66.0
+Stable tag: 1.67.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.67.0 =
+* Telegram has fewer commands. Everyone has /board, /me and /help. /me has buttons for the free-entry ticket, taking over a task, web sign-in, notifications and language. /board in a private chat also lists the tasks of your roles (it replaces /tasks).
+* Welcome crew get /roster and /door. /door has buttons for the door list, the guest list and the sales desk. Guests are changed with /door add, /door edit and /door remove.
+* Organizers also get /people, with buttons for giving credits, for roles, organizers and passes, and for who may hold each role.
+* Every question the bot asks has a Cancel button.
+* The old commands (/tasks, /ticket, /replace, /sales, /guest, /gift, /roles, /eligible, /notifications, /language, /cancel and others) are removed. The help, guide and email texts name the new commands and buttons.
 
 = 1.66.0 =
 The Crew app (the page set as the sign-up page, Settings, App) opens as a page of its own: the full browser width, without the theme's header, menu and footer, with a "← Website" link at the top, on the app colour. To keep it inside the theme, set the option eventcrew_crew_app_standalone to 0. A page whose address is changed now sends its old address to the new one, so links in emails already sent keep working. Texts that said "crew page" now say "Crew app".
@@ -765,6 +772,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.67.0 =
+Telegram commands are reduced to /board, /me and /help, plus /roster, /door and /people for welcome crew and organizers. The old commands are removed.
 
 = 1.66.0 =
 The Crew app page now opens without the theme. Rename the page and its address freely: the old address keeps working.

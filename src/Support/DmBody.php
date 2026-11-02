@@ -9,7 +9,7 @@ use EventCrew\Models\Person;
 /**
  * Wraps the Telegram DMs nobody asked for.
  *
- * A reply to /me or /ticket needs no introduction: the person typed the command
+ * A reply to /me or a button under it needs no introduction: the person typed the command
  * a second ago and knows who is answering. A message that simply arrives is a
  * different thing - it may be weeks since they last touched the bot, and the
  * chat is one of dozens - so it opens by saying which crew is writing, and

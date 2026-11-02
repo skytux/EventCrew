@@ -140,6 +140,25 @@ final class RoleTaskBotTest extends TelegramTestCase
         self::assertStringContainsString('no upcoming tasks for your roles', $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testAfterThePrivateBoardTheListComesOnlyWhenItHasATask(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');
+        $this->wpdb->nextResults[] = [$this->djTask()];
+        $this->wpdb->nextRows[] = null;   // isOn: not signed up yet
+
+        $this->roleTaskBot()->sendIfAny(555);
+
+        self::assertSame(['rt:s:9'], $this->buttonData());
+
+        $this->telegramCalls = [];
+        $this->wpdb->nextRows[] = $this->personRow(7);
+        $this->wpdb->nextResults[] = [$this->djTask()];
+
+        $this->roleTaskBot()->sendIfAny(555);
+
+        self::assertSame([], $this->telegramCalls);
+    }
+
     public function testSomeoneWithoutTheRoleCannotSignUp(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(7);
@@ -209,7 +228,7 @@ final class RoleTaskBotTest extends TelegramTestCase
         $this->roleTaskBot()->onSelect($this->tap('rt:a:9'));
 
         $this->roleTaskBot()->capturePerson(555, 555, 'Kim Lee kim@example.com');
-        self::assertSame(['rt:ay:9', 'rt:an:9'], $this->buttonData());
+        self::assertSame(['rt:ay:9', 'rt:an:9', 'mn:cancel'], $this->buttonData());
 
         $created = ['id' => 40, 'email' => 'kim@example.com', 'display_name' => 'Kim Lee'];
         $this->wpdb->insert_id = 40;

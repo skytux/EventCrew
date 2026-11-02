@@ -433,7 +433,7 @@ final class WelcomeSender
             '## 🎁 ' . __('Credits', 'eventcrew'),
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
-                __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /ticket to the bot or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
             '## 📈 ' . __('Standing', 'eventcrew'),

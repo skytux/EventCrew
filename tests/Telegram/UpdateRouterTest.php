@@ -151,46 +151,47 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame(['chat_id' => 999, 'message_id' => 7], $this->options[BoardService::BOARD_OPTION]);
     }
 
-    public function testPrivateTicketCommandReachesTheTicketService(): void
+    /**
+     * A tap on a button under /me, /door or /people, in the private chat.
+     *
+     * @return array<string, mixed>
+     */
+    private function tap(string $data): array
+    {
+        return ['callback_query' => [
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['chat' => ['id' => 555, 'type' => 'private']],
+            'data' => $data,
+        ]];
+    }
+
+    public function testTheTicketButtonReachesTheTicketService(): void
     {
         // Unlinked sender -> the ticket service answers with the set-up nudge,
-        // which is proof the /ticket command routed to it.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/ticket',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        // which is proof the 🎟 button routed to it.
+        $this->router()->dispatch($this->tap('mn:ticket'));
+
+        // The tap itself is answered, so the button stops spinning.
+        self::assertSame('cbq', $this->lastCallTo('answerCallbackQuery')['callback_query_id']);
 
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testAllowCommandReachesThePermissionService(): void
+    public function testTheWhoMayHoldButtonReachesThePermissionService(): void
     {
-        // The old name /allow still works: an unlinked sender is refused as
-        // not an organizer, proof it routed.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/allow',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        $this->router()->dispatch($this->tap('mn:elig'));
 
-        self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame(
+            'Only organizers can see who meets the role conditions.',
+            $this->lastCallTo('sendMessage')['text']
+        );
     }
 
-    public function testRolesCommandReachesThePermissionService(): void
+    public function testTheRolesButtonReachesThePermissionService(): void
     {
-        // Unlinked sender -> refused as not an organizer, proof /roles routed.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/roles',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        // Unlinked sender -> refused as not an organizer, proof the button routed.
+        $this->router()->dispatch($this->tap('mn:roles'));
 
         self::assertSame('Only organizers can change roles.', $this->lastCallTo('sendMessage')['text']);
     }
@@ -204,19 +205,15 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Only organizers', $this->lastCallTo('answerCallbackQuery')['text']);
     }
 
-    public function testGroupTicketCommandReachesTheTicketService(): void
+    public function testARemovedCommandGetsNoAnswer(): void
     {
-        // /ticket now works from the group too; an unlinked sender gets the
-        // set-up nudge back in the group they asked in, proof it routed.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/ticket',
-                'chat' => ['id' => -100, 'type' => 'supergroup'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        foreach (['/ticket', '/tickets', '/replace', '/gift', '/roles', '/tasks', '/cancel', '/language'] as $old) {
+            $this->router()->dispatch([
+                'message' => ['text' => $old, 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+            ]);
+        }
 
-        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame([], $this->telegramCalls);
     }
 
     public function testTicketCallbackReachesTheTicketService(): void
@@ -233,14 +230,8 @@ final class UpdateRouterTest extends TelegramTestCase
     public function testGiftCommandReachesTheGiftService(): void
     {
         // Unlinked sender -> the gift service refuses (not an organizer), which
-        // is proof /gift routed to it.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/gift',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        // is proof the 🎁 button routed to it.
+        $this->router()->dispatch($this->tap('mn:gift'));
 
         self::assertStringContainsString('Only organizers', $this->lastCallTo('sendMessage')['text']);
     }
@@ -274,33 +265,32 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
     }
 
-    public function testGroupReplaceDmsThePromptWithABreadcrumb(): void
+    public function testTheTakeOverButtonAsksWhoWithACancelButton(): void
     {
-        // A verified cover asking /replace in the group: the prompt goes to the
-        // DM, a breadcrumb to the group.
         $this->wpdb->nextRows[] = [
             'id' => 7, 'email' => 'cover@example.com', 'display_name' => 'Cover',
             'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555,
         ];
 
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/replace',
-                'chat' => ['id' => -100, 'type' => 'supergroup'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        $this->router()->dispatch($this->tap('mn:replace'));
 
-        self::assertSame(555, $this->telegramCalls[0]['body']['chat_id']); // prompt to DM
-        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']); // breadcrumb to group
+        $prompt = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $prompt['chat_id']);
+        self::assertSame('mn:cancel', $prompt['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+        self::assertArrayHasKey('eventcrew_tg_await_replace_target_555', $this->transients);
+
+        $this->router()->dispatch($this->tap('mn:cancel'));
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_replace_target_555', $this->transients);
+        self::assertSame('Stopped. Nothing is waiting for an answer.', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testMyTicketsCommandReachesTheProfileService(): void
     {
-        // Unlinked sender -> the set-up nudge, proof /mytickets routed.
+        // Unlinked sender -> the set-up nudge, proof /me tickets routed.
         $this->router()->dispatch([
             'message' => [
-                'text' => '/mytickets',
+                'text' => '/me tickets',
                 'chat' => ['id' => 555, 'type' => 'private'],
                 'from' => ['id' => 555],
             ],
@@ -309,15 +299,9 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testNotificationsCommandReachesTheSettingsService(): void
+    public function testTheNotificationsButtonReachesTheSettingsService(): void
     {
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/notifications',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
+        $this->router()->dispatch($this->tap('mn:notif'));
 
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
@@ -432,10 +416,10 @@ final class UpdateRouterTest extends TelegramTestCase
         $router = $this->languageRouter();
 
         $router->dispatch([
-            'message' => ['text' => '/ticket', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+            'message' => ['text' => '/me', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
         ]);
 
-        // Only the question so far; the /ticket answer is held back.
+        // Only the question so far; the /me answer is held back.
         self::assertCount(1, $this->telegramCalls);
         $question = $this->lastCallTo('sendMessage');
         self::assertSame('Valitse kieli · Choose your language', $question['text']);
@@ -458,8 +442,8 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame('Tallennettu.', $this->lastCallTo('answerCallbackQuery')['text']);
 
         $texts = $this->sentTexts();
-        self::assertContains('Kirjoitan sinulle suomeksi. Vaihda kieli komennolla /language.', $texts);
-        // The held /ticket ran after the choice, in Finnish.
+        self::assertContains('Kirjoitan sinulle suomeksi. Voit vaihtaa kielen napilla 🌐 Kieli komennon /me alla.', $texts);
+        // The held /me ran after the choice, in Finnish.
         self::assertSame(
             'Aloita ensin: lähetä botille /start.',
             end($texts)
@@ -471,7 +455,7 @@ final class UpdateRouterTest extends TelegramTestCase
         $this->transients['eventcrew_tg_language_555'] = 'en';
 
         $this->languageRouter()->dispatch([
-            'message' => ['text' => '/ticket', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+            'message' => ['text' => '/me', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
         ]);
 
         self::assertNotContains('Valitse kieli · Choose your language', $this->sentTexts());
@@ -481,20 +465,18 @@ final class UpdateRouterTest extends TelegramTestCase
     public function testAGroupCommandIsNotHeldBackForTheQuestion(): void
     {
         $this->languageRouter()->dispatch([
-            'message' => ['text' => '/ticket', 'chat' => ['id' => -100, 'type' => 'supergroup'], 'from' => ['id' => 555]],
+            'message' => ['text' => '/me', 'chat' => ['id' => -100, 'type' => 'supergroup'], 'from' => ['id' => 555]],
         ]);
 
         self::assertNotContains('Valitse kieli · Choose your language', $this->sentTexts());
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testTheLanguageCommandAsksAgainInTheDm(): void
+    public function testTheLanguageButtonAsksAgain(): void
     {
         $this->transients['eventcrew_tg_language_555'] = 'fi';
 
-        $this->languageRouter()->dispatch([
-            'message' => ['text' => '/language', 'chat' => ['id' => -100, 'type' => 'supergroup'], 'from' => ['id' => 555]],
-        ]);
+        $this->languageRouter()->dispatch($this->tap('mn:lang'));
 
         $question = $this->lastCallTo('sendMessage');
         self::assertSame('Valitse kieli · Choose your language', $question['text']);

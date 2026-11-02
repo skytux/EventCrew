@@ -47,7 +47,7 @@ final class NotificationPreferences
 
     /**
      * Human labels for the toggleable types, in display order - the rows of both
-     * the web tab and the /notifications keyboard.
+     * the web tab and the bot's 🔔 Notifications keyboard.
      *
      * @return array<string, string>
      */

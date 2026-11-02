@@ -10,10 +10,10 @@ use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\StandingCalculator;
 
 /**
- * /gift - an organizer hands someone a free-entry credit at their discretion,
+ * 🎁 Give credits (a button under /people) - an organizer hands someone a free-entry credit at their discretion,
  * from the bot, the same one-credit grant the People page offers.
  *
- * The flow mirrors /replace: /gift asks who, the organizer sends a name or
+ * The flow mirrors 🔁 Take over a task: it asks who, the organizer sends a name or
  * @mention, the bot offers the matches as buttons, and a tap records the grant.
  * It is organizer-only and always answers in the DM - who is being handed
  * credits is not group business - with a breadcrumb when asked in a group.
@@ -40,7 +40,7 @@ final class GiftService
     }
 
     /**
-     * /gift: asks the organizer who should get a credit. Refuses anyone who is
+     * 🎁 Give credits: asks the organizer who should get a credit. Refuses anyone who is
      * not a linked organizer.
      */
     public function start(int $telegramUserId, int $chatId, bool $isPrivate = true): void
@@ -61,7 +61,8 @@ final class GiftService
         $this->telegram->sendMessage(
             $telegramUserId,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('Who should get a free-entry credit? Send their name (or @mention). For more than one, add a number — "Sam 3" — and any words after it become the note.', 'eventcrew')
+            __('Who should get a free-entry credit? Send their name (or @mention). For more than one, add a number — "Sam 3" — and any words after it become the note.', 'eventcrew'),
+            MenuButtons::cancel()
         );
         $this->sentDmNote($chatId, $isPrivate);
     }
@@ -72,7 +73,7 @@ final class GiftService
     }
 
     /**
-     * /cancel: forgets the "who should get a credit?" question and the amount
+     * The Cancel button: forgets the "who should get a credit?" question and the amount
      * kept for the tap. True when the question was waiting.
      */
     public function cancelPending(int $telegramUserId): bool
@@ -122,7 +123,7 @@ final class GiftService
         if ([] === $buttons) {
             $this->telegram->sendMessage(
                 $chatId,
-                __('I couldn’t find anyone by that name. Send /gift to try again, with their exact name or an @mention.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('I couldn’t find anyone by that name. Send /people to try again, with their exact name or an @mention.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             );
 
             return;
@@ -166,7 +167,7 @@ final class GiftService
         if (null === $recipient) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('That person is no longer in EventCrew. Send /gift to pick someone else.', 'eventcrew'),
+                __('That person is no longer in EventCrew. Send /people to pick someone else.', 'eventcrew'),
                 true
             );
 
@@ -176,7 +177,7 @@ final class GiftService
         [$credits, $note] = $this->pendingAmount($organizerTelegramId);
 
         // A discretionary bot grant carries no WordPress user id, but the
-        // organizer who ran /gift is a known person, so record them - the audit
+        // organizer who tapped 🎁 Give credits is a known person, so record them - the audit
         // log then names them rather than "the bot".
         $this->grants->record($recipient->id, $credits, $note, 0, $organizer->id);
         $balance = $this->standing->for($recipient->id)->creditBalance;

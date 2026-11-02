@@ -10,7 +10,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\SalesDeskGate;
 
 /**
- * /sales: a fresh login link for the sales desk (the door page), sent to the
+ * 💳 Sales desk (a button under /door): a fresh login link for the sales desk (the door page), sent to the
  * asker's DM.
  *
  * Organizers get one for the next event night at any time. People on the
