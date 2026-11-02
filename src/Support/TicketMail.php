@@ -9,6 +9,7 @@ use EventCrew\Models\TicketBuyer;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Telegram\TicketController;
 
 /**
  * The ticket email: after an import, every imported ticket buyer with an email
@@ -267,6 +268,8 @@ final class TicketMail
         }
 
         $qrHtml = $this->qr->table(self::qrData($row));
+        // The same ticket note as the web ticket (door code, address), as typed.
+        $note = trim((string) get_option(TicketController::NOTE_OPTION, ''));
 
         $muted = 'font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b6b70';
         $ticket = '<div style="margin:24px 0 8px;padding:20px 12px;border:1px solid #d9d9de;border-radius:12px;'
@@ -281,6 +284,11 @@ final class TicketMail
             . ('' === $holder ? '' : sprintf(
                 '<p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:17px;color:#1d1d1f">%s</p>',
                 esc_html($holder)
+            ))
+            . ('' === $note ? '' : sprintf(
+                '<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;'
+                    . 'color:#1d1d1f;white-space:pre-line">%s</p>',
+                esc_html($note)
             ))
             . sprintf(
                 '<p style="margin:16px 0 0;%1$s"><a href="%2$s" style="color:#6b6b70">%3$s</a></p>',
@@ -298,6 +306,7 @@ final class TicketMail
         $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n"
             . ('' === $code ? '' : $both('code') . ': ' . $code . "\n")
             . ('' === $holder ? '' : $holder . "\n")
+            . ('' === $note ? '' : "\n" . $note . "\n\n")
             . $both('open') . ': ' . $url;
 
         return [
