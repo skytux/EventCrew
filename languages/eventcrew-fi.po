@@ -4338,11 +4338,17 @@ msgstr "Jos katsot, että olemme käsitelleet tietojasi väärin, voit tehdä va
 msgid "This calendar link is not valid."
 msgstr "Tämä kalenterilinkki ei ole kelvollinen."
 
-msgid "%1$d ticket buyers were added to the door list for %2$s."
-msgstr "%1$d lipunostajaa lisättiin ovilistaan päivälle %2$s."
+msgid "%1$d guests were added to the guest list for %2$s."
+msgstr "%1$d vierasta lisättiin vieraslistalle päivälle %2$s."
 
-msgid "%d names were skipped because they were already on the list."
-msgstr "%d nimeä ohitettiin, koska ne olivat jo listalla."
+msgid "They bring %d plus-ones in total."
+msgstr "Heillä on yhteensä %d aveceja."
+
+msgid "%d names were skipped because they were already on the guest list."
+msgstr "%d nimeä ohitettiin, koska ne olivat jo vieraslistalla."
+
+msgid "Guests added for %s"
+msgstr "Vieraat lisätty päivälle %s"
 
 msgid "Ticket buyers imported for %s"
 msgstr "Lipunostajat tuotu päivälle %s"

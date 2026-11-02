@@ -184,7 +184,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $buyers,
             $buyerImport,
             new MailImporter(
-                new BuyerImportController(new PersonRepository(), $buyerImport, $this->mailer()),
+                new BuyerImportController(new PersonRepository(), $buyerImport, $this->mailer(), new GuestRepository()),
                 new Logger(),
                 static fn (): Mailbox => $mailbox
             )

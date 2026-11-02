@@ -51,8 +51,8 @@
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
  * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
- * @var string $import_url The REST URL the mail poller posts buyer lists to.
- * @var string $import_mailbox The address organizers mail buyer lists to; '' when none is set.
+ * @var string $import_url The REST URL the mail poller posts mailed lists to.
+ * @var string $import_mailbox The address organizers mail ticket files and guest lists to; '' when none is set.
  * @var array<int, string> $import_senders Addresses besides the organizers' that may mail a list in.
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
