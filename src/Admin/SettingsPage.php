@@ -29,6 +29,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
@@ -65,7 +66,8 @@ final class SettingsPage
         private readonly EmailTemplate $emailTemplate,
         private readonly BoardService $board,
         private readonly WelcomeSender $welcome,
-        private readonly PersonRepository $people
+        private readonly PersonRepository $people,
+        private readonly CommandMenu $commandMenu
     ) {
     }
 
@@ -1090,42 +1092,9 @@ final class SettingsPage
         }
 
         // So /board shows in the command menu and reaches the bot reliably even
-        // under group privacy mode.
-        // Each description leads with where the command is used - Group for the
-        // shared board, DM for anything personal - so the menu itself says
-        // which chat to run it in.
-        $this->telegram->setMyCommands([
-            ['command' => 'start', 'description' => __('DM — set yourself up to sign up for tasks', 'eventcrew')],
-            ['command' => 'board', 'description' => __('Group — show the board of open tasks', 'eventcrew')],
-            ['command' => 'replace', 'description' => __('DM — cover someone else’s task', 'eventcrew')],
-            ['command' => 'me', 'description' => __('DM — your standing, credits and upcoming tasks', 'eventcrew')],
-            ['command' => 'ticket', 'description' => __('DM — spend a free-entry credit for a ticket', 'eventcrew')],
-            ['command' => 'myhistory', 'description' => __('DM — your past tasks', 'eventcrew')],
-            ['command' => 'mytickets', 'description' => __('DM — your upcoming and past tickets', 'eventcrew')],
-            ['command' => 'web', 'description' => __('DM — get a sign-in link for the web board', 'eventcrew')],
-            ['command' => 'notifications', 'description' => __('DM — choose what reaches you, and how', 'eventcrew')],
-            ['command' => 'language', 'description' => __('DM — Suomi / English', 'eventcrew')],
-            ['command' => 'roster', 'description' => __('DM — attendance roster (organizers & crew)', 'eventcrew')],
-            ['command' => 'tickets', 'description' => __('DM — organizers & door crew: who has a ticket', 'eventcrew')],
-            ['command' => 'guest', 'description' => __('DM — organizers & door crew: the guest list', 'eventcrew')],
-            [
-                'command' => 'sales',
-                'description' => __('DM — organizers & sales desk crew: the sales desk link', 'eventcrew'),
-            ],
-            ['command' => 'gift', 'description' => __('DM — organizers: give someone a free-entry credit', 'eventcrew')],
-            [
-                'command' => 'roletasks',
-                'description' => __('DM — tasks for your roles (DJ, VJ, ...): sign up or cancel', 'eventcrew'),
-            ],
-            [
-                'command' => 'roles',
-                'description' => __('DM — organizers: give or take away roles, pass, organizer', 'eventcrew'),
-            ],
-            [
-                'command' => 'eligible',
-                'description' => __('DM — organizers: who meets the role conditions', 'eventcrew'),
-            ],
-        ]);
+        // under group privacy mode. Each person's menu lists only the commands
+        // they may use; CommandMenu sends all of them.
+        $this->commandMenu->install();
 
         return ['ok' => true, 'error' => ''];
     }

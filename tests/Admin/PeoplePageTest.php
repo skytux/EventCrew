@@ -90,4 +90,52 @@ final class PeoplePageTest extends TestCase
         self::assertCount(1, $people);
         self::assertSame('dj,vj', $people[0]['data']['role_slugs']);
     }
+
+    /**
+     * Saves an edit of person 8, an organizer before the save, and returns the
+     * actions fired.
+     *
+     * @return array<int, array{0: string, 1: array<int, mixed>}>
+     */
+    private function editOrganizer(bool $stillOrganizer): array
+    {
+        $row = ['id' => 8, 'email' => 'anna@example.com', 'display_name' => 'Anna', 'is_organizer' => 1];
+        $this->wpdb->nextRows[] = $row; // findByEmail
+        $this->wpdb->nextRows[] = $row; // find, before the save
+        $this->wpdb->nextRows[] = $row; // find, for the roles
+
+        $_POST = ['person_id' => '8', 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+
+        if ($stillOrganizer) {
+            $_POST['is_organizer'] = '1';
+        }
+
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        try {
+            $this->page()->save();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        return $fired;
+    }
+
+    public function testUntickingOrganizerAsksForANewCommandMenu(): void
+    {
+        $fired = $this->editOrganizer(false);
+
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
+    }
+
+    public function testSavingWithoutChangingOrganizerLeavesTheCommandMenu(): void
+    {
+        $fired = $this->editOrganizer(true);
+
+        self::assertNotContains(\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, array_column($fired, 0));
+    }
 }

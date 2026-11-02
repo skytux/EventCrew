@@ -3439,3 +3439,71 @@ msgstr "✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
 #: src/Telegram/NotificationSettingsService.php:101
 msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."
 msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram tai ✉ sähköposti menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina molempia kanavia."
+
+#: src/Telegram/CommandMenu.php:292
+msgid "The commands you can use"
+msgstr "Komennot, joita voit käyttää"
+
+#: src/Telegram/CommandMenu.php:293
+msgid "Show the open tasks"
+msgstr "Näytä avoimet tehtävät"
+
+#: src/Telegram/CommandMenu.php:294
+msgid "Your tasks, credits and standing"
+msgstr "Tehtäväsi, vapaalippusi ja luotettavuutesi"
+
+#: src/Telegram/CommandMenu.php:295
+msgid "Spend a credit on a free-entry ticket"
+msgstr "Käytä vapaalippu"
+
+#: src/Telegram/CommandMenu.php:296
+msgid "Take over someone’s task"
+msgstr "Ota jonkun tehtävä hoitaaksesi"
+
+#: src/Telegram/CommandMenu.php:297
+msgid "Tasks for your roles"
+msgstr "Roolejesi tehtävät"
+
+#: src/Telegram/CommandMenu.php:298
+msgid "A sign-in link for the crew web page"
+msgstr "Kirjautumislinkki crew-sivulle"
+
+#: src/Telegram/CommandMenu.php:299
+msgid "Choose which messages you get"
+msgstr "Valitse, mitä viestejä saat"
+
+#: src/Telegram/CommandMenu.php:300
+msgid "Change the language"
+msgstr "Vaihda kieli"
+
+#: src/Telegram/CommandMenu.php:301
+msgid "Stop the question I asked you"
+msgstr "Lopeta kysymys, jonka esitin"
+
+#: src/Telegram/CommandMenu.php:302
+msgid "Who works a night; mark done, late or no-show"
+msgstr "Kuka on töissä illalla; merkitse tehty, myöhässä tai ei saapunut"
+
+#: src/Telegram/CommandMenu.php:303
+msgid "The door list"
+msgstr "Ovilista"
+
+#: src/Telegram/CommandMenu.php:304
+msgid "The guest list"
+msgstr "Vieraslista"
+
+#: src/Telegram/CommandMenu.php:305
+msgid "Open the sales desk"
+msgstr "Avaa myyntipiste"
+
+#: src/Telegram/CommandMenu.php:306
+msgid "Give free-entry credits"
+msgstr "Anna vapaalippuja"
+
+#: src/Telegram/CommandMenu.php:307
+msgid "Give or take roles, organizer status and passes"
+msgstr "Anna tai poista rooleja, järjestäjän oikeudet ja luvat"
+
+#: src/Telegram/CommandMenu.php:308
+msgid "Who may hold each role"
+msgstr "Kuka voi saada minkäkin roolin"
