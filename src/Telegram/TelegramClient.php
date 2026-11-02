@@ -74,10 +74,15 @@ final class TelegramClient
      * empty array when the result is a bare `true`, as setWebhook and
      * answerCallbackQuery return), or null on any transport or API error.
      *
+     * With $quiet a failure is logged as info instead of a warning or an
+     * error: for calls whose failure is expected now and then and changes
+     * nothing, such as a personal command menu for someone who never opened a
+     * private chat with the bot.
+     *
      * @param array<string, mixed> $params
      * @return array<string, mixed>|null
      */
-    public function call(string $method, array $params = []): ?array
+    public function call(string $method, array $params = [], bool $quiet = false): ?array
     {
         $this->lastError = '';
         $token = self::token();
@@ -100,7 +105,8 @@ final class TelegramClient
 
         if (is_wp_error($response)) {
             $this->lastError = (string) $response->get_error_message();
-            $this->logger->error(sprintf('Telegram %s failed: %s', $method, $this->lastError));
+            $message = sprintf('Telegram %s failed: %s', $method, $this->lastError);
+            $quiet ? $this->logger->info($message) : $this->logger->error($message);
 
             return null;
         }
@@ -123,9 +129,8 @@ final class TelegramClient
             }
 
             $this->lastError = $description;
-            $this->logger->warning(
-                sprintf('Telegram %s returned an error: %s', $method, $this->lastError)
-            );
+            $message = sprintf('Telegram %s returned an error: %s', $method, $this->lastError);
+            $quiet ? $this->logger->info($message) : $this->logger->warning($message);
 
             return null;
         }
@@ -220,12 +225,53 @@ final class TelegramClient
      * menu. Under group privacy mode a registered command is the reliable way
      * for a bare /command to reach the bot.
      *
+     * $scope is a BotCommandScope (['type' => 'all_private_chats'], or
+     * ['type' => 'chat', 'chat_id' => ...]); null is Telegram's default scope.
+     * $languageCode is a two-letter code such as 'fi'; '' is the list for
+     * every language without its own.
+     *
      * @param array<int, array{command: string, description: string}> $commands
+     * @param array<string, mixed>|null $scope
      * @return array<string, mixed>|null
      */
-    public function setMyCommands(array $commands): ?array
+    public function setMyCommands(
+        array $commands,
+        ?array $scope = null,
+        string $languageCode = '',
+        bool $quiet = false
+    ): ?array {
+        return $this->call('setMyCommands', ['commands' => $commands] + $this->scopeParams($scope, $languageCode), $quiet);
+    }
+
+    /**
+     * Removes the command list of one scope and language, so the next broader
+     * scope applies again. Arguments as for setMyCommands().
+     *
+     * @param array<string, mixed>|null $scope
+     * @return array<string, mixed>|null
+     */
+    public function deleteMyCommands(?array $scope = null, string $languageCode = '', bool $quiet = false): ?array
     {
-        return $this->call('setMyCommands', ['commands' => $commands]);
+        return $this->call('deleteMyCommands', $this->scopeParams($scope, $languageCode), $quiet);
+    }
+
+    /**
+     * @param array<string, mixed>|null $scope
+     * @return array<string, mixed>
+     */
+    private function scopeParams(?array $scope, string $languageCode): array
+    {
+        $params = [];
+
+        if (null !== $scope) {
+            $params['scope'] = $scope;
+        }
+
+        if ('' !== $languageCode) {
+            $params['language_code'] = $languageCode;
+        }
+
+        return $params;
     }
 
     /**

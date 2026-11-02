@@ -76,6 +76,7 @@ use EventCrew\Telegram\RosterService;
 use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\GuestListService;
 use EventCrew\Telegram\HelpService;
+use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
@@ -176,6 +177,11 @@ final class Kernel
         // The welcome message: sent the moment a member confirms their email,
         // which happens on the front path (web sign-in, the bot's webhook).
         $this->container->get(WelcomeSender::class)->boot();
+
+        // Each person's bot command menu: changed when their organizer status
+        // changes (bot, wp-admin) or they are marked arrived at the sales desk
+        // (bot, crew page, wp-admin), so it listens everywhere.
+        $this->container->get(CommandMenu::class)->boot();
 
         // The organizers' notice when someone is given a role. Roles are given
         // from the bot, the crew page and wp-admin, so it listens everywhere.
@@ -452,7 +458,8 @@ final class Kernel
                 $container->get(BoardService::class),
                 $container->get(RoleNotifier::class),
                 $container->get(RetentionPurge::class),
-                $container->get(WelcomeSender::class)
+                $container->get(WelcomeSender::class),
+                $container->get(CommandMenu::class)
             )
         );
 
@@ -906,6 +913,17 @@ final class Kernel
         );
 
         $this->container->singleton(
+            CommandMenu::class,
+            fn (Container $container) => new CommandMenu(
+                $container->get(PersonRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(DoorAccess::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
             HelpService::class,
             fn (Container $container) => new HelpService(
                 $container->get(PersonRepository::class),
@@ -994,7 +1012,8 @@ final class Kernel
                 $container->get(EmailTemplate::class),
                 $container->get(BoardService::class),
                 $container->get(WelcomeSender::class),
-                $container->get(PersonRepository::class)
+                $container->get(PersonRepository::class),
+                $container->get(CommandMenu::class)
             )
         );
 

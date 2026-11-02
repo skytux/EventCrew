@@ -71,7 +71,14 @@ final class SchedulerTest extends TestCase
                     $ledger
                 )
             ),
-            new \EventCrew\Support\WelcomeSender($tasks, $people, $ledger, $mailer, $telegram)
+            new \EventCrew\Support\WelcomeSender($tasks, $people, $ledger, $mailer, $telegram),
+            new \EventCrew\Telegram\CommandMenu(
+                $people,
+                $assignments,
+                $tasks,
+                new \EventCrew\Support\DoorAccess($tasks, $assignments),
+                $telegram
+            )
         );
     }
 

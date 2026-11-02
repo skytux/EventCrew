@@ -49,6 +49,26 @@ final class DoorAccess
     }
 
     /**
+     * Whether $person is welcome crew: they may view the door side of one of
+     * the nearby nights (see nearbyDates()). Organizers always are. /help shows
+     * its Welcome crew section to these people, and the command menu gives
+     * them the welcome crew commands. Pass $dates when checking many people,
+     * so the nearby nights are read once.
+     *
+     * @param array<int, string>|null $dates the nearby nights; null reads them
+     */
+    public function isWelcomeCrew(Person $person, ?array $dates = null): bool
+    {
+        foreach ($dates ?? $this->nearbyDates() as $date) {
+            if ($this->canView($person, $date)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The nearest upcoming day that has tasks, falling back to the most recent
      * past one - the same rule /roster and the wp-admin roster use. '' when no
      * task exists at all.

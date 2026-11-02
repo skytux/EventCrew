@@ -72,6 +72,22 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertSame(1, (int) $this->wpdb->updates[0]['data']['at_risk_pass']);
     }
 
+    public function testTakingAwayOrganizerStatusAsksForANewCommandMenu(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 1, 'telegram_chat_id' => 999];
+
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:admin:8']);
+
+        self::assertSame(0, (int) $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
+    }
+
     public function testEligibleListsWhoMeetsEachRolesConditionsForAnOrganizer(): void
     {
         $this->options[Roles::OPTION_NAME] = [

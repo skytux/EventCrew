@@ -289,6 +289,17 @@ abstract class TelegramTestCase extends TestCase
         );
     }
 
+    protected function commandMenu(): \EventCrew\Telegram\CommandMenu
+    {
+        return new \EventCrew\Telegram\CommandMenu(
+            new PersonRepository(),
+            new AssignmentRepository(),
+            new TaskRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            $this->client()
+        );
+    }
+
     protected function salesLinkService(): SalesLinkService
     {
         return new SalesLinkService($this->salesDeskGate(), new PersonRepository(), $this->doorLinkSender(), $this->client());

@@ -13,6 +13,7 @@ use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Telegram\CommandMenu;
 
 final class PeoplePage
 {
@@ -168,7 +169,8 @@ final class PeoplePage
             );
         }
 
-        $before = $id > 0 ? ($this->people->find($id)?->roleSlugs ?? []) : [];
+        $previous = $id > 0 ? $this->people->find($id) : null;
+        $before = $previous?->roleSlugs ?? [];
         $roles = $this->rolesAfterSave($id, $ticked);
         $data = [
             'email' => $email,
@@ -181,6 +183,10 @@ final class PeoplePage
         if ($id > 0) {
             $this->people->update($id, $data);
             RoleNotifier::rolesChanged($id, $before, $roles);
+
+            if ((bool) $previous?->isOrganizer !== $isOrganizer) {
+                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $id);
+            }
 
             Admin::redirectTo(self::PAGE_SLUG, __('Person updated.', 'eventcrew'));
         }
@@ -195,6 +201,10 @@ final class PeoplePage
 
         if ($newId > 0) {
             RoleNotifier::rolesChanged($newId, [], $roles);
+
+            if ($isOrganizer) {
+                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $newId);
+            }
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Person added.', 'eventcrew'));

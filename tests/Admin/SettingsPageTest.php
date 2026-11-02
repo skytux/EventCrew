@@ -102,7 +102,8 @@ final class SettingsPageTest extends TelegramTestCase
             new EmailTemplate($logger),
             $this->boardService(),
             $this->welcomeSender(),
-            new \EventCrew\Repositories\PersonRepository()
+            new \EventCrew\Repositories\PersonRepository(),
+            $this->commandMenu()
         );
     }
 
@@ -114,6 +115,32 @@ final class SettingsPageTest extends TelegramTestCase
 
         // Already installed for this version: no Telegram calls at all.
         self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testInstallingTheWebhookSendsTheCommandMenus(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = 'secret';
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path
+        );
+        $this->telegramResults['getMe'] = ['username' => 'crewbot'];
+
+        $result = $this->page()->installWebhook();
+
+        self::assertTrue($result['ok']);
+
+        $scopes = [];
+
+        foreach ($this->telegramCalls as $call) {
+            if ('setMyCommands' === $call['method']) {
+                $scopes[] = $call['body']['scope']['type'] . '/' . ($call['body']['language_code'] ?? '');
+            }
+        }
+
+        self::assertSame(
+            ['all_group_chats/', 'all_group_chats/fi', 'all_private_chats/', 'all_private_chats/fi'],
+            $scopes
+        );
     }
 
     public function testInstallOnUpdateSkipsAndDoesNotStampWhenUnconfigured(): void

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
-use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\Language;
@@ -43,7 +42,7 @@ final class HelpService
 
         $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
         $organizer = null !== $person && $person->isOrganizer;
-        $welcomeCrew = $organizer || (null !== $person && $this->isWelcomeCrew($person));
+        $welcomeCrew = $organizer || (null !== $person && $this->doorAccess->isWelcomeCrew($person));
 
         $sections = [$this->title(), $this->everyone()];
 
@@ -78,17 +77,6 @@ final class HelpService
             $this->everyone(),
             __('Send me /help in a private chat for more.', 'eventcrew'),
         ]);
-    }
-
-    private function isWelcomeCrew(Person $person): bool
-    {
-        foreach ($this->doorAccess->nearbyDates() as $date) {
-            if ($this->doorAccess->canView($person, $date)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function title(): string

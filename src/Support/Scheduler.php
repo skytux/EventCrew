@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\CommandMenu;
 
 /**
  * The heartbeat: one hourly WP-Cron event that runs the scheduled sends - the
@@ -42,7 +43,8 @@ final class Scheduler
         private readonly BoardService $board,
         private readonly RoleNotifier $roleNotifier,
         private readonly RetentionPurge $retention,
-        private readonly WelcomeSender $welcome
+        private readonly WelcomeSender $welcome,
+        private readonly CommandMenu $commandMenu
     ) {
     }
 
@@ -116,6 +118,11 @@ final class Scheduler
         // in without anyone pasting one into Settings. Throttled to once a week
         // inside, and a no-op when the organizer has set their own.
         $this->board->refreshGroupLink();
+
+        // Once a day, give the bot's command menu of their own to whoever is
+        // welcome crew for a nearby night now, and take it from whoever no
+        // longer is. Not gated: changing a menu sends nobody a notification.
+        $this->commandMenu->refreshIfDue();
 
         // Sweep spent and expired sign-in tokens - one is issued per email's
         // account-link footer, so the table would grow unbounded otherwise. The

@@ -348,6 +348,7 @@ final class PermissionService
                 return [sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name), 'pass'];
             case 'admin':
                 $this->people->setOrganizer($personId, ! $isOrganizer);
+                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $personId);
 
                 return $isOrganizer
                     ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']
