@@ -53,6 +53,17 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString('.ec-tile span{font-size:11px;line-height:1.1;white-space:nowrap}', $html);
     }
 
+    public function testTheSwitchPopupOffersLoginAsFirst(): void
+    {
+        $html = $this->page();
+        $as = strpos($html, 'id="ec-pick-as"');
+        $own = strpos($html, 'id="ec-pick-own"');
+
+        self::assertNotFalse($as);
+        self::assertNotFalse($own);
+        self::assertLessThan($own, $as);
+    }
+
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void
     {
         $html = $this->page();
