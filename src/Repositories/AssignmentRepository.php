@@ -34,6 +34,13 @@ final class AssignmentRepository
     /** No task with that id. */
     public const JOIN_UNKNOWN_TASK = 'unknown_task';
 
+    /**
+     * Refused by cancel(): the task starts within the sign-out lock (or has
+     * started), so the person can no longer sign themselves out. Nothing is
+     * written. An organizer can still take them off.
+     */
+    public const CANCEL_LOCKED = 'locked';
+
     private function table(): string
     {
         return Schema::table(Schema::ASSIGNMENTS);
@@ -217,10 +224,15 @@ final class AssignmentRepository
      * is a plain `cancelled` with no penalty. `setStatus()` stamps
      * `status_changed_at`, which is the "when" a later reputation score needs.
      *
-     * @return string The status recorded, or '' when there was no live slot to
-     *                cancel.
+     * With `$lockMinutes` above 0, a task with a start time that starts in
+     * less than that many minutes, or has started, is not cancelled at all:
+     * CANCEL_LOCKED comes back and nothing is written. A task without a start
+     * time is never locked.
+     *
+     * @return string The status recorded, CANCEL_LOCKED, or '' when there was
+     *                no live slot to cancel.
      */
-    public function cancel(int $taskId, int $personId, int $noticeHours): string
+    public function cancel(int $taskId, int $personId, int $noticeHours, int $lockMinutes = 0): string
     {
         $assignment = $this->findFor($taskId, $personId);
 
@@ -228,7 +240,16 @@ final class AssignmentRepository
             return '';
         }
 
-        $status = $this->cancellationStatus($taskId, $noticeHours);
+        $start = $this->secondsToStart($taskId);
+
+        $locked = $lockMinutes > 0 && null !== $start && $start['timed']
+            && $start['left'] < $lockMinutes * MINUTE_IN_SECONDS;
+
+        if ($locked) {
+            return self::CANCEL_LOCKED;
+        }
+
+        $status = $this->cancellationStatus($start, $noticeHours);
         $this->setStatus($assignment->id, $status);
 
         return $status;
@@ -236,10 +257,30 @@ final class AssignmentRepository
 
     /**
      * `late_cancel` when now is within the notice window of the task's start,
-     * else `cancelled`. An untimed task, or one whose start cannot be read,
-     * defaults to the no-penalty `cancelled`.
+     * else `cancelled`. An untimed task counts from 00:00 of its date; one
+     * whose start cannot be read defaults to the no-penalty `cancelled`.
+     *
+     * @param array{left: int, timed: bool}|null $start From secondsToStart().
      */
-    private function cancellationStatus(int $taskId, int $noticeHours): string
+    private function cancellationStatus(?array $start, int $noticeHours): string
+    {
+        if (null === $start) {
+            return AssignmentStatus::CANCELLED;
+        }
+
+        return $start['left'] < $noticeHours * HOUR_IN_SECONDS
+            ? AssignmentStatus::LATE_CANCEL
+            : AssignmentStatus::CANCELLED;
+    }
+
+    /**
+     * Seconds from now until the task starts (negative once it has started),
+     * and whether the task has its own start time. An untimed task counts
+     * from 00:00 of its date. Null when the task or its date cannot be read.
+     *
+     * @return array{left: int, timed: bool}|null
+     */
+    private function secondsToStart(int $taskId): ?array
     {
         global $wpdb;
 
@@ -252,12 +293,13 @@ final class AssignmentRepository
         );
 
         if (! is_array($row)) {
-            return AssignmentStatus::CANCELLED;
+            return null;
         }
 
         $when = (string) ($row['starts_at'] ?? '');
+        $timed = '' !== $when;
 
-        if ('' === $when) {
+        if (! $timed) {
             $when = (string) ($row['task_date'] ?? '') . ' 00:00:00';
         }
 
@@ -265,12 +307,10 @@ final class AssignmentRepository
         $now = strtotime((string) current_time('mysql'));
 
         if (false === $start || false === $now) {
-            return AssignmentStatus::CANCELLED;
+            return null;
         }
 
-        return ($start - $now) < $noticeHours * HOUR_IN_SECONDS
-            ? AssignmentStatus::LATE_CANCEL
-            : AssignmentStatus::CANCELLED;
+        return ['left' => $start - $now, 'timed' => $timed];
     }
 
     public function find(int $id): ?Assignment

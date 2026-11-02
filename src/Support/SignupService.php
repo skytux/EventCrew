@@ -27,6 +27,14 @@ final class SignupService
     /** Hours before a task's start inside which a cancel counts as late. */
     public const NOTICE_HOURS_OPTION = 'eventcrew_notice_hours';
 
+    /**
+     * Minutes before a task's start from which a person can no longer sign
+     * themselves out (0 = never locked). Organizers can still take them off.
+     */
+    public const SIGNOUT_LOCK_OPTION = 'eventcrew_signout_lock_minutes';
+
+    public const SIGNOUT_LOCK_DEFAULT = 5;
+
     /** Refused: the person is at risk and the gate is on. */
     public const GATED = 'gated';
 
@@ -231,7 +239,23 @@ final class SignupService
      */
     public function drop(int $personId, int $taskId): string
     {
-        return $this->assignments->cancel($taskId, $personId, $this->noticeHours());
+        return $this->assignments->cancel($taskId, $personId, $this->noticeHours(), self::signoutLockMinutes());
+    }
+
+    /** The sign-out lock in minutes, from the setting; 0 = off. */
+    public static function signoutLockMinutes(): int
+    {
+        return max(0, (int) get_option(self::SIGNOUT_LOCK_OPTION, self::SIGNOUT_LOCK_DEFAULT));
+    }
+
+    /** The answer every channel gives when the sign-out lock refuses a sign-out. */
+    public static function signoutLockedText(): string
+    {
+        return sprintf(
+            /* translators: %d: number of minutes */
+            __('Sign-out closes %d minutes before the task starts. Tell an organizer if you cannot come.', 'eventcrew'),
+            self::signoutLockMinutes()
+        );
     }
 
     /**

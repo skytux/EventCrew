@@ -649,7 +649,11 @@ final class SignupController
 
     public function dropFor(int $personId, int $taskId): string
     {
-        return '' === $this->signup->drop($personId, $taskId) ? 'not_on' : 'dropped';
+        return match ($this->signup->drop($personId, $taskId)) {
+            '' => 'not_on',
+            AssignmentRepository::CANCEL_LOCKED => 'signout_locked',
+            default => 'dropped',
+        };
     }
 
     /**
@@ -910,6 +914,7 @@ final class SignupController
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'credit_question' => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
+            'signout_locked' => SignupService::signoutLockedText(),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),
             'ticket_ticket_ready' => __('Your free-entry ticket is ready.', 'eventcrew'),
             'ticket_no_credit' => __('You have no free-entry credits to spend.', 'eventcrew'),

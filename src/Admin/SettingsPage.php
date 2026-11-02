@@ -97,6 +97,7 @@ final class SettingsPage
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
                 'notice_hours' => max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48)),
+                'signout_lock_minutes' => SignupService::signoutLockMinutes(),
                 'reputation_threshold' => (float) get_option(
                     StandingCalculator::THRESHOLD_OPTION,
                     Reputation::DEFAULT_THRESHOLD
@@ -374,6 +375,11 @@ final class SettingsPage
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);
+
+        $lockMinutes = isset($_POST['signout_lock_minutes'])
+            ? max(0, (int) $_POST['signout_lock_minutes'])
+            : SignupService::SIGNOUT_LOCK_DEFAULT;
+        update_option(SignupService::SIGNOUT_LOCK_OPTION, $lockMinutes);
 
         // A threshold outside (0,1] would make the join gate never or always
         // fire; fall back to the default rather than store nonsense.
