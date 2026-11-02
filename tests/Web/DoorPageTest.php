@@ -77,9 +77,26 @@ final class DoorPageTest extends TestCase
         self::assertSame(2, substr_count($html, 'scanMessage(text.noCamera, true);'));
         self::assertStringContainsString('scanMessage(text.noDecoder, true);', $html);
         // A successful mark is not an error.
-        self::assertStringContainsString("scanMessage(text.arrived.replace('%s', row.name));", $html);
+        self::assertStringContainsString("scanMessage(text.arrived.replace('%s', row.name), false, true);", $html);
         self::assertStringContainsString('#ec-scan-name{font-size:32px;line-height:1.2;font-weight:700;margin:12px 0 0;white-space:nowrap;', $html);
         self::assertStringContainsString("el('ec-scan-name').textContent = scanRow.name;\n        fitScanName();", $html);
+    }
+
+    public function testAScanArrivalSaysWelcomeBigOnGreen(): void
+    {
+        $html = $this->page();
+
+        self::assertStringContainsString('"arrived":"Welcome %s"', $html);
+        self::assertStringNotContainsString('is marked arrived.', $html);
+        self::assertStringContainsString(
+            '.ec-msg.is-welcome{background:var(--in-bg);border:2px solid var(--in);color:var(--in);font-size:26px;',
+            $html
+        );
+        self::assertStringContainsString(
+            "line.classList.toggle('is-welcome', !!message && !isError && !!isWelcome);",
+            $html
+        );
+        self::assertStringContainsString("scanMessage(text.arrived.replace('%s', row.name), false, true);", $html);
     }
 
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void

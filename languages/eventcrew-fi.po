@@ -2394,8 +2394,8 @@ msgstr "Admin-näkymät"
 msgid "%1$s: this ticket is for %2$s, not tonight."
 msgstr "%1$s: tämä lippu on päivälle %2$s, ei tälle illalle."
 
-msgid "%s is marked arrived."
-msgstr "%s on merkitty saapuneeksi."
+msgid "Welcome %s"
+msgstr "Tervetuloa %s"
 
 msgid "%s is not on tonight’s list."
 msgstr "%s ei ole tämän illan listalla."
