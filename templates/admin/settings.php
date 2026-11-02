@@ -55,7 +55,7 @@
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
- * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
+ * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
 declare(strict_types=1);
@@ -1210,6 +1210,45 @@ if (! defined('ABSPATH')) {
                         <p class="description">
                             <a href="<?php echo esc_url($privacy['notice_url']); ?>" target="_blank" rel="noopener">
                                 <?php esc_html_e('View the notice people are shown', 'eventcrew'); ?>
+                            </a>
+                        </p>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-privacy-buyer-page"><?php esc_html_e('Ticket buyer privacy page', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    wp_dropdown_pages([
+                        'name' => 'privacy_buyer_page_id',
+                        'id' => 'eventcrew-privacy-buyer-page',
+                        'selected' => $privacy['buyer_page_id'],
+                        'show_option_none' => __('— None —', 'eventcrew'),
+                        'option_none_value' => '0',
+                    ]);
+                    ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: 1: the shortcode, already wrapped in <code>, 2: number of days */
+                            esc_html__('The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop\'s order export, that buyers can type a dash instead of their address in the shop, and that their email address is deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop.', 'eventcrew'),
+                            '<code>[eventcrew_ticket_privacy]</code>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
+                            (int) \EventCrew\Support\PrivacyPolicy::BUYER_EMAIL_DAYS
+                        );
+                        ?>
+                    </p>
+                    <?php if (0 === $privacy['buyer_page_id']) : ?>
+                        <p class="description">
+                            <a href="<?php echo esc_url($privacy['create_buyer_url']); ?>">
+                                <?php esc_html_e('Create the ticket buyer privacy page', 'eventcrew'); ?>
+                            </a>
+                        </p>
+                    <?php elseif ('' !== $privacy['buyer_notice_url']) : ?>
+                        <p class="description">
+                            <a href="<?php echo esc_url($privacy['buyer_notice_url']); ?>" target="_blank" rel="noopener">
+                                <?php esc_html_e('View the ticket buyer notice', 'eventcrew'); ?>
                             </a>
                         </p>
                     <?php endif; ?>

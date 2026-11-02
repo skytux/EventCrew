@@ -219,6 +219,12 @@ final class SettingsPage
             'page_id' => PrivacyPolicy::pageId(),
             'configured' => PrivacyPolicy::isConfigured(),
             'notice_url' => PrivacyPolicy::noticeUrl(),
+            'buyer_page_id' => PrivacyPolicy::buyerPageId(),
+            'buyer_notice_url' => PrivacyPolicy::buyerNoticeUrl(),
+            'create_buyer_url' => wp_nonce_url(
+                admin_url('admin-post.php?action=eventcrew_create_buyer_privacy_page'),
+                self::PRIVACY_NONCE_ACTION
+            ),
             'core_policy_url' => admin_url('options-privacy.php'),
             'create_nonce_action' => self::PRIVACY_NONCE_ACTION,
         ];
@@ -652,6 +658,10 @@ final class SettingsPage
             PrivacyPolicy::PAGE_OPTION,
             isset($_POST['privacy_page_id']) ? max(0, (int) $_POST['privacy_page_id']) : 0
         );
+        update_option(
+            PrivacyPolicy::BUYER_PAGE_OPTION,
+            isset($_POST['privacy_buyer_page_id']) ? max(0, (int) $_POST['privacy_buyer_page_id']) : 0
+        );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $after = [
@@ -709,6 +719,46 @@ final class SettingsPage
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('Privacy page created and selected.', 'eventcrew')
+        );
+    }
+
+    /**
+     * Creates a published page carrying the [eventcrew_ticket_privacy]
+     * shortcode and selects it. Same rules as createPrivacyPage(): refuses
+     * when a ticket buyer page is already chosen.
+     */
+    public function createBuyerPrivacyPage(): void
+    {
+        Admin::assertCanSave(self::PRIVACY_NONCE_ACTION);
+
+        if (PrivacyPolicy::buyerPageId() > 0) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('A ticket buyer privacy page is already chosen.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $pageId = wp_insert_post([
+            'post_title' => __('Ticket buyer privacy notice', 'eventcrew'),
+            'post_content' => '[eventcrew_ticket_privacy]',
+            'post_status' => 'publish',
+            'post_type' => 'page',
+        ]);
+
+        if (is_wp_error($pageId) || 0 === (int) $pageId) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('The privacy page could not be created.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        update_option(PrivacyPolicy::BUYER_PAGE_OPTION, (int) $pageId);
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('Ticket buyer privacy page created and selected.', 'eventcrew')
         );
     }
 

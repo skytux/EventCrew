@@ -38,6 +38,16 @@ final class PrivacyPolicy
     public const PAGE_OPTION = 'eventcrew_privacy_page_id';
     public const UPDATED_OPTION = 'eventcrew_privacy_updated_at';
 
+    /** The page that carries the ticket buyer privacy notice. */
+    public const BUYER_PAGE_OPTION = 'eventcrew_privacy_buyer_page_id';
+
+    /**
+     * How many days after the event a ticket buyer's email address is deleted,
+     * unless they joined the newsletter. RetentionPurge enforces it and the
+     * ticket buyer notice states it, both from this one number.
+     */
+    public const BUYER_EMAIL_DAYS = 60;
+
     public const RETENTION_DEFAULT = 3;
     public const RETENTION_MIN = 1;
     public const RETENTION_MAX = 25;
@@ -219,6 +229,70 @@ final class PrivacyPolicy
             [
                 'heading' => __('Your rights', 'eventcrew'),
                 'paragraphs' => self::rightsParagraphs(),
+            ],
+        ];
+    }
+
+    public static function buyerPageId(): int
+    {
+        return (int) get_option(self::BUYER_PAGE_OPTION, 0);
+    }
+
+    /**
+     * Where the ticket buyer notice is: its own page if one is chosen and
+     * published, otherwise WordPress's own privacy policy page (which carries
+     * the same text as a suggestion), otherwise ''.
+     */
+    public static function buyerNoticeUrl(): string
+    {
+        foreach ([self::buyerPageId(), (int) get_option('wp_page_for_privacy_policy', 0)] as $pageId) {
+            if ($pageId > 0 && 'publish' === get_post_status($pageId)) {
+                $url = get_permalink($pageId);
+
+                if (is_string($url) && '' !== $url) {
+                    return $url;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * The public privacy notice for people who bought a ticket in the web
+     * shop. It is separate from the crew notice because ticket buyers are not
+     * crew members: they never signed up here, and their data comes from the
+     * shop's order export. Same shape as sections(), and shown only when
+     * isConfigured() is true, for the same reason.
+     *
+     * @return array<int, array{heading: string, paragraphs: array<int, string>}>
+     */
+    public static function buyerSections(): array
+    {
+        return [
+            [
+                'heading' => __('Who is responsible for your data', 'eventcrew'),
+                'paragraphs' => self::buyerControllerParagraphs(),
+            ],
+            [
+                'heading' => __('What we hold about you', 'eventcrew'),
+                'paragraphs' => self::buyerHeldParagraphs(),
+            ],
+            [
+                'heading' => __('Why we hold it', 'eventcrew'),
+                'paragraphs' => self::buyerPurposeParagraphs(),
+            ],
+            [
+                'heading' => __('Who else can see it', 'eventcrew'),
+                'paragraphs' => self::buyerRecipientParagraphs(),
+            ],
+            [
+                'heading' => __('How long we keep it', 'eventcrew'),
+                'paragraphs' => self::buyerRetentionParagraphs(),
+            ],
+            [
+                'heading' => __('Your rights', 'eventcrew'),
+                'paragraphs' => self::buyerRightsParagraphs(),
             ],
         ];
     }
@@ -480,6 +554,152 @@ final class PrivacyPolicy
         ];
 
         return $paragraphs;
+    }
+
+    /**
+     * The crew notice's controller paragraphs with the first sentence changed
+     * to name the ticket buyer records. The officer paragraph after it is the
+     * same for both notices.
+     *
+     * @return array<int, string>
+     */
+    private static function buyerControllerParagraphs(): array
+    {
+        $paragraphs = self::controllerParagraphs();
+        $address = self::address();
+
+        $paragraphs[0] = '' !== $address
+            ? sprintf(
+                /* translators: 1: organisation name, 2: postal address, 3: contact email */
+                __(
+                    'The data controller for the ticket buyer records described here is %1$s, %2$s. You can reach us at %3$s.',
+                    'eventcrew'
+                ),
+                self::controller(),
+                $address,
+                self::contact()
+            )
+            : sprintf(
+                /* translators: 1: organisation name, 2: contact email */
+                __(
+                    'The data controller for the ticket buyer records described here is %1$s. You can reach us at %2$s.',
+                    'eventcrew'
+                ),
+                self::controller(),
+                self::contact()
+            );
+
+        return $paragraphs;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function buyerHeldParagraphs(): array
+    {
+        return [
+            __(
+                'When you buy a ticket in our web shop, we take these details from the shop\'s order export: your name, your email address, and your order or ticket code. We also store the date of the event your ticket is for. We take nothing else from your order.',
+                'eventcrew'
+            ),
+            __(
+                'The shop asks for a postal address. We do not use it. You can type a dash ("-") in the address field instead of your real address.',
+                'eventcrew'
+            ),
+            __(
+                'At the door we also note whether you came in.',
+                'eventcrew'
+            ),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function buyerPurposeParagraphs(): array
+    {
+        return [
+            __(
+                'Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for.',
+                'eventcrew'
+            ),
+            __(
+                'Your email address is used to send you one short message after the event: a thank-you if you came, or a sorry-we-missed-you if you did not. The same message invites you to join our newsletter. The legal basis is our legitimate interest in keeping in touch with the people who bought a ticket.',
+                'eventcrew'
+            ),
+            __(
+                'You are added to the newsletter only if you confirm that you want it. Not joining has no effect on your ticket.',
+                'eventcrew'
+            ),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function buyerRecipientParagraphs(): array
+    {
+        return [
+            __(
+                'The organizers of our events, and the crew working the door on the night, can see your name on the door list.',
+                'eventcrew'
+            ),
+            __(
+                'We do not sell your data and we do not use it for advertising.',
+                'eventcrew'
+            ),
+            __(
+                'The web shop where you bought your ticket holds your order under its own privacy policy. Our email is delivered by an email service, since every message we send leaves this site as an email.',
+                'eventcrew'
+            ),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function buyerRetentionParagraphs(): array
+    {
+        return [
+            sprintf(
+                /* translators: %d: number of days */
+                __(
+                    'We delete your email address %d days after the event, unless you have joined our newsletter. This happens automatically.',
+                    'eventcrew'
+                ),
+                self::BUYER_EMAIL_DAYS
+            ),
+            __(
+                'If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time.',
+                'eventcrew'
+            ),
+            __(
+                'Your name, your ticket code and whether you came in stay on that night\'s door list, as our record of the tickets sold for it.',
+                'eventcrew'
+            ),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function buyerRightsParagraphs(): array
+    {
+        return [
+            __(
+                'You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it.',
+                'eventcrew'
+            ),
+            sprintf(
+                /* translators: %s: the controller's contact address */
+                __('To do any of these, write to %s and we will answer within one month.', 'eventcrew'),
+                self::contact()
+            ),
+            __(
+                'If you think we have handled your data badly, you can complain to your national data protection authority. In the EU you can complain to the one where you live, work, or where the problem happened.',
+                'eventcrew'
+            ),
+        ];
     }
 
     // phpcs:enable Generic.Files.LineLength.TooLong

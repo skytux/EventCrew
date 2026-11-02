@@ -10,7 +10,8 @@ use WP_Post;
 /**
  * Publishes the privacy notice: the [eventcrew_privacy] shortcode and its
  * matching block, plus the suggested text WordPress folds into its own privacy
- * policy draft.
+ * policy draft. The ticket buyer notice is published the same way, by the
+ * [eventcrew_ticket_privacy] shortcode and a second suggested text.
  *
  * Both readers take their words from Support\PrivacyPolicy, so the page and the
  * site policy cannot say different things about the same processing. The only
@@ -31,6 +32,7 @@ final class PrivacyController
     public function boot(): void
     {
         add_shortcode('eventcrew_privacy', [$this, 'renderShortcode']);
+        add_shortcode('eventcrew_ticket_privacy', [$this, 'renderBuyerShortcode']);
         add_action('init', [$this, 'registerBlock']);
         add_action('admin_init', [$this, 'registerPolicyText']);
         add_action('wp_enqueue_scripts', [$this, 'enqueueStyle']);
@@ -71,13 +73,35 @@ final class PrivacyController
             return;
         }
 
-        if (has_shortcode((string) $post->post_content, 'eventcrew_privacy') || has_block('eventcrew/privacy', $post)) {
+        if (
+            has_shortcode((string) $post->post_content, 'eventcrew_privacy')
+            || has_shortcode((string) $post->post_content, 'eventcrew_ticket_privacy')
+            || has_block('eventcrew/privacy', $post)
+        ) {
             $this->signup->registerStyle();
             wp_enqueue_style(SignupController::STYLE_HANDLE);
         }
     }
 
     public function renderShortcode(): string
+    {
+        return $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::sections() : []);
+    }
+
+    /**
+     * The [eventcrew_ticket_privacy] shortcode: the public notice for people
+     * who bought a ticket in the web shop. Same template and the same
+     * not-configured rule as the crew notice.
+     */
+    public function renderBuyerShortcode(): string
+    {
+        return $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::buyerSections() : []);
+    }
+
+    /**
+     * @param array<int, array{heading: string, paragraphs: array<int, string>}> $sections
+     */
+    private function render(array $sections): string
     {
         // Register before enqueuing, for the paths wp_enqueue_scripts never
         // reached - the block's REST preview above all. An enqueue of an
@@ -88,7 +112,7 @@ final class PrivacyController
 
         $eventcrew_configured = PrivacyPolicy::isConfigured();
         $eventcrew_can_edit = current_user_can('manage_options');
-        $eventcrew_sections = $eventcrew_configured ? PrivacyPolicy::sections() : [];
+        $eventcrew_sections = $sections;
 
         ob_start();
         include EVENTCREW_PLUGIN_DIR . 'templates/public/privacy.php';
@@ -97,7 +121,8 @@ final class PrivacyController
     }
 
     /**
-     * Adds the same notice to Settings -> Privacy as suggested policy text.
+     * Adds the same notice, and the ticket buyer notice as a second section,
+     * to Settings -> Privacy as suggested policy text.
      *
      * Core keeps a hash of what a plugin last suggested and flags the section as
      * stale when it changes, so an organizer who has already pasted this into
@@ -111,9 +136,23 @@ final class PrivacyController
             return;
         }
 
+        wp_add_privacy_policy_content('EventCrew', wp_kses_post(self::policyMarkup(PrivacyPolicy::sections())));
+        // The name is not translated: core keys its stored copy by it, so a
+        // translated name would count as a different plugin in each language.
+        wp_add_privacy_policy_content(
+            'EventCrew ticket buyers',
+            wp_kses_post(self::policyMarkup(PrivacyPolicy::buyerSections()))
+        );
+    }
+
+    /**
+     * @param array<int, array{heading: string, paragraphs: array<int, string>}> $sections
+     */
+    private static function policyMarkup(array $sections): string
+    {
         $content = '';
 
-        foreach (PrivacyPolicy::sections() as $section) {
+        foreach ($sections as $section) {
             $content .= '<h2 class="wp-policy-help">' . esc_html($section['heading']) . "</h2>\n";
 
             foreach ($section['paragraphs'] as $paragraph) {
@@ -121,6 +160,6 @@ final class PrivacyController
             }
         }
 
-        wp_add_privacy_policy_content('EventCrew', wp_kses_post($content));
+        return $content;
     }
 }
