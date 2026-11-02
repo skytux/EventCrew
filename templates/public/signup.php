@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, role_holders: list<array{id: int, name: string, roles: list<string>}>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -837,95 +837,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             </ul>
                         <?php endif; ?>
                     </div>
-                </section>
-            <?php endif; ?>
-
-            <section class="eventcrew-event eventcrew-admin-card">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Give a credit', 'eventcrew'); ?></h3>
-                </header>
-                <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['gift_action']); ?>">
-                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <p>
-                        <label for="eventcrew-admin-member"><?php esc_html_e('Member', 'eventcrew'); ?></label>
-                        <select id="eventcrew-admin-member" name="person_id" required>
-                            <option value=""><?php esc_html_e('Choose a member', 'eventcrew'); ?></option>
-                            <?php foreach ($eventcrew_admin['members'] as $eventcrew_member_id => $eventcrew_member_label) : ?>
-                                <option value="<?php echo esc_attr((string) $eventcrew_member_id); ?>"><?php echo esc_html($eventcrew_member_label); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </p>
-                    <p class="eventcrew-admin-pair">
-                        <span>
-                            <label for="eventcrew-admin-credits"><?php esc_html_e('Credits', 'eventcrew'); ?></label>
-                            <input id="eventcrew-admin-credits" type="number" name="credits" min="1" step="1" value="1" required>
-                        </span>
-                        <span>
-                            <label for="eventcrew-admin-reason"><?php esc_html_e('Reason (optional)', 'eventcrew'); ?></label>
-                            <input id="eventcrew-admin-reason" type="text" name="reason" maxlength="200">
-                        </span>
-                    </p>
-                    <button type="submit" class="wp-element-button"><?php esc_html_e('Give credit', 'eventcrew'); ?></button>
-                </form>
-            </section>
-
-            <?php if ([] !== $eventcrew_admin['roles']) : ?>
-                <section class="eventcrew-event eventcrew-admin-card">
-                    <header class="eventcrew-event-head">
-                        <h3 class="eventcrew-event-title"><?php esc_html_e('Roles', 'eventcrew'); ?></h3>
-                    </header>
-                    <div class="eventcrew-card-body">
-                        <p class="eventcrew-muted"><?php esc_html_e('Only people with a role see its tasks and can sign up for them.', 'eventcrew'); ?></p>
-                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['roles_action']); ?>">
-                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <p class="eventcrew-admin-pair">
-                                <span>
-                                    <label for="eventcrew-admin-role-member"><?php esc_html_e('Member', 'eventcrew'); ?></label>
-                                    <select id="eventcrew-admin-role-member" name="person_id" required>
-                                        <option value=""><?php esc_html_e('Choose a member', 'eventcrew'); ?></option>
-                                        <?php foreach ($eventcrew_admin['members'] as $eventcrew_member_id => $eventcrew_member_label) : ?>
-                                            <option value="<?php echo esc_attr((string) $eventcrew_member_id); ?>"><?php echo esc_html($eventcrew_member_label); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </span>
-                                <span>
-                                    <label for="eventcrew-admin-role"><?php esc_html_e('Role', 'eventcrew'); ?></label>
-                                    <select id="eventcrew-admin-role" name="add_role" required>
-                                        <?php foreach ($eventcrew_admin['roles'] as $eventcrew_role_slug => $eventcrew_role_label) : ?>
-                                            <option value="<?php echo esc_attr($eventcrew_role_slug); ?>"><?php echo esc_html($eventcrew_role_label); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </span>
-                            </p>
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Give the role', 'eventcrew'); ?></button>
-                        </form>
-                    </div>
-                    <?php if ([] !== $eventcrew_admin['role_holders']) : ?>
-                        <ul class="eventcrew-plain-list eventcrew-admin-holders">
-                            <?php foreach ($eventcrew_admin['role_holders'] as $eventcrew_holder) : ?>
-                                <li>
-                                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-admin-roles">
-                                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['roles_action']); ?>">
-                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                                        <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_holder['id']); ?>">
-                                        <strong><?php echo esc_html($eventcrew_holder['name']); ?></strong>
-                                        <?php foreach ($eventcrew_admin['roles'] as $eventcrew_role_slug => $eventcrew_role_label) : ?>
-                                            <label>
-                                                <input type="checkbox" name="roles[]" value="<?php echo esc_attr($eventcrew_role_slug); ?>" <?php checked(in_array($eventcrew_role_slug, $eventcrew_holder['roles'], true)); ?>>
-                                                <?php echo esc_html($eventcrew_role_label); ?>
-                                            </label>
-                                        <?php endforeach; ?>
-                                        <button type="submit" class="wp-element-button is-style-outline"><?php esc_html_e('Save', 'eventcrew'); ?></button>
-                                    </form>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
                 </section>
             <?php endif; ?>
             </div>
