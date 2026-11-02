@@ -17,6 +17,10 @@ final class VerificationControllerTest extends TelegramTestCase
         parent::setUp();
 
         Functions\when('esc_html')->returnArg(1);
+        // No Telegram account waiting on the token; OnboardingServiceTest
+        // covers the click that links one.
+        Functions\when('get_transient')->justReturn(false);
+        Functions\when('delete_transient')->justReturn(true);
     }
 
     private function controller(): VerificationController

@@ -60,9 +60,10 @@ final class VerificationController
     }
 
     /**
-     * Consumes the token and, if it was valid, marks the person verified and
-     * nudges them back to the board over Telegram. Split from handle() so the
-     * decision is testable without the echo/exit that serving a page needs.
+     * Consumes the token and, if it was valid, marks the person verified, links
+     * the Telegram account that asked for the link, and nudges them back to the
+     * board over Telegram. Split from handle() so the decision is testable
+     * without the echo/exit that serving a page needs.
      */
     public function verify(string $token): bool
     {
@@ -70,6 +71,12 @@ final class VerificationController
 
         if (null === $personId) {
             return false;
+        }
+
+        $pending = OnboardingService::takePendingLink($token);
+
+        if (null !== $pending) {
+            $this->linkWaitingTelegram($personId, $pending['telegram_user_id'], $pending['telegram_chat_id']);
         }
 
         $this->people->markEmailVerified($personId);
@@ -86,6 +93,50 @@ final class VerificationController
         }
 
         return true;
+    }
+
+    /**
+     * Links the Telegram account that typed this email, now that the click has
+     * proved the email is theirs: fills an empty link, replaces a different one.
+     *
+     * A Telegram account already linked to another person is refused rather
+     * than moved: the column is unique, and moving it would splice two people's
+     * histories - and their earned credits - onto one account. When an old
+     * link is replaced, its chat is told, so a takeover cannot pass unseen.
+     */
+    private function linkWaitingTelegram(int $personId, int $telegramUserId, int $chatId): void
+    {
+        $person = $this->people->find($personId);
+
+        if (null === $person) {
+            return;
+        }
+
+        $holder = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null !== $holder && $holder->id !== $personId) {
+            Language::forPerson($holder, fn () => $this->telegram->sendMessage(
+                $chatId,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('This Telegram account is already linked to another email. Contact an organizer if that is wrong.', 'eventcrew')
+            ));
+
+            return;
+        }
+
+        $oldChatId = $person->telegramUserId !== $telegramUserId ? $person->telegramChatId : null;
+
+        $this->people->linkTelegram($personId, $telegramUserId, $chatId);
+
+        // Sent after the link is written, so a failed send cannot undo it;
+        // TelegramClient logs a failure instead of throwing.
+        if (null !== $person->telegramUserId && null !== $oldChatId) {
+            Language::forPerson($person, fn () => $this->telegram->sendMessage(
+                $oldChatId,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __("Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you.", 'eventcrew')
+            ));
+        }
     }
 
     public function renderPage(bool $confirmed): string

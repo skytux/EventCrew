@@ -1799,6 +1799,10 @@ msgstr "Et ollut ilmoittautunut siihen."
 msgid "Your EventCrew access changed"
 msgstr "EventCrew-oikeutesi muuttuivat"
 
+#: src/Telegram/VerificationController.php:137
+msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
+msgstr "EventCrew-tilisi on nyt liitetty toiseen Telegram-tiliin. Ota yhteyttä järjestäjään, jos se et ollut sinä."
+
 #: src/Web/SignupController.php:413
 msgid "Your EventCrew sign-in link"
 msgstr "EventCrew-kirjautumislinkkisi"
