@@ -77,22 +77,22 @@ msgstr ""
 msgid "%1$s now has the role %2$s."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:155
+#: src/Support/RoleNotifier.php:160
 #. translators: 1: the person's name, 2: the role
 msgid "%1$s now meets the conditions for the role %2$s. You can give them the role with /people."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:171
+#: src/Support/RoleNotifier.php:176
 #. translators: 1: the person's name, 2: the role, 3: the name of the organizer who gave it
 msgid "%1$s was given the role %2$s by %3$s."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:163
+#: src/Support/RoleNotifier.php:168
 #. translators: 1: the person's name, 2: the role
 msgid "%1$s was given the role %2$s."
 msgstr ""
 
-#: src/Support/RoleNotifier.php:147
+#: src/Support/RoleNotifier.php:152
 #. translators: 1: the person's name, 2: the name of the organizer who did it
 msgid "%1$s was made an organizer by %2$s."
 msgstr ""
@@ -226,7 +226,7 @@ msgstr ""
 msgid "%s only"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:142
+#: src/Support/RoleNotifier.php:147
 #. translators: %s: the person's name
 msgid "%s was made an organizer."
 msgstr ""
@@ -256,12 +256,12 @@ msgid "(%s ago)"
 msgstr ""
 
 #: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1147
-#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:274
+#: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:273
 #: src/Web/CrewAdminTasks.php:382
 msgid "(deleted person)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:131 src/Web/CrewAdminPeople.php:280
+#: src/Admin/PeoplePage.php:131 src/Web/CrewAdminPeople.php:279
 msgid "(unknown)"
 msgstr ""
 
@@ -327,6 +327,11 @@ msgstr ""
 
 #: src/Admin/RosterPage.php:388 src/Web/CrewAdminRoster.php:411
 msgid "A guest needs a name."
+msgstr ""
+
+#: src/Web/CrewAdminController.php:800
+#. translators: 1: person's name, 2: their email, 3: date and time, * 4: the admin action's name, 5: IP address
+msgid "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1$s (%2$s)\nWhen: %3$s\nAction: %4$s\nIP address: %5$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban."
 msgstr ""
 
 #: templates/admin/settings.php:739
@@ -402,7 +407,7 @@ msgstr ""
 msgid "A task is one role on one date. In EventCrew > Tasks you create tasks one by one, or all the tasks of a night at once from the roles. A task can be linked to an event, so it shows under the event's name. A task set to 0 people stays saved but leaves the board."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:157 src/Web/CrewAdminPeople.php:206
+#: src/Admin/PeoplePage.php:157 src/Web/CrewAdminPeople.php:205
 msgid "A valid email address is required - it is how a person is identified."
 msgstr ""
 
@@ -602,7 +607,7 @@ msgstr ""
 msgid "Another night: put the date first, e.g. /door add 1.8. Name"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:167 src/Web/CrewAdminPeople.php:210
+#: src/Admin/PeoplePage.php:167 src/Web/CrewAdminPeople.php:209
 msgid "Another person already uses that email address."
 msgstr ""
 
@@ -1052,7 +1057,7 @@ msgstr ""
 msgid "Crew and attendance"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:827
+#: src/Web/CrewAdminController.php:828
 msgid "Crew app: a member is blocked after a forged admin request"
 msgstr ""
 
@@ -1341,7 +1346,7 @@ msgstr ""
 msgid "EventCrew bot – commands"
 msgstr ""
 
-#: src/Support/DoorNewMember.php:163
+#: src/Support/DoorNewMember.php:164
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew door"
 msgstr ""
@@ -1539,7 +1544,7 @@ msgstr ""
 msgid "Get my ticket"
 msgstr ""
 
-#: src/Support/CreditGrantNotifier.php:77
+#: src/Support/CreditGrantNotifier.php:76
 msgid "Get your free ticket"
 msgstr ""
 
@@ -1663,7 +1668,7 @@ msgstr ""
 msgid "Hi %1$s,\n\n%2$s"
 msgstr ""
 
-#: src/Support/CreditGrantNotifier.php:68
+#: src/Support/CreditGrantNotifier.php:67
 msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
 msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
 msgstr[0] ""
@@ -1697,6 +1702,10 @@ msgstr ""
 #: src/Support/DmBody.php:40 src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
+msgstr ""
+
+#: src/Support/Mailer.php:91
+msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
 msgstr ""
 
 #: src/Support/DoorDesk.php:1021
@@ -1857,7 +1866,7 @@ msgstr ""
 msgid "JMAP (over HTTPS)"
 msgstr ""
 
-#: src/Support/DoorNewMember.php:119
+#: src/Support/DoorNewMember.php:120
 msgid "Join the Telegram group"
 msgstr ""
 
@@ -1986,7 +1995,7 @@ msgstr ""
 msgid "Manage your EventCrew account"
 msgstr ""
 
-#: src/Support/Mailer.php:208
+#: src/Support/Mailer.php:209
 msgid "Manage your account or stop these emails"
 msgstr ""
 
@@ -2423,7 +2432,7 @@ msgstr ""
 msgid "One-time at-risk pass"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:294 src/Web/CrewAdminPeople.php:213
+#: src/Admin/PeoplePage.php:294 src/Web/CrewAdminPeople.php:212
 msgid "One-time sign-up pass granted."
 msgstr ""
 
@@ -2539,7 +2548,7 @@ msgstr ""
 msgid "Open the sales desk on this device"
 msgstr ""
 
-#: src/Support/Mailer.php:101
+#: src/Support/Mailer.php:102
 msgid "Open the signup page"
 msgstr ""
 
@@ -2734,7 +2743,7 @@ msgstr ""
 msgid "Person"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:218 src/Web/CrewAdminPeople.php:212
+#: src/Admin/PeoplePage.php:218 src/Web/CrewAdminPeople.php:211
 msgid "Person added."
 msgstr ""
 
@@ -2742,7 +2751,7 @@ msgstr ""
 msgid "Person deleted."
 msgstr ""
 
-#: src/Admin/PeoplePage.php:198 src/Web/CrewAdminPeople.php:211
+#: src/Admin/PeoplePage.php:198 src/Web/CrewAdminPeople.php:210
 msgid "Person updated."
 msgstr ""
 
@@ -3388,15 +3397,15 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:159
+#: src/Support/RoleNotifier.php:164
 msgid "Someone meets the conditions for a role"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:167 src/Support/RoleNotifier.php:176
+#: src/Support/RoleNotifier.php:172 src/Support/RoleNotifier.php:181
 msgid "Someone was given a role"
 msgstr ""
 
-#: src/Support/RoleNotifier.php:151
+#: src/Support/RoleNotifier.php:156
 msgid "Someone was made an organizer"
 msgstr ""
 
@@ -3750,6 +3759,10 @@ msgstr ""
 msgid "The Crew app page background, the email buttons, and the fallback icon’s background."
 msgstr ""
 
+#: src/Support/PrivacyEraser.php:85
+msgid "The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links."
+msgstr ""
+
 #: src/Support/DoorDesk.php:357
 msgid "The Holvi buyer could not be added. Try again."
 msgstr ""
@@ -4023,7 +4036,7 @@ msgstr ""
 msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
 msgstr ""
 
-#: src/Support/DoorNewMember.php:118
+#: src/Support/DoorNewMember.php:119
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr ""
 
@@ -4351,7 +4364,7 @@ msgstr ""
 msgid "Unban"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:320 src/Web/CrewAdminPeople.php:214
+#: src/Admin/PeoplePage.php:320 src/Web/CrewAdminPeople.php:213
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
@@ -4495,7 +4508,7 @@ msgstr ""
 msgid "Welcome to the %s crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat."
 msgstr ""
 
-#: src/Support/DoorNewMember.php:129
+#: src/Support/DoorNewMember.php:130
 msgid "Welcome to the crew"
 msgstr ""
 
@@ -4752,6 +4765,10 @@ msgstr[1] ""
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
+#: src/Support/DoorNewMember.php:109
+msgid "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours."
+msgstr ""
+
 #: src/Web/SignupController.php:903
 msgid "You were already signed up for that."
 msgstr ""
@@ -4952,7 +4969,7 @@ msgstr ""
 msgid "You’re signed up: %1$s for %2$s"
 msgstr ""
 
-#: src/Support/CreditGrantNotifier.php:64
+#: src/Support/CreditGrantNotifier.php:63
 msgid "You’ve been given free entry"
 msgstr ""
 
@@ -5098,7 +5115,7 @@ msgstr ""
 msgid "someone"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:134 src/Web/CrewAdminPeople.php:283
+#: src/Admin/PeoplePage.php:134 src/Web/CrewAdminPeople.php:282
 msgid "the system"
 msgstr ""
 
@@ -5126,7 +5143,7 @@ msgstr ""
 msgid "years after someone’s last activity"
 msgstr ""
 
-#: src/Support/Mailer.php:215
+#: src/Support/Mailer.php:216
 #. translators: %s: the manage-account link
 msgid "—\nManage your account or stop these emails: %s"
 msgstr ""
@@ -5220,6 +5237,13 @@ msgstr ""
 #: src/Telegram/PermissionService.php:383
 msgid "⭐ You’re now an EventCrew organizer."
 msgstr ""
+
+#: src/Support/CreditGrantNotifier.php:44
+#. translators: %d: number of free-entry credits granted
+msgid "🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event."
+msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/Support/ClaimNotifier.php:114 src/Telegram/TicketRedemptionService.php:259
 msgid "🎟 Show your ticket"

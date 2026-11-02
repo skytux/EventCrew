@@ -105,11 +105,12 @@ final class DoorNewMember
     private function sendWelcome(Person $person, string $email): void
     {
         $actions = [['label' => __('Confirm my email', 'eventcrew'), 'url' => $this->loginUrl($person->id)]];
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         $body = __(
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours.",
             'eventcrew'
         );
+        // phpcs:enable Generic.Files.LineLength.TooLong
 
         $invite = $this->groupInvite();
 

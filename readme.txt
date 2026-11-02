@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.72.0
+Stable tag: 1.73.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,6 +131,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.73.0 =
+Five messages were missing from the translation template because a code comment sat inside the translation call: the blocked-admin-request email, the test email, the door welcome email, the privacy erasure message and the free-entry credit message. They are now extracted, and four of them have Finnish (the fifth already had).
 
 = 1.72.0 =
 The bot answers any unknown or removed command with the /help list. In a group, a command addressed to another bot is left alone.
@@ -787,6 +790,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.73.0 =
+No action needed.
 
 = 1.72.0 =
 No action needed.

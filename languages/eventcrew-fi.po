@@ -3843,3 +3843,15 @@ msgstr "%s on nyt järjestäjä."
 
 msgid "Someone was made an organizer"
 msgstr "Joku tehtiin järjestäjäksi"
+
+msgid "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1$s (%2$s)\nWhen: %3$s\nAction: %4$s\nIP address: %5$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban."
+msgstr "Jäsen, joka ei ole järjestäjä, lähetti ylläpitopyynnön Crew-sovelluksesta. Pyyntöä ei toteutettu, ja hänen tilinsä on nyt estetty: hän ei voi ilmoittautua tehtäviin eikä kirjautua verkossa.\n\nKuka: %1$s (%2$s)\nMilloin: %3$s\nToiminto: %4$s\nIP-osoite: %5$s\n\nPoista esto avaamalla wp-adminissa EventCrew > Ihmiset, muokkaa henkilöä ja paina Poista esto."
+
+msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
+msgstr "Hei,\n\nTältä crew’n ilmoitukset näyttävät. Jos alla oleva logo, painike ja alatunniste näyttävät oikeilta, kaikki on valmista.\n\nJokaisen oikean viestin sanamuoto tulee EventCrew’lta itseltään – tämä pohja vain kehystää sen."
+
+msgid "The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links."
+msgstr "Tämän osoitteen EventCrew-tiedot poistettiin, mukaan lukien tehtävähistoria, vapaaliput ja kirjautumislinkit."
+
+msgid "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours."
+msgstr "Sinut lisättiin crew’hun ovella. Tervetuloa!\n\nEnsimmäinen painike vahvistaa sähköpostiosoitteesi ja kirjaa sinut sisään. Se toimii kerran, 24 tunnin ajan."
