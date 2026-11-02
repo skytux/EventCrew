@@ -1014,4 +1014,75 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['Bea'], array_column($sections[3]['rows'], 'name'));
         self::assertSame(['No name'], array_column($sections[4]['rows'], 'name'));
     }
+
+    /**
+     * A ticket buyer row on tonight's date with a ticket code.
+     *
+     * @return array<string, mixed>
+     */
+    private function codedBuyerRow(int $id, string $name): array
+    {
+        return ['id' => $id, 'event_date' => self::NIGHT, 'name' => $name, 'source' => 'email', 'ticket_code' => 'AB12'];
+    }
+
+    public function testATicketCodeFindsItsTicketWithoutMarkingIt(): void
+    {
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')]; // findByTicketCode
+        $this->wpdb->nextResults[] = [];                                // check-ins
+
+        $tickets = $this->desk()->ticketsByCode(self::NIGHT, ['AB12']);
+
+        self::assertSame(
+            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'in' => false]],
+            $tickets
+        );
+        self::assertStringContainsString("ticket_code = 'AB12'", $this->wpdb->queries[0]);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testEveryTicketOnOneCodeIsListedAndCheckedInOnesSaySo(): void
+    {
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada'), $this->codedBuyerRow(13, 'Ada')];
+        $this->wpdb->nextResults[] = [['kind' => 'buyer', 'ref_id' => 12, 'plus_ones' => 0]];
+
+        $tickets = $this->desk()->ticketsByCode(self::NIGHT, ['AB12']);
+
+        self::assertSame(['buyer:12', 'buyer:13'], array_column($tickets, 'key'));
+        self::assertSame([true, false], array_column($tickets, 'in'));
+    }
+
+    public function testTheSameTicketFoundByTwoDecodedCodesIsListedOnce(): void
+    {
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')];
+
+        self::assertSame(['buyer:12'], array_column($this->desk()->ticketsByCode(self::NIGHT, ['AB12', 'ab12']), 'key'));
+    }
+
+    public function testATicketCodeThatMatchesNothingFindsNothingAndSaysSo(): void
+    {
+        $desk = $this->desk();
+
+        self::assertSame([], $desk->ticketsByCode(self::NIGHT, ['NOPE']));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame('No ticket on tonight’s list has this code.', $desk->noTicketCodeText());
+    }
+
+    public function testTheTicketDecodersAreTheHolviPresetsTextItselfByDefault(): void
+    {
+        self::assertSame([''], DoorDesk::ticketDecoders());
+    }
+
+    public function testTheTicketDecodersAreEachFormatsDecoderListedOnce(): void
+    {
+        $this->options['eventcrew_ticket_formats'] = [
+            ['id' => 'a', 'name' => 'A', 'columns' => [], 'decoder_js' => 'return text.split("/").pop();'],
+            ['id' => 'b', 'name' => 'B', 'columns' => [], 'decoder_js' => ''],
+            ['id' => 'c', 'name' => 'C', 'columns' => [], 'decoder_js' => ' return text.split("/").pop(); '],
+        ];
+
+        self::assertSame(['return text.split("/").pop();', ''], DoorDesk::ticketDecoders());
+    }
 }

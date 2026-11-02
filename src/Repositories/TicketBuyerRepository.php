@@ -302,4 +302,36 @@ final class TicketBuyerRepository
 
         return function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
     }
+
+    /**
+     * The tickets on $eventDate that carry this ticket code (the shop's order
+     * code), oldest first. An order of several tickets has one row per
+     * ticket, so this can answer several. An empty code finds nothing.
+     *
+     * @return array<int, TicketBuyer>
+     */
+    public function findByTicketCode(string $eventDate, string $code): array
+    {
+        global $wpdb;
+
+        $code = trim($code);
+
+        if ('' === $code) {
+            return [];
+        }
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE event_date = %s AND ticket_code = %s ORDER BY id ASC",
+                $eventDate,
+                $code
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): TicketBuyer => TicketBuyer::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
+    }
 }

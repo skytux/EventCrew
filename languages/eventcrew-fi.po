@@ -5324,3 +5324,18 @@ msgstr "Jos yhtään muotoa ei ole jäljellä, käytetään Holvin muotoa."
 
 msgid "Save the import settings"
 msgstr "Tallenna tuontiasetukset"
+
+msgid "No ticket on tonight’s list has this code."
+msgstr "Tämän illan listalla ei ole lippua tällä koodilla."
+
+msgid "Every ticket with this code was already used tonight."
+msgstr "Kaikki tämän koodin liput on jo käytetty tänä iltana."
+
+msgid "%d tickets with this code. Mark them arrived one at a time."
+msgstr "Tällä koodilla on %d lippua. Merkitse ne saapuneiksi yksi kerrallaan."
+
+msgid "checked in"
+msgstr "sisällä"
+
+msgid "not checked in yet"
+msgstr "ei vielä sisällä"
