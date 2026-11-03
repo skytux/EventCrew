@@ -58,7 +58,7 @@
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
  * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
- * @var array{enabled: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
+ * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
@@ -1573,7 +1573,15 @@ if (! defined('ABSPATH')) {
                     <label>
                         <input type="checkbox" name="assistant_enabled" value="1" <?php checked($assistant['enabled']); ?>>
                         <?php esc_html_e('Answer plain messages with the language model', 'eventcrew'); ?>
+                    </label><br>
+                    <label>
+                        <input type="checkbox" name="assistant_forward" value="1"
+                            <?php checked($assistant['forward']); ?>>
+                        <?php esc_html_e('Send a private chat to the organizers when the person gives feedback, is unhappy or very happy, or asks for a human', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </label>
+                    <p class="description">
+                        <?php esc_html_e('Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
                 </td>
             </tr>
             <tr>

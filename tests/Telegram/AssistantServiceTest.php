@@ -11,13 +11,17 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\OrganizerGuide;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ChatForwarder;
+use EventCrew\Telegram\ConversationLog;
 use EventCrew\Telegram\HelpService;
 
 /**
@@ -124,7 +128,13 @@ final class AssistantServiceTest extends TelegramTestCase
             new AssistantKnowledge(new TaskRepository()),
             $this->help(),
             new Logger(),
-            false
+            false,
+            new ChatForwarder(
+                new PersonRepository(),
+                new Mailer(new Logger(), new EmailTemplate(new Logger())),
+                $this->client(),
+                new Logger()
+            )
         );
     }
 
@@ -592,7 +602,30 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertNull(AssistantService::parseReply('{"aimed": true, "known": true, "reply": "x"'));
 
         $fenced = AssistantService::parseReply("```json\n{\"aimed\": true, \"known\": true, \"lang\": \"FI\", \"reply\": \" Hei \", \"action\": \"null\"}\n```");
-        self::assertSame(['aimed' => true, 'known' => true, 'lang' => 'fi', 'reply' => 'Hei', 'action' => null], $fenced);
+        self::assertSame(
+            ['aimed' => true, 'known' => true, 'lang' => 'fi', 'reply' => 'Hei', 'action' => null, 'forward' => null],
+            $fenced
+        );
+    }
+
+    public function testParseReplyReadsForwardAndTakesAMissingOrUnknownOneAsNull(): void
+    {
+        $base = '{"aimed": true, "known": true, "reply": "x", "action": null';
+
+        self::assertSame('unhappy', AssistantService::parseReply($base . ', "forward": "unhappy"}')['forward'] ?? '');
+        self::assertSame(
+            'very_happy',
+            AssistantService::parseReply($base . ', "forward": " Very_Happy "}')['forward'] ?? ''
+        );
+        self::assertSame('human', AssistantService::parseReply($base . ', "forward": "human"}')['forward'] ?? '');
+        self::assertSame('feedback', AssistantService::parseReply($base . ', "forward": "feedback"}')['forward'] ?? '');
+
+        foreach (['}', ', "forward": null}', ', "forward": "angry"}', ', "forward": 3}'] as $end) {
+            $parsed = AssistantService::parseReply($base . $end);
+            self::assertIsArray($parsed, 'An older or odd answer still parses: ' . $end);
+            self::assertArrayHasKey('forward', $parsed);
+            self::assertNull($parsed['forward'], $end);
+        }
     }
 
     // ---- the group ------------------------------------------------------
@@ -889,6 +922,240 @@ final class AssistantServiceTest extends TelegramTestCase
     }
 
     // ---- nothing is logged ----------------------------------------------
+
+    // ---- forwarding a private chat to the organizers ----------------------
+
+    /** @var array<int, array{to: string, subject: string, body: string}> */
+    private array $mails = [];
+
+    /**
+     * The person (Telegram id 555) and two organizers, answered by what the
+     * query asks for rather than from the queues, and every email captured.
+     */
+    private function forwardWorld(bool $verified = true): void
+    {
+        $person = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => $verified ? '2026-07-01 00:00:00' : null,
+            'is_organizer' => 0,
+            'telegram_user_id' => 555,
+        ];
+        $organizers = [
+            [
+                'id' => 1,
+                'email' => 'lee@example.com',
+                'display_name' => 'Lee',
+                'email_verified_at' => '2026-01-01 00:00:00',
+                'is_organizer' => 1,
+                'telegram_chat_id' => 501,
+            ],
+            [
+                'id' => 2,
+                'email' => 'kim@example.com',
+                'display_name' => 'Kim',
+                'email_verified_at' => '2026-01-01 00:00:00',
+                'is_organizer' => 1,
+            ],
+        ];
+
+        $wpdb = new class ($person, $organizers) extends \FakeWpdb {
+            /**
+             * @param array<string, mixed> $person
+             * @param array<int, array<string, mixed>> $organizers
+             */
+            public function __construct(private array $person, private array $organizers)
+            {
+            }
+
+            // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps -- wpdb's own method name.
+            public function get_row(string $sql, string $output = 'OBJECT'): mixed
+            {
+                if (str_contains($sql, 'telegram_user_id = 555')) {
+                    $this->queries[] = $sql;
+
+                    return $this->person;
+                }
+
+                return parent::get_row($sql, $output);
+            }
+
+            // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps -- wpdb's own method name.
+            public function get_results(string $sql, string $output = 'OBJECT'): mixed
+            {
+                if (str_contains($sql, 'is_organizer = 1')) {
+                    $this->queries[] = $sql;
+
+                    return $this->organizers;
+                }
+
+                return parent::get_results($sql, $output);
+            }
+        };
+        $this->wpdb = $wpdb;
+        $GLOBALS['wpdb'] = $wpdb;
+
+        $this->mails = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
+            $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
+
+            return true;
+        });
+    }
+
+    private function forwardReply(string $reply, ?string $forward): void
+    {
+        $this->llmReplies[] = (string) json_encode([
+            'aimed' => true,
+            'known' => true,
+            'lang' => 'en',
+            'reply' => $reply,
+            'action' => null,
+            'forward' => $forward,
+        ]);
+    }
+
+    /** @return array<int, string> Texts sent to one chat. */
+    private function textsTo(int $chatId): array
+    {
+        return array_values(array_map(
+            static fn (array $call): string => (string) ($call['body']['text'] ?? ''),
+            array_filter(
+                $this->telegramCalls,
+                static fn (array $call): bool => 'sendMessage' === $call['method']
+                    && $chatId === (int) ($call['body']['chat_id'] ?? 0)
+            )
+        ));
+    }
+
+    public function testThePrivatePromptExplainsForwardAndTheGroupPromptDoesNot(): void
+    {
+        $this->reply(true, true, 'Hello!');
+        $this->reply(true, true, 'Saturday.');
+
+        $this->ask(self::privateMessage('hi'));
+        $this->ask(self::groupMessage('@crewbot when is the next night?'));
+
+        self::assertStringContainsString(
+            '"forward": null or "feedback", "unhappy", "very_happy" or "human"',
+            $this->systemPrompt(0)
+        );
+        self::assertStringContainsString('"forward" sends this chat to the organizers.', $this->systemPrompt(0));
+        self::assertStringNotContainsString('forward', $this->systemPrompt(1));
+    }
+
+    public function testAnUnhappyPersonsChatIsEmailedToEveryOrganizerAndThePersonIsTold(): void
+    {
+        $this->forwardWorld();
+        ConversationLog::add(555, ConversationLog::PERSON, 'is there a task on saturday?', time() - 600);
+        ConversationLog::add(555, ConversationLog::BOT, 'Yes: Clean at 22:00.', time() - 590);
+        $this->forwardReply('I am sorry to hear that.', 'unhappy');
+
+        $this->ask(self::privateMessage('the cleaning last week was badly organised'));
+
+        $toPerson = $this->textsTo(555);
+        self::assertCount(1, $toPerson);
+        self::assertStringContainsString('I am sorry to hear that.', $toPerson[0]);
+        self::assertStringContainsString('I have passed this chat on to the organizers.', $toPerson[0]);
+
+        self::assertSame(['lee@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('Bot chat: Sam is unhappy', $this->mails[0]['subject']);
+
+        $body = $this->mails[0]['body'];
+        $first = strpos($body, 'is there a task on saturday?');
+        $current = strpos($body, 'the cleaning last week was badly organised');
+        $answer = strpos($body, 'I am sorry to hear that.');
+        self::assertNotFalse($first);
+        self::assertNotFalse($current);
+        self::assertNotFalse($answer);
+        self::assertTrue($first < $current && $current < $answer, 'The transcript is oldest first.');
+        self::assertStringContainsString('Yes: Clean at 22:00.', $body);
+
+        // A short Telegram message to the organizer who has a chat; none to the other.
+        $toLee = $this->textsTo(501);
+        self::assertCount(1, $toLee);
+        self::assertStringContainsString('I emailed you a transcript of my private chat with Sam.', $toLee[0]);
+        self::assertStringNotContainsString('badly organised', $toLee[0]);
+    }
+
+    public function testEachKindNamesItselfInTheSubject(): void
+    {
+        $subjects = [];
+
+        foreach (
+            [
+                'feedback' => 'Bot chat: feedback from Sam',
+                'very_happy' => 'Bot chat: Sam is very happy',
+                'human' => 'Bot chat: Sam wants a human',
+            ] as $kind => $subject
+        ) {
+            $this->forwardWorld();
+            $this->transients = [];
+            $this->forwardReply('Thanks!', $kind);
+            $this->ask(self::privateMessage('a message'));
+            $subjects[$kind] = $this->mails[0]['subject'] ?? '';
+            self::assertSame($subject, $subjects[$kind]);
+        }
+    }
+
+    public function testAtMostOneForwardPerPersonPerHour(): void
+    {
+        $this->forwardWorld();
+        $this->forwardReply('Noted.', 'feedback');
+        $this->forwardReply('Noted again.', 'feedback');
+
+        $this->ask(self::privateMessage('the music was great'));
+        $this->ask(self::privateMessage('and the lights too'));
+
+        self::assertCount(2, $this->mails, 'Two organizers, once.');
+        $texts = $this->textsTo(555);
+        self::assertStringContainsString('passed this chat on', $texts[0]);
+        self::assertSame('Noted again.', $texts[1], 'The second answer does not claim a forward.');
+        self::assertArrayHasKey(ChatForwarder::LIMIT_PREFIX . '555', $this->transients);
+
+        // The hour is over: the next one goes out again.
+        unset($this->transients[ChatForwarder::LIMIT_PREFIX . '555']);
+        $this->forwardReply('Noted once more.', 'feedback');
+        $this->ask(self::privateMessage('one more thing'));
+
+        self::assertCount(4, $this->mails);
+    }
+
+    public function testSwitchedOffNothingIsForwardedAndThePromptDoesNotOfferIt(): void
+    {
+        $this->forwardWorld();
+        $this->options[AssistantSettings::FORWARD_OPTION] = false;
+        $this->forwardReply('I am sorry to hear that.', 'unhappy');
+
+        $this->ask(self::privateMessage('this was bad'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame(['I am sorry to hear that.'], $this->textsTo(555));
+        self::assertStringNotContainsString('"forward"', $this->systemPrompt(0));
+    }
+
+    public function testAPersonWithoutAConfirmedEmailIsNotForwarded(): void
+    {
+        $this->forwardWorld(false);
+        $this->forwardReply('An organizer can help.', 'human');
+
+        $this->ask(self::privateMessage('can I talk to a human?'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame(['An organizer can help.'], $this->textsTo(555));
+    }
+
+    public function testNothingIsForwardedFromTheGroup(): void
+    {
+        $this->forwardWorld();
+        $this->forwardReply('Sorry!', 'unhappy');
+
+        $this->ask(self::groupMessage('@crewbot this night was bad'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->transientsStartingWith(ChatForwarder::LIMIT_PREFIX));
+    }
 
     public function testTheMessageTextAndTheKeyAreNeverLogged(): void
     {
