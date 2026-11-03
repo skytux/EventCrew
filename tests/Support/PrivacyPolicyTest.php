@@ -134,8 +134,8 @@ final class PrivacyPolicyTest extends TestCase
             TelegramClient::TOKEN_OPTION => '123:abc',
             \EventCrew\Telegram\BoardService::USERNAME_OPTION => 'crewbot',
         ];
-        $held = 'If you sign in with Telegram, Telegram sends us your account number';
-        $processor = 'and signing in with Telegram goes through their service';
+        $held = 'If you sign in with Telegram, the Crew app makes a one-time code and puts a cookie in your browser';
+        $processor = 'and signing in with Telegram goes through a chat with the bot';
 
         $this->withOptions($options);
         $text = $this->flatten(PrivacyPolicy::sections());

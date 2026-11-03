@@ -23,6 +23,7 @@ use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Telegram\WebLoginBot;
 
 /**
  * The public web front door: a shortcode/block showing the open-task board, with
@@ -51,8 +52,11 @@ final class SignupController
     public const SALES_ACTION = 'eventcrew_web_sales';
     public const LANGUAGE_ACTION = 'eventcrew_web_language';
     public const PROFILE_ACTION = 'eventcrew_web_profile';
-    public const TG_NONCE_ACTION = 'eventcrew_web_tg_nonce';
-    public const TG_LOGIN_ACTION = 'eventcrew_web_tg_login';
+    /** The Telegram button asks for a login code here. */
+    public const TG_START_ACTION = 'eventcrew_web_tg_start';
+
+    /** The page asks here, every few seconds, whether the bot approved the code. */
+    public const TG_STATUS_ACTION = 'eventcrew_web_tg_status';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -120,8 +124,8 @@ final class SignupController
             self::SALES_ACTION,
             self::LANGUAGE_ACTION,
             self::PROFILE_ACTION,
-            self::TG_NONCE_ACTION,
-            self::TG_LOGIN_ACTION,
+            self::TG_START_ACTION,
+            self::TG_STATUS_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -360,10 +364,11 @@ final class SignupController
 
     /**
      * What the signed-out sign-in card needs to offer the Telegram button, or
-     * null when the login is not available (switch off, no bot token, or no
-     * bot username) - then the card shows the email form alone.
+     * null when the sign-in through the bot is not available (switch off, no
+     * bot token, or no bot username) - then the card shows the email form
+     * alone.
      *
-     * @return array<string, string>|null
+     * @return array<string, string|int>|null
      */
     private function telegramLoginView(): ?array
     {
@@ -372,52 +377,74 @@ final class SignupController
         }
 
         return [
-            'client_id' => TelegramLogin::clientId(),
-            // The popup's language follows the page's.
-            'lang' => Language::current() ?? Language::ENGLISH,
-            'script' => TelegramLogin::SCRIPT_URL,
-            'bot_link' => TelegramLogin::botStartUrl(),
-            'nonce_action' => self::TG_NONCE_ACTION,
-            'login_action' => self::TG_LOGIN_ACTION,
+            'start_action' => self::TG_START_ACTION,
+            'status_action' => self::TG_STATUS_ACTION,
         ];
     }
 
     /**
-     * Sign in with a Telegram ID token from the popup. The token's Telegram
-     * user id must belong to a crew account that is not blocked and has a
-     * confirmed, real email address. Nothing on the person is written: the
-     * name, username and photo in the token are not used.
+     * The Telegram button was pressed: a new login code for this browser.
+     * 'notice' is 'tg_started' with the code, the bot link, the seconds the
+     * code lives and the browser's secret (for the cookie, never for the
+     * page); or 'tg_busy' (too many codes from this address) or 'tg_failed'.
      *
-     * Notices: 'signed_in', 'tg_failed' (the token did not verify),
-     * 'tg_not_linked' (no crew account has this Telegram account),
-     * 'tg_not_verified' (the email is not confirmed yet), 'blocked'.
+     * @return array{notice: string, code?: string, url?: string, expires_in?: int, secret?: string}
+     */
+    public function startTelegramSignIn(string $clientIp): array
+    {
+        if (null === $this->telegramLogin || ! TelegramLogin::isAvailable()) {
+            return ['notice' => 'tg_failed'];
+        }
+
+        $created = $this->telegramLogin->create($clientIp);
+
+        if (null === $created) {
+            return ['notice' => 'tg_busy'];
+        }
+
+        return [
+            'notice' => 'tg_started',
+            'code' => $created['code'],
+            'url' => TelegramLogin::startUrl($created['code']),
+            'expires_in' => TelegramLogin::TTL,
+            'secret' => $created['secret'],
+        ];
+    }
+
+    /**
+     * The page's poll for its code. $secret is this browser's cookie. Notices:
+     * 'tg_pending' (keep waiting), 'tg_expired', and, once the bot approved
+     * the code, 'signed_in' with the person id - or 'blocked' / 'tg_failed'
+     * when the person can no longer sign in. The approved person must still be
+     * a crew member who is not blocked and has a confirmed, real address: the
+     * same rule the email link and the bot's button use.
      *
      * @return array{person_id: ?int, notice: string}
      */
-    public function telegramSignIn(string $idToken, string $cookieNonce): array
+    public function telegramStatus(string $code, string $secret): array
     {
-        if (null === $this->telegramLogin || ! TelegramLogin::isAvailable()) {
-            return ['person_id' => null, 'notice' => 'tg_failed'];
+        if (null === $this->telegramLogin) {
+            return ['person_id' => null, 'notice' => 'tg_expired'];
         }
 
-        $telegramUserId = $this->telegramLogin->verify($idToken, $cookieNonce);
+        $poll = $this->telegramLogin->poll($code, $secret);
 
-        if (null === $telegramUserId) {
-            return ['person_id' => null, 'notice' => 'tg_failed'];
+        if (TelegramLogin::STATE_PENDING === $poll['state']) {
+            return ['person_id' => null, 'notice' => 'tg_pending'];
         }
 
-        $person = $this->people->findByTelegramUserId($telegramUserId);
-
-        if (null === $person) {
-            return ['person_id' => null, 'notice' => 'tg_not_linked'];
+        if (TelegramLogin::STATE_APPROVED !== $poll['state']) {
+            return ['person_id' => null, 'notice' => 'tg_expired'];
         }
 
-        if ($person->isBanned()) {
+        $person = $this->people->find($poll['person_id']);
+
+        if (null !== $person && $person->isBanned()) {
             return ['person_id' => null, 'notice' => 'blocked'];
         }
 
-        if (! $person->isEmailVerified() || Person::isPlaceholderEmail($person->email)) {
-            return ['person_id' => null, 'notice' => 'tg_not_verified'];
+        if (null === $person || ! WebLoginBot::canSignIn($person)) {
+            return ['person_id' => null, 'notice' => 'tg_failed'];
         }
 
         return ['person_id' => $person->id, 'notice' => 'signed_in'];
@@ -818,32 +845,39 @@ final class SignupController
             $this->redirect($redirect, $this->confirmEmailChange(sanitize_text_field(wp_unslash($_GET['token']))));
         }
 
-        if (self::TG_NONCE_ACTION === $action) {
-            // A fresh one-time nonce for Telegram's popup, fetched by the page
-            // on load: signed-out pages are cached, so it is never printed
-            // into the HTML. The cookie ties it to this browser.
-            $nonce = TelegramLogin::isAvailable() ? TelegramLogin::newNonce() : '';
+        if (self::TG_START_ACTION === $action) {
+            // A login code for the Telegram button. The secret goes only into
+            // this browser's HttpOnly cookie, which ties the code to it.
+            $started = $this->startTelegramSignIn($this->clientIp());
+            $notice = $started['notice'];
 
-            if ('' !== $nonce) {
-                $this->setNonceCookie($nonce, time() + TelegramLogin::NONCE_TTL);
+            if (isset($started['secret'])) {
+                $this->setTelegramLoginCookie($started['secret'], time() + TelegramLogin::TTL);
             }
 
             nocache_headers();
-            wp_send_json(['nonce' => $nonce]);
+            wp_send_json([
+                'code' => $notice,
+                'notice' => self::noticeText($notice),
+                'login' => $started['code'] ?? '',
+                'url' => $started['url'] ?? '',
+                'expires_in' => $started['expires_in'] ?? 0,
+            ]);
         }
 
-        if (self::TG_LOGIN_ACTION === $action) {
-            $idToken = isset($_POST['id_token']) ? sanitize_text_field(wp_unslash($_POST['id_token'])) : '';
-            $cookieNonce = isset($_COOKIE[TelegramLogin::NONCE_COOKIE])
-                ? sanitize_text_field(wp_unslash($_COOKIE[TelegramLogin::NONCE_COOKIE]))
+        if (self::TG_STATUS_ACTION === $action) {
+            $code = isset($_POST['login']) ? sanitize_text_field(wp_unslash($_POST['login'])) : '';
+            $secret = isset($_COOKIE[TelegramLogin::COOKIE])
+                ? sanitize_text_field(wp_unslash($_COOKIE[TelegramLogin::COOKIE]))
                 : '';
 
-            // The nonce is single-use whatever the outcome.
-            $this->setNonceCookie('', time() - HOUR_IN_SECONDS);
-
-            ['person_id' => $personId, 'notice' => $notice] = $this->telegramSignIn($idToken, $cookieNonce);
+            ['person_id' => $personId, 'notice' => $notice] = $this->telegramStatus($code, $secret);
 
             if (null !== $personId) {
+                // The code is used up, and so is its cookie. Other answers
+                // leave the cookie alone: it may belong to a newer code from
+                // another tab, and it runs out with the code anyway.
+                $this->setTelegramLoginCookie('', time() - HOUR_IN_SECONDS);
                 $this->setSessionCookie(WebSession::mint($personId));
             }
 
@@ -1038,11 +1072,13 @@ final class SignupController
             'email_taken' => __('That email address belongs to another crew account.', 'eventcrew'),
             'email_changed' => __('Your email address is changed.', 'eventcrew'),
             'bad_email_link' => __('That email change link is invalid or has expired.', 'eventcrew'),
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'tg_not_linked' => __('This Telegram account is not linked to a crew account yet. Open the bot and press Start to sign up, or sign in with email.', 'eventcrew'),
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'tg_not_verified' => __('Your email address is not confirmed yet. Open the bot and press Start to confirm it, or sign in with email.', 'eventcrew'),
             'tg_failed' => __('Telegram sign-in did not work. Please try again, or sign in with email.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'tg_started' => __('Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself.', 'eventcrew'),
+            'tg_pending' => '',
+            'tg_expired' => __('The link expired. Press Telegram again.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'tg_busy' => __('Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email.', 'eventcrew'),
         ];
 
         // The Admin tab's outcomes are worded by its own controller.
@@ -1202,10 +1238,10 @@ final class SignupController
         exit;
     }
 
-    private function setNonceCookie(string $value, int $expires): void
+    private function setTelegramLoginCookie(string $value, int $expires): void
     {
         setcookie(
-            TelegramLogin::NONCE_COOKIE,
+            TelegramLogin::COOKIE,
             $value,
             [
                 'expires' => $expires,

@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Language;
+use EventCrew\Support\TelegramLogin;
 use WP_REST_Request;
 
 /**
@@ -25,7 +26,9 @@ final class VerificationController
     public function __construct(
         private readonly AuthTokenRepository $tokens,
         private readonly PersonRepository $people,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        // Optional: without it a click never signs in a waiting browser.
+        private readonly ?TelegramLogin $webLogin = null
     ) {
     }
 
@@ -74,15 +77,19 @@ final class VerificationController
         }
 
         $pending = OnboardingService::takePendingLink($token);
-
-        if (null !== $pending) {
-            $this->linkWaitingTelegram($personId, $pending['telegram_user_id'], $pending['telegram_chat_id']);
-        }
+        $linked = null !== $pending
+            && $this->linkWaitingTelegram($personId, $pending['telegram_user_id'], $pending['telegram_chat_id']);
 
         $this->people->markEmailVerified($personId);
 
         $person = $this->people->find($personId);
         $this->pageLanguage = $person?->language;
+
+        // A browser waiting on the crew app's Telegram button signs in now,
+        // when this Telegram account pressed it before signing up.
+        if ($linked && null !== $this->webLogin && null !== $person && WebLoginBot::canSignIn($person)) {
+            $this->webLogin->approveWaiting($pending['telegram_user_id'], $personId);
+        }
 
         if (null !== $person && null !== $person->telegramChatId) {
             $chatId = $person->telegramChatId;
@@ -103,13 +110,15 @@ final class VerificationController
      * than moved: the column is unique, and moving it would splice two people's
      * histories - and their earned credits - onto one account. When an old
      * link is replaced, its chat is told, so a takeover cannot pass unseen.
+     *
+     * True when the Telegram account is now linked to this person.
      */
-    private function linkWaitingTelegram(int $personId, int $telegramUserId, int $chatId): void
+    private function linkWaitingTelegram(int $personId, int $telegramUserId, int $chatId): bool
     {
         $person = $this->people->find($personId);
 
         if (null === $person) {
-            return;
+            return false;
         }
 
         $holder = $this->people->findByTelegramUserId($telegramUserId);
@@ -121,7 +130,7 @@ final class VerificationController
                 __('This Telegram account is already linked to another email. Contact an organizer if that is wrong.', 'eventcrew')
             ));
 
-            return;
+            return false;
         }
 
         $oldChatId = $person->telegramUserId !== $telegramUserId ? $person->telegramChatId : null;
@@ -137,6 +146,8 @@ final class VerificationController
                 __("Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you.", 'eventcrew')
             ));
         }
+
+        return true;
     }
 
     public function renderPage(bool $confirmed): string

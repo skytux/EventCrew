@@ -4,7 +4,7 @@
  * Settings → Telegram bot: the "Sign in with Telegram" row. Included by
  * settings.php inside the Telegram table, and rendered on its own by the test.
  *
- * @var array{web_login: array{enabled: bool, origin: string, client_id: string}} $telegram
+ * @var array{web_login: array{enabled: bool}} $telegram
  */
 
 $eventcrew_web_login = $telegram['web_login'];
@@ -23,17 +23,8 @@ $eventcrew_web_login = $telegram['web_login'];
         <p class="description">
             <?php
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            esc_html_e('Telegram only allows this on addresses you name. In the @BotFather chat, tap Open, then this bot, then Bot Settings, then Web Login (called Login Widget in some versions), and add this address under Allowed URLs:', 'eventcrew');
+            esc_html_e('The Crew app shows a Telegram button next to Email. It opens this bot, and the bot sends a button that signs the person in. Someone without an account first gives the bot their email and confirms it. It needs the bot token above.', 'eventcrew');
             ?>
-            <?php if ('' !== $eventcrew_web_login['origin']) : ?>
-                <code><?php echo esc_html($eventcrew_web_login['origin']); ?></code>
-            <?php endif; ?>
         </p>
-        <?php if ('' !== $eventcrew_web_login['client_id']) : ?>
-            <p class="description">
-                <?php esc_html_e('Client ID (the bot ID):', 'eventcrew'); ?>
-                <code><?php echo esc_html($eventcrew_web_login['client_id']); ?></code>
-            </p>
-        <?php endif; ?>
     </td>
 </tr>

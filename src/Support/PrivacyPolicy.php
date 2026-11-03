@@ -411,7 +411,7 @@ final class PrivacyPolicy
 
         if (TelegramLogin::isAvailable()) {
             $paragraphs[] = __(
-                'If you sign in with Telegram, Telegram sends us your account number, name, username and profile photo address. We use only the account number, to find your crew account, and we do not store the rest.',
+                'If you sign in with Telegram, the Crew app makes a one-time code and puts a cookie in your browser that ties the code to that browser. The bot uses your Telegram account number to find your crew account. The code and the cookie expire after 30 minutes and cannot be used twice.',
                 'eventcrew'
             );
         }
@@ -479,7 +479,7 @@ final class PrivacyPolicy
 
         if (TelegramLogin::isAvailable()) {
             $processors[] = __(
-                'Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through their service. Linking is entirely optional; the web page does everything the bot does.',
+                'Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through a chat with the bot. Linking is entirely optional; the web page does everything the bot does.',
                 'eventcrew'
             );
         } elseif (self::telegramEnabled()) {

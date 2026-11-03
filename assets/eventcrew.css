@@ -824,14 +824,41 @@
 }
 
 /*
- * The sign-in choice: the Email button and Telegram's button side by side,
- * centred. The script below gives Telegram's button the Email button's look;
- * only its colours stay Telegram's.
+ * The sign-in choice: the Email button and the Telegram button side by side,
+ * centred. The Telegram button has Telegram's colours and paper-plane icon;
+ * the page script gives it the Email button's shape and font.
  */
 .eventcrew-signup .eventcrew-signin-choice[hidden],
 .eventcrew-signup .eventcrew-signin[hidden],
 .eventcrew-signup .eventcrew-signin-back[hidden],
-.eventcrew-signup .eventcrew-tg-help[hidden] { display: none; }
+.eventcrew-signup .eventcrew-tg-note[hidden],
+.eventcrew-signup .eventcrew-tg-wait[hidden] { display: none; }
+.eventcrew-signup .tg-auth-button {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 28px;
+    border: none;
+    border-radius: 22px;
+    background: #119AF5;
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    text-transform: none;
+    cursor: pointer;
+    user-select: none;
+}
+.eventcrew-signup .tg-auth-button:hover,
+.eventcrew-signup .tg-auth-button:focus-visible { background: #1090E5; }
+.eventcrew-signup .tg-auth-button::before {
+    content: "";
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-right: 4px;
+    background: no-repeat center / 22px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22' fill='none'%3E%3Cpath d='M2.81376 10.5943C7.36914 8.61002 10.406 7.30175 11.9245 6.66971C16.265 4.86489 17.1658 4.55143 17.7542 4.54094C17.8836 4.53874 18.1716 4.57072 18.3596 4.72281C18.5158 4.85097 18.5598 5.0243 18.5818 5.14588C18.6013 5.26745 18.6282 5.54454 18.6062 5.76083C18.3719 8.23138 17.3539 14.2266 16.8363 16.9938C16.619 18.1647 16.1869 18.5572 15.7695 18.5955C14.8613 18.679 14.1728 17.996 13.294 17.42C11.9196 16.5185 11.1433 15.9575 9.80793 15.0779C8.26505 14.0613 9.26594 13.5025 10.1448 12.5895C10.3743 12.3505 14.373 8.71426 14.4487 8.38445C14.4585 8.34319 14.4683 8.18939 14.3755 8.10834C14.2852 8.02705 14.1508 8.05488 14.0532 8.07685C13.914 8.1081 11.7193 9.56015 7.4618 12.4328C6.83928 12.861 6.27536 13.0697 5.76758 13.0587C5.21097 13.0468 4.13689 12.7433 3.3386 12.484C2.3621 12.166 1.5833 11.9977 1.65166 11.4575C1.68583 11.1763 2.07406 10.8884 2.81376 10.5943Z' fill='white'/%3E%3C/svg%3E");
+}
 .eventcrew-signup .eventcrew-signin-choice-prompt { margin: 0 0 .75em; }
 /* Both buttons one width: the row is as wide as its content, and its equal
    columns (side by side) or its single column (stacked) take the wider one. */
@@ -860,7 +887,9 @@
     line-height: 1;
     border-radius: var(--eventcrew-radius);
 }
-.eventcrew-signup .eventcrew-tg-help { margin-top: .75em; }
+.eventcrew-signup .eventcrew-tg-note { margin: .75em 0 0; }
+.eventcrew-signup .eventcrew-tg-wait p { margin: 0 0 .75em; }
+.eventcrew-signup .eventcrew-tg-wait a { color: var(--eventcrew-accent); font-weight: 600; }
 .eventcrew-signup .eventcrew-signin-back { margin: 0 0 .75em; font-size: 1rem; font-weight: 600; }
 .eventcrew-signup .eventcrew-signin-back a { color: var(--eventcrew-accent); }
 
