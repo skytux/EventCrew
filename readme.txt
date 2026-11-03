@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.111.0
+Stable tag: 1.112.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.112.0 =
+* Crew app: on a desktop the Board and the tab bar are as wide as the header card and centred under it; the Board shows one column so task names stay whole.
 
 = 1.111.0 =
 Next events and post-event emails: a Finnish text and its English translation share one line with a dot only when together they are at most 32 characters; longer pairs (such as the door times) put the English on a new line under the Finnish.
@@ -1051,6 +1054,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.112.0 =
+Crew app Board no longer wider than the header card on desktop.
 
 = 1.111.0 =
 No action needed.
