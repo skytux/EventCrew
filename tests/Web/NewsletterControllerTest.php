@@ -296,6 +296,22 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringNotContainsString('.eventcrew-nl-button{', $html);
     }
 
+    /** Both email fields use a name of our own, so a browser does not fill in a street address. */
+    public function testTheEmailFieldsUseTheirOwnName(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $controller = $this->controller();
+
+        foreach ([$controller->renderShortcode(), self::bar($controller)] as $html) {
+            self::assertStringContainsString(
+                'name="' . NewsletterController::EMAIL_FIELD . '" required autocomplete="email"',
+                $html
+            );
+            self::assertStringNotContainsString('name="email"', $html);
+        }
+    }
+
     /** Without the full form on the page there is nothing for the "i" to lead to. */
     public function testNoInfoIconWithoutTheFullForm(): void
     {

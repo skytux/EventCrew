@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.95.0
+Stable tag: 1.95.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.95.1 =
+Firefox no longer fills a street address into the next events announcement's email field: the field is now named eventcrew_email (autocomplete=email kept); a page cached before the change still works.
 
 = 1.95.0 =
 The next events announcement is drawn as event cards: each newly announced event has its picture, date and time, title, short description in Finnish and then in English, a Buy a ticket button with the price (to the ticket shop), a Listen to the DJ button when the event has the DJ's music page, and a link to the event page. A sold-out event says Sold out instead of the ticket button. Every other coming event is listed under Later with a link to its tickets. The organizers' preview email now shows the announcement as HTML, exactly as subscribers get it. The English version below line and the divider are gone, because each card carries both languages.
@@ -919,6 +922,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.95.1 =
+No database change.
 
 = 1.95.0 =
 No database change.

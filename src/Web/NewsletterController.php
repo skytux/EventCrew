@@ -44,6 +44,13 @@ final class NewsletterController
     /** The field people do not see; a bot that fills it in is ignored. */
     public const HONEYPOT = 'website';
 
+    /**
+     * The address field's name. Not plain "email": Firefox matched that name to
+     * a saved street address and filled it in. autocomplete="email" still
+     * offers the reader's saved email addresses.
+     */
+    public const EMAIL_FIELD = 'eventcrew_email';
+
     /** The query argument that carries the form's result back to the page. */
     public const RESULT_ARG = 'eventcrew_newsletter';
 
@@ -198,7 +205,8 @@ final class NewsletterController
         $html .= $this->formStart(self::FORM_ANCHOR)
             . '<p><label for="eventcrew-newsletter-email">'
             . esc_html__('Your email address', 'eventcrew') . '</label><br>'
-            . '<input type="email" id="eventcrew-newsletter-email" name="email" required autocomplete="email"'
+            . '<input type="email" id="eventcrew-newsletter-email" name="' . self::EMAIL_FIELD . '" required'
+            . ' autocomplete="email"'
             . ' class="wp-element-input"></p>'
             . self::honeypot()
             . $this->captcha(false)
@@ -264,7 +272,8 @@ final class NewsletterController
             . $info
             . '<label for="eventcrew-nl-bar-email" class="eventcrew-nl-bar-label">'
             . esc_html__('Get the coming events by email', 'eventcrew') . '</label>'
-            . '<input type="email" id="eventcrew-nl-bar-email" name="email" required autocomplete="email"'
+            . '<input type="email" id="eventcrew-nl-bar-email" name="' . self::EMAIL_FIELD . '" required'
+            . ' autocomplete="email"'
             . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '" class="wp-element-input">'
             . self::honeypot()
             . '<button type="submit" class="eventcrew-nl-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
@@ -391,7 +400,9 @@ final class NewsletterController
     {
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- public form without a nonce; see the class comment.
         $honeypot = isset($_POST[self::HONEYPOT]) ? trim((string) wp_unslash($_POST[self::HONEYPOT])) : '';
-        $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+        // "email" is the field's old name, still sent by a page cached before the rename.
+        $field = isset($_POST[self::EMAIL_FIELD]) ? self::EMAIL_FIELD : 'email';
+        $email = isset($_POST[$field]) ? sanitize_text_field(wp_unslash($_POST[$field])) : '';
         $token = isset($_POST[Turnstile::RESPONSE_FIELD])
             ? sanitize_text_field(wp_unslash($_POST[Turnstile::RESPONSE_FIELD]))
             : '';
