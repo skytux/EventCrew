@@ -233,6 +233,26 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertSame(EVENTCREW_VERSION, $this->options[self::WEBHOOK_VERSION_OPTION] ?? null);
     }
 
+    public function testInstallOnUpdateNeverDeletesTheWorkingWebhook(): void
+    {
+        $this->readyToInstall();
+        // Refused every time: the update must not leave the bot without a webhook.
+        $this->telegramErrors['setWebhook'] = 'Too Many Requests: retry after 1';
+
+        $this->page()->installOnUpdate();
+
+        self::assertNotContains('deleteWebhook', $this->webhookCalls());
+    }
+
+    public function testTheButtonStillDeletesFirstToClearTheStoredError(): void
+    {
+        $this->readyToInstall();
+
+        $this->page()->installWebhook();
+
+        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+    }
+
     public function testAFailedInstallIsNotStampedAndIsTriedAgainLater(): void
     {
         $this->readyToInstall();
@@ -240,9 +260,10 @@ final class SettingsPageTest extends TelegramTestCase
 
         $this->page()->installOnUpdate();
 
-        // Not stamped, so a later run tries again.
+        // Not stamped, so a later run tries again. Never deleted first, so the
+        // old webhook still works while the new one is refused.
         self::assertArrayNotHasKey(self::WEBHOOK_VERSION_OPTION, $this->options);
-        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+        self::assertSame(['setWebhook'], $this->webhookCalls());
 
         // But not on the very next admin page load.
         $this->telegramCalls = [];
@@ -253,7 +274,7 @@ final class SettingsPageTest extends TelegramTestCase
         $this->options['eventcrew_webhook_failed_at'] = time() - 11 * 60;
         unset($this->telegramErrors['setWebhook']);
         $this->page()->installOnUpdate();
-        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+        self::assertSame(['setWebhook'], $this->webhookCalls());
         self::assertSame(EVENTCREW_VERSION, $this->options[self::WEBHOOK_VERSION_OPTION] ?? null);
     }
 

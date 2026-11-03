@@ -1390,10 +1390,11 @@ final class SettingsPage
             return;
         }
 
-        // Stamp only on success. A failed install leaves the webhook deleted
-        // (installWebhook() removes it first), so the bot receives nothing until
-        // an install works; stamping a failure would stop every retry.
-        if ($this->installWebhook()['ok']) {
+        // Stamp only on success; stamping a failure would stop every retry.
+        // Not clean: the webhook is replaced in place, never deleted first, so
+        // a refused setWebhook leaves the working webhook as it was and the
+        // bot never goes deaf because of an update.
+        if ($this->installWebhook(false)['ok']) {
             update_option(self::WEBHOOK_VERSION_OPTION, EVENTCREW_VERSION);
             update_option(self::WEBHOOK_FAILED_OPTION, 0);
 
@@ -1412,9 +1413,13 @@ final class SettingsPage
      * reason; it never redirects or checks a nonce, so both the Settings button
      * and the automatic on-update refresh can drive it.
      *
+     * $clean deletes the webhook first, which clears Telegram's stored last
+     * error. The buttons do that; the automatic refresh does not, because a
+     * setWebhook refused right after the delete leaves no webhook at all.
+     *
      * @return array{ok: bool, error: string}
      */
-    public function installWebhook(): array
+    public function installWebhook(bool $clean = true): array
     {
         if (! $this->telegram->isConfigured()) {
             return ['ok' => false, 'error' => __('Add a bot token and save before installing the webhook.', 'eventcrew')];
@@ -1449,7 +1454,9 @@ final class SettingsPage
         // URL, so a plain refresh never clears a stale error. Deleting the
         // webhook first resets that state; the setWebhook below re-installs it
         // clean. Pending updates are preserved (deleteWebhook drops none).
-        $this->telegram->deleteWebhook();
+        if ($clean) {
+            $this->telegram->deleteWebhook();
+        }
 
         $installed = $this->setWebhookWithRetry($url, $secret);
 
