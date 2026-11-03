@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.99.3
+Stable tag: 1.99.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.99.4 =
+Crew app sign-in: the Back link sits above the email field, with an arrow, at normal size and in bold, instead of in small text under the explanation lines.
 
 = 1.99.3 =
 Crew app Telegram sign-in: when it fails, the message ends with the reason in brackets (Telegram's error, or the site's HTTP status), so a failed try says which side refused.
@@ -979,6 +982,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.99.4 =
+No database change.
 
 = 1.99.3 =
 No database change.

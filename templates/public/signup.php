@@ -163,6 +163,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         </p>
                     </div>
                 </div>
+                <?php // Back sits above the email field, where the eye starts, not under the hints. ?>
+                <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
+                    <a href="#"><span aria-hidden="true">← </span><?php esc_html_e('Back', 'eventcrew'); ?></a>
+                </p>
             <?php endif; ?>
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
@@ -241,9 +245,6 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
             <?php if (null !== $eventcrew_tg_login) : ?>
-                <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
-                    <a href="#"><?php esc_html_e('Back', 'eventcrew'); ?></a>
-                </p>
                 <script>
                 // Show the choice before the first paint, so the email form and
                 // its human check do not flash first. Without JavaScript the
