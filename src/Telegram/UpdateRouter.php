@@ -51,7 +51,8 @@ final class UpdateRouter
         private readonly ?SayCommand $say = null,
         private readonly ?EventsCommand $events = null,
         private readonly ?WebLoginBot $webLogin = null,
-        private readonly ?BotLog $botLog = null
+        private readonly ?BotLog $botLog = null,
+        private readonly ?FollowupCommand $followup = null
     ) {
     }
 
@@ -311,6 +312,12 @@ final class UpdateRouter
 
         if (null !== $this->newsletter && $this->isCommand($text, 'newsletter')) {
             $this->newsletter->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'newsletter'));
+
+            return;
+        }
+
+        if (null !== $this->followup && $this->isCommand($text, 'followup')) {
+            $this->followup->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'followup'));
 
             return;
         }

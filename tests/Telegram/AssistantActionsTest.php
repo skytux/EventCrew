@@ -181,9 +181,12 @@ final class AssistantActionsTest extends TestCase
                 '/door remove [date] <number>',
                 '/newsletter <text>',
                 '/newsletter clear',
+                '/followup <came|missed> <text>',
+                '/followup [came|missed] clear',
             ],
             array_values($confirm)
         );
+        self::assertNotContains('/followup', $usages(self::member()));
         self::assertNotContains('/newsletter', $usages(self::member()));
         self::assertNotContains(
             '/newsletter',
@@ -285,5 +288,62 @@ final class AssistantActionsTest extends TestCase
     public function testAWordThatOnlyStartsWithNewsletterIsNotTheCommand(): void
     {
         self::assertSame(AssistantActions::ERROR_UNKNOWN, self::check('/newsletters', self::organizer())['error']);
+    }
+
+    public function testOnlyAnOrganizerMaySetThePostEventText(): void
+    {
+        $crew = ['organizer' => false, 'welcomeCrew' => true, 'verified' => true];
+
+        foreach (['/followup', '/followup clear', '/followup came Thanks!'] as $action) {
+            self::assertSame(
+                AssistantActions::ERROR_NOT_PERMITTED,
+                self::check($action, self::member())['error'],
+                $action
+            );
+            self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($action, $crew)['error'], $action);
+        }
+    }
+
+    public function testShowingThePostEventTextsRunsWithoutConfirm(): void
+    {
+        $result = self::check('/followup', self::organizer());
+
+        self::assertTrue($result['ok']);
+        self::assertFalse($result['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $result['run']);
+        self::assertSame('/followup', $result['payload']);
+    }
+
+    public function testSettingAndClearingAPostEventTextAskToConfirm(): void
+    {
+        $set = self::check("/followup  CAME  Thanks   for coming!\r\n\n\n\nSee you.", self::organizer());
+
+        self::assertTrue($set['ok']);
+        self::assertTrue($set['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $set['run']);
+        self::assertSame("/followup came Thanks for coming!\n\nSee you.", $set['payload']);
+        self::assertSame($set['payload'], $set['action']);
+
+        $one = self::check('/followup missed Clear', self::organizer());
+        self::assertTrue($one['confirm']);
+        self::assertSame('/followup missed clear', $one['payload']);
+
+        $both = self::check('/followup CLEAR', self::organizer());
+        self::assertTrue($both['confirm']);
+        self::assertSame('/followup clear', $both['payload']);
+    }
+
+    public function testABadPostEventTextIsRefused(): void
+    {
+        foreach (['/followup maybe Thanks!', '/followup came', '/followup came ' . str_repeat('a', 2001)] as $action) {
+            self::assertSame(
+                AssistantActions::ERROR_INVALID,
+                self::check($action, self::organizer())['error'],
+                substr($action, 0, 30)
+            );
+        }
+
+        self::assertTrue(self::check('/followup came ' . str_repeat('a', 2000), self::organizer())['ok']);
+        self::assertSame(AssistantActions::ERROR_UNKNOWN, self::check('/followups', self::organizer())['error']);
     }
 }

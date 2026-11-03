@@ -22,6 +22,10 @@ namespace EventCrew\Support;
  *
  * This is the one place that changes the text: the Telegram command, the
  * crew app's Admin tab and any later caller all go through set() and clear().
+ *
+ * The same one-time text is used by the post-event email (FollowupText): an
+ * instance made with another option and action keeps its own text the same
+ * way, for the next post-event email only.
  */
 final class NewsletterText
 {
@@ -35,8 +39,16 @@ final class NewsletterText
 
     private readonly TranslatedText $translator;
 
-    public function __construct(LlmClient $llm, Logger $logger)
-    {
+    /**
+     * $option is where the text is kept; $changedAction is fired after it is
+     * set or cleared ('' fires nothing).
+     */
+    public function __construct(
+        LlmClient $llm,
+        Logger $logger,
+        private readonly string $option = self::OPTION,
+        private readonly string $changedAction = self::CHANGED_ACTION
+    ) {
         $this->translator = new TranslatedText($llm, $logger);
     }
 
@@ -73,8 +85,8 @@ final class NewsletterText
             'rev' => (null === $previous ? 0 : $previous['rev']) + 1,
         ];
 
-        update_option(self::OPTION, $stored, false);
-        do_action(self::CHANGED_ACTION);
+        update_option($this->option, $stored, false);
+        $this->changed();
 
         return [
             'saved' => true,
@@ -95,7 +107,7 @@ final class NewsletterText
      */
     public function get(): ?array
     {
-        $stored = get_option(self::OPTION, null);
+        $stored = get_option($this->option, null);
 
         if (! is_array($stored)) {
             return null;
@@ -126,8 +138,8 @@ final class NewsletterText
             return;
         }
 
-        delete_option(self::OPTION);
-        do_action(self::CHANGED_ACTION);
+        delete_option($this->option);
+        $this->changed();
     }
 
     /**
@@ -139,7 +151,14 @@ final class NewsletterText
         $current = $this->get();
 
         if (null !== $current && $current['rev'] === $rev) {
-            delete_option(self::OPTION);
+            delete_option($this->option);
+        }
+    }
+
+    private function changed(): void
+    {
+        if ('' !== $this->changedAction) {
+            do_action($this->changedAction);
         }
     }
 

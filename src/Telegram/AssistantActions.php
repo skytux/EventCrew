@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\Dates;
 use EventCrew\Support\GuestCommand;
+use EventCrew\Support\FollowupText;
 use EventCrew\Support\NewsletterText;
 
 /**
@@ -126,6 +127,25 @@ final class AssistantActions
                 "remove the organizers' own text from the next newsletter",
                 true
             );
+            $list[] = self::entry(
+                '/followup',
+                'show the two texts the next post-event email uses (thank-you to those who came, sorry text to'
+                    . ' those who did not), and whether each is a one-time text or the one in Settings'
+            );
+            $list[] = self::entry(
+                '/followup <came|missed> <text>',
+                'set a one-time text for the next post-event email only: came = the thank-you text, missed = the'
+                    . ' sorry text; it replaces the main text between the greeting and the sign-off, is translated'
+                    . ' into Finnish and English, and is removed after that email is sent; {event} and {date} in it'
+                    . ' become the event\'s name and date; <text> is the text itself (line breaks allowed)',
+                true
+            );
+            $list[] = self::entry(
+                '/followup [came|missed] clear',
+                'remove the one-time text of the next post-event email (one version, or both when no version'
+                    . ' is given), so it uses the text in Settings',
+                true
+            );
         }
 
         return $list;
@@ -155,6 +175,11 @@ final class AssistantActions
         // line breaks.
         if (1 === preg_match('#^\s*/newsletter(?=\s|$)(.*)$#isu', $action, $m)) {
             return self::validateNewsletter($m[1], $audience);
+        }
+
+        // The same for a post-event email text.
+        if (1 === preg_match('#^\s*/followup(?=\s|$)(.*)$#isu', $action, $m)) {
+            return self::validateFollowup($m[1], $audience);
         }
 
         // The same for a message for the group: kept exactly as written.
@@ -350,6 +375,60 @@ final class AssistantActions
         }
 
         $line = '/newsletter ' . $text;
+
+        return self::accept($line, true, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * "/followup" shows the post-event email's texts, "/followup clear"
+     * removes both one-time texts, "/followup came|missed clear" removes one,
+     * and "/followup came|missed <text>" sets one. Organizers only. Setting
+     * and removing ask to confirm, and the text shown with the Confirm button
+     * is exactly the text that is saved.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateFollowup(string $rest, array $audience): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        // Spaces are squeezed within each line; a run of empty lines becomes one.
+        $lines = array_map(
+            static fn (string $line): string => trim((string) preg_replace('/[^\S\n]+/u', ' ', $line)),
+            explode("\n", str_replace("\r\n", "\n", $rest))
+        );
+        $rest = trim((string) preg_replace("/\n{3,}/", "\n\n", implode("\n", $lines)));
+
+        if ('' === $rest) {
+            return self::accept('/followup', false, self::RUN_MESSAGE, '/followup');
+        }
+
+        if ('clear' === strtolower($rest)) {
+            return self::accept('/followup clear', true, self::RUN_MESSAGE, '/followup clear');
+        }
+
+        $parts = preg_split('/\s+/u', $rest, 2);
+        $variant = strtolower((string) ($parts[0] ?? ''));
+        $text = trim((string) ($parts[1] ?? ''));
+
+        if (! FollowupText::isVariant($variant) || '' === $text) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        if ('clear' === strtolower($text)) {
+            $line = '/followup ' . $variant . ' clear';
+
+            return self::accept($line, true, self::RUN_MESSAGE, $line);
+        }
+
+        if (mb_strlen($text) > FollowupText::MAX_LENGTH) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = '/followup ' . $variant . ' ' . $text;
 
         return self::accept($line, true, self::RUN_MESSAGE, $line);
     }

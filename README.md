@@ -150,6 +150,7 @@ to the DM with a breadcrumb left behind.
 | `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
 | `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
 | `/newsletter` | organizers, private chat | Set the text for the next events announcement (`/newsletter <text>`), show it (`/newsletter`), or remove it (`/newsletter clear`) |
+| `/followup` | organizers, private chat | Set a one-time thank-you or sorry text for the next post-event email (`/followup came <text>`, `/followup missed <text>`), show both texts (`/followup`), or remove one-time texts (`/followup came clear`, `/followup clear`) |
 | `/say` | organizers, private chat | `/say <message>` shows the message as the group will see it, with Confirm and Cancel; Confirm posts it in the crew group. Bold, italics, links, quotes and line breaks are kept. Plain words work too ("post in the group: ...") |
 
 ### Plain messages (optional language model)
@@ -373,6 +374,19 @@ Post-event email**.
   thank-you and an invitation to secure their spot at the next event. Someone
   who was not gets a kind "sorry we missed you" that hopes to see them soon.
   Both are in Finnish first, then English.
+- **The text.** The main text of each version (between "Hi Alex," and the
+  sign-off) is set under **Settings → Email → Thank-you text (came)** and
+  **Sorry text (missed)**. It is written once in any language and translated
+  into Finnish and English by the language model while **Translate texts
+  automatically** is on, or edited by hand per language. `{event}` becomes the
+  event's name and `{date}` its date. Until a text is saved there, the built-in
+  text is used, in each language. An organizer can replace either text for the
+  next email only, with `/followup came <text>` or `/followup missed <text>` in a
+  private chat with the bot (or in plain words; the bot asks to Confirm), or in
+  the crew app's Admin tab. It is translated the same way as the newsletter's
+  text, shown in the preview email, and removed once that night's emails are
+  sent, or when that night is stopped or is too late to send. `/followup` shows
+  both texts; `/followup clear` removes the one-time texts.
 - **Content.** Under the text are a button to the site, the next three coming
   events as cards with their pictures (the same cards as the next events
   announcement), and, while the announcement is on, an invitation to join it.
