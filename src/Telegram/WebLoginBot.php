@@ -119,7 +119,17 @@ final class WebLoginBot
         }
 
         $this->telegram->answerCallbackQuery($callbackId);
-        $this->edit($chatId, $messageId, __('Signed in. You can go back to the crew app.', 'eventcrew'));
+        // On a phone the crew app is in another app, so the message carries a
+        // button back to it; the button also signs in that browser.
+        $this->edit(
+            $chatId,
+            $messageId,
+            __('Signed in. You can go back to the crew app.', 'eventcrew'),
+            ['inline_keyboard' => [[[
+                'text' => __('Back to the crew app', 'eventcrew'),
+                'url' => TelegramLogin::returnUrl($code),
+            ]]]]
+        );
     }
 
     /** The same rule the email link and the old Telegram sign-in used: a confirmed, real address. */
@@ -128,10 +138,13 @@ final class WebLoginBot
         return ! $person->isBanned() && $person->isEmailVerified() && ! Person::isPlaceholderEmail($person->email);
     }
 
-    private function edit(int $chatId, int $messageId, string $text): void
+    /**
+     * @param array<string, mixed>|null $replyMarkup
+     */
+    private function edit(int $chatId, int $messageId, string $text, ?array $replyMarkup = null): void
     {
         if (0 !== $chatId && 0 !== $messageId) {
-            $this->telegram->editMessageText($chatId, $messageId, $text);
+            $this->telegram->editMessageText($chatId, $messageId, $text, $replyMarkup);
         }
     }
 

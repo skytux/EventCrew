@@ -61,6 +61,7 @@ final class WebLoginBotTest extends TelegramTestCase
             static fn (string $email): bool => 1 === preg_match('/^[^@\s]+@[^@\s]+\.[^@\s]+$/', $email)
         );
         Functions\when('rest_url')->alias(static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path);
+        Functions\when('admin_url')->alias(static fn (string $path = ''): string => 'https://example.test/wp-admin/' . $path);
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
         );
@@ -181,6 +182,13 @@ final class WebLoginBotTest extends TelegramTestCase
 
         self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
         self::assertSame(self::SIGNED_IN, $this->lastCallTo('editMessageText')['text']);
+        self::assertSame(
+            [[[
+                'text' => 'Back to the crew app',
+                'url' => 'https://example.test/wp-admin/admin-ajax.php?action=eventcrew_web_tg_return&login=' . $code,
+            ]]],
+            $this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']
+        );
         self::assertSame(['state' => TelegramLogin::STATE_APPROVED, 'person_id' => 7], $this->login()->poll($code, $secret));
     }
 
