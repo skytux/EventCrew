@@ -311,7 +311,8 @@ final class CrewAdminRoster
             return 'admin_change_failed';
         }
 
-        $this->redemptions->cancel($redemption->id);
+        // Also emails "Your ticket is cancelled" when the ticket was emailed.
+        $this->tickets->cancelRedemption($redemption->id);
 
         return 'admin_door_returned';
     }
@@ -326,7 +327,8 @@ final class CrewAdminRoster
         int $guestId,
         string $name,
         int $plusOnes,
-        string $note
+        string $note,
+        string $email = ''
     ): string {
         if (! self::isValidDate($date) || $guestId < 0) {
             return 'admin_change_failed';
@@ -339,7 +341,17 @@ final class CrewAdminRoster
         $plusOnes = max(0, min(GuestRepository::MAX_PLUS_ONES, $plusOnes));
 
         if (0 === $guestId) {
-            $this->guests->add($date, $name, $plusOnes, $note, $organizer->id);
+            // The optional email field: the ticket goes with the next run of
+            // the ticket email's batch.
+            if ('' !== $email && ! is_email($email)) {
+                return 'admin_guest_bad_email';
+            }
+
+            $this->guests->add($date, $name, $plusOnes, $note, $organizer->id, $email);
+
+            if ('' !== $email) {
+                TicketMail::schedule();
+            }
 
             return 'admin_guest_added';
         }
@@ -356,11 +368,15 @@ final class CrewAdminRoster
     /** "Remove" on a guest. */
     public function removeGuest(int $guestId): string
     {
-        if ($guestId <= 0 || null === $this->guests->find($guestId)) {
+        $guest = $guestId > 0 ? $this->guests->find($guestId) : null;
+
+        if (null === $guest) {
             return 'admin_change_failed';
         }
 
         $this->guests->delete($guestId);
+        // "Your ticket is cancelled", when the guest was emailed a ticket.
+        $this->ticketMail?->guestCancelled($guest);
 
         return 'admin_guest_removed';
     }
@@ -509,6 +525,7 @@ final class CrewAdminRoster
             'admin_door_redeemed' => __('Credit redeemed — they’re on the door list.', 'eventcrew'),
             'admin_door_returned' => __('Credit handed back.', 'eventcrew'),
             'admin_guest_no_name' => __('A guest needs a name.', 'eventcrew'),
+            'admin_guest_bad_email' => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
             'admin_guest_added' => __('Guest added.', 'eventcrew'),
             'admin_guest_saved' => __('Guest saved.', 'eventcrew'),
             'admin_guest_removed' => __('Guest removed.', 'eventcrew'),

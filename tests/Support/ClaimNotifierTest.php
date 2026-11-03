@@ -8,8 +8,10 @@ use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
@@ -17,6 +19,8 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketQr;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -43,7 +47,7 @@ final class ClaimNotifierTest extends TestCase
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
         );
         Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
-            $this->mails[] = ['to' => $to, 'body' => $body];
+            $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
 
             return true;
         });
@@ -101,6 +105,74 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
         // Also an add-to-calendar hold, the strongest nudge against a no-show.
         self::assertStringContainsString('wp-json/eventcrew/v1/calendar?token=', $this->mails[0]['body']);
+    }
+
+    private function notifierWithTicketMail(): ClaimNotifier
+    {
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+
+        return new ClaimNotifier(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            $mailer,
+            new TelegramClient(new Logger(), new DohResolver(new Logger())),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository()),
+            new TicketMail(
+                new TicketBuyerRepository(),
+                new GuestRepository(),
+                new TaskRepository(),
+                $mailer,
+                new TicketQr(),
+                new AssignmentRepository(),
+                new RedemptionRepository()
+            )
+        );
+    }
+
+    /** Decision 1: a sign-up also gets the separate "Your ticket" email, with an EC-C code. */
+    public function testASignupAlsoGetsTheSeparateTicketEmail(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString('Your ticket', $this->mails[1]['subject']);
+        self::assertSame('sam@example.com', $this->mails[1]['to']);
+        $marked = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => 'wp_eventcrew_assignments' === $u['table']
+        ));
+        self::assertSame(['id' => 9], $marked[0]['where']);
+        self::assertArrayHasKey('ticket_mailed_at', $marked[0]['data']);
+    }
+
+    /** Decision 4: cancelling a sign-up whose ticket was emailed sends "Your ticket is cancelled". */
+    public function testCancellingASignupWithAnEmailedTicketSendsTheCancelEmail(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = [
+            'id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
+            'ticket_mailed_at' => '2026-07-19 10:00:00',
+        ];
+
+        $this->notifierWithTicketMail()->confirmCancellation($this->person(), 5, 'cancelled');
+
+        $subjects = array_column($this->mails, 'subject');
+        self::assertCount(2, $subjects);
+        self::assertStringContainsString('Your ticket is cancelled', $subjects[1]);
+    }
+
+    public function testCancellingASignupWhoseTicketWasNotEmailedSendsNoCancelEmail(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
+
+        $this->notifierWithTicketMail()->confirmCancellation($this->person(), 5, 'cancelled');
+
+        self::assertCount(1, $this->mails);
     }
 
     public function testSignupAlsoConfirmsInTheTelegramDm(): void

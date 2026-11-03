@@ -20,7 +20,9 @@ final class Redemption
         public readonly string $eventLabel = '',
         public readonly string $redeemedAt = '',
         public readonly string $note = '',
-        public readonly ?string $cancelledAt = null
+        public readonly ?string $cancelledAt = null,
+        /** when the "Your ticket" email was sent for this credit; null when none was */
+        public readonly ?string $ticketMailedAt = null
     ) {
     }
 
@@ -43,7 +45,8 @@ final class Redemption
             (string) ($row['event_label'] ?? ''),
             (string) ($row['redeemed_at'] ?? ''),
             (string) ($row['note'] ?? ''),
-            self::nullableString($row['cancelled_at'] ?? null)
+            self::nullableString($row['cancelled_at'] ?? null),
+            self::nullableString($row['ticket_mailed_at'] ?? null)
         );
     }
 

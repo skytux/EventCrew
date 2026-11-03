@@ -1124,6 +1124,39 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame(1, $guest['added_by']);
     }
 
+    /** Decision 3: the optional email field on the crew app's guest form. */
+    public function testAGuestAddedWithAnEmailIsStoredWithIt(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '0',
+            'guest_name' => 'Anna',
+            'guest_email' => ' anna@example.com ',
+        ]);
+
+        self::assertSame('admin_guest_added', $result['notice']);
+        self::assertSame('anna@example.com', $this->wpdb->inserts[0]['data']['email']);
+    }
+
+    public function testAGuestWithAnInvalidEmailIsNotAdded(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '0',
+            'guest_name' => 'Anna',
+            'guest_email' => 'anna@',
+        ]);
+
+        self::assertSame('admin_guest_bad_email', $result['notice']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
     public function testAGuestWithNoNameIsNotAdded(): void
     {
         $this->signIn($this->organizerRow(1));

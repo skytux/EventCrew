@@ -5,6 +5,17 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\DoorAccess;
+use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Logger;
+use EventCrew\Support\Mailer;
+use EventCrew\Support\TicketMail;
+use EventCrew\Telegram\GuestListService;
 
 final class GuestListServiceTest extends TelegramTestCase
 {
@@ -78,6 +89,74 @@ final class GuestListServiceTest extends TelegramTestCase
         self::assertStringStartsWith('✅ Added Anna Virtanen to Sat 1 Aug.', $sent['text']);
         self::assertStringContainsString('1 guest, 3 people in all', $sent['text']);
         self::assertStringContainsString('1. Anna Virtanen +2 (DJ’s partner)', $sent['text']);
+    }
+
+    /** Decision 3: an email address in /door add is stored, and the ticket mail run is queued. */
+    public function testAGuestAddedWithAnEmailIsStoredWithItAndTheMailRunIsQueued(): void
+    {
+        $scheduled = [];
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        Functions\when('wp_schedule_single_event')->alias(function (int $time, string $hook) use (&$scheduled): bool {
+            $scheduled[] = $hook;
+
+            return true;
+        });
+        $this->asker(true);
+        $this->wpdb->nextResults[] = [$this->guest(1, 'Anna')]; // render
+        $this->wpdb->nextCols[] = [];                           // nearbyDates
+
+        $this->guestListService()->onGuestCommand(555, 555, true, 'add 1.8. Anna anna@example.com');
+
+        self::assertSame('Anna', $this->wpdb->inserts[0]['data']['name']);
+        self::assertSame('anna@example.com', $this->wpdb->inserts[0]['data']['email']);
+        self::assertSame([TicketMail::HOOK], $scheduled);
+    }
+
+    public function testAGuestWithAnInvalidEmailIsNotAdded(): void
+    {
+        $this->asker(true);
+
+        $this->guestListService()->onGuestCommand(555, 555, true, 'add 1.8. Anna anna@');
+
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringContainsString('That email address is not valid.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    /** Decision 4: removing a guest who was sent a ticket emails "Your ticket is cancelled". */
+    public function testRemovingAGuestWithASentTicketSendsTheCancelEmail(): void
+    {
+        $mails = [];
+        Functions\when('get_option')->justReturn(false);
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
+        Functions\when('wp_mail')->alias(function (string $to, string $subject) use (&$mails): bool {
+            $mails[] = ['to' => $to, 'subject' => $subject];
+
+            return true;
+        });
+        $this->asker(true);
+        $sent = ['email' => 'bo@example.com', 'ticket_mail_status' => 'sent'] + $this->guest(5, 'Bo');
+        $this->wpdb->nextResults[] = [$this->guest(4, 'Anna'), $sent]; // numbered
+        $this->wpdb->nextResults[] = [$this->guest(4, 'Anna')];        // render
+        $this->wpdb->nextCols[] = [];                                  // nearbyDates
+
+        $service = new GuestListService(
+            new GuestRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            new PersonRepository(),
+            $this->client(),
+            new TicketMail(
+                new TicketBuyerRepository(),
+                new GuestRepository(),
+                new TaskRepository(),
+                new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            )
+        );
+        $service->onGuestCommand(555, 555, true, 'remove 1.8. 2');
+
+        self::assertSame(['id' => 5], $this->wpdb->deletes[0]['where']);
+        self::assertCount(1, $mails);
+        self::assertSame('bo@example.com', $mails[0]['to']);
+        self::assertStringContainsString('Your ticket is cancelled', $mails[0]['subject']);
     }
 
     public function testEditChangesOnlyWhatIsGiven(): void

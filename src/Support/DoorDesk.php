@@ -318,7 +318,9 @@ final class DoorDesk
      * Records a Holvi buyer who is missing from the imported list, already
      * marked in. It is listed with the Holvi buyers and is not a door sale.
      * The name and the email are both optional; with no name, a placeholder
-     * is stored. The email is only shown on the list: nothing is sent to it.
+     * is stored. With an email address, the buyer gets a ticket code
+     * (TicketMail::deskBuyerCode()) and is emailed their ticket by the next
+     * run of the ticket email's batch, like an imported buyer.
      * Answers a HOLVI_* code.
      */
     public function addHolviBuyer(string $date, int $doorPersonId, string $name, string $email): string
@@ -347,6 +349,11 @@ final class DoorDesk
 
         $this->checkins->mark($date, CheckinRepository::KIND_BUYER, $id, 0, $doorPersonId);
 
+        if ('' !== $email) {
+            $this->buyers->setTicketCode($id, TicketMail::deskBuyerCode($id));
+            TicketMail::schedule();
+        }
+
         return self::HOLVI_OK;
     }
 
@@ -366,7 +373,9 @@ final class DoorDesk
      * Reads what the camera found in a QR code at the desk. A ticket is the
      * signed ticket link (or its bare token) of a sign-up or of a spent
      * free-entry credit, or a guest's emailed ticket: the short signed code in
-     * its QR, or its ticket page link. On SCAN_OK, key is the row on tonight's list
+     * its QR, or its ticket page link. A crew member's or a desk buyer's
+     * emailed ticket holds a short signed code too (TicketMail::crewCode(),
+     * creditCode(), deskBuyerCode()). On SCAN_OK, key is the row on tonight's list
      * ("crew:8", "credit:8"), for the page to show with its +1 counter and
      * "Mark arrived" button; nothing is marked here. The other answers carry
      * the ticket holder's name and the ticket's night when they are known.
@@ -380,6 +389,27 @@ final class DoorDesk
 
         if (null !== $guestId) {
             return $this->scanGuest($date, $guestId);
+        }
+
+        // A crew member's emailed ticket: a sign-up or a spent credit. Either
+        // way the person is checked in by their row on tonight's list, crew
+        // when they work tonight, otherwise credit.
+        $assignmentId = TicketMail::crewIdFromCode($text);
+
+        if (null !== $assignmentId) {
+            return $this->scanAssignment($date, $assignmentId);
+        }
+
+        $redemptionId = TicketMail::creditIdFromCode($text);
+
+        if (null !== $redemptionId) {
+            return $this->scanRedemption($date, $redemptionId);
+        }
+
+        $buyerId = TicketMail::deskBuyerIdFromCode($text);
+
+        if (null !== $buyerId) {
+            return $this->scanDeskBuyer($date, $buyerId, trim($text));
         }
 
         $token = self::tokenFrom($text);
@@ -428,6 +458,29 @@ final class DoorDesk
 
         return $this->inScanWindow($date)
             ?? self::scanAnswer(self::SCAN_OK, CheckinRepository::KIND_GUEST . ':' . $guest->id, $guest->name, $date);
+    }
+
+    /**
+     * A desk buyer's emailed ticket (TicketMail::deskBuyerCode()): the buyer's
+     * row on the Holvi list. The row must still carry this code; a row that
+     * was deleted or lost its code no longer has a ticket.
+     *
+     * @return array{code: string, key: string, name: string, date: string, at: string}
+     */
+    private function scanDeskBuyer(string $date, int $buyerId, string $code): array
+    {
+        $buyer = $this->buyers->find($buyerId);
+
+        if (null === $buyer || $buyer->ticketCode !== $code) {
+            return self::scanAnswer(self::SCAN_DISABLED, '', null === $buyer ? '' : $buyer->name);
+        }
+
+        if ($buyer->eventDate !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $buyer->name, $buyer->eventDate);
+        }
+
+        return $this->inScanWindow($date)
+            ?? self::scanAnswer(self::SCAN_OK, CheckinRepository::KIND_BUYER . ':' . $buyer->id, $buyer->name, $date);
     }
 
     /**
@@ -977,7 +1030,8 @@ final class DoorDesk
                 continue;
             }
 
-            $this->redemptions->cancel($redemption->id);
+            // Also emails "Your ticket is cancelled" when the ticket was emailed.
+            $this->tickets->cancelRedemption($redemption->id);
             $returned = true;
         }
 

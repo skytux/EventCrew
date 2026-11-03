@@ -1238,6 +1238,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             <label for="eventcrew-admin-guest-new-note"><?php esc_html_e('Note', 'eventcrew'); ?></label>
                             <input id="eventcrew-admin-guest-new-note" type="text" name="guest_note" maxlength="191">
                         </p>
+                        <p>
+                            <label for="eventcrew-admin-guest-new-email"><?php esc_html_e('Email (optional: the ticket is emailed)', 'eventcrew'); ?></label>
+                            <input id="eventcrew-admin-guest-new-email" type="email" name="guest_email" maxlength="191" autocomplete="off">
+                        </p>
                         <button type="submit" name="op" value="save" class="wp-element-button"><?php esc_html_e('Add guest', 'eventcrew'); ?></button>
                     </form>
                 </section>

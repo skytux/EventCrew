@@ -16,6 +16,11 @@ namespace EventCrew\Support;
  * The date is optional everywhere ("1.8." or "2026-08-01"); without one the
  * caller uses the next event. <number> is the guest's number in the shown list.
  * Text after a +N with no ";" is the note too, so "Anna +2 DJ's partner" works.
+ *
+ * In "add", a word with an "@" before the ";" is the guest's email address,
+ * so "/door add Anna anna@example.com +1 ; DJ" works; the guest is then
+ * emailed their ticket. A word with an "@" that is not an email address is
+ * the error 'email'.
  */
 final class GuestCommand
 {
@@ -30,10 +35,11 @@ final class GuestCommand
     /**
      * @return array{
      *     action: string, date: string, number: int,
-     *     name: ?string, plus_ones: ?int, note: ?string, error: string
+     *     name: ?string, plus_ones: ?int, note: ?string, email: string, error: string
      * }
      *     date is '' when none was given; name/plus_ones/note are null when not
-     *     given; error is '' when the command is usable.
+     *     given; email is '' when none was given (only "add" reads one); error
+     *     is '' when the command is usable.
      */
     public static function parse(string $arguments, string $today): array
     {
@@ -44,6 +50,7 @@ final class GuestCommand
             'name' => null,
             'plus_ones' => null,
             'note' => null,
+            'email' => '',
             'error' => '',
         ];
 
@@ -107,6 +114,19 @@ final class GuestCommand
         $nameTokens = [];
         $afterPlus = [];
         $plusOnes = null;
+
+        foreach ($tokens as $index => $token) {
+            if (self::ADD !== $action || ! str_contains($token, '@')) {
+                continue;
+            }
+
+            if ('' !== $result['email'] || false === filter_var($token, FILTER_VALIDATE_EMAIL)) {
+                return ['error' => 'email'] + $result;
+            }
+
+            $result['email'] = $token;
+            unset($tokens[$index]);
+        }
 
         foreach ($tokens as $token) {
             if (null === $plusOnes && 1 === preg_match(self::PLUS_ONES_TOKEN, $token, $m)) {

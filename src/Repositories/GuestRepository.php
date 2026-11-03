@@ -54,8 +54,9 @@ final class GuestRepository
     }
 
     /**
-     * Adds a guest and returns the new row's id (0 on failure). $email is
-     * only given by a mailed guest list; such a guest is emailed a ticket.
+     * Adds a guest and returns the new row's id (0 on failure). $email comes
+     * from a mailed guest list or the optional email field of a guest added by
+     * hand; such a guest is emailed a ticket by the next ticket-email batch.
      */
     public function add(
         string $date,

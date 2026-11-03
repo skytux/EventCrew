@@ -299,6 +299,38 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('Holvi buyer added and checked in.', $desk->holviBuyerText(DoorDesk::HOLVI_OK));
     }
 
+    /** A desk buyer with an email gets an EC-B ticket code and the ticket mail run is queued. */
+    public function testAHolviBuyerWithAnEmailGetsATicketCodeAndTheMailRunIsQueued(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+        $scheduled = [];
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        Functions\when('wp_schedule_single_event')->alias(function (int $time, string $hook) use (&$scheduled): bool {
+            $scheduled[] = $hook;
+
+            return true;
+        });
+
+        self::assertSame(DoorDesk::HOLVI_OK, $this->desk()->addHolviBuyer(self::NIGHT, 1, 'Ada', 'ada@example.com'));
+
+        $update = $this->wpdb->updates[0];
+        self::assertSame('wp_eventcrew_ticket_buyers', $update['table']);
+        $code = $update['data']['ticket_code'];
+        self::assertMatchesRegularExpression('/^EC-B\d+-[0-9a-f]{16}$/', $code);
+        self::assertSame($update['where']['id'], TicketMail::deskBuyerIdFromCode($code));
+        self::assertSame([TicketMail::HOOK], $scheduled);
+    }
+
+    /** No email, no ticket: no code is written and no mail run is queued. */
+    public function testAHolviBuyerWithoutAnEmailGetsNoTicketCode(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->desk()->addHolviBuyer(self::NIGHT, 1, 'Ada', '');
+
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testAHolviBuyerWithNoNameOrEmailGetsAPlaceholderName(): void
     {
         $this->wpdb->nextQueryResults[] = 1;
@@ -940,6 +972,71 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('guest:12', $scan['key']);
         self::assertSame('Cy Cole', $scan['name']);
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** The short EC-C code in a crew sign-up's ticket email scans to their crew row. */
+    public function testScanningACrewShortQrCodeFindsTheirCrewRow(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueCrewEntrants();
+
+        $scan = $this->desk()->scan(self::NIGHT, ' ' . TicketMail::crewCode(30) . ' ');
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('crew:8', $scan['key']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** The short EC-F code in a credit's ticket email scans to the credit row. */
+    public function testScanningACreditShortQrCodeFindsTheCreditRow(): void
+    {
+        $credit = ['id' => 44, 'person_id' => 9, 'redeemed_for' => self::NIGHT];
+        $this->wpdb->nextRows[] = $credit;
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$credit];
+        $this->wpdb->nextRows[] = $this->personRow(9);
+
+        $scan = $this->desk()->scan(self::NIGHT, TicketMail::creditCode(44));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('credit:9', $scan['key']);
+    }
+
+    /** The EC-B code in a desk buyer's ticket email scans to their Holvi row. */
+    public function testScanningADeskBuyerShortQrCodeFindsTheirBuyerRow(): void
+    {
+        $code = TicketMail::deskBuyerCode(17);
+        $this->wpdb->nextRows[] = ['id' => 17, 'event_date' => self::NIGHT, 'name' => 'Ada', 'source' => 'desk', 'ticket_code' => $code];
+
+        $scan = $this->desk()->scan(self::NIGHT, $code);
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('buyer:17', $scan['key']);
+        self::assertSame('Ada', $scan['name']);
+    }
+
+    /** A desk buyer row that lost its code no longer has a ticket. */
+    public function testADeskBuyerCodeNoLongerOnTheRowIsRefused(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 17, 'event_date' => self::NIGHT, 'name' => 'Ada', 'source' => 'desk', 'ticket_code' => null];
+
+        self::assertSame(DoorDesk::SCAN_DISABLED, $this->desk()->scan(self::NIGHT, TicketMail::deskBuyerCode(17))['code']);
+    }
+
+    /** Codes of the three new kinds with a changed signature are not ours. */
+    public function testTamperedCrewCreditAndBuyerCodesAreNotOurs(): void
+    {
+        $desk = $this->desk();
+
+        foreach ([TicketMail::crewCode(30), TicketMail::creditCode(44), TicketMail::deskBuyerCode(17)] as $code) {
+            $forged = substr($code, 0, -1) . ('0' === substr($code, -1) ? '1' : '0');
+            self::assertSame(DoorDesk::SCAN_NOT_OURS, $desk->scan(self::NIGHT, $forged)['code'], $forged);
+        }
+
+        self::assertSame([], $this->wpdb->queries);
     }
 
     /** A guest code with a changed signature, or another guest's id, is not ours. */

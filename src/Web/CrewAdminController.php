@@ -460,7 +460,8 @@ final class CrewAdminController
                     (int) ($post['guest_id'] ?? 0),
                     sanitize_text_field((string) ($post['guest_name'] ?? '')),
                     (int) ($post['guest_plus_ones'] ?? 0),
-                    sanitize_text_field((string) ($post['guest_note'] ?? ''))
+                    sanitize_text_field((string) ($post['guest_note'] ?? '')),
+                    trim(sanitize_text_field((string) ($post['guest_email'] ?? '')))
                 ),
                 'remove' => $this->rosterScreen->removeGuest((int) ($post['guest_id'] ?? 0)),
                 'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'guests'),

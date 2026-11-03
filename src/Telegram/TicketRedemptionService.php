@@ -14,6 +14,7 @@ use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TicketMail;
 
 /**
  * Self-service free entry: a person spends one of their earned credits on an
@@ -42,7 +43,8 @@ final class TicketRedemptionService
         private readonly StandingCalculator $standing,
         private readonly FreeEntryGate $freeEntry,
         private readonly TelegramClient $telegram,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -226,19 +228,21 @@ final class TicketRedemptionService
         // The ticket link goes to both of the person's channels here, in the one
         // place a credit is spent, so a claim from the bot and a claim from the
         // web profile both leave the same email and DM record to fall back on.
-        $this->deliverTicket($personId, $date, $url);
+        $this->deliverTicket($personId, $date, $redemptionId);
 
         return ['code' => self::TICKET_READY, 'url' => $url];
     }
 
     /**
      * Sends the just-claimed ticket link to the person's Telegram DM and email,
-     * so they have it even if they close the page. Both sends are best-effort:
-     * TicketRedemptionService already recorded the redemption, and a missed
-     * confirmation must never undo a spent credit.
+     * so they have it even if they close the page, and then the "Your ticket"
+     * email with the QR code (TicketMail), the same one ticket buyers get. All
+     * sends are best-effort: TicketRedemptionService already recorded the
+     * redemption, and a missed confirmation must never undo a spent credit.
      */
-    private function deliverTicket(int $personId, string $date, string $url): void
+    private function deliverTicket(int $personId, string $date, int $redemptionId): void
     {
+        $url = $this->ticketUrl($redemptionId);
         $person = $this->people->find($personId);
 
         if (null === $person) {
@@ -276,6 +280,33 @@ final class TicketRedemptionService
             ),
             [['label' => __('Show your ticket', 'eventcrew'), 'url' => $url]]
         );
+
+        $this->ticketMail?->sendCreditTicket($person, $redemptionId, $date);
+    }
+
+    /**
+     * Cancels a redemption (the credit goes back to the person) and, when its
+     * ticket was emailed, emails the person that the ticket is cancelled. The
+     * one place an organizer or the door desk undoes a spent credit.
+     */
+    public function cancelRedemption(int $redemptionId): void
+    {
+        $redemption = null === $this->ticketMail ? null : $this->redemptions->find($redemptionId);
+        $this->redemptions->cancel($redemptionId);
+
+        if (null === $redemption || $redemption->isCancelled() || null === $redemption->ticketMailedAt) {
+            return;
+        }
+
+        $person = $this->people->find($redemption->personId);
+
+        if (null !== $person) {
+            $this->ticketMail?->crewCancelled(
+                $person,
+                $redemption->ticketMailedAt,
+                (string) $redemption->redeemedFor
+            );
+        }
     }
 
     /**
@@ -309,7 +340,7 @@ final class TicketRedemptionService
      */
     public function notifyRedemption(int $personId, string $date, int $redemptionId): void
     {
-        $this->deliverTicket($personId, $date, $this->ticketUrl($redemptionId));
+        $this->deliverTicket($personId, $date, $redemptionId);
     }
 
     /**
