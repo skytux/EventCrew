@@ -227,9 +227,10 @@ final class NewsletterWriterTest extends TestCase
      * The plan for the preview asks for the event's text with every input -
      * the event, its DJs from EventMesh (only well-formed ones, each
      * description cut to 1200 characters), the site's words and the last four
-     * sent texts - then its Finnish translation, then the opening with the
-     * events and DJ names, then the practical information with the DJ names
-     * once more. The preview shows the opening and the practical information,
+     * sent texts - in Finnish, then its English translation, then the
+     * opening in Finnish with the events, DJ names and the Finnish event
+     * texts, then the opening's English translation, then the practical
+     * information with the DJ names once more. The preview shows the opening and the practical information,
      * and neither the event's written text nor the description.
      */
     public function testThePlanWritesTheTextsFromEveryInput(): void
@@ -250,10 +251,10 @@ final class NewsletterWriterTest extends TestCase
             ['opening' => 'Newest opening.', 'events' => ['Newest text.']],
         ];
         $this->answers = [
-            self::answer('text', 'Come and dance to the warm grooves of DJ Aurora.'),
-            self::answer('fi', 'Tule tanssimaan DJ Auroran lämpimiin grooveihin.'),
-            self::answer('text', 'Summer is here, and so is the dance floor.'),
-            self::answer('fi', 'Kesä on täällä, ja niin on tanssilattiakin.'),
+            self::answer('text', 'Tule tanssimaan DJ Auroran lämpimiin grooveihin.'),
+            self::answer('en', 'Come and dance to the warm grooves of DJ Aurora.'),
+            self::answer('text', 'Kesä on täällä, ja niin on tanssilattiakin.'),
+            self::answer('en', 'Summer is here, and so is the dance floor.'),
             self::practicalAnswer('the Old Hall'),
         ];
         $this->queueOrganizer();
@@ -262,10 +263,11 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertCount(5, $this->requests);
 
-        [$event, $translation, $opening, $openingFi, $practical] = $this->requests;
+        [$event, $translation, $opening, $openingEn, $practical] = $this->requests;
         $system = self::system($event);
-        self::assertStringContainsString('2 to 3 sentences in English', $system);
+        self::assertStringContainsString('2 to 3 sentences in Finnish', $system);
         self::assertStringContainsString('Do not use the word "vol' . 'unteer"', $system);
+        self::assertStringContainsString('Do not use the word "vapaa' . 'ehtoinen"', $system);
         self::assertStringContainsString('Do not invent times, prices, places, names', $system);
         self::assertStringContainsString('A DJ name is a person, never a place.', $system);
         self::assertStringContainsString('Say "dance floor", never "party".', $system);
@@ -273,7 +275,7 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringContainsString('Newest opening.', $system);
         self::assertStringContainsString('Second text.', $system);
         self::assertStringNotContainsString('Oldest', $system);
-        self::assertStringContainsString('{"text": "the English text"}', $system);
+        self::assertStringContainsString('{"text": "the Finnish text"}', $system);
 
         $user = self::user($event);
         self::assertStringContainsString('Event: Summer Social', $user);
@@ -286,19 +288,23 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringNotContainsString(str_repeat('x', 1200 - 23 + 1), $user);
         self::assertStringContainsString(str_repeat('x', 1200 - 23), $user);
 
-        self::assertStringContainsString('from English into Finnish', self::system($translation));
+        self::assertStringContainsString('from Finnish into English', self::system($translation));
         self::assertStringContainsString('Say "dance floor"', self::system($translation));
-        self::assertSame('Come and dance to the warm grooves of DJ Aurora.', self::user($translation));
+        self::assertStringContainsString('Do not use the word "vol' . 'unteer"', self::system($translation));
+        self::assertStringContainsString('{"en": "the English text"}', self::system($translation));
+        self::assertSame('Tule tanssimaan DJ Auroran lämpimiin grooveihin.', self::user($translation));
 
         self::assertStringContainsString('opening text', self::system($opening));
+        self::assertStringContainsString('2 to 3 sentences in Finnish', self::system($opening));
         self::assertStringContainsString('Newest opening.', self::system($opening));
         self::assertStringContainsString('A DJ name is a person, never a place.', self::system($opening));
         self::assertStringContainsString(
             "- Monday 27 July 2026, 21:00: Summer Social. DJs (people who play the music, not places): "
-            . "DJ Aurora, DJ Kuu\n  Text about this event: Come and dance to the warm grooves of DJ Aurora.",
+            . "DJ Aurora, DJ Kuu\n  Text about this event: Tule tanssimaan DJ Auroran lämpimiin grooveihin.",
             self::user($opening)
         );
-        self::assertSame('Summer is here, and so is the dance floor.', self::user($openingFi));
+        self::assertStringContainsString('from Finnish into English', self::system($openingEn));
+        self::assertSame('Kesä on täällä, ja niin on tanssilattiakin.', self::user($openingEn));
 
         self::assertStringContainsString('Copy the venue and the address exactly', self::system($practical));
         self::assertStringContainsString('Never include door codes', self::system($practical));
@@ -340,7 +346,7 @@ final class NewsletterWriterTest extends TestCase
     {
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1];
-        $this->answers = [self::answer('text', 'Come and dance.'), self::answer('fi', 'Tule tanssimaan.')];
+        $this->answers = [self::answer('text', 'Tule tanssimaan.'), self::answer('en', 'Come and dance.')];
         $this->queueOrganizer();
 
         $this->newsletter()->run();
@@ -360,7 +366,7 @@ final class NewsletterWriterTest extends TestCase
     {
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->options[NewsletterText::OPTION] = ['fi' => 'Moi kaikki', 'en' => 'Hi all', 'rev' => 1];
-        $this->answers = [self::answer('text', 'Come and dance.'), self::answer('fi', 'Tule tanssimaan.')];
+        $this->answers = [self::answer('text', 'Tule tanssimaan.'), self::answer('en', 'Come and dance.')];
         $this->queueOrganizer();
 
         $this->newsletter()->run();
@@ -387,7 +393,7 @@ final class NewsletterWriterTest extends TestCase
                 'practical' => [1 => []],
             ],
         ]);
-        $this->answers = [self::answer('text', 'Welcome, dancers.'), self::answer('fi', 'Tervetuloa, tanssijat.')];
+        $this->answers = [self::answer('text', 'Tervetuloa, tanssijat.'), self::answer('en', 'Welcome, dancers.')];
         $this->queueOrganizer();
 
         $this->newsletter()->run();
@@ -417,7 +423,7 @@ final class NewsletterWriterTest extends TestCase
             'empty text' => [['{"text": "  "}']],
             'too long' => [[(string) json_encode(['text' => str_repeat('Dance. ', 100)])]],
             'a link' => [['{"text": "Tickets at https://shop.test now."}']],
-            'translation fails' => [['{"text": "Come and dance."}', 'Tule tanssimaan.']],
+            'translation fails' => [['{"text": "Tule tanssimaan."}', 'Come and dance.']],
         ];
     }
 
@@ -523,8 +529,8 @@ final class NewsletterWriterTest extends TestCase
             'written' => $written,
         ]);
         $this->answers = [
-            self::answer('text', 'Stay late and dance.'),
-            self::answer('fi', 'Jää tanssimaan.'),
+            self::answer('text', 'Jää tanssimaan.'),
+            self::answer('en', 'Stay late and dance.'),
             self::practicalAnswer(''),
         ];
 
@@ -542,7 +548,7 @@ final class NewsletterWriterTest extends TestCase
 
     /**
      * The batches use the plan's texts and never ask the model. After the
-     * last one the English texts join the memory, which keeps the last four.
+     * last one the Finnish texts join the memory, which keeps the last four.
      */
     public function testTheSentTextsAreRememberedKeepingTheLastFour(): void
     {
@@ -572,7 +578,7 @@ final class NewsletterWriterTest extends TestCase
                 ['opening' => 'Two.', 'events' => ['2']],
                 ['opening' => 'Three.', 'events' => ['3']],
                 ['opening' => 'Four.', 'events' => ['4']],
-                ['opening' => 'Welcome.', 'events' => ['Come.']],
+                ['opening' => 'Tervetuloa.', 'events' => ['Tule.']],
             ],
             $this->options[NewsletterWriter::MEMORY_OPTION]
         );
@@ -596,7 +602,7 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertStringNotContainsString('Welcome.', $this->mails[0]['body']);
         self::assertSame(
-            [['opening' => '', 'events' => ['Come.']]],
+            [['opening' => '', 'events' => ['Tule.']]],
             $this->options[NewsletterWriter::MEMORY_OPTION]
         );
     }
@@ -666,8 +672,8 @@ final class NewsletterWriterTest extends TestCase
         ];
         $this->withPlan($plan);
         $this->answers = [
-            self::answer('text', 'Come and dance.'),
-            self::answer('fi', 'Tule tanssimaan.'),
+            self::answer('text', 'Tule tanssimaan.'),
+            self::answer('en', 'Come and dance.'),
             self::practicalAnswer('old hall'),
         ];
         $this->queueOrganizer();
@@ -684,8 +690,8 @@ final class NewsletterWriterTest extends TestCase
 
         $this->withPlan(['preview_at' => '2026-07-20 11:00:00'] + $plan);
         $this->answers = [
-            self::answer('text', 'Come and dance.'),
-            self::answer('fi', 'Tule tanssimaan.'),
+            self::answer('text', 'Tule tanssimaan.'),
+            self::answer('en', 'Come and dance.'),
             self::practicalAnswer('old hall'),
         ];
 
