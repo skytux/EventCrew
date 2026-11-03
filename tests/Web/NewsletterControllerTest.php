@@ -452,8 +452,11 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('name="anchor" value="' . NewsletterController::FORM_ANCHOR . '"', $html);
     }
 
-    /** With Turnstile set up, its script tag is printed once even with both the form and the bar. */
-    public function testTheTurnstileScriptIsAddedOnce(): void
+    /**
+     * With Turnstile set up and the full form on the page, the Cloudflare check
+     * is only in the full form; the bar hands its address to that form.
+     */
+    public function testWithTheFullFormTheCheckIsOnlyInTheFullForm(): void
     {
         $this->options[Newsletter::ENABLED_OPTION] = '1';
         $this->options[Turnstile::SITE_KEY_OPTION] = 'site-key';
@@ -461,11 +464,30 @@ final class NewsletterControllerTest extends TestCase
         $this->onPublicPage();
         $controller = $this->controller();
 
-        $all = $controller->renderShortcode() . self::bar($controller);
+        $form = $controller->renderShortcode();
+        $bar = self::bar($controller);
 
-        self::assertSame(1, substr_count($all, Turnstile::SCRIPT_URL));
-        self::assertSame(2, substr_count($all, 'class="cf-turnstile"'));
-        // Hidden in both unless Cloudflare needs a click.
-        self::assertSame(2, substr_count($all, 'data-appearance="interaction-only"'));
+        self::assertSame(1, substr_count($form . $bar, Turnstile::SCRIPT_URL));
+        self::assertSame(1, substr_count($form, 'class="cf-turnstile"'));
+        self::assertSame(0, substr_count($bar, 'class="cf-turnstile"'));
+        // Hidden unless Cloudflare needs a click.
+        self::assertStringContainsString('data-appearance="interaction-only"', $form);
+        // The bar's script copies the address and submits the full form once it has a token.
+        self::assertStringContainsString('ff.querySelector("[name=cf-turnstile-response]")', $bar);
+        self::assertStringContainsString('ff.requestSubmit()', $bar);
+    }
+
+    /** Without the full form on the page, the bar keeps its own Cloudflare check. */
+    public function testWithoutTheFullFormTheBarHasTheCheck(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->options[Turnstile::SITE_KEY_OPTION] = 'site-key';
+        $this->options[Turnstile::SECRET_KEY_OPTION] = 'secret';
+        $this->onPublicPage();
+
+        $bar = self::bar($this->controller());
+
+        self::assertSame(1, substr_count($bar, 'class="cf-turnstile"'));
+        self::assertSame(1, substr_count($bar, Turnstile::SCRIPT_URL));
     }
 }
