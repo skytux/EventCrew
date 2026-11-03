@@ -16,6 +16,7 @@ use EventCrew\Support\Credits;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -172,6 +173,7 @@ final class SettingsPage
                 'door_allow_over_max' => DoorQuota::allowsOver(),
                 'welcome_enabled' => WelcomeSender::enabled(),
                 'newsletter_enabled' => Newsletter::enabled(),
+                'followup_enabled' => FollowupMail::enabled(),
                 'newsletter_days' => Newsletter::days(),
                 'newsletter_crew' => NewsletterCrew::enabled(),
                 'newsletter_bar_image' => Newsletter::barImageId(),
@@ -622,6 +624,7 @@ final class SettingsPage
         update_option(DoorQuota::OVER_OPTION, isset($_POST['door_allow_over_max']) ? '1' : '0');
         update_option(WelcomeSender::ENABLED_OPTION, isset($_POST['welcome_enabled']) ? '1' : '0');
         update_option(Newsletter::ENABLED_OPTION, isset($_POST['newsletter_enabled']) ? '1' : '0');
+        FollowupMail::setEnabled(isset($_POST['followup_enabled']));
         update_option(
             Newsletter::DAYS_OPTION,
             isset($_POST['newsletter_days'])

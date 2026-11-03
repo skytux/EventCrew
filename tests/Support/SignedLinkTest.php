@@ -49,4 +49,26 @@ final class SignedLinkTest extends TestCase
     {
         self::assertNotSame(SignedLink::sign('ticket', 1), SignedLink::sign('ticket', 2));
     }
+
+    public function testRoundTripsAPayload(): void
+    {
+        $payload = "b\n7\nhttps://shop.test/p/1?utm_source=eventcrew&x=ä";
+        $token = SignedLink::signPayload('followup_go', $payload);
+
+        self::assertSame($payload, SignedLink::verifyPayload('followup_go', $token));
+        self::assertMatchesRegularExpression('/^[A-Za-z0-9_\-]+\.[0-9a-f]{64}$/', $token, 'URL-safe as it is');
+    }
+
+    public function testRejectsAPayloadTokenForAnotherPurposeOrTampered(): void
+    {
+        $token = SignedLink::signPayload('followup_go', 'https://shop.test/');
+        [$body, $mac] = explode('.', $token);
+        $other = rtrim(strtr(base64_encode('https://evil.test/'), '+/', '-_'), '=');
+
+        self::assertNull(SignedLink::verifyPayload('followup_stop', $token));
+        self::assertNull(SignedLink::verifyPayload('followup_go', $other . '.' . $mac));
+        self::assertNull(SignedLink::verifyPayload('followup_go', $body . '.'));
+        self::assertNull(SignedLink::verifyPayload('followup_go', $body));
+        self::assertNull(SignedLink::verifyPayload('followup_go', ''));
+    }
 }

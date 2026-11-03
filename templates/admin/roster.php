@@ -13,6 +13,8 @@
  * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
  * @var string $ticket_mail_buyers "Ticket emails: 38 sent · 2 failed · 2 not sent" for the buyers; '' when none can be emailed.
  * @var string $ticket_mail_guests The same for guests with an email address; '' when there are none.
+ * @var string $followup_mail "Post-event email: 38 sent · 2 failed · 6 clicked", or when it goes out; '' when nobody can be emailed.
+ * @var bool $followup_can_stop Whether the shown night's post-event email can still be stopped.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
  * @var string $free_entry_event_reason Why the linked EventMesh event closes it ('' when it does not).
  * @var array<string, string> $statuses Status slug => label, for the pickers.
@@ -283,6 +285,28 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <input type="hidden" name="ticket_kind" value="buyers">
                         <button type="submit" class="button"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button>
                     </form>
+                </div>
+            <?php endif; ?>
+            <?php if ('' !== $followup_mail) : ?>
+                <p><?php echo esc_html($followup_mail); ?></p>
+                <div style="display:flex;flex-wrap:wrap;gap:.5em;margin:0 0 1em">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <input type="hidden" name="action" value="eventcrew_send_followup_test">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                        <button type="submit" class="button"><?php esc_html_e('Send a test to me', 'eventcrew'); ?></button>
+                    </form>
+                    <?php if ($followup_can_stop) : ?>
+                        <form
+                            method="post"
+                            action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                            onsubmit="return confirm('<?php echo esc_js(__('Stop this night’s post-event email? It will not be sent.', 'eventcrew')); ?>');">
+                            <input type="hidden" name="action" value="eventcrew_stop_followup">
+                            <?php wp_nonce_field($nonce_action); ?>
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                            <button type="submit" class="button"><?php esc_html_e('Do not send the post-event email', 'eventcrew'); ?></button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:820px">

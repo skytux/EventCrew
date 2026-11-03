@@ -6175,3 +6175,142 @@ msgstr "Takaisin Crew-sovellukseen"
 
 msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
 msgstr "Et ole kirjautunut tällä selaimella. Palaa selaimeen, jossa painoit Telegramia, tai paina Telegramia uudelleen tässä."
+
+#: templates/admin/settings-telegram-login.php:31
+msgid "Client ID (the bot ID):"
+msgstr "Client ID (botin tunnus):"
+
+#: src/Support/PrivacyPolicy.php:413
+msgid "If you sign in with Telegram, Telegram sends us your account number, name, username and profile photo address. We use only the account number, to find your crew account, and we do not store the rest."
+msgstr "Jos kirjaudut Telegramilla, Telegram lähettää meille tilisi numeron, nimesi, käyttäjänimesi ja profiilikuvasi osoitteen. Käytämme vain tilin numeroa crew-tilisi löytämiseen, emmekä tallenna muuta."
+
+#: templates/public/signup.php:148
+msgid "Open the bot"
+msgstr "Avaa botti"
+
+#: templates/admin/settings-telegram-login.php:24
+msgid "Telegram only allows this on addresses you name. In the @BotFather chat, tap Open, then this bot, then Bot Settings, then Web Login (called Login Widget in some versions), and add this address under Allowed URLs:"
+msgstr "Telegram sallii tämän vain osoitteissa, jotka annat sille. Paina @BotFather-keskustelussa Open, valitse tämä botti, sitten Bot Settings ja Web Login (joissain versioissa Login Widget), ja lisää tämä osoite kohtaan Allowed URLs:"
+
+#: src/Support/PrivacyPolicy.php:472
+msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through their service. Linking is entirely optional; the web page does everything the bot does."
+msgstr "Telegram, jos päätät yhdistää Telegram-tilin — botin sinulle lähettämät viestit kulkevat heidän palvelunsa kautta heidän oman tietosuojakäytäntönsä mukaisesti (https://telegram.org/privacy), ja kirjautuminen Telegramilla kulkee heidän palvelunsa kautta. Yhdistäminen on täysin valinnaista; verkkosivu tekee kaiken, minkä botti tekee."
+
+#: src/Web/SignupController.php:1042
+msgid "This Telegram account is not linked to a crew account yet. Open the bot and press Start to sign up, or sign in with email."
+msgstr "Tätä Telegram-tiliä ei ole vielä yhdistetty crew-tiliin. Avaa botti ja paina Start liittyäksesi, tai kirjaudu sähköpostilla."
+
+#: src/Web/SignupController.php:1044
+msgid "Your email address is not confirmed yet. Open the bot and press Start to confirm it, or sign in with email."
+msgstr "Sähköpostiosoitettasi ei ole vielä vahvistettu. Avaa botti ja paina Start vahvistaaksesi sen, tai kirjaudu sähköpostilla."
+
+msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
+msgstr "Tapahtuman %1$s jälkeen tapahtuman jälkeinen viesti lähtee %2$s klo %3$s %4$d osoitteeseen: kiitos niille, jotka tulivat, ja lämmin harmittelu niille, jotka eivät päässeet. Molemmat versiot ovat alla esimerkkinimellä, ja tulevat tapahtumat näkyvät sellaisina kuin ne ovat nyt. Jos viestiä ei pidä lähettää, pysäytä se lopun painikkeesta tai Läsnäolo-sivulla."
+
+msgid "Alex"
+msgstr "Alex"
+
+msgid "Both post-event emails were sent to %s as a test."
+msgstr "Molemmat tapahtuman jälkeiset viestit lähetettiin testinä osoitteeseen %s."
+
+msgid "Both post-event emails were sent to your own address as a test."
+msgstr "Molemmat tapahtuman jälkeiset viestit lähetettiin testinä omaan osoitteeseesi."
+
+msgid "Do not send the post-event email"
+msgstr "Älä lähetä tapahtuman jälkeistä viestiä"
+
+msgid "Every link in it carries utm_source=eventcrew, utm_medium=email and utm_campaign=thanks-YYYY-MM-DD or missed-YYYY-MM-DD, so your shop’s and your site’s statistics can tell which sales came from these emails. The Roster page shows how many people opened a link."
+msgstr "Jokaisessa sen linkissä on utm_source=eventcrew, utm_medium=email ja utm_campaign=thanks-YYYY-MM-DD tai missed-YYYY-MM-DD, joten verkkokauppasi ja sivustosi tilastoista näkee, mitkä myynnit tulivat näistä viesteistä. Läsnäolo-sivu näyttää, moniko avasi linkin."
+
+msgid "If you are on a guest list with your email address, you get the same message after the event."
+msgstr "Jos olet vieraslistalla sähköpostiosoitteesi kanssa, saat saman viestin tapahtuman jälkeen."
+
+msgid "Join the announcement"
+msgstr "Tilaa tiedote"
+
+msgid "Off by default. When it is on, everyone who had a ticket to an event and gave an email address gets a short email the day after at 12:00: a thank-you if they were checked in at the door, and a kind “sorry we missed you” if they were not. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button."
+msgstr "Oletuksena pois päältä. Kun se on päällä, jokainen, jolla oli lippu tapahtumaan ja joka antoi sähköpostiosoitteensa, saa tapahtumaa seuraavana päivänä klo 12.00 lyhyen viestin: kiitoksen, jos hänet merkittiin sisään ovella, ja lämpimän ”harmi, ettet päässyt” -viestin, jos ei. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa esikatselun, jossa on Pysäytä-painike; Läsnäolo-sivulla on sama painike."
+
+msgid "Post-event email"
+msgstr "Tapahtuman jälkeinen viesti"
+
+msgid "Post-event email preview: it goes out on %s"
+msgstr "Tapahtuman jälkeisen viestin esikatselu: viesti lähtee %s"
+
+msgid "Post-event email: %1$d sent · %2$d failed · %3$d clicked"
+msgstr "Tapahtuman jälkeinen viesti: %1$d lähetetty · %2$d epäonnistui · %3$d avasi linkin"
+
+msgid "Post-event email: goes out on %1$s at %2$s"
+msgstr "Tapahtuman jälkeinen viesti: lähtee %1$s klo %2$s"
+
+msgid "Post-event email: stopped"
+msgstr "Tapahtuman jälkeinen viesti: pysäytetty"
+
+msgid "Post-event email: switched off"
+msgstr "Tapahtuman jälkeinen viesti: pois päältä"
+
+msgid "Press the button to stop the post-event email of this event. It will not be sent."
+msgstr "Paina painiketta, niin tämän tapahtuman jälkeistä viestiä ei lähetetä."
+
+msgid "See the coming events"
+msgstr "Katso tulevat tapahtumat"
+
+msgid "Send the post-event email"
+msgstr "Lähetä tapahtuman jälkeinen viesti"
+
+msgid "Stop this night’s post-event email? It will not be sent."
+msgstr "Pysäytetäänkö tämän illan tapahtuman jälkeinen viesti? Sitä ei lähetetä."
+
+msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
+msgstr "Kiitos, että olit mukana %1$s -illassa %2$s. Oli ihanaa jakaa ilta ja tanssilattia kanssasi, ja toivomme, että jotain siitä lämmöstä lähti mukaasi kotiin."
+
+msgid "Thank you for dancing with us"
+msgstr "Kiitos, että tanssit kanssamme"
+
+msgid "The links in that message go through our own site first. When you open one of them, we note the time you first opened a link from your message. We do not note which link it was, and we do not note anything about your device. We use this only to count how many people opened a link, so we know whether the message is useful. The links also carry a label (utm_source, utm_medium and utm_campaign) that tells our site and our web shop the visit came from this message. The legal basis is our legitimate interest in knowing whether our messages are useful. The time is kept with your ticket record and is no longer tied to you once your name and email address are deleted."
+msgstr "Viestin linkit kulkevat ensin oman sivustomme kautta. Kun avaat jonkin niistä, kirjaamme ajan, jolloin avasit viestisi linkin ensimmäisen kerran. Emme kirjaa, mikä linkki se oli, emmekä mitään laitteestasi. Käytämme tätä vain laskeaksemme, moniko avasi linkin, jotta tiedämme, onko viestistä hyötyä. Linkeissä on myös merkintä (utm_source, utm_medium ja utm_campaign), josta sivustomme ja verkkokauppamme näkevät, että käynti tuli tästä viestistä. Oikeusperuste on oikeutettu etumme tietää, ovatko viestimme hyödyllisiä. Aika säilyy lippusi tiedoissa, eikä se enää liity sinuun, kun nimesi ja sähköpostiosoitteesi on poistettu."
+
+msgid "The next evenings are already on their way. Have a look at what is coming and secure your spot for your next ecstatic dance. We would love to dance with you again."
+msgstr "Seuraavat illat ovat jo tulossa. Katso, mitä on luvassa, ja varmista paikkasi seuraavaan ecstatic dance -iltaasi. Tanssisimme kanssasi mielellämme taas."
+
+msgid "The post-event email is stopped. It will not be sent."
+msgstr "Tapahtuman jälkeinen viesti on pysäytetty. Sitä ei lähetetä."
+
+msgid "The post-event email was already stopped."
+msgstr "Tapahtuman jälkeinen viesti oli jo pysäytetty."
+
+msgid "There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon."
+msgstr "Uusia iltoja on tulossa, ja tanssilattialla on paikka sinulle. Seuraavat näet alta. Toivottavasti nähdään pian."
+
+msgid "To those who came"
+msgstr "Niille, jotka tulivat"
+
+msgid "To those who did not come"
+msgstr "Niille, jotka eivät päässeet"
+
+msgid "Too late: the post-event email has already gone out."
+msgstr "Liian myöhään: tapahtuman jälkeinen viesti on jo lähtenyt."
+
+msgid "Warmly,"
+msgstr "Lämpimästi,"
+
+msgid "We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
+msgstr "Kaipasimme sinua %1$s -illassa %2$s. Olemme pahoillamme, ettet päässyt mukaan tällä kertaa. Ymmärrämme, että se on voinut harmittaa, ja toivomme, että voit hyvin."
+
+msgid "We missed you this time"
+msgstr "Kaipasimme sinua tällä kertaa"
+
+msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. You confirm it from an email, and you can leave at any time."
+msgstr "Haluatko kuulla uusista tapahtumista ensimmäisten joukossa? Tilaa tulevien tapahtumien tiedote: lähetämme sinulle sähköpostia, kun uusia tapahtumia julkaistaan. Vahvistat tilauksen sähköpostista, ja voit perua sen milloin tahansa."
+
+msgid "You get this email because you had a ticket to this event."
+msgstr "Saat tämän viestin, koska sinulla oli lippu tähän tapahtumaan."
+
+msgid "💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone who had a ticket and gave an email address: a thank-you to those who were checked in at the door, and a kind \"sorry we missed you\" to those who were not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a \"Send a test to me\" button. The Roster page shows how many were sent and how many people opened a link."
+msgstr "💌 Tapahtuman jälkeinen viesti lähtee, jos ylläpitäjä on kytkenyt sen päälle, jokaisen tapahtuman jälkeisenä päivänä klo 12.00 kaikille, joilla oli lippu ja jotka antoivat sähköpostiosoitteensa: kiitos niille, jotka merkittiin sisään ovella, ja lämmin \"harmi, ettet päässyt\" niille, joita ei merkitty. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa molemmista esikatselun, jossa on painike viestin pysäyttämiseen; Läsnäolo-sivulla ja Crew-sovelluksen Admin-välilehdellä on sama painike sekä \"Lähetä testi minulle\" -painike. Läsnäolo-sivu näyttää, montako viestiä lähti ja moniko avasi linkin."
+
+msgid "It starts with the first event whose day begins after you switch it on. Events that are already over, or going on, at that moment get no email."
+msgstr "Viestit alkavat ensimmäisestä tapahtumasta, jonka päivä alkaa sen jälkeen, kun kytket asetuksen päälle. Tapahtumat, jotka ovat silloin jo ohi tai käynnissä, eivät saa viestiä."
+
+msgid "Post-event email: not sent for this event (switched on after it)"
+msgstr "Tapahtuman jälkeinen viesti: ei lähetetä tästä tapahtumasta (kytketty päälle sen jälkeen)"

@@ -168,6 +168,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_send_followup_test',
+            [$this->container->get(RosterPage::class), 'sendFollowupTest']
+        );
+
+        add_action(
+            'admin_post_eventcrew_stop_followup',
+            [$this->container->get(RosterPage::class), 'stopFollowup']
+        );
+
+        add_action(
             'admin_post_eventcrew_save_import_mailbox',
             [$this->container->get(SettingsPage::class), 'saveImportMailbox']
         );

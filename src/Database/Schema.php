@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '24';
+    public const DB_VERSION = '25';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -495,6 +495,12 @@ final class Schema
             // ticket_mail_status is '' (not sent), 'sent'
             // or 'failed', and ticket_mailed_at is when it was tried.
             // RetentionPurge blanks the email 60 days after the event.
+            //
+            // followup_mail_status is the post-event email (FollowupMail): ''
+            // (not sent), 'sent', 'failed' or 'stopped' (an organizer stopped
+            // that night's email); followup_mailed_at is when it was tried,
+            // and followup_clicked_at is the first time a link in it was
+            // opened (only the time, nothing about who or from where).
             "CREATE TABLE {$guests} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
@@ -505,6 +511,9 @@ final class Schema
                 email varchar(191) DEFAULT NULL,
                 ticket_mail_status varchar(10) NOT NULL DEFAULT '',
                 ticket_mailed_at datetime DEFAULT NULL,
+                followup_mail_status varchar(10) NOT NULL DEFAULT '',
+                followup_mailed_at datetime DEFAULT NULL,
+                followup_clicked_at datetime DEFAULT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 KEY event_date (event_date)
@@ -548,6 +557,10 @@ final class Schema
             //
             // ticket_mail_status is '' (not sent), 'sent' or 'failed' (what
             // wp_mail answered), and ticket_mailed_at is when it was tried.
+            //
+            // followup_mail_status, followup_mailed_at and followup_clicked_at
+            // are the post-event email, as on the guests table. Every row with
+            // an email gets it, door and desk rows too.
             "CREATE TABLE {$ticketBuyers} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 event_date date NOT NULL,
@@ -558,6 +571,9 @@ final class Schema
                 ticket_code varchar(191) DEFAULT NULL,
                 ticket_mail_status varchar(10) NOT NULL DEFAULT '',
                 ticket_mailed_at datetime DEFAULT NULL,
+                followup_mail_status varchar(10) NOT NULL DEFAULT '',
+                followup_mailed_at datetime DEFAULT NULL,
+                followup_clicked_at datetime DEFAULT NULL,
                 created_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 KEY event_date (event_date),

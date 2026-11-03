@@ -13,6 +13,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\RosterAssembler;
@@ -47,7 +48,8 @@ final class RosterPage
         private readonly GuestRepository $guests,
         private readonly TicketBuyerRepository $ticketBuyers,
         private readonly BuyerImport $buyerImport,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?FollowupMail $followup = null
     ) {
     }
 
@@ -88,6 +90,13 @@ final class RosterPage
                 'ticket_mail_guests' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
                     $this->ticketMail->counts($selected, TicketMail::KIND_GUESTS)
                 ),
+                'followup_mail' => '' === $selected || null === $this->followup ? '' : FollowupMail::statusLine(
+                    $this->followup->counts($selected),
+                    $this->followup->nightStatus($selected),
+                    $selected
+                ),
+                'followup_can_stop' => '' !== $selected && null !== $this->followup
+                    && $this->followup->canStop($selected),
                 'free_entry_closed' => '' !== $selected && $this->freeEntry->isClosedByHand($selected),
                 'free_entry_event_reason' => '' === $selected ? '' : $this->freeEntry->eventReason($selected),
                 'statuses' => $this->statusChoices(),
@@ -544,6 +553,74 @@ final class RosterPage
             0 === $result['failed'] ? 'success' : 'error',
             $this->dateArg($date)
         );
+    }
+
+    /**
+     * The post-event email's "Send a test to me": both versions, with a
+     * sample name, to the signed-in organizer's own address.
+     */
+    public function sendFollowupTest(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $to = (string) wp_get_current_user()->user_email;
+        $result = $this->isValidDate($date) && null !== $this->followup
+            ? $this->followup->sendTest($date, $to)
+            : FollowupMail::TEST_FAILED;
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            self::followupTestMessage($result, $to),
+            FollowupMail::TEST_SENT === $result ? 'success' : 'error',
+            $this->dateArg($date)
+        );
+    }
+
+    /** Stops the shown night's post-event email. */
+    public function stopFollowup(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $result = $this->isValidDate($date) && null !== $this->followup
+            ? $this->followup->stop($date)
+            : FollowupMail::TOO_LATE;
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            self::followupStopMessage($result),
+            FollowupMail::TOO_LATE === $result ? 'error' : 'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /** The notice after the post-event email's test. Shared with the crew app. */
+    public static function followupTestMessage(string $result, string $to): string
+    {
+        return FollowupMail::TEST_SENT === $result
+            ? sprintf(
+                /* translators: %s: the organizer's own email address */
+                __('Both post-event emails were sent to %s as a test.', 'eventcrew'),
+                $to
+            )
+            : __('The test email could not be sent. Check the site’s email setup.', 'eventcrew');
+    }
+
+    /** The notice after stopping the post-event email. Shared with the crew app. */
+    public static function followupStopMessage(string $result): string
+    {
+        return match ($result) {
+            FollowupMail::STOPPED => __('The post-event email is stopped. It will not be sent.', 'eventcrew'),
+            FollowupMail::ALREADY => __('The post-event email was already stopped.', 'eventcrew'),
+            default => __('Too late: the post-event email has already gone out.', 'eventcrew'),
+        };
     }
 
     /** The notice after "Send a test to me". Shared with the crew app. */

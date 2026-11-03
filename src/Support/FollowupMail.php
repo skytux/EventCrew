@@ -1,0 +1,970 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Support;
+
+use EventCrew\Repositories\FollowupRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Web\NewsletterController;
+
+/**
+ * The post-event email: one short email to every ticket holder of a night
+ * (imported ticket buyers, door and desk sales, and guests) who has an email
+ * address, the day after the event at 12:00 site time.
+ *
+ * - Someone who was checked in at the door gets a thank-you and an invitation
+ *   to secure their spot at the next event.
+ * - Someone who was not gets a kind "sorry we missed you" that hopes to see
+ *   them soon.
+ *
+ * Both are in Finnish and in English, Finnish first, like the ticket email.
+ * Under the text are the next three coming events as cards with their
+ * pictures (NewsletterLayout), and, while the next events announcement is
+ * switched on, an invitation to join it. Nobody is subscribed by this email;
+ * joining goes through the announcement's own double opt-in.
+ *
+ * Several rows of one night with the same address (one person who bought two
+ * tickets) get one email. Its row is the first of them; the others are
+ * marked 'duplicate'. The person counts as came when any of the rows was
+ * checked in.
+ *
+ * Every link in the email carries utm_source=eventcrew, utm_medium=email and
+ * utm_campaign=thanks-YYYY-MM-DD or missed-YYYY-MM-DD, so the shop's and the
+ * site's statistics can tell which sales came from these emails. The link
+ * itself goes through this site first (?eventcrew_go=<token>), which counts
+ * the first click per row: only the time, in followup_clicked_at. The token
+ * is signed, so the redirect cannot be used to send anyone to a page of
+ * someone else's choosing, and it only ever leads to an http(s) address.
+ *
+ * Timing, all in the site's timezone, driven by the hourly heartbeat:
+ *
+ * - From 12:00 the day before the event, each organizer gets a preview with
+ *   both versions (a sample name, the events as they are then) and a Stop
+ *   link. The preview goes out once per night, and only when the night has
+ *   a ticket holder with an email address.
+ * - From 12:00 the day after the event, the emails go out in batches of
+ *   BATCH, the rest in WP-Cron events of their own. Only a night whose
+ *   preview went out is sent, and only an event whose day began after the
+ *   setting was switched on (covers()), so switching this on never mails
+ *   the people of an event that is over. A night more than LATE_DAYS late
+ *   is not sent at all.
+ * - An organizer can stop a night's email from the preview's link or from
+ *   the Roster page until it starts going out. A stopped night's rows are
+ *   marked 'stopped'.
+ *
+ * Switched off by default (Settings > Email).
+ */
+final class FollowupMail
+{
+    public const ENABLED_OPTION = 'eventcrew_followup_enabled';
+
+    /** When the setting was last switched on (a Unix time; 0 when off). */
+    public const ENABLED_AT_OPTION = 'eventcrew_followup_enabled_at';
+
+    /** Which nights were previewed, stopped, started and finished. */
+    public const STATE_OPTION = 'eventcrew_followup_state';
+
+    /** The single cron event that sends one more batch. */
+    public const HOOK = 'eventcrew_send_followup';
+
+    /** Emails per batch. */
+    public const BATCH = 25;
+
+    /** The query argument of the counted link. */
+    public const GO_ARG = 'eventcrew_go';
+
+    /** The REST route of the Stop page (Web\FollowupController). */
+    public const ROUTE = 'eventcrew/v1/followup';
+
+    public const PURPOSE_STOP = 'followup_stop';
+    public const PURPOSE_GO = 'followup_go';
+
+    public const STATUS_SENT = 'sent';
+    public const STATUS_FAILED = 'failed';
+    public const STATUS_STOPPED = 'stopped';
+    public const STATUS_DUPLICATE = 'duplicate';
+
+    /** stop()'s answers. */
+    public const STOPPED = 'stopped';
+    public const ALREADY = 'already';
+    public const TOO_LATE = 'too_late';
+
+    /** sendTest()'s answers. */
+    public const TEST_SENT = 'sent';
+    public const TEST_FAILED = 'failed';
+
+    /** The hour of the preview (the day before) and of the send (the day after). */
+    public const SEND_HOUR = 12;
+
+    /** How many days after its send time a night is still sent. */
+    public const LATE_DAYS = 2;
+
+    /** How many coming events the email shows. */
+    public const EVENTS = 3;
+
+    /** The longest event description shown, in characters per language. */
+    public const EXCERPT_CHARS = 600;
+
+    /** The link kind of a preview's or a test's links: not counted. */
+    private const KIND_SAMPLE = 't';
+
+    /** How long a night stays in the state option. */
+    private const KEEP_DAYS = 30;
+
+    private const LOCK = 'eventcrew_followup';
+
+    /** @var array<string, array<int, array<string, mixed>>> The coming events per night. */
+    private array $events = [];
+
+    public function __construct(
+        private readonly FollowupRepository $rows,
+        private readonly TaskRepository $tasks,
+        private readonly PersonRepository $people,
+        private readonly Mailer $mailer,
+        private readonly ?Logger $logger = null
+    ) {
+    }
+
+    public function boot(): void
+    {
+        add_action(self::HOOK, [$this, 'sendBatch']);
+    }
+
+    public static function enabled(): bool
+    {
+        return '1' === (string) get_option(self::ENABLED_OPTION, '0');
+    }
+
+    /**
+     * Switches the email on or off. Switching it on notes the moment, so
+     * only the events whose day begins after it are emailed: an event that
+     * is already over (or under way) when the setting goes on is never
+     * mailed late. Saving the settings again while it is on keeps the
+     * first moment.
+     */
+    public static function setEnabled(bool $on, ?int $now = null): void
+    {
+        if ($on && ! self::enabled()) {
+            update_option(self::ENABLED_AT_OPTION, $now ?? time());
+        }
+
+        if (! $on) {
+            update_option(self::ENABLED_AT_OPTION, 0);
+        }
+
+        update_option(self::ENABLED_OPTION, $on ? '1' : '0');
+    }
+
+    /**
+     * Whether $date's event is one the email covers: the setting was on
+     * before 00:00 of that day, site time.
+     */
+    public static function covers(string $date): bool
+    {
+        $since = (int) get_option(self::ENABLED_AT_OPTION, 0);
+
+        return $since > 0 && $since < self::atHour($date)->setTime(0, 0)->getTimestamp();
+    }
+
+    /**
+     * The heartbeat's call: sends the previews that are due and starts (or
+     * goes on with) the nights whose send time has come. Does nothing while
+     * switched off.
+     */
+    public function run(?\DateTimeImmutable $now = null): void
+    {
+        if (! self::enabled()) {
+            return;
+        }
+
+        $now = $now ?? self::now();
+
+        // Switched on some other way than the settings page (an option
+        // import, WP-CLI): count from now, so past events are still left out.
+        if (0 === (int) get_option(self::ENABLED_AT_OPTION, 0)) {
+            update_option(self::ENABLED_AT_OPTION, $now->getTimestamp());
+        }
+
+        $this->locked(function () use ($now): void {
+            $this->runLocked($now);
+        });
+    }
+
+    /** The cron event: one more batch of every night that is being sent. */
+    public function sendBatch(): void
+    {
+        if (! self::enabled()) {
+            return;
+        }
+
+        $this->locked(function (): void {
+            $state = $this->state();
+
+            foreach (array_keys($state['started']) as $date) {
+                if (! isset($state['done'][$date]) && ! isset($state['stopped'][$date])) {
+                    $state = $this->sendNight((string) $date, $state);
+                }
+            }
+
+            $this->save($state);
+        });
+    }
+
+    /**
+     * Stops $date's post-event email. Returns STOPPED, ALREADY (stopped
+     * before) or TOO_LATE (it has started going out).
+     */
+    public function stop(string $date): string
+    {
+        $answer = self::TOO_LATE;
+
+        $this->locked(function () use ($date, &$answer): void {
+            $state = $this->state();
+
+            if (isset($state['stopped'][$date])) {
+                $answer = self::ALREADY;
+
+                return;
+            }
+
+            if (isset($state['started'][$date])) {
+                $answer = self::TOO_LATE;
+
+                return;
+            }
+
+            $state['stopped'][$date] = true;
+            $this->save($state);
+            $this->rows->markUnsent($date, self::STATUS_STOPPED);
+            $this->log(sprintf('Post-event email for %s stopped.', $date));
+            $answer = self::STOPPED;
+        });
+
+        return $answer;
+    }
+
+    /**
+     * Where $date's email stands: 'off' (switched off), 'stopped', 'sending'
+     * (started, not finished), 'sent' (finished), 'not_covered' (the setting
+     * went on after the event's day began), or 'planned'.
+     */
+    public function nightStatus(string $date): string
+    {
+        $state = $this->state();
+
+        return match (true) {
+            isset($state['stopped'][$date]) => 'stopped',
+            isset($state['done'][$date]) => 'sent',
+            isset($state['started'][$date]) => 'sending',
+            ! self::enabled() => 'off',
+            ! self::covers($date) => 'not_covered',
+            default => 'planned',
+        };
+    }
+
+    /** Whether $date's email can still be stopped. */
+    public function canStop(string $date, ?\DateTimeImmutable $now = null): bool
+    {
+        $now = $now ?? self::now();
+
+        return 'planned' === $this->nightStatus($date)
+            && $now->getTimestamp() < self::sendAt($date)->getTimestamp() + self::LATE_DAYS * DAY_IN_SECONDS;
+    }
+
+    /**
+     * How many of $date's emails were sent, failed and clicked.
+     *
+     * @return array{sent: int, failed: int, stopped: int, unsent: int, clicked: int}
+     */
+    public function counts(string $date): array
+    {
+        return $this->rows->counts($date);
+    }
+
+    /**
+     * "Post-event email: 38 sent · 2 failed · 6 clicked", or a word on what
+     * will happen; '' when the night has nobody to email.
+     *
+     * @param array{sent: int, failed: int, stopped: int, unsent: int, clicked: int} $counts
+     */
+    public static function statusLine(array $counts, string $nightStatus, string $date): string
+    {
+        if (0 === $counts['sent'] + $counts['failed'] + $counts['stopped'] + $counts['unsent']) {
+            return '';
+        }
+
+        if ($counts['sent'] + $counts['failed'] > 0) {
+            return sprintf(
+                /* translators: 1: emails sent, 2: emails that failed, 3: emails with a link opened */
+                __('Post-event email: %1$d sent · %2$d failed · %3$d clicked', 'eventcrew'),
+                $counts['sent'],
+                $counts['failed'],
+                $counts['clicked']
+            );
+        }
+
+        return match ($nightStatus) {
+            'stopped' => __('Post-event email: stopped', 'eventcrew'),
+            'off' => __('Post-event email: switched off', 'eventcrew'),
+            'not_covered' => __('Post-event email: not sent for this event (switched on after it)', 'eventcrew'),
+            default => sprintf(
+                /* translators: 1: the date it goes out, like 15.11.2026, 2: the time, like 12:00 */
+                __('Post-event email: goes out on %1$s at %2$s', 'eventcrew'),
+                TicketMail::shortDate(self::addDays($date, 1)),
+                sprintf('%02d:00', self::SEND_HOUR)
+            ),
+        };
+    }
+
+    /**
+     * Sends both versions to $to, built with a sample name and $date's
+     * coming events. Their links are not counted. Returns TEST_SENT when both
+     * went, TEST_FAILED otherwise.
+     */
+    public function sendTest(string $date, string $to): string
+    {
+        if (! is_email($to)) {
+            return self::TEST_FAILED;
+        }
+
+        $sent = 0;
+
+        foreach ([true, false] as $came) {
+            $mail = $this->compose($date, $came, self::sampleName(), self::KIND_SAMPLE, 0);
+
+            if ($this->mailer->toTicketHolder($to, $mail['subject'], $mail['html'], $mail['text'], self::footer())) {
+                $sent++;
+            }
+        }
+
+        return 2 === $sent ? self::TEST_SENT : self::TEST_FAILED;
+    }
+
+    /**
+     * When $date's preview may go out: 12:00 the day before, site time.
+     */
+    public static function previewAt(string $date): \DateTimeImmutable
+    {
+        return self::atHour(self::addDays($date, -1));
+    }
+
+    /** When $date's emails go out: 12:00 the day after, site time. */
+    public static function sendAt(string $date): \DateTimeImmutable
+    {
+        return self::atHour(self::addDays($date, 1));
+    }
+
+    /**
+     * $url with utm_source, utm_medium and utm_campaign set. Other query
+     * arguments and a #fragment stay as they are; earlier utm_source,
+     * utm_medium and utm_campaign values are replaced.
+     */
+    public static function withUtm(string $url, string $campaign): string
+    {
+        $fragment = null;
+        $hash = strpos($url, '#');
+
+        if (false !== $hash) {
+            $fragment = substr($url, $hash + 1);
+            $url = substr($url, 0, $hash);
+        }
+
+        $query = '';
+        $mark = strpos($url, '?');
+
+        if (false !== $mark) {
+            $query = substr($url, $mark + 1);
+            $url = substr($url, 0, $mark);
+        }
+
+        $pairs = array_values(array_filter(
+            explode('&', $query),
+            static fn (string $pair): bool => '' !== $pair
+                && 1 !== preg_match('/^utm_(?:source|medium|campaign)(?:=|$)/i', $pair)
+        ));
+        $pairs[] = 'utm_source=eventcrew';
+        $pairs[] = 'utm_medium=email';
+        $pairs[] = 'utm_campaign=' . rawurlencode($campaign);
+
+        return $url . '?' . implode('&', $pairs) . (null === $fragment ? '' : '#' . $fragment);
+    }
+
+    /** "thanks-2026-11-14" or "missed-2026-11-14". */
+    public static function campaign(string $date, bool $came): string
+    {
+        return ($came ? 'thanks-' : 'missed-') . $date;
+    }
+
+    /**
+     * The counted link to $target for one row ($kind 'b' for a ticket buyer,
+     * 'g' for a guest, 't' for a preview or a test, which is not counted).
+     */
+    public static function trackedUrl(string $target, string $kind, int $rowId): string
+    {
+        $token = SignedLink::signPayload(self::PURPOSE_GO, $kind . "\n" . $rowId . "\n" . $target);
+
+        return add_query_arg([self::GO_ARG => $token], home_url('/'));
+    }
+
+    /**
+     * Where a counted link leads, or null when the token is not one this
+     * site signed or its address is not http(s). Records the row's first
+     * click.
+     */
+    public function clickTarget(string $token): ?string
+    {
+        $payload = SignedLink::verifyPayload(self::PURPOSE_GO, $token);
+
+        if (null === $payload) {
+            return null;
+        }
+
+        $parts = explode("\n", $payload, 3);
+
+        if (3 !== count($parts) || ! ctype_digit($parts[1])) {
+            return null;
+        }
+
+        [$kind, $id, $target] = $parts;
+        $scheme = strtolower((string) parse_url($target, PHP_URL_SCHEME));
+        $host = (string) parse_url($target, PHP_URL_HOST);
+
+        if (! in_array($scheme, ['http', 'https'], true) || '' === $host || 1 === preg_match('/[\s\\\\]/', $target)) {
+            return null;
+        }
+
+        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+
+        if (isset($kinds[$kind]) && (int) $id > 0) {
+            $this->rows->recordClick($kinds[$kind], (int) $id);
+        }
+
+        return $target;
+    }
+
+    /** The organizers' Stop link for $date's email. */
+    public static function stopUrl(string $date): string
+    {
+        return add_query_arg(
+            ['do' => 'stop', 'token' => self::stopToken($date)],
+            rest_url(self::ROUTE)
+        );
+    }
+
+    public static function stopToken(string $date): string
+    {
+        return SignedLink::sign(self::PURPOSE_STOP, (int) str_replace('-', '', $date));
+    }
+
+    /** The night a Stop token is for, or null when it does not verify. */
+    public static function dateOfStopToken(string $token): ?string
+    {
+        $id = SignedLink::verify(self::PURPOSE_STOP, $token);
+
+        if (null === $id) {
+            return null;
+        }
+
+        $day = \DateTimeImmutable::createFromFormat('!Ymd', (string) $id);
+
+        return false === $day ? null : $day->format('Y-m-d');
+    }
+
+    /**
+     * One email: subject, the HTML content for the email template and the
+     * plain-text alternative. $kind and $rowId go into the counted links.
+     *
+     * @return array{subject: string, html: string, text: string}
+     */
+    public function compose(string $date, bool $came, string $name, string $kind, int $rowId): array
+    {
+        $shortDate = TicketMail::shortDate($date);
+        $event = $this->eventName($date);
+        $fi = Language::run(Language::FINNISH, fn (): array => self::words($came, $name, $event, $shortDate));
+        $en = Language::run(Language::ENGLISH, fn (): array => self::words($came, $name, $event, $shortDate));
+        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
+        $pair = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' · ' . $en[$key];
+
+        $campaign = self::campaign($date, $came);
+        $link = static fn (string $url): string => '' === $url
+            ? ''
+            : self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId);
+        $accent = EmailTemplate::accent();
+        $font = EmailBody::FONT;
+
+        $siteButton = [['label' => $pair('site'), 'url' => $link(home_url('/'))]];
+
+        $html = EmailBody::toHtml($fi['body'])
+            . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
+            . EmailBody::toHtml($en['body'])
+            . EmailBody::centred(EmailBody::toHtml('', $siteButton, $accent));
+        $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n" . EmailBody::toText('', $siteButton);
+
+        $cards = array_map(
+            static fn (array $card): array => array_merge($card, [
+                'url' => $link((string) ($card['url'] ?? '')),
+                'ticket_url' => $link((string) ($card['ticket_url'] ?? '')),
+                'listen' => $link((string) ($card['listen'] ?? '')),
+            ]),
+            $this->comingEvents($date)
+        );
+
+        if ([] !== $cards) {
+            $html .= sprintf(
+                '<h2 style="margin:28px 0 16px;font-family:%s;font-size:20px;line-height:1.3;color:#1f2328">%s</h2>',
+                $font,
+                esc_html($pair('coming'))
+            ) . NewsletterLayout::cardsHtml($cards, $accent);
+            $text .= "\n\n" . mb_strtoupper($pair('coming')) . "\n\n" . NewsletterLayout::cardsText($cards);
+        }
+
+        if (Newsletter::enabled()) {
+            $join = [[
+                'label' => $pair('join'),
+                'url' => $link(home_url('/') . '#' . NewsletterController::FORM_ANCHOR),
+            ]];
+            $html .= '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
+                . EmailBody::toHtml($fi['invite'] . "\n\n" . $en['invite'])
+                . EmailBody::centred(EmailBody::toHtml('', $join, $accent));
+            $text .= "\n\n————————\n\n" . $fi['invite'] . "\n\n" . $en['invite']
+                . "\n\n" . EmailBody::toText('', $join);
+        }
+
+        return [
+            'subject' => $both('subject') . ' – ' . $shortDate,
+            'html' => $html,
+            'text' => $text,
+        ];
+    }
+
+    /** The footer line, in both languages. */
+    public static function footer(): string
+    {
+        $words = static fn (): string => __('You get this email because you had a ticket to this event.', 'eventcrew');
+        $fi = (string) Language::run(Language::FINNISH, $words);
+        $en = (string) Language::run(Language::ENGLISH, $words);
+
+        return $fi === $en ? $en : $fi . ' / ' . $en;
+    }
+
+    /** The name the preview and the test greet. */
+    public static function sampleName(): string
+    {
+        return __('Alex', 'eventcrew');
+    }
+
+    private function runLocked(\DateTimeImmutable $now): void
+    {
+        $state = $this->state();
+        $today = $now->setTimezone(self::timezone())->format('Y-m-d');
+        $dates = $this->rows->datesWithRecipients(
+            self::addDays($today, -(self::LATE_DAYS + 1)),
+            self::addDays($today, 1)
+        );
+        $at = $now->getTimestamp();
+
+        foreach ($dates as $date) {
+            if (isset($state['stopped'][$date])) {
+                continue;
+            }
+
+            // An event whose day had begun before the setting went on is
+            // never mailed, not even late.
+            if (! isset($state['started'][$date]) && ! self::covers($date)) {
+                continue;
+            }
+
+            $sendAt = self::sendAt($date)->getTimestamp();
+
+            if (! isset($state['previewed'][$date]) && $at >= self::previewAt($date)->getTimestamp() && $at < $sendAt) {
+                $state['previewed'][$date] = true;
+                $this->save($state);
+                $this->sendPreview($date);
+                continue;
+            }
+
+            if (
+                isset($state['previewed'][$date])
+                && ! isset($state['done'][$date])
+                && $at >= $sendAt
+                && ($at < $sendAt + self::LATE_DAYS * DAY_IN_SECONDS || isset($state['started'][$date]))
+            ) {
+                $state['started'][$date] = true;
+                $this->save($state);
+                $state = $this->sendNight($date, $state);
+            }
+        }
+
+        $this->save(self::pruned($state, $today));
+    }
+
+    /**
+     * Sends up to BATCH of $date's emails, records each outcome, and asks
+     * WP-Cron for another batch when some are left; marks the night done
+     * when none are.
+     *
+     * @param array<string, array<string, bool>> $state
+     * @return array<string, array<string, bool>>
+     */
+    private function sendNight(string $date, array $state): array
+    {
+        $checkedIn = $this->rows->checkedIn($date);
+        $groups = [];
+
+        foreach ($this->rows->recipients($date) as $row) {
+            $key = function_exists('mb_strtolower') ? mb_strtolower($row['email']) : strtolower($row['email']);
+            $groups[$key][] = $row;
+        }
+
+        $tried = 0;
+        $failed = 0;
+        $more = false;
+
+        foreach ($groups as $group) {
+            $handled = array_filter($group, static fn (array $row): bool => '' !== $row['status']);
+
+            if ([] !== $handled) {
+                // The address had its email already; a row added since gets none.
+                foreach ($group as $row) {
+                    if ('' === $row['status']) {
+                        $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_DUPLICATE);
+                    }
+                }
+
+                continue;
+            }
+
+            if ($tried >= self::BATCH) {
+                $more = true;
+                break;
+            }
+
+            $came = false;
+
+            foreach ($group as $row) {
+                $came = $came || isset($checkedIn[$row['kind'] . ':' . $row['id']]);
+            }
+
+            $first = $group[0];
+            $mail = $this->compose(
+                $date,
+                $came,
+                $first['name'],
+                FollowupRepository::KIND_GUEST === $first['kind'] ? 'g' : 'b',
+                $first['id']
+            );
+            $sent = $this->mailer->toTicketHolder(
+                $first['email'],
+                $mail['subject'],
+                $mail['html'],
+                $mail['text'],
+                self::footer()
+            );
+            $tried++;
+            $failed += $sent ? 0 : 1;
+
+            $this->rows->setStatus($first['kind'], $first['id'], $sent ? self::STATUS_SENT : self::STATUS_FAILED);
+
+            foreach (array_slice($group, 1) as $row) {
+                $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_DUPLICATE);
+            }
+        }
+
+        if ($tried > 0) {
+            $this->log(sprintf('Post-event email for %s: %d tried, %d failed.', $date, $tried, $failed));
+        }
+
+        if ($more) {
+            if (false === wp_next_scheduled(self::HOOK)) {
+                wp_schedule_single_event(time(), self::HOOK);
+            }
+        } else {
+            $state['done'][$date] = true;
+        }
+
+        return $state;
+    }
+
+    /**
+     * Mails every organizer one preview of $date's email with both versions
+     * and the Stop button. Returns how many went.
+     */
+    private function sendPreview(string $date): int
+    {
+        $came = $this->compose($date, true, self::sampleName(), self::KIND_SAMPLE, 0);
+        $missed = $this->compose($date, false, self::sampleName(), self::KIND_SAMPLE, 0);
+        $count = count(array_unique(array_map(
+            static fn (array $row): string => strtolower($row['email']),
+            $this->rows->recipients($date)
+        )));
+        $sendAt = self::sendAt($date);
+        $sentTo = 0;
+
+        foreach ($this->people->organizers() as $person) {
+            $words = Language::forPerson($person, static fn (): array => [
+                'subject' => sprintf(
+                    /* translators: %s: the date the post-event email goes out, like 15.11.2026 */
+                    __('Post-event email preview: it goes out on %s', 'eventcrew'),
+                    TicketMail::shortDate($sendAt->format('Y-m-d'))
+                ),
+                'intro' => sprintf(
+                    /* translators: 1: event date, 14.11.2026, 2: send date, 3: time, 12:00, 4: number of addresses */
+                    __('After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    TicketMail::shortDate($date),
+                    TicketMail::shortDate($sendAt->format('Y-m-d')),
+                    $sendAt->format('H:i'),
+                    $count
+                ),
+                'came' => __('To those who came', 'eventcrew'),
+                'missed' => __('To those who did not come', 'eventcrew'),
+                'subject_line' => __('Subject', 'eventcrew'),
+                'stop' => __('Do not send the post-event email', 'eventcrew'),
+            ]);
+
+            $heading = static fn (string $label, string $subject): string => sprintf(
+                '<p style="margin:0 0 16px;font-family:%s;font-size:13px;font-weight:700;letter-spacing:.04em;'
+                    . 'text-transform:uppercase;color:#5b6470">%s</p>'
+                    . '<p style="margin:0 0 20px;font-family:%s;font-size:15px;color:#1f2328">%s: %s</p>',
+                EmailBody::FONT,
+                esc_html($label),
+                EmailBody::FONT,
+                esc_html($words['subject_line']),
+                esc_html($subject)
+            );
+            $html = $heading($words['came'], $came['subject']) . $came['html']
+                . '<hr style="border:0;border-top:3px solid #e3e3e8;margin:32px 0">'
+                . $heading($words['missed'], $missed['subject']) . $missed['html'];
+            $text = mb_strtoupper($words['came']) . "\n" . $words['subject_line'] . ': ' . $came['subject'] . "\n\n"
+                . $came['text'] . "\n\n————————\n\n"
+                . mb_strtoupper($words['missed']) . "\n" . $words['subject_line'] . ': ' . $missed['subject'] . "\n\n"
+                . $missed['text'];
+
+            if (
+                $this->mailer->toPersonWithContent(
+                    $person->id,
+                    $person->email,
+                    $words['subject'],
+                    $words['intro'],
+                    $html,
+                    $text,
+                    [['label' => $words['stop'], 'url' => self::stopUrl($date)]]
+                )
+            ) {
+                $sentTo++;
+            }
+        }
+
+        $this->log(sprintf('Post-event email preview for %s sent to %d organizers.', $date, $sentTo));
+
+        return $sentTo;
+    }
+
+    /**
+     * The next EVENTS coming events after $date, with their cards; each
+     * description cut to EXCERPT_CHARS.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function comingEvents(string $date): array
+    {
+        if (! isset($this->events[$date])) {
+            $this->events[$date] = array_map(
+                static function (array $event): array {
+                    $card = Newsletter::withCard($event);
+
+                    foreach (['excerpt_fi', 'excerpt_en', 'excerpt'] as $key) {
+                        $card[$key] = self::shorten((string) ($card[$key] ?? ''));
+                    }
+
+                    return $card;
+                },
+                array_slice(Newsletter::comingEvents($date), 0, self::EVENTS)
+            );
+        }
+
+        return $this->events[$date];
+    }
+
+    /** $text cut to EXCERPT_CHARS at a word, with "…" when it was cut. */
+    private static function shorten(string $text): string
+    {
+        $text = trim($text);
+
+        if (mb_strlen($text) <= self::EXCERPT_CHARS) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, self::EXCERPT_CHARS);
+        $space = mb_strrpos($cut, ' ');
+
+        return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), " \n,.;:–-") . '…';
+    }
+
+    /**
+     * One language's words, composed in the current language.
+     *
+     * @return array{body: string, subject: string, site: string, coming: string, join: string, invite: string}
+     */
+    private static function words(bool $came, string $name, string $event, string $date): array
+    {
+        $first = DoorDesk::firstName($name);
+        $hello = '' === $first
+            ? __('Hi,', 'eventcrew')
+            /* translators: %s: the ticket holder's first name */
+            : sprintf(__('Hi %s,', 'eventcrew'), $first);
+
+        $lines = $came
+            ? [
+                $hello,
+                sprintf(
+                    /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
+                    __('Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    $event,
+                    $date
+                ),
+                __('The next evenings are already on their way. Have a look at what is coming and secure your spot for your next ecstatic dance. We would love to dance with you again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ]
+            : [
+                $hello,
+                sprintf(
+                    /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
+                    __('We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    $event,
+                    $date
+                ),
+                __('There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ];
+
+        $lines[] = __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
+
+        return [
+            'body' => implode("\n\n", $lines),
+            'subject' => $came
+                ? __('Thank you for dancing with us', 'eventcrew')
+                : __('We missed you this time', 'eventcrew'),
+            'site' => __('See the coming events', 'eventcrew'),
+            'coming' => __('Coming events', 'eventcrew'),
+            'join' => __('Join the announcement', 'eventcrew'),
+            'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. You confirm it from an email, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        ];
+    }
+
+    /**
+     * The name of the event on $date: its first task's event, or the site's
+     * name when the night has no tasks.
+     */
+    private function eventName(string $date): string
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            $name = trim($task->eventName());
+
+            if ('' !== $name) {
+                return $name;
+            }
+        }
+
+        return (string) get_bloginfo('name');
+    }
+
+    /**
+     * @return array{
+     *     previewed: array<string, bool>,
+     *     stopped: array<string, bool>,
+     *     started: array<string, bool>,
+     *     done: array<string, bool>
+     * }
+     */
+    private function state(): array
+    {
+        $stored = get_option(self::STATE_OPTION, []);
+        $stored = is_array($stored) ? $stored : [];
+        $state = [];
+
+        foreach (['previewed', 'stopped', 'started', 'done'] as $key) {
+            $state[$key] = is_array($stored[$key] ?? null) ? $stored[$key] : [];
+        }
+
+        return $state;
+    }
+
+    /** @param array<string, array<string, bool>> $state */
+    private function save(array $state): void
+    {
+        update_option(self::STATE_OPTION, $state, false);
+    }
+
+    /**
+     * $state without the nights more than KEEP_DAYS before $today.
+     *
+     * @param array<string, array<string, bool>> $state
+     * @return array<string, array<string, bool>>
+     */
+    private static function pruned(array $state, string $today): array
+    {
+        $cutoff = self::addDays($today, -self::KEEP_DAYS);
+
+        foreach ($state as $key => $dates) {
+            $state[$key] = array_filter(
+                $dates,
+                static fn (string|int $date): bool => (string) $date >= $cutoff,
+                ARRAY_FILTER_USE_KEY
+            );
+        }
+
+        return $state;
+    }
+
+    /**
+     * Runs $work while holding the post-event email's MySQL lock, or not at
+     * all when another request holds it.
+     */
+    private function locked(callable $work): void
+    {
+        global $wpdb;
+
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::LOCK))) {
+            return;
+        }
+
+        try {
+            $work();
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
+        }
+    }
+
+    private function log(string $message): void
+    {
+        $this->logger?->info($message);
+    }
+
+    private static function atHour(string $ymd): \DateTimeImmutable
+    {
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $ymd, self::timezone());
+
+        if (false === $day) {
+            $day = new \DateTimeImmutable('today', self::timezone());
+        }
+
+        return $day->setTime(self::SEND_HOUR, 0);
+    }
+
+    private static function timezone(): \DateTimeZone
+    {
+        return function_exists('wp_timezone') ? wp_timezone() : new \DateTimeZone('UTC');
+    }
+
+    private static function now(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable('now', self::timezone());
+    }
+
+    private static function addDays(string $ymd, int $days): string
+    {
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $ymd);
+
+        return false === $day ? $ymd : $day->modify(sprintf('%+d days', $days))->format('Y-m-d');
+    }
+}

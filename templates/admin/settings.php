@@ -26,6 +26,7 @@
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var bool $newsletter_enabled Whether the newsletter goes out.
+ * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var bool $newsletter_crew Whether crew members with a verified email are added to the newsletter.
  * @var int $newsletter_bar_image The sign-up bar's background image (attachment id; 0 = none).
@@ -1365,6 +1366,29 @@ if (! defined('ABSPATH')) {
                     </p>
                     <p class="description">
                         <?php esc_html_e('Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Post-event email', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Send the post-event email', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="followup_enabled" value="1"
+                            <?php checked($followup_enabled); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Off by default. When it is on, everyone who had a ticket to an event and gave an email address gets a short email the day after at 12:00: a thank-you if they were checked in at the door, and a kind “sorry we missed you” if they were not. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('It starts with the first event whose day begins after you switch it on. Events that are already over, or going on, at that moment get no email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Every link in it carries utm_source=eventcrew, utm_medium=email and utm_campaign=thanks-YYYY-MM-DD or missed-YYYY-MM-DD, so your shop’s and your site’s statistics can tell which sales came from these emails. The Roster page shows how many people opened a link.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>

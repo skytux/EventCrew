@@ -676,6 +676,14 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
+                'If you are on a guest list with your email address, you get the same message after the event.',
+                'eventcrew'
+            ),
+            __(
+                'The links in that message go through our own site first. When you open one of them, we note the time you first opened a link from your message. We do not note which link it was, and we do not note anything about your device. We use this only to count how many people opened a link, so we know whether the message is useful. The links also carry a label (utm_source, utm_medium and utm_campaign) that tells our site and our web shop the visit came from this message. The legal basis is our legitimate interest in knowing whether our messages are useful. The time is kept with your ticket record and is no longer tied to you once your name and email address are deleted.',
+                'eventcrew'
+            ),
+            __(
                 'You are added to the next events announcement only if you confirm that you want it. Not joining has no effect on your ticket.',
                 'eventcrew'
             ),
