@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.98.1
+Stable tag: 1.98.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.98.2 =
+Telegram sign-in: the popup address now carries origin=, which Telegram's login page needs (it answered "origin required"); Telegram's own script leaves it out.
 
 = 1.98.1 =
 Crew app sign-in: the Email and Telegram buttons are centred, and the Telegram button takes the Email button's look (font, letter case, size, corners); only its colours stay Telegram's.
@@ -964,6 +967,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.98.2 =
+No database change.
 
 = 1.98.1 =
 No database change.

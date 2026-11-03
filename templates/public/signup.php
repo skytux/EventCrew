@@ -2806,6 +2806,19 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         });
     }
 
+    // Telegram's login page answers "origin required" unless its address
+    // carries origin=, and Telegram's own script leaves it out of the popup
+    // address. Add it to that one address; every other window.open is untouched.
+    var nativeOpen = window.open;
+    var authStart = new URL(choice.getAttribute('data-script'), window.location.href).origin + '/auth?';
+    window.open = function (url) {
+        var args = Array.prototype.slice.call(arguments);
+        if (typeof url === 'string' && url.indexOf(authStart) === 0 && !/[?&]origin=/.test(url)) {
+            args[0] = url + '&origin=' + encodeURIComponent(window.location.origin);
+        }
+        return nativeOpen.apply(window, args);
+    };
+
     var script = document.createElement('script');
     script.src = choice.getAttribute('data-script');
     script.async = true;
