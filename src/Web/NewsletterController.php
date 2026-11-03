@@ -976,7 +976,7 @@ final class NewsletterController
             . esc_html($both(static fn (): string => __('Language', 'eventcrew')))
             . '</legend>' . $radio(Language::FINNISH, 'Suomi') . $radio(Language::ENGLISH, 'English')
             . '<p style="margin:.4em 0 0;font-size:.85em;color:#5b6470">'
-            . esc_html($both(static fn (): string => __('For now the announcement comes in both languages.', 'eventcrew'))) // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            . esc_html($both(static fn (): string => __('The announcement comes in the language you choose.', 'eventcrew'))) // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             . '</p></fieldset>'
             . '<button type="submit" style="padding:.6em 1em">'
             . esc_html($both(static fn (): string => __('Save', 'eventcrew'))) . '</button></form>'

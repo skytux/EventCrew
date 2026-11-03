@@ -778,6 +778,45 @@ final class FollowupMailTest extends TestCase
     }
 
     /**
+     * The announcement now comes in the subscriber's language (Lou,
+     * 2026-11-03), but the post-event email stays in both languages: its
+     * events part is the two-language content, never the Finnish-only or
+     * English-only one, and its subject and texts keep both languages.
+     */
+    public function testThePostEventEmailStaysInBothLanguages(): void
+    {
+        $this->sampleEvents();
+
+        foreach ([true, false] as $came) {
+            $mail = $this->followup()->compose(self::NIGHT, $came, 'Anna', 'b', 7);
+            $events = array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT));
+            $part = static fn (string $lang): array => Newsletter::content(
+                array_slice($events, 0, 1),
+                array_slice($events, 1),
+                null,
+                $lang
+            );
+
+            self::assertSame($part(''), Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null));
+            self::assertNotSame($part('fi')['html'], $part('')['html']);
+            self::assertNotSame($part('en')['html'], $part('')['html']);
+
+            self::assertStringContainsString('>Tulevat tapahtumat</h1>', $mail['html']);
+            self::assertStringContainsString('>Coming events</p>', $mail['html']);
+            self::assertStringContainsString("TULEVAT TAPAHTUMAT\nCOMING EVENTS", $mail['text']);
+
+            foreach ([$mail['html'], $mail['text']] as $out) {
+                self::assertStringContainsString('Myöhemmin · Later', $out);
+                self::assertStringContainsString('Osta lippu · Buy a ticket', $out);
+                self::assertStringNotContainsString('Automatically translated', $out);
+            }
+
+            self::assertStringContainsString($came ? 'Kiitos, että olit mukana' : 'Kaipasimme sinua', $mail['html']);
+            self::assertStringContainsString($came ? 'Thank you for coming' : 'We missed you at', $mail['html']);
+        }
+    }
+
+    /**
      * The practical information the language model found for the next events
      * announcement goes on these cards too, in the HTML and the plain text:
      * one kept from a sent announcement and one from the current plan. An

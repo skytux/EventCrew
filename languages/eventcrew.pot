@@ -850,6 +850,10 @@ msgstr ""
 msgid "Automatically create tasks when a new event is synced from EventMesh"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:766
+msgid "Automatically translated"
+msgstr ""
+
 #: templates/admin/settings.php:1392
 msgid "Available tags:"
 msgstr ""
@@ -969,7 +973,7 @@ msgstr ""
 msgid "Button"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:729 src/Telegram/EventCard.php:380
+#: src/Support/NewsletterLayout.php:817 src/Telegram/EventCard.php:380
 msgid "Buy a ticket"
 msgstr ""
 
@@ -1108,7 +1112,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:344 src/Support/NewsletterLayout.php:727
+#: src/Support/Newsletter.php:355 src/Support/NewsletterLayout.php:815
 msgid "Coming events"
 msgstr ""
 
@@ -1352,7 +1356,7 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Support/Newsletter.php:394
+#: src/Support/Newsletter.php:442
 msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
 msgstr ""
 
@@ -1511,7 +1515,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Support/Newsletter.php:748 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1055
+#: src/Support/Newsletter.php:843 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1055
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -1540,11 +1544,11 @@ msgstr ""
 msgid "Door tickets"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:736
+#: src/Support/NewsletterLayout.php:824
 msgid "Doors close %s"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:734
+#: src/Support/NewsletterLayout.php:822
 msgid "Doors open %s"
 msgstr ""
 
@@ -1866,10 +1870,6 @@ msgstr ""
 msgid "For anything else, write to %s and we will answer within one month."
 msgstr ""
 
-#: src/Web/NewsletterController.php:979
-msgid "For now the announcement comes in both languages."
-msgstr ""
-
 #: templates/admin/settings.php:2016
 msgid "For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each Finnish and English field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it."
 msgstr ""
@@ -2139,7 +2139,7 @@ msgstr ""
 msgid "Hi %1$s,\n\nYou've cancelled %2$s at %3$s, and your ticket is now disabled.\n\n%4$s\n\n%5$s"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:153
+#: src/Support/NewsletterLayout.php:168
 msgid "Hi %s!"
 msgstr ""
 
@@ -2153,7 +2153,7 @@ msgstr ""
 msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:151
+#: src/Support/NewsletterLayout.php:166
 msgid "Hi!"
 msgstr ""
 
@@ -2512,7 +2512,7 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:728
+#: src/Support/NewsletterLayout.php:816
 msgid "Later"
 msgstr ""
 
@@ -2573,7 +2573,7 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:731 src/Telegram/EventCard.php:381
+#: src/Support/NewsletterLayout.php:819 src/Telegram/EventCard.php:381
 msgid "Listen to the DJ"
 msgstr ""
 
@@ -2773,7 +2773,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/Newsletter.php:738
+#: src/Support/Newsletter.php:816
 #. translators: %s: the date the newsletter will be sent, like 14.11.2026
 msgid "Next events announcement preview: it goes out on %s"
 msgstr ""
@@ -4344,7 +4344,7 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:732 src/Telegram/EventCard.php:382
+#: src/Support/NewsletterLayout.php:820 src/Telegram/EventCard.php:382
 msgid "Sold out"
 msgstr ""
 
@@ -4441,7 +4441,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:897 src/Support/Newsletter.php:747
+#: src/Support/FollowupMail.php:897 src/Support/Newsletter.php:842
 msgid "Subject"
 msgstr ""
 
@@ -4882,6 +4882,10 @@ msgstr ""
 
 #: templates/admin/settings.php:2082
 msgid "The address organizers send their lists to. Leave it empty if this site has no import mailbox."
+msgstr ""
+
+#: src/Web/NewsletterController.php:979
+msgid "The announcement comes in the language you choose."
 msgstr ""
 
 #: templates/public/signup.php:1789
@@ -5502,7 +5506,7 @@ msgstr ""
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
-#: src/Support/Newsletter.php:743
+#: src/Support/Newsletter.php:821
 #. translators: 1: the send date, like 14.11.2026, 2: number of subscribers
 msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
 msgstr ""
@@ -5542,6 +5546,21 @@ msgstr ""
 
 #: templates/admin/people.php:58 templates/public/signup.php:788
 msgid "This is how a person is identified across Telegram and the web."
+msgstr ""
+
+#: src/Support/Newsletter.php:833
+#. translators: %d: number of subscribers who chose English
+msgid "This is the English version. Subscribers who get it: %d."
+msgstr ""
+
+#: src/Support/Newsletter.php:828
+#. translators: %d: number of subscribers who chose Finnish
+msgid "This is the Finnish version. Subscribers who get it: %d."
+msgstr ""
+
+#: src/Support/Newsletter.php:838
+#. translators: %d: number of subscribers who chose no language
+msgid "This is the two-language version. Subscribers who get it: %d."
 msgstr ""
 
 #: src/Telegram/VerificationController.php:157
@@ -5723,7 +5742,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:730 src/Support/WelcomeSender.php:431 templates/public/signup.php:433
+#: src/Support/NewsletterLayout.php:818 src/Support/WelcomeSender.php:431 templates/public/signup.php:433
 msgid "Tickets"
 msgstr ""
 
@@ -6404,7 +6423,7 @@ msgstr ""
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:379
+#: src/Support/Newsletter.php:425
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 

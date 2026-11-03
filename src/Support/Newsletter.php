@@ -199,14 +199,14 @@ final class Newsletter
     }
 
     /**
-     * The greeting at the top of one recipient's announcement (see
-     * NewsletterLayout::greeting()).
+     * The greeting at the top of one recipient's announcement, in $lang
+     * ('fi', 'en', or '' for both; see NewsletterLayout::greeting()).
      *
      * @return array{html: string, text: string}
      */
-    public static function greeting(?string $name): array
+    public static function greeting(?string $name, string $lang = ''): array
     {
-        return NewsletterLayout::greeting($name);
+        return NewsletterLayout::greeting($name, $lang);
     }
 
     public static function stopUrl(int $planId): string
@@ -332,22 +332,66 @@ final class Newsletter
      * NewsletterWriter), the cards show each event's practical information,
      * and its opening text stands in for a missing organizers' text.
      *
+     * $lang is the subscriber's language: 'fi' or 'en' makes the email in
+     * that language only, '' in both (Lou, 2026-11-03). An English-only email
+     * whose text above the cards was translated by the language model ends
+     * with the "Automatically translated" note.
+     *
      * @param array<int, array<string, mixed>> $events Plan events.
-     * @param array{fi: string, en: string}|null $text
+     * @param array{fi: string, en: string, source?: string, translated?: bool}|null $text
      * @param array<int, array<string, mixed>> $later Other coming events, in the plan events' shape.
      * @param array<string, mixed>|null $written The plan's 'written'.
      * @return array{subject: string, html: string, text: string}
      */
-    public function compose(array $events, ?array $text, array $later = [], ?array $written = null): array
-    {
-        return [
-            'subject' => self::both(static fn (): string => __('Coming events', 'eventcrew'))
+    public function compose(
+        array $events,
+        ?array $text,
+        array $later = [],
+        ?array $written = null,
+        string $lang = ''
+    ): array {
+        $opening = null === $text ? NewsletterWriter::opening($written) : null;
+        $mail = [
+            'subject' => self::inLanguage(static fn (): string => __('Coming events', 'eventcrew'), $lang)
                 . ' – ' . (string) get_bloginfo('name'),
         ] + self::content(
             NewsletterWriter::apply(array_map([self::class, 'withCard'], array_values($events)), $written),
             array_map([self::class, 'withCard'], array_values($later)),
-            $text ?? NewsletterWriter::opening($written)
+            $text ?? $opening,
+            $lang
         );
+
+        if ('en' === $lang && self::translatedIntoEnglish($text, $opening)) {
+            $note = NewsletterLayout::translatedNote();
+            $mail['html'] .= $note['html'];
+            $mail['text'] .= "\n\n" . $note['text'];
+        }
+
+        return $mail;
+    }
+
+    /**
+     * Whether the English text above the cards was translated by the language
+     * model: the organizers' text when it was written in another language
+     * than English, or the language model's opening, which is written in
+     * Finnish and translated into English. An organizers' text kept from
+     * before the source was stored counts as translated when its two
+     * languages differ.
+     *
+     * @param array<string, mixed>|null $text
+     * @param array{fi: string, en: string}|null $opening
+     */
+    private static function translatedIntoEnglish(?array $text, ?array $opening): bool
+    {
+        if (null === $text) {
+            return null !== $opening;
+        }
+
+        if (! array_key_exists('source', $text)) {
+            return (string) ($text['fi'] ?? '') !== (string) ($text['en'] ?? '');
+        }
+
+        return ! empty($text['translated']) && 'en' !== $text['source'];
     }
 
     /**
@@ -359,42 +403,47 @@ final class Newsletter
      * @param array<int, array<string, mixed>> $cards Events through withCard().
      * @param array<int, array<string, mixed>> $later Events through withCard().
      * @param array{fi?: string, en?: string}|null $text
+     * @param string $lang 'fi' or 'en' for one language; '' (the default, which FollowupMail uses) for both.
      * @return array{html: string, text: string}
      */
-    public static function content(array $cards, array $later, ?array $text): array
+    public static function content(array $cards, array $later, ?array $text, string $lang = ''): array
     {
         return [
-            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent()),
-            'text' => NewsletterLayout::text($cards, $later, $text),
+            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang),
+            'text' => NewsletterLayout::text($cards, $later, $text, $lang),
         ];
     }
 
     /**
-     * The footer line, in both languages: the link to the subscriber's own
-     * page, where they change their name or leave the newsletter.
+     * The footer line, in both languages, or in $lang alone: the link to the
+     * subscriber's own page, where they change their name or leave the
+     * newsletter.
      */
-    public static function footer(): string
+    public static function footer(string $lang = ''): string
     {
-        return self::both(
+        return self::inLanguage(
             static fn (): string => __(
                 'You get this email because you joined the next events announcement. Change your details or leave the announcement', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 'eventcrew'
-            )
+            ),
+            $lang
         );
     }
 
     /**
-     * The line above the footer link, in both languages: crew members get this
-     * announcement too, and leaving it changes no other crew message.
+     * The line above the footer link, in both languages, or in $lang alone:
+     * crew members get this announcement too, and leaving it changes no
+     * other crew message.
      */
-    public static function crewNote(): string
+    public static function crewNote(string $lang = ''): string
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        return self::both(
+        return self::inLanguage(
             static fn (): string => __(
                 'Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected.',
                 'eventcrew'
-            )
+            ),
+            $lang
         );
         // phpcs:enable Generic.Files.LineLength.TooLong
     }
@@ -619,7 +668,15 @@ final class Newsletter
         $plan = $this->written($plan, null === $text);
         $plan['later'] = $this->laterEvents($events, $today);
         $plan['status'] = self::PLAN_SENDING;
-        $plan['text'] = null === $text ? null : ['fi' => $text['fi'], 'en' => $text['en'], 'rev' => $text['rev']];
+        // The source language too, so an English-only email knows whether
+        // its English was translated by the language model.
+        $plan['text'] = null === $text ? null : [
+            'fi' => $text['fi'],
+            'en' => $text['en'],
+            'rev' => $text['rev'],
+            'source' => (string) ($text['source'] ?? ''),
+            'translated' => (bool) ($text['translated'] ?? false),
+        ];
         $state['plan'] = $plan;
 
         self::schedule();
@@ -641,26 +698,35 @@ final class Newsletter
         }
 
         $rows = $this->subscribers->confirmedAfter((int) $plan['cursor'], self::BATCH);
-        $mail = $this->compose($plan['events'], $plan['text'], $plan['later'] ?? [], $plan['written'] ?? null);
-        $footer = self::footer();
-        $crewNote = self::crewNote();
+        $mails = [];
 
         foreach ($rows as $row) {
-            // Composed once per batch; only the greeting is the recipient's own.
-            $greeting = self::greeting($row['name'] ?? null);
+            // The subscriber's language: 'fi' or 'en' gets that language
+            // only, anything else both (Lou, 2026-11-03).
+            $lang = in_array($row['language'] ?? '', ['fi', 'en'], true) ? $row['language'] : '';
+            // Composed once per batch and language; only the greeting is the recipient's own.
+            $mails[$lang] ??= $this->compose(
+                $plan['events'],
+                $plan['text'],
+                $plan['later'] ?? [],
+                $plan['written'] ?? null,
+                $lang
+            ) + ['footer' => self::footer($lang), 'crew_note' => self::crewNote($lang)];
+            $mail = $mails[$lang];
+            $greeting = self::greeting($row['name'] ?? null, $lang);
             $unsubscribe = self::unsubscribeUrl($row['id']);
             $sent = $this->mailer->toSubscriber(
                 $row['email'],
                 $mail['subject'],
                 $greeting['html'] . $mail['html'],
                 $greeting['text'] . "\n\n" . $mail['text'],
-                $footer,
+                $mail['footer'],
                 self::manageUrl($row['id']),
                 [
                     'List-Unsubscribe: <' . $unsubscribe . '>',
                     'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
                 ],
-                $crewNote
+                $mail['crew_note']
             );
 
             $plan['cursor'] = $row['id'];
@@ -717,53 +783,86 @@ final class Newsletter
      * the exact newsletter below (as HTML, the way subscribers get it) and the
      * Stop button. Returns how many went.
      *
+     * Subscribers get the announcement in their own language (Lou,
+     * 2026-11-03), so each organizer gets one preview per version that has at
+     * least one subscriber: Finnish only, English only, and both languages
+     * for those whose language is not known. Each preview says which
+     * subscribers get that version. With no subscribers at all, the one
+     * preview is the two-language version.
+     *
      * @param array<string, mixed> $plan
      */
     private function sendPreview(array $plan): int
     {
-        $mail = $this->compose(
-            $plan['events'],
-            $this->text->get(),
-            $this->laterEvents($plan['events'], (string) current_time('Y-m-d')),
-            $plan['written'] ?? null
-        );
-        $count = $this->subscribers->countConfirmed();
+        $text = $this->text->get();
+        $later = $this->laterEvents($plan['events'], (string) current_time('Y-m-d'));
+        $organizers = $this->people->organizers();
+        $byLanguage = $this->subscribers->countConfirmedByLanguage();
+        $count = array_sum($byLanguage);
+        $variants = array_keys(array_filter($byLanguage, static fn (int $n): bool => $n > 0));
+        $variants = [] === $variants ? [''] : array_map('strval', $variants);
+        // Only when some subscriber chose a language; until then the one preview is as before.
+        $sayVersion = [''] !== $variants;
         $stopUrl = self::stopUrl($plan['id']);
         $sentTo = 0;
 
-        foreach ($this->people->organizers() as $person) {
-            $words = Language::forPerson($person, static fn (): array => [
-                'subject' => self::PREVIEW_PREFIX . sprintf(
-                    /* translators: %s: the date the newsletter will be sent, like 14.11.2026 */
-                    __('Next events announcement preview: it goes out on %s', 'eventcrew'),
-                    TicketMail::shortDate($plan['send_on'])
-                ),
-                'intro' => sprintf(
-                    /* translators: 1: the send date, like 14.11.2026, 2: number of subscribers */
-                    __('This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    TicketMail::shortDate($plan['send_on']),
-                    $count
-                ),
-                'subject_line' => __('Subject', 'eventcrew'),
-                'stop' => __('Do not send this announcement', 'eventcrew'),
-            ]);
+        foreach ($organizers as $person) {
+            foreach ($variants as $lang) {
+                $mail = $this->compose($plan['events'], $text, $later, $plan['written'] ?? null, $lang);
+                $n = $byLanguage[$lang] ?? 0;
+                $words = Language::forPerson($person, static fn (): array => [
+                    'subject' => self::PREVIEW_PREFIX . sprintf(
+                        /* translators: %s: the date the newsletter will be sent, like 14.11.2026 */
+                        __('Next events announcement preview: it goes out on %s', 'eventcrew'),
+                        TicketMail::shortDate($plan['send_on'])
+                    ),
+                    'intro' => sprintf(
+                        /* translators: 1: the send date, like 14.11.2026, 2: number of subscribers */
+                        __('This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                        TicketMail::shortDate($plan['send_on']),
+                        $count
+                    ),
+                    'version' => match ($lang) {
+                        'fi' => sprintf(
+                            /* translators: %d: number of subscribers who chose Finnish */
+                            __('This is the Finnish version. Subscribers who get it: %d.', 'eventcrew'),
+                            $n
+                        ),
+                        'en' => sprintf(
+                            /* translators: %d: number of subscribers who chose English */
+                            __('This is the English version. Subscribers who get it: %d.', 'eventcrew'),
+                            $n
+                        ),
+                        default => sprintf(
+                            /* translators: %d: number of subscribers who chose no language */
+                            __('This is the two-language version. Subscribers who get it: %d.', 'eventcrew'),
+                            $n
+                        ),
+                    },
+                    'subject_line' => __('Subject', 'eventcrew'),
+                    'stop' => __('Do not send this announcement', 'eventcrew'),
+                ]);
 
-            $intro = $words['intro'] . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
-            // The organizer sees the greeting a subscriber gets, with their own name.
-            $greeting = self::greeting(DoorDesk::firstName($person->name()));
+                $intro = $words['intro']
+                    . ($sayVersion ? "\n\n" . $words['version'] : '')
+                    . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
+                // The organizer sees the greeting a subscriber gets, with their own name.
+                $greeting = self::greeting(DoorDesk::firstName($person->name()), $lang);
+                $suffix = $sayVersion ? ' (' . ('' === $lang ? 'FI + EN' : strtoupper($lang)) . ')' : '';
 
-            $sent = $this->mailer->toPersonWithContent(
-                $person->id,
-                $person->email,
-                $words['subject'],
-                $intro,
-                $greeting['html'] . $mail['html'],
-                $greeting['text'] . "\n\n" . $mail['text'],
-                [['label' => $words['stop'], 'url' => $stopUrl]]
-            );
+                $sent = $this->mailer->toPersonWithContent(
+                    $person->id,
+                    $person->email,
+                    $words['subject'] . $suffix,
+                    $intro,
+                    $greeting['html'] . $mail['html'],
+                    $greeting['text'] . "\n\n" . $mail['text'],
+                    [['label' => $words['stop'], 'url' => $stopUrl]]
+                );
 
-            if ($sent) {
-                $sentTo++;
+                if ($sent) {
+                    $sentTo++;
+                }
             }
         }
 
@@ -1056,6 +1155,16 @@ final class Newsletter
         $en = (string) Language::run(Language::ENGLISH, $words);
 
         return $fi === $en ? $en : $fi . ' / ' . $en;
+    }
+
+    /** $words run in $lang ('fi' or 'en') alone, or both() for any other $lang. */
+    private static function inLanguage(callable $words, string $lang): string
+    {
+        return match ($lang) {
+            'fi' => (string) Language::run(Language::FINNISH, $words),
+            'en' => (string) Language::run(Language::ENGLISH, $words),
+            default => self::both($words),
+        };
     }
 
     private static function link(string $do, string $token): string
