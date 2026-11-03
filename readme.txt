@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.108.0
+Stable tag: 1.109.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.109.0 =
+Next events announcement: the event cards no longer show a description or a written event text; the language model picks the venue, the address and the door times out of the description (each checked against it, door codes left out) and the card shows them as short centred lines with the date, title and buttons. The Later list shows a small picture on the left of each event. Organizers get no new preview when only this information is written.
 
 = 1.108.0 =
 Post-event email: the thank-you text (people who came) and the sorry-we-missed-you text can be edited in Settings > Email, written once and translated, and an organizer can set a one-time text for the next post-event email in the crew app's Admin tab or with the bot's /followup.
@@ -1042,6 +1045,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.109.0 =
+No database change.
 
 = 1.108.0 =
 No database change. Until someone saves a text, the post-event email is exactly as before.

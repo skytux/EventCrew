@@ -586,7 +586,13 @@ final class FollowupMailTest extends TestCase
                 self::assertStringContainsString($image, $body, 'the cards with their pictures');
             }
 
-            self::assertStringNotContainsString('https://cdn.test/4.jpg', $body, 'three events only');
+            self::assertStringNotContainsString(
+                'width="536" alt="Ecstatic Dance 4"',
+                $body,
+                'three events only as cards'
+            );
+            self::assertSame(1, substr_count($body, 'https://cdn.test/4.jpg'), 'the fourth as a Later picture');
+            self::assertStringContainsString('width="80" alt="Ecstatic Dance 4"', $body);
             self::assertStringContainsString('Tilaa tiedote', $body, 'the announcement invite');
 
             // Every link goes through the counted redirect, with the campaign.
@@ -634,27 +640,28 @@ final class FollowupMailTest extends TestCase
             self::assertStringContainsString('Myöhemmin · Later', $expected['html'], 'the fourth under Later');
             self::assertStringContainsString($expected['html'], $mail['html']);
             self::assertStringContainsString($expected['text'], $mail['text']);
-            self::assertStringContainsString(str_repeat('A warm evening of free movement. ', 39), $mail['html']);
+            self::assertStringNotContainsString('A warm evening of free movement.', $mail['html'] . $mail['text']);
         }
     }
 
     /**
-     * The texts the language model wrote for the next events announcement
-     * replace the descriptions here too, in the HTML and the plain text: one
-     * kept from a sent announcement and one from the current plan. An event
-     * with no written text keeps its description, the announcement's opening
-     * is not shown, and with the switch off every card has its description.
+     * The practical information the language model found for the next events
+     * announcement goes on these cards too, in the HTML and the plain text:
+     * one kept from a sent announcement and one from the current plan. An
+     * event with none has no such lines. No card shows a written text or a
+     * description, the announcement's opening is not shown, and with the
+     * switch off no card has practical information.
      */
-    public function testAWrittenTextReplacesTheDescriptionAsInTheAnnouncement(): void
+    public function testThePracticalInformationIsAsInTheAnnouncement(): void
     {
         $this->sampleEvents();
-        $description = str_repeat('A warm evening of free movement. ', 39);
         $this->options[Newsletter::STATE_OPTION] = [
             'ledger' => [
                 1 => [
                     's' => Newsletter::LEDGER_SENT,
                     'd' => '2026-11-21',
                     'w' => ['fi' => 'Tule tanssimaan.', 'en' => 'Come and dance.'],
+                    'p' => ['venue' => 'Old Hall', 'address' => '', 'doors_open' => '18:30', 'doors_close' => ''],
                 ],
             ],
             'plan' => [
@@ -664,27 +671,40 @@ final class FollowupMailTest extends TestCase
                 'written' => [
                     'events' => [2 => ['fi' => 'Jää myöhään.', 'en' => 'Stay late.']],
                     'opening' => ['fi' => 'Tervetuloa.', 'en' => 'Welcome.'],
+                    'practical' => [
+                        2 => [
+                            'venue' => 'Dance Central',
+                            'address' => 'Main Street 1, Helsinki',
+                            'doors_open' => '',
+                            'doors_close' => '19:00',
+                        ],
+                    ],
                 ],
             ],
         ];
 
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
-        self::assertStringContainsString('FI</span>&nbsp; Tule tanssimaan.', $mail['html']);
-        self::assertStringContainsString('EN</span>&nbsp; Come and dance.', $mail['html']);
-        self::assertStringContainsString('EN</span>&nbsp; Stay late.', $mail['html']);
-        self::assertStringContainsString("FI: Tule tanssimaan.\nEN: Come and dance.", $mail['text']);
-        self::assertStringContainsString("FI: Jää myöhään.\nEN: Stay late.", $mail['text']);
-        self::assertStringNotContainsString('Welcome.', $mail['html'] . $mail['text']);
-        // Only the third card, which has no written text, shows the description.
-        self::assertSame(1, substr_count($mail['html'], $description));
-        self::assertSame(1, substr_count($mail['text'], $description));
+        self::assertStringContainsString('Old Hall<br>Ovet aukeavat 18:30 · Doors open 18:30</p>', $mail['html']);
+        self::assertStringContainsString(
+            'Dance Central<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00 · Doors close 19:00</p>',
+            $mail['html']
+        );
+        self::assertStringContainsString(
+            "Ecstatic Dance 1\nOld Hall\nOvet aukeavat 18:30 · Doors open 18:30\n",
+            $mail['text']
+        );
+        self::assertSame(2, substr_count($mail['html'], 'Ovet '), 'the third card has none');
+
+        foreach (['Come and dance.', 'Stay late.', 'Welcome.', 'A warm evening of free movement.'] as $hidden) {
+            self::assertStringNotContainsString($hidden, $mail['html'] . $mail['text']);
+        }
 
         $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
-        self::assertStringNotContainsString('Come and dance.', $mail['html'] . $mail['text']);
-        self::assertSame(3, substr_count($mail['html'], $description));
+        self::assertStringNotContainsString('Old Hall', $mail['html'] . $mail['text']);
+        self::assertStringNotContainsString('Dance Central', $mail['html'] . $mail['text']);
     }
 
     /** No coming events: no events part at all, as the newsletter sends nothing then. */

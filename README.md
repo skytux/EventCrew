@@ -308,13 +308,17 @@ An email of the coming events (from EventMesh) for anyone who joined, crew or
 not. It is **off by default**; switch it on under **Settings → Email → Next
 events announcement**.
 
-- **Layout.** Each newly announced event is a card: its picture, date and start
-  time, title, short description in Finnish and then in English, a **Buy a
+- **Layout.** Each newly announced event is a centred card: its picture, date
+  and start time, title, practical information, a **Buy a
   ticket** button with the price (to the ticket shop), a **Listen to the DJ**
   button when the event has the DJ's music page (EventMesh's embed source URL),
   and a link to the event page. A sold-out event shows **Sold out** instead of
   the ticket button. Every other coming event is listed under **Later**, one
-  line each, with a link to its tickets. The email also has a plain-text part.
+  line each with an 80 px picture, with a link to its tickets. The email also
+  has a plain-text part.
+- **Practical information.** The language model picks the venue, address and
+  door times out of each event's description; a value is shown only when it is
+  in the description. The cards show no description text.
 - **Joining.** The form is the `[eventcrew_newsletter]` shortcode or the **Next
   events announcement** block (for the site footer and other template parts).
   When the announcement is on, a thin sign-up bar also shows at the bottom of

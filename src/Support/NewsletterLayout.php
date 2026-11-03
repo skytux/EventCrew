@@ -13,18 +13,20 @@ namespace EventCrew\Support;
  * 1. The heading, in Finnish with the English under it.
  * 2. The organizers' text, if any: the Finnish paragraph, then the English
  *    one, each with a small FI / EN label.
- * 3. One card per newly announced event: the picture, the date and time, the
- *    title, the whole description in Finnish and then in English (labelled
- *    FI / EN, with its line breaks) or, in its place, the text the language
- *    model wrote for the card (NewsletterWriter), a "Buy a ticket" button with the price
- *    that opens the ticket shop, and a "Listen to the DJ" button, Finnish on
- *    the first line and English on the second, when the event has the DJ's
- *    music page (an email cannot play music itself, so it opens the page). A
- *    sold-out event shows "Sold out" instead of the ticket button. The
- *    picture opens the ticket shop, or the event's own page when there is no
- *    ticket to buy.
+ * 3. One card per newly announced event: the picture, then, centred, the
+ *    date and time, the title, the practical information the language model
+ *    found in the description (NewsletterWriter: the venue, the street
+ *    address, when the doors open and close; each line only when known), a
+ *    "Buy a ticket" button with the price that opens the ticket shop, and a
+ *    "Listen to the DJ" button, Finnish on the first line and English on the
+ *    second, when the event has the DJ's music page (an email cannot play
+ *    music itself, so it opens the page). A sold-out event shows "Sold out"
+ *    instead of the ticket button. The picture opens the ticket shop, or the
+ *    event's own page when there is no ticket to buy. The card shows no
+ *    description and no text written for the event (Lou, 2026-11-03).
  * 4. "Later": every other coming event as one line, with the date, the
- *    title and a link to its tickets.
+ *    title and a link to its tickets, and the event's picture small on its
+ *    left, linked like the line, when it has one.
  *
  * Every fixed word is written in both languages ("Osta lippu · Buy a
  * ticket"), so each picture appears once and a reader of either language
@@ -40,6 +42,9 @@ final class NewsletterLayout
 
     /** The picture's width: the template's 600px column less its 32px padding each side. */
     private const IMAGE_WIDTH = 536;
+
+    /** The width of a picture in the "Later" list. */
+    private const THUMB_WIDTH = 80;
 
     /** Between the cards and the "Later" list in the plain text. */
     private const TEXT_RULE = '————————';
@@ -142,20 +147,15 @@ final class NewsletterLayout
     }
 
     /**
-     * One card as plain text: the date, the title, the description, then the
-     * ticket and music links.
+     * One card as plain text: the date, the title, the practical
+     * information, then the ticket and music links.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
      */
     private static function cardText(array $card, array $words): string
     {
-        $lines = [self::when($card), self::title($card)];
-        $about = self::bilingualText(...self::about($card));
-
-        if ('' !== $about) {
-            $lines[] = $about;
-        }
+        $lines = array_merge([self::when($card), self::title($card)], self::practicalLines($card, $words));
 
         $ticket = (string) ($card['ticket_url'] ?? '');
 
@@ -222,14 +222,15 @@ final class NewsletterLayout
         }
 
         $body = sprintf(
-            '<p style="margin:0 0 6px;font-family:%s;font-size:13px;font-weight:700;letter-spacing:.04em;color:%s">'
-                . '%s</p>',
+            '<p style="margin:0 0 6px;font-family:%s;font-size:13px;font-weight:700;letter-spacing:.04em;color:%s;'
+                . 'text-align:center">%s</p>',
             $font,
             esc_attr($accent),
             esc_html(self::when($card))
         );
         $body .= sprintf(
-            '<h2 style="margin:0 0 %s;font-family:%s;font-size:20px;line-height:1.3;color:%s">%s</h2>',
+            '<h2 style="margin:0 0 %s;font-family:%s;font-size:20px;line-height:1.3;color:%s;text-align:center">'
+                . '%s</h2>',
             '' !== $titleFi && $titleFi !== $title ? '2px' : '14px',
             $font,
             self::TEXT_COLOR,
@@ -238,15 +239,25 @@ final class NewsletterLayout
 
         if ('' !== $titleFi && $titleFi !== $title) {
             $body .= sprintf(
-                '<p style="margin:0 0 14px;font-family:%s;font-size:15px;line-height:1.4;color:%s">%s</p>',
+                '<p style="margin:0 0 14px;font-family:%s;font-size:15px;line-height:1.4;color:%s;'
+                    . 'text-align:center">%s</p>',
                 $font,
                 self::MUTED_COLOR,
                 esc_html($titleFi)
             );
         }
 
-        [$aboutFi, $aboutEn, $aboutPlain] = self::about($card);
-        $body .= self::bilingual($aboutFi, $aboutEn, $aboutPlain, '0 0 16px');
+        $practical = self::practicalLines($card, $words);
+
+        if ([] !== $practical) {
+            $body .= sprintf(
+                '<p style="margin:0 0 16px;font-family:%s;font-size:14px;line-height:1.5;color:%s;'
+                    . 'text-align:center">%s</p>',
+                $font,
+                self::MUTED_COLOR,
+                implode('<br>', array_map('esc_html', $practical))
+            );
+        }
 
         if ($soldOut) {
             $body .= sprintf(
@@ -293,7 +304,7 @@ final class NewsletterLayout
             );
         }
 
-        $html .= '<tr><td style="padding:18px 20px 20px">' . $body . '</td></tr>';
+        $html .= '<tr><td align="center" style="padding:18px 20px 20px;text-align:center">' . $body . '</td></tr>';
 
         return sprintf(
             '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
@@ -327,17 +338,54 @@ final class NewsletterLayout
             $right = '';
         }
 
-        return sprintf(
-            '<tr><td style="padding:10px 0;border-top:1px solid %s;font-family:%s;font-size:15px;line-height:1.45;'
-                . 'color:%s"><strong>%s</strong><br>%s%s</td></tr>',
-            self::BORDER_COLOR,
-            $font,
-            self::TEXT_COLOR,
+        $text = sprintf(
+            '<strong>%s</strong><br>%s%s',
             esc_html(self::when($event)),
             esc_html(self::title($event)),
             '' === $right
                 ? ''
                 : '<br><span style="font-size:14px;color:' . self::MUTED_COLOR . '">' . $right . '</span>'
+        );
+        $cell = sprintf(
+            'font-family:%s;font-size:15px;line-height:1.45;color:%s',
+            $font,
+            self::TEXT_COLOR
+        );
+        $image = (string) ($event['image'] ?? '');
+
+        if ('' === $image) {
+            return sprintf(
+                '<tr><td style="padding:10px 0;border-top:1px solid %s;%s">%s</td></tr>',
+                self::BORDER_COLOR,
+                $cell,
+                $text
+            );
+        }
+
+        // The picture on the left and the text on its right, in a table of
+        // their own: email clients do not lay out floats or flex boxes.
+        $picture = sprintf(
+            '<img src="%s" width="%d" alt="%s" '
+                . 'style="display:block;width:%dpx;height:auto;border:0;border-radius:6px">',
+            esc_url($image),
+            self::THUMB_WIDTH,
+            esc_attr(self::title($event)),
+            self::THUMB_WIDTH
+        );
+
+        return sprintf(
+            '<tr><td style="padding:10px 0;border-top:1px solid %s">'
+                . '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"><tr>'
+                . '<td width="%d" valign="middle" style="width:%dpx;padding:0 14px 0 0;vertical-align:middle;'
+                . 'line-height:0">%s</td>'
+                . '<td valign="middle" style="vertical-align:middle;%s">%s</td>'
+                . '</tr></table></td></tr>',
+            self::BORDER_COLOR,
+            self::THUMB_WIDTH,
+            self::THUMB_WIDTH,
+            '' === $link ? $picture : sprintf('<a href="%s">%s</a>', esc_url($link), $picture),
+            $cell,
+            $text
         );
     }
 
@@ -404,27 +452,35 @@ final class NewsletterLayout
     }
 
     /**
-     * A card's text as [Finnish, English, unknown language]: the language
-     * model's text when the card has one in both languages
-     * (NewsletterWriter), else the description.
+     * A card's practical information (NewsletterWriter::apply()) as short
+     * lines: the venue, the street address, "Ovet aukeavat 18:30 · Doors
+     * open 18:30" and the same for the doors closing. A line that is not
+     * known is left out.
      *
      * @param array<string, mixed> $card
-     * @return array{0: string, 1: string, 2: string}
+     * @param array<string, array<string, string>> $words
+     * @return list<string>
      */
-    private static function about(array $card): array
+    private static function practicalLines(array $card, array $words): array
     {
-        $fi = trim((string) ($card['written_fi'] ?? ''));
-        $en = trim((string) ($card['written_en'] ?? ''));
+        $info = NewsletterWriter::practicalOf($card['practical'] ?? null);
 
-        if ('' !== $fi && '' !== $en) {
-            return [$fi, $en, ''];
+        if (null === $info) {
+            return [];
         }
 
-        return [
-            (string) ($card['excerpt_fi'] ?? ''),
-            (string) ($card['excerpt_en'] ?? ''),
-            (string) ($card['excerpt'] ?? ''),
-        ];
+        $lines = [];
+
+        foreach (NewsletterWriter::PRACTICAL_KEYS as $key) {
+            if ('' === $info[$key]) {
+                continue;
+            }
+
+            // The venue and the address need no label; the times do.
+            $lines[] = isset($words['en'][$key]) ? self::pairWith($words, $key, $info[$key]) : $info[$key];
+        }
+
+        return $lines;
     }
 
     /** "14.11.2026 · 19:00", or the date alone when the time is not known. */
@@ -466,6 +522,20 @@ final class NewsletterLayout
             : $words['fi'][$key] . ' · ' . $words['en'][$key];
     }
 
+    /**
+     * The words under $key with $value in place of their %s, in both
+     * languages: "Ovet aukeavat 18:30 · Doors open 18:30".
+     *
+     * @param array<string, array<string, string>> $words
+     */
+    private static function pairWith(array $words, string $key, string $value): string
+    {
+        $fi = sprintf($words['fi'][$key], $value);
+        $en = sprintf($words['en'][$key], $value);
+
+        return $fi === $en ? $en : $fi . ' · ' . $en;
+    }
+
     /** @return array<string, array<string, string>> Every fixed word, in Finnish and in English. */
     private static function words(): array
     {
@@ -476,6 +546,10 @@ final class NewsletterLayout
             'tickets' => __('Tickets', 'eventcrew'),
             'listen' => __('Listen to the DJ', 'eventcrew'),
             'sold_out' => __('Sold out', 'eventcrew'),
+            /* translators: %s: the time the doors of the event open, like 18:30 */
+            'doors_open' => __('Doors open %s', 'eventcrew'),
+            /* translators: %s: the time the doors of the event close, like 19:00 */
+            'doors_close' => __('Doors close %s', 'eventcrew'),
         ];
 
         return [

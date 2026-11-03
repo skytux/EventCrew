@@ -352,9 +352,9 @@ final class NewsletterTest extends TestCase
 
     /**
      * A card per event: the picture, the date, the title with its Finnish
-     * title, the description in Finnish then English, the ticket button with
-     * the price and the Listen button. A sold-out event has no ticket button.
-     * The later events are lines under "Later".
+     * title, the ticket button with the price and the Listen button, and no
+     * description. A sold-out event has no ticket button. The later events
+     * are lines under "Later".
      */
     public function testComposeDrawsACardPerEvent(): void
     {
@@ -383,7 +383,8 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('src="https://cdn.test/1.jpg"', $html);
         self::assertStringContainsString('27.7.2026 · 21:00', $html);
         self::assertStringContainsString('Kesätanssit', $html);
-        self::assertLessThan(strpos($html, 'We dance all night.'), strpos($html, 'Tanssimme koko yön.'));
+        self::assertStringNotContainsString('We dance all night.', $html);
+        self::assertStringNotContainsString('Tanssimme koko yön.', $html);
         self::assertLessThan(strpos($html, 'Summer Dance'), strpos($html, 'Tervetuloa!'));
         self::assertStringContainsString('href="https://shop.test/p/1"', $html);
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
@@ -394,7 +395,8 @@ final class NewsletterTest extends TestCase
         self::assertGreaterThan(strpos($html, 'Myöhemmin · Later'), strpos($html, 'Autumn Night'));
 
         $text = $mail['text'];
-        self::assertStringContainsString("FI: Tanssimme koko yön.\nEN: We dance all night.", $text);
+        self::assertStringNotContainsString('We dance all night.', $text);
+        self::assertStringNotContainsString('Tanssimme koko yön.', $text);
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
         self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ: https://music.test/dj', $text);
         self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
@@ -427,19 +429,20 @@ final class NewsletterTest extends TestCase
     }
 
     /**
-     * A description with blank lines is one paragraph per block, the FI / EN
-     * label on the first only, and single line breaks stay <br>. The text
-     * keeps the lines under its label and leaves a blank line between the
-     * languages.
+     * An organizers' text with blank lines is one paragraph per block, the
+     * FI / EN label on the first only, and single line breaks stay <br>. The
+     * text keeps the lines under its label and leaves a blank line between
+     * the languages. (The cards show no description since 2026-11-03.)
      */
-    public function testADescriptionKeepsItsParagraphsAndLines(): void
+    public function testAnOrganizersTextKeepsItsParagraphsAndLines(): void
     {
-        $card = [
-            'excerpt_fi' => "Tanssimme koko yön.\nOvet klo 21.\n\nOta kengät mukaan.",
-            'excerpt_en' => "We dance all night.\nDoors at 21.\n\nBring shoes.",
-        ] + self::planEvent(1, '2026-07-27', 'Summer Dance');
+        $card = self::planEvent(1, '2026-07-27', 'Summer Dance');
+        $intro = [
+            'fi' => "Tanssimme koko yön.\nOvet klo 21.\n\nOta kengät mukaan.",
+            'en' => "We dance all night.\nDoors at 21.\n\nBring shoes.",
+        ];
 
-        $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
+        $html = NewsletterLayout::html([$card], [], $intro, '#7a3cff');
 
         self::assertSame(1, substr_count($html, '>FI</span>'));
         self::assertSame(1, substr_count($html, '>EN</span>'));
@@ -451,7 +454,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString(
             "FI: Tanssimme koko yön.\nOvet klo 21.\n\nOta kengät mukaan.\n\n"
                 . "EN: We dance all night.\nDoors at 21.\n\nBring shoes.",
-            NewsletterLayout::text([$card], [], null)
+            NewsletterLayout::text([$card], [], $intro)
         );
     }
 
@@ -470,7 +473,8 @@ final class NewsletterTest extends TestCase
     /**
      * compose()'s HTML and text for one fixed input are byte for byte the
      * ones saved in fixtures/, which were made before the events part was
-     * shared with the post-event email (FollowupMail).
+     * shared with the post-event email (FollowupMail), and made again when
+     * the cards lost their description and were centred (2026-11-03).
      */
     public function testComposeOutputIsUnchangedForAFixedInput(): void
     {

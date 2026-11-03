@@ -382,6 +382,16 @@ msgstr "Poistaminen hävittää tilisi ja historiasi lopullisesti. Tätä ei voi
 msgid "Done — you’re covering %1$s’s %2$s."
 msgstr "Valmista — tuuraat henkilöä %1$s tehtävässä %2$s."
 
+#: src/Support/NewsletterLayout.php:552
+#, php-format
+msgid "Doors close %s"
+msgstr "Ovet sulkeutuvat %s"
+
+#: src/Support/NewsletterLayout.php:550
+#, php-format
+msgid "Doors open %s"
+msgstr "Ovet aukeavat %s"
+
 #: src/Support/DoorDesk.php:719
 msgid "Door"
 msgstr "Ovi"
