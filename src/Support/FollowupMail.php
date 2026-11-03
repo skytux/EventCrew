@@ -539,13 +539,10 @@ final class FollowupMail
             : self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId);
         $accent = EmailTemplate::accent();
 
-        $siteButton = [['label' => $pair('site'), 'url' => $link(home_url('/'))]];
-
         $html = EmailBody::toHtml($fi['body'])
             . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-            . EmailBody::toHtml($en['body'])
-            . EmailBody::centred(EmailBody::toHtml('', $siteButton, $accent));
-        $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n" . EmailBody::toText('', $siteButton);
+            . EmailBody::toHtml($en['body']);
+        $text = $fi['body'] . "\n\n" . $en['body'];
 
         $events = array_map(
             static fn (array $card): array => array_merge($card, [
@@ -947,7 +944,7 @@ final class FollowupMail
      * One language's words, composed in the current language. $main is the
      * email's main text in that language (FollowupText), already filled in.
      *
-     * @return array{body: string, subject: string, site: string, join: string, invite: string}
+     * @return array{body: string, subject: string, join: string, invite: string}
      */
     private static function words(bool $came, string $name, string $main): array
     {
@@ -965,7 +962,6 @@ final class FollowupMail
             'subject' => $came
                 ? __('Thank you for dancing with us', 'eventcrew')
                 : __('We missed you this time', 'eventcrew'),
-            'site' => __('See the coming events', 'eventcrew'),
             'join' => __('Join the announcement', 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. You confirm it from an email, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];

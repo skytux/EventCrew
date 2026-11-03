@@ -6338,9 +6338,6 @@ msgstr "Tapahtuman jälkeinen viesti: pois päältä"
 msgid "Press the button to stop the post-event email of this event. It will not be sent."
 msgstr "Paina painiketta, niin tämän tapahtuman jälkeistä viestiä ei lähetetä."
 
-msgid "See the coming events"
-msgstr "Katso tulevat tapahtumat"
-
 msgid "Send the post-event email"
 msgstr "Lähetä tapahtuman jälkeinen viesti"
 
