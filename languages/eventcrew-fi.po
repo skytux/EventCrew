@@ -6825,3 +6825,32 @@ msgstr "Näytä ryhmän taulu tapahtumakortteina"
 
 msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons."
 msgstr "Oletuksena pois päältä. Kun se on päällä, taulu on kaksi viestiä. Ensin kuvaviesti seuraavasta tapahtumasta, jos se on EventMesh-tapahtuma, jolla on kuva: sen kuva, nimi, päivä, hinta, kielimallin kirjoittamat kaksi lausetta DJ:stä tai juontajasta sekä sen linkit. Sen alla tekstitaulu: seuraavat 3 tapahtumaa, kuka on ilmoittautunut mihinkin tehtävään, ja tehtäväpainikkeet. Päivämääräpainikkeita ei ole."
+
+msgid "Cancel sending"
+msgstr "Peru lähetys"
+
+msgid "%d buyer"
+msgid_plural "%d buyers"
+msgstr[0] "%d ostaja"
+msgstr[1] "%d ostajaa"
+
+msgid "Ticket emails go out at %1$s to %2$s."
+msgstr "Lippuviestit lähtevät klo %1$s: %2$s."
+
+msgid "Ticket emails go out at %s. Until then you can cancel them."
+msgstr "Lippuviestit lähtevät klo %s. Siihen asti voit perua ne."
+
+msgid "A send is already waiting. It goes out at %s."
+msgstr "Lähetys odottaa jo. Se lähtee klo %s."
+
+msgid "Sending cancelled. No ticket email was sent."
+msgstr "Lähetys peruttu. Yhtään lippuviestiä ei lähetetty."
+
+msgid "No send was waiting. It may have gone out already."
+msgstr "Mikään lähetys ei odottanut. Se on ehkä jo lähtenyt."
+
+msgid "The ticket emails go out at %s. To stop them, press \"Cancel sending\" on the Roster page before then."
+msgstr "Lippuviestit lähtevät klo %s. Jos haluat estää ne, paina Läsnäolo-sivulla \"Peru lähetys\" ennen sitä."
+
+msgid "Every send waits 10 minutes before anything goes out, whether an import or \"Send the rest now\" started it. Until then, Roster and the Admin tab show the time, how many get an email, and a \"Cancel sending\" button. Cancelling sends nothing; those tickets stay not sent. \"Send a test to me\" is not delayed."
+msgstr "Jokainen lähetys odottaa 10 minuuttia ennen kuin mitään lähtee, aloitti sen tuonti tai \"Lähetä loput nyt\". Siihen asti Roster ja Admin-välilehti näyttävät kellonajan, montako saa viestin, ja \"Peru lähetys\" -painikkeen. Peruminen ei lähetä mitään; liput jäävät lähettämättä. \"Lähetä testi minulle\" ei odota."

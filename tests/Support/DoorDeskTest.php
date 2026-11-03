@@ -318,7 +318,8 @@ final class DoorDeskTest extends SalesDeskTestCase
         $code = $update['data']['ticket_code'];
         self::assertMatchesRegularExpression('/^EC-B\d+-[0-9a-f]{16}$/', $code);
         self::assertSame($update['where']['id'], TicketMail::deskBuyerIdFromCode($code));
-        self::assertSame([TicketMail::HOOK], $scheduled);
+        // The send waits TicketMail::DELAY first: its start event is queued.
+        self::assertSame([TicketMail::START_HOOK], $scheduled);
     }
 
     /** No email, no ticket: no code is written and no mail run is queued. */

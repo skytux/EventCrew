@@ -218,9 +218,13 @@ final class SchedulerTest extends TestCase
 
             return 1;
         });
+        // A waiting ticket send is cancelled too.
+        Functions\when('get_option')->justReturn(false);
+        Functions\when('delete_option')->justReturn(true);
 
         Scheduler::unschedule();
 
         self::assertContains(Scheduler::HOOK, $cleared);
+        self::assertContains(\EventCrew\Support\TicketMail::START_HOOK, $cleared);
     }
 }

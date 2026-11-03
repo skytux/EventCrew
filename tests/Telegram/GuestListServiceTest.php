@@ -109,7 +109,8 @@ final class GuestListServiceTest extends TelegramTestCase
 
         self::assertSame('Anna', $this->wpdb->inserts[0]['data']['name']);
         self::assertSame('anna@example.com', $this->wpdb->inserts[0]['data']['email']);
-        self::assertSame([TicketMail::HOOK], $scheduled);
+        // The send waits TicketMail::DELAY first: its start event is queued.
+        self::assertSame([TicketMail::START_HOOK], $scheduled);
     }
 
     public function testAGuestWithAnInvalidEmailIsNotAdded(): void
@@ -242,5 +243,48 @@ final class GuestListServiceTest extends TelegramTestCase
         $edited = $this->lastCallTo('editMessageText');
         self::assertSame(42, $edited['message_id']);
         self::assertStringContainsString('1. Anna', $edited['text']);
+    }
+
+    private function pressCancelSending(): void
+    {
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->justReturn(1);
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+
+        $this->updateRouter()->dispatch([
+            'update_id' => 1,
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gl:cancel',
+                'message' => ['chat' => ['id' => 555], 'message_id' => 42]],
+        ]);
+    }
+
+    public function testAnOrganizersCancelButtonStopsTheWaitingSend(): void
+    {
+        $this->asker(true);
+
+        $this->pressCancelSending();
+
+        self::assertNull(TicketMail::pending());
+        self::assertSame(
+            'Sending cancelled. No ticket email was sent.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
+    public function testCrewCannotCancelTheWaitingSend(): void
+    {
+        $this->asker(false);
+
+        $this->pressCancelSending();
+
+        self::assertNotNull(TicketMail::pending());
+        self::assertSame(
+            'Only organizers can change the guest list.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
     }
 }

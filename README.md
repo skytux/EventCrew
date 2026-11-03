@@ -91,7 +91,14 @@ run and keeps going while some are left; a failed email is not retried by
 itself. The Holvi card on the Roster page (and on the crew page's Admin tab)
 shows "N sent · N failed · N not sent", with "Send a test to me" (one ticket of
 that date to your own address, no status changes) and "Send the rest now"
-(every ticket not sent yet, failed ones too). Door sales are never emailed. The
+(every ticket not sent yet, failed ones too). Every send, from an import or
+from "Send the rest now", waits 10 minutes before anything goes out: until
+then the Holvi card (and the bot's answer to `/door add` with an email) shows
+the time, how many get an email and a "Cancel sending" button. Cancelling sends
+nothing and leaves those tickets not sent; pressing "Send the rest now" again
+joins the waiting send. The waiting send is the option
+`eventcrew_ticket_send_pending` and one `eventcrew_send_tickets_start` cron
+event. "Send a test to me" is not delayed. Door sales are never emailed. The
 buyer's email address, name and ticket code are deleted 60 days after the event
 by the hourly job, which ends the ticket page link. The row stays, with its
 date, its email status and its check-in, so the counts of tickets sold and used
