@@ -492,6 +492,10 @@ final class AssistantService
             '- When the message does not say exactly which task, guest or night it means and more than one'
                 . ' fits, "action" is null and "reply" asks which one, listing the choices. Never pick one'
                 . ' for the person.',
+            '- When the message is a greeting, "reply" greets back and says the person can simply write'
+                . ' what they want in their own words, with one or two short examples (like "sign me up'
+                . ' for a task on Saturday"), and that /help lists the commands. Do not answer a greeting'
+                . ' with only a list of commands.',
             '- Dates in actions are written like 1.8. or 2026-08-01.',
         ];
 
