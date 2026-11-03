@@ -71,17 +71,27 @@ final class EventNameTest extends TestCase
             ]
         );
 
-        self::assertSame('DJ Esimerkki', EventName::djLine(1));
-        self::assertSame('DJs Aino Testinen & Bo Kokeilu', EventName::djLine(2));
-        self::assertSame('DJs A, B & C', EventName::djLine(3));
+        self::assertSame('Esimerkki', EventName::djLine(1));
+        self::assertSame('Aino Testinen & Bo Kokeilu', EventName::djLine(2));
+        self::assertSame('A, B & C', EventName::djLine(3));
+    }
+
+    public function testTheDjLineHasNoDjPrefix(): void
+    {
+        $this->fakeEventNames([1 => ['en' => 'A'], 2 => ['en' => 'B']], [1 => ['Esimerkki'], 2 => ['X', 'Y']]);
+
+        foreach ([1, 2] as $postId) {
+            self::assertStringStartsNotWith('DJ', EventName::djLine($postId));
+            self::assertStringNotContainsString('DJ', EventName::oneLine($postId, 'en', self::TITLE));
+        }
     }
 
     public function testTheDjLineIsTheSameInFinnish(): void
     {
         $this->fakeEventNames([1 => ['en' => 'A'], 2 => ['en' => 'B']], [1 => ['X'], 2 => ['X', 'Y']]);
 
-        self::assertSame('DJ X', Language::run(Language::FINNISH, static fn (): string => EventName::djLine(1)));
-        self::assertSame('DJs X & Y', Language::run(Language::FINNISH, static fn (): string => EventName::djLine(2)));
+        self::assertSame('X', Language::run(Language::FINNISH, static fn (): string => EventName::djLine(1)));
+        self::assertSame('X & Y', Language::run(Language::FINNISH, static fn (): string => EventName::djLine(2)));
     }
 
     public function testOneLineJoinsTheNameAndTheDjsOrKeepsTheNameWhenTooLong(): void
@@ -89,7 +99,7 @@ final class EventNameTest extends TestCase
         $this->fakeEventNames([7 => ['en' => 'Ecstatic Dance']], [7 => ['Aino Testinen', 'Bo Kokeilu']]);
 
         self::assertSame(
-            'Ecstatic Dance · DJs Aino Testinen & Bo Kokeilu',
+            'Ecstatic Dance · Aino Testinen & Bo Kokeilu',
             EventName::oneLine(7, 'en', self::TITLE)
         );
         self::assertSame('Ecstatic Dance', EventName::oneLine(7, 'en', self::TITLE, 40));
@@ -117,6 +127,6 @@ final class EventNameTest extends TestCase
 
         $task = new Task(1, '2026-11-14', 'door', 2, 7);
 
-        self::assertSame(['name' => 'Ecstatic Dance', 'dj' => 'DJ X'], EventName::ofTask($task, 'en'));
+        self::assertSame(['name' => 'Ecstatic Dance', 'dj' => 'X'], EventName::ofTask($task, 'en'));
     }
 }

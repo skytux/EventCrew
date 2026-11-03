@@ -234,7 +234,7 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller()->renderShortcode();
 
         self::assertStringContainsString(
-            '<h3 class="eventcrew-event-title">Ecstatic Dance<span class="eventcrew-event-dj">DJ Esimerkki</span></h3>',
+            '<h3 class="eventcrew-event-title">Ecstatic Dance<span class="eventcrew-event-dj">Esimerkki</span></h3>',
             $html
         );
         self::assertStringNotContainsString('ECSTATIC DANCE', $html);

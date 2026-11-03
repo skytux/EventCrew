@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.118.0
+Stable tag: 1.119.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.119.0 =
+The DJ line under the event name in the emails and on the Telegram event cards shows only the names, without "DJ" or "DJs" in front.
 
 = 1.118.0 =
 The next events announcement greets each subscriber by first name ("Hei Anna! · Hi Anna!", or "Hei! · Hi!" without a name). The thank-you email's Join button subscribes the ticket holder with one press and stores their first name. The website form asks for an optional first name after the address is saved. Each announcement ends with a link to a page where the subscriber can change their name and language or leave. The subscriber's browser language (Finnish or English) is stored; the announcement is still sent in both languages.
@@ -1072,6 +1075,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.119.0 =
+No settings change.
 
 = 1.118.0 =
 Database version 29: two new subscriber columns (name, language).
