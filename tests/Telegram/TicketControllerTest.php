@@ -367,7 +367,7 @@ final class TicketControllerTest extends TestCase
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
 
-        self::assertSame(['in' => 1, 'of' => 1, 'at' => '2026-08-01 21:05:00'], $ticket['used']);
+        self::assertSame('2026-08-01 21:05:00', $ticket['used']);
         $sql = (string) end($this->wpdb->queries);
         self::assertStringContainsString("event_date = '2026-08-01' AND kind = 'crew' AND ref_id IN (7)", $sql);
 
@@ -385,7 +385,7 @@ final class TicketControllerTest extends TestCase
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
 
-        self::assertSame('2026-08-01 22:40:00', $ticket['used']['at']);
+        self::assertSame('2026-08-01 22:40:00', $ticket['used']);
         self::assertStringContainsString("kind = 'credit'", (string) end($this->wpdb->queries));
     }
 
@@ -420,53 +420,39 @@ final class TicketControllerTest extends TestCase
         );
     }
 
-    /** Bo's order AB12CD is three tickets: rows 4, 5 and 6. */
-    private function queueBuyerOrder(): void
+    /** Bo's ticket AB12CD is row 4. Holvi gives every ticket its own code. */
+    private function queueBuyerTicket(): void
     {
         $this->wpdb->nextRows[] = $this->buyerRow('AB12CD');
-        $this->wpdb->nextResults[] = [
-            $this->buyerRow('AB12CD'),
-            ['id' => 5] + $this->buyerRow('AB12CD'),
-            ['id' => 6] + $this->buyerRow('AB12CD'),
-        ]; // findByTicketCode
         $this->wpdb->nextResults[] = []; // tasks->forDate
     }
 
-    /**
-     * Which ticket of a shared code the door used is not known, so the band
-     * stays green while any is left and says how many are used.
-     */
-    public function testABuyerOrderPartlyCheckedInStaysGreenAndSaysHowMany(): void
+    public function testABuyerTicketNotYetCheckedInStaysValid(): void
     {
-        $this->queueBuyerOrder();
-        $this->wpdb->nextResults[] = [
-            ['ref_id' => 4, 'checked_in_at' => '2026-08-01 21:00:00'],
-            ['ref_id' => 6, 'checked_in_at' => '2026-08-01 21:30:00'],
-        ];
+        $this->queueBuyerTicket();
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('buyer_ticket|AB12CD', 4));
 
-        self::assertStringContainsString("kind = 'buyer' AND ref_id IN (4, 5, 6)", (string) end($this->wpdb->queries));
+        self::assertNull($ticket['used']);
+        self::assertStringContainsString("kind = 'buyer' AND ref_id IN (4)", (string) end($this->wpdb->queries));
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString(
-            '<p class="t-band is-valid">VALID<small class="t-band-note">2 of 3 used</small></p>',
-            $html
-        );
-        self::assertStringNotContainsString('is-used">', $html);
+        self::assertStringContainsString('<p class="t-band is-valid">VALID</p>', $html);
+        self::assertStringNotContainsString(' used<', $html);
     }
 
-    public function testABuyerOrderAllCheckedInShowsTheLatestTime(): void
+    /** Only this row is read: no other row with the same code is looked up. */
+    public function testABuyerTicketCheckedInShowsTheOrangeBandWithItsTime(): void
     {
-        $this->queueBuyerOrder();
-        $this->wpdb->nextResults[] = [
-            ['ref_id' => 4, 'checked_in_at' => '2026-08-01 21:00:00'],
-            ['ref_id' => 5, 'checked_in_at' => '2026-08-01 23:10:00'],
-            ['ref_id' => 6, 'checked_in_at' => '2026-08-01 21:30:00'],
-        ];
+        $this->queueBuyerTicket();
+        $this->wpdb->nextResults[] = [['ref_id' => 4, 'checked_in_at' => '2026-08-01 23:10:00']];
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('buyer_ticket|AB12CD', 4));
 
+        self::assertSame('2026-08-01 23:10:00', $ticket['used']);
+        foreach ($this->wpdb->queries as $sql) {
+            self::assertStringNotContainsString('ticket_code', (string) $sql);
+        }
         self::assertStringContainsString(
             '<p class="t-band is-used">Already used · 23:10</p>',
             $this->controller()->renderPage($ticket)

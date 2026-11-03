@@ -1144,7 +1144,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(
             [[
                 'key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12,
-                'name' => 'Ada Lovelace', 'first' => 'Ada', 'in' => false,
+                'name' => 'Ada Lovelace', 'first' => 'Ada', 'in' => false, 'at' => '',
             ]],
             $tickets
         );
@@ -1171,6 +1171,44 @@ final class DoorDeskTest extends SalesDeskTestCase
         $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')];
 
         self::assertSame(['buyer:12'], array_column($this->desk()->ticketsByCode(self::NIGHT, ['AB12', 'ab12']), 'key'));
+    }
+
+    /** The door says "already used · 21:05": the time of the first check-in. */
+    public function testATicketCodeAlreadyUsedTonightGivesTheTimeItWasUsed(): void
+    {
+        $this->wpdb->nextResults[] = [$this->codedBuyerRow(12, 'Ada')];
+        $this->wpdb->nextResults[] = [
+            ['kind' => 'buyer', 'ref_id' => 12, 'plus_ones' => 0, 'checked_in_at' => self::NIGHT . ' 21:05:00'],
+        ];
+
+        $tickets = $this->desk()->ticketsByCode(self::NIGHT, ['AB12']);
+
+        self::assertTrue($tickets[0]['in']);
+        self::assertSame('21:05', $tickets[0]['at']);
+        self::assertStringContainsString('checked_in_at', $this->wpdb->queries[1]);
+    }
+
+    public function testAListRowCheckedInGivesItsTimeAndOneNotInGivesNone(): void
+    {
+        $this->queueState([['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1, 'checked_in_at' => self::NIGHT . ' 20:15:00']]);
+        $in = $this->desk()->state(self::NIGHT);
+        $this->queueState([]);
+        $out = $this->desk()->state(self::NIGHT);
+
+        $find = static function (array $state): array {
+            foreach ($state['sections'] as $section) {
+                foreach ($section['rows'] as $row) {
+                    if ('guest:4' === $row['key']) {
+                        return $row;
+                    }
+                }
+            }
+
+            return [];
+        };
+
+        self::assertSame('20:15', $find($in)['at']);
+        self::assertSame('', $find($out)['at']);
     }
 
     public function testATicketCodeThatMatchesNothingFindsNothingAndSaysSo(): void

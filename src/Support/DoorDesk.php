@@ -193,7 +193,7 @@ final class DoorDesk
      *     version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
      *         key: string, kind: string, ref: int, name: string, first: string, detail: string,
-     *         plus: int, max: int, in: bool
+     *         plus: int, max: int, in: bool, at: string
      *     }>}>
      * }
      */
@@ -477,15 +477,16 @@ final class DoorDesk
 
     /**
      * The tickets on tonight's list that carry one of these ticket codes:
-     * the shop's order code, read from a QR code the desk scanned and
-     * decoded on the page. One order of several tickets has one row per
-     * ticket, so this can answer several. Each answer is the row's key on
-     * tonight's list ("buyer:12"), the name, and whether that ticket is
-     * already checked in. Nothing is marked here: the desk checks the
-     * tickets in one at a time through mark().
+     * read from a QR code the desk scanned and decoded on the page. A Holvi
+     * code belongs to one ticket; a ticket file of another format may repeat
+     * a code, so this can answer several. Each answer is the row's key on
+     * tonight's list ("buyer:12"), the name, whether that ticket is
+     * already checked in, and at what time ('HH:MM', '' when not in).
+     * Nothing is marked here: the desk checks the tickets in one at a time
+     * through mark().
      *
      * @param array<int, string> $codes
-     * @return array<int, array{key: string, kind: string, ref: int, name: string, first: string, in: bool}>
+     * @return array<int, array{key: string, kind: string, ref: int, name: string, first: string, in: bool, at: string}>
      */
     public function ticketsByCode(string $date, array $codes): array
     {
@@ -508,6 +509,7 @@ final class DoorDesk
                     'name' => '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name,
                     'first' => self::firstName($buyer->name),
                     'in' => array_key_exists($key, $checkins),
+                    'at' => self::inTime($checkins[$key]['at'] ?? ''),
                 ];
             }
         }
@@ -1167,13 +1169,14 @@ final class DoorDesk
 
     /**
      * Adds each row's check-in to it. A checked-in row shows the plus-ones
-     * written at the door, which may differ from the list's default.
+     * written at the door, which may differ from the list's default, and
+     * the time it was marked in.
      *
      * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
-     * @param array<string, int> $checkins
+     * @param array<string, array{plus: int, at: string}> $checkins
      * @return array{key: string, title: string, rows: array<int, array{
      *     key: string, kind: string, ref: int, name: string, first: string, detail: string,
-     *     plus: int, max: int, in: bool
+     *     plus: int, max: int, in: bool, at: string
      * }>}
      */
     private function section(string $key, string $title, array $rows, array $checkins): array
@@ -1191,13 +1194,24 @@ final class DoorDesk
                 'name' => $row['name'],
                 'first' => self::firstName($row['name']),
                 'detail' => $row['detail'],
-                'plus' => $in ? $checkins[$rowKey] : $row['plus'],
+                'plus' => $in ? $checkins[$rowKey]['plus'] : $row['plus'],
                 'max' => $row['max'],
                 'in' => $in,
+                'at' => $in ? self::inTime($checkins[$rowKey]['at']) : '',
             ];
         }
 
         return ['key' => $key, 'title' => $title, 'rows' => $out];
+    }
+
+    /**
+     * The time a row was marked in, like "21:05", for the desk's orange
+     * "already used" line. The stored time is site time already; '' when
+     * it is not known.
+     */
+    private static function inTime(string $checkedInAt): string
+    {
+        return '' === $checkedInAt ? '' : Dates::wallClock($checkedInAt, 'H:i');
     }
 
     /**

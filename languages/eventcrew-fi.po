@@ -2401,8 +2401,8 @@ msgstr "%1$s: tämä lippu on päivälle %2$s, ei tälle illalle."
 msgid "Welcome %s"
 msgstr "Tervetuloa %s"
 
-msgid "%s: this ticket was already used tonight."
-msgstr "%s: tämä lippu on jo käytetty tänä iltana."
+msgid "%1$s: already used · %2$s"
+msgstr "%1$s: jo käytetty · %2$s"
 
 msgid "Ticket scanning opens at %s."
 msgstr "Lippujen skannaus alkaa klo %s."
@@ -6369,10 +6369,6 @@ msgstr "Viestit alkavat ensimmäisestä tapahtumasta, jonka päivä alkaa sen j�
 
 msgid "Post-event email: not sent for this event (switched on after it)"
 msgstr "Tapahtuman jälkeinen viesti: ei lähetetä tästä tapahtumasta (kytketty päälle sen jälkeen)"
-
-#, php-format
-msgid "%1$d of %2$d used"
-msgstr "%1$d/%2$d käytetty"
 
 #, php-format
 msgid "Already used · %s"

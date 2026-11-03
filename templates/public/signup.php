@@ -394,6 +394,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                     · <a href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
                                     · <a href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
                                 </span>
+                                <?php if (null !== ($eventcrew_mine['used'] ?? null)) : ?>
+                                    <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_mine['used'])); ?></span>
+                                <?php endif; ?>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -457,6 +460,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                                 <?php echo esc_html($eventcrew_ticket['label']); ?>
                                             </a>
                                             <span class="eventcrew-mine-when"><?php echo esc_html(\EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when'])); ?></span>
+                                            <?php if (null !== ($eventcrew_ticket['used'] ?? null)) : ?>
+                                                <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_ticket['used'])); ?></span>
+                                            <?php endif; ?>
                                         </li>
                                     <?php endforeach; ?>
                                 </ul>

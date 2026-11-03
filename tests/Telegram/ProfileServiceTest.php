@@ -193,4 +193,35 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringContainsString('2026-07-25', $rows[0][0]['text']);
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
     }
+
+    public function testMyTicketsSaysWhenATicketWasAlreadyUsed(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up'],
+            ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'completed'],
+        ];
+        $this->wpdb->nextRows[] = ['task_date' => '2026-07-25'] + $this->taskRow(1);
+        $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2);
+        $this->wpdb->nextResults[] = []; // no free-entry redemptions
+        $this->wpdb->nextResults[] = [ // checked in at the door on 18 July
+            ['event_date' => '2026-07-18', 'kind' => 'crew', 'checked_in_at' => '2026-07-18 21:05:00'],
+        ];
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+
+        $this->service()->onMyTickets(555, 555);
+
+        $text = (string) $this->lastCallTo('sendMessage')['text'];
+        self::assertSame(1, substr_count($text, '🟠 Already used · 21:05'));
+        self::assertMatchesRegularExpression('/2026-07-18[^\n]*🟠 Already used · 21:05/u', $text);
+    }
 }

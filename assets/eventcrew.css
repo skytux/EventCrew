@@ -289,6 +289,11 @@
 .eventcrew-signup .eventcrew-mine-label { font-weight: 600; }
 .eventcrew-signup .eventcrew-mine-when { font-size: .85em; opacity: .75; }
 .eventcrew-signup .eventcrew-mine-when a { white-space: nowrap; }
+/* A ticket the door has marked in: the ticket page's orange, with dark text (7:1) on any theme. */
+.eventcrew-signup .eventcrew-used {
+    align-self: flex-start; margin-top: .2em; padding: .15em .6em; border-radius: 999px;
+    background: #ff8c1a; color: #1d1d1f; font-size: .85em; font-weight: 700;
+}
 
 /*
  * The Me tab's parts (My tasks, What you've done, Tickets) are cards like the

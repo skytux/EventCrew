@@ -340,7 +340,7 @@ final class DoorControllerTest extends SalesDeskTestCase
         self::assertSame(200, $status);
         self::assertTrue($answer['ok']);
         self::assertSame(
-            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'first' => 'Ada', 'in' => false]],
+            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'first' => 'Ada', 'in' => false, 'at' => '']],
             $answer['tickets']
         );
         self::assertSame('', $answer['message']);
