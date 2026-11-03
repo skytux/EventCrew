@@ -274,6 +274,13 @@ final class AssistantKnowledge
                 'sold_out' === $closed ? ', sold out' : ''
             );
 
+            // The same price the event card shows ("🎟 22 €"); none, no words.
+            $price = NewsletterLayout::price(EventSource::card($event['id'])['price']);
+
+            if ('' !== $price) {
+                $line .= ', ticket ' . $price;
+            }
+
             $link = (string) get_permalink($event['id']);
 
             if ('' !== $link) {
