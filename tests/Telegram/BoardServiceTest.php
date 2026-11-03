@@ -982,7 +982,8 @@ final class BoardServiceTest extends TelegramTestCase
     public function testLockKeepsTheBoardInTheFirstGroupWhenAddedToAnother(): void
     {
         // The lock defaults on, so a board already bound to one group is not
-        // moved when the bot is added to a second.
+        // moved when the bot is added to a second - and the bot leaves the
+        // second group.
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
 
         $this->board()->onBotMembershipChange([
@@ -991,7 +992,10 @@ final class BoardServiceTest extends TelegramTestCase
         ]);
 
         self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
-        self::assertSame([], $this->telegramCalls);
+        self::assertSame(
+            [['method' => 'leaveChat', 'body' => ['chat_id' => -200]]],
+            $this->telegramCalls
+        );
     }
 
     public function testLockStillCapturesTheveryFirstGroup(): void
@@ -1006,6 +1010,23 @@ final class BoardServiceTest extends TelegramTestCase
         ]);
 
         self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+        self::assertNotContains('leaveChat', $this->calledMethods());
+    }
+
+    public function testTheSameGroupAddingTheBotAgainIsNotLeft(): void
+    {
+        // Locked, and the group re-adding the bot is the one holding the board:
+        // it stays the board's group and the bot stays in it.
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->wpdb->nextResults[] = []; // refresh render: no tasks
+
+        $this->board()->onBotMembershipChange([
+            'chat' => ['id' => -100, 'type' => 'supergroup'],
+            'new_chat_member' => ['status' => 'member'],
+        ]);
+
+        self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+        self::assertNotContains('leaveChat', $this->calledMethods());
     }
 
     public function testUnlockedBoardMovesToTheNewGroup(): void
@@ -1020,6 +1041,7 @@ final class BoardServiceTest extends TelegramTestCase
         ]);
 
         self::assertSame(-200, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+        self::assertNotContains('leaveChat', $this->calledMethods());
     }
 
     public function testLockAlsoBlocksBoardCommandInAnotherGroup(): void

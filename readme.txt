@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.95.2
+Stable tag: 1.96.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.96.0 =
+Settings > Telegram bot: the bot's About and Description, in English and Finnish, with character counts; saving sends each changed text to Telegram (a text Telegram refuses is sent again on the next save). With the group lock on, the bot leaves any other group that adds it; with the lock off a new group still takes the board.
 
 = 1.95.2 =
 Documentation: README covers the event cards, the sign-up bar and footer block, the email field name and /say; ROADMAP has a current-state section with the work in progress and the planned work.
@@ -925,6 +928,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.96.0 =
+No database change.
 
 = 1.95.2 =
 No database change.

@@ -271,6 +271,35 @@ final class TelegramClient
     }
 
     /**
+     * Sets the bot's short description ("About"), shown on the bot's profile
+     * and in shared links. Max 120 characters. A null or '' $languageCode is
+     * the text for every language without its own; '' as $text clears it.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function setMyShortDescription(string $text, ?string $languageCode = null): ?array
+    {
+        return $this->call(
+            'setMyShortDescription',
+            ['short_description' => $text] + $this->scopeParams(null, (string) $languageCode)
+        );
+    }
+
+    /**
+     * Sets the bot's description, shown in an empty private chat with the bot.
+     * Max 512 characters. Arguments as for setMyShortDescription().
+     *
+     * @return array<string, mixed>|null
+     */
+    public function setMyDescription(string $text, ?string $languageCode = null): ?array
+    {
+        return $this->call(
+            'setMyDescription',
+            ['description' => $text] + $this->scopeParams(null, (string) $languageCode)
+        );
+    }
+
+    /**
      * @param array<string, mixed>|null $scope
      * @return array<string, mixed>
      */
@@ -328,6 +357,16 @@ final class TelegramClient
     public function getChat(int|string $chatId): ?array
     {
         return $this->call('getChat', ['chat_id' => $chatId]);
+    }
+
+    /**
+     * Makes the bot leave a group.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function leaveChat(int $chatId): ?array
+    {
+        return $this->call('leaveChat', ['chat_id' => $chatId]);
     }
 
     /**
