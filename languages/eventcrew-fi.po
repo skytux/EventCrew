@@ -6727,3 +6727,54 @@ msgstr "DJ %s"
 
 msgid "DJs %s"
 msgstr "DJs %s"
+
+msgid "Hi!"
+msgstr "Hei!"
+
+msgid "Hi %s!"
+msgstr "Hei %s!"
+
+msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
+msgstr "Saat tämän viestin, koska tilasit tulevien tapahtumien tiedotteen. Muuta tietojasi tai peru tiedotteen tilaus"
+
+msgid "Thank you. Now check your inbox: the announcement starts only after you press the link in the email we sent."
+msgstr "Kiitos. Katso nyt sähköpostisi: tiedote alkaa vasta, kun painat lähettämämme viestin linkkiä."
+
+msgid "What should we call you?"
+msgstr "Millä nimellä kutsumme sinua?"
+
+msgid "Your first name (optional)"
+msgstr "Etunimesi (ei pakollinen)"
+
+msgid "Skip"
+msgstr "Ohita"
+
+msgid "We use it only to greet you in the announcement. You can change it with the link at the end of every announcement."
+msgstr "Käytämme sitä vain tervehtiessämme sinua tiedotteessa. Voit muuttaa sitä jokaisen tiedotteen lopussa olevalla linkillä."
+
+msgid "Here you can change the name we greet you with and your language, or leave the announcement."
+msgstr "Täällä voit muuttaa nimen, jolla sinua tervehditään, ja kielesi, tai perua tiedotteen tilauksen."
+
+msgid "For now the announcement comes in both languages."
+msgstr "Toistaiseksi tiedote tulee molemmilla kielillä."
+
+msgid "Leave the announcement"
+msgstr "Peru tiedotteen tilaus"
+
+msgid "EventCrew next events announcement"
+msgstr "EventCrew: tulevien tapahtumien tiedote"
+
+msgid "Confirmed"
+msgstr "Vahvistettu"
+
+msgid "The subscription to the next events announcement was deleted, with its name and language."
+msgstr "Tulevien tapahtumien tiedotteen tilaus poistettiin nimineen ja kielineen."
+
+msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
+msgstr "Haluatko kuulla uusista tapahtumista ensimmäisten joukossa? Tilaa tulevien tapahtumien tiedote: lähetämme sinulle sähköpostia, kun uusia tapahtumia julkaistaan. Yksi painikkeen painallus riittää, ja voit perua tilauksen milloin tahansa."
+
+msgid "If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We also store the name you want us to greet you with, if you give one, and the language your browser prefers (Finnish or English). You can change the name and the language, or leave, with the link at the end of every announcement. When you leave, the name is deleted."
+msgstr "Jos tilaat tulevien tapahtumien tiedotteemme, tallennamme sähköpostiosoitteesi, tiedon siitä, oletko vahvistanut sen tai perunut tiedotteen tilauksen, liittymispäivän ja vahvistuspäivän. Tallennamme myös nimen, jolla haluat meidän tervehtivän sinua, jos annat sen, sekä selaimesi suosiman kielen (suomi tai englanti). Voit muuttaa nimeä ja kieltä tai perua tilauksen jokaisen tiedotteen lopussa olevalla linkillä. Kun perut, nimi poistetaan."
+
+msgid "You are added to the next events announcement only if you press its button in that message. We then take the first word of the name on your ticket as the name to greet you with. Not joining has no effect on your ticket."
+msgstr "Sinut lisätään tulevien tapahtumien tiedotteen tilaajaksi vain, jos painat sen painiketta tuossa viestissä. Otamme silloin lippusi nimen ensimmäisen sanan nimeksi, jolla tervehdimme sinua. Liittymättä jättäminen ei vaikuta lippuusi."

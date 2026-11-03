@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '28';
+    public const DB_VERSION = '29';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -595,19 +595,24 @@ final class Schema
                 KEY event_date (event_date),
                 KEY ticket_code (ticket_code)
             ) ENGINE=InnoDB {$charsetCollate};",
-            // The newsletter's subscribers: an email address and nothing that
-            // names a person. status is 'pending' (signed up, not confirmed
-            // yet), 'confirmed' (clicked the link in the confirmation email;
-            // only these get the newsletter) or 'unsubscribed'. The address is
-            // stored in lower case and is unique, so a second sign-up reuses
-            // the row. A pending row older than Newsletter::PENDING_DAYS is
-            // deleted.
+            // The newsletter's subscribers: an email address, and optionally
+            // the name the person wants to be greeted with (schema 29). status
+            // is 'pending' (signed up, not confirmed yet), 'confirmed'
+            // (clicked the link in the confirmation email, or the subscribe
+            // button in a thank-you email; only these get the newsletter) or
+            // 'unsubscribed'. The address is stored in lower case and is
+            // unique, so a second sign-up reuses the row. A pending row older
+            // than Newsletter::PENDING_DAYS is deleted. language (schema 29)
+            // is 'fi', 'en' or '' when not known, taken from the browser at
+            // sign-up and changeable on the manage page.
             "CREATE TABLE {$newsletterSubscribers} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 email varchar(191) NOT NULL,
                 status varchar(20) NOT NULL DEFAULT 'pending',
                 created_at datetime NOT NULL,
                 confirmed_at datetime DEFAULT NULL,
+                name varchar(100) DEFAULT NULL,
+                language varchar(2) NOT NULL DEFAULT '',
                 PRIMARY KEY  (id),
                 UNIQUE KEY email (email),
                 KEY status (status)

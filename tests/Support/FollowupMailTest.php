@@ -528,6 +528,123 @@ final class FollowupMailTest extends TestCase
         self::assertCount(2, $this->db->queries);
     }
 
+    // ---- The subscribe button ---------------------------------------------
+
+    /**
+     * The button carries a signed id of the ticket holder's row; pressing it
+     * counts the click and subscribes that address, confirmed, with the first
+     * word of the ticket name and the browser's language.
+     */
+    public function testTheSubscribeButtonSubscribesTheTicketHolder(): void
+    {
+        $url = FollowupMail::joinUrl('b', 7, 'thanks-2026-11-14');
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->db->nextQueryResults = [1];
+        $this->db->nextRows[] = ['name' => 'Anna Virtanen', 'email' => 'Anna@Example.test']; // holder()
+        $this->db->nextRows[] = null; // no subscriber row yet
+
+        $target = $this->followup()->joinClick((string) $query[FollowupMail::JOIN_ARG], 'fi');
+
+        self::assertStringStartsWith('https://site.test/?' . FollowupMail::JOIN_ARG . '=', $url);
+        self::assertSame(
+            'https://site.test/?eventcrew_newsletter=joined'
+                . '&utm_source=eventcrew&utm_medium=email&utm_campaign=thanks-2026-11-14#eventcrew-newsletter',
+            $target
+        );
+        self::assertContains(
+            'UPDATE wp_eventcrew_ticket_buyers SET followup_clicked_at = \'2026-07-20 12:00:00\''
+                . ' WHERE id = 7 AND followup_clicked_at IS NULL',
+            array_map('trim', $this->db->queries)
+        );
+        self::assertContains('SELECT name, email FROM wp_eventcrew_ticket_buyers WHERE id = 7', $this->db->queries);
+        self::assertSame('wp_eventcrew_newsletter_subscribers', $this->db->inserts[0]['table']);
+        self::assertSame(
+            [
+                'email' => 'anna@example.test',
+                'status' => 'confirmed',
+                'created_at' => '2026-07-20 12:00:00',
+                'confirmed_at' => '2026-07-20 12:00:00',
+                'name' => 'Anna',
+                'language' => 'fi',
+            ],
+            $this->db->inserts[0]['data']
+        );
+    }
+
+    /** The button of a preview or a test only leads to the page: nobody is subscribed or counted. */
+    public function testASampleSubscribeButtonSubscribesNobody(): void
+    {
+        $url = FollowupMail::joinUrl('t', 0, 'missed-2026-11-14');
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        $target = $this->followup()->joinClick((string) $query[FollowupMail::JOIN_ARG], 'fi');
+
+        self::assertSame(
+            'https://site.test/?utm_source=eventcrew&utm_medium=email&utm_campaign=missed-2026-11-14'
+                . '#eventcrew-newsletter',
+            $target
+        );
+        self::assertSame([], $this->db->queries);
+        self::assertSame([], $this->db->inserts);
+    }
+
+    /** A row whose address was deleted since only leads to the page. */
+    public function testASubscribeButtonOfAnErasedRowSubscribesNobody(): void
+    {
+        $this->db->nextRows[] = ['name' => '', 'email' => ''];
+
+        $target = $this->followup()->joinClick(
+            SignedLink::signPayload(FollowupMail::PURPOSE_JOIN, "g\n3\nthanks-2026-11-14")
+        );
+
+        self::assertStringNotContainsString('joined', (string) $target);
+        self::assertSame([], $this->db->inserts);
+        self::assertSame([], $this->db->updates);
+    }
+
+    public function testAForgedSubscribeTokenDoesNothing(): void
+    {
+        $token = FollowupMail::joinUrl('b', 7, 'thanks-2026-11-14');
+        $mail = $this->followup();
+
+        self::assertNull($mail->joinClick('garbage'));
+        self::assertNull($mail->joinClick(SignedLink::signPayload(FollowupMail::PURPOSE_GO, "b\n7\nthanks")));
+        self::assertNull($mail->joinClick(substr($token, (int) strpos($token, '=') + 1) . 'x'));
+        self::assertSame([], $this->db->queries);
+    }
+
+    public function testTheHolderIsReadByKindAndId(): void
+    {
+        $rows = new FollowupRepository();
+        $this->db->nextRows[] = ['name' => 'Cy Guest', 'email' => ' cy@example.test '];
+
+        self::assertSame(
+            ['name' => 'Cy Guest', 'email' => 'cy@example.test'],
+            $rows->holder(FollowupRepository::KIND_GUEST, 3)
+        );
+        self::assertSame('SELECT name, email FROM wp_eventcrew_guests WHERE id = 3', $this->db->lastQuery());
+        self::assertNull($rows->holder(FollowupRepository::KIND_GUEST, 4), 'no row');
+        self::assertNull($rows->holder('person', 3));
+        self::assertNull($rows->holder(FollowupRepository::KIND_BUYER, 0));
+    }
+
+    /** The email's subscribe button is the signed join link of that row, not a counted redirect. */
+    public function testTheEmailsSubscribeButtonIsTheRowsJoinLink(): void
+    {
+        $this->sampleEvents();
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        preg_match('/eventcrew_join=([A-Za-z0-9_.\-]+)/', $mail['html'], $token);
+        self::assertNotEmpty($token, 'the join link is in the email');
+        self::assertSame(
+            "b\n7\n" . FollowupMail::campaign(self::NIGHT, true),
+            SignedLink::verifyPayload(FollowupMail::PURPOSE_JOIN, $token[1])
+        );
+        self::assertStringContainsString('eventcrew_join=' . $token[1], $mail['text']);
+    }
+
     // ---- The counts line --------------------------------------------------
 
     public function testTheStatusLine(): void

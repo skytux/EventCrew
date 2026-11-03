@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 
@@ -29,7 +30,8 @@ final class PrivacyEraser
         private readonly PersonRepository $people,
         private readonly PersonEraser $eraser,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
-        private readonly GuestRepository $guests = new GuestRepository()
+        private readonly GuestRepository $guests = new GuestRepository(),
+        private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository()
     ) {
     }
 
@@ -105,6 +107,15 @@ final class PrivacyEraser
         if ($this->guests->eraseEmail($email) > 0) {
             $messages[] = __(
                 'The name and email address were erased from the guest list places under this address. The places stay on the guest list with no name.',
+                'eventcrew'
+            );
+        }
+
+        // The announcement subscription goes entirely: its row holds only
+        // the address, the name to greet and the language.
+        if ($this->subscribers->deleteByEmail($email) > 0) {
+            $messages[] = __(
+                'The subscription to the next events announcement was deleted, with its name and language.',
                 'eventcrew'
             );
         }
