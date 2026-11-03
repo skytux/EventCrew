@@ -6369,3 +6369,11 @@ msgstr "Viestit alkavat ensimmäisestä tapahtumasta, jonka päivä alkaa sen j�
 
 msgid "Post-event email: not sent for this event (switched on after it)"
 msgstr "Tapahtuman jälkeinen viesti: ei lähetetä tästä tapahtumasta (kytketty päälle sen jälkeen)"
+
+#, php-format
+msgid "%1$d of %2$d used"
+msgstr "%1$d/%2$d käytetty"
+
+#, php-format
+msgid "Already used · %s"
+msgstr "Jo käytetty · %s"

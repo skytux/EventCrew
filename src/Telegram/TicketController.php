@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -46,7 +47,8 @@ final class TicketController
         private readonly PersonRepository $people,
         private readonly RedemptionRepository $redemptions,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
-        private readonly GuestRepository $guests = new GuestRepository()
+        private readonly GuestRepository $guests = new GuestRepository(),
+        private readonly CheckinRepository $checkins = new CheckinRepository()
     ) {
     }
 
@@ -94,10 +96,12 @@ final class TicketController
      *
      * 'qr' is what the QR code holds when it is not the page's own link: a
      * ticket buyer's ticket code. 'code' is written out under the QR code.
+     * 'used' says whether the door has marked the ticket in (usedFor()).
      *
      * @return array{
      *     valid: bool, name: string, event: string, date: string, role: string, time: string,
-     *     issued: string, language: ?string, image?: string, qr?: string, code?: string
+     *     issued: string, language: ?string, image?: string, qr?: string, code?: string,
+     *     used?: array{in: int, of: int, at: string}|null
      * }|null
      */
     public function ticketFor(string $token): ?array
@@ -133,10 +137,45 @@ final class TicketController
 
         $role = static fn (): string => __('Ticket', 'eventcrew');
 
+        // One shop order of several tickets is several rows under one code,
+        // and the door scans the code: the page counts every row it covers.
+        $rowIds = [$buyer->id];
+
+        foreach ($this->buyers->findByTicketCode($buyer->eventDate, $buyer->ticketCode) as $sibling) {
+            $rowIds[] = $sibling->id;
+        }
+
         return $this->emailedTicket($buyer->eventDate, $buyer->name, $role) + [
             'qr' => $buyer->ticketCode,
             'code' => $buyer->ticketCode,
+            'used' => $this->usedFor($buyer->eventDate, [CheckinRepository::KIND_BUYER], $rowIds),
         ];
+    }
+
+    /**
+     * Whether the door has marked this ticket in on its night: how many of
+     * its check-in entries are in, out of how many, and the latest time one
+     * was marked. Null when none is in. $kinds are tried in order and the
+     * first that has a row answers - the door marks a person who works and
+     * also holds a credit as crew, one who only holds a credit as credit.
+     *
+     * @param array<int, string> $kinds
+     * @param array<int, int> $refIds
+     * @return array{in: int, of: int, at: string}|null
+     */
+    private function usedFor(string $date, array $kinds, array $refIds): ?array
+    {
+        $refIds = array_values(array_unique($refIds));
+
+        foreach ($kinds as $kind) {
+            $times = $this->checkins->checkedInAt($date, $kind, $refIds);
+
+            if ([] !== $times) {
+                return ['in' => count($times), 'of' => count($refIds), 'at' => max($times)];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -166,7 +205,9 @@ final class TicketController
             )
             : __('Guest list', 'eventcrew');
 
-        return $this->emailedTicket($guest->eventDate, $guest->name, $role);
+        return $this->emailedTicket($guest->eventDate, $guest->name, $role) + [
+            'used' => $this->usedFor($guest->eventDate, [CheckinRepository::KIND_GUEST], [$guest->id]),
+        ];
     }
 
     /**
@@ -237,6 +278,11 @@ final class TicketController
             'issued' => $assignment->signedUpAt,
             'language' => $person->language,
             'image' => SignupBoardView::eventImage($task->eventPostId),
+            'used' => $this->usedFor(
+                $task->taskDate,
+                [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT],
+                [$person->id]
+            ),
         ];
     }
 
@@ -277,6 +323,11 @@ final class TicketController
             'issued' => $redemption->redeemedAt,
             'language' => $person->language,
             'image' => SignupBoardView::eventImage($redemption->eventPostId),
+            'used' => $this->usedFor(
+                $redemption->redeemedFor,
+                [CheckinRepository::KIND_CREDIT, CheckinRepository::KIND_CREW],
+                [$person->id]
+            ),
         ];
     }
 
@@ -294,7 +345,7 @@ final class TicketController
     }
 
     /**
-     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string}|null $ticket
+     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string, used?: array{in: int, of: int, at: string}|null}|null $ticket
      */
     public function renderPage(?array $ticket): string
     {
@@ -311,7 +362,7 @@ final class TicketController
         $title = __('Your EventCrew ticket', 'eventcrew');
 
         $band = $ticket['valid']
-            ? '<p class="t-band is-valid">' . esc_html__('VALID', 'eventcrew') . '</p>'
+            ? $this->validBand($ticket['used'] ?? null)
             : '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
 
         $body = sprintf(
@@ -331,6 +382,43 @@ final class TicketController
             . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
             . '</div>'
         );
+    }
+
+    /**
+     * The band of a ticket that is not cancelled: green VALID, or orange once
+     * the door has marked it in. A ticket covering several entries (one shop
+     * order of several tickets) that is partly in stays green and says how
+     * many are used; fully in, it is orange with the time the last one came
+     * in. The stored time is site time already.
+     *
+     * @param array{in: int, of: int, at: string}|null $used
+     */
+    private function validBand(?array $used): string
+    {
+        if (null === $used || $used['in'] < 1) {
+            return '<p class="t-band is-valid">' . esc_html__('VALID', 'eventcrew') . '</p>';
+        }
+
+        // The door checks an order's tickets in one at a time under the shared
+        // code, in no set order, so which one was used is not known: the band
+        // stays green while any is left, and says how many are used.
+        if ($used['in'] < $used['of']) {
+            return '<p class="t-band is-valid">' . esc_html__('VALID', 'eventcrew')
+                . '<small class="t-band-note">' . esc_html(sprintf(
+                    /* translators: 1: how many of the tickets are checked in, 2: how many tickets there are */
+                    __('%1$d of %2$d used', 'eventcrew'),
+                    $used['in'],
+                    $used['of']
+                )) . '</small></p>';
+        }
+
+        $text = sprintf(
+            /* translators: %s: the time the ticket was checked in at the door, like 21:05 */
+            __('Already used · %s', 'eventcrew'),
+            Dates::wallClock($used['at'], 'H:i')
+        );
+
+        return '<p class="t-band is-used">' . esc_html($text) . '</p>';
     }
 
     /**
@@ -470,6 +558,10 @@ final class TicketController
             . '.t-task{margin:0 0 1em;opacity:.8}'
             . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
+            // Bright orange with dark text: 7:1 contrast, where white text on
+            // an orange this light would not be readable.
+            . '.t-band.is-used{background:#ff8c1a;color:#1d1d1f}'
+            . '.t-band-note{display:block;font-weight:400;font-size:.8em;letter-spacing:.03em}'
             . '.t-qr{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
             . '.t-qr svg{display:block;width:100%;height:auto}'
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'

@@ -349,6 +349,143 @@ final class TicketControllerTest extends TestCase
         self::assertStringNotContainsString('pre-line', $html);
     }
 
+    /** The rostered-slot ticket of Sam (person 7) for 1 August. */
+    private function queueCrewTicket(string $status = 'signed_up'): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => $status];
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'decorate',
+            'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+    }
+
+    public function testACrewTicketCheckedInAtTheDoorShowsTheOrangeBand(): void
+    {
+        $this->queueCrewTicket();
+        $this->wpdb->nextResults[] = [['ref_id' => 7, 'checked_in_at' => '2026-08-01 21:05:00']];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
+
+        self::assertSame(['in' => 1, 'of' => 1, 'at' => '2026-08-01 21:05:00'], $ticket['used']);
+        $sql = (string) end($this->wpdb->queries);
+        self::assertStringContainsString("event_date = '2026-08-01' AND kind = 'crew' AND ref_id IN (7)", $sql);
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('<p class="t-band is-used">Already used · 21:05</p>', $html);
+        self::assertStringNotContainsString('is-valid">', $html);
+    }
+
+    public function testACrewTicketMarkedInAsCreditAlsoReadsAsUsed(): void
+    {
+        $this->queueCrewTicket();
+        $this->wpdb->nextResults[] = []; // not in as crew
+        $this->wpdb->nextResults[] = [['ref_id' => 7, 'checked_in_at' => '2026-08-01 22:40:00']];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
+
+        self::assertSame('2026-08-01 22:40:00', $ticket['used']['at']);
+        self::assertStringContainsString("kind = 'credit'", (string) end($this->wpdb->queries));
+    }
+
+    public function testACrewTicketNotYetCheckedInStaysValid(): void
+    {
+        $this->queueCrewTicket();
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
+
+        self::assertNull($ticket['used']);
+        self::assertStringContainsString(
+            '<p class="t-band is-valid">VALID</p>',
+            $this->controller()->renderPage($ticket)
+        );
+    }
+
+    public function testAGuestTicketCheckedInShowsTheOrangeBand(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 12, 'event_date' => '2026-08-01', 'name' => 'Cy Cole', 'plus_ones' => 0,
+            'email' => 'cy@example.test',
+        ];
+        $this->wpdb->nextResults[] = []; // tasks->forDate
+        $this->wpdb->nextResults[] = [['ref_id' => 12, 'checked_in_at' => '2026-08-01 20:15:00']];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('guest_ticket', 12));
+
+        self::assertStringContainsString("kind = 'guest' AND ref_id IN (12)", (string) end($this->wpdb->queries));
+        self::assertStringContainsString(
+            '<p class="t-band is-used">Already used · 20:15</p>',
+            $this->controller()->renderPage($ticket)
+        );
+    }
+
+    /** Bo's order AB12CD is three tickets: rows 4, 5 and 6. */
+    private function queueBuyerOrder(): void
+    {
+        $this->wpdb->nextRows[] = $this->buyerRow('AB12CD');
+        $this->wpdb->nextResults[] = [
+            $this->buyerRow('AB12CD'),
+            ['id' => 5] + $this->buyerRow('AB12CD'),
+            ['id' => 6] + $this->buyerRow('AB12CD'),
+        ]; // findByTicketCode
+        $this->wpdb->nextResults[] = []; // tasks->forDate
+    }
+
+    /**
+     * Which ticket of a shared code the door used is not known, so the band
+     * stays green while any is left and says how many are used.
+     */
+    public function testABuyerOrderPartlyCheckedInStaysGreenAndSaysHowMany(): void
+    {
+        $this->queueBuyerOrder();
+        $this->wpdb->nextResults[] = [
+            ['ref_id' => 4, 'checked_in_at' => '2026-08-01 21:00:00'],
+            ['ref_id' => 6, 'checked_in_at' => '2026-08-01 21:30:00'],
+        ];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('buyer_ticket|AB12CD', 4));
+
+        self::assertStringContainsString("kind = 'buyer' AND ref_id IN (4, 5, 6)", (string) end($this->wpdb->queries));
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString(
+            '<p class="t-band is-valid">VALID<small class="t-band-note">2 of 3 used</small></p>',
+            $html
+        );
+        self::assertStringNotContainsString('is-used">', $html);
+    }
+
+    public function testABuyerOrderAllCheckedInShowsTheLatestTime(): void
+    {
+        $this->queueBuyerOrder();
+        $this->wpdb->nextResults[] = [
+            ['ref_id' => 4, 'checked_in_at' => '2026-08-01 21:00:00'],
+            ['ref_id' => 5, 'checked_in_at' => '2026-08-01 23:10:00'],
+            ['ref_id' => 6, 'checked_in_at' => '2026-08-01 21:30:00'],
+        ];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('buyer_ticket|AB12CD', 4));
+
+        self::assertStringContainsString(
+            '<p class="t-band is-used">Already used · 23:10</p>',
+            $this->controller()->renderPage($ticket)
+        );
+    }
+
+    public function testACancelledTicketStaysDisabledEvenWhenCheckedIn(): void
+    {
+        $this->queueCrewTicket('cancelled');
+        $this->wpdb->nextResults[] = [['ref_id' => 7, 'checked_in_at' => '2026-08-01 21:05:00']];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertNotNull($ticket['used']);
+        self::assertStringContainsString('<p class="t-band is-disabled">DISABLED</p>', $html);
+        self::assertStringNotContainsString('is-used">', $html);
+    }
+
     public function testRenderPageShowsNotFoundForANullTicket(): void
     {
         $html = $this->controller()->renderPage(null);
