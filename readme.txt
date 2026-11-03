@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.97.9
+Stable tag: 1.98.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.98.0 =
+Telegram event cards. /events, in a private chat with the bot, shows an organizer the next coming events as picture cards (the event picture, the date, the price or sold out, a short Finnish and English description, and buttons to buy a ticket, listen to the DJ and open the crew app). Confirm posts the same cards in the crew group; Cancel sends nothing. A card without a picture goes out as a text message with the same buttons. An organizer who asks the bot in their own words which events come next gets the same preview. Listed in /help and in the organizer guide.
 
 = 1.97.9 =
 After the answer to a sign-up for the next events announcement (in the full form or in the bar), a "Back to top" link takes the visitor back to the top of the page.
@@ -958,6 +961,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.98.0 =
+No database change.
 
 = 1.97.9 =
 No database change.

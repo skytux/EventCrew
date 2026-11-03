@@ -213,6 +213,22 @@ final class AssistantActionsTest extends TestCase
         self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/say Hello', $crew)['error']);
     }
 
+    public function testOnlyAnOrganizerGetsTheEventCards(): void
+    {
+        $crew = ['organizer' => false, 'welcomeCrew' => true, 'verified' => true];
+        $result = self::check('/events', self::organizer());
+
+        self::assertTrue($result['ok']);
+        self::assertFalse($result['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $result['run']);
+        self::assertSame('/events', $result['payload']);
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('/events now', self::organizer())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/events', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/events', $crew)['error']);
+        self::assertContains('/events', array_column(AssistantActions::catalogue(self::organizer()), 'usage'));
+        self::assertNotContains('/events', array_column(AssistantActions::catalogue($crew), 'usage'));
+    }
+
     public function testAMessageForTheGroupKeepsItsTextExactlyAndRunsWithoutTheHelpersConfirm(): void
     {
         $result = self::check("/say  Hi  all,\n\n\nsee you!  ", self::organizer());
