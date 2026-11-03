@@ -16,6 +16,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
@@ -36,6 +37,7 @@ use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
@@ -108,6 +110,7 @@ use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\CrewAppPage;
 use EventCrew\Web\DoorController;
+use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
@@ -198,6 +201,11 @@ final class Kernel
         // must exist for logged-out visitors, so they boot on every path.
         $this->container->get(Newsletter::class)->boot();
         $this->container->get(NewsletterController::class)->boot();
+
+        // The post-event email: its sending batches are a cron event, and its
+        // counted links and Stop page are opened by logged-out people.
+        $this->container->get(FollowupMail::class)->boot();
+        $this->container->get(FollowupController::class)->boot();
 
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
@@ -378,6 +386,27 @@ final class Kernel
                 $container->get(Mailer::class),
                 $container->get(Logger::class)
             )
+        );
+
+        $this->container->singleton(
+            FollowupRepository::class,
+            fn () => new FollowupRepository()
+        );
+
+        $this->container->singleton(
+            FollowupMail::class,
+            fn (Container $container) => new FollowupMail(
+                $container->get(FollowupRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            FollowupController::class,
+            fn (Container $container) => new FollowupController($container->get(FollowupMail::class))
         );
 
         $this->container->singleton(
@@ -586,7 +615,8 @@ final class Kernel
                 $container->get(RetentionPurge::class),
                 $container->get(WelcomeSender::class),
                 $container->get(CommandMenu::class),
-                $container->get(Newsletter::class)
+                $container->get(Newsletter::class),
+                $container->get(FollowupMail::class)
             )
         );
 
@@ -711,7 +741,8 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(BuyerImport::class),
                 $container->get(MailImporter::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                $container->get(FollowupMail::class)
             )
         );
 
@@ -1295,7 +1326,8 @@ final class Kernel
                 $container->get(GuestRepository::class),
                 $container->get(TicketBuyerRepository::class),
                 $container->get(BuyerImport::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                $container->get(FollowupMail::class)
             )
         );
 

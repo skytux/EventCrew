@@ -309,6 +309,45 @@ events announcement**.
   confirmed the announcement keeps their email address past the 60-day buyer
   purge.
 
+## Post-event email
+
+A short email the day after each event to everyone who had a ticket and gave an
+email address: imported ticket buyers, door and desk sales, and guests on a
+guest list. It is **off by default**; switch it on under **Settings → Email →
+Post-event email**.
+
+- **Two versions.** Someone who was checked in at the door gets a warm
+  thank-you and an invitation to secure their spot at the next event. Someone
+  who was not gets a kind "sorry we missed you" that hopes to see them soon.
+  Both are in Finnish first, then English.
+- **Content.** Under the text are a button to the site, the next three coming
+  events as cards with their pictures (the same cards as the next events
+  announcement), and, while the announcement is on, an invitation to join it.
+  Nobody is subscribed by this email; joining goes through the announcement's
+  double opt-in.
+- **One per address.** Several tickets of one night with the same email address
+  get one email. The person counts as came when any of those tickets was
+  checked in. Rows whose address was already deleted by the 60-day purge are
+  skipped.
+- **Timing.** At 12:00 site time the day before the event, every organizer gets
+  a preview with both versions (with a sample name) and a signed **Stop** link.
+  The emails go out from 12:00 the day after, in WP-Cron batches of 25. Only a
+  night whose preview went out is sent, and a night more than two days late is
+  not sent. A night with no ticket holder with an email gets nothing, not even
+  a preview. Switching it on never mails an event that is already over or going
+  on: the first email is for the first event whose day starts after the switch.
+  The Roster page (wp-admin and the crew app's Admin tab) has the
+  same Stop button and a **Send a test to me** button.
+- **Tracking.** Every link carries `utm_source=eventcrew`, `utm_medium=email`
+  and `utm_campaign=thanks-YYYY-MM-DD` or `missed-YYYY-MM-DD`, merged into any
+  query string the link already has, so the shop's and the site's statistics can
+  tell which sales came from these emails. The link goes through the site first
+  (`?eventcrew_go=<signed token>`, answered with a 302) and records the time of
+  the first click per email; only signed http(s) targets are followed, so it is
+  not an open redirect. The Roster page shows
+  "Post-event email: 38 sent · 2 failed · 6 clicked". Mail scanners that open
+  links can add to the clicks.
+
 ## Requirements
 
 - WordPress 6.8+

@@ -627,7 +627,7 @@ final class Newsletter
      * @param array<string, mixed> $event
      * @return array<string, mixed>
      */
-    private static function withCard(array $event): array
+    public static function withCard(array $event): array
     {
         return array_merge(EventSource::card((int) ($event['id'] ?? 0)), $event);
     }
@@ -674,7 +674,8 @@ final class Newsletter
 
     /**
      * Every coming event that is not hidden, earliest first, in the plan
-     * events' shape.
+     * events' shape: the events dated after $today. Also what the post-event
+     * email (FollowupMail) lists.
      *
      * @return array<int, array{
      *     id: int,
@@ -686,7 +687,7 @@ final class Newsletter
      *     sold_out: bool
      * }>
      */
-    private function comingEvents(string $today): array
+    public static function comingEvents(string $today): array
     {
         $events = [];
 

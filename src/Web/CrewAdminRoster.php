@@ -23,6 +23,7 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -56,7 +57,8 @@ final class CrewAdminRoster
         private readonly TicketBuyerRepository $ticketBuyers,
         private readonly BuyerImport $buyerImport,
         private readonly MailImporter $mailImporter,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?FollowupMail $followup = null
     ) {
     }
 
@@ -112,6 +114,8 @@ final class CrewAdminRoster
      *     buyers: list<string>,
      *     ticket_mail_buyers: string,
      *     ticket_mail_guests: string,
+     *     followup_mail: string,
+     *     followup_can_stop: bool,
      *     mailbox: string,
      *     mail_last: string
      * }
@@ -127,6 +131,8 @@ final class CrewAdminRoster
             'buyers' => [],
             'ticket_mail_buyers' => '',
             'ticket_mail_guests' => '',
+            'followup_mail' => '',
+            'followup_can_stop' => false,
             'mailbox' => BuyerImportController::mailbox(),
             'mail_last' => self::lastMailCheck(),
         ];
@@ -173,6 +179,15 @@ final class CrewAdminRoster
             $view['ticket_mail_guests'] = TicketMail::statusLine(
                 $this->ticketMail->counts($date, TicketMail::KIND_GUESTS)
             );
+        }
+
+        if (null !== $this->followup) {
+            $view['followup_mail'] = FollowupMail::statusLine(
+                $this->followup->counts($date),
+                $this->followup->nightStatus($date),
+                $date
+            );
+            $view['followup_can_stop'] = $this->followup->canStop($date);
         }
 
         return $view;
@@ -405,6 +420,29 @@ final class CrewAdminRoster
     }
 
     /**
+     * The post-event email's "Send a test to me": both versions, with a
+     * sample name, to the organizer's own address.
+     */
+    public function sendFollowupTest(string $date, Person $organizer): string
+    {
+        if (! self::isValidDate($date) || null === $this->followup) {
+            return 'admin_change_failed';
+        }
+
+        return 'admin_followup_test_' . $this->followup->sendTest($date, $organizer->email);
+    }
+
+    /** Stops $date's post-event email. */
+    public function stopFollowup(string $date): string
+    {
+        if (! self::isValidDate($date) || null === $this->followup) {
+            return 'admin_change_failed';
+        }
+
+        return 'admin_followup_stop_' . $this->followup->stop($date);
+    }
+
+    /**
      * "Check the mailbox now": one run of the mail import, as the button in
      * wp-admin Settings does. The text of the result is read back from the
      * stored status when the page shows the notice.
@@ -478,6 +516,17 @@ final class CrewAdminRoster
             'admin_tickets_test_sent' => __('A test ticket email was sent to your own address.', 'eventcrew'),
             'admin_tickets_test_failed' => RosterPage::ticketTestMessage(TicketMail::TEST_FAILED, ''),
             'admin_tickets_test_none' => RosterPage::ticketTestMessage(TicketMail::TEST_NONE, ''),
+            'admin_followup_test_' . FollowupMail::TEST_SENT => __(
+                'Both post-event emails were sent to your own address as a test.',
+                'eventcrew'
+            ),
+            'admin_followup_test_' . FollowupMail::TEST_FAILED => RosterPage::followupTestMessage(
+                FollowupMail::TEST_FAILED,
+                ''
+            ),
+            'admin_followup_stop_' . FollowupMail::STOPPED => RosterPage::followupStopMessage(FollowupMail::STOPPED),
+            'admin_followup_stop_' . FollowupMail::ALREADY => RosterPage::followupStopMessage(FollowupMail::ALREADY),
+            'admin_followup_stop_' . FollowupMail::TOO_LATE => RosterPage::followupStopMessage(FollowupMail::TOO_LATE),
             'admin_mail_off' => __(
                 'Reading the mailbox is switched off, or the server, user name or password is missing.',
                 'eventcrew'

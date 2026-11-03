@@ -79,6 +79,42 @@ final class SignedLink
         return substr(self::mac($purpose, (string) $id), 0, 16);
     }
 
+    /**
+     * A token that carries a short text instead of an id, signed the same
+     * way: base64url($payload) . '.' . HMAC(purpose|body). The text is
+     * readable by anyone who has the token, so it must hold nothing secret.
+     */
+    public static function signPayload(string $purpose, string $payload): string
+    {
+        $body = self::encode($payload);
+
+        return $body . '.' . self::mac($purpose, $body);
+    }
+
+    /**
+     * The text a signPayload() token carries, or null when the token is
+     * malformed, for the wrong purpose, or the signature does not verify.
+     */
+    public static function verifyPayload(string $purpose, string $token): ?string
+    {
+        $token = trim($token);
+        $dot = strrpos($token, '.');
+
+        if (false === $dot || 0 === $dot) {
+            return null;
+        }
+
+        $body = substr($token, 0, $dot);
+
+        if (! hash_equals(self::mac($purpose, $body), substr($token, $dot + 1))) {
+            return null;
+        }
+
+        $payload = base64_decode(strtr($body, '-_', '+/'), true);
+
+        return false === $payload ? null : $payload;
+    }
+
     private static function mac(string $purpose, string $body): string
     {
         $key = function_exists('wp_salt') ? wp_salt('auth') : 'eventcrew-test-key';

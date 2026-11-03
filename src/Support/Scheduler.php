@@ -45,7 +45,8 @@ final class Scheduler
         private readonly RetentionPurge $retention,
         private readonly WelcomeSender $welcome,
         private readonly CommandMenu $commandMenu,
-        private readonly ?Newsletter $newsletter = null
+        private readonly ?Newsletter $newsletter = null,
+        private readonly ?FollowupMail $followup = null
     ) {
     }
 
@@ -116,6 +117,11 @@ final class Scheduler
             // neither the preview nor the newsletter goes out at night. Does
             // nothing while switched off.
             $this->newsletter?->run();
+
+            // The post-event email: the organizers' preview from 12:00 the
+            // day before a night, the emails themselves from 12:00 the day
+            // after. Does nothing while switched off.
+            $this->followup?->run();
         }
 
         // Not gated: editing the pinned board in place sends nobody a
@@ -192,5 +198,6 @@ final class Scheduler
         wp_clear_scheduled_hook(MailImporter::HOOK);
         wp_clear_scheduled_hook(TicketMail::HOOK);
         wp_clear_scheduled_hook(Newsletter::HOOK);
+        wp_clear_scheduled_hook(FollowupMail::HOOK);
     }
 }
