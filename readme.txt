@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.125.4
+Stable tag: 1.126.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.126.0 =
+Telegram group board in card format, behind a new setting (Settings, Telegram bot, Event cards) that is off by default: one message per day for the next 6 days with tasks; a day with an EventMesh event that has a picture is a photo card with that day task buttons; other days stay text.
 
 = 1.125.4 =
 Tests: seven duplicate tests removed (1897 to 1890); no change to the plugin itself.
@@ -1111,6 +1114,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.126.0 =
+No settings change.
 
 = 1.125.4 =
 No settings change.

@@ -355,6 +355,17 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertFalse($this->options[TelegramLogin::ENABLED_OPTION]);
     }
 
+    public function testTheBoardCardsSwitchSavesAndIsOffByDefault(): void
+    {
+        self::assertFalse(\EventCrew\Telegram\BoardService::cardsOn());
+
+        $this->saveTelegramSection(['telegram_board_cards' => '1']);
+        self::assertTrue($this->options[\EventCrew\Telegram\BoardService::CARDS_OPTION]);
+
+        $this->saveTelegramSection([]);
+        self::assertFalse($this->options[\EventCrew\Telegram\BoardService::CARDS_OPTION]);
+    }
+
     public function testTheSignInRowIsTheSwitchAndABotSignInHintWithoutTheToken(): void
     {
         $token = '123456789:AAsecret-part-of-the-token';
