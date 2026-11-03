@@ -127,6 +127,11 @@ final class NewsletterController
      * that key and draws the keyboard over the page (Safari on iOS): it moves
      * the bar up only when the visual viewport ends more than 100px above the
      * layout viewport, so a browser toolbar that slides in or out is ignored.
+     *
+     * When the page also has the full form, the bar has no Cloudflare check of
+     * its own: Subscribe in the bar copies the address into the full form,
+     * scrolls to it, and submits it as soon as its check has a token (or
+     * after 2 minutes, so the server answers a check that never finished).
      */
     private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
         . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
@@ -158,6 +163,15 @@ final class NewsletterController
         . 'if(vv){vv.addEventListener("resize",queue);vv.addEventListener("scroll",queue);}'
         . 'b.addEventListener("focusin",function(){queue();setTimeout(queue,350);});'
         . 'b.addEventListener("focusout",function(e){if(!b.contains(e.relatedTarget)){b.style.bottom="";show();}});'
+        . 'var bf=b.querySelector("form"),ff=document.querySelector(".eventcrew-newsletter form");'
+        . 'if(bf&&ff&&!bf.querySelector(".cf-turnstile")&&ff.querySelector(".cf-turnstile")){'
+        . 'bf.addEventListener("submit",function(e){e.preventDefault();'
+        . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
+        . 'if(b.contains(document.activeElement)){document.activeElement.blur();}'
+        . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var n=0;'
+        . '(function send(){var t=ff.querySelector("[name=cf-turnstile-response]");'
+        . 'if((t&&t.value)||n++>600){if(ff.requestSubmit){ff.requestSubmit();}else{ff.submit();}}'
+        . 'else{setTimeout(send,200);}})();});}'
         . 'window.addEventListener("resize",show);show();})();';
 
     /** Set when the full form was rendered on this page. */
@@ -311,7 +325,9 @@ final class NewsletterController
             . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '" class="wp-element-input">'
             . self::honeypot()
             . '<button type="submit" class="eventcrew-nl-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
-            . $this->captcha(true)
+            // With the full form on the page, the Cloudflare check is only
+            // there: the bar's script hands its address to that form.
+            . ($this->formShown ? '' : $this->captcha(true))
             . '</form>'
             . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
             . esc_attr__('Close', 'eventcrew') . '">×</button>'
