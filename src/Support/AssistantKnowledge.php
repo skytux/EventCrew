@@ -9,6 +9,7 @@ use EventCrew\Repositories\TaskRepository;
 
 /**
  * What the bot's language-model helper may answer from: today's date, the
+ * official email address (the contact in the privacy settings), the
  * roles, the open tasks of the coming nights, the coming EventMesh events
  * when EventMesh is active, and the text of some published pages.
  *
@@ -74,6 +75,17 @@ final class AssistantKnowledge
 
         $parts = [
             '## Today' . "\n" . $this->todayLine(),
+        ];
+
+        // The contact from the privacy settings is the official address.
+        $contact = PrivacyPolicy::contact();
+
+        if ('' !== $contact) {
+            $parts[] = '## Contact' . "\n" . 'The official email address: ' . $contact;
+        }
+
+        $parts = [
+            ...$parts,
             '## Roles' . "\n" . $this->rolesText(),
             '## Open tasks (the board)' . "\n" . $taskText,
         ];
