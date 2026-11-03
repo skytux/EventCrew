@@ -92,8 +92,11 @@ itself. The Holvi card on the Roster page (and on the crew page's Admin tab)
 shows "N sent · N failed · N not sent", with "Send a test to me" (one ticket of
 that date to your own address, no status changes) and "Send the rest now"
 (every ticket not sent yet, failed ones too). Door sales are never emailed. The
-email address is deleted 60 days after the event, which ends the ticket page
-link.
+buyer's email address, name and ticket code are deleted 60 days after the event
+by the hourly job, which ends the ticket page link. The row stays, with its
+date, its email status and its check-in, so the counts of tickets sold and used
+stay right; the door list shows it as "No name". The rows of a buyer who joined
+the next events announcement and confirmed it are not blanked.
 
 The same ticket email (same design, Finnish first) is also sent to:
 

@@ -1198,8 +1198,11 @@ final class DoorDesk
             // shown as plain text.
             $detail = __('Holvi', 'eventcrew');
             $detail = '' === $buyer->email ? $detail : $detail . ' · ' . $buyer->email;
+            // A row whose name was blanked 60 days after the event
+            // (RetentionPurge::purgeBuyers) still shows on an old night's list.
+            $name = '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name;
             // A Holvi ticket admits one person: the desk shows no +1 for it.
-            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $buyer->name, $detail, 0);
+            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $name, $detail, 0);
         }
 
         return [$holvi, $door];

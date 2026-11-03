@@ -266,7 +266,13 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
             <?php if ([] !== $ticket_buyers) : ?>
                 <ul style="columns:3 14em;max-width:820px;margin:.5em 0 1em">
                     <?php foreach ($ticket_buyers as $eventcrew_buyer) : ?>
-                        <li><?php echo esc_html($eventcrew_buyer->name); ?></li>
+                        <?php
+                        // A name blanked 60 days after the event shows as "No name".
+                        $eventcrew_buyer_name = '' === $eventcrew_buyer->name
+                            ? __('No name', 'eventcrew')
+                            : $eventcrew_buyer->name;
+                        ?>
+                        <li><?php echo esc_html($eventcrew_buyer_name); ?></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>

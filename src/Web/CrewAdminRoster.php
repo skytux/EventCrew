@@ -168,7 +168,8 @@ final class CrewAdminRoster
 
         foreach ($this->ticketBuyers->forDate($date) as $buyer) {
             if ($buyer instanceof TicketBuyer && ! $buyer->isDoorSale()) {
-                $view['buyers'][] = $buyer->name;
+                // A name blanked 60 days after the event shows as "No name".
+                $view['buyers'][] = '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name;
             }
         }
 

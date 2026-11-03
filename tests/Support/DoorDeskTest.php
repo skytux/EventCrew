@@ -1195,6 +1195,29 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['No name'], array_column($sections[4]['rows'], 'name'));
     }
 
+    /**
+     * An old night's list after the 60-day purge: Holvi rows with no name,
+     * email or ticket code still render, as "No name", with their check-in.
+     */
+    public function testAHolviRowBlankedByThePurgeShowsNoNameAndKeepsItsCheckin(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'buyer', 'ref_id' => 9, 'plus_ones' => 0]]; // check-ins
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $blanked = ['event_date' => self::NIGHT, 'name' => '', 'email' => null, 'ticket_code' => null];
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'source' => 'email'] + $blanked,
+            ['id' => 10, 'source' => 'desk'] + $blanked,
+        ];
+
+        $sections = $this->desk()->state(self::NIGHT)['sections'];
+
+        self::assertSame(['No name', 'No name'], array_column($sections[3]['rows'], 'name'));
+        self::assertSame(['Holvi', 'Holvi'], array_column($sections[3]['rows'], 'detail'));
+        self::assertSame([true, false], array_column($sections[3]['rows'], 'in'));
+    }
+
     public function testTheListKeepsTheFullNameAndTheWelcomeGetsTheFirstName(): void
     {
         $this->wpdb->nextResults[] = [];
