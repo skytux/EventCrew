@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 /**
- * What was said in a private chat between one person and the bot's
- * language-model helper, kept for 24 hours so the model can follow the
- * conversation ("that one", "the second", "and on Sunday?").
+ * What one person said to the bot's language-model helper, and the helper's
+ * answers, kept for 24 hours so the model can follow the conversation
+ * ("that one", "the second", "and on Sunday?").
  *
  * Only the plain messages the helper read and the helper's own answers are
- * kept; commands and what they show are not. Nothing from a group is kept.
- * The record is one transient per Telegram user: each message older than 24
- * hours is dropped when the record is read or written, and the transient
- * itself expires 24 hours after the last message.
+ * kept; commands and what they show are not. In a group, only the messages
+ * written to the bot are kept. The record is one transient per Telegram user
+ * for the private chat, and a separate one per user and group ($chatId of
+ * the group), so what was said in private never reaches a group answer. Each
+ * message older than 24 hours is dropped when the record is read or written,
+ * and the transient itself expires 24 hours after the last message.
  */
 final class ConversationLog
 {
@@ -34,8 +36,11 @@ final class ConversationLog
     public const PERSON = 'person';
     public const BOT = 'bot';
 
-    /** Adds one message to the person's record. */
-    public static function add(int $userId, string $who, string $text, ?int $now = null): void
+    /**
+     * Adds one message to the person's record: the private one, or with
+     * $chatId of a group, the one for that group.
+     */
+    public static function add(int $userId, string $who, string $text, ?int $now = null, int $chatId = 0): void
     {
         $text = trim($text);
 
@@ -44,14 +49,14 @@ final class ConversationLog
         }
 
         $now ??= time();
-        $entries = self::entries($userId, $now);
+        $entries = self::entries($userId, $now, $chatId);
         $entries[] = [
             't' => $now,
             'w' => self::BOT === $who ? self::BOT : self::PERSON,
             'x' => mb_substr($text, 0, self::MAX_ENTRY_CHARS),
         ];
 
-        set_transient(self::key($userId), array_slice($entries, -self::MAX_ENTRIES), self::KEEP);
+        set_transient(self::key($userId, $chatId), array_slice($entries, -self::MAX_ENTRIES), self::KEEP);
     }
 
     /**
@@ -59,9 +64,9 @@ final class ConversationLog
      *
      * @return list<array{t: int, w: string, x: string}>
      */
-    public static function entries(int $userId, ?int $now = null): array
+    public static function entries(int $userId, ?int $now = null, int $chatId = 0): array
     {
-        $stored = get_transient(self::key($userId));
+        $stored = get_transient(self::key($userId, $chatId));
 
         if (! is_array($stored)) {
             return [];
@@ -93,12 +98,12 @@ final class ConversationLog
      * time in the site's time zone. When it is longer than the model is sent,
      * the oldest lines are left out. Empty when there is nothing.
      */
-    public static function forPrompt(int $userId, ?int $now = null): string
+    public static function forPrompt(int $userId, ?int $now = null, int $chatId = 0): string
     {
         $lines = [];
         $length = 0;
 
-        foreach (array_reverse(self::entries($userId, $now)) as $entry) {
+        foreach (array_reverse(self::entries($userId, $now, $chatId)) as $entry) {
             $line = sprintf(
                 '[%s] %s: %s',
                 function_exists('wp_date') ? (string) wp_date('D H:i', $entry['t']) : gmdate('D H:i', $entry['t']),
@@ -117,14 +122,18 @@ final class ConversationLog
         return implode("\n", array_reverse($lines));
     }
 
-    /** Deletes the person's record. */
-    public static function forget(int $userId): void
+    /** Deletes the person's record: the private one, or the one for group $chatId. */
+    public static function forget(int $userId, int $chatId = 0): void
     {
-        delete_transient(self::key($userId));
+        delete_transient(self::key($userId, $chatId));
     }
 
-    private static function key(int $userId): string
+    /**
+     * The private record keeps the key it always had; a group record adds
+     * the group's id (without the minus sign Telegram puts on group ids).
+     */
+    private static function key(int $userId, int $chatId = 0): string
     {
-        return self::PREFIX . $userId;
+        return self::PREFIX . (0 === $chatId ? '' : 'g' . abs($chatId) . '_') . $userId;
     }
 }
