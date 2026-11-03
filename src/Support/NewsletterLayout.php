@@ -51,6 +51,9 @@ final class NewsletterLayout
     /** Between the cards and the "Later" list in the plain text. */
     private const TEXT_RULE = '————————';
 
+    /** The longest Finnish-and-English pair kept on one line; see joinPair(). */
+    private const PAIR_MAX = 32;
+
     /**
      * @param array<int, array<string, mixed>> $cards Newly announced events,
      *        each with date, time, title, title_fi, sold_out, url (the event
@@ -91,7 +94,7 @@ final class NewsletterLayout
                 '<h2 style="margin:8px 0 12px;font-family:%s;font-size:18px;line-height:1.3;color:%s">%s</h2>',
                 $font,
                 self::TEXT_COLOR,
-                esc_html(self::pair($words, 'later'))
+                self::pairHtml(self::pair($words, 'later'))
             );
 
             $items = '';
@@ -271,7 +274,7 @@ final class NewsletterLayout
                     . 'text-align:center">%s</p>',
                 $font,
                 self::MUTED_COLOR,
-                implode('<br>', array_map('esc_html', $practical))
+                implode('<br>', array_map([self::class, 'pairHtml'], $practical))
             );
         }
 
@@ -282,7 +285,7 @@ final class NewsletterLayout
                     . 'background:#f1f2f4;font-family:%s;font-size:14px;font-weight:600;color:%s">%s</span></p>',
                 $font,
                 self::MUTED_COLOR,
-                esc_html(self::pair($words, 'sold_out'))
+                self::pairHtml(self::pair($words, 'sold_out'))
             );
         } elseif ('' !== $ticket) {
             $body .= sprintf(
@@ -297,7 +300,7 @@ final class NewsletterLayout
                 esc_url($ticket),
                 $font,
                 EmailBody::readableOn($accent),
-                esc_html(self::buyLabel($card, $words))
+                self::pairHtml(self::buyLabel($card, $words))
             );
         }
 
@@ -342,13 +345,13 @@ final class NewsletterLayout
         $price = self::price((string) ($event['price'] ?? ''));
 
         if ($soldOut) {
-            $right = esc_html(self::pair($words, 'sold_out'));
+            $right = self::pairHtml(self::pair($words, 'sold_out'));
         } elseif ('' !== $link) {
             $right = sprintf(
                 '<a href="%s" style="color:%s;font-weight:600;text-decoration:none;white-space:nowrap">%s →</a>',
                 esc_url($link),
                 esc_attr($accent),
-                esc_html(self::pair($words, 'tickets') . ('' === $price ? '' : ' · ' . $price))
+                self::pairHtml(self::pair($words, 'tickets') . ('' === $price ? '' : ' · ' . $price))
             );
         } else {
             $right = '';
@@ -469,8 +472,8 @@ final class NewsletterLayout
 
     /**
      * A card's practical information (NewsletterWriter::apply()) as short
-     * lines: the venue, the street address, "Ovet aukeavat 18:30 · Doors
-     * open 18:30" and the same for the doors closing. A line that is not
+     * lines: the venue, the street address, "Ovet aukeavat 18:30" over
+     * "Doors open 18:30" (joinPair()) and the same for the doors closing. A line that is not
      * known is left out.
      *
      * @param array<string, mixed> $card
@@ -533,23 +536,44 @@ final class NewsletterLayout
     /** @param array<string, array<string, string>> $words */
     private static function pair(array $words, string $key): string
     {
-        return $words['fi'][$key] === $words['en'][$key]
-            ? $words['en'][$key]
-            : $words['fi'][$key] . ' · ' . $words['en'][$key];
+        return self::joinPair($words['fi'][$key], $words['en'][$key]);
     }
 
     /**
      * The words under $key with $value in place of their %s, in both
-     * languages: "Ovet aukeavat 18:30 · Doors open 18:30".
+     * languages: "Ovet aukeavat 18:30", new line, "Doors open 18:30".
      *
      * @param array<string, array<string, string>> $words
      */
     private static function pairWith(array $words, string $key, string $value): string
     {
-        $fi = sprintf($words['fi'][$key], $value);
-        $en = sprintf($words['en'][$key], $value);
+        return self::joinPair(sprintf($words['fi'][$key], $value), sprintf($words['en'][$key], $value));
+    }
 
-        return $fi === $en ? $en : $fi . ' · ' . $en;
+    /**
+     * The rule for putting a Finnish text and its English translation
+     * together. When both fit on one line of a narrow phone screen
+     * (PAIR_MAX characters with the " · " between them) they share one
+     * line: "Osta lippu · Buy a ticket". When they are longer, the English
+     * goes on a new line under the Finnish, as "\n" (pairHtml() makes it a
+     * line break in the email). The same text in both languages is written
+     * once.
+     */
+    public static function joinPair(string $fi, string $en): string
+    {
+        if ($fi === $en) {
+            return $en;
+        }
+
+        $line = $fi . ' · ' . $en;
+
+        return mb_strlen($line) <= self::PAIR_MAX ? $line : $fi . "\n" . $en;
+    }
+
+    /** A text from joinPair() for the email's HTML: escaped, its new line a line break. */
+    private static function pairHtml(string $text): string
+    {
+        return str_replace("\n", '<br>', esc_html($text));
     }
 
     /** @return array<string, array<string, string>> Every fixed word, in Finnish and in English. */

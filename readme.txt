@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.110.0
+Stable tag: 1.111.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.111.0 =
+Next events and post-event emails: a Finnish text and its English translation share one line with a dot only when together they are at most 32 characters; longer pairs (such as the door times) put the English on a new line under the Finnish.
 
 = 1.110.0 =
 Post-event email: only the first coming event is a card, with a short warm text the language model writes for this email in the style of the event's DJ (English and Finnish) and the event's practical information; every other coming event is a Later line with a small picture. Written once per night before the preview; if writing fails the card has no text.
@@ -1048,6 +1051,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.111.0 =
+No action needed.
 
 = 1.110.0 =
 No database change.

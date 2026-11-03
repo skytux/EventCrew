@@ -398,7 +398,7 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('We dance all night.', $text);
         self::assertStringNotContainsString('Tanssimme koko yön.', $text);
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
-        self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ: https://music.test/dj', $text);
+        self::assertStringContainsString("Kuuntele DJ:tä\nListen to the DJ: https://music.test/dj", $text);
         self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
     }
 

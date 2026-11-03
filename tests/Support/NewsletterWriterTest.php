@@ -787,7 +787,7 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertMatchesRegularExpression(
             '~<p style="[^"]*text-align:center">Example Hall Helsinki<br>'
-            . 'Sörnäisten rantatie 33C, 00500 Helsinki<br>Ovet aukeavat 18:30 · Doors open 18:30</p>~u',
+            . 'Sörnäisten rantatie 33C, 00500 Helsinki<br>Ovet aukeavat 18:30<br>Doors open 18:30</p>~u',
             $html
         );
         self::assertMatchesRegularExpression('~<h2 style="[^"]*text-align:center">Summer Social</h2>~', $html);
@@ -796,7 +796,7 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringContainsString('<td align="center" style="padding:18px 20px 20px;text-align:center">', $html);
         self::assertStringContainsString(
             "Summer Social\nExample Hall Helsinki\nSörnäisten rantatie 33C, 00500 Helsinki\n"
-            . 'Ovet aukeavat 18:30 · Doors open 18:30',
+            . "Ovet aukeavat 18:30\nDoors open 18:30",
             $text
         );
 
@@ -934,6 +934,21 @@ final class NewsletterWriterTest extends TestCase
         self::assertSame('old hall', $this->plan()['written']['practical'][1]['venue']);
         self::assertSame([], $this->mails);
         self::assertTrue($this->plan()['previewed']);
+    }
+
+    public function testAShortPairSharesALineAndALongPairStacks(): void
+    {
+        // 25 and 32 characters: one line with a dot.
+        self::assertSame('Osta lippu · Buy a ticket', NewsletterLayout::joinPair('Osta lippu', 'Buy a ticket'));
+        self::assertSame('Ovet 18:30 · Doors open at 18:30', NewsletterLayout::joinPair('Ovet 18:30', 'Doors open at 18:30'));
+        // 33 characters and more: the English on a new line.
+        self::assertSame("Ovet 18:30\nDoors open at 18:30.", NewsletterLayout::joinPair('Ovet 18:30', 'Doors open at 18:30.'));
+        self::assertSame(
+            "Ovet sulkeutuvat 19:00\nDoors close 19:00",
+            NewsletterLayout::joinPair('Ovet sulkeutuvat 19:00', 'Doors close 19:00')
+        );
+        // The same text in both languages is written once.
+        self::assertSame('DJ', NewsletterLayout::joinPair('DJ', 'DJ'));
     }
 
     public function testParseReadsTheAnswerRobustly(): void
