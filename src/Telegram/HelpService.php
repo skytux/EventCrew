@@ -8,6 +8,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\Language;
+use EventCrew\Support\Roles;
 
 /**
  * /help, /door, /people and the answer to the Cancel button.
@@ -70,9 +71,10 @@ final class HelpService
      * Which /help sections this Telegram user gets: organizer, welcome crew
      * (every organizer is also welcome crew), and whether they have a person
      * record with a confirmed email. The language-model helper offers actions
-     * by the same rule.
+     * by the same rule. "roles" has the names of the crew roles they were
+     * given (e.g. "DJ"), for the helper to know what to leave out.
      *
-     * @return array{organizer: bool, welcomeCrew: bool, verified: bool}
+     * @return array{organizer: bool, welcomeCrew: bool, verified: bool, roles: list<string>}
      */
     public function audience(int $telegramUserId): array
     {
@@ -83,6 +85,9 @@ final class HelpService
             'organizer' => $organizer,
             'welcomeCrew' => $organizer || (null !== $person && $this->doorAccess->isWelcomeCrew($person)),
             'verified' => null !== $person && $person->isEmailVerified(),
+            'roles' => null !== $person
+                ? array_values(array_map(static fn (string $slug): string => Roles::label($slug), $person->roleSlugs))
+                : [],
         ];
     }
 

@@ -169,6 +169,28 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
     }
 
+    public function testInstallingTheWebhookKeepsTheBotsNameAndUsername(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = 'secret';
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path
+        );
+        $saved = [];
+        \Brain\Monkey\Functions\when('update_option')->alias(
+            static function (string $name, mixed $value) use (&$saved): bool {
+                $saved[$name] = $value;
+
+                return true;
+            }
+        );
+        $this->telegramResults['getMe'] = ['username' => 'crewbot', 'first_name' => 'Crew Bot'];
+
+        $this->page()->installWebhook();
+
+        self::assertSame('crewbot', $saved[\EventCrew\Telegram\BoardService::USERNAME_OPTION] ?? null);
+        self::assertSame('Crew Bot', $saved[\EventCrew\Telegram\BoardService::NAME_OPTION] ?? null);
+    }
+
     public function testInstallingTheWebhookSendsTheCommandMenus(): void
     {
         $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = 'secret';
