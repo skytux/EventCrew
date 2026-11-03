@@ -1,17 +1,23 @@
 # EventCrew — project brief and roadmap
 
 Written so a cold reader (or a fresh session) can pick this up without the
-originating conversation. For the *why* behind the architecture, see the
-planning document at `~/.claude/plans/imperative-foraging-galaxy.md`.
+originating conversation. The *why* behind the architecture was first written
+in a planning document, `imperative-foraging-galaxy.md`, on the pc where the
+project started. That document is not in this repo and not on the VPS; this
+file and `README.md` carry what it decided.
 
 ## What this is
 
 A WordPress plugin for staffing recurring events. An organizer defines what
-needs doing on a given date; people claim those jobs from a Telegram group;
-the plugin tracks who turned up and what they earned.
+needs doing on a given date; people claim those jobs from a Telegram group or
+from the Crew app (the public web page, installable on a phone); the plugin
+tracks who turned up and what they earned. Around that it also runs the door
+(ticket buyers, guests, a ticket scan), the next events announcement by email,
+and the thank-you email after an event.
 
 Built for a dance event with three roles (Decorate, Welcome, Clean), two
-people on Decorate, free entry earned by working.
+people on Decorate, free entry earned by working. Roles are set in Settings,
+so an install can add more, such as Crew leader, DJ or VJ.
 
 The core vocabulary is deliberately generic: a **Role** is a kind of job, a
 **Task** is one instance of a role on a date needing N people, an
@@ -28,58 +34,101 @@ Do not re-open these without new information.
 | Sibling plugin, not an EventMesh module | The two share conventions, not machinery. Soft link only: a task may reference an `eventmesh_event` post, falling back to its own label. EventCrew must run standalone. |
 | Custom tables, no CPTs | A join record makes an unusable CPT list table. All assignment access goes through a repository so this stays reversible. |
 | People are never WordPress users | WP accounts are for organizers. Identity is a verified email; the Telegram id is an optional link on the row. |
-| Email is transactional, off by disabling the account (revised v0.6) | Superseded the original opt-in rule. An active, verified account receives the open-task email and personal summaries; the off switch is disabling the account (`/stop` in the bot, or the one-click link in every mail). Verified-only still holds, so we never mail an address nobody proved they control. The `email_opt_in_*` columns are now vestigial. |
+| Email is transactional, switched off per type (revised v0.6, again v1.7.0–1.8.2) | Superseded the original opt-in rule. A verified account receives the open-task email and personal summaries. v0.6 made the off switch disabling the account; v1.7.0 added per-type, per-channel notification preferences (the web Notifications tab and `/notifications`), and v1.8.1–1.8.2 removed `/stop` and the disable switch, so those preferences are now the only off switch. Commitments (sign-up and cancel confirmations, the reminder) cannot be switched off. Verified-only still holds, so we never mail an address nobody proved they control. The `email_opt_in_*` and `disabled_at` columns are dropped by the schema migration. |
 | The bot lives in the existing Telegram group | A bot cannot DM a user who hasn't started it, so the group carries the board and anything personal goes to private chat or a callback alert. |
 | Settings lists only controls the shipped code reads | Options arrive with the release that uses them, rather than accumulating dead switches. |
 
 ## Where it stands
 
-### Now (1.95.1, 2026-11-03)
+### Now (1.128.2, 2026-11-04)
 
 The plugin runs in production. Everything listed in `README.md` is shipped; the
-changelog is in `readme.txt`. The latest releases:
+changelog is in `readme.txt`. The database schema is version 29. The releases
+since the last update of this file (1.95.2):
 
-- 1.92.0–1.93.0: the next events announcement form is also a block (for the
-  footer); a thin sign-up bar at the bottom of public pages, with an optional
-  background image; the Cloudflare check shows only when it needs a click.
-- 1.94.0: `/say` lets an organizer post a message in the crew group, after a
-  preview with Confirm.
-- 1.95.0: the next events announcement is drawn as event cards (picture, price,
-  Buy a ticket, Listen to the DJ, event page) with a "Later" list of the other
-  coming events; the organizers' preview is the real HTML.
-- 1.95.1: the announcement's email field is named `eventcrew_email`, so Firefox
-  no longer fills a street address into it.
+- 1.96.0: the bot's About and Description texts (English and Finnish) are set
+  in **Settings → Telegram bot** and sent to Telegram with
+  `setMyShortDescription` / `setMyDescription`. Telegram has no API for "Allow
+  Groups"; that stays a BotFather setting. With the group lock on, the bot
+  leaves any other group that adds it; with the lock off, a new group takes the
+  board, as before.
+- 1.97.0–1.100.2: sign-in with Telegram on the Crew app. 1.97.0 used
+  Telegram's login widget (an OpenID Connect popup); 1.100.0 replaced it, and
+  the widget and popup code are removed. Now the Telegram button opens the bot
+  with a one-time code (30 minutes, tied to the browser by a cookie,
+  `Support\TelegramLogin`); the bot (`Telegram\WebLoginBot`) sends a **Sign in**
+  button, and the waiting page signs in by itself. A Telegram account with no
+  crew account first gives the bot an email and confirms it. Off by default:
+  Settings → Telegram bot → "Allow sign-in with Telegram on the Crew app". It
+  needs only the bot token; no BotFather Web Login entry.
+- 1.98.0: Telegram event cards (`Telegram\EventCard`): one photo message per
+  coming event with **Buy a ticket**, **Listen to the DJ** and **Crew app**
+  buttons. `/events` in a private chat shows an organizer a preview with
+  Confirm/Cancel; Confirm posts the cards in the crew group. Plain-words
+  questions about the next events get the same preview.
+- 1.99.0: crew members with a verified email are on the next events
+  announcement by default (setting "Add crew members to the newsletter", on by
+  default); anyone who unsubscribed is never added again.
+- 1.101.0–1.117.0: the post-event email. The day after a night, ticket holders
+  get a thank-you email (if they came) or a we-missed-you email (if they did
+  not), with the coming events. Organizers get a preview the day before and can
+  stop it. The two texts are edited in Settings → Email; a one-time text for
+  the next one is set in the Crew app's Admin tab or with `/followup`. Off until
+  switched on.
+- 1.102.0: preview and send times for the next events announcement in
+  Settings; texts such as the bot About and Description are written once and
+  translated by the language model, with one switch for all automatic
+  translation.
+- 1.103.0: crew get a separate "Your ticket" email with a scannable code (EC-C
+  for a task, EC-F for a free-entry credit, EC-B for a Holvi buyer added at the
+  desk); the door scan accepts them. A guest added by hand can get a ticket
+  email. A "Your ticket is cancelled" email goes out when a ticket that was
+  emailed is cancelled.
+- 1.104.0: taking over someone's task is a request the holder must accept
+  before a deadline (24, 48 or 72 hours, depending on how close the task is,
+  never later than 1 hour before it starts). Organizers can still reassign
+  directly. Schema 27 (`takeovers` table).
+- 1.105.0: the Bot log (wp-admin → EventCrew → Bot log): every bot command and
+  button use, without message text, kept 60 days. Schema 28.
+- 1.106.0–1.111.0, 1.115.0, 1.119.0–1.120.0: the language model writes short
+  texts for each event in the announcement and the post-event email, in Finnish
+  first and then translated to English; it reads the venue, the address and the
+  door times out of the event description (door codes left out). Each
+  subscriber gets the announcement in their chosen language (Finnish, English,
+  or both when none is chosen). The DJ line shows only the names.
+- 1.118.0, 1.121.0–1.125.3: the announcement greets each subscriber by first
+  name; a page where the subscriber changes name and language or leaves; the
+  website form and the sticky bar send without reloading the page; the
+  confirmation email is a dark card in the look of the site; an address that is
+  already subscribed gets one "already subscribed" email at most once an hour.
+  Schema 29 (subscriber name and language).
+- 1.112.0–1.114.0: event names come without the date, from EventMesh's clean
+  names, with the DJ names on their own line; on a desktop every Crew app tab
+  is as wide as the header card.
+- 1.126.0–1.128.2: the group board in card format, behind **Settings →
+  Telegram bot → Event cards** (off by default). With it on, the board is two
+  messages: a photo card for the next event (its caption a two-sentence text
+  about the DJ or host, written ahead by the language model, with its links),
+  and under it the text board for the next 3 events with who is signed up, the
+  task buttons, a separator line after each date and no date buttons. With it
+  off, the board is the text board with the date-picker row, as before.
+- 1.126.2: the import mailbox password is stored encrypted (sodium secretbox,
+  key from the site salts).
+- 1.128.1: Holvi buyer rows whose name was blanked 60 days after the event show
+  "No name" on the door desk, the Crew app Admin tab and the wp-admin Roster.
 
-**In progress:**
+**In progress:** nothing recorded here.
 
-- Bot About and Description texts (English and Finnish) set from **Settings →
-  Telegram bot** and sent to Telegram with `setMyShortDescription` /
-  `setMyDescription`. Telegram has no API for "Allow Groups"; that stays a
-  BotFather setting.
-- The bot leaves a group that adds it while the group lock is on and another
-  group holds the board. With the lock off, a new group takes the board, as
-  before.
+**Planned:** nothing recorded here. The three items planned at 1.95.2 are all
+built: the Telegram event card (1.98.0), the board in card format (1.126.0–
+1.128.2) and Crew app sign-in with Telegram (1.97.0, through the bot since
+1.100.0).
 
-**Planned, in this order:**
-
-1. A Telegram event card: one photo message per event (picture, bold title,
-   date and time, price, excerpt, sold-out mark) with **Buy a ticket**,
-   **Crew app** and **Listen to the DJ** buttons. An organizer sends `/events`
-   in a private chat and gets a preview with Confirm/Cancel, like `/say`;
-   plain-words questions about the next events get the cards.
-2. The group board in card format: one photo message per event with its task
-   buttons under it, edited in place; days without an EventMesh event stay
-   text messages; the date-picker row goes away.
-3. Crew app sign-in with Telegram: built in 1.97.0 (Telegram's OpenID Connect
-   popup; the sign-in screen asks "How do you want to sign in?" with an Email
-   button and Telegram's own button; only accounts already linked to the bot
-   with a confirmed email sign in). Off by default: Settings → Telegram bot →
-   "Allow sign-in with Telegram on the Crew app". It needs the site address
-   under Allowed URLs in the @BotFather app (Bot Settings → Web Login); that
-   entry was not found yet, so it is not switched on live.
-
-Still open from earlier: ticket-buyer import from `.xlsx` files, a column
-mapping for imported files, and more sender addresses allowed to email a list.
+The three items "still open from earlier" at 1.95.2 were already built in
+1.78.0: ticket files mailed in as `.xlsx` or `.csv` are imported one row per
+ticket; ticket file formats (the column mapping, with a Holvi preset) are set
+in Settings → Email; and extra sender addresses allowed to email a list are set
+there too.
 
 ### Early history
 
@@ -195,6 +244,10 @@ be designing for a user who does not exist.
 ---
 
 ## Release ladder
+
+This table lists the early releases and a few later ones; it is not in strict
+version order and it is not complete. Every release, including all those after
+v1.9.2, is in the changelog in `readme.txt`.
 
 | Release | Contents |
 |---|---|
@@ -443,6 +496,10 @@ needs. Both are opt-in Settings toggles that no-op on a normal host:
   `/wp-json`, which Telegram can't run. The webhook can instead be installed on
   `admin-ajax.php` (`WebhookController`'s fallback door: raw body, secret in the
   URL), which the host leaves open. Settings shows the exact test request.
+  Later a Settings option (`eventcrew_telegram_secret_in_url`) was added to
+  leave the secret out of that URL, so it travels only in Telegram's header,
+  on a host that keeps the header; a secret in a URL ends up in the server's
+  access log.
 
 ---
 
@@ -783,26 +840,22 @@ tests. **All five now pass on the live host.**
 
 ## Local dev environment
 
-The `php` on PATH loads no `php.ini`, and Composer is not installed globally.
-Build a minimal ini enabling `openssl`, `curl`, `mbstring`, `fileinfo` (and
-`zip`, which `tools/build-zip.php` needs) with `extension_dir` pointed at the
-PHP install's `ext/`, fetch `composer.phar`, and run everything as
-`php -c <ini> <command>`. Keep that ini outside the repo — which means
-rebuilding it each session, a few seconds' work:
+Since 2026-09-14 the repo lives on the VPS (`~/wordpress-eventcrew`), not on
+the Windows pc. The dev tools (PHP 8.3, Composer, PHPUnit, PHP_CodeSniffer,
+the zip build) do not run on the VPS itself; they run in a Docker container,
+image `eventcrew-dev:php8.3`, through the wrapper `~/eventcrew-dev/ec`, which
+mounts the checkout at `/app`:
 
-```ini
-extension_dir = "<php-install>\ext"
-extension=openssl
-extension=curl
-extension=mbstring
-extension=fileinfo
-extension=zip
+```
+~/eventcrew-dev/ec composer install --prefer-dist
+~/eventcrew-dev/ec vendor/bin/phpunit
+~/eventcrew-dev/ec vendor/bin/phpcs
+~/eventcrew-dev/ec php tools/build-zip.php
 ```
 
-PHP 8.3 lives under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\PHP.PHP.8.3_*`.
-Then `php -c <ini> vendor/phpunit/phpunit/phpunit` and
-`php -c <ini> vendor/squizlabs/php_codesniffer/bin/phpcs`.
+The image has no GD extension, so the two `AppIconTest` tests are skipped
+there. `~/eventcrew-dev/` (the `Dockerfile` and `ec`) is outside the repo.
 
-There is no local WordPress, MySQL, Docker or WP-CLI on this machine, which is
-why install verification is a script handed over to be run on the real host
-rather than something reproducible here.
+There is no local WordPress, MySQL or WP-CLI, which is why install
+verification is a script handed over to be run on the real host rather than
+something reproducible here.

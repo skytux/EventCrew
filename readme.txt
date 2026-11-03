@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.130.0
+Stable tag: 1.130.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.130.1 =
+ROADMAP.md brought up to date with the plugin as it is now (sign-in through the bot, built items, VPS dev setup).
 
 = 1.130.0 =
 Bot: the assistant knows each coming event's ticket price, the same price the event card shows.
@@ -1138,6 +1141,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.130.1 =
+No settings change.
 
 = 1.130.0 =
 No settings change.
