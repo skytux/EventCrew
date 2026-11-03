@@ -917,8 +917,12 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame(0, substr_count($bar, 'class="cf-turnstile"'));
         // Hidden unless Cloudflare needs a click.
         self::assertStringContainsString('data-appearance="interaction-only"', $form);
-        // The bar's script copies the address and submits the full form once it has a token.
+        // The bar's script sends its own form with the full form's token, answer in the bar.
         self::assertStringContainsString('ff.querySelector("[name=cf-turnstile-response]")', $bar);
+        self::assertStringContainsString('a.value="eventcrew-nl-bar"', $bar);
+        self::assertStringContainsString('bf.requestSubmit()', $bar);
+        // When the full form has no token in 4 seconds, it scrolls there and submits that form.
+        self::assertStringContainsString('n++>20){there();}', $bar);
         self::assertStringContainsString('ff.requestSubmit()', $bar);
     }
 

@@ -224,9 +224,15 @@ final class NewsletterController
      * layout viewport, so a browser toolbar that slides in or out is ignored.
      *
      * When the page also has the full form, the bar has no Cloudflare check of
-     * its own: Subscribe in the bar copies the address into the full form,
-     * scrolls to it, and submits it as soon as its check has a token (or
-     * after 2 minutes, so the server answers a check that never finished).
+     * its own. Subscribe in the bar takes the full form's check token, starts
+     * that check again for later, and sends the bar's own form with the bar as
+     * the place for the answer: the page does not scroll, and the answer and
+     * the second step show in the bar. When the full form has no token within
+     * 4 seconds (Cloudflare wants a click there), or the page cannot send
+     * without a reload, the bar does as before: it copies the address into
+     * the full form, scrolls to it, and submits it as soon as its check has a
+     * token (or after 2 minutes, so the server answers a check that never
+     * finished).
      */
     private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
         . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
@@ -263,14 +269,27 @@ final class NewsletterController
         . 'var bf=b.querySelector("form");'
         . 'if(bf&&!bf.querySelector(".cf-turnstile")'
         . '&&document.querySelector(".eventcrew-newsletter form .cf-turnstile")){'
-        . 'bf.addEventListener("submit",function(e){var ff=document.querySelector(".eventcrew-newsletter form");'
+        . 'bf.addEventListener("submit",function(e){'
+        . 'if(bf.hasAttribute("data-go")){bf.removeAttribute("data-go");return;}'
+        . 'var ff=document.querySelector(".eventcrew-newsletter form");'
         . 'if(!ff||!ff.querySelector("input[type=email]")){return;}e.preventDefault();'
-        . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
         . 'if(b.contains(document.activeElement)){document.activeElement.blur();}'
-        . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var n=0;'
-        . '(function send(){var t=ff.querySelector("[name=cf-turnstile-response]");'
-        . 'if((t&&t.value)||n++>600){if(ff.requestSubmit){ff.requestSubmit();}else{ff.submit();}}'
-        . 'else{setTimeout(send,200);}})();});}'
+        . 'var bt=bf.querySelector("button[type=submit]"),n=0,'
+        . 'ajax=!!(window.eventcrewNlAjax&&window.fetch&&window.FormData&&window.DOMParser&&bf.requestSubmit);'
+        . 'if(bt){bt.disabled=true;}'
+        . 'function token(){var t=ff.querySelector("[name=cf-turnstile-response]");return t?t.value:"";}'
+        . 'function here(){var h=bf.querySelector("[name=cf-turnstile-response]");'
+        . 'if(!h){h=document.createElement("input");h.type="hidden";h.name="cf-turnstile-response";bf.appendChild(h);}'
+        . 'h.value=token();var a=bf.querySelector("input[name=anchor]");if(a){a.value="eventcrew-nl-bar";}'
+        . 'var c=ff.querySelector(".cf-turnstile");if(c&&window.turnstile){try{turnstile.reset(c);}catch(x){}}'
+        . 'if(bt){bt.disabled=false;}bf.setAttribute("data-go","1");bf.requestSubmit();}'
+        . 'function there(){if(bt){bt.disabled=false;}'
+        . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
+        . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var m=0;'
+        . '(function send(){if(token()||m++>600){if(ff.requestSubmit){ff.requestSubmit();}else{ff.submit();}}'
+        . 'else{setTimeout(send,200);}})();}'
+        . 'if(!ajax){there();return;}'
+        . '(function wait(){if(token()){here();}else if(n++>20){there();}else{setTimeout(wait,200);}})();});}'
         . 'window.addEventListener("resize",show);show();})();';
 
     /** Set when the full form was rendered on this page. */
