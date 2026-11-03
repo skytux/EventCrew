@@ -108,6 +108,19 @@ class TicketQr
     }
 
     /**
+     * The largest whole number of pixels per module, at least $least, at
+     * which table() draws the code for $data (with or without a logo, as
+     * $logo says) no wider than $width pixels, quiet zone included. A code
+     * too large for $width at $least pixels is drawn at $least anyway.
+     */
+    public function fitCell(string $data, int $width, string $logo = '', int $least = 6): int
+    {
+        $count = count($this->matrix($data, '' === $logo ? 1 : self::LOGO_MIN_VERSION));
+
+        return max($least, intdiv($width, $count + 2 * self::MARGIN));
+    }
+
+    /**
      * The code as HTML tables, $cell pixels per module, which every email
      * client shows: nothing attached and nothing written in as data. $logo,
      * when not '', is the URL of a square image drawn in the middle of the

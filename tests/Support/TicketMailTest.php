@@ -278,10 +278,81 @@ final class TicketMailTest extends TestCase
 
         self::assertSame(1, substr_count($mail['html'], '<img'));
         self::assertStringContainsString('<img src="https://site.test/logo.png"', $mail['html']);
+        $qr = new TicketQr();
+        $data = TicketMail::qrData($buyer);
         self::assertStringContainsString(
-            (new TicketQr())->table(TicketMail::qrData($buyer), 6, 'https://site.test/logo.png'),
+            $qr->table($data, $qr->fitCell($data, 224, 'https://site.test/logo.png'), 'https://site.test/logo.png'),
             $mail['html']
         );
+    }
+
+    /**
+     * The ticket is drawn like the ticket page: the dark header with the
+     * event and the date, then the holder's name, the QR code, the code and
+     * the link, in that order, on the page's grey. Inline styles and tables
+     * only: no style block, no linked stylesheet, no flex or grid layout.
+     */
+    public function testTheTicketLooksLikeTheTicketPage(): void
+    {
+        $buyer = TicketBuyer::fromRow($this->buyerRow(1));
+        $mail = $this->ticketMail()->compose($buyer);
+        $html = $mail['html'];
+        $qr = new TicketQr();
+        $data = TicketMail::qrData($buyer);
+        $cell = $qr->fitCell($data, 224);
+
+        self::assertStringContainsString($qr->table($data, $cell), $html);
+        self::assertLessThanOrEqual(224, (count($qr->matrix($data)) + 8) * $cell);
+        self::assertStringContainsString('bgcolor="#e8e6e3"', $html);
+        self::assertStringContainsString('bgcolor="#2b2b30"', $html);
+        self::assertStringContainsString('max-width:416px', $html);
+        self::assertStringContainsString('font-family:system-ui,', $html);
+
+        $order = [
+            'Lippusi / Your ticket',
+            'Test Site</p>',
+            '14.11.2026</p>',
+            'Anna Virtanen</p>',
+            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width=',
+            'AB12CD1</p>',
+            'Avaa lippu selaimessa / Open the ticket in your browser',
+        ];
+        $last = -1;
+
+        foreach ($order as $text) {
+            $at = strpos($html, $text, $last + 1);
+            self::assertNotFalse($at, $text);
+            self::assertGreaterThan($last, $at, $text);
+            $last = $at;
+        }
+
+        foreach (['<style', '<link', '@import', 'display:flex', 'display:grid', '<div'] as $css) {
+            self::assertStringNotContainsStringIgnoringCase($css, $html);
+        }
+
+        // The FI / EN tags of the two texts are still there.
+        self::assertStringContainsString('>FI<', $html);
+        self::assertStringContainsString('>EN<', $html);
+    }
+
+    /** With an event picture, it is behind the header under the page's dark layer. */
+    public function testTheTicketHeaderHasTheEventPicture(): void
+    {
+        Functions\when('get_the_title')->justReturn('Salsa Night');
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/poster.jpg');
+        $this->wpdb->nextResults[] = [[
+            'id' => 3,
+            'task_date' => '2026-11-14',
+            'event_post_id' => 55,
+        ]];
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringContainsString(
+            'background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.72)),'
+                . 'url(&quot;https://site.test/poster.jpg&quot;)',
+            $mail['html']
+        );
+        self::assertStringContainsString('Salsa Night</p>', $mail['html']);
     }
 
     public function testTheEmailShowsTheTicketNoteUnderTheTicket(): void
