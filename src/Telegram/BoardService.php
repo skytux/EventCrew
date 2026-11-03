@@ -680,10 +680,21 @@ final class BoardService
      * The copy is not remembered as the board: refreshes and reposts still go
      * to the group. Its buttons work like the group's, and a tap on them
      * redraws that copy too (see onJoinLeave).
+     *
+     * With the card format on, the copy is one message per day, the same
+     * messages as the group's; none of them is stored in BOARD_OPTION.
      */
     public function sendPrivate(int $chatId): void
     {
         if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return;
+        }
+
+        if (self::cardsOn()) {
+            foreach ($this->renderCards() as $message) {
+                $this->postDay($chatId, $message);
+            }
+
             return;
         }
 
@@ -711,10 +722,53 @@ final class BoardService
             return;
         }
 
+        if (self::cardsOn()) {
+            $this->refreshPrivateDay($chatId, $messageId, $message, $date);
+
+            return;
+        }
+
         $rendered = $this->render($date);
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
 
         $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+    }
+
+    /**
+     * The card format's private redraw: only the one day's message that was
+     * tapped. $date is the day the task button carries; '' is the first day
+     * on the board. A photo message gets its caption and buttons edited, a
+     * text message its text and buttons. A day no longer on the board, or a
+     * day that changed between photo and text, leaves the message as it is.
+     *
+     * @param array<string, mixed> $tapped The message the button was tapped on.
+     */
+    private function refreshPrivateDay(int $chatId, int $messageId, array $tapped, string $date): void
+    {
+        $messages = $this->renderCards();
+        $day = '' === $date ? (string) array_key_first($messages) : $date;
+
+        if ('' === $day || ! isset($messages[$day])) {
+            return;
+        }
+
+        $message = $messages[$day];
+        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
+
+        $isPhoto = isset($tapped['photo']);
+
+        // Telegram cannot turn a text message into a photo message or back.
+        if ($isPhoto !== ('card' === $message['kind'])) {
+            return;
+        }
+
+        if ($isPhoto) {
+            $this->telegram->editMessageCaption($chatId, $messageId, $message['text'], $markup);
+
+            return;
+        }
+
+        $this->telegram->editMessageText($chatId, $messageId, $message['text'], $markup);
     }
 
     /**

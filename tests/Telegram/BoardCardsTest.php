@@ -523,6 +523,150 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame([''], array_keys($this->options[BoardService::BOARD_OPTION]['days']));
     }
 
+    // --- /board in a private chat -------------------------------------------
+
+    public function testAPrivateBoardWithCardsOnSendsOneMessagePerDayAndLeavesTheGroupBoard(): void
+    {
+        $group = [
+            'chat_id' => self::CHAT,
+            'message_id' => 0,
+            'days' => ['2026-08-01' => self::stored(33, 'card', self::IMAGE)],
+        ];
+        $this->options[BoardService::BOARD_OPTION] = $group;
+        $this->partyEvent();
+        $this->queueTwoDays();
+
+        $this->board()->sendPrivate(555);
+
+        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
+        foreach ($this->telegramCalls as $call) {
+            self::assertSame(555, $call['body']['chat_id']);
+        }
+        self::assertSame(self::IMAGE, $this->lastCallTo('sendPhoto')['photo']);
+        self::assertSame('t:1', self::targets($this->lastCallTo('sendPhoto'))[0]);
+        self::assertContains('t:2:2026-08-02', self::targets($this->lastCallTo('sendMessage')));
+        self::assertSame($group, $this->options[BoardService::BOARD_OPTION]);
+    }
+
+    public function testAPrivateBoardWithCardsOffIsOneTextMessageWithDayButtons(): void
+    {
+        $this->options[BoardService::CARDS_OPTION] = false;
+        $this->partyEvent();
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party'),
+            $this->taskRow(2, null, 'Cleanup', '2026-08-02'),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $this->board()->sendPrivate(555);
+
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        self::assertContains('t:1', self::targets($sent));
+        self::assertContains('bd:2026-08-02', self::targets($sent));
+        self::assertSame(
+            ['chat_id' => self::CHAT, 'message_id' => 0],
+            $this->options[BoardService::BOARD_OPTION]
+        );
+    }
+
+    public function testATapOnAPrivateCardEditsOnlyThatCardsCaption(): void
+    {
+        $this->partyEvent();
+        $this->tapAsVerifiedPerson();
+        $this->queueTwoDays(); // the group's refresh
+        $this->queueTwoDays([1 => 1]); // the private redraw
+
+        $this->board()->onJoinLeave($this->privateTap('t:1', 42, true));
+
+        $private = $this->privateCalls();
+        self::assertSame(['editMessageCaption'], array_column($private, 'method'));
+        $edit = $private[0]['body'];
+        self::assertSame(42, $edit['message_id']);
+        self::assertStringStartsWith('<b>Party</b>', $edit['caption']);
+        self::assertSame('t:1', self::targets($edit)[0]);
+        self::assertStringContainsString('1/2', self::labels($edit)[0]);
+    }
+
+    public function testATapOnAPrivateTextDayEditsOnlyThatDaysText(): void
+    {
+        $this->partyEvent();
+        $this->tapAsVerifiedPerson();
+        $this->queueTwoDays(); // the group's refresh
+        $this->queueTwoDays([2 => 1]); // the private redraw
+
+        $this->board()->onJoinLeave($this->privateTap('t:2:2026-08-02', 43, false));
+
+        $private = $this->privateCalls();
+        self::assertSame(['editMessageText'], array_column($private, 'method'));
+        $edit = $private[0]['body'];
+        self::assertSame(43, $edit['message_id']);
+        $targets = self::targets($edit);
+        self::assertContains('t:2:2026-08-02', $targets);
+        self::assertNotContains('t:1', $targets);
+        foreach ($targets as $target) {
+            self::assertStringStartsNotWith(BoardService::PICK_PREFIX, $target);
+        }
+        self::assertStringContainsString('1/2', implode("\n", self::labels($edit)));
+    }
+
+    public function testATapOnAPrivateCopyOfADayNoLongerOnTheBoardChangesNothing(): void
+    {
+        $this->partyEvent();
+        $this->tapAsVerifiedPerson();
+        $this->queueEventDay(); // the group's refresh
+        $this->queueEventDay(); // the private redraw
+
+        $this->board()->onJoinLeave($this->privateTap('t:2:2026-08-02', 43, false));
+
+        self::assertSame([], $this->privateCalls());
+    }
+
+    /**
+     * The sender is a verified person, and the toggle is a join that succeeds.
+     */
+    private function tapAsVerifiedPerson(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+        $this->wpdb->nextVars[] = 2; // taskCapacity
+        $this->wpdb->nextQueryResults[] = 1; // conditional insert
+    }
+
+    /**
+     * A task button tapped on a private copy: message $messageId in chat 555.
+     *
+     * @return array<string, mixed>
+     */
+    private function privateTap(string $data, int $messageId, bool $photo): array
+    {
+        $message = ['message_id' => $messageId, 'chat' => ['id' => 555, 'type' => 'private']];
+
+        if ($photo) {
+            $message['photo'] = [['file_id' => 'f', 'width' => 320, 'height' => 320]];
+        }
+
+        return ['id' => 'cbq1', 'from' => ['id' => 555], 'data' => $data, 'message' => $message];
+    }
+
+    /**
+     * Every call to the private chat 555, except answering the tap.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function privateCalls(): array
+    {
+        return array_values(array_filter(
+            $this->telegramCalls,
+            static fn (array $call): bool => 555 === ($call['body']['chat_id'] ?? null)
+        ));
+    }
+
     private function board(): BoardService
     {
         return $this->boardService();
