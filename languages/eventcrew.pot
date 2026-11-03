@@ -841,6 +841,10 @@ msgstr ""
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:438
+msgid "Buy a ticket"
+msgstr ""
+
 #: src/Telegram/AssistantService.php:511 src/Telegram/MenuButtons.php:92 src/Telegram/SayCommand.php:95 templates/admin/people.php:120
 #: templates/admin/tasks.php:269 templates/public/signup-board.php:214 templates/public/signup.php:737 templates/public/signup.php:1391
 msgid "Cancel"
@@ -970,7 +974,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:308 src/Support/Newsletter.php:637
+#: src/Support/Newsletter.php:295 src/Support/NewsletterLayout.php:436
 msgid "Coming events"
 msgstr ""
 
@@ -1477,6 +1481,10 @@ msgstr ""
 msgid "Event name"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:441
+msgid "Event page"
+msgstr ""
+
 #: templates/admin/settings.php:124 templates/public/signup.php:1606
 msgid "Event start"
 msgstr ""
@@ -1536,7 +1544,7 @@ msgstr ""
 msgid "EventCrew tasks"
 msgstr ""
 
-#: src/Support/Mailer.php:194
+#: src/Support/Mailer.php:251
 msgid "EventCrew test email"
 msgstr ""
 
@@ -1907,7 +1915,7 @@ msgstr ""
 msgid "Hi %s,"
 msgstr ""
 
-#: src/Support/Mailer.php:196
+#: src/Support/Mailer.php:253
 msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
 msgstr ""
 
@@ -2203,6 +2211,10 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:437
+msgid "Later"
+msgstr ""
+
 #: templates/admin/tasks.php:247 templates/public/signup.php:1382
 msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
 msgstr ""
@@ -2252,6 +2264,10 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:440
+msgid "Listen to the DJ"
+msgstr ""
+
 #: templates/public/door.php:92 templates/public/door.php:222
 msgid "Loading…"
 msgstr ""
@@ -2285,7 +2301,7 @@ msgstr ""
 msgid "Manage your EventCrew account"
 msgstr ""
 
-#: src/Support/Mailer.php:314
+#: src/Support/Mailer.php:371
 msgid "Manage your account or stop these emails"
 msgstr ""
 
@@ -2440,7 +2456,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/Newsletter.php:581
+#: src/Support/Newsletter.php:572
 #. translators: %s: the date the newsletter will be sent, like 14.11.2026
 msgid "Next events announcement preview: it goes out on %s"
 msgstr ""
@@ -2902,7 +2918,7 @@ msgstr ""
 msgid "Open the sales desk on this device"
 msgstr ""
 
-#: src/Support/Mailer.php:207
+#: src/Support/Mailer.php:264
 msgid "Open the signup page"
 msgstr ""
 
@@ -3869,6 +3885,10 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
+#: src/Support/NewsletterLayout.php:442
+msgid "Sold out"
+msgstr ""
+
 #: src/Support/OpenTaskCall.php:259
 msgid "Some tasks still need people"
 msgstr ""
@@ -3933,7 +3953,7 @@ msgstr ""
 msgid "Stop at-risk members from signing up for new tasks"
 msgstr ""
 
-#: src/Support/Newsletter.php:591 src/Web/CrewAdminController.php:182 src/Web/NewsletterController.php:613 templates/public/signup.php:1726
+#: src/Support/Newsletter.php:582 src/Web/CrewAdminController.php:182 src/Web/NewsletterController.php:613 templates/public/signup.php:1726
 msgid "Stop this announcement"
 msgstr ""
 
@@ -3946,7 +3966,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/Newsletter.php:590
+#: src/Support/Newsletter.php:581
 msgid "Subject"
 msgstr ""
 
@@ -4837,7 +4857,7 @@ msgstr ""
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
-#: src/Support/Newsletter.php:586
+#: src/Support/Newsletter.php:577
 #. translators: 1: the send date, like 14.11.2026, 2: number of subscribers
 msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
 msgstr ""
@@ -5041,7 +5061,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:431 templates/public/signup.php:364
+#: src/Support/NewsletterLayout.php:439 src/Support/WelcomeSender.php:431 templates/public/signup.php:364
 msgid "Tickets"
 msgstr ""
 
@@ -5591,7 +5611,7 @@ msgstr ""
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:321
+#: src/Support/Newsletter.php:306
 msgid "You get this email because you joined the next events announcement. Leave the announcement"
 msgstr ""
 
@@ -6015,10 +6035,6 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Support/Newsletter.php:632
-msgid "sold out"
-msgstr ""
-
 #: src/Telegram/ReplacementService.php:255 src/Telegram/ReplacementService.php:282
 msgid "someone"
 msgstr ""
@@ -6051,7 +6067,7 @@ msgstr ""
 msgid "years after someone’s last activity"
 msgstr ""
 
-#: src/Support/Mailer.php:321
+#: src/Support/Mailer.php:378
 #. translators: %s: the manage-account link
 msgid "—\nManage your account or stop these emails: %s"
 msgstr ""

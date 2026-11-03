@@ -12,6 +12,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Tests\TestCase;
 
@@ -177,7 +178,8 @@ final class NewsletterTest extends TestCase
     /**
      * Seven days before the 27th is the 20th's next day: the plan sends on
      * 2026-07-21 and carries every event up to 2026-07-28; the organizer gets
-     * the preview today with the Stop link and both languages.
+     * the preview today as HTML, with the Stop link and both languages. The
+     * event after the window is in the "Later" list, not a card.
      */
     public function testThePreviewDayMakesAPlanAndMailsTheOrganizers(): void
     {
@@ -200,7 +202,10 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Tulevat tapahtumat', $body);
         self::assertStringContainsString('Coming events', $body);
         self::assertStringContainsString('Summer Social', $body);
-        self::assertStringNotContainsString('Too Far', $body);
+        self::assertStringContainsString('<h2', $body);
+        self::assertStringContainsString('Content-Type: text/html', implode("\n", (array) $this->mails[0]['headers']));
+        self::assertGreaterThan(strpos($body, 'Myöhemmin · Later'), strpos($body, 'Too Far'));
+        self::assertGreaterThan(strpos($body, 'Late Night'), strpos($body, 'Myöhemmin · Later'));
     }
 
     public function testAnEventFurtherAwayIsNotPlannedYet(): void
@@ -313,8 +318,9 @@ final class NewsletterTest extends TestCase
             $headers
         );
         self::assertStringContainsString('List-Unsubscribe-Post: List-Unsubscribe=One-Click', $headers);
-        self::assertStringContainsString('Moi', $this->mails[0]['body']);
-        self::assertStringContainsString('<hr', $this->mails[0]['body']);
+        self::assertStringContainsString('FI</span>&nbsp; Moi', $this->mails[0]['body']);
+        self::assertStringContainsString('EN</span>&nbsp; Hi', $this->mails[0]['body']);
+        self::assertStringContainsString('Summer Social', $this->mails[0]['body']);
 
         $state = $this->state();
         self::assertNull($state['plan']);
@@ -343,40 +349,74 @@ final class NewsletterTest extends TestCase
         self::assertSame([Newsletter::HOOK], $this->scheduled);
     }
 
-    /** Finnish part first with the Finnish title, then the divider, then English. */
-    public function testComposeIsFinnishFirstThenEnglish(): void
+    /**
+     * A card per event: the picture, the date, the title with its Finnish
+     * title, the description in Finnish then English, the ticket button with
+     * the price and the Listen button. A sold-out event has no ticket button.
+     * The later events are lines under "Later".
+     */
+    public function testComposeDrawsACardPerEvent(): void
     {
-        $event = ['title_fi' => 'Kesätanssit', 'sold_out' => true] + self::planEvent(1, '2026-07-27', 'Summer Dance');
+        $this->event(1, '2026-07-27', 'Summer Dance', [
+            '_eventmesh_image_url' => 'https://cdn.test/1.jpg',
+            '_eventmesh_price' => '27.50 EUR',
+            '_eventmesh_url' => 'https://shop.test/p/1',
+            '_eventmesh_embed_source_url' => 'https://music.test/dj',
+            '_eventmesh_original_lang' => 'en',
+            '_eventmesh_tr_fi_hash' => md5('Summer Dance' . "\0"),
+            '_eventmesh_tr_fi_excerpt' => 'Tanssimme koko yön.',
+        ]);
+        $this->events[1]['post']->post_excerpt = 'We dance all night.';
+        $this->event(2, '2026-07-28', 'Full House', ['_eventmesh_url' => 'https://shop.test/p/2']);
+        $soldOut = ['sold_out' => true] + self::planEvent(2, '2026-07-28', 'Full House');
+        $first = ['title_fi' => 'Kesätanssit'] + self::planEvent(1, '2026-07-27', 'Summer Dance');
 
-        $mail = $this->newsletter()->compose([$event], ['fi' => 'Tervetuloa!', 'en' => 'Welcome!']);
+        $mail = $this->newsletter()->compose(
+            [$first, $soldOut],
+            ['fi' => 'Tervetuloa!', 'en' => 'Welcome!'],
+            [self::planEvent(3, '2026-08-10', 'Autumn Night')]
+        );
+        $html = $mail['html'];
 
-        $parts = explode('————————', $mail['text']);
-        self::assertCount(2, $parts);
-        self::assertStringContainsString('Tulevat tapahtumat', $parts[0]);
-        self::assertStringContainsString('Kesätanssit', $parts[0]);
-        self::assertStringContainsString('loppuunmyyty', $parts[0]);
-        self::assertStringContainsString('Tervetuloa!', $parts[0]);
-        self::assertStringContainsString('Coming events', $parts[1]);
-        self::assertStringContainsString('Summer Dance', $parts[1]);
-        self::assertStringContainsString('(sold out)', $parts[1]);
-        self::assertStringContainsString('Welcome!', $parts[1]);
-        self::assertStringNotContainsString('Kesätanssit', $parts[1]);
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
+        self::assertStringContainsString('src="https://cdn.test/1.jpg"', $html);
+        self::assertStringContainsString('27.7.2026 · 21:00', $html);
+        self::assertStringContainsString('Kesätanssit', $html);
+        self::assertLessThan(strpos($html, 'We dance all night.'), strpos($html, 'Tanssimme koko yön.'));
+        self::assertLessThan(strpos($html, 'Summer Dance'), strpos($html, 'Tervetuloa!'));
+        self::assertStringContainsString('href="https://shop.test/p/1"', $html);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
+        self::assertSame(1, substr_count($html, 'Buy a ticket'));
+        self::assertStringContainsString('href="https://music.test/dj"', $html);
+        self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ', $html);
+        self::assertStringContainsString('Loppuunmyyty · Sold out', $html);
+        self::assertGreaterThan(strpos($html, 'Myöhemmin · Later'), strpos($html, 'Autumn Night'));
+
+        $text = $mail['text'];
+        self::assertStringContainsString("FI: Tanssimme koko yön.\nEN: We dance all night.", $text);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
+        self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ: https://music.test/dj', $text);
+        self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
     }
 
-    /** The first line, above the Finnish part, says in English that English follows. */
-    public function testTheMailStartsWithTheEnglishBelowLine(): void
+    /** A sending plan lists the coming events it does not carry under "Later". */
+    public function testTheSendDayKeepsTheLaterEvents(): void
     {
-        $mail = $this->newsletter()->compose([self::planEvent(1, '2026-07-27', 'Summer Dance')], null);
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->event(2, '2026-08-20', 'Far Away');
+        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')], 'send_on' => '2026-07-20']);
 
-        self::assertStringStartsWith("English version below ↓\n\n", $mail['text']);
-        self::assertStringStartsWith(
-            '<p style="margin:0 0 16px;color:#6b6b76;font-size:14px">English version below ↓</p>',
-            $mail['html']
-        );
-        self::assertLessThan(
-            strpos($mail['html'], 'Tulevat tapahtumat'),
-            strpos($mail['html'], 'English version below')
-        );
+        $this->newsletter()->run();
+
+        self::assertSame([2], array_column($this->state()['plan']['later'], 'id'));
+    }
+
+    public function testThePriceIsWrittenTheFinnishWay(): void
+    {
+        self::assertSame('22 €', NewsletterLayout::price('22.00 EUR'));
+        self::assertSame('27,50 €', NewsletterLayout::price('27.50 EUR'));
+        self::assertSame('5 €', NewsletterLayout::price('5 €'));
+        self::assertSame('Free', NewsletterLayout::price('Free'));
+        self::assertSame('', NewsletterLayout::price(''));
     }
 }

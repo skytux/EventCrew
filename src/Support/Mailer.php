@@ -186,6 +186,65 @@ final class Mailer
     }
 
     /**
+     * A mail to a person that shows a ready-made email inside it: $intro (EmailBody
+     * text) on top, then $content (ready HTML) between two lines, then the
+     * $actions buttons, then the manage-account footer. $contentText is the
+     * same content as plain text. Used for the announcement preview, so the
+     * organizers see the announcement exactly as subscribers will.
+     *
+     * Always sent as HTML, whatever the template setting, because the content
+     * is HTML.
+     *
+     * @param array<int, array{label: string, url: string}> $actions
+     */
+    public function toPersonWithContent(
+        int $personId,
+        string $to,
+        string $subject,
+        string $intro,
+        string $content,
+        string $contentText,
+        array $actions = []
+    ): bool {
+        if (Person::isPlaceholderEmail($to)) {
+            return false;
+        }
+
+        $manageUrl = $this->manageUrl($personId);
+        $accent = EmailTemplate::accent();
+        $rule = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:24px 0">';
+        $textRule = "\n\n————————\n\n";
+
+        $body = EmailBody::toHtml($intro, [], $accent) . $rule . $content . $rule
+            . EmailBody::toHtml('', $actions, $accent);
+        $html = $this->template->render(
+            $subject,
+            $body,
+            EmailBody::footerHtml($this->footerLabel(), $manageUrl)
+        );
+        $text = EmailBody::toText($intro) . $textRule . $contentText . $textRule
+            . EmailBody::toText('', $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
+
+        $altBody = static function ($phpmailer) use ($text): void {
+            $phpmailer->AltBody = $text;
+        };
+
+        add_action('phpmailer_init', $altBody);
+
+        try {
+            $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+        } finally {
+            remove_action('phpmailer_init', $altBody);
+        }
+
+        if (! $sent) {
+            $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
+        }
+
+        return $sent;
+    }
+
+    /**
      * A sample of the real thing, for the Settings button that proves the
      * template and the site's mail setup work before anyone relies on them.
      */

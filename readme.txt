@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.94.0
+Stable tag: 1.95.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.95.0 =
+The next events announcement is drawn as event cards: each newly announced event has its picture, date and time, title, short description in Finnish and then in English, a Buy a ticket button with the price (to the ticket shop), a Listen to the DJ button when the event has the DJ's music page, and a link to the event page. A sold-out event says Sold out instead of the ticket button. Every other coming event is listed under Later with a link to its tickets. The organizers' preview email now shows the announcement as HTML, exactly as subscribers get it. The English version below line and the divider are gone, because each card carries both languages.
 
 = 1.94.0 =
 New organizer command /say: in a private chat with the bot, /say followed by a message shows the message as the group will see it, with Confirm and Cancel; Confirm posts it in the crew group. Bold, italics, links, quotes and line breaks are kept. Plain words work too (for example: post in the group: ...). Listed in /help for organizers.
@@ -916,6 +919,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.95.0 =
+No database change.
 
 = 1.94.0 =
 No database change.

@@ -5985,3 +5985,23 @@ msgstr "Lähetetty ryhmään."
 #: src/Telegram/HelpService.php:225
 msgid "/say text – post a message in the group; you see it first"
 msgstr "/say teksti – julkaise viesti ryhmässä; näet sen ensin"
+
+#: src/Support/NewsletterLayout.php:437
+msgid "Later"
+msgstr "Myöhemmin"
+
+#: src/Support/NewsletterLayout.php:438
+msgid "Buy a ticket"
+msgstr "Osta lippu"
+
+#: src/Support/NewsletterLayout.php:441
+msgid "Event page"
+msgstr "Tapahtuman sivu"
+
+#: src/Support/NewsletterLayout.php:442
+msgid "Sold out"
+msgstr "Loppuunmyyty"
+
+#: src/Support/NewsletterLayout.php:440
+msgid "Listen to the DJ"
+msgstr "Kuuntele DJ:tä"
