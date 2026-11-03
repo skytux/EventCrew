@@ -762,9 +762,9 @@ final class NewsletterWriterTest extends TestCase
 
     /**
      * The layout shows neither a written text nor the description. The date,
-     * the titles and the practical information are centred; the practical
-     * information has one line each, the door times in both languages, and a
-     * line that is not known is left out.
+     * the titles are centred and the practical information is aligned left;
+     * the practical information has one line each, the door times in both
+     * languages, and a line that is not known is left out.
      */
     public function testTheLayoutShowsThePracticalInformationAndNoText(): void
     {
@@ -786,8 +786,10 @@ final class NewsletterWriterTest extends TestCase
         $text = NewsletterLayout::text([$card], [], null);
 
         self::assertMatchesRegularExpression(
-            '~<p style="[^"]*text-align:center">Helsinki Dance Central<br>'
-            . 'Sörnäisten rantatie 33C, 00500 Helsinki<br>Ovet aukeavat 18:30<br>Doors open 18:30</p>~u',
+            '~<p style="margin:0 0 21px;[^"]*text-align:left">Helsinki Dance Central<br>'
+            . 'Sörnäisten rantatie 33C, 00500 Helsinki</p>'
+            . '<p style="margin:0 0 8px;[^"]*text-align:left"><span [^>]*>FI</span>&nbsp; Ovet aukeavat 18:30</p>'
+            . '<p style="margin:0 0 16px;[^"]*text-align:left"><span [^>]*>EN</span>&nbsp; Doors open 18:30</p>~u',
             $html
         );
         self::assertMatchesRegularExpression('~<h2 style="[^"]*text-align:center">Summer Social</h2>~', $html);
@@ -796,7 +798,7 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringContainsString('<td align="center" style="padding:18px 20px 20px;text-align:center">', $html);
         self::assertStringContainsString(
             "Summer Social\nHelsinki Dance Central\nSörnäisten rantatie 33C, 00500 Helsinki\n"
-            . "Ovet aukeavat 18:30\nDoors open 18:30",
+            . "\nFI: Ovet aukeavat 18:30\nEN: Doors open 18:30",
             $text
         );
 

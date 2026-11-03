@@ -589,11 +589,15 @@ final class FollowupMailTest extends TestCase
                 'Finnish first'
             );
 
-            self::assertStringContainsString('width="536" alt="Ecstatic Dance 1"', $body, 'the card with its picture');
+            self::assertStringContainsString(
+                'width="536" alt="21.11.2026 · 21:00 — Ecstatic Dance 1"',
+                $body,
+                'the card with its picture'
+            );
 
             foreach ([2, 3, 4] as $id) {
                 self::assertStringNotContainsString(
-                    'width="536" alt="Ecstatic Dance ' . $id . '"',
+                    ' — Ecstatic Dance ' . $id . '"',
                     $body,
                     'one event only as a card'
                 );
@@ -692,9 +696,12 @@ final class FollowupMailTest extends TestCase
 
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
-        self::assertStringContainsString('Old Hall<br>Ovet aukeavat 18:30<br>Doors open 18:30</p>', $mail['html']);
+        self::assertStringContainsString('margin:0 0 21px;', $mail['html'], 'an empty line after the venue');
+        self::assertStringContainsString('text-align:left">Old Hall</p>', $mail['html']);
+        self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30</p>', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30</p>', $mail['html']);
         self::assertStringContainsString(
-            "Ecstatic Dance 1\nOld Hall\nOvet aukeavat 18:30\nDoors open 18:30\n",
+            "Ecstatic Dance 1\nOld Hall\n\nFI: Ovet aukeavat 18:30\nEN: Doors open 18:30\n",
             $mail['text']
         );
         self::assertSame(1, substr_count($mail['html'], 'Ovet '), 'only the card has such lines');
@@ -710,10 +717,9 @@ final class FollowupMailTest extends TestCase
             = $this->options[Newsletter::STATE_OPTION]['plan']['written']['practical'][2];
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
-        self::assertStringContainsString(
-            'Dance Central<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00<br>Doors close 19:00</p>',
-            $mail['html']
-        );
+        self::assertStringContainsString('Dance Central<br>Main Street 1, Helsinki</p>', $mail['html']);
+        self::assertStringContainsString('FI</span>&nbsp; Ovet sulkeutuvat 19:00</p>', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Doors close 19:00</p>', $mail['html']);
 
         $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
@@ -926,7 +932,8 @@ final class FollowupMailTest extends TestCase
         $preview = $this->mails[0]['body'];
         self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $preview, 'the preview shows it');
         self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $preview);
-        self::assertStringContainsString('Ovet aukeavat 18:30<br>Doors open 18:30', $preview);
+        self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30</p>', $preview);
+        self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30</p>', $preview);
 
         $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
@@ -967,7 +974,8 @@ final class FollowupMailTest extends TestCase
         self::assertCount(2, $this->requests);
         self::assertSame([], $this->state()['written'][self::NIGHT]['text']);
         $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
-        self::assertStringContainsString('Ovet aukeavat 18:30<br>Doors open 18:30', $mail['html']);
+        self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30</p>', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30</p>', $mail['html']);
         self::assertStringNotContainsString('Doors open early, dance late', $mail['html'] . $mail['text']);
         self::assertStringNotContainsString('Spin with', $mail['html'] . $mail['text']);
 
