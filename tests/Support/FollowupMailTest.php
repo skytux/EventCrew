@@ -692,9 +692,9 @@ final class FollowupMailTest extends TestCase
 
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
-        self::assertStringContainsString('Old Hall<br>Ovet aukeavat 18:30 · Doors open 18:30</p>', $mail['html']);
+        self::assertStringContainsString('Old Hall<br>Ovet aukeavat 18:30<br>Doors open 18:30</p>', $mail['html']);
         self::assertStringContainsString(
-            "Ecstatic Dance 1\nOld Hall\nOvet aukeavat 18:30 · Doors open 18:30\n",
+            "Ecstatic Dance 1\nOld Hall\nOvet aukeavat 18:30\nDoors open 18:30\n",
             $mail['text']
         );
         self::assertSame(1, substr_count($mail['html'], 'Ovet '), 'only the card has such lines');
@@ -711,7 +711,7 @@ final class FollowupMailTest extends TestCase
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
         self::assertStringContainsString(
-            'Dance Central<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00 · Doors close 19:00</p>',
+            'Dance Central<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00<br>Doors close 19:00</p>',
             $mail['html']
         );
 
@@ -926,7 +926,7 @@ final class FollowupMailTest extends TestCase
         $preview = $this->mails[0]['body'];
         self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $preview, 'the preview shows it');
         self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $preview);
-        self::assertStringContainsString('Ovet aukeavat 18:30 · Doors open 18:30', $preview);
+        self::assertStringContainsString('Ovet aukeavat 18:30<br>Doors open 18:30', $preview);
 
         $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
@@ -967,7 +967,7 @@ final class FollowupMailTest extends TestCase
         self::assertCount(2, $this->requests);
         self::assertSame([], $this->state()['written'][self::NIGHT]['text']);
         $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
-        self::assertStringContainsString('Ovet aukeavat 18:30 · Doors open 18:30', $mail['html']);
+        self::assertStringContainsString('Ovet aukeavat 18:30<br>Doors open 18:30', $mail['html']);
         self::assertStringNotContainsString('Doors open early, dance late', $mail['html'] . $mail['text']);
         self::assertStringNotContainsString('Spin with', $mail['html'] . $mail['text']);
 
