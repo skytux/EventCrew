@@ -752,7 +752,17 @@ final class FollowupMailTest extends TestCase
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
 
         self::assertStringNotContainsString('Join the announcement', $mail['html']);
-        self::assertStringContainsString('See the coming events', $mail['text']);
+    }
+
+    /** Neither version has a "See the coming events" button, in HTML or plain text. */
+    public function testNoSeeTheComingEventsButton(): void
+    {
+        foreach ([true, false] as $came) {
+            $mail = $this->followup()->compose(self::NIGHT, $came, 'Anna', 'b', 1);
+
+            self::assertStringNotContainsString('See the coming events', $mail['html'] . $mail['text']);
+            self::assertStringNotContainsString('Katso tulevat tapahtumat', $mail['html'] . $mail['text']);
+        }
     }
 
     public function testATestToABadAddressFails(): void

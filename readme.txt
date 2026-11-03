@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.116.0
+Stable tag: 1.117.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.117.0 =
+The thank-you and sorry emails after an event no longer have the "See the coming events" button.
 
 = 1.116.0 =
 The thank-you and sorry emails no longer force light colours (they have no QR code); mail apps may show them in dark mode like the announcement. Ticket emails stay light-only.
@@ -1066,6 +1069,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.117.0 =
+No settings change.
 
 = 1.116.0 =
 Email colours only.
