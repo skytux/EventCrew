@@ -685,12 +685,12 @@
 
 /*
  * The buttons at the top of the page: the Telegram group filled (the theme's own
- * button, as the main action) and the crew guide outlined beside it. Both the
- * same height; they wrap to two lines on a narrow screen. The outline is drawn
+ * button, as the main action) and the crew guide under it, each on its own
+ * row at every screen width. Both the same height. The outline is drawn
  * here because the theme only styles is-style-outline inside a block wrapper.
  */
 .eventcrew-signup .eventcrew-links {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: .6em;
+    display: flex; flex-direction: column; align-items: center; gap: .6em;
     margin: 0 0 1.2em;
 }
 .eventcrew-signup .eventcrew-links .wp-element-button {
@@ -698,8 +698,8 @@
     display: inline-flex; align-items: center; justify-content: center; gap: .4em;
     min-height: 44px; padding: .5em 1.1em;
     border-radius: var(--eventcrew-radius); font-weight: 600; text-decoration: none;
-    /* One width for both: side by side when they fit, else stacked at full width. */
-    flex: 1 1 12em; max-width: 18em; white-space: nowrap;
+    /* A row of its own, as wide as on one row: up to 18em, less on a narrow screen. */
+    flex: none; width: 100%; max-width: 18em; white-space: nowrap;
 }
 .eventcrew-signup .eventcrew-links .eventcrew-link-icon { flex: none; width: 1.2em; height: 1.2em; }
 
