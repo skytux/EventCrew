@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\Dates;
 use EventCrew\Support\GuestCommand;
+use EventCrew\Support\NewsletterText;
 
 /**
  * The actions the language-model helper may ask for, and the check every one
@@ -99,6 +100,19 @@ final class AssistantActions
             $list[] = self::entry('menu:gift', 'give someone credits (the bot then asks who)');
             $list[] = self::entry('menu:roles', 'give or take roles, organizers and passes (the bot then asks who)');
             $list[] = self::entry('menu:eligible', 'who may hold each role');
+            $list[] = self::entry('/newsletter', "show the organizers' own text for the next newsletter");
+            $list[] = self::entry(
+                '/newsletter <text>',
+                "set the organizers' own text for the next newsletter, replacing any earlier one; it is translated"
+                    . ' so the mail carries it in Finnish and English; <text> is the text itself, as the person'
+                    . ' wants it sent (line breaks allowed)',
+                true
+            );
+            $list[] = self::entry(
+                '/newsletter clear',
+                "remove the organizers' own text from the next newsletter",
+                true
+            );
         }
 
         return $list;
@@ -124,6 +138,12 @@ final class AssistantActions
         string $today,
         array $offeredTasks
     ): array {
+        // Checked before the spaces are squeezed: a newsletter text keeps its
+        // line breaks.
+        if (1 === preg_match('#^\s*/newsletter(?=\s|$)(.*)$#isu', $action, $m)) {
+            return self::validateNewsletter($m[1], $audience);
+        }
+
         $action = trim((string) preg_replace('/\s+/u', ' ', $action));
         $parts = explode(' ', $action, 2);
         $head = strtolower($parts[0]);
@@ -272,6 +292,45 @@ final class AssistantActions
         }
 
         $line = '/door ' . $rest;
+
+        return self::accept($line, true, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * "/newsletter" shows the text for the next newsletter, "/newsletter
+     * clear" removes it, and "/newsletter <text>" sets it. Organizers only.
+     * Setting and removing ask to confirm, and the text shown with the
+     * Confirm button is exactly the text that is saved.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateNewsletter(string $rest, array $audience): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        // Spaces are squeezed within each line; a run of empty lines becomes one.
+        $lines = array_map(
+            static fn (string $line): string => trim((string) preg_replace('/[^\S\n]+/u', ' ', $line)),
+            explode("\n", str_replace("\r\n", "\n", $rest))
+        );
+        $text = trim((string) preg_replace("/\n{3,}/", "\n\n", implode("\n", $lines)));
+
+        if ('' === $text) {
+            return self::accept('/newsletter', false, self::RUN_MESSAGE, '/newsletter');
+        }
+
+        if ('clear' === strtolower($text)) {
+            return self::accept('/newsletter clear', true, self::RUN_MESSAGE, '/newsletter clear');
+        }
+
+        if (mb_strlen($text) > NewsletterText::MAX_LENGTH) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = '/newsletter ' . $text;
 
         return self::accept($line, true, self::RUN_MESSAGE, $line);
     }

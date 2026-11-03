@@ -275,8 +275,9 @@ default**; switch it on under **Settings → Email → Newsletter**.
   Admin tab has the same button. A stopped newsletter is not sent. Sending runs
   in WP-Cron batches of 20.
 - **Organizer text.** An organizer can add a text to the next newsletter, with
-  `/newsletter <text>` in a private chat with the bot or in the crew app's
-  Admin tab. The text is written once, in Finnish or English, and translated
+  `/newsletter <text>` in a private chat with the bot, by telling the bot in
+  plain words in that chat (the bot shows the exact text with a Confirm button
+  before saving it), or in the crew app's Admin tab. The text is written once, in Finnish or English, and translated
   into the other language through the language model when it is saved. Without
   a model, or when the translation fails, both languages show the text as it
   was written and the organizer is told. The text is removed after the

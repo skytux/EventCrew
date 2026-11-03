@@ -852,6 +852,31 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame('This question has expired. Please write again.', $this->lastCallTo('answerCallbackQuery')['text']);
     }
 
+    public function testANewsletterTextInPlainWordsRunsAfterConfirmWithItsLineBreaks(): void
+    {
+        $this->person(true);
+        $this->reply(
+            true,
+            true,
+            'I will put this in the next newsletter.',
+            "/newsletter Doors open at 19.\n\nBring water."
+        );
+
+        $this->ask(self::privateMessage('add to the newsletter: doors open at 19, bring water'));
+
+        self::assertSame([], $this->ran, 'Nothing runs before Confirm.');
+        self::assertSame(
+            ["I will put this in the next newsletter.\n\n➡️ /newsletter Doors open at 19.\n\nBring water."],
+            $this->sentTexts()
+        );
+
+        $this->person(true);
+        $this->confirm((string) $this->lastSentMarkup()['inline_keyboard'][0][0]['callback_data']);
+
+        self::assertCount(1, $this->ran);
+        self::assertSame("/newsletter Doors open at 19.\n\nBring water.", $this->ran[0]['message']['text']);
+    }
+
     public function testCancelRunsNothing(): void
     {
         $data = str_replace('ai:ok:', 'ai:no:', $this->proposeGuest());
