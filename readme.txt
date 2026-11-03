@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.89.0
+Stable tag: 1.90.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.90.0 =
+The bot helper sets the organizers' text for the next newsletter from plain words: an organizer tells the bot in a private chat what to add, the bot shows the exact text with a Confirm button, and Confirm saves it as /newsletter does (translated into Finnish and English). /newsletter clear and /newsletter (show) work the same way. Line breaks in the text are kept.
 
 = 1.89.0 =
 Newsletter: people join with a public form ([eventcrew_newsletter]) and confirm by email (double opt-in); every mail has a one-click unsubscribe link. It announces the coming events a set number of days before each event (default 7, off until switched on in Settings > Email); organizers get a preview the day before and can stop it. Organizers set a custom text with /newsletter in a private chat or in the crew app's Admin tab; it is translated to the other language when saved and cleared after sending. Each newsletter is in Finnish and English. Sent in batches of 20 through WP-Cron.
@@ -899,6 +902,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.90.0 =
+No database change.
 
 = 1.89.0 =
 Database version 24: new table eventcrew_newsletter_subscribers (email, status, created_at, confirmed_at).

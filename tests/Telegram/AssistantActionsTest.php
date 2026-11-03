@@ -179,8 +179,77 @@ final class AssistantActionsTest extends TestCase
                 '/door add [date] <name> [+N] [; note]',
                 '/door edit [date] <number> [name] [+N] [; note]',
                 '/door remove [date] <number>',
+                '/newsletter <text>',
+                '/newsletter clear',
             ],
             array_values($confirm)
         );
+        self::assertNotContains('/newsletter', $usages(self::member()));
+        self::assertNotContains(
+            '/newsletter',
+            $usages(['organizer' => false, 'welcomeCrew' => true, 'verified' => true])
+        );
+    }
+
+    public function testOnlyAnOrganizerMaySetTheNewsletterText(): void
+    {
+        $crew = ['organizer' => false, 'welcomeCrew' => true, 'verified' => true];
+
+        foreach (['/newsletter', '/newsletter clear', '/newsletter Doors open at 19.'] as $action) {
+            self::assertSame(
+                AssistantActions::ERROR_NOT_PERMITTED,
+                self::check($action, self::member())['error'],
+                $action
+            );
+            self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($action, $crew)['error'], $action);
+        }
+    }
+
+    public function testShowingTheNewsletterTextRunsWithoutConfirm(): void
+    {
+        $result = self::check('/newsletter', self::organizer());
+
+        self::assertTrue($result['ok']);
+        self::assertFalse($result['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $result['run']);
+        self::assertSame('/newsletter', $result['payload']);
+    }
+
+    public function testSettingAndClearingTheNewsletterTextAskToConfirm(): void
+    {
+        $set = self::check('/newsletter Doors open at 19.', self::organizer(), 'tell them doors open at 19');
+
+        self::assertTrue($set['ok']);
+        self::assertTrue($set['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $set['run']);
+        self::assertSame('/newsletter Doors open at 19.', $set['payload']);
+        self::assertSame('/newsletter Doors open at 19.', $set['action']);
+
+        $clear = self::check('/newsletter  CLEAR ', self::organizer());
+
+        self::assertTrue($clear['confirm']);
+        self::assertSame('/newsletter clear', $clear['payload']);
+    }
+
+    public function testTheNewsletterTextKeepsItsLineBreaks(): void
+    {
+        $result = self::check("/newsletter Doors   open at 19.\r\n\n\n\nBring  water. ", self::organizer());
+
+        self::assertSame("/newsletter Doors open at 19.\n\nBring water.", $result['payload']);
+        self::assertSame($result['payload'], $result['action']);
+    }
+
+    public function testATooLongNewsletterTextIsRefused(): void
+    {
+        $result = self::check('/newsletter ' . str_repeat('a', 2001), self::organizer());
+
+        self::assertFalse($result['ok']);
+        self::assertSame(AssistantActions::ERROR_INVALID, $result['error']);
+        self::assertTrue(self::check('/newsletter ' . str_repeat('a', 2000), self::organizer())['ok']);
+    }
+
+    public function testAWordThatOnlyStartsWithNewsletterIsNotTheCommand(): void
+    {
+        self::assertSame(AssistantActions::ERROR_UNKNOWN, self::check('/newsletters', self::organizer())['error']);
     }
 }
