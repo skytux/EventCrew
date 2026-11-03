@@ -39,8 +39,9 @@ final class ManageControllerTest extends TestCase
         // Sign-in tokens, the send ledger, the assignments, the redemptions,
         // the credit grants and the person row are all deleted. The first two
         // were missed before PersonEraser: an "erased" person kept a live magic
-        // link and a record of every notice they had been sent.
-        self::assertCount(6, $this->wpdb->deletes);
+        // link and a record of every notice they had been sent. Takeover
+        // requests are two more deletes: as holder and as the one who asked.
+        self::assertCount(8, $this->wpdb->deletes);
     }
 
     public function testAnUnknownActionDoesNothing(): void

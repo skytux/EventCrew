@@ -53,17 +53,8 @@ final class ReplacementServiceTest extends TelegramTestCase
             new AssignmentRepository(),
             new TaskRepository(),
             new PersonRepository(),
-            new BoardService(
-                new TaskRepository(),
-                new AssignmentRepository(),
-                new PersonRepository(),
-                $this->client(),
-                new Logger(),
-                new ClaimNotifier(new TaskRepository(), new AssignmentRepository(), new Mailer(new Logger(), new EmailTemplate(new Logger())), $this->client(), $this->standing()),
-                $this->signup()
-            ),
             $this->client(),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            $this->takeoverService()
         );
     }
 
@@ -135,40 +126,73 @@ final class ReplacementServiceTest extends TelegramTestCase
         self::assertSame('rep:3', $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0]['callback_data']);
     }
 
-    public function testSelectSwapsTheOriginalForTheCoverAutomatically(): void
+    public function testSelectOnlySendsTheHolderARequestAndMovesNothing(): void
     {
-        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 1];
-
         // find(assignment 3) -> the original's occupying slot on task 5
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
         // findByTelegramUserId(555) -> the cover (id 7)
-        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
         // tasks->find(5)
         $this->wpdb->nextRows[] = $this->taskRow(5);
         // refusalFor: findFor(5,7) -> null (not already on)
         $this->wpdb->nextRows[] = null;
-        // swap: setStatus(replaced) [update], then join(): taskCapacity, findFor null, insert
-        $this->wpdb->nextVars[] = 2;         // taskCapacity
-        $this->wpdb->nextRows[] = null;      // join findFor
-        $this->wpdb->nextQueryResults[] = 1; // conditional insert -> JOIN_OK
-        // success messaging: tasks->find(5), people->find(9) [original]
-        $this->wpdb->nextRows[] = $this->taskRow(5);
+        // request: people->find(9) -> the holder, then no pending request yet
         $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(9, 999), ['telegram_chat_id' => 999]);
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1; // the request row is stored
 
         $this->service()->onSelect([
             'id' => 'cbq', 'from' => ['id' => 555], 'data' => 'rep:3',
         ]);
 
-        // The original was marked replaced (an update to status).
-        self::assertSame(AssignmentStatus::REPLACED, $this->wpdb->updates[0]['data']['status']);
-        // ...recorded as the cover's person id.
-        self::assertSame(7, $this->wpdb->updates[0]['data']['changed_by']);
-        self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
-        // The cover was signed up (a conditional insert ran).
-        self::assertStringContainsString('INSERT INTO', implode("\n", $this->wpdb->queries));
-        // The group was told, and the original DMed.
-        self::assertContains('answerCallbackQuery', $this->calledMethods());
-        self::assertContains('sendMessage', $this->calledMethods());
+        // Nothing moved: no status change, and the only insert is the request.
+        self::assertSame([], $this->wpdb->updates);
+        $inserts = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_starts_with(ltrim($sql), 'INSERT')
+        ));
+        self::assertCount(1, $inserts);
+        self::assertStringContainsString('eventcrew_takeovers', $inserts[0]);
+
+        // The holder got the two buttons.
+        $ask = $this->telegramCalls[0]['body'];
+        self::assertSame(999, $ask['chat_id']);
+        self::assertSame('tko:y:1', $ask['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+        self::assertSame('tko:n:1', $ask['reply_markup']['inline_keyboard'][0][1]['callback_data']);
+
+        // The cover was told the request went out, with the deadline.
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        self::assertStringContainsString('Thu 23 Jul 12:00', $sent['text']);
+    }
+
+    public function testTheHoldersButtonAnswersAndReplacesTheButtons(): void
+    {
+        // findByTelegramUserId(999) -> the holder
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(9, 999), ['telegram_chat_id' => 999]);
+        // answer(): takeover, assignment, task, cover, holder
+        $this->wpdb->nextRows[] = [
+            'id' => 1, 'assignment_id' => 3, 'task_id' => 5, 'holder_id' => 9, 'cover_id' => 7,
+            'status' => 'pending', 'deadline_at' => '2026-07-23 12:00:00',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
+        $this->wpdb->nextRows[] = $this->taskRow(5);
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(9, 999);
+        $this->wpdb->nextQueryResults[] = 1; // resolve(refused)
+
+        $this->service()->onAnswer([
+            'id' => 'cbq',
+            'from' => ['id' => 999],
+            'data' => 'tko:n:1',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999], 'text' => 'The request'],
+        ]);
+
+        self::assertSame([], $this->wpdb->updates, 'refusing moves nothing');
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(42, $edit['message_id']);
+        self::assertStringStartsWith("The request\n\nYou keep your task", $edit['text']);
+        self::assertArrayNotHasKey('reply_markup', $edit, 'the buttons are gone');
     }
 
     /**

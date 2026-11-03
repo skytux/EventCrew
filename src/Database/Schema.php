@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '26';
+    public const DB_VERSION = '27';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -32,6 +32,7 @@ final class Schema
     public const CHECKINS = 'eventcrew_checkins';
     public const TICKET_BUYERS = 'eventcrew_ticket_buyers';
     public const NEWSLETTER_SUBSCRIBERS = 'eventcrew_newsletter_subscribers';
+    public const TAKEOVERS = 'eventcrew_takeovers';
 
     /**
      * @return array<int, string>
@@ -50,6 +51,7 @@ final class Schema
             self::CHECKINS,
             self::TICKET_BUYERS,
             self::NEWSLETTER_SUBSCRIBERS,
+            self::TAKEOVERS,
         ];
     }
 
@@ -291,6 +293,7 @@ final class Schema
         $checkins = self::table(self::CHECKINS);
         $ticketBuyers = self::table(self::TICKET_BUYERS);
         $newsletterSubscribers = self::table(self::NEWSLETTER_SUBSCRIBERS);
+        $takeovers = self::table(self::TAKEOVERS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -605,6 +608,28 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY email (email),
                 KEY status (status)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // A request to take over someone's task (schema 27). The cover
+            // asks, the holder (holder_id, on assignment_id) answers before
+            // deadline_at, and only then does the task move. status is
+            // 'pending', 'accepted', 'refused', 'expired' or 'cancelled'.
+            // One pending row per task at a time; the insert checks that in
+            // the same statement (TakeoverRepository::create()).
+            "CREATE TABLE {$takeovers} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                assignment_id bigint(20) unsigned NOT NULL,
+                task_id bigint(20) unsigned NOT NULL,
+                holder_id bigint(20) unsigned NOT NULL,
+                cover_id bigint(20) unsigned NOT NULL,
+                status varchar(10) NOT NULL DEFAULT 'pending',
+                deadline_at datetime NOT NULL,
+                created_at datetime NOT NULL,
+                answered_at datetime DEFAULT NULL,
+                PRIMARY KEY  (id),
+                KEY task_status (task_id,status),
+                KEY status_deadline (status,deadline_at),
+                KEY assignment_id (assignment_id)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

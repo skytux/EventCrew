@@ -28,6 +28,8 @@ use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TakeoverService;
+use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\DoorListService;
@@ -207,9 +209,8 @@ abstract class TelegramTestCase extends TestCase
                 new AssignmentRepository(),
                 new TaskRepository(),
                 new PersonRepository(),
-                $this->boardService(),
                 $this->client(),
-                $mailer
+                $this->takeoverService()
             ),
             new ProfileService(
                 new PersonRepository(),
@@ -256,6 +257,26 @@ abstract class TelegramTestCase extends TestCase
             null,
             $events,
             $webLogin
+        );
+    }
+
+    /**
+     * A real TakeoverService over the fake wpdb and the captured client.
+     */
+    protected function takeoverService(): TakeoverService
+    {
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $assignments = new AssignmentRepository();
+
+        return new TakeoverService(
+            new TakeoverRepository(),
+            $assignments,
+            new TaskRepository(),
+            new PersonRepository(),
+            new ClaimNotifier(new TaskRepository(), $assignments, $mailer, $this->client(), $this->standing()),
+            $this->boardService(),
+            $this->client(),
+            $mailer
         );
     }
 

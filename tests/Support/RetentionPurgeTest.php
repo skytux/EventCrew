@@ -115,6 +115,9 @@ final class RetentionPurgeTest extends TestCase
 
         self::assertContains('wp_eventcrew_auth_tokens', $deletedTables);
         self::assertContains('wp_eventcrew_notifications', $deletedTables);
+        $takeovers = 'wp_eventcrew_takeovers';
+        self::assertContains(['table' => $takeovers, 'where' => ['holder_id' => 4]], $this->wpdb->deletes);
+        self::assertContains(['table' => $takeovers, 'where' => ['cover_id' => 4]], $this->wpdb->deletes);
         self::assertNotContains('wp_eventcrew_assignments', $deletedTables);
         self::assertNotContains('wp_eventcrew_redemptions', $deletedTables);
         self::assertNotContains('wp_eventcrew_credit_grants', $deletedTables);
