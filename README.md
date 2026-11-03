@@ -391,9 +391,16 @@ Post-event email**.
   text, shown in the preview email, and removed once that night's emails are
   sent, or when that night is stopped or is too late to send. `/followup` shows
   both texts; `/followup clear` removes the one-time texts.
-- **Content.** Under the text are a button to the site, the next three coming
-  events as cards with their pictures (the same cards as the next events
-  announcement), and, while the announcement is on, an invitation to join it.
+- **Content.** Under the text are a button to the site, the coming events in
+  the next events announcement's format (the next one as a card with its
+  picture, the rest as short lines with small pictures under "Later"), and,
+  while the announcement is on, an invitation to join it. The card never shows
+  the event's description. It shows two short sentences the language model
+  writes for this email only, in the style of the event's DJ, in English and
+  then in Finnish, and the event's practical information (venue, address,
+  doors). Both are written once per night in a background run before the
+  preview and kept, so the preview and every email show the same. When the
+  writing fails, the card has no text.
   Nobody is subscribed by this email; joining goes through the announcement's
   double opt-in.
 - **One per address.** Several tickets of one night with the same email address

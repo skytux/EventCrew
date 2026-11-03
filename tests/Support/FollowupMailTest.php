@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
@@ -42,6 +43,12 @@ final class FollowupMailTest extends TestCase
 
     /** @var list<string> Addresses whose wp_mail fails. */
     private array $failing = [];
+
+    /** @var list<array<string, mixed>> The decoded language model requests. */
+    private array $requests = [];
+
+    /** @var list<string|int> The language model's answers in order; an int is an HTTP error status. */
+    private array $answers = [];
 
     private FollowupWpdb $db;
 
@@ -582,17 +589,17 @@ final class FollowupMailTest extends TestCase
                 'Finnish first'
             );
 
-            foreach (['https://cdn.test/1.jpg', 'https://cdn.test/2.jpg', 'https://cdn.test/3.jpg'] as $image) {
-                self::assertStringContainsString($image, $body, 'the cards with their pictures');
-            }
+            self::assertStringContainsString('width="536" alt="Ecstatic Dance 1"', $body, 'the card with its picture');
 
-            self::assertStringNotContainsString(
-                'width="536" alt="Ecstatic Dance 4"',
-                $body,
-                'three events only as cards'
-            );
-            self::assertSame(1, substr_count($body, 'https://cdn.test/4.jpg'), 'the fourth as a Later picture');
-            self::assertStringContainsString('width="80" alt="Ecstatic Dance 4"', $body);
+            foreach ([2, 3, 4] as $id) {
+                self::assertStringNotContainsString(
+                    'width="536" alt="Ecstatic Dance ' . $id . '"',
+                    $body,
+                    'one event only as a card'
+                );
+                self::assertSame(1, substr_count($body, 'https://cdn.test/' . $id . '.jpg'), 'a Later picture');
+                self::assertStringContainsString('width="80" alt="Ecstatic Dance ' . $id . '"', $body);
+            }
             self::assertStringContainsString('Tilaa tiedote', $body, 'the announcement invite');
 
             // Every link goes through the counted redirect, with the campaign.
@@ -612,7 +619,7 @@ final class FollowupMailTest extends TestCase
     /**
      * The coming events part of both versions is the newsletter's content
      * (Newsletter::content()) for the same events, byte for byte, with only
-     * the links counted: the first three as cards, the rest under "Later".
+     * the links counted: the first one as a card, the rest under "Later".
      */
     public function testTheEventsPartIsTheNewslettersForTheSameEvents(): void
     {
@@ -633,11 +640,11 @@ final class FollowupMailTest extends TestCase
                 ]),
                 array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT))
             );
-            $expected = Newsletter::content(array_slice($events, 0, 3), array_slice($events, 3), null);
+            $expected = Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null);
 
             self::assertCount(4, $events);
             self::assertStringContainsString('Tulevat tapahtumat', $expected['html'], 'the newsletter heading');
-            self::assertStringContainsString('Myöhemmin · Later', $expected['html'], 'the fourth under Later');
+            self::assertStringContainsString('Myöhemmin · Later', $expected['html'], 'the others under Later');
             self::assertStringContainsString($expected['html'], $mail['html']);
             self::assertStringContainsString($expected['text'], $mail['text']);
             self::assertStringNotContainsString('A warm evening of free movement.', $mail['html'] . $mail['text']);
@@ -687,18 +694,26 @@ final class FollowupMailTest extends TestCase
 
         self::assertStringContainsString('Old Hall<br>Ovet aukeavat 18:30 · Doors open 18:30</p>', $mail['html']);
         self::assertStringContainsString(
-            'Example Hall<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00 · Doors close 19:00</p>',
-            $mail['html']
-        );
-        self::assertStringContainsString(
             "Ecstatic Dance 1\nOld Hall\nOvet aukeavat 18:30 · Doors open 18:30\n",
             $mail['text']
         );
-        self::assertSame(2, substr_count($mail['html'], 'Ovet '), 'the third card has none');
+        self::assertSame(1, substr_count($mail['html'], 'Ovet '), 'only the card has such lines');
+        self::assertStringNotContainsString('Example Hall', $mail['html'] . $mail['text'], 'a Later line has none');
 
         foreach (['Come and dance.', 'Stay late.', 'Welcome.', 'A warm evening of free movement.'] as $hidden) {
             self::assertStringNotContainsString($hidden, $mail['html'] . $mail['text']);
         }
+
+        // The current plan's information, for the card's event.
+        unset($this->options[Newsletter::STATE_OPTION]['ledger']);
+        $this->options[Newsletter::STATE_OPTION]['plan']['written']['practical'][1]
+            = $this->options[Newsletter::STATE_OPTION]['plan']['written']['practical'][2];
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString(
+            'Example Hall<br>Main Street 1, Helsinki<br>Ovet sulkeutuvat 19:00 · Doors close 19:00</p>',
+            $mail['html']
+        );
 
         $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
@@ -878,7 +893,171 @@ final class FollowupMailTest extends TestCase
         self::assertArrayHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options, 'kept for the send');
     }
 
+    // ---- The card's own text ----------------------------------------------
+
+    /**
+     * Before the preview, a background run writes the first coming event's
+     * text (English, then Finnish) and its practical information once and
+     * keeps them for the night. The preview and every email show them on the
+     * one card, in both languages, in the HTML and the plain text, and never
+     * the description. Later runs ask the model nothing more.
+     */
+    public function testTheCardsTextIsWrittenOnceAndShownInBothLanguages(): void
+    {
+        $this->cardNight();
+        $this->model([
+            '{"text": "Spin with DJ Kai at Old Hall."}',
+            '{"fi": "Pyöri DJ Kain kanssa Old Hallissa."}',
+            '{"venue": "Old Hall", "address": "", "doors_open": "18:30", "doors_close": ""}',
+        ]);
+        $followup = $this->followup();
+
+        $followup->run($this->at('2026-11-13 12:00'));
+
+        self::assertCount(3, $this->requests, 'the text, its translation, the practical information');
+        self::assertStringContainsString('2 short sentences', $this->requests[0]['messages'][0]['content']);
+        self::assertStringContainsString('Ecstatic Dance 1', $this->requests[0]['messages'][1]['content']);
+        self::assertSame(1, $this->state()['written'][self::NIGHT]['id']);
+        self::assertSame(
+            ['fi' => 'Pyöri DJ Kain kanssa Old Hallissa.', 'en' => 'Spin with DJ Kai at Old Hall.'],
+            $this->state()['written'][self::NIGHT]['text']
+        );
+        self::assertCount(1, $this->mails);
+        $preview = $this->mails[0]['body'];
+        self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $preview, 'the preview shows it');
+        self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $preview);
+        self::assertStringContainsString('Ovet aukeavat 18:30 · Doors open 18:30', $preview);
+
+        $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertSame(1, substr_count($mail['html'], 'width="536"'), 'only one card');
+        self::assertStringContainsString('width="80" alt="Ecstatic Dance 2"', $mail['html'], 'Later with a picture');
+        self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $mail['html']);
+        self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $mail['html']);
+        self::assertStringContainsString(
+            "Ecstatic Dance 1\nFI: Pyöri DJ Kain kanssa Old Hallissa.\nEN: Spin with DJ Kai at Old Hall.\nOld Hall\n",
+            $mail['text']
+        );
+        self::assertStringNotContainsString('Doors open early, dance late', $mail['html'] . $mail['text']);
+
+        // The send: the same text for everyone, nothing asked again.
+        $followup->run($this->at('2026-11-15 12:00'));
+
+        self::assertCount(3, $this->requests, 'stored once and reused');
+        self::assertCount(3, $this->mails);
+
+        foreach (array_slice($this->mails, 1) as $sent) {
+            self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $sent['body']);
+        }
+    }
+
+    /**
+     * A failed text leaves the card without text (never the description);
+     * the practical information written in the same run is still shown, and
+     * the failure is not asked again for the night.
+     */
+    public function testAFailedTextLeavesTheCardWithoutText(): void
+    {
+        $this->cardNight();
+        $this->model([500, '{"venue": "Old Hall", "address": "", "doors_open": "18:30", "doors_close": ""}']);
+        $followup = $this->followup();
+
+        $followup->run($this->at('2026-11-13 12:00'));
+
+        self::assertCount(2, $this->requests);
+        self::assertSame([], $this->state()['written'][self::NIGHT]['text']);
+        $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
+        self::assertStringContainsString('Ovet aukeavat 18:30 · Doors open 18:30', $mail['html']);
+        self::assertStringNotContainsString('Doors open early, dance late', $mail['html'] . $mail['text']);
+        self::assertStringNotContainsString('Spin with', $mail['html'] . $mail['text']);
+
+        $followup->run($this->at('2026-11-15 12:00'));
+        self::assertCount(2, $this->requests, 'not asked again');
+    }
+
+    /**
+     * Outside a background run nothing is written and the preview goes out
+     * without a text; with the switch off a stored text is not shown.
+     */
+    public function testNoBackgroundRunOrTheSwitchOffShowsNoText(): void
+    {
+        $this->cardNight();
+        $this->model(['{"text": "Spin with DJ Kai at Old Hall."}']);
+        Functions\when('wp_doing_cron')->justReturn(false);
+
+        $this->followup()->run($this->at('2026-11-13 12:00'));
+
+        self::assertSame([], $this->requests);
+        self::assertArrayNotHasKey(self::NIGHT, $this->state()['written'] ?? []);
+        self::assertCount(1, $this->mails, 'the preview still goes out');
+
+        $this->options[FollowupMail::STATE_OPTION]['written'][self::NIGHT] = [
+            'id' => 1,
+            'text' => ['fi' => 'Pyöri.', 'en' => 'Spin.'],
+            'practical' => [],
+        ];
+        self::assertStringContainsString('Spin.', $this->followup()->compose(self::NIGHT, true, 'A', 'b', 7)['html']);
+
+        $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
+        $mail = $this->followup()->compose(self::NIGHT, true, 'A', 'b', 7);
+        self::assertStringNotContainsString('Spin.', $mail['html']);
+    }
+
+    /**
+     * A text written for another first event (that one was removed) is not
+     * shown on this card.
+     */
+    public function testATextForAnotherEventIsNotShown(): void
+    {
+        $this->cardNight();
+        $this->options[FollowupMail::STATE_OPTION] = [
+            'written' => [self::NIGHT => ['id' => 9, 'text' => ['fi' => 'Pyöri.', 'en' => 'Spin.'], 'practical' => []]],
+        ];
+        $mail = $this->followup()->compose(self::NIGHT, true, 'A', 'b', 7);
+
+        self::assertStringNotContainsString('Spin.', $mail['html']);
+    }
+
     // ---- Helpers ----------------------------------------------------------
+
+    /** The sample events, the first with a description that names its venue and doors, and two ticket holders. */
+    private function cardNight(): void
+    {
+        $this->sampleEvents();
+        $this->events[1]['post']->post_content = 'Old Hall, doors 18:30. Doors open early, dance late.';
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->guest(5, 'Gus Example', 'gus@example.test');
+        $this->organizer();
+    }
+
+    /**
+     * A configured language model in a background run: a stub of
+     * wp_remote_post that answers from $answers in order (an int is an HTTP
+     * error status) and records each decoded request.
+     *
+     * @param list<string|int> $answers
+     */
+    private function model(array $answers): void
+    {
+        $this->answers = $answers;
+        $this->options[AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[AssistantSettings::MODEL_OPTION] = 'test-model';
+        Functions\when('wp_doing_cron')->justReturn(true);
+        Functions\when('wp_json_encode')->alias(static fn (mixed $value): string => (string) json_encode($value));
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args): array {
+            $this->requests[] = json_decode((string) $args['body'], true);
+
+            return ['answer' => array_shift($this->answers) ?? ''];
+        });
+        Functions\when('wp_remote_retrieve_response_code')->alias(
+            static fn (array $response): int => is_int($response['answer']) ? $response['answer'] : 200
+        );
+        Functions\when('wp_remote_retrieve_body')->alias(
+            static fn (array $response): string => (string) json_encode(
+                ['choices' => [['message' => ['content' => (string) $response['answer']]]]]
+            )
+        );
+    }
 
     private function nextText(string $variant, string $en, string $fi, int $rev): void
     {

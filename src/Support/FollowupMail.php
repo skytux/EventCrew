@@ -26,10 +26,17 @@ use EventCrew\Web\NewsletterController;
  * emails are all sent, or when that night (its preview sent) is stopped or
  * left too late to send.
  * Under the text are the coming events the way the next events announcement
- * shows them (Newsletter::content()): its heading, the next three as cards
- * with their pictures and the rest as short lines under "Later". A card shows
- * the practical information the language model found for that event for the
- * announcement (Newsletter::writtenTexts()), when there is some.
+ * shows them (Newsletter::content()): its heading, the next one as a card
+ * with its picture and the rest as short lines with small pictures under
+ * "Later". The card never shows the event's description. It shows a short
+ * text the language model wrote for this email only (two sentences in the
+ * style of the event's DJ, in English and in Finnish) and the event's
+ * practical information. Both are written once per night in a background
+ * run before the preview (writeNight()) and kept in the state option, so the
+ * preview and every recipient get the same; without them the card has no
+ * text, and its practical information is what the announcement found
+ * (Newsletter::writtenTexts()), when there is some. A newly written text
+ * sends no second preview: the preview goes out once per night.
  * Then, while the announcement is switched on, an invitation to join it.
  * Nobody is subscribed by this email;
  * joining goes through the announcement's own double opt-in.
@@ -110,8 +117,8 @@ final class FollowupMail
     /** How many days after its send time a night is still sent. */
     public const LATE_DAYS = 2;
 
-    /** How many coming events the email shows as cards; the rest are short lines. */
-    public const EVENTS = 3;
+    /** How many coming events the email shows as cards; the rest are short lines (Owner, 2026-11-03). */
+    public const EVENTS = 1;
 
     /** The link kind of a preview's or a test's links: not counted. */
     private const KIND_SAMPLE = 't';
@@ -126,16 +133,20 @@ final class FollowupMail
 
     private readonly FollowupText $text;
 
+    private readonly NewsletterWriter $writer;
+
     public function __construct(
         private readonly FollowupRepository $rows,
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
         private readonly ?Logger $logger = null,
-        ?FollowupText $text = null
+        ?FollowupText $text = null,
+        ?NewsletterWriter $writer = null
     ) {
         $textLogger = $logger ?? new Logger();
         $this->text = $text ?? new FollowupText(new LlmClient($textLogger), $textLogger);
+        $this->writer = $writer ?? new NewsletterWriter(new LlmClient($textLogger), $textLogger);
     }
 
     public function boot(): void
@@ -538,10 +549,8 @@ final class FollowupMail
 
         // No coming events, no events part: the newsletter is not sent then.
         if ([] !== $events) {
-            // The practical information the language model found for the
-            // next events announcement goes on these cards too.
             $coming = Newsletter::content(
-                NewsletterWriter::apply(array_slice($events, 0, self::EVENTS), Newsletter::writtenTexts()),
+                $this->withWritten($date, array_slice($events, 0, self::EVENTS)),
                 array_slice($events, self::EVENTS),
                 null
             );
@@ -621,6 +630,7 @@ final class FollowupMail
             }
 
             if (! isset($state['previewed'][$date]) && $at >= self::previewAt($date)->getTimestamp() && $at < $sendAt) {
+                $state = $this->writeNight($date, $state);
                 $state['previewed'][$date] = true;
                 $this->save($state);
                 $this->sendPreview($date);
@@ -636,6 +646,8 @@ final class FollowupMail
                 if (! isset($state['started'][$date])) {
                     // The one-time texts this night starts with; removed when it is done.
                     $state['texts'][$date] = $this->text->revisions();
+                    // The first event's text, when the preview's run could not write it.
+                    $state = $this->writeNight($date, $state);
                 }
 
                 $state['started'][$date] = true;
@@ -823,6 +835,87 @@ final class FollowupMail
     }
 
     /**
+     * Writes, once, the text and the practical information of the first
+     * coming event for $date's email (NewsletterWriter::writeFollowup()) and
+     * keeps them in $state['written'][$date] with the event's id, so the
+     * preview and every recipient get the same. Written again only when the
+     * first coming event has become another one, and never once the night
+     * has started. Nothing is stored when nothing may be written now (not a
+     * background run, no model, the switch off); a failed text is stored as
+     * [] and not asked for again.
+     *
+     * @param array<string, array<string, mixed>> $state
+     * @return array<string, array<string, mixed>>
+     */
+    private function writeNight(string $date, array $state): array
+    {
+        $first = array_values($this->comingEvents($date))[0] ?? null;
+
+        if (isset($state['started'][$date]) || null === $first) {
+            return $state;
+        }
+
+        $id = (int) ($first['id'] ?? 0);
+        $stored = $state['written'][$date] ?? null;
+
+        if (is_array($stored) && (int) ($stored['id'] ?? 0) === $id) {
+            return $state;
+        }
+
+        $written = $this->writer->writeFollowup($first);
+
+        if (null === $written) {
+            return $state;
+        }
+
+        $state['written'][$date] = ['id' => $id] + $written;
+        $this->save($state);
+
+        return $state;
+    }
+
+    /**
+     * $cards (the first coming event) with what was written for $date's
+     * email (writeNight()) when it is for that event: its text, Finnish and
+     * English, and its practical information. Without practical information
+     * of its own, a card takes what the next events announcement found
+     * (Newsletter::writtenTexts()). A card never shows the description.
+     *
+     * @param array<int, array<string, mixed>> $cards
+     * @return array<int, array<string, mixed>>
+     */
+    private function withWritten(string $date, array $cards): array
+    {
+        $cards = NewsletterWriter::apply($cards, ['practical' => Newsletter::writtenTexts()['practical']]);
+        $written = $this->state()['written'][$date] ?? null;
+
+        if (! is_array($written) || ! NewsletterWriter::enabled()) {
+            return $cards;
+        }
+
+        foreach ($cards as $index => $card) {
+            if ((int) ($card['id'] ?? 0) !== (int) ($written['id'] ?? 0)) {
+                continue;
+            }
+
+            $text = NewsletterWriter::followupText($written['text'] ?? null);
+
+            if (null !== $text) {
+                $cards[$index]['text_fi'] = $text['fi'];
+                $cards[$index]['text_en'] = $text['en'];
+            }
+
+            $info = NewsletterWriter::practicalOf($written['practical'] ?? null);
+
+            if (null !== $info) {
+                $cards[$index]['practical'] = $info;
+            }
+        }
+
+        return $cards;
+    }
+
+    /**
      * Every coming event after $date, as the newsletter reads it
      * (Newsletter::comingEvents() and withCard()).
      *
@@ -888,7 +981,9 @@ final class FollowupMail
     /**
      * texts holds, per started night, the revisions of the one-time texts it
      * started with (FollowupText::revisions()); expired holds the previewed
-     * nights that were left too late to send.
+     * nights that were left too late to send; written holds, per night, the
+     * text and the practical information written for its first coming event
+     * (writeNight()).
      *
      * @return array{
      *     previewed: array<string, bool>,
@@ -896,7 +991,8 @@ final class FollowupMail
      *     started: array<string, bool>,
      *     done: array<string, bool>,
      *     texts: array<string, array<string, int>>,
-     *     expired: array<string, bool>
+     *     expired: array<string, bool>,
+     *     written: array<string, array<string, mixed>>
      * }
      */
     private function state(): array
@@ -905,7 +1001,7 @@ final class FollowupMail
         $stored = is_array($stored) ? $stored : [];
         $state = [];
 
-        foreach (['previewed', 'stopped', 'started', 'done', 'texts', 'expired'] as $key) {
+        foreach (['previewed', 'stopped', 'started', 'done', 'texts', 'expired', 'written'] as $key) {
             $state[$key] = is_array($stored[$key] ?? null) ? $stored[$key] : [];
         }
 
