@@ -11,6 +11,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\GuestCommand;
+use EventCrew\Support\TicketMail;
 
 /**
  * The guest list (👥 under /door; /door add|edit|remove changes it): the guest
@@ -34,7 +35,8 @@ final class GuestListService
         private readonly GuestRepository $guests,
         private readonly DoorAccess $access,
         private readonly PersonRepository $people,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -137,12 +139,19 @@ final class GuestListService
     }
 
     /**
-     * @param array{name: ?string, plus_ones: ?int, note: ?string} $command
+     * @param array{name: ?string, plus_ones: ?int, note: ?string, email?: string} $command
      */
     private function add(Person $person, string $date, array $command): string
     {
         $name = (string) $command['name'];
-        $this->guests->add($date, $name, (int) $command['plus_ones'], (string) $command['note'], $person->id);
+        $email = (string) ($command['email'] ?? '');
+        $this->guests->add($date, $name, (int) $command['plus_ones'], (string) $command['note'], $person->id, $email);
+
+        // With an email address the guest is emailed their ticket, by the
+        // next run of the ticket email's cron batch.
+        if ('' !== $email) {
+            TicketMail::schedule();
+        }
 
         return sprintf(
             /* translators: 1: guest name, 2: event day */
@@ -188,6 +197,8 @@ final class GuestListService
         }
 
         $this->guests->delete($guest->id);
+        // "Your ticket is cancelled", when the guest was emailed a ticket.
+        $this->ticketMail?->guestCancelled($guest);
 
         /* translators: %s: guest name */
         return sprintf(__('🗑 Removed %s.', 'eventcrew'), $guest->name);
@@ -233,6 +244,7 @@ final class GuestListService
             $lines[] = __('Add: /door add Name ; note  (just the guest)', 'eventcrew');
             $lines[] = __('Add with extra people: /door add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
             $lines[] = __('No +N, or +0, means no extra people.', 'eventcrew');
+            $lines[] = __('Email the ticket: /door add Name name@example.com', 'eventcrew');
             $lines[] = __('Change: /door edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
             $lines[] = __('Remove: /door remove 2', 'eventcrew');
             $lines[] = __('Another night: put the date first, e.g. /door add 1.8. Name', 'eventcrew');
@@ -269,6 +281,7 @@ final class GuestListService
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'name' => __('Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)', 'eventcrew'),
             'nothing' => __('Say what to change, e.g. /door edit 2 +3 or /door edit 2 ; new note', 'eventcrew'),
+            'email' => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             default => __('To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night.', 'eventcrew'),
         };

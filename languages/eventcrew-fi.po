@@ -6373,3 +6373,37 @@ msgstr "Tapahtuman jälkeinen viesti: ei lähetetä tästä tapahtumasta (kytket
 #, php-format
 msgid "Already used · %s"
 msgstr "Jo käytetty · %s"
+
+msgid "Thank you for taking a task!"
+msgstr "Kiitos, että otit tehtävän!"
+
+msgid "You spent a free-entry credit on this night."
+msgstr "Käytit vapaalipun tähän iltaan."
+
+msgid "Your ticket is cancelled"
+msgstr "Lippusi on peruttu"
+
+#, php-format
+msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
+msgstr "Lippusi tapahtumaan %1$s %2$s on peruttu. Lippusähköpostin QR-koodi ei enää toimi ovella."
+
+msgid "Email the ticket: /door add Name name@example.com"
+msgstr "Lippu sähköpostiin: /door add Nimi nimi@example.com"
+
+msgid "Optional: the ticket is emailed"
+msgstr "Valinnainen: lippu lähetetään sähköpostiin"
+
+msgid "Email (optional: the ticket is emailed)"
+msgstr "Sähköposti (valinnainen: lippu lähetetään)"
+
+msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
+msgstr "Sama lippusähköposti lähtee seuraavassa erässä vieraalle, jonka lisäät sähköpostiosoitteen kanssa (wp-adminin Roster, Admin-välilehti tai /door add Nimi nimi@example.com), ja myyntipisteessä sähköpostiosoitteen kanssa lisätylle Holvi-ostajalle. Crew saa erillisen lippusähköpostin, kun ottaa tehtävän tai käyttää vapaalipun. Kun vieras poistetaan tai tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, hän saa lyhyen \"Lippusi on peruttu\" -viestin."
+
+msgid "When you take a task, or spend a free-entry credit, we also email you your ticket: a QR code and a link to your ticket page. If that task or credit is cancelled after the ticket was sent, we email you that the ticket is cancelled."
+msgstr "Kun otat tehtävän tai käytät vapaalipun, lähetämme sinulle myös lipun sähköpostilla: QR-koodin ja linkin lippusivullesi. Jos tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, kerromme sähköpostilla, että lippu on peruttu."
+
+msgid "If your ticket was missing from our door list and the door desk adds you with your email address, we email you your ticket in the same way."
+msgstr "Jos lippusi puuttui ovilistalta ja myyntipiste lisää sinut sähköpostiosoitteesi kanssa, lähetämme lipun sinulle samalla tavalla."
+
+msgid "If you are removed from the guest list after your ticket was emailed, we email you that your ticket is cancelled."
+msgstr "Jos sinut poistetaan vieraslistalta lipun lähettämisen jälkeen, kerromme sähköpostilla, että lippusi on peruttu."

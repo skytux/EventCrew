@@ -30,7 +30,8 @@ final class ClaimNotifier
         private readonly AssignmentRepository $assignments,
         private readonly Mailer $mailer,
         private readonly TelegramClient $telegram,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -99,6 +100,10 @@ final class ClaimNotifier
                 RoleGuide::emailAction(),
             ]))
         );
+
+        // The "Your ticket" email, the same one ticket buyers get, after the
+        // task email. It carries the QR code the door desk scans.
+        $this->ticketMail?->sendCrewTicket($person, $assignment->id, $task->taskDate);
     }
 
     /**
@@ -219,6 +224,14 @@ final class ClaimNotifier
             // different slot, so the board is one tap away.
             [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
         );
+
+        // When this sign-up's ticket was emailed, a short "Your ticket is
+        // cancelled" email too, in the same two languages as the ticket.
+        $assignment = null === $this->ticketMail ? null : $this->assignments->findFor($taskId, $person->id);
+
+        if (null !== $assignment) {
+            $this->ticketMail?->crewCancelled($person, $assignment->ticketMailedAt, $task->taskDate);
+        }
     }
 
     /**

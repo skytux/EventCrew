@@ -88,9 +88,31 @@ run and keeps going while some are left; a failed email is not retried by
 itself. The Holvi card on the Roster page (and on the crew page's Admin tab)
 shows "N sent · N failed · N not sent", with "Send a test to me" (one ticket of
 that date to your own address, no status changes) and "Send the rest now"
-(every ticket not sent yet, failed ones too). Door sales and buyers added at
-the sales desk are never emailed. The email address is deleted 60 days after
-the event, which ends the ticket page link.
+(every ticket not sent yet, failed ones too). Door sales are never emailed. The
+email address is deleted 60 days after the event, which ends the ticket page
+link.
+
+The same ticket email (same design, Finnish first) is also sent to:
+
+- a guest added by hand with an email address: the guest form in wp-admin
+  (EventCrew > Roster) and on the crew page's Admin tab has an optional Email
+  field, and in the bot a word with an "@" is the email
+  (`/door add Anna anna@example.com +1`). The ticket goes with the next cron
+  batch, not at once. The email can only be given when the guest is added.
+- a Holvi buyer added at the sales desk with an email address. The row gets a
+  signed code `EC-B<id>-<signature>`, and the ticket goes with the next batch.
+- a crew member who takes a task (always sent, like the sign-up confirmation)
+  or spends a free-entry credit (follows the person's "Free-entry ticket
+  ready" email choice). This is a separate email, sent at once, in addition to
+  the confirmation email with the ticket link. Its QR holds `EC-C<id>-<signature>`
+  for a task or `EC-F<id>-<signature>` for a credit. The desk scanner accepts
+  both and finds the person's crew or credit row. Old crew ticket links keep
+  working.
+
+When a guest who was sent a ticket is removed from the list, or a task sign-up
+or credit whose ticket was emailed is cancelled (by the person, an organizer, or
+the swap at the sales desk), the person gets a short "Your ticket is cancelled"
+email in Finnish and English. Nothing is sent for a night that is already past.
 
 For the email route, something has to read the import mailbox. Either:
 

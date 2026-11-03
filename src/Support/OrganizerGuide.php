@@ -156,6 +156,7 @@ final class OrganizerGuide
             ),
             __('Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under "Holvi ticket buyers". A name already on the list is skipped.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __('After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket\'s QR code, in Finnish and English. Roster and the Admin tab show how many were sent, failed or not sent yet. "Send a test to me" sends one to your own address; "Send the rest now" sends every ticket not sent yet, failed ones too.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short "Your ticket is cancelled" email.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ...self::mailImportDetails(),
         ];
     }

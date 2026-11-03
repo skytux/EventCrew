@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\CrewTicket;
 use EventCrew\Models\Guest;
+use EventCrew\Models\Person;
 use EventCrew\Models\TicketBuyer;
+use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\EmailTemplate;
@@ -67,8 +71,17 @@ final class TicketMailTest extends TestCase
             new TicketBuyerRepository(),
             new GuestRepository(),
             new TaskRepository(),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TicketQr(),
+            new AssignmentRepository(),
+            new RedemptionRepository()
         );
+    }
+
+    /** @param array<string, array<string, bool>> $prefs */
+    private function person(string $email = 'mia@example.test', array $prefs = []): Person
+    {
+        return new Person(8, $email, 'Mia Crew', '2026-01-01 00:00:00', notifyPrefs: $prefs);
     }
 
     /** @return array<string, mixed> */
@@ -154,7 +167,9 @@ final class TicketMailTest extends TestCase
         self::assertStringContainsString('FROM wp_eventcrew_ticket_buyers', $buyers);
         self::assertStringContainsString("event_date >= '" . current_time('Y-m-d') . "'", $buyers);
         self::assertStringContainsString("ticket_mail_status = ''", $buyers);
-        self::assertStringContainsString("source NOT IN ('door', 'desk')", $buyers);
+        // A buyer added at the desk with an email is mailed too; a door sale is not.
+        self::assertStringContainsString("source <> 'door'", $buyers);
+        self::assertStringNotContainsString("'desk'", $buyers);
         self::assertStringContainsString('LIMIT 25', $buyers);
         self::assertStringContainsString('FROM wp_eventcrew_guests', $this->wpdb->queries[1]);
         self::assertStringContainsString("ticket_mail_status = ''", $this->wpdb->queries[1]);
@@ -501,6 +516,125 @@ final class TicketMailTest extends TestCase
         self::assertSame(1, SignedLink::verify('buyer_ticket|AB12CD1', $token));
         self::assertNull(SignedLink::verify('buyer_ticket|', $token));
         self::assertNull(SignedLink::verify('guest_ticket', $token));
+    }
+
+    /**
+     * Decision 1 and 2: a crew sign-up gets the same "Your ticket" email as a
+     * ticket buyer, at once, with a short signed EC-C code in the QR and the
+     * sign-up's old ticket link under it; the send is recorded on the sign-up.
+     */
+    public function testACrewSignupGetsTheTicketEmailWithACrewCode(): void
+    {
+        $mail = $this->ticketMail();
+
+        self::assertTrue($mail->sendCrewTicket($this->person(), 31, '2026-11-14'));
+        self::assertSame(['mia@example.test'], array_column($this->mails, 'to'));
+        self::assertSame('Lippusi / Your ticket – 14.11.2026', $this->mails[0]['subject']);
+        self::assertStringContainsString('Kiitos, että otit tehtävän!', $this->mails[0]['body']);
+        self::assertStringContainsString('Thank you for taking a task!', $this->mails[0]['body']);
+        self::assertStringContainsString('Open the ticket in your browser', $this->mails[0]['body']);
+
+        $update = $this->updates()[0];
+        self::assertSame('wp_eventcrew_assignments', $update['table']);
+        self::assertSame(['id' => 31], $update['where']);
+        self::assertSame('2026-07-20 12:00:00', $update['data']['ticket_mailed_at']);
+
+        // The QR holds EC-C<id>-<16 hex>, which only verifies unchanged.
+        $ticket = new CrewTicket(CrewTicket::KIND_CREW, 31, '2026-11-14', 'Mia Crew', 'mia@example.test');
+        $code = TicketMail::qrData($ticket);
+        self::assertMatchesRegularExpression('/^EC-C31-[0-9a-f]{16}$/', $code);
+        self::assertSame(31, TicketMail::crewIdFromCode($code));
+        self::assertNull(TicketMail::crewIdFromCode('EC-C32-' . substr($code, -16)));
+        self::assertNull(TicketMail::creditIdFromCode('EC-F31-' . substr($code, -16)));
+        self::assertNull(TicketMail::guestIdFromCode('EC-G31-' . substr($code, -16)));
+
+        // The link is the sign-up's existing ticket link, so old links keep working.
+        $html = $mail->compose($ticket)['html'];
+        preg_match('/href="([^"]+eventcrew\/v1\/ticket[^"]*)"/', $html, $link);
+        parse_str((string) parse_url(html_entity_decode($link[1]), PHP_URL_QUERY), $query);
+        self::assertSame(31, SignedLink::verify('ticket', (string) $query['token']));
+    }
+
+    /** A credit spent on a night gets the same email, with an EC-F code. */
+    public function testACreditGetsTheTicketEmailWithACreditCode(): void
+    {
+        self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
+        self::assertStringContainsString('Käytit vapaalipun tähän iltaan.', $this->mails[0]['body']);
+        self::assertStringContainsString('You spent a free-entry credit on this night.', $this->mails[0]['body']);
+
+        $update = $this->updates()[0];
+        self::assertSame('wp_eventcrew_redemptions', $update['table']);
+        self::assertSame(['id' => 12], $update['where']);
+
+        $code = TicketMail::creditCode(12);
+        self::assertMatchesRegularExpression('/^EC-F12-[0-9a-f]{16}$/', $code);
+        self::assertSame(12, TicketMail::creditIdFromCode($code));
+        self::assertNull(TicketMail::crewIdFromCode('EC-C12-' . substr($code, -16)));
+    }
+
+    /**
+     * A credit's ticket email follows the person's "Free-entry ticket ready"
+     * email choice; nothing goes to a placeholder address.
+     */
+    public function testNoCrewTicketEmailWhenSwitchedOffOrNoAddress(): void
+    {
+        $mail = $this->ticketMail();
+        $off = $this->person('mia@example.test', ['ticket' => ['email' => false]]);
+
+        self::assertFalse($mail->sendCreditTicket($off, 12, '2026-11-14'));
+        self::assertFalse($mail->sendCrewTicket($this->person('person-8@crew.invalid'), 31, '2026-11-14'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /**
+     * Decision 4: a guest who was sent a ticket gets "Your ticket is
+     * cancelled" in both languages; a guest who was not sent one gets nothing.
+     */
+    public function testARemovedGuestWithASentTicketGetsTheCancelEmail(): void
+    {
+        $mail = $this->ticketMail();
+        $sent = Guest::fromRow(['ticket_mail_status' => 'sent'] + $this->guestRow(9));
+        $unsent = Guest::fromRow($this->guestRow(10));
+
+        self::assertFalse($mail->guestCancelled($unsent));
+        self::assertSame([], $this->mails);
+
+        self::assertTrue($mail->guestCancelled($sent));
+        self::assertSame(['cy@example.test'], array_column($this->mails, 'to'));
+        self::assertSame('Lippusi on peruttu / Your ticket is cancelled – 14.11.2026', $this->mails[0]['subject']);
+        self::assertStringContainsString('Lippusi tapahtumaan Test Site 14.11.2026 on peruttu.', $this->mails[0]['body']);
+        self::assertStringContainsString(
+            'Your ticket to Test Site on 14.11.2026 is cancelled. The QR code in the ticket email no longer works',
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString('you had a ticket to this event', $this->mails[0]['body']);
+    }
+
+    /**
+     * A crew cancel email goes only when that ticket was emailed, and never
+     * for a night already past.
+     */
+    public function testTheCrewCancelEmailNeedsASentTicketAndAComingNight(): void
+    {
+        $mail = $this->ticketMail();
+
+        self::assertFalse($mail->crewCancelled($this->person(), null, '2026-11-14'));
+        self::assertFalse($mail->crewCancelled($this->person(), '2026-07-01 10:00:00', '2026-07-19'));
+        self::assertSame([], $this->mails);
+
+        self::assertTrue($mail->crewCancelled($this->person(), '2026-07-01 10:00:00', '2026-11-14'));
+        self::assertSame(['mia@example.test'], array_column($this->mails, 'to'));
+    }
+
+    /** Decision 5: a desk buyer's ticket code is a short signed EC-B code. */
+    public function testADeskBuyerCodeVerifies(): void
+    {
+        $code = TicketMail::deskBuyerCode(40);
+
+        self::assertMatchesRegularExpression('/^EC-B40-[0-9a-f]{16}$/', $code);
+        self::assertSame(40, TicketMail::deskBuyerIdFromCode($code));
+        self::assertNull(TicketMail::deskBuyerIdFromCode('EC-B41-' . substr($code, -16)));
     }
 
     public function testTheStatusLine(): void

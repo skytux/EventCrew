@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.102.3
+Stable tag: 1.103.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.103.0 =
+* Crew get a separate "Your ticket" email with a scannable code (EC-C for a task, EC-F for a free-entry credit); the door scan accepts them.
+* Optional email when a guest is added by hand (wp-admin Roster, crew app Admin tab, /door add Name name@example.com); the ticket goes with the next batch.
+* A Holvi buyer added at the desk with an email gets a ticket code (EC-B) and the ticket email.
+* "Your ticket is cancelled" email when a guest is removed, or a sign-up or credit is cancelled, after its ticket was emailed.
 
 = 1.102.3 =
 Already used in orange with the check-in time at the door scan and in every ticket list (Me tab, crew app, Telegram /me); the ticket page reads only its own row (Holvi gives each ticket its own code).
@@ -1012,6 +1018,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.103.0 =
+Database update 26: adds ticket_mailed_at to sign-ups and credits.
 
 = 1.102.3 =
 No DB change.

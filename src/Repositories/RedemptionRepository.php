@@ -211,6 +211,20 @@ final class RedemptionRepository
         );
     }
 
+    /** Records that the "Your ticket" email (TicketMail) was sent for this credit, now. */
+    public function markTicketMailed(int $id): void
+    {
+        global $wpdb;
+
+        $wpdb->update(
+            $this->table(),
+            ['ticket_mailed_at' => current_time('mysql')],
+            ['id' => $id],
+            ['%s'],
+            ['%d']
+        );
+    }
+
     public function deleteForPerson(int $personId): void
     {
         global $wpdb;

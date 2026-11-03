@@ -70,6 +70,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketQr;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -537,7 +538,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(TicketMail::class)
             )
         );
 
@@ -757,7 +759,10 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
                 $container->get(TaskRepository::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                new TicketQr(),
+                $container->get(AssignmentRepository::class),
+                $container->get(RedemptionRepository::class)
             )
         );
 
@@ -995,7 +1000,8 @@ final class Kernel
                 $container->get(GuestRepository::class),
                 $container->get(DoorAccess::class),
                 $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(TicketMail::class)
             )
         );
 
@@ -1052,7 +1058,8 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
                 $container->get(TelegramClient::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(TicketMail::class)
             )
         );
 

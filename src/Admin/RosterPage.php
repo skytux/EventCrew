@@ -187,7 +187,8 @@ final class RosterPage
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ($redemptionId > 0) {
-            $this->redemptions->cancel($redemptionId);
+            // Also emails "Your ticket is cancelled" when the ticket was emailed.
+            $this->tickets->cancelRedemption($redemptionId);
         }
 
         Admin::redirectTo(
@@ -397,6 +398,7 @@ final class RosterPage
         $name = isset($_POST['guest_name']) ? sanitize_text_field(wp_unslash($_POST['guest_name'])) : '';
         $plusOnes = isset($_POST['guest_plus_ones']) ? (int) $_POST['guest_plus_ones'] : 0;
         $note = isset($_POST['guest_note']) ? sanitize_text_field(wp_unslash($_POST['guest_note'])) : '';
+        $email = isset($_POST['guest_email']) ? trim(sanitize_text_field(wp_unslash($_POST['guest_email']))) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ('' === $name || ! $this->isValidDate($date)) {
@@ -408,9 +410,24 @@ final class RosterPage
             );
         }
 
+        // The email field is only on the add row, and optional.
+        if (0 === $guestId && '' !== $email && ! is_email($email)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
         if (0 === $guestId) {
-            $this->guests->add($date, $name, $plusOnes, $note, null);
+            $this->guests->add($date, $name, $plusOnes, $note, null, $email);
             $message = __('Guest added.', 'eventcrew');
+
+            // The ticket goes with the next run of the ticket email's batch.
+            if ('' !== $email) {
+                TicketMail::schedule();
+            }
         } else {
             $this->guests->update($guestId, $name, $plusOnes, $note);
             $message = __('Guest saved.', 'eventcrew');
@@ -428,8 +445,12 @@ final class RosterPage
         $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        if ($guestId > 0) {
-            $this->guests->delete($guestId);
+        $guest = $guestId > 0 ? $this->guests->find($guestId) : null;
+
+        if (null !== $guest) {
+            $this->guests->delete($guest->id);
+            // "Your ticket is cancelled", when the guest was emailed a ticket.
+            $this->ticketMail?->guestCancelled($guest);
         }
 
         Admin::redirectTo(

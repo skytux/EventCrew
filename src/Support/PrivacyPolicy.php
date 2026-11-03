@@ -438,6 +438,10 @@ final class PrivacyPolicy
                 'Confirmations of what you signed up for, and reminders about it, always send. They are how we deliver what you asked for, and switching them off would mean signing up for something we then never told you about.',
                 'eventcrew'
             ),
+            __(
+                'When you take a task, or spend a free-entry credit, we also email you your ticket: a QR code and a link to your ticket page. If that task or credit is cancelled after the ticket was sent, we email you that the ticket is cancelled.',
+                'eventcrew'
+            ),
             self::telegramEnabled()
                 ? __(
                     'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off.',
@@ -669,6 +673,14 @@ final class PrivacyPolicy
             ),
             __(
                 'If an organizer puts you on a guest list with your email address, we store your name, your email address, how many people you bring and the date of the event. We email you a thank-you message with your ticket in the same way, and use the rest to check you in at the door.',
+                'eventcrew'
+            ),
+            __(
+                'If your ticket was missing from our door list and the door desk adds you with your email address, we email you your ticket in the same way.',
+                'eventcrew'
+            ),
+            __(
+                'If you are removed from the guest list after your ticket was emailed, we email you that your ticket is cancelled.',
                 'eventcrew'
             ),
             __(

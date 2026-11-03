@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketQr;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -130,6 +135,96 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         // ...and in an email carrying the same link.
         self::assertNotEmpty($mails);
         self::assertStringContainsString($result['url'], $mails[0]['body']);
+    }
+
+    private function serviceWithTicketMail(): TicketRedemptionService
+    {
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+
+        return new TicketRedemptionService(
+            new PersonRepository(),
+            new TaskRepository(),
+            new RedemptionRepository(),
+            $this->standing(),
+            new FreeEntryGate(),
+            $this->client(),
+            $mailer,
+            new TicketMail(
+                new TicketBuyerRepository(),
+                new GuestRepository(),
+                new TaskRepository(),
+                $mailer,
+                new TicketQr(),
+                new AssignmentRepository(),
+                new RedemptionRepository()
+            )
+        );
+    }
+
+    /** @return \ArrayObject<int, string> the subjects of the emails sent, filled as they go */
+    private function captureSubjects(): \ArrayObject
+    {
+        $subjects = new \ArrayObject();
+        Functions\when('wp_mail')->alias(static function (string $to, string $subject) use ($subjects): bool {
+            $subjects[] = $subject;
+
+            return true;
+        });
+
+        return $subjects;
+    }
+
+    /** Decision 1: spending a credit also sends the separate "Your ticket" email. */
+    public function testSpendingACreditAlsoSendsTheSeparateTicketEmail(): void
+    {
+        $subjects = $this->captureSubjects();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->queueBalanceAndEvent(2);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+
+        $this->serviceWithTicketMail()->redeem(7, '2026-08-01');
+
+        self::assertCount(2, $subjects);
+        self::assertStringContainsString('Your ticket', $subjects[1]);
+        $marked = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => 'wp_eventcrew_redemptions' === $u['table']
+        ));
+        self::assertArrayHasKey('ticket_mailed_at', $marked[0]['data']);
+    }
+
+    /** Decision 4: cancelling a credit whose ticket was emailed sends "Your ticket is cancelled". */
+    public function testCancellingACreditWithAnEmailedTicketSendsTheCancelEmail(): void
+    {
+        $subjects = $this->captureSubjects();
+        $this->wpdb->nextRows[] = [
+            'id' => 44, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'cancelled_at' => null,
+            'ticket_mailed_at' => '2026-07-19 10:00:00',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->serviceWithTicketMail()->cancelRedemption(44);
+
+        self::assertStringContainsString('SET cancelled_at', implode("\n", $this->wpdb->queries));
+        self::assertCount(1, $subjects);
+        self::assertStringContainsString('Your ticket is cancelled', $subjects[0]);
+    }
+
+    public function testCancellingACreditWhoseTicketWasNotEmailedSendsNothing(): void
+    {
+        $subjects = $this->captureSubjects();
+        $this->wpdb->nextRows[] = ['id' => 44, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'cancelled_at' => null];
+
+        $this->serviceWithTicketMail()->cancelRedemption(44);
+
+        self::assertStringContainsString('SET cancelled_at', $this->wpdb->lastQuery());
+        self::assertCount(0, $subjects);
     }
 
     public function testTappingANightSaysWhereTheTicketIs(): void

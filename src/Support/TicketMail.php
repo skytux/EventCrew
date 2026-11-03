@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\CrewTicket;
 use EventCrew\Models\Guest;
+use EventCrew\Models\Person;
 use EventCrew\Models\TicketBuyer;
+use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Telegram\TicketController;
@@ -36,6 +40,17 @@ use EventCrew\Telegram\TicketController;
  * Each row's ticket_mail_status records what happened: '' (not tried), 'sent'
  * or 'failed'. The automatic run only tries '' rows, so a failed address is
  * not retried by itself; "Send the rest now" tries every row not 'sent'.
+ *
+ * Crew get the same email, sent at once rather than by cron: a sign-up for a
+ * task (sendCrewTicket()) and a free-entry credit spent on a night
+ * (sendCreditTicket()). Its QR holds a short signed code of its own (crewCode(),
+ * creditCode()), which the door desk checks the person in by. A buyer added at
+ * the sales desk with an email address gets a code (deskBuyerCode()) and the
+ * cron email like an imported buyer.
+ *
+ * When a ticket that was emailed stops being valid - the guest is removed, the
+ * sign-up or the credit is cancelled - sendCancelled() tells the holder, so
+ * they do not come to the door with a QR code that no longer works.
  */
 final class TicketMail
 {
@@ -64,7 +79,9 @@ final class TicketMail
         private readonly GuestRepository $guests,
         private readonly TaskRepository $tasks,
         private readonly Mailer $mailer,
-        private readonly TicketQr $qr = new TicketQr()
+        private readonly TicketQr $qr = new TicketQr(),
+        private readonly ?AssignmentRepository $assignments = null,
+        private readonly ?RedemptionRepository $redemptions = null
     ) {
     }
 
@@ -220,15 +237,19 @@ final class TicketMail
      * (guestCode()), which the desk verifies. The guest's code is short so
      * that its QR, drawn as table cells, keeps the email small.
      */
-    public static function qrData(TicketBuyer|Guest $row): string
+    public static function qrData(TicketBuyer|Guest|CrewTicket $row): string
     {
+        if ($row instanceof CrewTicket) {
+            return $row->isCredit() ? self::creditCode($row->id) : self::crewCode($row->id);
+        }
+
         return $row instanceof Guest ? self::guestCode($row->id) : $row->ticketCode;
     }
 
     /** "EC-G12-0123456789abcdef": a guest's id and a short signature of it. */
     public static function guestCode(int $guestId): string
     {
-        return 'EC-G' . $guestId . '-' . SignedLink::shortSignature('guest_ticket', $guestId);
+        return self::shortCode('G', 'guest_ticket', $guestId);
     }
 
     /**
@@ -237,13 +258,231 @@ final class TicketMail
      */
     public static function guestIdFromCode(string $text): ?int
     {
-        if (1 !== preg_match('/^EC-G([1-9]\d{0,18})-([0-9a-f]{16})$/', trim($text), $match)) {
+        return self::idFromShortCode('G', 'guest_ticket', $text);
+    }
+
+    /**
+     * "EC-C12-0123456789abcdef": the code in a crew sign-up's ticket email, an
+     * assignment id signed with the same purpose as the sign-up's ticket link.
+     */
+    public static function crewCode(int $assignmentId): string
+    {
+        return self::shortCode('C', 'ticket', $assignmentId);
+    }
+
+    /** The assignment id in a crewCode(), or null. */
+    public static function crewIdFromCode(string $text): ?int
+    {
+        return self::idFromShortCode('C', 'ticket', $text);
+    }
+
+    /**
+     * "EC-F12-0123456789abcdef": the code in a free-entry credit's ticket
+     * email, a redemption id signed like the credit's ticket link.
+     */
+    public static function creditCode(int $redemptionId): string
+    {
+        return self::shortCode('F', 'credit_ticket', $redemptionId);
+    }
+
+    /** The redemption id in a creditCode(), or null. */
+    public static function creditIdFromCode(string $text): ?int
+    {
+        return self::idFromShortCode('F', 'credit_ticket', $text);
+    }
+
+    /**
+     * "EC-B12-0123456789abcdef": the ticket code given to a buyer added at the
+     * sales desk with an email address, so their emailed ticket has a code.
+     */
+    public static function deskBuyerCode(int $buyerId): string
+    {
+        return self::shortCode('B', 'buyer_ticket', $buyerId);
+    }
+
+    /** The ticket buyer id in a deskBuyerCode(), or null. */
+    public static function deskBuyerIdFromCode(string $text): ?int
+    {
+        return self::idFromShortCode('B', 'buyer_ticket', $text);
+    }
+
+    private static function shortCode(string $letter, string $purpose, int $id): string
+    {
+        return 'EC-' . $letter . $id . '-' . SignedLink::shortSignature($purpose, $id);
+    }
+
+    /**
+     * The id in a code made by shortCode() with the same letter and purpose,
+     * or null when $text is not such a code or its signature does not verify.
+     */
+    private static function idFromShortCode(string $letter, string $purpose, string $text): ?int
+    {
+        if (1 !== preg_match('/^EC-' . $letter . '([1-9]\d{0,18})-([0-9a-f]{16})$/', trim($text), $match)) {
             return null;
         }
 
         $id = (int) $match[1];
 
-        return hash_equals(SignedLink::shortSignature('guest_ticket', $id), $match[2]) ? $id : null;
+        return hash_equals(SignedLink::shortSignature($purpose, $id), $match[2]) ? $id : null;
+    }
+
+    /**
+     * The link in a crew ticket email: the sign-up's or the credit's existing
+     * ticket page, the same link the task email and the bot give.
+     */
+    public static function crewUrl(CrewTicket $ticket): string
+    {
+        return add_query_arg(
+            ['token' => SignedLink::sign($ticket->isCredit() ? 'credit_ticket' : 'ticket', $ticket->id)],
+            rest_url(self::PAGE_ROUTE)
+        );
+    }
+
+    /**
+     * Emails a crew member their ticket for a task they signed up for, at
+     * once, and records that it was sent. A sign-up's ticket is locked on, as
+     * the sign-up confirmation is. Nothing is sent to a placeholder address.
+     */
+    public function sendCrewTicket(Person $person, int $assignmentId, string $date): bool
+    {
+        $sent = $this->sendPersonTicket(
+            new CrewTicket(CrewTicket::KIND_CREW, $assignmentId, $date, $person->name(), $person->email)
+        );
+
+        if ($sent && null !== $this->assignments) {
+            $this->assignments->markTicketMailed($assignmentId);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * Emails a crew member the ticket a free-entry credit bought, at once, and
+     * records that it was sent. Follows the person's "Free-entry ticket ready"
+     * email choice.
+     */
+    public function sendCreditTicket(Person $person, int $redemptionId, string $date): bool
+    {
+        if (! (new NotificationPreferences())->emailAllowed($person, NotificationPreferences::TICKET)) {
+            return false;
+        }
+
+        $sent = $this->sendPersonTicket(
+            new CrewTicket(CrewTicket::KIND_CREDIT, $redemptionId, $date, $person->name(), $person->email)
+        );
+
+        if ($sent && null !== $this->redemptions) {
+            $this->redemptions->markTicketMailed($redemptionId);
+        }
+
+        return $sent;
+    }
+
+    private function sendPersonTicket(CrewTicket $ticket): bool
+    {
+        if ('' === $ticket->email || Person::isPlaceholderEmail($ticket->email) || '' === $ticket->eventDate) {
+            return false;
+        }
+
+        return $this->deliver($ticket, $ticket->email);
+    }
+
+    /**
+     * Tells a removed guest that their emailed ticket is cancelled. Only when
+     * their ticket email was sent, and the night is today or later.
+     */
+    public function guestCancelled(Guest $guest): bool
+    {
+        if (self::STATUS_SENT !== $guest->mailStatus) {
+            return false;
+        }
+
+        return $this->sendCancelled($guest->name, $guest->email, $guest->eventDate);
+    }
+
+    /**
+     * Tells a crew member that the ticket of a cancelled sign-up is cancelled.
+     * Only when that ticket was emailed.
+     */
+    public function crewCancelled(Person $person, ?string $ticketMailedAt, string $date): bool
+    {
+        if (null === $ticketMailedAt || '' === $ticketMailedAt) {
+            return false;
+        }
+
+        return $this->sendCancelled($person->name(), $person->email, $date);
+    }
+
+    /**
+     * The short "Your ticket is cancelled" email, in Finnish and English. Not
+     * sent to an empty or placeholder address, or for a night already past.
+     */
+    public function sendCancelled(string $name, string $email, string $date): bool
+    {
+        if ('' === $email || Person::isPlaceholderEmail($email) || ! is_email($email)) {
+            return false;
+        }
+
+        if ('' === $date || $date < (string) current_time('Y-m-d')) {
+            return false;
+        }
+
+        $mail = $this->composeCancelled($name, $date);
+        $footer = static fn (): string => __(
+            'You get this email because you had a ticket to this event.',
+            'eventcrew'
+        );
+        $fi = Language::run(Language::FINNISH, $footer);
+        $en = Language::run(Language::ENGLISH, $footer);
+
+        return $this->mailer->toTicketHolder(
+            $email,
+            $mail['subject'],
+            $mail['html'],
+            $mail['text'],
+            $fi === $en ? $en : $fi . ' / ' . $en
+        );
+    }
+
+    /**
+     * The cancel email for one ticket: subject, HTML content and plain text.
+     *
+     * @return array{subject: string, html: string, text: string}
+     */
+    public function composeCancelled(string $name, string $date): array
+    {
+        $short = self::shortDate($date);
+        $event = $this->eventName($date);
+        $words = static function () use ($name, $event, $short): array {
+            $first = DoorDesk::firstName($name);
+
+            return [
+                'body' => ('' === $first
+                        ? __('Hi,', 'eventcrew')
+                        /* translators: %s: the ticket holder's first name */
+                        : sprintf(__('Hi %s,', 'eventcrew'), $first))
+                    . "\n\n"
+                    . sprintf(
+                        /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
+                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                        __('Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door.', 'eventcrew'),
+                        $event,
+                        $short
+                    ),
+                'subject' => __('Your ticket is cancelled', 'eventcrew'),
+            ];
+        };
+        $fi = Language::run(Language::FINNISH, $words);
+        $en = Language::run(Language::ENGLISH, $words);
+        $subject = $fi['subject'] === $en['subject'] ? $en['subject'] : $fi['subject'] . ' / ' . $en['subject'];
+
+        return [
+            'subject' => $subject . ' – ' . $short,
+            'html' => EmailBody::toHtml($fi['body'])
+                . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
+                . EmailBody::toHtml($en['body']),
+            'text' => $fi['body'] . "\n\n" . $en['body'],
+        ];
     }
 
     /**
@@ -253,7 +492,7 @@ final class TicketMail
      *
      * @return array{subject: string, html: string, text: string}
      */
-    public function compose(TicketBuyer|Guest $row): array
+    public function compose(TicketBuyer|Guest|CrewTicket $row): array
     {
         $date = self::shortDate($row->eventDate);
         $event = $this->eventName($row->eventDate);
@@ -261,8 +500,15 @@ final class TicketMail
         $en = Language::run(Language::ENGLISH, fn (): array => $this->words($row, $event, $date));
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
 
-        $url = $row instanceof Guest ? self::guestUrl($row->id) : self::buyerUrl($row);
-        $code = $row instanceof Guest ? '' : $row->ticketCode;
+        if ($row instanceof CrewTicket) {
+            $url = self::crewUrl($row);
+        } else {
+            $url = $row instanceof Guest ? self::guestUrl($row->id) : self::buyerUrl($row);
+        }
+
+        // Only a ticket buyer's code is written out: it is the code the buyer
+        // knows from Holvi. A guest's or a crew member's code is in the QR only.
+        $code = $row instanceof TicketBuyer ? $row->ticketCode : '';
         $holder = '' === trim($row->name) ? '' : $row->name;
 
         if ($row instanceof Guest && $row->plusOnes > 0) {
@@ -351,7 +597,7 @@ final class TicketMail
         return $sent;
     }
 
-    private function deliver(TicketBuyer|Guest $row, string $to): bool
+    private function deliver(TicketBuyer|Guest|CrewTicket $row, string $to): bool
     {
         if ('' === $to) {
             return false;
@@ -373,17 +619,26 @@ final class TicketMail
      *
      * @return array{body: string, subject: string, open: string, code: string}
      */
-    private function words(TicketBuyer|Guest $row, string $event, string $date): array
+    private function words(TicketBuyer|Guest|CrewTicket $row, string $event, string $date): array
     {
         $first = DoorDesk::firstName($row->name);
+
+        if ($row instanceof CrewTicket) {
+            $thanks = $row->isCredit()
+                ? __('You spent a free-entry credit on this night.', 'eventcrew')
+                : __('Thank you for taking a task!', 'eventcrew');
+        } else {
+            $thanks = $row instanceof Guest
+                ? __('Thank you for coming! You are on the guest list.', 'eventcrew')
+                : __('Thank you for buying a ticket!', 'eventcrew');
+        }
+
         $lines = [
             '' === $first
                 ? __('Hi,', 'eventcrew')
                 /* translators: %s: the ticket holder's first name */
                 : sprintf(__('Hi %s,', 'eventcrew'), $first),
-            $row instanceof Guest
-                ? __('Thank you for coming! You are on the guest list.', 'eventcrew')
-                : __('Thank you for buying a ticket!', 'eventcrew'),
+            $thanks,
             sprintf(
                 /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
                 __('Here is your ticket to %1$s on %2$s. Show the QR code below at the door.', 'eventcrew'),

@@ -190,6 +190,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <th><?php esc_html_e('Name', 'eventcrew'); ?></th>
                         <th style="width:7em"><?php esc_html_e('Plus-ones', 'eventcrew'); ?></th>
                         <th><?php esc_html_e('Note', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Email', 'eventcrew'); ?></th>
                         <th style="width:11em"></th>
                     </tr>
                 </thead>
@@ -200,6 +201,8 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                             <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>"></td>
                             <td data-label="<?php esc_attr_e('Plus-ones', 'eventcrew'); ?>"><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr((string) $eventcrew_guest->plusOnes); ?>"></td>
                             <td data-label="<?php esc_attr_e('Note', 'eventcrew'); ?>"><input type="text" name="guest_note" maxlength="191" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->note); ?>"></td>
+                            <?php /* The email is set when the guest is added; a saved row shows it only. */ ?>
+                            <td data-label="<?php esc_attr_e('Email', 'eventcrew'); ?>"><?php echo esc_html($eventcrew_guest->email); ?></td>
                             <td class="eventcrew-stack-actions" style="white-space:nowrap">
                                 <form method="post" id="<?php echo esc_attr($eventcrew_form); ?>" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
                                     <input type="hidden" name="action" value="eventcrew_save_guest">
@@ -222,6 +225,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="eventcrew-guest-new" placeholder="<?php esc_attr_e('New guest’s name', 'eventcrew'); ?>"></td>
                         <td data-label="<?php esc_attr_e('Plus-ones', 'eventcrew'); ?>"><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="eventcrew-guest-new" value="0"></td>
                         <td data-label="<?php esc_attr_e('Note', 'eventcrew'); ?>"><input type="text" name="guest_note" maxlength="191" style="width:100%" form="eventcrew-guest-new"></td>
+                        <td data-label="<?php esc_attr_e('Email', 'eventcrew'); ?>"><input type="email" name="guest_email" maxlength="191" style="width:100%" form="eventcrew-guest-new" placeholder="<?php esc_attr_e('Optional: the ticket is emailed', 'eventcrew'); ?>"></td>
                         <td class="eventcrew-stack-actions">
                             <form method="post" id="eventcrew-guest-new" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                                 <input type="hidden" name="action" value="eventcrew_save_guest">

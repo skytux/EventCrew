@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '25';
+    public const DB_VERSION = '26';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -395,6 +395,10 @@ final class Schema
             // counts_credit (schema 18) is 0 when whoever signed someone up to
             // a restricted-role task said it should not count toward
             // free-entry credit; every credit and standing count skips those.
+            //
+            // ticket_mailed_at (schema 26) is when the "Your ticket" email
+            // (TicketMail) was sent for this sign-up. NULL means none was
+            // sent, so a cancellation sends no "ticket cancelled" email.
             "CREATE TABLE {$assignments} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 task_id bigint(20) unsigned NOT NULL,
@@ -406,6 +410,7 @@ final class Schema
                 changed_by_kind varchar(10) DEFAULT NULL,
                 reminded_at datetime DEFAULT NULL,
                 counts_credit tinyint(1) NOT NULL DEFAULT 1,
+                ticket_mailed_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 UNIQUE KEY task_person (task_id,person_id),
                 KEY person_id (person_id),
@@ -423,6 +428,9 @@ final class Schema
             // link must keep working and show DISABLED. Undoing one (credit
             // handed back, or swapped for a task at the desk) sets this, and
             // a cancelled row no longer uses up a credit or lets anyone in.
+            //
+            // ticket_mailed_at (schema 26) is when the "Your ticket" email
+            // (TicketMail) was sent for this credit, as on assignments.
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 person_id bigint(20) unsigned NOT NULL,
@@ -432,6 +440,7 @@ final class Schema
                 redeemed_at datetime NOT NULL,
                 note varchar(191) NOT NULL DEFAULT '',
                 cancelled_at datetime DEFAULT NULL,
+                ticket_mailed_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 KEY person_id (person_id),
                 KEY redeemed_for (redeemed_for)

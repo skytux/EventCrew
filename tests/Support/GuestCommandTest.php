@@ -49,6 +49,25 @@ final class GuestCommandTest extends TestCase
         self::assertSame('press', $command['note']);
     }
 
+    /** Decision 3: a word with an "@" is the guest's email address, not part of the name. */
+    public function testAddReadsAnEmailAddressAnywhereBeforeTheNote(): void
+    {
+        $command = GuestCommand::parse('add Anna anna@example.com Virtanen +1 ; DJ', self::TODAY);
+
+        self::assertSame('', $command['error']);
+        self::assertSame('Anna Virtanen', $command['name']);
+        self::assertSame('anna@example.com', $command['email']);
+        self::assertSame(1, $command['plus_ones']);
+        self::assertSame('DJ', $command['note']);
+        self::assertSame('', GuestCommand::parse('add Anna', self::TODAY)['email']);
+    }
+
+    public function testAnInvalidOrSecondEmailAddressIsAnError(): void
+    {
+        self::assertSame('email', GuestCommand::parse('add Anna anna@', self::TODAY)['error']);
+        self::assertSame('email', GuestCommand::parse('add Anna a@example.com b@example.com', self::TODAY)['error']);
+    }
+
     public function testAddWithoutANameIsAnError(): void
     {
         self::assertSame('name', GuestCommand::parse('add +2', self::TODAY)['error']);

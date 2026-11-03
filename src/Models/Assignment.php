@@ -22,7 +22,9 @@ final class Assignment
         public readonly ?string $remindedAt = null,
         public readonly ?string $changedByKind = null,
         /** false when this task was set not to count toward free-entry credit */
-        public readonly bool $countsCredit = true
+        public readonly bool $countsCredit = true,
+        /** when the "Your ticket" email was sent for this sign-up; null when none was */
+        public readonly ?string $ticketMailedAt = null
     ) {
     }
 
@@ -41,7 +43,8 @@ final class Assignment
             self::nullableInt($row['changed_by'] ?? null),
             self::nullableString($row['reminded_at'] ?? null),
             self::nullableString($row['changed_by_kind'] ?? null),
-            0 !== (int) ($row['counts_credit'] ?? 1)
+            0 !== (int) ($row['counts_credit'] ?? 1),
+            self::nullableString($row['ticket_mailed_at'] ?? null)
         );
     }
 

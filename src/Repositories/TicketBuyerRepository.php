@@ -208,7 +208,8 @@ final class TicketBuyerRepository
     /**
      * Records one Holvi buyer who was missing from the imported list, added by
      * hand at the sales desk, and returns its id, or 0 when the write failed.
-     * An empty email is stored as NULL. Nothing is ever sent to the email.
+     * An empty email is stored as NULL. With an email, the caller gives the
+     * row a ticket code (setTicketCode()) and it is emailed its ticket.
      */
     public function addDeskBuyer(string $date, string $name, string $email): int
     {
@@ -228,6 +229,14 @@ final class TicketBuyerRepository
         );
 
         return false !== $inserted && (int) $inserted > 0 ? (int) $wpdb->insert_id : 0;
+    }
+
+    /** Sets one row's ticket code: the code a desk buyer's emailed ticket carries. */
+    public function setTicketCode(int $id, string $code): void
+    {
+        global $wpdb;
+
+        $wpdb->update($this->table(), ['ticket_code' => $code], ['id' => $id], ['%s'], ['%d']);
     }
 
     /**
@@ -490,8 +499,7 @@ final class TicketBuyerRepository
                     . ' WHERE event_date = %s AND ' . self::MAILABLE
                     . ' GROUP BY ticket_mail_status',
                 $date,
-                self::SOURCE_DOOR,
-                self::SOURCE_DESK
+                self::SOURCE_DOOR
             ),
             ARRAY_A
         );
@@ -517,11 +525,12 @@ final class TicketBuyerRepository
     }
 
     /**
-     * The rows that can be emailed a ticket: imported (not a door sale and
-     * not added at the desk), with an email address and a ticket code. The
-     * two %s are the door and desk sources.
+     * The rows that can be emailed a ticket: imported, or added at the sales
+     * desk (not a door sale), with an email address and a ticket code. A desk
+     * buyer gets a ticket code only when an email address was typed for them
+     * (TicketMail::deskBuyerCode()). The %s is the door source.
      */
-    private const MAILABLE = 'source NOT IN (%s, %s)'
+    private const MAILABLE = 'source <> %s'
         . " AND email IS NOT NULL AND email <> '' AND ticket_code IS NOT NULL AND ticket_code <> ''";
 
     /**
@@ -537,7 +546,7 @@ final class TicketBuyerRepository
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()} WHERE {$where} AND " . self::MAILABLE
                     . " ORDER BY {$order} LIMIT %d",
-                ...array_merge($args, [self::SOURCE_DOOR, self::SOURCE_DESK, max(1, $limit)])
+                ...array_merge($args, [self::SOURCE_DOOR, max(1, $limit)])
             ),
             ARRAY_A
         );
