@@ -1493,6 +1493,7 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+            <?php require EVENTCREW_PLUGIN_DIR . 'templates/admin/settings-telegram-login.php'; ?>
             <tr>
                 <th scope="row">
                     <label for="eventcrew-telegram-group-link"><?php esc_html_e('Group link', 'eventcrew'); ?></label>

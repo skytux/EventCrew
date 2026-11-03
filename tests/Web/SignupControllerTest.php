@@ -18,12 +18,15 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Tests\Support\TelegramTokens;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
@@ -86,7 +89,7 @@ final class SignupControllerTest extends TestCase
         });
     }
 
-    private function controller(): SignupController
+    private function controller(?TelegramLogin $telegramLogin = null): SignupController
     {
         $people = new PersonRepository();
         $assignments = new AssignmentRepository();
@@ -115,7 +118,11 @@ final class SignupControllerTest extends TestCase
                 new FreeEntryGate(),
                 new TelegramClient(new Logger(), new DohResolver(new Logger())),
                 new Mailer(new Logger(), new EmailTemplate(new Logger()))
-            )
+            ),
+            null,
+            null,
+            null,
+            $telegramLogin
         );
     }
 
@@ -721,5 +728,203 @@ final class SignupControllerTest extends TestCase
         self::assertTrue($controller->keepStyleOutOfMinify(true, $inline));
         self::assertTrue($controller->keepStyleOutOfMinify(true, $other));
         self::assertTrue($controller->keepStyleOutOfMinify(true));
+    }
+
+    /**
+     * The Telegram login switched on, with a bot token and username, and
+     * Telegram's key endpoint answered by the test key. $options adds to or
+     * overrides those options.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function telegramOn(array $options = []): void
+    {
+        $options += [
+            TelegramLogin::ENABLED_OPTION => true,
+            TelegramClient::TOKEN_OPTION => TelegramTokens::BOT_TOKEN,
+            BoardService::USERNAME_OPTION => 'crewbot',
+        ];
+
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('update_option')->justReturn(true);
+        Functions\when('wp_remote_get')->justReturn(
+            ['response' => ['code' => 200], 'body' => TelegramTokens::jwksBody()]
+        );
+        Functions\when('wp_remote_retrieve_response_code')->alias(static fn (array $r): int => $r['response']['code']);
+        Functions\when('wp_remote_retrieve_body')->alias(static fn (array $r): string => $r['body']);
+    }
+
+    private function telegramController(): SignupController
+    {
+        return $this->controller(new TelegramLogin(new Logger(), new DohResolver(new Logger())));
+    }
+
+    /**
+     * A signed token for Telegram user 4242 and the nonce it carries.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function telegramToken(): array
+    {
+        $nonce = TelegramLogin::newNonce();
+
+        return [TelegramTokens::token(TelegramTokens::claims($nonce)), $nonce];
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    private function linkedPersonRow(array $overrides = []): array
+    {
+        return $overrides + [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 4242,
+        ];
+    }
+
+    public function testTelegramSignsInALinkedVerifiedPersonAndWritesNothing(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = $this->linkedPersonRow();
+
+        self::assertSame(
+            ['person_id' => 7, 'notice' => 'signed_in'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+        self::assertStringContainsString('telegram_user_id', (string) end($this->wpdb->queries));
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testTelegramWithNoLinkedPersonSaysNotLinked(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = null;
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'tg_not_linked'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTelegramWithAnUnconfirmedEmailSaysNotVerified(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = $this->linkedPersonRow(['email_verified_at' => null]);
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'tg_not_verified'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTelegramWithAPlaceholderEmailSaysNotVerified(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = $this->linkedPersonRow(['email' => 'tg-4242@telegram.invalid']);
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'tg_not_verified'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTelegramDoesNotSignInABlockedPerson(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = $this->linkedPersonRow(['banned_at' => '2026-08-01 00:00:00']);
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'blocked'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTelegramWithABadTokenFailsWithoutLookingAnyoneUp(): void
+    {
+        $this->telegramOn();
+        [$token, $nonce] = $this->telegramToken();
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'tg_failed'],
+            $this->telegramController()->telegramSignIn($token, 'not-this-browsers-nonce')
+        );
+        self::assertSame([], $this->wpdb->queries);
+    }
+
+    public function testTelegramFailsWhenTheLoginIsSwitchedOff(): void
+    {
+        $this->telegramOn([TelegramLogin::ENABLED_OPTION => false]);
+        [$token, $nonce] = $this->telegramToken();
+        $this->wpdb->nextRows[] = $this->linkedPersonRow();
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'tg_failed'],
+            $this->telegramController()->telegramSignIn($token, $nonce)
+        );
+    }
+
+    public function testTheSignedOutViewOffersTelegramWhenTheLoginIsAvailable(): void
+    {
+        $this->telegramOn();
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $login = $this->telegramController()->viewModel()['telegram_login'];
+
+        self::assertIsArray($login);
+        self::assertSame(TelegramTokens::BOT_ID, $login['client_id']);
+        self::assertSame('https://t.me/crewbot?start=onboard', $login['bot_link']);
+        self::assertSame(SignupController::TG_NONCE_ACTION, $login['nonce_action']);
+        self::assertSame(SignupController::TG_LOGIN_ACTION, $login['login_action']);
+        self::assertStringNotContainsString(TelegramTokens::BOT_TOKEN, (string) json_encode($login));
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>}>
+     */
+    public static function telegramUnavailable(): array
+    {
+        return [
+            'switch off' => [[TelegramLogin::ENABLED_OPTION => false]],
+            'no bot token' => [[TelegramClient::TOKEN_OPTION => '']],
+            'no bot username' => [[BoardService::USERNAME_OPTION => '']],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @dataProvider telegramUnavailable
+     */
+    public function testTheSignedOutViewHasNoTelegramLoginWhenItIsUnavailable(array $options): void
+    {
+        $this->telegramOn($options);
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertNull($this->telegramController()->viewModel()['telegram_login']);
+    }
+
+    public function testTheNewNoticesHaveWords(): void
+    {
+        foreach (['tg_not_linked', 'tg_not_verified', 'tg_failed'] as $code) {
+            self::assertNotSame('', SignupController::noticeText($code), $code);
+        }
     }
 }

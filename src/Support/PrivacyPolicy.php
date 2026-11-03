@@ -409,6 +409,13 @@ final class PrivacyPolicy
             );
         }
 
+        if (TelegramLogin::isAvailable()) {
+            $paragraphs[] = __(
+                'If you sign in with Telegram, Telegram sends us your account number, name, username and profile photo address. We use only the account number, to find your crew account, and we do not store the rest.',
+                'eventcrew'
+            );
+        }
+
         $paragraphs[] = __(
             'We do not build a stored score of you. Your standing is recalculated from the outcomes above every time it is shown, so there is no hidden rating carried around in your record.',
             'eventcrew'
@@ -461,7 +468,12 @@ final class PrivacyPolicy
 
         $processors = [];
 
-        if (self::telegramEnabled()) {
+        if (TelegramLogin::isAvailable()) {
+            $processors[] = __(
+                'Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through their service. Linking is entirely optional; the web page does everything the bot does.',
+                'eventcrew'
+            );
+        } elseif (self::telegramEnabled()) {
             $processors[] = __(
                 'Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy). Linking is entirely optional; the web page does everything the bot does.',
                 'eventcrew'

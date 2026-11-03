@@ -32,6 +32,7 @@ use EventCrew\Support\SendWindow;
 use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketFormats;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
@@ -321,6 +322,7 @@ final class SettingsPage
             'token' => (string) get_option(TelegramClient::TOKEN_OPTION, ''),
             'configured' => $configured,
             'dns_bypass' => (bool) get_option(TelegramClient::DNS_BYPASS_OPTION, false),
+            'web_login' => self::webLoginView(),
             'use_fallback' => $useFallback,
             'secret_in_url' => WebhookController::secretTravelsInUrl(),
             'webhook_url' => $displayUrl,
@@ -338,6 +340,30 @@ final class SettingsPage
                 self::BOT_PROFILE_FIELDS
             ),
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
+        ];
+    }
+
+    /**
+     * The "Sign in with Telegram" row: the switch, the site address to add in
+     * @BotFather, and the Client ID - which is the bot ID alone, never the
+     * token. The address is read from home_url() each time, never stored.
+     *
+     * @return array{enabled: bool, origin: string, client_id: string}
+     */
+    public static function webLoginView(): array
+    {
+        $home = (string) home_url('/');
+        $scheme = (string) wp_parse_url($home, PHP_URL_SCHEME);
+        $host = (string) wp_parse_url($home, PHP_URL_HOST);
+        $port = wp_parse_url($home, PHP_URL_PORT);
+        $origin = '' === $scheme || '' === $host
+            ? ''
+            : $scheme . '://' . $host . (is_int($port) ? ':' . $port : '');
+
+        return [
+            'enabled' => (bool) get_option(TelegramLogin::ENABLED_OPTION, false),
+            'origin' => $origin,
+            'client_id' => TelegramLogin::clientId(),
         ];
     }
 
@@ -446,6 +472,7 @@ final class SettingsPage
         update_option(TelegramClient::TOKEN_OPTION, $token);
 
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
+        update_option(TelegramLogin::ENABLED_OPTION, isset($_POST['telegram_web_login']));
 
         // Both of these change the URL Telegram must post to, so the webhook has
         // to be re-installed or the bot goes silent - and it goes silent with no

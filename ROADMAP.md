@@ -70,11 +70,13 @@ changelog is in `readme.txt`. The latest releases:
 2. The group board in card format: one photo message per event with its task
    buttons under it, edited in place; days without an EventMesh event stay
    text messages; the date-picker row goes away.
-3. Crew app sign-in with Telegram: the sign-in screen first asks "Email or
-   Telegram?"; Telegram shows the Telegram login button directly and signs in
-   the person whose row holds that Telegram id. The site's domain is already
-   registered with the bot in BotFather (`/setdomain`). The design is not
-   signed off yet.
+3. Crew app sign-in with Telegram: built in 1.97.0 (Telegram's OpenID Connect
+   popup; the sign-in screen asks "How do you want to sign in?" with an Email
+   button and Telegram's own button; only accounts already linked to the bot
+   with a confirmed email sign in). Off by default: Settings → Telegram bot →
+   "Allow sign-in with Telegram on the Crew app". It needs the site address
+   under Allowed URLs in the @BotFather app (Bot Settings → Web Login); that
+   entry was not found yet, so it is not switched on live.
 
 Still open from earlier: ticket-buyer import from `.xlsx` files, a column
 mapping for imported files, and more sender addresses allowed to email a list.

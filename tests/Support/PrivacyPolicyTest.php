@@ -123,6 +123,36 @@ final class PrivacyPolicyTest extends TestCase
     }
 
     /**
+     * The Telegram sign-in sentences appear only when the sign-in is on: an
+     * install with a bot but no Telegram sign-in must not describe one.
+     */
+    public function testTheTelegramSignInIsDescribedOnlyWhenItIsEnabled(): void
+    {
+        $options = [
+            PrivacyPolicy::CONTROLLER_OPTION => 'Dance Club',
+            PrivacyPolicy::CONTACT_OPTION => 'privacy@example.test',
+            TelegramClient::TOKEN_OPTION => '123:abc',
+            \EventCrew\Telegram\BoardService::USERNAME_OPTION => 'crewbot',
+        ];
+        $held = 'If you sign in with Telegram, Telegram sends us your account number';
+        $processor = 'and signing in with Telegram goes through their service';
+
+        $this->withOptions($options);
+        $text = $this->flatten(PrivacyPolicy::sections());
+
+        self::assertStringContainsString('If you link a Telegram account', $text);
+        self::assertStringNotContainsString($held, $text);
+        self::assertStringNotContainsString($processor, $text);
+
+        $this->withOptions($options + [\EventCrew\Support\TelegramLogin::ENABLED_OPTION => true]);
+        $text = $this->flatten(PrivacyPolicy::sections());
+
+        self::assertStringContainsString($held, $text);
+        self::assertStringContainsString($processor, $text);
+        self::assertSame(1, substr_count($text, 'messages the bot sends you pass through their service'));
+    }
+
+    /**
      * The published retention period has to match the one the purge enforces,
      * and an out-of-range option must not silently become a shorter one.
      */
