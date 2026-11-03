@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.80.2
+Stable tag: 1.80.3
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.80.3 =
+After an update the bot's webhook is replaced in place, never deleted first, so the bot no longer stops hearing messages when Telegram refuses the re-install.
 
 = 1.80.2 =
 The bot's answer to a greeting says requests can be written in plain words, not only as commands.
@@ -869,6 +872,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.80.3 =
+No database change.
 
 = 1.80.2 =
 No database change.
