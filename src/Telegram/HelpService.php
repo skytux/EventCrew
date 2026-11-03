@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\Language;
 
@@ -46,7 +47,13 @@ final class HelpService
         }
 
         $audience = $this->audience($telegramUserId);
-        $sections = [$this->title(), $this->everyone()];
+        $sections = [$this->title()];
+
+        if (AssistantSettings::isActive()) {
+            $sections[] = $this->plainWords();
+        }
+
+        $sections[] = $this->everyone();
 
         if ($audience['welcomeCrew']) {
             $sections[] = $this->welcomeCrew();
@@ -167,6 +174,16 @@ final class HelpService
     private function title(): string
     {
         return __('EventCrew bot – commands', 'eventcrew');
+    }
+
+    /** Shown while the language-model helper is on. */
+    private function plainWords(): string
+    {
+        return implode("\n", [
+            __('In your own words', 'eventcrew'),
+            __('You can also just write what you want, like "sign me up for a task on Saturday".', 'eventcrew'),
+            __('I remember our private chat for 24 hours, so you can refer back to it.', 'eventcrew'),
+        ]);
     }
 
     private function everyone(): string

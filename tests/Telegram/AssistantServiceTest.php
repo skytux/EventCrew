@@ -233,6 +233,99 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertStringContainsString('Do not answer a greeting with only a list of commands.', $body['messages'][0]['content']);
     }
 
+    // ---- the conversation (24 hours, private only) ----------------------
+
+    private function systemPrompt(int $call): string
+    {
+        $body = json_decode((string) $this->llmCalls[$call]['args']['body'], true);
+
+        return (string) $body['messages'][0]['content'];
+    }
+
+    public function testTheNextMessageCarriesWhatWasSaidBefore(): void
+    {
+        $this->reply(true, true, 'Saturday has Decorate and Clean.');
+        $this->reply(true, true, 'Clean it is.');
+
+        $this->ask(self::privateMessage('what tasks are on saturday?'));
+        $this->ask(self::privateMessage('the second one'));
+
+        self::assertStringContainsString(
+            "CONVERSATION (this private chat, last 24 hours):\n(nothing yet)",
+            $this->systemPrompt(0)
+        );
+
+        $second = $this->systemPrompt(1);
+        self::assertStringContainsString('Person: what tasks are on saturday?', $second);
+        self::assertStringContainsString('Bot: Saturday has Decorate and Clean.', $second);
+        // The new message goes once, as the user turn, not also in the history.
+        self::assertStringNotContainsString('Person: the second one', $second);
+        self::assertStringContainsString('You remember this private chat for 24 hours', $second);
+    }
+
+    public function testMessagesOlderThan24HoursAreNotSent(): void
+    {
+        \EventCrew\Telegram\ConversationLog::add(555, 'person', 'an old question', time() - DAY_IN_SECONDS - 60);
+        \EventCrew\Telegram\ConversationLog::add(555, 'person', 'a recent question', time() - 3600);
+        $this->reply(true, true, 'Hello!');
+
+        $this->ask(self::privateMessage('hi'));
+
+        self::assertStringNotContainsString('an old question', $this->systemPrompt(0));
+        self::assertStringContainsString('a recent question', $this->systemPrompt(0));
+    }
+
+    public function testTheRecordKeepsAtMostTheNewestHundredMessages(): void
+    {
+        for ($i = 1; $i <= 105; $i++) {
+            \EventCrew\Telegram\ConversationLog::add(555, 'person', 'message ' . $i);
+        }
+
+        $entries = \EventCrew\Telegram\ConversationLog::entries(555);
+
+        self::assertCount(100, $entries);
+        self::assertSame('message 6', $entries[0]['x']);
+        self::assertSame('message 105', $entries[99]['x']);
+    }
+
+    public function testNothingFromTheGroupIsKept(): void
+    {
+        $this->reply(true, true, 'Saturday.');
+
+        $this->ask(self::groupMessage('@crewbot when is the next night?'));
+
+        self::assertSame([], $this->transientsStartingWith(\EventCrew\Telegram\ConversationLog::PREFIX));
+        self::assertStringNotContainsString('CONVERSATION', $this->systemPrompt(0));
+    }
+
+    public function testHelpSaysPlainWordsWorkAndTheChatIsRemembered(): void
+    {
+        $this->help()->onHelp(555, 555, true);
+
+        $text = $this->sentTexts()[0];
+        self::assertStringContainsString('You can also just write what you want', $text);
+        self::assertStringContainsString('I remember our private chat for 24 hours', $text);
+    }
+
+    public function testHelpWithoutTheHelperDoesNotMentionPlainWords(): void
+    {
+        $this->options[AssistantSettings::ENABLED_OPTION] = false;
+
+        $this->help()->onHelp(555, 555, true);
+
+        self::assertStringNotContainsString('I remember our private chat', $this->sentTexts()[0]);
+    }
+
+    /** @return array<string, mixed> */
+    private function transientsStartingWith(string $prefix): array
+    {
+        return array_filter(
+            $this->transients,
+            static fn (string $key): bool => str_starts_with($key, $prefix),
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
     public function testTheKeyIsSentAsABearerToken(): void
     {
         AssistantSettings::saveKey('sk-test');

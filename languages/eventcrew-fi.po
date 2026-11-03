@@ -5685,3 +5685,12 @@ msgstr "viestiä ryhmää kohden"
 
 msgid "messages per person in a private chat"
 msgstr "viestiä henkilöä kohden yksityiskeskustelussa"
+
+msgid "In your own words"
+msgstr "Omin sanoin"
+
+msgid "You can also just write what you want, like \"sign me up for a task on Saturday\"."
+msgstr "Voit myös kirjoittaa omin sanoin, esim. \"ilmoita minut lauantain tehtävään\"."
+
+msgid "I remember our private chat for 24 hours, so you can refer back to it."
+msgstr "Muistan yksityisen keskustelumme 24 tuntia, joten voit viitata aiempaan."
