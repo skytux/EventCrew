@@ -6790,3 +6790,13 @@ msgstr "Liity tulevien tapahtumien tiedotteeseen painamalla painiketta."
 
 msgid "Join"
 msgstr "Liity"
+
+msgid "One step left"
+msgstr "Enää yksi askel"
+
+msgid "One email before each event. Nothing else."
+msgstr "Yksi viesti ennen jokaista tapahtumaa. Ei muuta."
+
+#, php-format
+msgid "You get this email because this address was entered in the announcement form on %s."
+msgstr "Saat tämän viestin, koska tämä osoite kirjoitettiin tiedotteen lomakkeeseen sivustolla %s."
