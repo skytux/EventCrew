@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\FollowupRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Web\NewsletterController;
@@ -38,8 +39,12 @@ use EventCrew\Web\NewsletterController;
  * (Newsletter::writtenTexts()), when there is some. A newly written text
  * sends no second preview: the preview goes out once per night.
  * Then, while the announcement is switched on, an invitation to join it.
- * Nobody is subscribed by this email;
- * joining goes through the announcement's own double opt-in.
+ * Its button (?eventcrew_join=<token>) carries a signed link to this one
+ * ticket holder's row: pressing it subscribes that row's address as
+ * confirmed, with the first word of the ticket holder's name as the name to
+ * greet them with (joinClick()). The press comes from the mailbox the email
+ * went to, so no confirmation email follows. A preview's or a test's button
+ * subscribes nobody.
  *
  * Several rows of one night with the same address (one person who bought two
  * tickets) get one email. Its row is the first of them; the others are
@@ -94,8 +99,12 @@ final class FollowupMail
     /** The REST route of the Stop page (Web\FollowupController). */
     public const ROUTE = 'eventcrew/v1/followup';
 
+    /** The query argument of the subscribe button. */
+    public const JOIN_ARG = 'eventcrew_join';
+
     public const PURPOSE_STOP = 'followup_stop';
     public const PURPOSE_GO = 'followup_go';
+    public const PURPOSE_JOIN = 'followup_join';
 
     public const STATUS_SENT = 'sent';
     public const STATUS_FAILED = 'failed';
@@ -135,6 +144,8 @@ final class FollowupMail
 
     private readonly NewsletterWriter $writer;
 
+    private readonly NewsletterSubscriberRepository $subscribers;
+
     public function __construct(
         private readonly FollowupRepository $rows,
         private readonly TaskRepository $tasks,
@@ -142,11 +153,13 @@ final class FollowupMail
         private readonly Mailer $mailer,
         private readonly ?Logger $logger = null,
         ?FollowupText $text = null,
-        ?NewsletterWriter $writer = null
+        ?NewsletterWriter $writer = null,
+        ?NewsletterSubscriberRepository $subscribers = null
     ) {
         $textLogger = $logger ?? new Logger();
         $this->text = $text ?? new FollowupText(new LlmClient($textLogger), $textLogger);
         $this->writer = $writer ?? new NewsletterWriter(new LlmClient($textLogger), $textLogger);
+        $this->subscribers = $subscribers ?? new NewsletterSubscriberRepository();
     }
 
     public function boot(): void
@@ -482,6 +495,69 @@ final class FollowupMail
         return $target;
     }
 
+    /**
+     * The subscribe button's link for one row ($kind 'b', 'g', or 't' for a
+     * preview or a test, which subscribes nobody). $campaign goes into the
+     * UTM arguments of the page it leads to.
+     */
+    public static function joinUrl(string $kind, int $rowId, string $campaign): string
+    {
+        $token = SignedLink::signPayload(self::PURPOSE_JOIN, $kind . "\n" . $rowId . "\n" . $campaign);
+
+        return add_query_arg([self::JOIN_ARG => $token], home_url('/'));
+    }
+
+    /**
+     * What pressing the subscribe button does: records the row's first click
+     * (like any counted link), subscribes the row's address as confirmed with
+     * the ticket holder's first name and $language ('fi', 'en' or ''), and
+     * answers with the page to send the browser to - the front page's
+     * subscribe form, showing that it worked. Null when the token is not one
+     * this site signed.
+     *
+     * A sample link (a preview's or a test's) only leads to the page. So
+     * does the link of a row whose email was deleted since.
+     */
+    public function joinClick(string $token, string $language = ''): ?string
+    {
+        $payload = SignedLink::verifyPayload(self::PURPOSE_JOIN, $token);
+
+        if (null === $payload) {
+            return null;
+        }
+
+        $parts = explode("\n", $payload, 3);
+
+        if (3 !== count($parts) || ! ctype_digit($parts[1])) {
+            return null;
+        }
+
+        [$kind, $id, $campaign] = $parts;
+        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+        $page = home_url('/');
+
+        if (isset($kinds[$kind]) && (int) $id > 0) {
+            $this->rows->recordClick($kinds[$kind], (int) $id);
+            $holder = $this->rows->holder($kinds[$kind], (int) $id);
+
+            if (
+                null !== $holder
+                && $this->subscribers->addFromTicket(
+                    $holder['email'],
+                    DoorDesk::firstName($holder['name']),
+                    $language
+                ) > 0
+            ) {
+                $page = add_query_arg(
+                    [NewsletterController::RESULT_ARG => NewsletterController::RESULT_JOINED],
+                    $page
+                );
+            }
+        }
+
+        return self::withUtm($page, $campaign) . '#' . NewsletterController::FORM_ANCHOR;
+    }
+
     /** The organizers' Stop link for $date's email. */
     public static function stopUrl(string $date): string
     {
@@ -567,7 +643,9 @@ final class FollowupMail
         if (Newsletter::enabled()) {
             $join = [[
                 'label' => $pair('join'),
-                'url' => $link(home_url('/') . '#' . NewsletterController::FORM_ANCHOR),
+                // Not a counted link: the join link counts the click itself,
+                // and subscribes this row's address (joinClick()).
+                'url' => self::joinUrl($kind, $rowId, $campaign),
             ]];
             $html .= '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
                 . EmailBody::toHtml($fi['invite'] . "\n\n" . $en['invite'])
@@ -963,7 +1041,7 @@ final class FollowupMail
                 ? __('Thank you for dancing with us', 'eventcrew')
                 : __('We missed you this time', 'eventcrew'),
             'join' => __('Join the announcement', 'eventcrew'),
-            'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. You confirm it from an email, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];
     }
 
