@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.82.0
+Stable tag: 1.83.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.83.0 =
+/board and the list of tasks for your roles show one day at a time under a fixed row of every date (up to six), the shown day marked ▸; the "Back to the next event" button is gone.
 
 = 1.82.0 =
 The bot's helper is told the person's roles and leaves out, without mentioning, anything meant for roles they do not have; it also knows the bot's own name (taken from Telegram when the webhook is installed).
@@ -878,6 +881,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.83.0 =
+No database change.
 
 = 1.82.0 =
 No database change.

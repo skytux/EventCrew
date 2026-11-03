@@ -9,7 +9,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Domain: eventcrew\n"
 
-#: src/Telegram/HelpService.php:196
+#: src/Telegram/HelpService.php:201
 msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
 msgstr ""
 
@@ -287,39 +287,39 @@ msgstr ""
 msgid "+1 allowed"
 msgstr ""
 
-#: src/Telegram/HelpService.php:219
+#: src/Telegram/HelpService.php:224
 msgid "/board in a private chat – also ➕ to put a person on a task"
 msgstr ""
 
-#: src/Telegram/HelpService.php:193
+#: src/Telegram/HelpService.php:198
 msgid "/board – the open tasks; in a private chat also the tasks of your roles"
 msgstr ""
 
-#: src/Telegram/HelpService.php:208
+#: src/Telegram/HelpService.php:213
 msgid "/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk"
 msgstr ""
 
-#: src/Telegram/HelpService.php:216
+#: src/Telegram/HelpService.php:221
 msgid "/door add [date] Name +N ; note – add a guest (also edit, remove)"
 msgstr ""
 
-#: src/Telegram/HelpService.php:199
+#: src/Telegram/HelpService.php:204
 msgid "/help – this list"
 msgstr ""
 
-#: src/Telegram/HelpService.php:197
+#: src/Telegram/HelpService.php:202
 msgid "/me history – your past tasks"
 msgstr ""
 
-#: src/Telegram/HelpService.php:198
+#: src/Telegram/HelpService.php:203
 msgid "/me tickets – your tickets for coming nights"
 msgstr ""
 
-#: src/Telegram/HelpService.php:194
+#: src/Telegram/HelpService.php:199
 msgid "/me – your tasks, credits and standing"
 msgstr ""
 
-#: src/Telegram/HelpService.php:218
+#: src/Telegram/HelpService.php:223
 msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role"
 msgstr ""
 
@@ -327,7 +327,7 @@ msgstr ""
 msgid "/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
 msgstr ""
 
-#: src/Telegram/HelpService.php:207
+#: src/Telegram/HelpService.php:212
 msgid "/roster [date] – who works that night; mark ✓ done, ⏰ late, ✗ no-show"
 msgstr ""
 
@@ -532,7 +532,7 @@ msgstr ""
 msgid "Add person"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:267
+#: src/Telegram/RoleTaskBot.php:297
 msgid "Add someone"
 msgstr ""
 
@@ -1019,7 +1019,7 @@ msgstr ""
 msgid "Count one person in without a name"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:158 src/Telegram/RoleTaskBot.php:336 templates/public/door.php:70 templates/public/signup-board.php:230
+#: src/Telegram/RoleTaskBot.php:158 src/Telegram/RoleTaskBot.php:370 templates/public/door.php:70 templates/public/signup-board.php:230
 #: templates/public/signup.php:969
 msgid "Count toward free-entry credit?"
 msgstr ""
@@ -1418,7 +1418,7 @@ msgid "Event start"
 msgstr ""
 
 #: src/Admin/Admin.php:246 src/Admin/Admin.php:247 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:49
-#: src/Support/PrivacyExporter.php:56 src/Telegram/BoardService.php:205 src/Telegram/ManageController.php:131
+#: src/Support/PrivacyExporter.php:56 src/Telegram/BoardService.php:208 src/Telegram/ManageController.php:131
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
 msgstr ""
@@ -1431,7 +1431,7 @@ msgstr ""
 msgid "EventCrew Settings"
 msgstr ""
 
-#: src/Telegram/HelpService.php:176
+#: src/Telegram/HelpService.php:181
 msgid "EventCrew bot – commands"
 msgstr ""
 
@@ -1516,7 +1516,7 @@ msgstr ""
 msgid "Every ticket with this code was already used tonight."
 msgstr ""
 
-#: src/Telegram/HelpService.php:192
+#: src/Telegram/HelpService.php:197
 msgid "Everyone"
 msgstr ""
 
@@ -1557,11 +1557,11 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:639
+#: src/Telegram/AssistantService.php:667
 msgid "First sign up with /start."
 msgstr ""
 
-#: src/Telegram/BoardService.php:540
+#: src/Telegram/BoardService.php:543
 msgid "First tap the “New here? Sign up” button below to confirm your email."
 msgstr ""
 
@@ -1920,7 +1920,7 @@ msgstr ""
 msgid "How your score works:"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:638
+#: src/Telegram/AssistantService.php:666
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -1940,11 +1940,11 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:637
+#: src/Telegram/AssistantService.php:665
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
-#: src/Telegram/HelpService.php:185
+#: src/Telegram/HelpService.php:190
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr ""
 
@@ -2000,7 +2000,7 @@ msgstr ""
 msgid "In short"
 msgstr ""
 
-#: src/Telegram/HelpService.php:183
+#: src/Telegram/HelpService.php:188
 msgid "In your own words"
 msgstr ""
 
@@ -2324,7 +2324,7 @@ msgstr ""
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:132 src/Telegram/RoleTaskBot.php:302 templates/admin/people.php:146 templates/public/door.php:72
+#: src/Support/PrivacyExporter.php:132 src/Telegram/RoleTaskBot.php:336 templates/admin/people.php:146 templates/public/door.php:72
 #: templates/public/signup-board.php:231 templates/public/signup.php:749 templates/public/signup.php:973
 msgid "No"
 msgstr ""
@@ -2399,7 +2399,7 @@ msgstr ""
 msgid "No name"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:96 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:93 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -2552,7 +2552,7 @@ msgstr ""
 msgid "Nothing was added to the door list."
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:132 src/Telegram/RoleTaskBot.php:422
+#: src/Telegram/RoleTaskBot.php:132 src/Telegram/RoleTaskBot.php:456
 msgid "Nothing was added. Start again with /board."
 msgstr ""
 
@@ -2560,7 +2560,7 @@ msgstr ""
 msgid "Nothing was changed."
 msgstr ""
 
-#: src/Telegram/HelpService.php:160
+#: src/Telegram/HelpService.php:165
 msgid "Nothing was waiting for an answer."
 msgstr ""
 
@@ -2668,7 +2668,7 @@ msgstr ""
 msgid "Only organizers and that night’s welcome crew can see who has a ticket."
 msgstr ""
 
-#: src/Telegram/HelpService.php:106
+#: src/Telegram/HelpService.php:111
 msgid "Only organizers and the welcome crew of a coming night can use /door."
 msgstr ""
 
@@ -2696,7 +2696,7 @@ msgstr ""
 msgid "Only organizers can see who meets the role conditions."
 msgstr ""
 
-#: src/Telegram/HelpService.php:131
+#: src/Telegram/HelpService.php:136
 msgid "Only organizers can use /people."
 msgstr ""
 
@@ -2736,7 +2736,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:111
+#: src/Telegram/BoardRenderer.php:108
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
@@ -2846,7 +2846,7 @@ msgstr ""
 msgid "Organizer notice channels"
 msgstr ""
 
-#: src/Telegram/HelpService.php:215
+#: src/Telegram/HelpService.php:220
 msgid "Organizers"
 msgstr ""
 
@@ -3227,7 +3227,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:640
+#: src/Telegram/AssistantService.php:668
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
@@ -3408,7 +3408,7 @@ msgstr ""
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:112
+#: src/Telegram/BoardRenderer.php:109
 msgid "Send /me in a DM to get your summary."
 msgstr ""
 
@@ -3420,7 +3420,7 @@ msgstr ""
 msgid "Send a test to me"
 msgstr ""
 
-#: src/Telegram/HelpService.php:170
+#: src/Telegram/HelpService.php:175
 msgid "Send me /help in a private chat for more."
 msgstr ""
 
@@ -3444,7 +3444,7 @@ msgstr ""
 msgid "Send open-task email now"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:408
+#: src/Telegram/RoleTaskBot.php:442
 msgid "Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member."
 msgstr ""
 
@@ -3737,7 +3737,7 @@ msgstr ""
 msgid "Stop at-risk members from signing up for new tasks"
 msgstr ""
 
-#: src/Telegram/HelpService.php:159
+#: src/Telegram/HelpService.php:164
 msgid "Stopped. Nothing is waiting for an answer."
 msgstr ""
 
@@ -3811,11 +3811,11 @@ msgstr ""
 msgid "Tasks completed"
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:278
+#: src/Telegram/RoleTaskBot.php:312
 msgid "Tasks for your roles, and every upcoming task you can add someone to.\n✋ = sign up · ❌ = cancel · ➕ = add someone."
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:279
+#: src/Telegram/RoleTaskBot.php:313
 msgid "Tasks for your roles. These are not on the group board.\n✋ = sign up · ❌ = cancel"
 msgstr ""
 
@@ -4031,7 +4031,7 @@ msgstr ""
 msgid "That slot filled up before I could swap it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:595 src/Web/SignupController.php:908
+#: src/Telegram/BoardService.php:598 src/Web/SignupController.php:908
 msgid "That slot just filled up."
 msgstr ""
 
@@ -4043,8 +4043,8 @@ msgstr ""
 msgid "That task is full."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:219 src/Telegram/BoardService.php:596 src/Telegram/ReplacementService.php:173 src/Telegram/ReplacementService.php:184
-#: src/Telegram/RoleTaskBot.php:326 src/Telegram/RoleTaskBot.php:360 src/Web/SignupController.php:914
+#: src/Support/RoleTaskService.php:219 src/Telegram/BoardService.php:599 src/Telegram/ReplacementService.php:173 src/Telegram/ReplacementService.php:184
+#: src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:914
 msgid "That task is no longer available."
 msgstr ""
 
@@ -4491,11 +4491,11 @@ msgstr ""
 msgid "There are no published pages."
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:244
+#: src/Telegram/RoleTaskBot.php:268
 msgid "There are no upcoming tasks for your roles."
 msgstr ""
 
-#: src/Telegram/RoleTaskBot.php:243
+#: src/Telegram/RoleTaskBot.php:267
 msgid "There are no upcoming tasks for your roles. An organizer gives roles with /people."
 msgstr ""
 
@@ -4966,7 +4966,7 @@ msgstr ""
 msgid "Welcome %s"
 msgstr ""
 
-#: src/Telegram/HelpService.php:206
+#: src/Telegram/HelpService.php:211
 msgid "Welcome crew  (date: 1.8. or 2026-08-01; default: next night)"
 msgstr ""
 
@@ -5172,7 +5172,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:131 src/Telegram/RoleTaskBot.php:301 templates/admin/people.php:145 templates/public/door.php:71
+#: src/Support/PrivacyExporter.php:131 src/Telegram/RoleTaskBot.php:335 templates/admin/people.php:145 templates/public/door.php:71
 #: templates/public/signup-board.php:231 templates/public/signup.php:749 templates/public/signup.php:751 templates/public/signup.php:972
 msgid "Yes"
 msgstr ""
@@ -5217,7 +5217,7 @@ msgstr ""
 msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list; a guest with an email address on the line gets a ticket by email."
 msgstr ""
 
-#: src/Telegram/HelpService.php:184
+#: src/Telegram/HelpService.php:189
 msgid "You can also just write what you want, like \"sign me up for a task on Saturday\"."
 msgstr ""
 
@@ -5308,7 +5308,7 @@ msgstr ""
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:619 src/Telegram/RoleTaskBot.php:380 src/Web/SignupController.php:916
+#: src/Telegram/BoardService.php:622 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:916
 msgid "You weren’t signed up for that one."
 msgstr ""
 
@@ -5412,7 +5412,7 @@ msgstr ""
 msgid "Your past tasks:"
 msgstr ""
 
-#: src/Telegram/BoardService.php:591 src/Telegram/RoleTaskBot.php:356
+#: src/Telegram/BoardService.php:594 src/Telegram/RoleTaskBot.php:390
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
@@ -5470,11 +5470,11 @@ msgstr ""
 msgid "You’re already signed up for that one."
 msgstr ""
 
-#: src/Telegram/BoardService.php:594 src/Telegram/RoleTaskBot.php:359
+#: src/Telegram/BoardService.php:597 src/Telegram/RoleTaskBot.php:393
 msgid "You’re already signed up for that."
 msgstr ""
 
-#: src/Telegram/BoardService.php:593 src/Telegram/RoleTaskBot.php:358
+#: src/Telegram/BoardService.php:596 src/Telegram/RoleTaskBot.php:392
 msgid "You’re in! See you there."
 msgstr ""
 
@@ -5482,11 +5482,11 @@ msgstr ""
 msgid "You’re not signed up for anything yet — take a look at the board."
 msgstr ""
 
-#: src/Telegram/BoardService.php:617 src/Telegram/RoleTaskBot.php:378
+#: src/Telegram/BoardService.php:620 src/Telegram/RoleTaskBot.php:412
 msgid "You’re out. Thanks for the notice."
 msgstr ""
 
-#: src/Telegram/BoardService.php:616 src/Telegram/RoleTaskBot.php:377
+#: src/Telegram/BoardService.php:619 src/Telegram/RoleTaskBot.php:411
 msgid "You’re out. This close to the event it counts as a late cancellation."
 msgstr ""
 
@@ -5577,7 +5577,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:295
+#: src/Telegram/BoardRenderer.php:248
 msgid "full"
 msgstr ""
 
@@ -5793,10 +5793,6 @@ msgstr ""
 msgid "❌ Cancelled"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:192
-msgid "⬅ Back to the next event"
-msgstr ""
-
 #: src/Support/Roles.php:347
 msgid "⭐ Organize"
 msgstr ""
@@ -5825,15 +5821,15 @@ msgstr ""
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:142
+#: src/Telegram/BoardRenderer.php:139
 msgid "👋 New here? Sign up →"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:143
+#: src/Telegram/BoardRenderer.php:140
 msgid "👤 See my info →"
 msgstr ""
 
-#: src/Telegram/HelpService.php:138
+#: src/Telegram/HelpService.php:143
 msgid "👥 People: choose what to do."
 msgstr ""
 
@@ -5875,19 +5871,19 @@ msgstr ""
 msgid "🗑 Removed %s."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:207
-msgid "🗓 Other dates"
+#: src/Telegram/DayPicker.php:60
+msgid "🗓 Dates"
 msgstr ""
 
 #: src/Support/DoorLinkSender.php:310
 msgid "🚪 Open the sales desk"
 msgstr ""
 
-#: src/Telegram/HelpService.php:116
+#: src/Telegram/HelpService.php:121
 msgid "🚪 The door on %s: choose what to open."
 msgstr ""
 
-#: src/Telegram/HelpService.php:114
+#: src/Telegram/HelpService.php:119
 msgid "🚪 The door: choose what to open."
 msgstr ""
 

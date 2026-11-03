@@ -5459,6 +5459,9 @@ msgstr "⬅ Seuraavaan tapahtumaan"
 msgid "🗓 Other dates"
 msgstr "🗓 Muut päivät"
 
+msgid "🗓 Dates"
+msgstr "🗓 Päivät"
+
 msgid "A guest's email address is deleted %d days after the event too. The guest's name stays on that night's guest list."
 msgstr "Myös vieraan sähköpostiosoite poistetaan %d päivän kuluttua tapahtumasta. Vieraan nimi jää illan vieraslistalle."
 

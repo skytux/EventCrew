@@ -175,6 +175,12 @@ final class RoleTaskBot
 
         $data = (string) ($callbackQuery['data'] ?? '');
 
+        if (1 === preg_match('/^rt:d:(\d{4}-\d{2}-\d{2})$/', $data, $day)) {
+            $this->pickDay($callbackId, $telegramUserId, $chatId, $tappedMessageId, $day[1]);
+
+            return;
+        }
+
         if (1 !== preg_match('/^rt:(s|y|n|c|a|ay|an):(\d+)(?::(\d+))?$/', $data, $m)) {
             $this->telegram->answerCallbackQuery($callbackId);
 
@@ -201,26 +207,44 @@ final class RoleTaskBot
         };
     }
 
+    /** A day button under the list: the list redrawn on that day. */
+    private function pickDay(string $callbackId, int $telegramUserId, int $chatId, int $messageId, string $date): void
+    {
+        $this->telegram->answerCallbackQuery($callbackId);
+        $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified() || $messageId <= 0) {
+            return;
+        }
+
+        [$text, $markup] = $this->buildList($person, $date);
+        $this->telegram->editMessageText($chatId, $messageId, $text, $markup);
+    }
+
     /**
      * Edits the list message in place so it shows the person's tasks as they
      * are now. Nothing happens when the message id is unknown.
      */
-    private function refreshList(Person $person, int $chatId, int $messageId): void
+    private function refreshList(Person $person, int $chatId, int $messageId, int $taskId = 0): void
     {
         if ($messageId <= 0) {
             return;
         }
 
-        [$text, $markup] = $this->buildList($person);
+        // Stay on the day of the task that was tapped.
+        $task = $taskId > 0 ? $this->tasks->find($taskId) : null;
+        [$text, $markup] = $this->buildList($person, null !== $task ? $task->taskDate : '');
         $this->telegram->editMessageText($chatId, $messageId, $text, $markup);
     }
 
     /**
      * The list text and its keyboard (null when there is nothing to tap).
+     * One day at a time: $date, or the first day with a task when $date has
+     * none; the other days are buttons under it (DayPicker).
      *
      * @return array{0: string, 1: array<string, mixed>|null}
      */
-    private function buildList(Person $person): array
+    private function buildList(Person $person, string $date = ''): array
     {
         $own = $this->roleTasks->tasksFor($person);
         $addable = $person->isOrganizer ? $this->roleTasks->addableTasks() : [];
@@ -251,9 +275,15 @@ final class RoleTaskBot
             static fn (Task $a, Task $b): int => [$a->taskDate, $a->startsAt, $a->id]
                 <=> [$b->taskDate, $b->startsAt, $b->id]
         );
+        $dates = array_values(array_unique(array_map(static fn (Task $t): string => $t->taskDate, $byId)));
+        $shown = in_array($date, $dates, true) ? $date : $dates[0];
         $rows = [];
 
         foreach ($byId as $task) {
+            if ($task->taskDate !== $shown) {
+                continue;
+            }
+
             $row = [];
 
             if ($person->hasRole($task->roleSlug)) {
@@ -269,6 +299,10 @@ final class RoleTaskBot
                 ];
             }
 
+            $rows[] = $row;
+        }
+
+        foreach (DayPicker::rows($dates, $shown, self::PREFIX . 'd:', BoardRenderer::SPACER_DATA) as $row) {
             $rows[] = $row;
         }
 
@@ -364,7 +398,7 @@ final class RoleTaskBot
 
         if ($joined) {
             $this->notifier->confirmSignup($person, $taskId);
-            $this->refreshList($person, $chatId, $listMessageId);
+            $this->refreshList($person, $chatId, $listMessageId, $taskId);
         }
     }
 
@@ -384,7 +418,7 @@ final class RoleTaskBot
 
         if ('' !== $status && AssignmentRepository::CANCEL_LOCKED !== $status) {
             $this->notifier->confirmCancellation($person, $taskId, $status);
-            $this->refreshList($person, $chatId, $listMessageId);
+            $this->refreshList($person, $chatId, $listMessageId, $taskId);
         }
     }
 
