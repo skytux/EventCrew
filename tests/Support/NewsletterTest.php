@@ -392,7 +392,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
         self::assertSame(1, substr_count($html, 'Buy a ticket'));
         self::assertStringContainsString('href="https://music.test/dj"', $html);
-        self::assertStringContainsString('▶ Kuuntele DJ:tä<br>Listen to the DJ</a>', $html);
+        self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ</a>', $html);
         self::assertStringContainsString('Loppuunmyyty · Sold out', $html);
         self::assertGreaterThan(strpos($html, 'Myöhemmin · Later'), strpos($html, 'Autumn Night'));
 
@@ -476,7 +476,9 @@ final class NewsletterTest extends TestCase
      * compose()'s HTML and text for one fixed input are byte for byte the
      * ones saved in fixtures/, which were made before the events part was
      * shared with the post-event email (FollowupMail), and made again when
-     * the cards lost their description and were centred (2026-11-03).
+     * the cards lost their description and were centred, and again when a
+     * card's picture took the date and the title into its alt text
+     * (2026-11-03).
      */
     public function testComposeOutputIsUnchangedForAFixedInput(): void
     {
@@ -508,10 +510,11 @@ final class NewsletterTest extends TestCase
     }
 
     /**
-     * With EventMesh's clean names a card shows the name, the Finnish name
-     * when it is different, then the DJ line; a "Later" line shows the name
-     * and the DJ line under it. The picture's alt text keeps the title as
-     * written.
+     * With EventMesh's clean names, a card with a picture has the date, the
+     * name, the Finnish name when it is different and the DJ line in the
+     * picture's alt text, and not as text under the picture (the poster
+     * shows them). A "Later" line shows the name and the DJ line under it,
+     * and its small picture's alt text keeps the title as written.
      */
     public function testTheCleanNameAndTheDjLineReplaceTheTitle(): void
     {
@@ -530,10 +533,15 @@ final class NewsletterTest extends TestCase
 
         $html = NewsletterLayout::html([$card], [$later], null, '#7a3cff');
 
-        self::assertMatchesRegularExpression('~<h2 style="margin:0 0 2px;[^"]*">Ecstatic Dance</h2>~', $html);
-        self::assertMatchesRegularExpression('~<p style="margin:0 0 2px;[^"]*">Ekstaattinen tanssi</p>~', $html);
-        self::assertMatchesRegularExpression('~<p style="margin:0 0 14px;[^"]*">DJ Esimerkki</p>~', $html);
-        self::assertStringContainsString('alt="ECSTATIC DANCE 27.7.2026 / Esimerkki"', $html);
+        self::assertStringContainsString(
+            'width="536" alt="27.7.2026 · 21:00 — Ecstatic Dance — Ekstaattinen tanssi — DJ Esimerkki"',
+            $html
+        );
+        self::assertStringNotContainsString('>Ecstatic Dance<', $html);
+        self::assertStringNotContainsString('>Ekstaattinen tanssi<', $html);
+        self::assertStringNotContainsString('>DJ Esimerkki<', $html);
+        self::assertStringNotContainsString('>27.7.2026 · 21:00<', $html);
+        self::assertStringNotContainsString('<h2 style="margin:0 0', $html, 'no title under the picture');
         self::assertStringContainsString('Open Floor<br>DJs Aino Testinen &amp; Bo Kokeilu', $html);
         self::assertStringContainsString('alt="OPEN FLOOR 10.8.2026 / Aino Testinen &amp; Bo Kokeilu"', $html);
         self::assertStringNotContainsString('>ECSTATIC DANCE', $html);
@@ -561,6 +569,72 @@ final class NewsletterTest extends TestCase
         self::assertSame(1, substr_count($html, 'Ecstatic Dance'));
         self::assertStringNotContainsString('EKSTAATTINEN', $html);
         self::assertStringContainsString('DJ Esimerkki', $html);
+    }
+
+    /** A card with no picture writes the date, the name, the Finnish name and the DJ line as text. */
+    public function testACardWithNoPictureWritesTheNameAsText(): void
+    {
+        $this->fakeEventNames(
+            [1 => ['en' => 'Ecstatic Dance', 'fi' => 'Ekstaattinen tanssi']],
+            [1 => ['Esimerkki']]
+        );
+        $card = self::planEvent(1, '2026-07-27', 'ECSTATIC DANCE 27.7.2026 / Esimerkki');
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
+
+        self::assertStringNotContainsString('<img', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 6px;[^"]*">27\.7\.2026 · 21:00</p>~u', $html);
+        self::assertMatchesRegularExpression('~<h2 style="margin:0 0 2px;[^"]*">Ecstatic Dance</h2>~', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 2px;[^"]*">Ekstaattinen tanssi</p>~', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 14px;[^"]*">DJ Esimerkki</p>~u', $html);
+    }
+
+    /**
+     * A picture's alt text falls back to the title as written, is escaped,
+     * and the picture is styled so the alt text reads well when pictures are
+     * not loaded. The venue, the door times and the buttons stay under it.
+     */
+    public function testThePictureAltTextIsEscapedAndTheRestStaysVisible(): void
+    {
+        $card = [
+            'image' => 'https://cdn.test/1.jpg',
+            'ticket_url' => 'https://shop.test/p/1',
+            'listen' => 'https://music.test/dj',
+            'practical' => [
+                'venue' => 'Old Hall',
+                'address' => 'Main Street 1, Helsinki',
+                'doors_open' => '18:30',
+                'doors_close' => '19:00',
+            ],
+        ] + self::planEvent(1, '2026-07-27', 'Rock & "Roll" <Night>');
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
+
+        self::assertMatchesRegularExpression(
+            '~<img src="https://cdn\.test/1\.jpg" width="536" '
+                . 'alt="27\.7\.2026 · 21:00 — Rock &amp; &quot;Roll&quot; &lt;Night&gt;" style="[^"]*">~u',
+            $html
+        );
+        preg_match('~<img [^>]*style="([^"]*)"~', $html, $style);
+
+        $rules = ['max-width:536px', 'font-size:20px', 'font-weight:700', 'text-align:center', 'background:'];
+
+        foreach ($rules as $rule) {
+            self::assertStringContainsString($rule, $style[1]);
+        }
+
+        self::assertStringNotContainsString('<h2', $html);
+        self::assertStringContainsString('Old Hall<br>Main Street 1, Helsinki</p>', $html);
+        self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30<br>Ovet sulkeutuvat 19:00</p>', $html);
+        self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30<br>Doors close 19:00</p>', $html);
+        self::assertStringContainsString('Osta lippu · Buy a ticket', $html);
+        self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ', $html);
+
+        // The plain text has no picture, so it keeps the date and the title.
+        self::assertStringStartsWith(
+            "27.7.2026 · 21:00\nRock & \"Roll\" <Night>\nOld Hall",
+            explode("\n\n", NewsletterLayout::text([$card], [], null), 2)[1]
+        );
     }
 
     public function testThePriceIsWrittenTheFinnishWay(): void
