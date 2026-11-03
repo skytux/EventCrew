@@ -125,6 +125,7 @@ to the DM with a breadcrumb left behind.
 | `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
 | `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
 | `/newsletter` | organizers, private chat | Set the text for the next events announcement (`/newsletter <text>`), show it (`/newsletter`), or remove it (`/newsletter clear`) |
+| `/say` | organizers, private chat | `/say <message>` shows the message as the group will see it, with Confirm and Cancel; Confirm posts it in the crew group. Bold, italics, links, quotes and line breaks are kept. Plain words work too ("post in the group: ...") |
 
 ### Plain messages (optional language model)
 
@@ -256,12 +257,28 @@ the account is the hard "no email at all" switch.
 
 ## Next events announcement
 
-An email of the coming events (from EventMesh: date, start time, title, link,
-and "sold out" where it is) for anyone who joined, crew or not. It is **off by
-default**; switch it on under **Settings → Email → Next events announcement**.
+An email of the coming events (from EventMesh) for anyone who joined, crew or
+not. It is **off by default**; switch it on under **Settings → Email → Next
+events announcement**.
 
-- **Joining.** The `[eventcrew_newsletter]` shortcode shows an email field. It
-  has a hidden honeypot field, and a Turnstile check when Turnstile is set up.
+- **Layout.** Each newly announced event is a card: its picture, date and start
+  time, title, short description in Finnish and then in English, a **Buy a
+  ticket** button with the price (to the ticket shop), a **Listen to the DJ**
+  button when the event has the DJ's music page (EventMesh's embed source URL),
+  and a link to the event page. A sold-out event shows **Sold out** instead of
+  the ticket button. Every other coming event is listed under **Later**, one
+  line each, with a link to its tickets. The email also has a plain-text part.
+- **Joining.** The form is the `[eventcrew_newsletter]` shortcode or the **Next
+  events announcement** block (for the site footer and other template parts).
+  When the announcement is on, a thin sign-up bar also shows at the bottom of
+  public pages (not in wp-admin and not on the crew app page); on a phone its
+  label is hidden, and it has an "i" link to the full form when the page has
+  one. **Settings** can give the bar a background image from the Media Library,
+  shown under a dark layer. The email field is named `eventcrew_email` (with
+  `autocomplete="email"`), because Firefox filled a saved street address into a
+  field named `email`; a page cached with the old name still works. The form
+  has a hidden honeypot field, and a Turnstile check when Turnstile is set up;
+  the check shows only when Cloudflare needs a click.
   Joining is double opt-in: the person gets a confirmation email with a signed
   link, and is subscribed only after following it. A sign-up that is not
   confirmed within 7 days is deleted. The table stores the email address, the
@@ -271,7 +288,8 @@ default**; switch it on under **Settings → Email → Next events announcement*
   each event (**Days before the event**, default 7). Events that fall in the
   same window go into one announcement, and each event is in at most one
   announcement. The day before sending, every organizer gets a preview email with
-  the exact content and a signed **Stop this announcement** link; the crew app's
+  the announcement exactly as subscribers get it (HTML) and a signed **Stop this
+  announcement** link; the crew app's
   Admin tab has the same button. A stopped announcement is not sent. Sending runs
   in WP-Cron batches of 20.
 - **Organizer text.** An organizer can add a text to the next announcement, with
@@ -282,9 +300,10 @@ default**; switch it on under **Settings → Email → Next events announcement*
   a model, or when the translation fails, both languages show the text as it
   was written and the organizer is told. The text is removed after the
   announcement is sent.
-- **Language.** Every announcement carries Finnish first, then English. Event
-  titles use EventMesh's Finnish translation in the Finnish part when there is
-  one.
+- **Language.** Every card and the organizer text carry Finnish first, then
+  English, each labelled. A card shows EventMesh's Finnish title under the
+  English one when there is a translation. Prices are written the Finnish way
+  (`22 €`, `27,50 €`).
 - **Leaving.** Every announcement has a one-click leave link and the
   `List-Unsubscribe` / `List-Unsubscribe-Post` headers. A ticket buyer who
   confirmed the announcement keeps their email address past the 60-day buyer

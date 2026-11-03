@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.95.1
+Stable tag: 1.95.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.95.2 =
+Documentation: README covers the event cards, the sign-up bar and footer block, the email field name and /say; ROADMAP has a current-state section with the work in progress and the planned work.
 
 = 1.95.1 =
 Firefox no longer fills a street address into the next events announcement's email field: the field is now named eventcrew_email (autocomplete=email kept); a page cached before the change still works.
@@ -922,6 +925,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.95.2 =
+No database change.
 
 = 1.95.1 =
 No database change.
