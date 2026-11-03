@@ -126,6 +126,7 @@ final class SignupController
             self::PROFILE_ACTION,
             self::TG_START_ACTION,
             self::TG_STATUS_ACTION,
+            TelegramLogin::RETURN_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -879,10 +880,44 @@ final class SignupController
                 // another tab, and it runs out with the code anyway.
                 $this->setTelegramLoginCookie('', time() - HOUR_IN_SECONDS);
                 $this->setSessionCookie(WebSession::mint($personId));
+            } elseif ('tg_expired' === $notice && null !== $this->currentPerson()) {
+                // The bot's "Back to the crew app" button already used the
+                // code in this browser and signed it in: the waiting tab
+                // reloads signed in instead of saying the link expired.
+                $notice = 'signed_in';
             }
 
             nocache_headers();
             wp_send_json(['code' => $notice, 'notice' => self::noticeText($notice)]);
+        }
+
+        if (TelegramLogin::RETURN_ACTION === $action) {
+            // The bot's "Back to the crew app" button, opened on the phone.
+            // In the browser that pressed Telegram it signs in, like the
+            // page's own poll; then it opens the crew app.
+            $code = isset($_GET['login']) ? sanitize_text_field(wp_unslash($_GET['login'])) : '';
+            $secret = isset($_COOKIE[TelegramLogin::COOKIE])
+                ? sanitize_text_field(wp_unslash($_COOKIE[TelegramLogin::COOKIE]))
+                : '';
+            $crewApp = $this->mailer->boardUrl();
+            $crewApp = '' === $crewApp ? home_url('/') : $crewApp;
+
+            ['person_id' => $personId, 'notice' => $notice] = $this->telegramStatus($code, $secret);
+
+            if (null !== $personId) {
+                $this->setTelegramLoginCookie('', time() - HOUR_IN_SECONDS);
+                $this->setSessionCookie(WebSession::mint($personId));
+                $this->redirect($crewApp, 'signed_in');
+            }
+
+            if (null !== $this->currentPerson()) {
+                // The page's own poll got there first: already signed in.
+                wp_safe_redirect($crewApp);
+
+                exit;
+            }
+
+            $this->redirect($crewApp, 'blocked' === $notice ? 'blocked' : 'tg_return_failed');
         }
 
         if (self::LOGIN_ACTION === $action) {
@@ -1077,6 +1112,8 @@ final class SignupController
             'tg_started' => __('Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself.', 'eventcrew'),
             'tg_pending' => '',
             'tg_expired' => __('The link expired. Press Telegram again.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'tg_return_failed' => __('You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'tg_busy' => __('Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email.', 'eventcrew'),
         ];

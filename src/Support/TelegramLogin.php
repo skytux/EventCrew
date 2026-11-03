@@ -81,6 +81,25 @@ final class TelegramLogin
         return ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
     }
 
+    /**
+     * The admin-ajax action behind the bot's "Back to the crew app" button:
+     * it signs in the browser that holds this code's cookie and opens the
+     * crew app.
+     */
+    public const RETURN_ACTION = 'eventcrew_web_tg_return';
+
+    /**
+     * The address of the bot's "Back to the crew app" button. It carries the
+     * code, which is useless without the browser's secret cookie.
+     */
+    public static function returnUrl(string $code): string
+    {
+        return add_query_arg(
+            ['action' => self::RETURN_ACTION, 'login' => $code],
+            admin_url('admin-ajax.php')
+        );
+    }
+
     /** The deep link that opens the bot's private chat with this code. */
     public static function startUrl(string $code): string
     {

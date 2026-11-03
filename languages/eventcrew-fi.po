@@ -6169,3 +6169,9 @@ msgid "You can cancel without it affecting your standing up to %d hour before th
 msgid_plural "You can cancel without it affecting your standing up to %d hours before the task."
 msgstr[0] "Voit perua ilman vaikutusta luotettavuuteesi, kun perut viimeistään %d tunnin ennen tehtävää."
 msgstr[1] "Voit perua ilman vaikutusta luotettavuuteesi, kun perut viimeistään %d tuntia ennen tehtävää."
+
+msgid "Back to the crew app"
+msgstr "Takaisin Crew-sovellukseen"
+
+msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
+msgstr "Et ole kirjautunut tällä selaimella. Palaa selaimeen, jossa painoit Telegramia, tai paina Telegramia uudelleen tässä."
