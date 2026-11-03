@@ -1519,7 +1519,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Support/Newsletter.php:849 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
+#: src/Support/Newsletter.php:854 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -4478,7 +4478,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:904 src/Support/Newsletter.php:848
+#: src/Support/FollowupMail.php:904 src/Support/Newsletter.php:853
 msgid "Subject"
 msgstr ""
 
@@ -5553,11 +5553,6 @@ msgstr ""
 msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
 msgstr ""
 
-#: src/Support/Newsletter.php:827
-#. translators: 1: the send date, like 14.11.2026, 2: number of subscribers
-msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
-msgstr ""
-
 #: src/Web/CrewAdminNewsletter.php:127 src/Web/NewsletterController.php:1093
 msgid "This announcement was already stopped or sent."
 msgstr ""
@@ -5595,17 +5590,17 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Support/Newsletter.php:839
+#: src/Support/Newsletter.php:844
 #. translators: %d: number of subscribers who chose English
 msgid "This is the English version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:834
+#: src/Support/Newsletter.php:839
 #. translators: %d: number of subscribers who chose Finnish
 msgid "This is the Finnish version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:844
+#: src/Support/Newsletter.php:849
 #. translators: %d: number of subscribers who chose no language
 msgid "This is the two-language version. Subscribers who get it: %d."
 msgstr ""

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.131.0
+Stable tag: 1.131.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.131.1 =
+The organizers' newsletter preview email says "1 subscriber" in the singular and "2 subscribers" in the plural.
 
 = 1.131.0 =
 Ticket emails: every real send (import, guest with email, "Send the rest now") waits 10 minutes and can be cancelled from wp-admin Roster, the crew page Admin tab or the /door add reply. "Send a test to me" is still immediate.
@@ -1144,6 +1147,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.131.1 =
+No settings change.
 
 = 1.131.0 =
 No settings change.

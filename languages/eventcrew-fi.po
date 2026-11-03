@@ -5901,8 +5901,10 @@ msgid "There is no text for the next announcement."
 msgstr "Seuraavalle tiedotteelle ei ole tekstiä."
 
 #, php-format
-msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
-msgstr "Tämä tiedote lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
+msgid "This announcement goes out on %1$s to %2$d subscriber. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
+msgid_plural "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
+msgstr[0] "Tämä tiedote lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
+msgstr[1] "Tämä tiedote lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
 
 msgid "This announcement was already stopped or sent."
 msgstr "Tämä tiedote on jo pysäytetty tai lähetetty."
