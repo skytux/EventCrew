@@ -833,12 +833,23 @@
 .eventcrew-signup .eventcrew-signin-back[hidden],
 .eventcrew-signup .eventcrew-tg-help[hidden] { display: none; }
 .eventcrew-signup .eventcrew-signin-choice-prompt { margin: 0 0 .75em; }
+/* Both buttons one width: the row is as wide as its content, and its equal
+   columns (side by side) or its single column (stacked) take the wider one. */
 .eventcrew-signup .eventcrew-signin-choice-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: 1fr;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
     gap: 0.75em;
+}
+@media (min-width: 640px) {
+    .eventcrew-signup .eventcrew-signin-choice-row { grid-auto-flow: column; }
+}
+.eventcrew-signup .eventcrew-signin-choice-row .tg-auth-button {
+    width: auto;
+    justify-content: center;
 }
 .eventcrew-signup .eventcrew-signin-choice-row .wp-element-button {
     box-sizing: border-box;
