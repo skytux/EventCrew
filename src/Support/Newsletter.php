@@ -310,6 +310,22 @@ final class Newsletter
         );
     }
 
+    /**
+     * The line above the footer link, in both languages: crew members get this
+     * announcement too, and leaving it changes no other crew message.
+     */
+    public static function crewNote(): string
+    {
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return self::both(
+            static fn (): string => __(
+                'Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected.',
+                'eventcrew'
+            )
+        );
+        // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
     private function runLocked(): void
     {
         $state = $this->state();
@@ -493,6 +509,7 @@ final class Newsletter
         $rows = $this->subscribers->confirmedAfter((int) $plan['cursor'], self::BATCH);
         $mail = $this->compose($plan['events'], $plan['text'], $plan['later'] ?? []);
         $footer = self::footer();
+        $crewNote = self::crewNote();
 
         foreach ($rows as $row) {
             $unsubscribe = self::unsubscribeUrl($row['id']);
@@ -506,7 +523,8 @@ final class Newsletter
                 [
                     'List-Unsubscribe: <' . $unsubscribe . '>',
                     'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
-                ]
+                ],
+                $crewNote
             );
 
             $plan['cursor'] = $row['id'];

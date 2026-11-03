@@ -429,7 +429,7 @@ final class PrivacyPolicy
      */
     private static function purposeParagraphs(): array
     {
-        return [
+        $paragraphs = [
             __(
                 'We hold it to run the crew: to let you claim a task, to tell you about the tasks you claimed, to mark who arrived, and to work out who has earned free entry. Our legal basis is that this is necessary to do the thing you asked us to do when you signed up, and our legitimate interest in staffing our own events.',
                 'eventcrew'
@@ -448,6 +448,15 @@ final class PrivacyPolicy
                     'eventcrew'
                 ),
         ];
+
+        if (NewsletterCrew::enabled()) {
+            $paragraphs[] = __(
+                'Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email.',
+                'eventcrew'
+            );
+        }
+
+        return $paragraphs;
     }
 
     /**

@@ -27,6 +27,7 @@
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var int $newsletter_days Days before an event the newsletter goes out.
+ * @var bool $newsletter_crew Whether crew members with a verified email are added to the newsletter.
  * @var int $newsletter_bar_image The sign-up bar's background image (attachment id; 0 = none).
  * @var string $newsletter_bar_image_url That image's medium size URL for the preview, or ''.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
@@ -1395,6 +1396,16 @@ if (! defined('ABSPATH')) {
                     <p class="description">
                         <?php esc_html_e('How many days before each event the next events announcement goes out. Events that fall in the same window go in one announcement.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Add crew members to the newsletter', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="newsletter_crew" value="1"
+                            <?php checked($newsletter_crew); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
                 </td>
             </tr>
             <tr>
