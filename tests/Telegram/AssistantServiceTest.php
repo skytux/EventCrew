@@ -222,6 +222,17 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertStringContainsString('Never pick one for the person.', $body['messages'][0]['content']);
     }
 
+    public function testTheModelIsToldAGreetingSaysPlainWordsWork(): void
+    {
+        $this->reply(true, true, 'Hello!');
+
+        $this->ask(self::privateMessage('hi'));
+
+        $body = json_decode((string) $this->llmCalls[0]['args']['body'], true);
+        self::assertStringContainsString('can simply write what they want in their own words', $body['messages'][0]['content']);
+        self::assertStringContainsString('Do not answer a greeting with only a list of commands.', $body['messages'][0]['content']);
+    }
+
     public function testTheKeyIsSentAsABearerToken(): void
     {
         AssistantSettings::saveKey('sk-test');
