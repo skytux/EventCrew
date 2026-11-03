@@ -117,26 +117,27 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <div class="eventcrew-card-body">
             <?php
             /*
-             * The choice between email and Telegram, when the Telegram login is
-             * available. It starts hidden and the script below reveals it, so
-             * without JavaScript - or when Telegram's script cannot load - the
-             * email form is what shows, exactly as before. The nonce is not in
-             * the markup: signed-out pages are cached, so the script fetches a
-             * fresh one for this browser.
+             * The choice between email and Telegram, when the sign-in through
+             * the bot is available. It starts hidden and the script below
+             * reveals it, so without JavaScript the email form is what shows,
+             * exactly as before. The login code is not in the markup:
+             * signed-out pages are cached, so the script asks for a fresh one
+             * when Telegram is pressed.
              */
             $eventcrew_tg_login = is_array($view['telegram_login'] ?? null) ? $view['telegram_login'] : null;
             ?>
             <?php if (null !== $eventcrew_tg_login) : ?>
+                <?php // Back sits above the email field and the waiting text, where the eye starts. ?>
+                <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
+                    <a href="#"><span aria-hidden="true">← </span><?php esc_html_e('Back', 'eventcrew'); ?></a>
+                </p>
                 <div
                     class="eventcrew-signin-choice"
                     data-eventcrew-tg-login
                     data-ajax="<?php echo esc_url($eventcrew_ajax); ?>"
                     data-here="<?php echo esc_url($eventcrew_here); ?>"
-                    data-client-id="<?php echo esc_attr($eventcrew_tg_login['client_id']); ?>"
-                    data-lang="<?php echo esc_attr($eventcrew_tg_login['lang']); ?>"
-                    data-script="<?php echo esc_url($eventcrew_tg_login['script']); ?>"
-                    data-nonce-action="<?php echo esc_attr($eventcrew_tg_login['nonce_action']); ?>"
-                    data-login-action="<?php echo esc_attr($eventcrew_tg_login['login_action']); ?>"
+                    data-start-action="<?php echo esc_attr((string) $eventcrew_tg_login['start_action']); ?>"
+                    data-status-action="<?php echo esc_attr((string) $eventcrew_tg_login['status_action']); ?>"
                     hidden>
                     <p class="eventcrew-signin-choice-prompt">
                         <?php esc_html_e('How do you want to sign in?', 'eventcrew'); ?>
@@ -148,25 +149,19 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <button
                             type="button"
                             class="tg-auth-button"
+                            data-eventcrew-tg-start
                             aria-label="<?php esc_attr_e('Sign in with Telegram', 'eventcrew'); ?>">
                             <?php esc_html_e('Sign in with Telegram', 'eventcrew'); ?>
                         </button>
                     </div>
-                    <div class="eventcrew-tg-help" data-eventcrew-tg-help hidden>
-                        <p class="eventcrew-muted eventcrew-hint" data-eventcrew-tg-help-text></p>
-                        <p>
-                            <a
-                                class="wp-element-button"
-                                href="<?php echo esc_url($eventcrew_tg_login['bot_link']); ?>"
-                                target="_blank"
-                                rel="noopener"><?php esc_html_e('Open the bot', 'eventcrew'); ?></a>
-                        </p>
-                    </div>
+                    <p class="eventcrew-muted eventcrew-hint eventcrew-tg-note" data-eventcrew-tg-note hidden></p>
                 </div>
-                <?php // Back sits above the email field, where the eye starts, not under the hints. ?>
-                <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
-                    <a href="#"><span aria-hidden="true">← </span><?php esc_html_e('Back', 'eventcrew'); ?></a>
-                </p>
+                <div class="eventcrew-tg-wait" data-eventcrew-tg-wait hidden>
+                    <p class="eventcrew-tg-wait-text"><?php echo esc_html(\EventCrew\Web\SignupController::noticeText('tg_started')); ?></p>
+                    <p>
+                        <a href="#" target="_blank" rel="noopener" data-eventcrew-tg-again><?php esc_html_e('Open Telegram again', 'eventcrew'); ?></a>
+                    </p>
+                </div>
             <?php endif; ?>
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
@@ -2659,16 +2654,15 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 })();
 
 /*
- * Sign in with Telegram. When the login is available the sign-in card offers
- * a choice: the email form, or Telegram's own button, which opens Telegram's
- * popup. The popup hands back an ID token, which is posted to the server; the
- * server checks it and starts the session, and the page reloads signed in.
+ * Sign in through the Telegram bot. When it is available the sign-in card
+ * offers a choice: the email form, or the Telegram button. Pressing Telegram
+ * asks the site for a one-time code (the site also sets a cookie that ties
+ * the code to this browser), opens the bot in a new tab with that code, and
+ * then asks the site every 3 seconds whether the bot has approved the code.
+ * Once it has, the site starts the session and the page reloads signed in.
  *
  * The choice shows straight away (a small script under the form swaps it in
- * before the first paint); the email form shows when Email is pressed. The
- * Telegram button starts working once Telegram's script has loaded and this
- * browser has its one-time nonce. If either fails, the page falls back to the
- * email form.
+ * before the first paint); the email form shows when Email is pressed.
  */
 (function () {
     var choice = document.querySelector('[data-eventcrew-tg-login]');
@@ -2678,15 +2672,19 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     var sent = document.getElementById('eventcrew-signin-sent');
     var back = document.querySelector('[data-eventcrew-tg-back]');
     var emailButton = choice.querySelector('[data-eventcrew-tg-email]');
-    var help = choice.querySelector('[data-eventcrew-tg-help]');
-    var helpText = choice.querySelector('[data-eventcrew-tg-help-text]');
+    var tgButton = choice.querySelector('[data-eventcrew-tg-start]');
+    var note = choice.querySelector('[data-eventcrew-tg-note]');
+    var wait = document.querySelector('[data-eventcrew-tg-wait]');
+    var again = wait ? wait.querySelector('[data-eventcrew-tg-again]') : null;
     var ajax = choice.getAttribute('data-ajax');
     var failedText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_failed')); ?>;
-    var scriptReady = false;
-    var nonce = '';
-    var revealed = false;
-    var gaveUp = false;
-    var posting = false;
+    var expiredText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_expired')); ?>;
+    var POLL_MS = 3000;
+    var login = '';       // the code being waited on; '' when not waiting
+    var deadline = 0;     // when the code expires, in ms since the epoch
+    var timer = null;
+    var asking = false;   // a status request is in flight
+    var starting = false; // a start request is in flight
 
     function toast(text) {
         // The board script above moved the toast to <body>; it hides itself.
@@ -2697,9 +2695,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         setTimeout(function () { box.classList.remove('show'); }, 6000);
     }
 
-    // Telegram's script styles its button its own way (pill, system font).
-    // Copy the Email button's look onto it, whatever the theme makes that;
-    // the colours stay Telegram's. Inline styles win over the script's CSS.
+    // The Telegram button has Telegram's colours (see eventcrew.css). Copy the
+    // Email button's shape and font onto it, whatever the theme makes that.
     function matchLook() {
         var tg = choice.querySelector('.tg-auth-button');
         if (!tg || !emailButton || !window.getComputedStyle) { return; }
@@ -2711,24 +2708,45 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     }
 
     function showChoice() {
+        stopWaiting();
         choice.hidden = false;
         matchLook();
+        if (wait) { wait.hidden = true; }
         if (form) { form.hidden = true; }
         if (sent) { sent.hidden = true; }
         if (back) { back.hidden = true; }
     }
 
     function showEmail() {
+        stopWaiting();
         choice.hidden = true;
+        if (wait) { wait.hidden = true; }
         if (form) { form.hidden = false; }
-        // "Back" only while the choice can still be offered.
-        if (back) { back.hidden = gaveUp; }
+        if (back) { back.hidden = false; }
     }
 
-    // Telegram's script or the nonce failed: the email form is all there is.
-    function giveUp() {
-        gaveUp = true;
-        showEmail();
+    function showWaiting(url) {
+        choice.hidden = true;
+        if (note) { note.hidden = true; }
+        if (again) { again.href = url; }
+        if (wait) { wait.hidden = false; }
+        if (form) { form.hidden = true; }
+        if (back) { back.hidden = false; }
+    }
+
+    function stopWaiting() {
+        login = '';
+        deadline = 0;
+        if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    // Back to the choice with a line under the buttons, e.g. "The link expired".
+    function resetWith(text) {
+        showChoice();
+        if (note && text) {
+            note.textContent = text;
+            note.hidden = false;
+        }
     }
 
     function post(data) {
@@ -2742,81 +2760,97 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             });
     }
 
-    function fetchNonce() {
-        nonce = '';
-
-        return post({ action: choice.getAttribute('data-nonce-action') }).then(function (data) {
-            nonce = data && typeof data.nonce === 'string' ? data.nonce : '';
-            if (!nonce) { giveUp(); return; }
-            ready();
-        }).catch(giveUp);
+    function signedIn() {
+        stopWaiting();
+        // A fresh address, so a cached signed-out copy is not shown again.
+        var url = new URL(choice.getAttribute('data-here'), window.location.href);
+        url.searchParams.set('eventcrew_notice', 'signed_in');
+        window.location.assign(url.toString());
     }
 
-    function ready() {
-        if (gaveUp || !scriptReady || !nonce) { return; }
-        if (!window.Telegram || !window.Telegram.Login) { giveUp(); return; }
+    function schedule() {
+        if (timer) { clearTimeout(timer); }
+        timer = login ? setTimeout(check, POLL_MS) : null;
+    }
 
-        try {
-            window.Telegram.Login.init({
-                client_id: choice.getAttribute('data-client-id'),
-                scope: ['profile'],
-                nonce: nonce,
-                lang: choice.getAttribute('data-lang')
-            }, onAuth);
-        } catch (err) {
-            giveUp();
+    // One status request. Runs on the timer while the page is visible, and
+    // straight away when the person comes back to this tab from Telegram.
+    function check() {
+        timer = null;
+        if (!login) { return; }
+
+        if (Date.now() >= deadline) {
+            resetWith(expiredText);
             return;
         }
 
-        if (!revealed) {
-            revealed = true;
-            showChoice();
-        }
-    }
+        if (document.visibilityState === 'hidden') { return; } // resumes on visibilitychange
+        if (asking) { schedule(); return; }
 
-    function onAuth(result) {
-        if (!result || posting) { return; }
+        asking = true;
+        var waitingFor = login;
+        post({ action: choice.getAttribute('data-status-action'), login: waitingFor }).then(function (data) {
+            asking = false;
+            if (login !== waitingFor) { return; } // Back was pressed meanwhile
 
-        if (result.error || !result.id_token) {
-            // Closing the popup is not an error worth a message.
-            // The reason in brackets tells Telegram's refusals apart from
-            // the site's, so a report from a phone says which side failed.
-            if (result.error !== 'popup_closed') {
-                toast(failedText + ' (Telegram: ' + String(result.error || 'no token') + ')');
-            }
-            return;
-        }
-
-        posting = true;
-        post({ action: choice.getAttribute('data-login-action'), id_token: result.id_token }).then(function (data) {
             var code = data && data.code ? data.code : 'tg_failed';
 
-            if (code === 'signed_in') {
-                // A fresh address, so a cached signed-out copy is not shown again.
-                var url = new URL(choice.getAttribute('data-here'), window.location.href);
-                url.searchParams.set('eventcrew_notice', 'signed_in');
-                window.location.assign(url.toString());
+            if (code === 'signed_in') { signedIn(); return; }
+            if (code === 'tg_pending') { schedule(); return; }
+            if (code === 'tg_expired') { resetWith(expiredText); return; }
+
+            resetWith('');
+            toast((data && data.notice) || failedText);
+        }).catch(function () {
+            // A dropped request is not the end: try again on the next tick.
+            asking = false;
+            schedule();
+        });
+    }
+
+    function start() {
+        if (starting) { return; }
+        starting = true;
+        if (note) { note.hidden = true; }
+
+        // Opened now, inside the click, so the browser does not block it;
+        // the bot's address is filled in when the site answers.
+        var tab = null;
+        try { tab = window.open('', '_blank'); } catch (err) { tab = null; }
+
+        post({ action: choice.getAttribute('data-start-action') }).then(function (data) {
+            starting = false;
+            var code = data && data.code ? data.code : 'tg_failed';
+
+            if (code !== 'tg_started' || !data.login || !data.url) {
+                if (tab) { tab.close(); }
+                toast((data && data.notice) || failedText);
                 return;
             }
 
-            if ((code === 'tg_not_linked' || code === 'tg_not_verified') && help && helpText) {
-                helpText.textContent = data.notice || '';
-                help.hidden = false;
-            } else {
-                toast((data && data.notice) || failedText);
+            login = String(data.login);
+            deadline = Date.now() + (parseInt(data.expires_in, 10) || 1800) * 1000;
+            showWaiting(data.url);
+
+            if (tab) {
+                try { tab.opener = null; } catch (err) { /* nothing to do */ }
+                tab.location.href = data.url;
             }
 
-            posting = false;
-            fetchNonce(); // the nonce was used up; a second try needs a new one
-        }).catch(function (err) {
-            posting = false;
-            toast(failedText + ' (site: ' + String((err && err.message) || 'no reply') + ')');
-            fetchNonce();
+            schedule();
+        }).catch(function () {
+            starting = false;
+            if (tab) { tab.close(); }
+            toast(failedText);
         });
     }
 
     if (emailButton) {
         emailButton.addEventListener('click', function () { showEmail(); });
+    }
+
+    if (tgButton) {
+        tgButton.addEventListener('click', function () { start(); });
     }
 
     if (back) {
@@ -2826,29 +2860,13 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         });
     }
 
-    // Telegram's login page answers "origin required" unless its address
-    // carries origin=, and Telegram's own script leaves it out of the popup
-    // address. Add it to that one address; every other window.open is untouched.
-    var nativeOpen = window.open;
-    var authStart = new URL(choice.getAttribute('data-script'), window.location.href).origin + '/auth?';
-    window.open = function (url) {
-        var args = Array.prototype.slice.call(arguments);
-        if (typeof url === 'string' && url.indexOf(authStart) === 0 && !/[?&]origin=/.test(url)) {
-            args[0] = url + '&origin=' + encodeURIComponent(window.location.origin);
-        }
-        return nativeOpen.apply(window, args);
-    };
+    // Coming back from Telegram: ask at once instead of waiting for the timer.
+    function onReturn() {
+        if (login && document.visibilityState !== 'hidden') { check(); }
+    }
+    document.addEventListener('visibilitychange', onReturn);
+    window.addEventListener('focus', onReturn);
 
-    revealed = true;
     showChoice();
-
-    var script = document.createElement('script');
-    script.src = choice.getAttribute('data-script');
-    script.async = true;
-    script.onload = function () { scriptReady = true; ready(); };
-    script.onerror = giveUp;
-    document.head.appendChild(script);
-
-    fetchNonce();
 })();
 </script>

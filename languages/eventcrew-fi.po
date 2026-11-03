@@ -6099,45 +6099,61 @@ msgstr "Salli kirjautuminen Telegramilla Crew-sovellukseen"
 msgid "Back"
 msgstr "Takaisin"
 
-#: templates/admin/settings-telegram-login.php:31
-msgid "Client ID (the bot ID):"
-msgstr "Client ID (botin tunnus):"
-
 #: templates/public/signup.php:141
 msgid "How do you want to sign in?"
 msgstr "Miten haluat kirjautua?"
 
 #: src/Support/PrivacyPolicy.php:413
-msgid "If you sign in with Telegram, Telegram sends us your account number, name, username and profile photo address. We use only the account number, to find your crew account, and we do not store the rest."
-msgstr "Jos kirjaudut Telegramilla, Telegram lähettää meille tilisi numeron, nimesi, käyttäjänimesi ja profiilikuvasi osoitteen. Käytämme vain tilin numeroa crew-tilisi löytämiseen, emmekä tallenna muuta."
+msgid "If you sign in with Telegram, the Crew app makes a one-time code and puts a cookie in your browser that ties the code to that browser. The bot uses your Telegram account number to find your crew account. The code and the cookie expire after 30 minutes and cannot be used twice."
+msgstr "Jos kirjaudut Telegramilla, Crew-sovellus tekee kertakäyttöisen koodin ja tallentaa selaimeesi evästeen, joka sitoo koodin siihen selaimeen. Botti etsii crew-tilisi Telegram-tilisi numerolla. Koodi ja eväste vanhenevat 30 minuutissa, eikä niitä voi käyttää kahdesti."
 
-#: templates/public/signup.php:148
-msgid "Open the bot"
-msgstr "Avaa botti"
+#: templates/admin/settings-telegram-login.php:26
+msgid "The Crew app shows a Telegram button next to Email. It opens this bot, and the bot sends a button that signs the person in. Someone without an account first gives the bot their email and confirms it. It needs the bot token above."
+msgstr "Crew-sovelluksessa näkyy Sähköposti-painikkeen vieressä Telegram-painike. Se avaa tämän botin, ja botti lähettää painikkeen, joka kirjaa henkilön sisään. Jos henkilöllä ei ole vielä tiliä, hän antaa ensin botille sähköpostiosoitteensa ja vahvistaa sen. Tämä tarvitsee yllä olevan botin tunnuksen (token)."
+
+#: templates/public/signup.php:162
+msgid "Open Telegram again"
+msgstr "Avaa Telegram uudelleen"
+
+#: src/Web/SignupController.php:1077 templates/public/signup.php:160
+msgid "Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself."
+msgstr "Avaa Telegram, paina Start ja paina sitten botin lähettämää painiketta. Tämä sivu kirjaa sinut sisään itsestään."
 
 #: templates/admin/settings-telegram-login.php:13 templates/public/signup.php:144
 msgid "Sign in with Telegram"
 msgstr "Kirjaudu Telegramilla"
-
-#: templates/admin/settings-telegram-login.php:24
-msgid "Telegram only allows this on addresses you name. In the @BotFather chat, tap Open, then this bot, then Bot Settings, then Web Login (called Login Widget in some versions), and add this address under Allowed URLs:"
-msgstr "Telegram sallii tämän vain osoitteissa, jotka annat sille. Paina @BotFather-keskustelussa Open, valitse tämä botti, sitten Bot Settings ja Web Login (joissain versioissa Login Widget), ja lisää tämä osoite kohtaan Allowed URLs:"
 
 #: src/Web/SignupController.php:1045
 msgid "Telegram sign-in did not work. Please try again, or sign in with email."
 msgstr "Kirjautuminen Telegramilla ei onnistunut. Yritä uudelleen tai kirjaudu sähköpostilla."
 
 #: src/Support/PrivacyPolicy.php:472
-msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through their service. Linking is entirely optional; the web page does everything the bot does."
-msgstr "Telegram, jos päätät yhdistää Telegram-tilin — botin sinulle lähettämät viestit kulkevat heidän palvelunsa kautta heidän oman tietosuojakäytäntönsä mukaisesti (https://telegram.org/privacy), ja kirjautuminen Telegramilla kulkee heidän palvelunsa kautta. Yhdistäminen on täysin valinnaista; verkkosivu tekee kaiken, minkä botti tekee."
+msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through a chat with the bot. Linking is entirely optional; the web page does everything the bot does."
+msgstr "Telegram, jos päätät yhdistää Telegram-tilin — botin sinulle lähettämät viestit kulkevat heidän palvelunsa kautta heidän oman tietosuojakäytäntönsä mukaisesti (https://telegram.org/privacy), ja kirjautuminen Telegramilla tapahtuu keskustelussa botin kanssa. Yhdistäminen on täysin valinnaista; verkkosivu tekee kaiken, minkä botti tekee."
 
-#: src/Web/SignupController.php:1042
-msgid "This Telegram account is not linked to a crew account yet. Open the bot and press Start to sign up, or sign in with email."
-msgstr "Tätä Telegram-tiliä ei ole vielä yhdistetty crew-tiliin. Avaa botti ja paina Start liittyäksesi, tai kirjaudu sähköpostilla."
+#: src/Web/SignupController.php:1079
+msgid "The link expired. Press Telegram again."
+msgstr "Linkki vanheni. Paina Telegram-painiketta uudelleen."
 
-#: src/Web/SignupController.php:1044
-msgid "Your email address is not confirmed yet. Open the bot and press Start to confirm it, or sign in with email."
-msgstr "Sähköpostiosoitettasi ei ole vielä vahvistettu. Avaa botti ja paina Start vahvistaaksesi sen, tai kirjaudu sähköpostilla."
+#: src/Web/SignupController.php:1080
+msgid "Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email."
+msgstr "Liian monta kirjautumisyritystä tästä osoitteesta. Odota muutama minuutti ja yritä uudelleen, tai kirjaudu sähköpostilla."
+
+#: src/Telegram/WebLoginBot.php:69
+msgid "Do you want to sign in to the crew app? Press the button only if you just pressed Telegram on the crew app yourself."
+msgstr "Haluatko kirjautua Crew-sovellukseen? Paina painiketta vain, jos painoit juuri itse Telegram-painiketta Crew-sovelluksessa."
+
+#: src/Telegram/WebLoginBot.php:71
+msgid "Sign in to the crew app"
+msgstr "Kirjaudu Crew-sovellukseen"
+
+#: src/Telegram/WebLoginBot.php:122
+msgid "Signed in. You can go back to the crew app."
+msgstr "Kirjauduttu sisään. Voit palata Crew-sovellukseen."
+
+#: src/Telegram/WebLoginBot.php:140
+msgid "This sign-in link has expired. Press Telegram on the crew app again."
+msgstr "Tämä kirjautumislinkki on vanhentunut. Paina uudelleen Telegram-painiketta Crew-sovelluksessa."
 
 msgid "Add crew members to the newsletter"
 msgstr "Lisää tiimin jäsenet uutiskirjeen tilaajiksi"

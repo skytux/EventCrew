@@ -187,7 +187,8 @@ abstract class TelegramTestCase extends TestCase
     protected function updateRouter(
         ?LanguageService $language = null,
         ?\EventCrew\Telegram\AssistantService $assistant = null,
-        ?\EventCrew\Telegram\EventsCommand $events = null
+        ?\EventCrew\Telegram\EventsCommand $events = null,
+        ?\EventCrew\Telegram\WebLoginBot $webLogin = null
     ): UpdateRouter
     {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
@@ -253,7 +254,8 @@ abstract class TelegramTestCase extends TestCase
             $assistant,
             null,
             null,
-            $events
+            $events,
+            $webLogin
         );
     }
 

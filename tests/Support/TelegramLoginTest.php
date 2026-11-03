@@ -8,13 +8,12 @@ use Brain\Monkey\Functions;
 use EventCrew\Support\Logger;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Telegram\BoardService;
-use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 
 final class TelegramLoginTest extends TestCase
 {
-    private const NONCE = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90';
+    private const BOT_TOKEN = '123456:test-token-for-the-login-tests';
 
     /** @var array<string, mixed> */
     private array $options = [];
@@ -25,11 +24,8 @@ final class TelegramLoginTest extends TestCase
     /** @var array<int, string> every message the Logger wrote */
     private array $logged = [];
 
-    /** How many times Telegram's keys were fetched. */
-    private int $fetches = 0;
-
-    /** What the fake key endpoint answers: [status, body]. */
-    private array $jwksResponse = [200, ''];
+    /** How many times get_transient() was called. */
+    private int $reads = 0;
 
     protected function setUp(): void
     {
@@ -37,13 +33,12 @@ final class TelegramLoginTest extends TestCase
 
         $this->options = [
             TelegramLogin::ENABLED_OPTION => true,
-            TelegramClient::TOKEN_OPTION => TelegramTokens::BOT_TOKEN,
-            BoardService::USERNAME_OPTION => 'crewbot',
+            TelegramClient::TOKEN_OPTION => self::BOT_TOKEN,
+            BoardService::USERNAME_OPTION => '@crewbot',
         ];
         $this->transients = [];
         $this->logged = [];
-        $this->fetches = 0;
-        $this->jwksResponse = [200, TelegramTokens::jwksBody()];
+        $this->reads = 0;
 
         Functions\when('get_option')->alias(
             fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
@@ -56,228 +51,290 @@ final class TelegramLoginTest extends TestCase
 
             return true;
         });
-        Functions\when('get_transient')->alias(fn (string $key): mixed => $this->transients[$key] ?? false);
+        Functions\when('get_transient')->alias(function (string $key): mixed {
+            $this->reads++;
+
+            return $this->transients[$key] ?? false;
+        });
         Functions\when('set_transient')->alias(function (string $key, mixed $value): bool {
             $this->transients[$key] = $value;
 
             return true;
         });
-        Functions\when('wp_remote_get')->alias(function (string $url): array {
-            self::assertSame('https://oauth.telegram.org/.well-known/jwks.json', $url);
-            $this->fetches++;
+        Functions\when('delete_transient')->alias(function (string $key): bool {
+            unset($this->transients[$key]);
 
-            return ['response' => ['code' => $this->jwksResponse[0]], 'body' => $this->jwksResponse[1]];
+            return true;
         });
-        Functions\when('wp_remote_retrieve_response_code')->alias(static fn (array $r): int => $r['response']['code']);
-        Functions\when('wp_remote_retrieve_body')->alias(static fn (array $r): string => $r['body']);
     }
 
     private function login(): TelegramLogin
     {
-        return new TelegramLogin(new Logger(), new DohResolver(new Logger()));
+        return new TelegramLogin(new Logger());
     }
 
     /**
-     * @param array<string, mixed> $overrides
+     * A fresh code and its browser secret.
+     *
+     * @return array{code: string, secret: string}
      */
-    private function token(array $overrides = []): string
+    private function created(): array
     {
-        return TelegramTokens::token(TelegramTokens::claims(self::NONCE, $overrides));
+        $made = $this->login()->create('203.0.113.7');
+        self::assertNotNull($made);
+
+        return $made;
     }
 
-    public function testAValidTokenGivesTheTelegramUserId(): void
+    /** Moves every stored code's creation time back by $seconds. */
+    private function age(int $seconds): void
     {
-        self::assertSame(4242, $this->login()->verify($this->token(), self::NONCE));
-    }
-
-    public function testTheClientIdIsTheBotIdAloneNeverTheToken(): void
-    {
-        self::assertSame(TelegramTokens::BOT_ID, TelegramLogin::clientId());
-
-        $this->options[TelegramClient::TOKEN_OPTION] = 'not-a-token';
-        self::assertSame('', TelegramLogin::clientId());
-    }
-
-    public function testTheLoginIsAvailableOnlyWithTheSwitchATokenAndAUsername(): void
-    {
-        self::assertTrue(TelegramLogin::isAvailable());
-
-        $required = [TelegramLogin::ENABLED_OPTION, TelegramClient::TOKEN_OPTION, BoardService::USERNAME_OPTION];
-
-        foreach ($required as $missing) {
-            $options = $this->options;
-            unset($this->options[$missing]);
-            self::assertFalse(TelegramLogin::isAvailable(), $missing);
-            $this->options = $options;
+        foreach ($this->transients as $key => $value) {
+            if (is_array($value) && isset($value['created'])) {
+                $this->transients[$key]['created'] = (int) $value['created'] - $seconds;
+            }
         }
     }
 
-    public function testAlgNoneIsRefused(): void
+    public function testAvailableOnlyWithTheSwitchTheTokenAndTheUsername(): void
     {
-        $token = TelegramTokens::unsigned(
-            ['alg' => 'none', 'typ' => 'JWT', 'kid' => TelegramTokens::KID],
-            TelegramTokens::claims(self::NONCE),
-            ''
+        self::assertTrue(TelegramLogin::isAvailable());
+
+        $this->options[TelegramLogin::ENABLED_OPTION] = false;
+        self::assertFalse(TelegramLogin::isAvailable());
+
+        $this->options[TelegramLogin::ENABLED_OPTION] = true;
+        $this->options[BoardService::USERNAME_OPTION] = '';
+        self::assertFalse(TelegramLogin::isAvailable());
+
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->options[TelegramClient::TOKEN_OPTION] = '';
+        self::assertFalse(TelegramLogin::isAvailable());
+    }
+
+    public function testACodeIsUrlSafeAndItsStartPayloadFitsTelegramsLimit(): void
+    {
+        $codes = [];
+
+        for ($i = 0; $i < 20; $i++) {
+            $code = $this->created()['code'];
+            $codes[] = $code;
+            $payload = TelegramLogin::PAYLOAD_PREFIX . $code;
+
+            self::assertTrue(TelegramLogin::isCode($code));
+            self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{1,64}$/', $payload);
+            self::assertLessThanOrEqual(64, strlen(TelegramLogin::CALLBACK_PREFIX . $code));
+            $this->transients = []; // past the rate limit is not this test's business
+        }
+
+        self::assertCount(20, array_unique($codes));
+        self::assertSame('https://t.me/crewbot?start=login-' . $codes[0], TelegramLogin::startUrl($codes[0]));
+    }
+
+    public function testTheStoreHoldsOnlyHashesOfTheCodeAndTheSecret(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->created();
+
+        $stored = serialize($this->transients);
+        self::assertStringNotContainsString($code, $stored);
+        self::assertStringNotContainsString($secret, $stored);
+
+        $record = $this->transients['eventcrew_tgl_' . hash('sha256', $code)];
+        self::assertSame(hash('sha256', $secret), $record['secret_hash']);
+        self::assertSame(TelegramLogin::STATE_PENDING, $record['state']);
+        self::assertEqualsWithDelta(time(), $record['created'], 2);
+    }
+
+    public function testANewCodeIsPending(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->created();
+
+        self::assertSame(
+            ['state' => TelegramLogin::STATE_PENDING, 'person_id' => 0],
+            $this->login()->poll($code, $secret)
         );
-
-        self::assertNull($this->login()->verify($token, self::NONCE));
     }
 
-    /**
-     * The classic forgery: HS256 "signed" with the public key as the shared
-     * secret. Only RS256 is ever accepted, so the header alone refuses it.
-     */
-    public function testHs256IsRefused(): void
+    public function testThePollIsOneTransientRead(): void
     {
-        $header = ['alg' => 'HS256', 'typ' => 'JWT', 'kid' => TelegramTokens::KID];
-        $claims = TelegramTokens::claims(self::NONCE);
-        $input = TelegramTokens::b64((string) json_encode($header))
-            . '.' . TelegramTokens::b64((string) json_encode($claims));
-        $mac = hash_hmac('sha256', $input, TelegramTokens::jwksBody(), true);
-        $token = TelegramTokens::unsigned($header, $claims, TelegramTokens::b64($mac));
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $this->reads = 0;
 
-        self::assertNull($this->login()->verify($token, self::NONCE));
+        $this->login()->poll($code, $secret);
+
+        self::assertSame(1, $this->reads);
     }
 
-    public function testABadSignatureIsRefused(): void
+    public function testAnApprovedCodeSignsInOnceThenIsUsed(): void
     {
-        $parts = explode('.', $this->token());
-        // A payload that differs from the one that was signed.
-        $parts[1] = TelegramTokens::b64((string) json_encode(TelegramTokens::claims(self::NONCE, ['id' => 1])));
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
 
-        self::assertNull($this->login()->verify(implode('.', $parts), self::NONCE));
+        self::assertTrue($login->claimForTelegramUser($code, 4242));
+        self::assertTrue($login->approve($code, 4242, 17));
+
+        self::assertSame(['state' => TelegramLogin::STATE_APPROVED, 'person_id' => 17], $login->poll($code, $secret));
+        self::assertSame(['state' => TelegramLogin::STATE_EXPIRED, 'person_id' => 0], $login->poll($code, $secret));
+        self::assertFalse($login->approve($code, 4242, 17), 'a used code cannot be approved again');
     }
 
-    public function testAWrongIssuerIsRefused(): void
+    public function testACodeIsApprovedOnlyOnce(): void
     {
-        self::assertNull($this->login()->verify($this->token(['iss' => 'https://evil.example']), self::NONCE));
+        ['code' => $code] = $this->created();
+        $login = $this->login();
+
+        self::assertTrue($login->claimForTelegramUser($code, 4242));
+        self::assertTrue($login->approve($code, 4242, 17));
+        self::assertFalse($login->approve($code, 4242, 17));
+        self::assertFalse($login->claimForTelegramUser($code, 4242), 'an approved code is not opened again');
     }
 
-    public function testAWrongAudienceIsRefused(): void
+    public function testAWrongCookieCannotSignIn(): void
     {
-        self::assertNull($this->login()->verify($this->token(['aud' => '987654321']), self::NONCE));
+        ['code' => $code] = $this->created();
+        $login = $this->login();
+        $login->claimForTelegramUser($code, 4242);
+        $login->approve($code, 4242, 17);
+
+        $expired = ['state' => TelegramLogin::STATE_EXPIRED, 'person_id' => 0];
+        self::assertSame($expired, $login->poll($code, bin2hex(random_bytes(32))));
+        self::assertSame($expired, $login->poll($code, ''));
+
+        $record = $this->transients['eventcrew_tgl_' . hash('sha256', $code)];
+        self::assertSame(TelegramLogin::STATE_APPROVED, $record['state'], 'a wrong cookie does not use the code up');
     }
 
-    public function testAnExpiredTokenIsRefused(): void
+    public function testAnotherBrowsersCookieCannotSignIn(): void
     {
-        self::assertNull($this->login()->verify($this->token(['exp' => time() - 1]), self::NONCE));
+        ['code' => $mine] = $this->created();
+        ['secret' => $theirs] = $this->created();
+        $login = $this->login();
+        $login->claimForTelegramUser($mine, 4242);
+        $login->approve($mine, 4242, 17);
+
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll($mine, $theirs)['state']);
     }
 
-    public function testATokenIssuedMoreThanFiveMinutesAgoIsRefused(): void
+    public function testOnlyTheTelegramUserWhoOpenedTheCodeCanApproveIt(): void
     {
-        self::assertNull($this->login()->verify($this->token(['iat' => time() - 301]), self::NONCE));
-        self::assertSame(4242, $this->login()->verify($this->token(['iat' => time() - 290]), self::NONCE));
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
+
+        self::assertTrue($login->claimForTelegramUser($code, 4242));
+        self::assertFalse($login->claimForTelegramUser($code, 9999), 'a second Telegram account is refused');
+        self::assertTrue($login->claimForTelegramUser($code, 4242), 'the first one may open it again');
+
+        self::assertFalse($login->approve($code, 9999, 18));
+        self::assertSame(TelegramLogin::STATE_PENDING, $login->poll($code, $secret)['state']);
+
+        self::assertTrue($login->approve($code, 4242, 17));
+        self::assertSame(17, $login->poll($code, $secret)['person_id']);
     }
 
-    public function testAWrongNonceIsRefused(): void
+    public function testACodeNobodyOpenedInTheBotCannotBeApproved(): void
     {
-        self::assertNull($this->login()->verify($this->token(), str_repeat('0', 64)));
-        self::assertNull($this->login()->verify($this->token(), ''));
+        ['code' => $code] = $this->created();
+
+        self::assertFalse($this->login()->approve($code, 4242, 17));
     }
 
-    public function testANonceWorksOnlyOnce(): void
+    public function testACodeExpiresAfterThirtyMinutes(): void
     {
-        $token = $this->token();
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
+        $login->claimForTelegramUser($code, 4242);
+        $login->approve($code, 4242, 17);
 
-        self::assertSame(4242, $this->login()->verify($token, self::NONCE));
-        self::assertNull($this->login()->verify($token, self::NONCE));
-        // A second, freshly signed token with the same nonce is refused too.
-        self::assertNull($this->login()->verify($this->token(['iat' => time() - 5]), self::NONCE));
+        $this->age(TelegramLogin::TTL + 1);
+
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll($code, $secret)['state']);
+        self::assertSame(30 * 60, TelegramLogin::TTL);
     }
 
-    public function testCachedKeysAreUsedWithoutAFetch(): void
+    public function testAnExpiredCodeCannotBeOpenedOrApproved(): void
     {
-        $this->login()->verify($this->token(), self::NONCE);
-        self::assertSame(1, $this->fetches);
+        ['code' => $code] = $this->created();
+        $this->age(TelegramLogin::TTL + 1);
 
-        $nonce = str_repeat('b', 64);
-        self::assertSame(4242, $this->login()->verify(TelegramTokens::token(TelegramTokens::claims($nonce)), $nonce));
-        self::assertSame(1, $this->fetches);
+        self::assertFalse($this->login()->claimForTelegramUser($code, 4242));
+        self::assertFalse($this->login()->approve($code, 4242, 17));
     }
 
-    public function testAnUnknownKidRefetchesTheKeysExactlyOnce(): void
+    public function testAnUnknownOrMalformedCodeIsExpired(): void
     {
-        // The cache holds an older key set without this kid.
-        $this->transients['eventcrew_tg_jwks'] = json_decode(TelegramTokens::jwksBody('old-key'), true)['keys'];
+        $login = $this->login();
 
-        self::assertSame(4242, $this->login()->verify($this->token(), self::NONCE));
-        self::assertSame(1, $this->fetches);
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll(str_repeat('a', 24), 'x')['state']);
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll('../../etc', 'x')['state']);
+        self::assertFalse($login->claimForTelegramUser(str_repeat('b', 24), 4242));
+        self::assertFalse(TelegramLogin::isCode('short'));
+        self::assertFalse(TelegramLogin::isCode(str_repeat('a', 23) . '!'));
     }
 
-    public function testAKidTelegramDoesNotHaveIsRefusedAfterOneFetch(): void
+    public function testASignUpInTheBotApprovesTheRememberedCodeWhenTheAccountIsLinked(): void
     {
-        $this->transients['eventcrew_tg_jwks'] = json_decode(TelegramTokens::jwksBody('old-key'), true)['keys'];
-        $this->jwksResponse = [200, TelegramTokens::jwksBody('old-key')];
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
 
-        self::assertNull($this->login()->verify($this->token(), self::NONCE));
-        self::assertSame(1, $this->fetches);
+        self::assertTrue($login->claimForTelegramUser($code, 4242));
+        $login->rememberForSignUp($code, 4242);
+
+        self::assertFalse($login->approveWaiting(9999, 17), 'nothing waits for another Telegram account');
+        self::assertTrue($login->approveWaiting(4242, 17));
+        self::assertSame(['state' => TelegramLogin::STATE_APPROVED, 'person_id' => 17], $login->poll($code, $secret));
+        self::assertFalse($login->approveWaiting(4242, 17), 'the remembered code is used once');
     }
 
-    public function testAFailedKeyFetchIsRefused(): void
+    public function testASignUpFinishedAfterTheCodeExpiredApprovesNothing(): void
     {
-        $this->jwksResponse = [500, 'Internal Server Error'];
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
+        $login->claimForTelegramUser($code, 4242);
+        $login->rememberForSignUp($code, 4242);
 
-        self::assertNull($this->login()->verify($this->token(), self::NONCE));
-        self::assertArrayNotHasKey('eventcrew_tg_jwks', $this->transients);
+        $this->age(TelegramLogin::TTL + 1);
+
+        self::assertFalse($login->approveWaiting(4242, 17));
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll($code, $secret)['state']);
     }
 
-    public function testAMissingIdIsRefused(): void
+    public function testCodeCreationIsRateLimitedPerAddress(): void
     {
-        self::assertNull($this->login()->verify($this->token(['id' => null]), self::NONCE));
+        $login = $this->login();
+
+        for ($i = 0; $i < 10; $i++) {
+            self::assertNotNull($login->create('198.51.100.1'), 'attempt ' . ($i + 1));
+        }
+
+        self::assertNull($login->create('198.51.100.1'));
+        self::assertNotNull($login->create('198.51.100.2'), 'another address is not affected');
+        self::assertStringNotContainsString('198.51.100.1', serialize($this->transients), 'the address is stored hashed');
     }
 
-    public function testANonNumericIdIsRefused(): void
+    public function testRefusalsAreLoggedWithoutCodesSecretsOrIds(): void
     {
-        self::assertNull($this->login()->verify($this->token(['id' => '42abc']), self::NONCE));
-    }
+        ['code' => $code, 'secret' => $secret] = $this->created();
+        $login = $this->login();
 
-    public function testAZeroOrNegativeIdIsRefused(): void
-    {
-        self::assertNull($this->login()->verify($this->token(['id' => 0]), self::NONCE));
-        $nonce = str_repeat('c', 64);
-        $token = TelegramTokens::token(TelegramTokens::claims($nonce, ['id' => -5]));
-        self::assertNull($this->login()->verify($token, $nonce));
-    }
+        $login->claimForTelegramUser($code, 4242);
+        $login->claimForTelegramUser($code, 98765);
+        $login->approve($code, 98765, 17);
+        $login->poll($code, 'wrong-secret');
+        $login->poll(str_repeat('z', 24), $secret);
 
-    /**
-     * An id too large for PHP must not be rounded into somebody else's id.
-     */
-    public function testAnIdTooLargeForPhpIsRefused(): void
-    {
-        $json = str_replace(
-            '"id":1,',
-            '"id":99999999999999999999999,',
-            (string) json_encode(TelegramTokens::claims(self::NONCE, ['id' => 1]))
-        );
-        $token = TelegramTokens::tokenFromJson($json);
-
-        self::assertNull($this->login()->verify($token, self::NONCE));
-    }
-
-    public function testTheTokenNeverAppearsInALogMessage(): void
-    {
-        $tokens = [
-            $this->token(['iss' => 'https://evil.example']),
-            $this->token(['aud' => '1']),
-            $this->token(['exp' => time() - 1]),
-            $this->token(),
-        ];
-
-        foreach ($tokens as $token) {
-            $this->login()->verify($token, str_repeat('f', 64));
+        for ($i = 0; $i < 11; $i++) {
+            $login->create('192.0.2.55');
         }
 
         self::assertNotEmpty($this->logged);
 
         foreach ($this->logged as $message) {
-            foreach ($tokens as $token) {
-                foreach (explode('.', $token) as $part) {
-                    self::assertStringNotContainsString($part, $message);
-                }
-            }
-
-            self::assertStringNotContainsString(self::NONCE, $message);
-            self::assertStringNotContainsString(TelegramTokens::BOT_TOKEN, $message);
+            self::assertStringStartsWith('Telegram sign-in refused:', $message);
+            self::assertStringNotContainsString($code, $message);
+            self::assertStringNotContainsString($secret, $message);
+            self::assertStringNotContainsString('98765', $message);
+            self::assertStringNotContainsString('192.0.2.55', $message);
+            self::assertStringNotContainsString(self::BOT_TOKEN, $message);
         }
     }
 }

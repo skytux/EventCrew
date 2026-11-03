@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
+use EventCrew\Support\TelegramLogin;
 
 /**
  * Reads one Telegram update and sends it to the right place.
@@ -47,7 +48,8 @@ final class UpdateRouter
         private readonly ?AssistantService $assistant = null,
         private readonly ?NewsletterCommand $newsletter = null,
         private readonly ?SayCommand $say = null,
-        private readonly ?EventsCommand $events = null
+        private readonly ?EventsCommand $events = null,
+        private readonly ?WebLoginBot $webLogin = null
     ) {
     }
 
@@ -119,6 +121,8 @@ final class UpdateRouter
                 $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
                 $this->events->onConfirm($callbackQuery);
+            } elseif (null !== $this->webLogin && str_starts_with($data, TelegramLogin::CALLBACK_PREFIX)) {
+                $this->webLogin->onConfirm($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
@@ -184,13 +188,23 @@ final class UpdateRouter
             // The board's deep-link buttons both land here as /start with a
             // payload: "onboard" (or none) is the sign-up flow, "me" is the
             // returning member asking for their summary in the DM.
-            if ('me' === $this->commandPayload($text, 'start')) {
+            // "login-<code>" is the crew app's Telegram sign-in button.
+            $payload = $this->commandPayload($text, 'start');
+
+            if ('me' === $payload) {
                 $this->profile->onMe($fromId, $chatId, $isPrivate);
 
                 return;
             }
 
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
+
+            if (null !== $this->webLogin && $isPrivate && WebLoginBot::isLoginPayload($payload)) {
+                $this->webLogin->onStart($fromId, $chatId, $this->displayName($from), $payload);
+
+                return;
+            }
+
             $this->onboarding->start($fromId, $chatId, $this->displayName($from), $isPrivate);
 
             return;

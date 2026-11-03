@@ -98,6 +98,7 @@ use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
+use EventCrew\Telegram\WebLoginBot;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
@@ -637,8 +638,18 @@ final class Kernel
         $this->container->singleton(
             TelegramLogin::class,
             fn (Container $container) => new TelegramLogin(
-                $container->get(Logger::class),
-                $container->get(DohResolver::class)
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            WebLoginBot::class,
+            fn (Container $container) => new WebLoginBot(
+                $container->get(TelegramLogin::class),
+                $container->get(PersonRepository::class),
+                $container->get(OnboardingService::class),
+                $container->get(TelegramClient::class),
+                $container->get(Logger::class)
             )
         );
 
@@ -1075,7 +1086,8 @@ final class Kernel
                 $container->get(AssistantService::class),
                 $container->get(NewsletterCommand::class),
                 $container->get(SayCommand::class),
-                $container->get(EventsCommand::class)
+                $container->get(EventsCommand::class),
+                $container->get(WebLoginBot::class)
             )
         );
 
@@ -1157,7 +1169,8 @@ final class Kernel
             fn (Container $container) => new VerificationController(
                 $container->get(AuthTokenRepository::class),
                 $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(TelegramLogin::class)
             )
         );
 

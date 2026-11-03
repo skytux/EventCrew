@@ -355,23 +355,14 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertFalse($this->options[TelegramLogin::ENABLED_OPTION]);
     }
 
-    public function testTheSignInHintShowsTheSiteAddressAndTheBotIdButNeverTheToken(): void
+    public function testTheSignInRowIsTheSwitchAndABotSignInHintWithoutTheToken(): void
     {
         $token = '123456789:AAsecret-part-of-the-token';
         $this->options[TelegramClient::TOKEN_OPTION] = $token;
         $this->options[TelegramLogin::ENABLED_OPTION] = true;
-        \Brain\Monkey\Functions\when('home_url')->alias(
-            static fn (string $p = '/'): string => 'https://crew.example.org' . $p
-        );
-        \Brain\Monkey\Functions\when('wp_parse_url')->alias(
-            static fn (string $url, int $part = -1): mixed => parse_url($url, $part)
-        );
 
         $view = SettingsPage::webLoginView();
-        self::assertSame(
-            ['enabled' => true, 'origin' => 'https://crew.example.org', 'client_id' => '123456789'],
-            $view
-        );
+        self::assertSame(['enabled' => true], $view);
 
         \Brain\Monkey\Functions\when('checked')->alias(static function (mixed $value): void {
             echo $value ? ' checked=\'checked\'' : '';
@@ -393,8 +384,9 @@ final class SettingsPageTest extends TelegramTestCase
 
         self::assertStringContainsString('name="telegram_web_login"', $html);
         self::assertStringContainsString("checked='checked'", $html);
-        self::assertStringContainsString('<code>https://crew.example.org</code>', $html);
-        self::assertStringContainsString('<code>123456789</code>', $html);
+        self::assertStringContainsString('the bot sends a button that signs the person in', $html);
+        self::assertStringNotContainsString('BotFather', $html);
+        self::assertStringNotContainsString('<code>', $html);
         self::assertStringNotContainsString('AAsecret', $html);
         self::assertStringNotContainsString($token, $html);
     }

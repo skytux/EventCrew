@@ -346,26 +346,15 @@ final class SettingsPage
     }
 
     /**
-     * The "Sign in with Telegram" row: the switch, the site address to add in
-     * @BotFather, and the Client ID - which is the bot ID alone, never the
-     * token. The address is read from home_url() each time, never stored.
+     * The "Sign in with Telegram" row: the on/off switch for signing in to
+     * the Crew app through the bot. Nothing else needs setting up.
      *
-     * @return array{enabled: bool, origin: string, client_id: string}
+     * @return array{enabled: bool}
      */
     public static function webLoginView(): array
     {
-        $home = (string) home_url('/');
-        $scheme = (string) wp_parse_url($home, PHP_URL_SCHEME);
-        $host = (string) wp_parse_url($home, PHP_URL_HOST);
-        $port = wp_parse_url($home, PHP_URL_PORT);
-        $origin = '' === $scheme || '' === $host
-            ? ''
-            : $scheme . '://' . $host . (is_int($port) ? ':' . $port : '');
-
         return [
             'enabled' => (bool) get_option(TelegramLogin::ENABLED_OPTION, false),
-            'origin' => $origin,
-            'client_id' => TelegramLogin::clientId(),
         ];
     }
 
