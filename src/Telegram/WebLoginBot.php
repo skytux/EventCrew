@@ -126,7 +126,7 @@ final class WebLoginBot
             $messageId,
             __('Signed in. You can go back to the crew app.', 'eventcrew'),
             ['inline_keyboard' => [[[
-                'text' => __('Back to the crew app', 'eventcrew'),
+                'text' => '✅ ' . __('Back to the crew app', 'eventcrew'),
                 'url' => TelegramLogin::returnUrl($code),
             ]]]]
         );
