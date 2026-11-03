@@ -66,6 +66,7 @@ final class NewsletterWriter
     /** The rules every written text follows. */
     private const RULES = 'Use only facts that are in the input. '
         . 'Do not invent times, prices, places, names or anything else. '
+        . 'A DJ name is a person, never a place. Name a place only when the input says it is the place. '
         . 'Do not write hashtags or links. '
         . 'Do not use emoji, unless the site\'s words and style below use them. '
         // Spelled in two parts: the word itself is kept out of the source.
@@ -178,7 +179,9 @@ final class NewsletterWriter
         }
 
         if ($wantOpening && null === $written['opening'] && [] !== $events && $inTime()) {
-            $written['opening'] = $this->safely(fn (): ?array => $this->writeOpening($events)) ?? [];
+            $written['opening'] = $this->safely(
+                fn (): ?array => $this->writeOpening($events, $written['events'])
+            ) ?? [];
         }
 
         $plan['written'] = $written;
@@ -362,10 +365,14 @@ final class NewsletterWriter
     /**
      * The opening text in both languages, or null.
      *
+     * Each event's own written text goes with it, so the model takes the
+     * place from there and not from a DJ name in the title (Lou, 2026-11-03).
+     *
      * @param array<int, array<string, mixed>> $events The plan's events.
+     * @param array<int, array<string, string>> $texts Event id => its written text ([] = failed).
      * @return array{fi: string, en: string}|null
      */
-    private function writeOpening(array $events): ?array
+    private function writeOpening(array $events, array $texts = []): ?array
     {
         $lines = ['The events in this newsletter:'];
 
@@ -373,7 +380,12 @@ final class NewsletterWriter
             $id = (int) ($event['id'] ?? 0);
             $names = array_column(self::djs($id), 'name');
             $lines[] = '- ' . self::when($event) . ': ' . self::titles($event)
-                . ([] === $names ? '' : '. DJs: ' . implode(', ', $names));
+                . ([] === $names ? '' : '. DJs (people who play the music, not places): ' . implode(', ', $names));
+            $text = trim((string) ($texts[$id]['en'] ?? ''));
+
+            if ('' !== $text) {
+                $lines[] = '  Text about this event: ' . $text;
+            }
         }
 
         $en = $this->ask(
@@ -493,7 +505,7 @@ final class NewsletterWriter
 
         if ([] !== $djs) {
             $lines[] = '';
-            $lines[] = 'DJs:';
+            $lines[] = 'DJs (people who play the music, not places):';
 
             foreach ($djs as $dj) {
                 $lines[] = '- ' . $dj['name'] . ('' === $dj['description'] ? '' : ': ' . $dj['description']);
