@@ -63,21 +63,43 @@ final class NewsletterController
 
     private const BAR_CSS = '.eventcrew-nl-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;'
         . 'background:var(--wp--preset--color--contrast,#111);color:var(--wp--preset--color--base,#fff);'
-        . 'padding:4px 40px 4px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3}'
+        . 'padding:8px 52px 8px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3}'
         . '.eventcrew-nl-bar.has-image{background-color:#111;background-size:cover;background-position:center;'
         . 'color:#fff}'
         . '.eventcrew-nl-bar[hidden]{display:none}'
         . '.eventcrew-nl-bar form{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;'
         . 'margin:0}'
         . '.eventcrew-nl-bar-label{white-space:nowrap}'
-        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;padding:4px 8px;'
-        . 'font-size:14px}'
-        . '.eventcrew-nl-bar .wp-element-button{padding:4px 14px;font-size:14px;white-space:nowrap}'
+        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;min-height:40px;'
+        . 'box-sizing:border-box;padding:6px 14px;font-size:16px;border-radius:999px}'
+        . '.eventcrew-nl-bar-info{flex:none;display:inline-flex;align-items:center;justify-content:center;'
+        . 'width:40px;height:40px;color:inherit;text-decoration:none}'
+        . '.eventcrew-nl-bar-info span{display:inline-flex;align-items:center;justify-content:center;width:24px;'
+        . 'height:24px;border:1.5px solid currentColor;border-radius:50%;font:italic 600 15px/1 Georgia,serif}'
         . '.eventcrew-nl-bar .cf-turnstile{position:absolute;bottom:100%;left:50%;transform:translateX(-50%)}'
         . '.eventcrew-nl-bar-message{margin:0 0 4px;text-align:center}'
-        . '.eventcrew-nl-bar-close{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:none;'
-        . 'border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px}'
+        . '.eventcrew-nl-bar-close{position:absolute;top:50%;right:4px;transform:translateY(-50%);background:none;'
+        . 'border:0;color:inherit;font-size:22px;line-height:1;cursor:pointer;width:44px;height:44px;padding:0}'
         . '@media (max-width:600px){.eventcrew-nl-bar-label{display:none}}';
+
+    /**
+     * The secondary (outline) button both forms use, and the full form's
+     * layout: centred, a wide field, and a small faint note.
+     */
+    private const FORM_CSS = '.eventcrew-nl-button{display:inline-flex;align-items:center;justify-content:center;'
+        . 'min-height:40px;padding:6px 22px;background:transparent;color:inherit;border:1.5px solid currentColor;'
+        . 'border-radius:999px;font:inherit;font-size:14px;letter-spacing:.1em;text-transform:uppercase;'
+        . 'white-space:nowrap;cursor:pointer;transition:background-color .15s}'
+        . '.eventcrew-nl-button:hover,.eventcrew-nl-button:focus-visible{background:rgba(255,255,255,.15)}'
+        . '.eventcrew-newsletter{text-align:center}'
+        . '.eventcrew-newsletter label{display:block;margin-bottom:6px}'
+        . '.eventcrew-newsletter input[type=email]{display:block;width:100%;max-width:22em;min-height:40px;'
+        . 'margin:0 auto;box-sizing:border-box;padding:6px 14px;font-size:16px;border-radius:999px}'
+        . '.eventcrew-newsletter .cf-turnstile{display:flex;justify-content:center}'
+        . '.eventcrew-newsletter .eventcrew-muted{font-size:13px;line-height:1.4;opacity:.7}';
+
+    /** Set when FORM_CSS was printed on this page. */
+    private bool $formCssAdded = false;
 
     /**
      * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
@@ -166,7 +188,8 @@ final class NewsletterController
     public function renderShortcode(): string
     {
         $message = $this->resultMessage();
-        $html = '<div class="eventcrew-newsletter" id="' . esc_attr(self::FORM_ANCHOR) . '">';
+        $html = $this->formCss()
+            . '<div class="eventcrew-newsletter" id="' . esc_attr(self::FORM_ANCHOR) . '">';
 
         if ('' !== $message) {
             $html .= '<p class="eventcrew-newsletter-message" role="status">' . esc_html($message) . '</p>';
@@ -179,8 +202,8 @@ final class NewsletterController
             . ' class="wp-element-input"></p>'
             . self::honeypot()
             . $this->captcha(false)
-            . '<p><button type="submit" class="wp-element-button">'
-            . esc_html__('Get the next events announcement', 'eventcrew') . '</button></p>'
+            . '<p><button type="submit" class="eventcrew-nl-button">'
+            . esc_html__('Subscribe', 'eventcrew') . '</button></p>'
             . '<p class="eventcrew-muted">'
             . esc_html__('We send you an email to confirm. You can leave the announcement at any time with the link in every announcement.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             . '</p></form></div>';
@@ -223,19 +246,28 @@ final class NewsletterController
         $html = '<div' . $look . ' id="' . esc_attr(self::BAR_ANCHOR) . '" hidden'
             . ' data-close-days="' . esc_attr((string) self::CLOSE_DAYS) . '"'
             . ('' !== $message ? ' data-message="1"' : '') . '>'
+            . $this->formCss()
             . '<style>' . self::BAR_CSS . '</style>';
 
         if ('' !== $message) {
             $html .= '<p class="eventcrew-nl-bar-message" role="status">' . esc_html($message) . '</p>';
         }
 
+        // The "i" leads to the full form (with its note) when the page has one.
+        $info = $this->formShown
+            ? '<a class="eventcrew-nl-bar-info" href="#' . esc_attr(self::FORM_ANCHOR) . '" aria-label="'
+                . esc_attr__('About the next events announcement', 'eventcrew')
+                . '"><span aria-hidden="true">i</span></a>'
+            : '';
+
         $html .= $this->formStart($anchor)
+            . $info
             . '<label for="eventcrew-nl-bar-email" class="eventcrew-nl-bar-label">'
             . esc_html__('Get the coming events by email', 'eventcrew') . '</label>'
             . '<input type="email" id="eventcrew-nl-bar-email" name="email" required autocomplete="email"'
             . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '" class="wp-element-input">'
             . self::honeypot()
-            . '<button type="submit" class="wp-element-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
+            . '<button type="submit" class="eventcrew-nl-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
             . $this->captcha(true)
             . '</form>'
             . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
@@ -245,6 +277,18 @@ final class NewsletterController
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
         echo $html;
+    }
+
+    /** FORM_CSS the first time a form is printed on the page, then ''. */
+    private function formCss(): string
+    {
+        if ($this->formCssAdded) {
+            return '';
+        }
+
+        $this->formCssAdded = true;
+
+        return '<style>' . self::FORM_CSS . '</style>';
     }
 
     /** Whether the bar is printed on this request. */
@@ -303,7 +347,7 @@ final class NewsletterController
 
     /**
      * The Turnstile widget when it is set up; its script is added once per
-     * page. In the bar it shows only when Cloudflare asks the visitor to act.
+     * page. It shows only when Cloudflare asks the visitor to act.
      */
     private function captcha(bool $inBar): string
     {
@@ -314,7 +358,7 @@ final class NewsletterController
         }
 
         $html = '<div class="cf-turnstile" data-sitekey="' . esc_attr($siteKey) . '" data-theme="auto"'
-            . ($inBar ? ' data-appearance="interaction-only"' : '') . '></div>';
+            . ' data-appearance="interaction-only"></div>';
 
         if (! $this->captchaScriptAdded) {
             $this->captchaScriptAdded = true;

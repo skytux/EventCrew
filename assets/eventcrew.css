@@ -801,7 +801,8 @@
 .eventcrew-signin-row.has-captcha .eventcrew-turnstile { width: 100%; margin: 0; }
 .eventcrew-signin-row.has-captcha .wp-element-input,
 .eventcrew-signin-row.has-captcha .wp-element-button { height: 65px; min-height: 65px; max-height: 65px; margin: 0; }
-.eventcrew-signup .eventcrew-turnstile { min-height: 65px; }
+/* The widget shows only when Cloudflare needs a click (interaction-only), so
+   it keeps no empty space; the button says "Checking you're human…" meanwhile. */
 /* The compact widget (a column under 300px) is narrower than the column, so
    it is centred in it like the field and button above and below it. */
 .eventcrew-signup .eventcrew-turnstile[data-size="compact"] { display: flex; justify-content: center; }
