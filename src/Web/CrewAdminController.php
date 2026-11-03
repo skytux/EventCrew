@@ -13,6 +13,7 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorLinkSender;
+use EventCrew\Support\EventName;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
@@ -751,7 +752,9 @@ final class CrewAdminController
             $choices[$task->id] = sprintf(
                 '%s — %s, %s',
                 $task->roleDisplay(),
-                $task->eventName(),
+                null === $task->eventPostId
+                    ? $task->eventName()
+                    : EventName::oneLine($task->eventPostId, EventName::lang(), $task->eventName()),
                 Dates::dayLabel($task->taskDate)
             );
         }

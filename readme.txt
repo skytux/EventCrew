@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.112.0
+Stable tag: 1.113.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.113.0 =
+Event names without the date and in normal case, from EventMesh's clean names; the DJ names on their own line under the name on the crew app Board, My tasks, the announcement email cards and the admin task pages. Where a line cannot break (a button or a drop-down option) the DJ names follow the name after a dot, or are left out when the line would be too long.
 
 = 1.112.0 =
 * Crew app: on a desktop the Board and the tab bar are as wide as the header card and centred under it; the Board shows one column so task names stay whole.
@@ -1054,6 +1057,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.113.0 =
+Needs EventMesh 1.7.0 for the clean names; without it the event titles are shown as before.
 
 = 1.112.0 =
 Crew app Board no longer wider than the header card on desktop.

@@ -389,6 +389,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
                             <li>
                                 <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_mine['label']); ?></span>
+                                <?php if ('' !== ($eventcrew_mine['dj'] ?? '')) : ?>
+                                    <span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_mine['dj']); ?></span>
+                                <?php endif; ?>
                                 <span class="eventcrew-mine-when">
                                     <?php echo esc_html($eventcrew_mine['when']); ?>
                                     · <a href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
@@ -412,6 +415,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
                             <li>
                                 <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_past['label']); ?></span>
+                                <?php if ('' !== ($eventcrew_past['dj'] ?? '')) : ?>
+                                    <span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_past['dj']); ?></span>
+                                <?php endif; ?>
                                 <span class="eventcrew-mine-when">
                                     <?php echo esc_html($eventcrew_past['when']); ?>
                                     · <?php echo esc_html($eventcrew_past['status']); ?>
@@ -1378,8 +1384,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             $eventcrew_task_local = static function (?string $stored): string {
                 return null === $stored || '' === $stored ? '' : str_replace(' ', 'T', substr($stored, 0, 16));
             };
+            // An option cannot break a line: the event's name and DJ line share one (EventName::oneLine()).
             $eventcrew_task_event_label = static function (array $event): string {
-                return '' === $event['date'] ? (string) $event['title'] : $event['date'] . ' — ' . $event['title'];
+                $eventcrew_event_name = \EventCrew\Support\EventName::oneLine((int) $event['id'], \EventCrew\Support\EventName::lang(), (string) $event['title']);
+
+                return '' === $event['date'] ? $eventcrew_event_name : $event['date'] . ' — ' . $eventcrew_event_name;
             };
             $eventcrew_role_editing = $eventcrew_tasks['role_editing'];
             // A GET form drops the query of its action, so a permalink like
@@ -1550,8 +1559,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>
                 <?php endif; ?>
                 <?php foreach ($eventcrew_tasks['list'] as $eventcrew_task_row) : ?>
-                    <?php $eventcrew_task_item = $eventcrew_task_row['task']; ?>
-                    <h4 class="eventcrew-admin-task"><?php echo esc_html($eventcrew_task_item->roleDisplay() . ' — ' . $eventcrew_task_item->eventName()); ?></h4>
+                    <?php
+                    $eventcrew_task_item = $eventcrew_task_row['task'];
+                    $eventcrew_task_event_name = \EventCrew\Support\EventName::ofTask($eventcrew_task_item, \EventCrew\Support\EventName::lang());
+                    ?>
+                    <h4 class="eventcrew-admin-task"><?php echo esc_html($eventcrew_task_item->roleDisplay() . ' — ' . $eventcrew_task_event_name['name']); ?><?php if ('' !== $eventcrew_task_event_name['dj']) : ?><span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_task_event_name['dj']); ?></span><?php endif; ?></h4>
                     <p class="eventcrew-admin-nobody eventcrew-muted"><?php
                         echo esc_html(trim(('' === $eventcrew_task_row['time'] ? '' : $eventcrew_task_row['time'] . ' · ') . $eventcrew_task_row['filled']));
                     ?></p>

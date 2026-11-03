@@ -8,6 +8,7 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
+use EventCrew\Support\EventName;
 use EventCrew\Support\RoleGuide;
 
 /**
@@ -64,6 +65,13 @@ final class BoardRenderer
      * divider rather than as something to tap.
      */
     public const DIVIDER = '───────────';
+
+    /**
+     * The longest event heading, "Name · DJ X", in characters. A button label
+     * cannot break a line, so the DJ line shares the name's line; longer than
+     * this, the heading is the name alone, so a phone does not cut it short.
+     */
+    public const EVENT_HEADING_MAX = 40;
 
 
     public function __construct(
@@ -188,7 +196,14 @@ final class BoardRenderer
 
             if (! isset($groups[$key])) {
                 $groups[$key] = [
-                    'title' => $task->eventName(),
+                    'title' => null === $task->eventPostId
+                        ? $task->eventName()
+                        : EventName::oneLine(
+                            $task->eventPostId,
+                            EventName::lang(),
+                            $task->eventName(),
+                            self::EVENT_HEADING_MAX
+                        ),
                     'tasks' => [],
                     'date' => Dates::dayLabel($task->taskDate),
                 ];

@@ -25,6 +25,8 @@ use EventCrew\Tests\TestCase;
  */
 final class NewsletterTest extends TestCase
 {
+    use FakeEventNames;
+
     /** @var array<string, mixed> */
     private array $options = [];
 
@@ -503,6 +505,62 @@ final class NewsletterTest extends TestCase
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.html', $mail['html']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.txt', $mail['text']);
+    }
+
+    /**
+     * With EventMesh's clean names a card shows the name, the Finnish name
+     * when it is different, then the DJ line; a "Later" line shows the name
+     * and the DJ line under it. The picture's alt text keeps the title as
+     * written.
+     */
+    public function testTheCleanNameAndTheDjLineReplaceTheTitle(): void
+    {
+        $this->fakeEventNames(
+            [
+                1 => ['en' => 'Ecstatic Dance', 'fi' => 'Ekstaattinen tanssi'],
+                2 => ['en' => 'Open Floor', 'fi' => 'Open Floor'],
+            ],
+            [1 => ['Ihmeidentekijä'], 2 => ['Milla Linna', 'Ty Alexander']]
+        );
+        $card = ['image' => 'https://cdn.test/1.jpg']
+            + self::planEvent(1, '2026-07-27', 'ECSTATIC DANCE 27.7.2026 / Ihmeidentekijä');
+        $card['title_fi'] = 'EKSTAATTINEN TANSSI 27.7.2026 / Ihmeidentekijä';
+        $later = ['image' => 'https://cdn.test/2.jpg']
+            + self::planEvent(2, '2026-08-10', 'OPEN FLOOR 10.8.2026 / Milla Linna & Ty Alexander');
+
+        $html = NewsletterLayout::html([$card], [$later], null, '#7a3cff');
+
+        self::assertMatchesRegularExpression('~<h2 style="margin:0 0 2px;[^"]*">Ecstatic Dance</h2>~', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 2px;[^"]*">Ekstaattinen tanssi</p>~', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 14px;[^"]*">DJ Ihmeidentekijä</p>~', $html);
+        self::assertStringContainsString('alt="ECSTATIC DANCE 27.7.2026 / Ihmeidentekijä"', $html);
+        self::assertStringContainsString('Open Floor<br>DJs Milla Linna &amp; Ty Alexander', $html);
+        self::assertStringContainsString('alt="OPEN FLOOR 10.8.2026 / Milla Linna &amp; Ty Alexander"', $html);
+        self::assertStringNotContainsString('>ECSTATIC DANCE', $html);
+        self::assertStringNotContainsString('EKSTAATTINEN', $html);
+
+        $text = NewsletterLayout::text([$card], [$later], null);
+
+        self::assertStringContainsString("27.7.2026 · 21:00\nEcstatic Dance\nDJ Ihmeidentekijä", $text);
+        self::assertStringContainsString(
+            "- 10.8.2026 · 21:00 · Open Floor: https://site.test/event-2/\n  DJs Milla Linna & Ty Alexander",
+            $text
+        );
+        self::assertStringNotContainsString('OPEN FLOOR', $text);
+    }
+
+    /** The same Finnish and English name is written once. */
+    public function testTheFinnishNameIsLeftOutWhenItIsTheSame(): void
+    {
+        $this->fakeEventNames([1 => ['en' => 'Ecstatic Dance']], [1 => ['Ihmeidentekijä']]);
+        $card = self::planEvent(1, '2026-07-27', 'ECSTATIC DANCE 27.7.2026');
+        $card['title_fi'] = 'EKSTAATTINEN TANSSI 27.7.2026';
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
+
+        self::assertSame(1, substr_count($html, 'Ecstatic Dance'));
+        self::assertStringNotContainsString('EKSTAATTINEN', $html);
+        self::assertStringContainsString('DJ Ihmeidentekijä', $html);
     }
 
     public function testThePriceIsWrittenTheFinnishWay(): void

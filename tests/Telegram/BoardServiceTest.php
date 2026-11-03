@@ -15,12 +15,15 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
+use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
 final class BoardServiceTest extends TelegramTestCase
 {
+    use FakeEventNames;
+
     /** @var array<int, array{to: string, body: string}> */
     private array $mails = [];
 
@@ -147,6 +150,35 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][0][0]['callback_data']);
         self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][1][0]['callback_data']);
         self::assertSame('t:1', $rendered['keyboard'][2][0]['callback_data']);
+    }
+
+    /**
+     * With EventMesh's clean name the heading is "Name · DJ line" on one line
+     * (a button cannot break a line), or the name alone when that is longer
+     * than EVENT_HEADING_MAX. A task without an event keeps its label.
+     */
+    public function testRenderHeadsAnEventWithItsCleanNameAndDjs(): void
+    {
+        $this->fakeEventNames(
+            [100 => ['en' => 'Ecstatic Dance'], 200 => ['en' => 'Open Floor']],
+            [100 => ['Ihmeidentekijä'], 200 => ['Milla Linna', 'Ty Alexander']]
+        );
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'ECSTATIC DANCE 1.8.2026 / Ihmeidentekijä'),
+            $this->taskRow(2, 200, 'OPEN FLOOR'),
+            $this->taskRow(3, null, 'Picnic'),
+        ];
+        $this->wpdb->nextResults[] = []; // occupancyFor
+
+        $labels = array_map(
+            static fn (array $row): string => $row[0]['text'],
+            $this->board()->render()['keyboard']
+        );
+
+        self::assertContains('📅 Ecstatic Dance · DJ Ihmeidentekijä', $labels);
+        // "Open Floor · DJs Milla Linna & Ty Alexander" is 43 characters.
+        self::assertContains('📅 Open Floor', $labels);
+        self::assertContains('📅 Picnic', $labels);
     }
 
     /**

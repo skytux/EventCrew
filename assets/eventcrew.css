@@ -236,6 +236,8 @@
 .eventcrew-signup .eventcrew-me-card .eventcrew-event-title,
 .eventcrew-signup .eventcrew-admin-card .eventcrew-event-title { margin: 0; font-size: 1.05em; line-height: 1.3; }
 .eventcrew-signup .eventcrew-event-date { font-size: .9em; opacity: .8; white-space: nowrap; }
+/* The event's DJ line, on its own line under the event's name (EventName). */
+.eventcrew-signup .eventcrew-event-dj { display: block; font-size: .85em; font-weight: 400; opacity: .8; }
 
 /*
  * The events on the board in columns: as many 18rem columns as fit inside the

@@ -93,7 +93,7 @@ endif; ?>
         printf(' style="%s"', esc_attr('--eventcrew-event-image: url("' . esc_url($eventcrew_image) . '")'));
     }
     ?>>
-        <h3 class="eventcrew-event-title"><?php echo esc_html($eventcrew_group['title']); ?></h3>
+        <h3 class="eventcrew-event-title"><?php echo esc_html($eventcrew_group['title']); ?><?php if ('' !== ($eventcrew_group['dj'] ?? '')) : ?><span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_group['dj']); ?></span><?php endif; ?></h3>
         <?php if ('' !== $eventcrew_group_date) : ?>
             <span class="eventcrew-event-date"><?php echo esc_html($eventcrew_group_date); ?></span>
         <?php endif; ?>
