@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.105.0
+Stable tag: 1.106.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.106.0 =
+Next events announcement: Qwen (the language model) writes 2-3 sentences for each event and an opening when the organizers wrote none, in English and Finnish, avoiding the wording of the last 4 announcements. The post-event email shows the same written texts for the same events. Without a written text, the event description is shown as before. On by default (setting: write event texts).
 
 = 1.105.0 =
 Bot log: every bot command and button use is recorded (who, when, which command, typed / button / helper, outcome), without any message text, and kept 60 days. wp-admin shows it under EventCrew > Bot log. When the helper runs a command, its private-chat memory gets a short line saying which command it ran. Database version 28.
@@ -1033,6 +1036,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.106.0 =
+No changes needed.
 
 = 1.105.0 =
 The database updates itself to version 28 on the first page load.

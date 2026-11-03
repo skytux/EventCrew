@@ -24,6 +24,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterSchedule;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
@@ -171,6 +172,9 @@ final class SettingsPage
                 'newsletter_bar_image_url' => Newsletter::barImageId() > 0
                     ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'medium')
                     : '',
+                'newsletter_write' => NewsletterWriter::enabled(),
+                'newsletter_words' => NewsletterWriter::words(),
+                'llm_configured' => AssistantSettings::isConfigured(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
@@ -698,6 +702,16 @@ final class SettingsPage
             $barImage > 0 && wp_attachment_is_image($barImage) ? $barImage : 0
         );
         $this->saveNewsletterSchedule();
+        update_option(NewsletterWriter::ENABLED_OPTION, isset($_POST['newsletter_write']) ? '1' : '0');
+        update_option(
+            NewsletterWriter::WORDS_OPTION,
+            NewsletterWriter::cleanWords(
+                isset($_POST['newsletter_words'])
+                    ? sanitize_textarea_field(wp_unslash((string) $_POST['newsletter_words']))
+                    : ''
+            ),
+            false
+        );
 
         update_option(
             Turnstile::SITE_KEY_OPTION,

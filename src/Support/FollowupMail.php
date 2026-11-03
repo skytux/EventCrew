@@ -22,8 +22,11 @@ use EventCrew\Web\NewsletterController;
  * Both are in Finnish and in English, Finnish first, like the ticket email.
  * Under the text are the coming events the way the next events announcement
  * shows them (Newsletter::content()): its heading, the next three as cards
- * with their pictures and the rest as short lines under "Later". Then, while
- * the announcement is switched on, an invitation to join it. Nobody is subscribed by this email;
+ * with their pictures and the rest as short lines under "Later". A card shows
+ * the text the language model wrote for that event in the announcement
+ * (Newsletter::writtenTexts()) in place of the description, when there is one.
+ * Then, while the announcement is switched on, an invitation to join it.
+ * Nobody is subscribed by this email;
  * joining goes through the announcement's own double opt-in.
  *
  * Several rows of one night with the same address (one person who bought two
@@ -510,8 +513,10 @@ final class FollowupMail
 
         // No coming events, no events part: the newsletter is not sent then.
         if ([] !== $events) {
+            // An event's text written by the language model for the next
+            // events announcement replaces its description here too.
             $coming = Newsletter::content(
-                array_slice($events, 0, self::EVENTS),
+                NewsletterWriter::apply(array_slice($events, 0, self::EVENTS), Newsletter::writtenTexts()),
                 array_slice($events, self::EVENTS),
                 null
             );

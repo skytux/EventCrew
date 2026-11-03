@@ -13,6 +13,7 @@ use EventCrew\Support\FollowupMail;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SignedLink;
 use EventCrew\Tests\TestCase;
 
@@ -634,6 +635,55 @@ final class FollowupMailTest extends TestCase
             self::assertStringContainsString($expected['text'], $mail['text']);
             self::assertStringContainsString(str_repeat('A warm evening of free movement. ', 39), $mail['html']);
         }
+    }
+
+    /**
+     * The texts the language model wrote for the next events announcement
+     * replace the descriptions here too, in the HTML and the plain text: one
+     * kept from a sent announcement and one from the current plan. An event
+     * with no written text keeps its description, the announcement's opening
+     * is not shown, and with the switch off every card has its description.
+     */
+    public function testAWrittenTextReplacesTheDescriptionAsInTheAnnouncement(): void
+    {
+        $this->sampleEvents();
+        $description = str_repeat('A warm evening of free movement. ', 39);
+        $this->options[Newsletter::STATE_OPTION] = [
+            'ledger' => [
+                1 => [
+                    's' => Newsletter::LEDGER_SENT,
+                    'd' => '2026-11-21',
+                    'w' => ['fi' => 'Tule tanssimaan.', 'en' => 'Come and dance.'],
+                ],
+            ],
+            'plan' => [
+                'id' => 2,
+                'status' => Newsletter::PLAN_PLANNED,
+                'events' => [['id' => 2, 'date' => '2026-11-28']],
+                'written' => [
+                    'events' => [2 => ['fi' => 'Jää myöhään.', 'en' => 'Stay late.']],
+                    'opening' => ['fi' => 'Tervetuloa.', 'en' => 'Welcome.'],
+                ],
+            ],
+        ];
+
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('FI</span>&nbsp; Tule tanssimaan.', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Come and dance.', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Stay late.', $mail['html']);
+        self::assertStringContainsString("FI: Tule tanssimaan.\nEN: Come and dance.", $mail['text']);
+        self::assertStringContainsString("FI: Jää myöhään.\nEN: Stay late.", $mail['text']);
+        self::assertStringNotContainsString('Welcome.', $mail['html'] . $mail['text']);
+        // Only the third card, which has no written text, shows the description.
+        self::assertSame(1, substr_count($mail['html'], $description));
+        self::assertSame(1, substr_count($mail['text'], $description));
+
+        $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringNotContainsString('Come and dance.', $mail['html'] . $mail['text']);
+        self::assertSame(3, substr_count($mail['html'], $description));
     }
 
     /** No coming events: no events part at all, as the newsletter sends nothing then. */
