@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.97.4
+Stable tag: 1.97.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.97.5 =
+* The next events announcement bar at the bottom of the page fades in and out, and stays at the bottom of the screen in Firefox for Android: pages with the bar tell the phone to make the page shorter when the keyboard opens (interactive-widget=resizes-content), and the bar is only moved up by script when a keyboard really covers it (Safari on iOS).
 
 = 1.97.4 =
 * The button in the announcement preview email, on its stop page and in the Admin tab now says "Do not send this announcement" (Finnish: "Älä lähetä tätä tiedotetta") instead of "Stop this announcement".
@@ -943,6 +946,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.97.5 =
+No database change.
 
 = 1.97.4 =
 No database change.
