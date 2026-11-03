@@ -36,6 +36,10 @@ use EventCrew\Support\OrganizerGuide;
  * (ConversationLog) and sent along, so the model can follow the
  * conversation; nothing from a group is kept.
  *
+ * In a private chat the model may also set "forward" (feedback, unhappy,
+ * very happy, wants a human): ChatForwarder then emails that chat to the
+ * organizers, and the answer tells the person so.
+ *
  * The model is asked after the webhook has answered Telegram (on shutdown,
  * after fastcgi_finish_request() or litespeed_finish_request() where the
  * server has one), so a slow model never holds up the webhook.
@@ -62,7 +66,8 @@ final class AssistantService
         private readonly AssistantKnowledge $knowledge,
         private readonly HelpService $help,
         private readonly Logger $logger,
-        private readonly bool $defer = true
+        private readonly bool $defer = true,
+        private readonly ?ChatForwarder $forwarder = null
     ) {
     }
 
@@ -237,9 +242,10 @@ final class AssistantService
 
     /**
      * Reads the model's answer: one JSON object, with or without text or a
-     * code fence around it. Null when it is not usable.
+     * code fence around it. Null when it is not usable. A missing or unknown
+     * "forward" reads as null.
      *
-     * @return array{aimed: bool, known: bool, lang: string, reply: string, action: ?string}|null
+     * @return array{aimed: bool, known: bool, lang: string, reply: string, action: ?string, forward: ?string}|null
      */
     public static function parseReply(string $content): ?array
     {
@@ -268,6 +274,7 @@ final class AssistantService
         }
 
         $action = null === $action ? '' : trim($action);
+        $forward = is_string($data['forward'] ?? null) ? strtolower(trim($data['forward'])) : '';
 
         return [
             'aimed' => $data['aimed'],
@@ -275,6 +282,7 @@ final class AssistantService
             'lang' => is_string($data['lang'] ?? null) ? strtolower(trim($data['lang'])) : '',
             'reply' => trim($data['reply']),
             'action' => '' === $action || 'null' === strtolower($action) ? null : $action,
+            'forward' => in_array($forward, ChatForwarder::KINDS, true) ? $forward : null,
         ];
     }
 
@@ -341,7 +349,8 @@ final class AssistantService
         }
 
         if ($parsed['known'] && '' !== $parsed['reply']) {
-            $this->tell($chatId, $fromId, $this->clip($parsed['reply']));
+            $reply = $this->withForward($fromId, $parsed['forward'], $language, $this->clip($parsed['reply']));
+            $this->tell($chatId, $fromId, $reply);
 
             return;
         }
@@ -356,7 +365,25 @@ final class AssistantService
             $reply .= "\n\n/help";
         }
 
-        $this->tell($chatId, $fromId, $this->clip($reply));
+        $reply = $this->withForward($fromId, $parsed['forward'], $language, $this->clip($reply));
+        $this->tell($chatId, $fromId, $reply);
+    }
+
+    /**
+     * When the model marked the message to forward, sends the chat to the
+     * organizers and adds to $reply that it did. $reply unchanged when
+     * nothing was sent (no forward, switched off, not verified, or already
+     * sent this hour).
+     */
+    private function withForward(int $fromId, ?string $kind, ?string $language, string $reply): string
+    {
+        if (null === $kind || null === $this->forwarder) {
+            return $reply;
+        }
+
+        $told = $reply . "\n\n" . $this->fixed($language, 'forwarded');
+
+        return $this->forwarder->forward($fromId, $kind, $told) ? $told : $reply;
     }
 
     /**
@@ -364,7 +391,7 @@ final class AssistantService
      * as a reply to that message. Never an action.
      *
      * @param array<string, mixed> $message
-     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string} $parsed
+     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string, forward: ?string} $parsed
      */
     private function answerGroup(array $message, array $parsed): void
     {
@@ -393,7 +420,7 @@ final class AssistantService
      * Confirm and Cancel when it changes something.
      *
      * @param array<string, mixed> $message
-     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string} $parsed
+     * @param array{aimed: bool, known: bool, lang: string, reply: string, action: ?string, forward: ?string} $parsed
      * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
      * @param array<int, int> $offeredTasks
      * @param callable(array<string, mixed>): void $run
@@ -494,6 +521,7 @@ final class AssistantService
     private function instructions(array $message, array $audience, string $facts, string $history = ''): string
     {
         $isPrivate = 'private' === $message['chat']['type'];
+        $forward = $isPrivate && null !== $this->forwarder && AssistantSettings::forwardEnabled();
         $yes = static fn (bool $value): string => $value ? 'yes' : 'no';
 
         $lines = [
@@ -502,7 +530,8 @@ final class AssistantService
                 . $this->ownName(),
             'Answer the person\'s message with ONE JSON object and nothing else:',
             '{"aimed": true or false, "known": true or false, "lang": "<two-letter code of the language'
-                . ' the message is written in>", "reply": "<your answer>", "action": "<one action line>" or null}',
+                . ' the message is written in>", "reply": "<your answer>", "action": "<one action line>" or null'
+                . ($forward ? ', "forward": null or "feedback", "unhappy", "very_happy" or "human"' : '') . '}',
             '',
             'Rules:',
             '- "reply" is in the language the message is written in. Plain text, no Markdown, at most 600 characters.',
@@ -538,6 +567,15 @@ final class AssistantService
                 . ' conversation disagree, the FACTS are right: they are newer.';
             $lines[] = '- In a greeting, also say that you remember this chat for 24 hours, so the person can'
                 . ' refer back to what was said.';
+
+            if ($forward) {
+                $lines[] = '- "forward" sends this chat to the organizers. It is "feedback" when the person gives'
+                    . ' feedback about the event, the crew or the bot; "unhappy" when they are clearly unhappy'
+                    . ' or complain; "very_happy" when they are clearly very happy or full of praise; "human"'
+                    . ' when they ask to talk to a human or an organizer. Otherwise "forward" is null. When'
+                    . ' "forward" is not null, "action" is null. Do not say in "reply" that the chat is sent:'
+                    . ' the bot adds that itself.';
+            }
         } else {
             $lines[] = '- This is the crew\'s group chat. "aimed" is true only when the message is written to the'
                 . ' bot: it mentions the bot, replies to the bot, or asks the bot something. Messages between'
@@ -693,6 +731,7 @@ final class AssistantService
             'unknown' => __('I do not know that. /help lists the commands, or ask an organizer.', 'eventcrew'),
             'cannot' => __('I cannot do that for you. /help lists what you can do.', 'eventcrew'),
             'register' => __('First sign up with /start.', 'eventcrew'),
+            'forwarded' => __('I have passed this chat on to the organizers.', 'eventcrew'),
             default => __('Right now I only understand commands: /help', 'eventcrew'),
         });
     }

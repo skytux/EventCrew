@@ -146,6 +146,11 @@ the model:
 - **Memory:** the bot keeps a private chat for 24 hours (the plain messages and
   its own answers, not commands), so follow-ups like "and on Sunday?" work. Each
   message is dropped 24 hours after it was written. Nothing from a group is kept.
+- **Forwarding:** when someone in a private chat gives feedback, is unhappy or
+  very happy, or asks for a human, every organizer gets the last 24 hours of that
+  chat by email (with the person's name and confirmed email) and a short
+  Telegram message, and the person is told. At most once per person per hour;
+  only people with a confirmed email. Switch it off in Settings > Telegram bot.
 - **Name:** the bot calls itself by the name set in @BotFather, read with
   `getMe` when the webhook is installed.
 - **Actions:** the model may also suggest one action the

@@ -341,6 +341,7 @@ final class SettingsPage
 
         return [
             'enabled' => AssistantSettings::isEnabled(),
+            'forward' => AssistantSettings::forwardEnabled(),
             'url' => AssistantSettings::url(),
             'model' => AssistantSettings::model(),
             'key_status' => AssistantSettings::keyStatus(),
@@ -681,6 +682,7 @@ final class SettingsPage
         }
 
         update_option(AssistantSettings::ENABLED_OPTION, isset($_POST['assistant_enabled']), false);
+        update_option(AssistantSettings::FORWARD_OPTION, isset($_POST['assistant_forward']), false);
 
         $rawUrl = trim(sanitize_text_field(wp_unslash((string) $_POST['assistant_url'])));
         $model = isset($_POST['assistant_model'])

@@ -66,6 +66,7 @@ use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\OnboardingService;
@@ -980,6 +981,18 @@ final class Kernel
                 $container->get(LlmClient::class),
                 $container->get(AssistantKnowledge::class),
                 $container->get(HelpService::class),
+                $container->get(Logger::class),
+                true,
+                $container->get(ChatForwarder::class)
+            )
+        );
+
+        $this->container->singleton(
+            ChatForwarder::class,
+            fn (Container $container) => new ChatForwarder(
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class),
                 $container->get(Logger::class)
             )
         );

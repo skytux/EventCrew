@@ -31,6 +31,7 @@ final class AssistantSettings
     public const PRIVATE_LIMIT_OPTION = 'eventcrew_assistant_private_limit';
     public const GROUP_LIMIT_OPTION = 'eventcrew_assistant_group_limit';
     public const PAGES_OPTION = 'eventcrew_assistant_pages';
+    public const FORWARD_OPTION = 'eventcrew_assistant_forward';
 
     public const DEFAULT_PRIVATE_LIMIT = 20;
     public const DEFAULT_GROUP_LIMIT = 60;
@@ -112,6 +113,15 @@ final class AssistantSettings
     public static function groupLimit(): int
     {
         return max(0, (int) get_option(self::GROUP_LIMIT_OPTION, self::DEFAULT_GROUP_LIMIT));
+    }
+
+    /**
+     * Whether a private chat is sent to the organizers when the person gives
+     * feedback, is unhappy or very happy, or asks for a human. On by default.
+     */
+    public static function forwardEnabled(): bool
+    {
+        return (bool) get_option(self::FORWARD_OPTION, true);
     }
 
     /**

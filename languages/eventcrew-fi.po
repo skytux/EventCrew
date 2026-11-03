@@ -5582,8 +5582,8 @@ msgstr "En voi tehdä sitä puolestasi. /help kertoo, mitä voit tehdä."
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr "En tiedä sitä. /help listaa komennot, tai kysy järjestäjältä."
 
-msgid "If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer."
-msgstr "Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista, sivuston sivuista ja virallisesta sähköpostiosoitteesta (yhteystieto kohdassa Asetukset > Tietosuoja), ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Se muistaa yksityisen keskustelun 24 tuntia. Se tietää kunkin roolit ja jättää pois sen, mikä on tarkoitettu vain muille. Kun järjestäjä kirjoittaa sille yksityisesti, se tuntee myös tämän oppaan ja infrastruktuurimuistiinpanon. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen."
+msgid "If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot)."
+msgstr "Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista, sivuston sivuista ja virallisesta sähköpostiosoitteesta (yhteystieto kohdassa Asetukset > Tietosuoja), ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Se muistaa yksityisen keskustelun 24 tuntia. Se tietää kunkin roolit ja jättää pois sen, mikä on tarkoitettu vain muille. Kun järjestäjä kirjoittaa sille yksityisesti, se tuntee myös tämän oppaan ja infrastruktuurimuistiinpanon. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen. Kun joku antaa yksityisessä keskustelussa palautetta, on tyytymätön tai hyvin tyytyväinen tai pyytää ihmistä, jokainen järjestäjä saa keskustelun sähköpostilla ja lyhyen Telegram-viestin, enintään kerran tunnissa samalta henkilöltä (pois päältä kohdassa Asetukset > Telegram-botti)."
 
 msgid "LLM API URL"
 msgstr "LLM-API:n osoite"
@@ -5658,8 +5658,8 @@ msgstr "Kielimalli vastasi. Yhteys toimii."
 msgid "The model name exactly as the server lists it."
 msgstr "Mallin nimi täsmälleen niin kuin palvelin sen listaa."
 
-msgid "The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, your roles, whether you are an organizer and, in a private chat, the conversation of the last 24 hours are sent there to work out the answer. The bot keeps a private chat for 24 hours so it can follow the conversation; each message is deleted 24 hours after it was written. Messages in the group are not kept. The bot never changes anything for you without asking you to confirm."
-msgstr "Kielimallin palvelin, joka auttaa bottia vastaamaan, jos kirjoitat botille viestin, joka ei ole komento — viestin teksti, roolisi, tieto siitä, oletko järjestäjä, ja yksityisessä keskustelussa viimeisen 24 tunnin keskustelu lähetetään sinne vastauksen laatimista varten. Botti säilyttää yksityisen keskustelun 24 tuntia, jotta se voi seurata keskustelua; kukin viesti poistetaan 24 tunnin kuluttua sen kirjoittamisesta. Ryhmän viestejä ei säilytetä. Botti ei muuta mitään puolestasi pyytämättä ensin vahvistusta."
+msgid "The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, your roles, whether you are an organizer and, in a private chat, the conversation of the last 24 hours are sent there to work out the answer. The bot keeps a private chat for 24 hours so it can follow the conversation; each message is deleted 24 hours after it was written. Messages in the group are not kept. The bot never changes anything for you without asking you to confirm. When you give feedback in a private chat, say you are unhappy or very happy, or ask for a human, the bot emails the last 24 hours of that chat, with your name and email address, to the organizers, and tells you that it did."
+msgstr "Kielimallin palvelin, joka auttaa bottia vastaamaan, jos kirjoitat botille viestin, joka ei ole komento — viestin teksti, roolisi, tieto siitä, oletko järjestäjä, ja yksityisessä keskustelussa viimeisen 24 tunnin keskustelu lähetetään sinne vastauksen laatimista varten. Botti säilyttää yksityisen keskustelun 24 tuntia, jotta se voi seurata keskustelua; kukin viesti poistetaan 24 tunnin kuluttua sen kirjoittamisesta. Ryhmän viestejä ei säilytetä. Botti ei muuta mitään puolestasi pyytämättä ensin vahvistusta. Kun annat yksityisessä keskustelussa palautetta, kerrot olevasi tyytymätön tai hyvin tyytyväinen tai pyydät ihmistä, botti lähettää keskustelun viimeiset 24 tuntia nimesi ja sähköpostiosoitteesi kanssa järjestäjille sähköpostilla ja kertoo sinulle tehneensä niin."
 
 msgid "The stored API key cannot be decrypted (the site's security keys have changed). Enter the key again."
 msgstr "Tallennettua API-avainta ei voi purkaa (sivuston suojausavaimet ovat muuttuneet). Anna avain uudelleen."
@@ -5697,3 +5697,36 @@ msgstr "Voit myös kirjoittaa omin sanoin, esim. \"ilmoita minut lauantain teht�
 
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr "Muistan yksityisen keskustelumme 24 tuntia, joten voit viitata aiempaan."
+
+msgid "I have passed this chat on to the organizers."
+msgstr "Välitin tämän keskustelun järjestäjille."
+
+#, php-format
+msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
+msgstr "%1$s (%2$s) kirjoitti botille yksityiskeskustelussa. Tässä keskustelu, vanhin ensin."
+
+#, php-format
+msgid "Bot chat: %s is unhappy"
+msgstr "Bottikeskustelu: %s on tyytymätön"
+
+#, php-format
+msgid "Bot chat: %s is very happy"
+msgstr "Bottikeskustelu: %s on hyvin tyytyväinen"
+
+#, php-format
+msgid "Bot chat: %s wants a human"
+msgstr "Bottikeskustelu: %s haluaa puhua ihmiselle"
+
+#, php-format
+msgid "Bot chat: feedback from %s"
+msgstr "Bottikeskustelu: palautetta henkilöltä %s"
+
+#, php-format
+msgid "I emailed you a transcript of my private chat with %s."
+msgstr "Lähetin sinulle sähköpostilla yksityiskeskusteluni henkilön %s kanssa."
+
+msgid "Send a private chat to the organizers when the person gives feedback, is unhappy or very happy, or asks for a human"
+msgstr "Lähetä yksityiskeskustelu järjestäjille, kun henkilö antaa palautetta, on tyytymätön tai hyvin tyytyväinen tai pyytää ihmistä"
+
+msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
+msgstr "Jokainen järjestäjä saa keskustelun viimeiset 24 tuntia sähköpostilla ja lyhyen Telegram-viestin. Enintään kerran tunnissa henkilöä kohden, ja vain vahvistetun sähköpostin omaaville."
