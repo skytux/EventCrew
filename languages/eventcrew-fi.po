@@ -5789,8 +5789,8 @@ msgstr "Tulevien tapahtumien tiedotteen esikatselu: se lähtee %s"
 msgid "Next announcement: %s, about these events:"
 msgstr "Seuraava tiedote: %s, näistä tapahtumista:"
 
-msgid "Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button."
-msgstr "Oletuksena pois päältä. Kun se on päällä, tulevat tapahtumat lähtevät sähköpostilla kaikille, jotka ovat tilanneet tulevien tapahtumien tiedotteen ja vahvistaneet osoitteensa. Tiedotteen voi tilata lyhytkoodilla [eventcrew_newsletter]. Lähetystä edeltävänä päivänä jokainen järjestäjä saa esikatselusähköpostin, jossa on Pysäytä-painike; Crew-sovelluksen Admin-välilehdellä on sama painike."
+msgid "Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. Before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button."
+msgstr "Oletuksena pois päältä. Kun se on päällä, tulevat tapahtumat lähtevät sähköpostilla kaikille, jotka ovat tilanneet tulevien tapahtumien tiedotteen ja vahvistaneet osoitteensa. Tiedotteen voi tilata lyhytkoodilla [eventcrew_newsletter]. Ennen lähetystä jokainen järjestäjä saa esikatselusähköpostin, jossa on Pysäytä-painike; Crew-sovelluksen Admin-välilehdellä on sama painike."
 
 msgid "Only organizers can use /newsletter."
 msgstr "Vain järjestäjät voivat käyttää komentoa /newsletter."
@@ -5909,8 +5909,8 @@ msgstr "Sähköpostiosoitteesi"
 msgid "sold out"
 msgstr "loppuunmyyty"
 
-msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. The day before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in Finnish or in English: it is translated into the other language."
-msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Lähtöä edeltävänä päivänä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se suomeksi tai englanniksi: se käännetään toiselle kielelle."
+msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into Finnish and English."
+msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään suomeksi ja englanniksi."
 
 msgid "Get the coming events by email"
 msgstr "Tulevat tapahtumat sähköpostiisi"
@@ -6086,6 +6086,61 @@ msgstr "Telegramin rajapinnassa ei ole asetusta, joka estää lisäämästä bot
 #. translators: %s: each text Telegram refused, with Telegram's reason
 msgid "Telegram did not accept these texts. They are sent again the next time you save: %s"
 msgstr "Telegram ei hyväksynyt näitä tekstejä. Ne lähetetään uudelleen, kun tallennat seuraavan kerran: %s"
+
+msgid "About"
+msgstr "Tietoja"
+
+msgid "Finnish"
+msgstr "suomi"
+
+msgid "English"
+msgstr "englanti"
+
+msgid "Write in any language"
+msgstr "Kirjoita millä kielellä tahansa"
+
+msgid "Translate again"
+msgstr "Käännä uudelleen"
+
+msgid "edited by hand, not translated again"
+msgstr "muokattu käsin, ei käännetä uudelleen"
+
+msgid "The texts were not translated because no language model is set up. Empty language fields now hold the text as you wrote it."
+msgstr "Tekstejä ei käännetty, koska kielimallia ei ole asetettu. Tyhjissä kielikentissä on nyt teksti sellaisena kuin kirjoitit sen."
+
+#. translators: %s: the kind of error, e.g. timeout or http_401
+msgid "The language model could not translate the texts (%s). The language fields keep what they had, and empty ones now hold the text as you wrote it."
+msgstr "Kielimalli ei voinut kääntää tekstejä (%s). Kielikentät pitävät entisen sisältönsä, ja tyhjissä on nyt teksti sellaisena kuin kirjoitit sen."
+
+msgid "Translation"
+msgstr "Käännös"
+
+msgid "Translate texts automatically with the language model"
+msgstr "Käännä tekstit automaattisesti kielimallilla"
+
+msgid "For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each Finnish and English field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it."
+msgstr "Teksteille, jotka kirjoitat kerran millä kielellä tahansa: botin Tietoja ja Kuvaus sekä järjestäjien teksti tulevien tapahtumien tiedotteessa. Kielimalli täyttää jokaisen suomen- ja englanninkielisen kentän, jota et ole muokannut käsin. Kun tämä on pois päältä, kielimallille ei lähetetä mitään, ja tyhjä kielikenttä saa tekstin sellaisena kuin kirjoitit sen."
+
+msgid "Send the preview"
+msgstr "Lähetä esikatselu"
+
+msgid "Hours"
+msgstr "Tunnit"
+
+msgid "Days"
+msgstr "Päivät"
+
+msgid "hours after the previous event ends"
+msgstr "tuntia edellisen tapahtuman päättymisen jälkeen"
+
+msgid "days before the event, at"
+msgstr "päivää ennen tapahtumaa, klo"
+
+msgid "When every organizer gets the preview email. With no previous event, or a previous event with no end time, the second choice is used. A preview time that is not before the sending time sends the preview one day before the sending. Times are in the site time zone and are checked once an hour."
+msgstr "Milloin jokainen järjestäjä saa esikatselusähköpostin. Jos edellistä tapahtumaa ei ole tai sillä ei ole päättymisaikaa, käytetään toista vaihtoehtoa. Jos esikatselun aika ei ole ennen lähetysaikaa, esikatselu lähtee päivää ennen lähetystä. Ajat ovat sivuston aikavyöhykkeessä, ja ne tarkistetaan kerran tunnissa."
+
+msgid "Send the newsletter"
+msgstr "Lähetä tiedote"
 
 #: src/Admin/SettingsPage.php:788
 msgid "The changed About and Description texts were sent to Telegram."

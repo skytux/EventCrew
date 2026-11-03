@@ -13,22 +13,36 @@ use EventCrew\Repositories\PersonRepository;
  * number of days (the "days" setting, default 7) before each event to every
  * confirmed subscriber.
  *
- * How one newsletter happens:
+ * How one newsletter happens (all times are the site's; NewsletterSchedule
+ * has the settings and the arithmetic):
  *
  * 1. The hourly heartbeat calls run(). It finds the earliest coming event that
- *    no newsletter has carried yet. When that event is $days days away plus
- *    one (the preview day), it makes a plan: the send day ($days before the
- *    event, or tomorrow if that day has already gone) and every coming event
- *    in the $days days after the send day. One event is in one newsletter at
- *    most, so events that fall in the same window share one newsletter.
- * 2. At the same moment every organizer gets a preview email with the exact
- *    content and a "Stop this newsletter" link. The crew app's Admin tab has
- *    the same Stop button. A stopped newsletter is not sent, and its events
- *    are not put into a later one.
- * 3. On the send day, inside the send window (SendWindow), run() starts the
- *    sending. A WP-Cron event (HOOK) sends BATCH emails per run and schedules
- *    itself again until every confirmed subscriber has had it. Then the
- *    organizers' text (NewsletterText) is cleared.
+ *    no newsletter has carried yet, and works out two times for it:
+ *    - the send time: $days days before the event, at the send time setting
+ *      (HH:MM, by default the hour the send window opens);
+ *    - the preview time: either some hours (default 0) after the previous
+ *      event ends - the latest event, not hidden, that starts before this
+ *      one - or a set number of days before this event at a set HH:MM. The
+ *      first falls back to the second when there is no previous event or it
+ *      has no end time.
+ * 2. At the first run at or after the preview time, but no later than one
+ *    day before the send time, run() makes a plan: the send time (or
+ *    tomorrow at the send time, if a plan made late would otherwise send
+ *    sooner) and every coming event in the $days days after the send day.
+ *    One event is in one newsletter at most, so events that fall in the same
+ *    window share one newsletter.
+ * 3. Every organizer gets a preview email with the exact content and a "Stop
+ *    this newsletter" link, at the first run at or after the preview time.
+ *    When the preview time is not before the send time, the preview goes
+ *    when the plan is made instead. If the send time comes before the
+ *    preview has gone (a run was skipped), the preview goes first and the
+ *    sending starts on the next run. The crew app's Admin tab has the same
+ *    Stop button. A stopped newsletter is not sent, and its events are not
+ *    put into a later one. A text change re-sends a preview that has gone.
+ * 4. At the first run at or after the send time, run() starts the sending.
+ *    A WP-Cron event (HOOK) sends BATCH emails per run and schedules itself
+ *    again until every confirmed subscriber has had it. Then the organizers'
+ *    text (NewsletterText) is cleared.
  *
  * An event that starts before a newsletter could still be previewed and sent
  * (for example, the setting was switched on the day before it) is marked
@@ -243,7 +257,13 @@ final class Newsletter
     {
         $plan = $this->state()['plan'];
 
-        if (null !== $plan && self::PLAN_PLANNED === $plan['status'] && self::enabled()) {
+        // A plan whose preview has not gone yet carries the new text when it goes.
+        if (
+            null !== $plan
+            && self::PLAN_PLANNED === $plan['status']
+            && (bool) ($plan['previewed'] ?? true)
+            && self::enabled()
+        ) {
             $this->sendPreview($plan);
         }
     }
@@ -369,14 +389,32 @@ final class Newsletter
             $plan = null;
         }
 
-        if (! SendWindow::isOpen()) {
-            $this->save($state);
-
-            return;
-        }
+        $now = (string) current_time('mysql');
 
         if (null !== $plan) {
-            if ($today >= $plan['send_on']) {
+            // A plan from before the preview and send times were settings
+            // was previewed when it was made, and goes at the send time on
+            // its send day.
+            $sendAt = (string) ($plan['send_at'] ?? NewsletterSchedule::at(
+                $plan['send_on'],
+                NewsletterSchedule::sendTime()
+            ));
+
+            if (
+                ! (bool) ($plan['previewed'] ?? true)
+                && ($now >= (string) ($plan['preview_at'] ?? '') || $now >= $sendAt)
+            ) {
+                // The preview first; when the send time has come too, the
+                // sending starts on the next run.
+                $plan['previewed'] = true;
+                $state['plan'] = $plan;
+                $this->save($state);
+                $this->sendPreview($plan);
+
+                return;
+            }
+
+            if ($now >= $sendAt) {
                 $state = $this->startSending($state, $today);
             }
 
@@ -385,34 +423,43 @@ final class Newsletter
             return;
         }
 
-        $state = $this->plan($state, $today);
+        $state = $this->plan($state, $today, $now);
         $this->save($state);
 
-        if (null !== $state['plan']) {
+        if (null !== $state['plan'] && $state['plan']['previewed']) {
             $this->sendPreview($state['plan']);
         }
     }
 
     /**
-     * Makes the next plan when its preview day has come, marking events it is
-     * too late for as missed.
+     * Makes the next plan when its time has come (NewsletterSchedule::planAt()),
+     * marking events it is too late for as missed. The plan's previewed is
+     * true when its preview is due now: its preview time has passed, or it
+     * is not before the send time.
      *
      * @param array<string, mixed> $state
      * @return array<string, mixed>
      */
-    private function plan(array $state, string $today): array
+    private function plan(array $state, string $today, string $now): array
     {
         $days = self::days();
-        $tomorrow = self::addDays($today, 1);
-        $events = $this->eligibleEvents($state['ledger'], $today);
+        $all = EventSource::upcoming(self::EVENT_SCAN);
+        $earliestSend = NewsletterSchedule::at(self::addDays($today, 1), NewsletterSchedule::sendTime());
+        $events = $this->eligibleEvents($state['ledger'], $today, $all);
 
         foreach ($events as $index => $first) {
-            if ($today < self::addDays($first['date'], -$days - 1)) {
+            $previewAt = NewsletterSchedule::previewAt($first, $this->previousEvent($all, $first['starts_at']));
+            $sendAt = NewsletterSchedule::sendAt($first['date']);
+
+            if ($now < NewsletterSchedule::planAt($previewAt, $sendAt)) {
                 // The earliest event is not due yet, so no later one is.
                 return $state;
             }
 
-            $sendOn = max(self::addDays($first['date'], -$days), $tomorrow);
+            // A plan made late goes no sooner than tomorrow, so the
+            // organizers always have time to read the preview.
+            $sendAt = max($sendAt, $earliestSend);
+            $sendOn = substr($sendAt, 0, 10);
 
             if ($sendOn >= $first['date']) {
                 // There is no day left to send a previewed newsletter.
@@ -426,6 +473,7 @@ final class Newsletter
 
             foreach (array_slice($events, $index) as $event) {
                 if ($event['date'] > $sendOn && $event['date'] <= $until) {
+                    unset($event['starts_at']);
                     $chosen[] = $event;
                 }
             }
@@ -434,6 +482,9 @@ final class Newsletter
                 'id' => $state['next_id'],
                 'status' => self::PLAN_PLANNED,
                 'send_on' => $sendOn,
+                'send_at' => $sendAt,
+                'preview_at' => $previewAt,
+                'previewed' => $now >= $previewAt || $previewAt >= $sendAt,
                 'events' => $chosen,
                 'cursor' => 0,
                 'sent' => 0,
@@ -651,9 +702,12 @@ final class Newsletter
     }
 
     /**
-     * The coming events no newsletter has carried, earliest first.
+     * The coming events no newsletter has carried, earliest first, each with
+     * its start (starts_at, "Y-m-d H:i:s").
      *
      * @param array<int|string, mixed> $ledger
+     * @param array<int, array{id: int, starts_at: string, ends_at: string, date: string}> $all
+     *     EventSource::upcoming(EVENT_SCAN).
      * @return array<int, array{
      *     id: int,
      *     date: string,
@@ -661,15 +715,44 @@ final class Newsletter
      *     title: string,
      *     title_fi: string,
      *     url: string,
-     *     sold_out: bool
+     *     sold_out: bool,
+     *     starts_at: string
      * }>
      */
-    private function eligibleEvents(array $ledger, string $today): array
+    private function eligibleEvents(array $ledger, string $today, array $all): array
     {
-        return array_values(array_filter(
-            $this->comingEvents($today),
-            static fn (array $event): bool => ! isset($ledger[$event['id']])
-        ));
+        $starts = array_column($all, 'starts_at', 'id');
+        $events = [];
+
+        foreach ($this->comingEvents($today, $all) as $event) {
+            if (! isset($ledger[$event['id']])) {
+                $events[] = $event + ['starts_at' => (string) ($starts[$event['id']] ?? '')];
+            }
+        }
+
+        return $events;
+    }
+
+    /**
+     * The latest event that starts before $startsAt and is not hidden, or
+     * null: the event whose end the preview may wait for.
+     *
+     * @param array<int, array{id: int, starts_at: string, ends_at: string}> $all Sorted by start.
+     * @return array{starts_at: string, ends_at: string}|null
+     */
+    private function previousEvent(array $all, string $startsAt): ?array
+    {
+        foreach (array_reverse($all) as $event) {
+            if (
+                $event['starts_at'] < $startsAt
+                && '' !== $event['starts_at']
+                && ! in_array(EventSource::closedReason($event['id']), self::HIDDEN_REASONS, true)
+            ) {
+                return ['starts_at' => $event['starts_at'], 'ends_at' => $event['ends_at']];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -677,6 +760,8 @@ final class Newsletter
      * events' shape: the events dated after $today. Also what the post-event
      * email (FollowupMail) lists.
      *
+     * @param array<int, array<string, mixed>>|null $all EventSource::upcoming(EVENT_SCAN)
+     *     when the caller has read it already.
      * @return array<int, array{
      *     id: int,
      *     date: string,
@@ -687,11 +772,11 @@ final class Newsletter
      *     sold_out: bool
      * }>
      */
-    public static function comingEvents(string $today): array
+    public static function comingEvents(string $today, ?array $all = null): array
     {
         $events = [];
 
-        foreach (EventSource::upcoming(self::EVENT_SCAN) as $event) {
+        foreach ($all ?? EventSource::upcoming(self::EVENT_SCAN) as $event) {
             if ('' === $event['date'] || $event['date'] <= $today) {
                 continue;
             }

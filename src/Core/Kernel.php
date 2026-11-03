@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
@@ -142,6 +143,10 @@ final class Kernel
         // per site, on the first request after the update, while the setting
         // is on.
         $this->container->get(NewsletterCrew::class)->maybeRun();
+
+        // Turns the bot's four old About/Description fields into the two
+        // written-once texts. Runs once per site.
+        BotProfileSettings::migrate();
 
         // Empties the page cache once after each update, so no visitor gets a
         // page built by the old version.
