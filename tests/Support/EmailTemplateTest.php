@@ -245,4 +245,16 @@ final class EmailTemplateTest extends TestCase
             EmailBody::forDm("## Tickets\n\n- 🔹 One\n- 🔹 Two\n- plain\n- plain")
         );
     }
+
+    public function testCentredCentresEveryButton(): void
+    {
+        $html = EmailBody::centred(EmailBody::toHtml('', [
+            ['label' => 'One', 'url' => 'https://example.org/1'],
+            ['label' => 'Two', 'url' => 'https://example.org/2'],
+        ]));
+
+        self::assertSame(2, substr_count($html, '<table role="presentation" align="center"'));
+        self::assertStringContainsString('style="margin:8px auto 12px"', $html);
+        self::assertStringContainsString('style="margin:0 auto 12px"', $html);
+    }
 }

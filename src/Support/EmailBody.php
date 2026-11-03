@@ -51,6 +51,22 @@ final class EmailBody
     }
 
     /**
+     * $buttonsHtml (from toHtml() with no text) with every button centred.
+     */
+    public static function centred(string $buttonsHtml): string
+    {
+        return str_replace(
+            ['<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 12px">',
+                '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">'],
+            ['<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:8px auto 12px">',
+                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:0 auto 12px">'],
+            $buttonsHtml
+        );
+    }
+
+    /**
      * The plain-text counterpart, kept in step with the HTML so the multipart
      * alternative says the same thing: each button becomes a "Label: url" line,
      * which is what these bodies looked like before buttons existed.

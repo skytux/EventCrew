@@ -216,7 +216,7 @@ final class Mailer
         $textRule = "\n\n————————\n\n";
 
         $body = EmailBody::toHtml($intro, [], $accent) . $rule . $content . $rule
-            . EmailBody::toHtml('', $actions, $accent);
+            . EmailBody::centred(EmailBody::toHtml('', $actions, $accent));
         $html = $this->template->render(
             $subject,
             $body,

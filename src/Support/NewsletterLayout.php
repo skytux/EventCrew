@@ -245,7 +245,8 @@ final class NewsletterLayout
 
         if ($soldOut) {
             $body .= sprintf(
-                '<p style="margin:4px 0 16px"><span style="display:inline-block;padding:8px 16px;border-radius:999px;'
+                '<p style="margin:4px 0 16px;text-align:center"><span style="display:inline-block;padding:8px 16px;'
+                    . 'border-radius:999px;'
                     . 'background:#f1f2f4;font-family:%s;font-size:14px;font-weight:600;color:%s">%s</span></p>',
                 $font,
                 self::MUTED_COLOR,
@@ -253,9 +254,11 @@ final class NewsletterLayout
             );
         } elseif ('' !== $ticket) {
             $body .= sprintf(
-                '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px">'
-                    . '<tr><td style="border-radius:999px;background:%s">'
-                    . '<a href="%s" style="display:inline-block;padding:13px 24px;font-family:%s;font-size:15px;'
+                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                    . ' style="margin:4px auto 16px">'
+                    . '<tr><td align="center" style="border-radius:999px;background:%s">'
+                    . '<a href="%s" style="display:inline-block;text-align:center;padding:13px 24px;'
+                    . 'font-family:%s;font-size:15px;'
                     . 'font-weight:700;line-height:1.2;color:%s;text-decoration:none;border-radius:999px">%s</a>'
                     . '</td></tr></table>',
                 esc_attr($accent),
@@ -268,9 +271,11 @@ final class NewsletterLayout
 
         if ('' !== $listen) {
             $body .= sprintf(
-                '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px">'
-                    . '<tr><td style="border-radius:999px;border:1px solid %s;background:#ffffff">'
-                    . '<a href="%s" style="display:inline-block;padding:11px 22px;font-family:%s;font-size:15px;'
+                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                    . ' style="margin:0 auto 16px">'
+                    . '<tr><td align="center" style="border-radius:999px;border:1px solid %s;background:#ffffff">'
+                    . '<a href="%s" style="display:inline-block;text-align:center;padding:11px 22px;'
+                    . 'font-family:%s;font-size:15px;'
                     . 'font-weight:600;line-height:1.2;color:%s;text-decoration:none;border-radius:999px">▶ %s</a>'
                     . '</td></tr></table>',
                 esc_attr($accent),
