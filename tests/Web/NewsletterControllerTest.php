@@ -252,9 +252,51 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('name="anchor" value="' . NewsletterController::BAR_ANCHOR . '"', $html);
         self::assertStringContainsString('eventcrew-nl-bar-close', $html);
         self::assertStringContainsString('localStorage', $html);
-        // It stays shown while focus is in it, and sits above an on-screen keyboard.
+        // It stays shown while focus is in it.
         self::assertStringContainsString('!b.contains(document.activeElement)', $html);
-        self::assertStringContainsString('visualViewport', $html);
+        // It fades in and out, gets hidden after the fade, and does not move with reduced motion.
+        self::assertStringContainsString(
+            '.eventcrew-nl-bar.is-out{opacity:0;transform:translateY(10px);pointer-events:none}',
+            $html
+        );
+        self::assertStringContainsString('setTimeout(function(){b.hidden=true;},250)', $html);
+        self::assertStringContainsString(
+            '@media (prefers-reduced-motion:reduce){.eventcrew-nl-bar{transition:none}}',
+            $html
+        );
+        // Fallback for a keyboard drawn over the page: lifts only past 100px, once per frame.
+        self::assertStringContainsString('document.documentElement.clientHeight-vv.height-vv.offsetTop', $html);
+        self::assertStringContainsString('c>100?', $html);
+        self::assertStringContainsString('requestAnimationFrame(lift)', $html);
+    }
+
+    /** On a page with the bar, a block theme's viewport meta lets the keyboard resize the page. */
+    public function testTheBarPageGetsTheResizingViewport(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        add_action('wp_head', '_block_template_viewport_meta_tag', 0);
+        $controller = $this->controller();
+
+        self::assertSame('page.php', $controller->resizingViewport('page.php'));
+        self::assertFalse(has_action('wp_head', '_block_template_viewport_meta_tag'));
+        self::assertSame(0, has_action('wp_head', [$controller, 'printViewportMeta']));
+
+        ob_start();
+        $controller->printViewportMeta();
+        self::assertStringContainsString('interactive-widget=resizes-content', (string) ob_get_clean());
+    }
+
+    /** Without the bar (or on a classic theme) the viewport meta is left alone. */
+    public function testOtherPagesKeepTheirViewport(): void
+    {
+        $this->onPublicPage();
+        add_action('wp_head', '_block_template_viewport_meta_tag', 0);
+        $controller = $this->controller();
+        $controller->resizingViewport('page.php');
+
+        self::assertSame(0, has_action('wp_head', '_block_template_viewport_meta_tag'));
+        self::assertFalse(has_action('wp_head', [$controller, 'printViewportMeta']));
     }
 
     public function testNoBarWhenTheNewsletterIsOff(): void

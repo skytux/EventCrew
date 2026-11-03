@@ -70,10 +70,13 @@ final class NewsletterController
 
     private const BAR_CSS = '.eventcrew-nl-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;'
         . 'background:var(--wp--preset--color--contrast,#111);color:var(--wp--preset--color--base,#fff);'
-        . 'padding:8px 52px 8px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3}'
+        . 'padding:8px 52px 8px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3;'
+        . 'transition:opacity .25s ease,transform .25s ease}'
         . '.eventcrew-nl-bar.has-image{background-color:#111;background-size:cover;background-position:center;'
         . 'color:#fff}'
+        . '.eventcrew-nl-bar.is-out{opacity:0;transform:translateY(10px);pointer-events:none}'
         . '.eventcrew-nl-bar[hidden]{display:none}'
+        . '@media (prefers-reduced-motion:reduce){.eventcrew-nl-bar{transition:none}}'
         . '.eventcrew-nl-bar form{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;'
         . 'margin:0}'
         . '.eventcrew-nl-bar-label{white-space:nowrap}'
@@ -112,15 +115,28 @@ final class NewsletterController
      * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
      * answer to a sign-up from the bar shows anyway), hides it while a full
      * form is on screen, and keeps room for it at the bottom of the page.
-     * While focus is in the bar it stays shown, and sits above an on-screen
-     * keyboard that covers the page.
+     * It fades in and out (the class is-out), and gets `hidden` when the fade
+     * out ends; with reduced motion it switches at once. While focus is in the
+     * bar it stays shown.
+     *
+     * The on-screen keyboard is handled by the viewport meta (see
+     * resizingViewport()): the keyboard shrinks the layout viewport, so
+     * bottom:0 is above it. lift() is the fallback for a browser that ignores
+     * that key and draws the keyboard over the page (Safari on iOS): it moves
+     * the bar up only when the visual viewport ends more than 100px above the
+     * layout viewport, so a browser toolbar that slides in or out is ignored.
      */
     private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
         . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
         . 'try{var t=+localStorage.getItem(K);closed=t>0&&Date.now()-t<d*864e5;}catch(e){}'
         . 'if(closed&&!b.hasAttribute("data-message")){return;}'
-        . 'var forms=document.querySelectorAll(".eventcrew-newsletter"),inView=[],off=false;'
-        . 'function show(){var hide=off||(inView.length>0&&!b.contains(document.activeElement));b.hidden=hide;'
+        . 'var forms=document.querySelectorAll(".eventcrew-newsletter"),inView=[],off=false,tm=0,'
+        . 'still=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);'
+        . 'function show(){var hide=off||(inView.length>0&&!b.contains(document.activeElement));clearTimeout(tm);'
+        . 'if(hide){b.classList.add("is-out");if(still){b.hidden=true;}'
+        . 'else if(!b.hidden){tm=setTimeout(function(){b.hidden=true;},250);}}'
+        . 'else{if(b.hidden){b.classList.add("is-out");b.hidden=false;void b.offsetWidth;}'
+        . 'b.classList.remove("is-out");}'
         . 'document.body.style.paddingBottom=hide?"":b.offsetHeight+"px";}'
         . 'b.querySelector(".eventcrew-nl-bar-close").addEventListener("click",function(){off=true;'
         . 'try{localStorage.setItem(K,String(Date.now()));}catch(e){}show();});'
@@ -128,10 +144,12 @@ final class NewsletterController
         . 'es.forEach(function(e){var i=inView.indexOf(e.target);'
         . 'if(e.isIntersecting&&i<0){inView.push(e.target);}if(!e.isIntersecting&&i>=0){inView.splice(i,1);}});'
         . 'show();});forms.forEach(function(f){io.observe(f);});}'
-        . 'var vv=window.visualViewport;function lift(){if(vv&&b.contains(document.activeElement)){'
-        . 'b.style.bottom=Math.max(0,innerHeight-vv.height-vv.offsetTop)+"px";}}'
-        . 'if(vv){vv.addEventListener("resize",lift);vv.addEventListener("scroll",lift);}'
-        . 'b.addEventListener("focusin",function(){lift();setTimeout(lift,350);});'
+        . 'var vv=window.visualViewport,raf=0;function lift(){raf=0;var c=vv&&b.contains(document.activeElement)'
+        . '?document.documentElement.clientHeight-vv.height-vv.offsetTop:0;'
+        . 'b.style.bottom=c>100?Math.round(c)+"px":"";}'
+        . 'function queue(){if(!raf){raf=requestAnimationFrame(lift);}}'
+        . 'if(vv){vv.addEventListener("resize",queue);vv.addEventListener("scroll",queue);}'
+        . 'b.addEventListener("focusin",function(){queue();setTimeout(queue,350);});'
         . 'b.addEventListener("focusout",function(e){if(!b.contains(e.relatedTarget)){b.style.bottom="";show();}});'
         . 'window.addEventListener("resize",show);show();})();';
 
@@ -156,6 +174,7 @@ final class NewsletterController
         add_action('wp_ajax_nopriv_' . self::JOIN_ACTION, [$this, 'handleJoin']);
         add_action('rest_api_init', [$this, 'registerRoutes']);
         add_action('wp_footer', [$this, 'renderBar']);
+        add_filter('template_include', [$this, 'resizingViewport'], 100);
         add_action('init', [$this, 'registerBlock']);
     }
 
@@ -294,6 +313,35 @@ final class NewsletterController
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
         echo $html;
+    }
+
+    /**
+     * The template_include filter: on a page with the bar, swaps the viewport
+     * meta of a block theme for one with interactive-widget=resizes-content
+     * (Chrome for Android 108+, Firefox for Android 132+). The on-screen
+     * keyboard then shrinks the layout viewport and the bar at bottom:0 sits
+     * above it, with no script. Core adds that meta from locate_block_template(),
+     * which has run by now; a classic theme prints its own meta and is left as
+     * it is.
+     */
+    public function resizingViewport(mixed $template): mixed
+    {
+        if (
+            false !== has_action('wp_head', '_block_template_viewport_meta_tag')
+            && $this->barBelongsHere()
+        ) {
+            remove_action('wp_head', '_block_template_viewport_meta_tag', 0);
+            add_action('wp_head', [$this, 'printViewportMeta'], 0);
+        }
+
+        return $template;
+    }
+
+    /** Core's block theme viewport meta, plus the keyboard key. */
+    public function printViewportMeta(): void
+    {
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1,'
+            . ' interactive-widget=resizes-content" />' . "\n";
     }
 
     /** FORM_CSS the first time a form is printed on the page, then ''. */
