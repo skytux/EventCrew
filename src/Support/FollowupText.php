@@ -11,7 +11,7 @@ namespace EventCrew\Support;
  *
  * The text is the part between the greeting ("Hi Anna,") and the sign-off
  * ("Warmly," and the site's name). {event} in it becomes the event's name and
- * {date} its date. The greeting, the buttons, the coming events, the
+ * {date} its date. The greeting, the coming events, the
  * announcement invite and the footer are not part of it.
  *
  * Each text comes from one of three places, the first that has one:
