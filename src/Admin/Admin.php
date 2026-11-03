@@ -96,6 +96,7 @@ final class Admin
         );
 
         add_action('admin_notices', [$this->container->get(SettingsPage::class), 'unreadableKeyNotice']);
+        add_action('admin_notices', [$this->container->get(SettingsPage::class), 'unreadableMailPasswordNotice']);
 
         add_action(
             'admin_post_eventcrew_send_open_task',

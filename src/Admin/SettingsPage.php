@@ -1050,6 +1050,31 @@ final class SettingsPage
     }
 
     /**
+     * The admin notice for a stored mailbox password that can no longer be
+     * decrypted (the site's salts changed, or the database came from another
+     * site). Shown to administrators on every wp-admin page while reading the
+     * mailbox is switched on.
+     */
+    public function unreadableMailPasswordNotice(): void
+    {
+        if (
+            ! current_user_can(Admin::CAPABILITY)
+            || MailFetchSettings::OFF === MailFetchSettings::get()['protocol']
+            || MailFetchSettings::PASSWORD_UNREADABLE !== MailFetchSettings::passwordStatus()
+        ) {
+            return;
+        }
+
+        printf(
+            '<div class="notice notice-error"><p>%s</p></div>',
+            esc_html__(
+                'EventCrew: the stored mailbox password cannot be decrypted, so the site cannot read the mailbox. Enter the password again in Settings > Email.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'eventcrew'
+            )
+        );
+    }
+
+    /**
      * The Privacy tab's fields.
      *
      * The controller's postal address is a textarea because addresses have
@@ -1581,20 +1606,24 @@ final class SettingsPage
         $password = (string) wp_unslash((string) ($_POST['mail_fetch_password'] ?? ''));
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        $current = MailFetchSettings::get();
-
-        MailFetchSettings::save([
+        $settings = [
             'protocol' => $field('mail_fetch_protocol'),
             'server' => $field('mail_fetch_server'),
             'port' => (int) $field('mail_fetch_port'),
             'security' => $field('mail_fetch_security'),
             'username' => $field('mail_fetch_username'),
-            'password' => '' === $password ? $current['password'] : $password,
             'folder' => $field('mail_fetch_folder'),
             'imported_folder' => $field('mail_fetch_imported_folder'),
             'rejected_folder' => $field('mail_fetch_rejected_folder'),
             'authserv_id' => $field('mail_fetch_authserv_id'),
-        ]);
+        ];
+
+        // No 'password' key keeps the stored one as it is.
+        if ('' !== $password) {
+            $settings['password'] = $password;
+        }
+
+        MailFetchSettings::save($settings);
 
         Admin::redirectTo(self::PAGE_SLUG, __('The mailbox settings were saved.', 'eventcrew'));
     }
