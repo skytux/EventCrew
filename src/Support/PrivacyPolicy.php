@@ -470,7 +470,7 @@ final class PrivacyPolicy
 
         if (self::telegramEnabled() && AssistantSettings::isActive()) {
             $processors[] = __(
-                'The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, and whether you are an organizer, are sent there to work out the answer. We do not store the text, and the bot never changes anything for you without asking you to confirm.',
+                'The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, your roles, whether you are an organizer and, in a private chat, the conversation of the last 24 hours are sent there to work out the answer. The bot keeps a private chat for 24 hours so it can follow the conversation; each message is deleted 24 hours after it was written. Messages in the group are not kept. The bot never changes anything for you without asking you to confirm.',
                 'eventcrew'
             );
         }

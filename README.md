@@ -135,8 +135,20 @@ the model:
 
 - **Private chat:** every such message gets an answer, in the language it was
   written in. The model knows the open tasks, coming events (EventMesh, when
-  installed) and the text of chosen pages (default: the menu pages). If it does
-  not know, it says so and points to `/help`. It may also suggest one action the
+  installed), the official email address (the contact in **Settings → Privacy**)
+  and the text of chosen pages (default: the menu pages). If it does
+  not know, it says so and points to `/help`.
+- **Who is asking:** the model is told the person's roles and whether they are an
+  organizer or welcome crew. It leaves out every task, command and detail meant
+  only for others, without saying that it exists. When an organizer writes in a
+  private chat, the model also gets the organizer guide and the infrastructure
+  note from Settings.
+- **Memory:** the bot keeps a private chat for 24 hours (the plain messages and
+  its own answers, not commands), so follow-ups like "and on Sunday?" work. Each
+  message is dropped 24 hours after it was written. Nothing from a group is kept.
+- **Name:** the bot calls itself by the name set in @BotFather, read with
+  `getMe` when the webhook is installed.
+- **Actions:** the model may also suggest one action the
   person could do themselves with a command; the plugin checks it with the same
   permission rules. Signing up for a task, leaving one and changing the guest
   list need a tap on ✅ Confirm (the offer expires after 10 minutes); showing
@@ -144,7 +156,8 @@ the model:
 - **Group:** the bot answers only when the message is meant for it and it knows
   the answer; otherwise it stays silent. It never acts in the group.
 - Limits: 20 messages per person per hour in private and 60 per group per hour
-  (both settable). Message text is not stored or logged. With the switch off or
+  (both settable). Message text is not logged; private chats are kept for 24
+  hours as described above. With the switch off or
   no server set, the bot behaves exactly as before.
 
 `\EventCrew\Support\AssistantSettings::saveConnection($url, $model, $apiKey, $enabled)` sets the
