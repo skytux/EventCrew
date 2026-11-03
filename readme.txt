@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.125.1
+Stable tag: 1.125.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.125.2 =
+The Confirm button in the confirmation email stays on one line and is centred in every mail app.
 
 = 1.125.1 =
 Sticky bar: when the full form has no Cloudflare token yet, the bar starts its own check in the bar instead of scrolling down to the full form (1.125.0 still scrolled in that case).
@@ -1102,6 +1105,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.125.2 =
+No settings change.
 
 = 1.125.1 =
 No settings change.
