@@ -38,6 +38,10 @@ final class FollowupControllerTest extends TestCase
 
             return true;
         });
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
     }
 
     public function testABadTokenIsNotFound(): void
@@ -75,6 +79,68 @@ final class FollowupControllerTest extends TestCase
 
         $again = $this->controller()->respond('stop', 'POST', FollowupMail::stopToken('2026-11-14'));
         self::assertStringContainsString('was already stopped', $again['html']);
+    }
+
+    /** Opening the subscribe link (as a mail scanner does) subscribes nobody and counts no click. */
+    public function testOpeningTheSubscribeLinkOnlyShowsAFormThatPostsItBack(): void
+    {
+        $token = self::joinToken('b', 7);
+        $answer = $this->controller()->respondJoin('GET', $token, 'fi');
+
+        self::assertNull($answer['redirect']);
+        self::assertStringContainsString('<meta name="robots" content="noindex">', $answer['html']);
+        self::assertStringContainsString('<form id="eventcrew-join" method="post"', $answer['html']);
+        self::assertStringContainsString(
+            'name="' . FollowupMail::JOIN_ARG . '" value="' . $token . '"',
+            $answer['html']
+        );
+        self::assertStringContainsString('>Liity / Join</button>', $answer['html']);
+        self::assertStringContainsString('document.getElementById("eventcrew-join").submit()', $answer['html']);
+        self::assertSame([], $this->wpdb->queries, 'no click counted, no row read');
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testPostingTheSubscribeTokenSubscribesTheTicketHolder(): void
+    {
+        $this->wpdb->nextQueryResults = [1];
+        $this->wpdb->nextRows[] = ['name' => 'Anna Virtanen', 'email' => 'anna@example.test']; // holder()
+        $this->wpdb->nextRows[] = null; // no subscriber row yet
+
+        $answer = $this->controller()->respondJoin('POST', self::joinToken('b', 7), 'en');
+
+        self::assertStringStartsWith('https://site.test/?eventcrew_newsletter=joined', (string) $answer['redirect']);
+        self::assertStringContainsString('followup_clicked_at', implode("\n", $this->wpdb->queries));
+        self::assertSame('anna@example.test', $this->wpdb->inserts[0]['data']['email']);
+        self::assertSame('en', $this->wpdb->inserts[0]['data']['language']);
+    }
+
+    public function testAForgedOrSampleSubscribeTokenSubscribesNobody(): void
+    {
+        $controller = $this->controller();
+
+        foreach (['GET', 'POST'] as $method) {
+            self::assertSame('https://site.test/', $controller->respondJoin($method, 'garbage', 'fi')['redirect']);
+            self::assertSame(
+                'https://site.test/',
+                $controller->respondJoin($method, self::joinToken('b', 7) . 'x', 'fi')['redirect']
+            );
+        }
+
+        $sample = $controller->respondJoin('POST', self::joinToken('t', 0), 'fi');
+        self::assertStringNotContainsString('joined', (string) $sample['redirect']);
+
+        self::assertSame([], $this->wpdb->queries);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    private static function joinToken(string $kind, int $id): string
+    {
+        $url = FollowupMail::joinUrl($kind, $id, 'thanks-2026-11-14');
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        return (string) $query[FollowupMail::JOIN_ARG];
     }
 
     private function controller(): FollowupController
