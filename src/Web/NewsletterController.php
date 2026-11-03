@@ -9,6 +9,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterConfirmMail;
+use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\Turnstile;
 use WP_REST_Request;
@@ -151,6 +152,9 @@ final class NewsletterController
 
     /** Days the bar stays away after the visitor closes it. */
     public const CLOSE_DAYS = 30;
+
+    /** Marks an address that got the already-subscribed email within the hour. */
+    private const ALREADY_KEY_PREFIX = 'eventcrew_nl_already_';
 
     /** A pending sign-up gets a new confirmation email only after this long. */
     private const RESEND_AFTER_SECONDS = HOUR_IN_SECONDS;
@@ -934,6 +938,9 @@ final class NewsletterController
 
         if (null !== $existing) {
             if (NewsletterSubscriberRepository::STATUS_CONFIRMED === $existing['status']) {
+                // The page answers as for a new address; the note goes only to the address itself.
+                $this->sendAlreadySubscribed($email);
+
                 return self::RESULT_SENT;
             }
 
@@ -1151,10 +1158,48 @@ final class NewsletterController
             . '</button></form>';
     }
 
+    /**
+     * Tells an address that is already subscribed so, and whom to write to when
+     * the announcements do not arrive: the contact of the privacy settings, or
+     * the site's admin email. At most once an hour per address.
+     */
+    private function sendAlreadySubscribed(string $email): void
+    {
+        $key = self::ALREADY_KEY_PREFIX . substr(hash('sha256', $email), 0, 32);
+
+        if (false !== get_transient($key)) {
+            return;
+        }
+
+        set_transient($key, 1, self::RESEND_AFTER_SECONDS);
+        $contact = PrivacyPolicy::contact();
+        $contact = '' !== $contact ? $contact : (string) get_option('admin_email', '');
+        $site = (string) get_bloginfo('name');
+        $this->sendCard(
+            $email,
+            static fn (): array => NewsletterConfirmMail::alreadyWords($site, $contact),
+            'mailto:' . $contact
+        );
+    }
+
     private function sendConfirmation(string $email, int $id): void
     {
         $site = (string) get_bloginfo('name');
-        $words = static fn (): array => NewsletterConfirmMail::words($site);
+        $this->sendCard(
+            $email,
+            static fn (): array => NewsletterConfirmMail::words($site),
+            Newsletter::confirmUrl($id)
+        );
+    }
+
+    /**
+     * One card email in Finnish and English.
+     *
+     * @param callable(): array{subject: string, heading: string, promise: string, body: string, button: string} $words
+     */
+    private function sendCard(string $email, callable $words, string $url): void
+    {
+        $site = (string) get_bloginfo('name');
         $why = static fn (): string => sprintf(
             /* translators: %s: the site's name */
             __('You get this email because this address was entered in the announcement form on %s.', 'eventcrew'),
@@ -1162,7 +1207,6 @@ final class NewsletterController
         );
         $fi = Language::run(Language::FINNISH, $words);
         $en = Language::run(Language::ENGLISH, $words);
-        $url = Newsletter::confirmUrl($id);
         $imageUrl = Newsletter::barImageId() > 0
             ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'large')
             : '';

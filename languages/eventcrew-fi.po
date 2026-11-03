@@ -6800,3 +6800,16 @@ msgstr "Yksi viesti ennen jokaista tapahtumaa. Ei muuta."
 #, php-format
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr "Saat tämän viestin, koska tämä osoite kirjoitettiin tiedotteen lomakkeeseen sivustolla %s."
+
+msgid "You are already subscribed to the next events announcement"
+msgstr "Olet jo tulevien tapahtumien tiedotteen tilaaja"
+
+msgid "You are already subscribed"
+msgstr "Olet jo tilaaja"
+
+#, php-format
+msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
+msgstr "Tämä osoite saa jo sivuston %1$s tulevien tapahtumien tiedotteen, joten mitään muuta ei tarvita. Jos tiedotteet eivät tule perille ja haluat ne, kirjoita osoitteeseen %2$s alla olevalla painikkeella, niin joku selvittää asian."
+
+msgid "Write to us"
+msgstr "Kirjoita meille"

@@ -31,6 +31,9 @@ final class NewsletterControllerTest extends TestCase
     /** @var list<array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
+    /** @var array<string, mixed> */
+    private array $transients = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -54,6 +57,13 @@ final class NewsletterControllerTest extends TestCase
         Functions\when('is_email')->alias(
             static fn (string $email): bool => 1 === preg_match('/^[^@\s]+@[^@\s]+\.[a-z]+$/', $email)
         );
+        $this->transients = [];
+        Functions\when('get_transient')->alias(fn (string $key): mixed => $this->transients[$key] ?? false);
+        Functions\when('set_transient')->alias(function (string $key, mixed $value): bool {
+            $this->transients[$key] = $value;
+
+            return true;
+        });
         Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body): bool {
             $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
 
@@ -176,12 +186,20 @@ final class NewsletterControllerTest extends TestCase
     }
 
     /** A confirmed address answers the same and gets no email. */
-    public function testAConfirmedAddressGetsNoEmail(): void
+    /** A confirmed address is told so once an hour, with the site's email to write to. */
+    public function testAConfirmedAddressGetsOneAlreadySubscribedEmail(): void
     {
+        $this->options['eventcrew_privacy_contact'] = 'crew@site.test';
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
         $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
 
         self::assertSame(NewsletterController::RESULT_SENT, $this->controller()->join('fan@example.test', '', ''));
-        self::assertSame([], $this->mails);
+        self::assertSame(NewsletterController::RESULT_SENT, $this->controller()->join('fan@example.test', '', ''));
+        self::assertCount(1, $this->mails);
+        self::assertSame('fan@example.test', $this->mails[0]['to']);
+        self::assertStringContainsString('You are already subscribed', $this->mails[0]['subject']);
+        self::assertStringContainsString('mailto:crew@site.test', $this->mails[0]['body']);
+        self::assertStringNotContainsString('confirm', strtolower($this->mails[0]['body']));
     }
 
     public function testTheConfirmLinkConfirms(): void
