@@ -12,6 +12,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterConfirmMail;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\Turnstile;
@@ -102,6 +103,40 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame('fan@example.test', $this->mails[0]['to']);
         self::assertStringContainsString('do=confirm', $this->mails[0]['body']);
         self::assertStringContainsString('Vahvista', $this->mails[0]['subject']);
+    }
+
+    /** The confirmation is the gold card: both headings, the promise, the button with the link. */
+    public function testTheConfirmationEmailIsTheCard(): void
+    {
+        $this->controller()->join('fan@example.test', '', '');
+        $body = $this->mails[0]['body'];
+
+        self::assertStringContainsString('Enää yksi askel', $body);
+        self::assertStringContainsString('One step left', $body);
+        self::assertStringContainsString('Ei muuta.', $body);
+        self::assertStringContainsString('Vahvista / Confirm</a>', $body);
+        self::assertStringContainsString('✦', $body);
+        self::assertStringContainsString('announcement form on', $body);
+        self::assertStringNotContainsString('border-radius:15px 15px 0 0', $body, 'no bar picture set, no picture');
+    }
+
+    /** The plain-text part writes the link out. */
+    public function testTheConfirmationTextWritesTheLinkOut(): void
+    {
+        $fi = ['subject' => 's', 'heading' => 'Enää', 'promise' => 'Lupaus', 'body' => 'Teksti',
+            'button' => 'Vahvista'];
+        $en = ['subject' => 's', 'heading' => 'Left', 'promise' => 'Promise', 'body' => 'Text', 'button' => 'Confirm'];
+
+        $text = NewsletterConfirmMail::text($fi, $en, 'https://site.test/c');
+        $html = NewsletterConfirmMail::html($fi, $en, 'https://site.test/c', 'https://site.test/bar.jpg');
+
+        self::assertStringContainsString("Vahvista / Confirm: https://site.test/c", $text);
+        self::assertStringContainsString("Teksti", $text);
+        self::assertStringContainsString("\nText", $text);
+        self::assertStringContainsString('<img src="https://site.test/bar.jpg"', $html);
+        self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, 'Teksti'), 'Finnish text above the button');
+        self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, '>Text<'), 'English text above it too');
+        self::assertLessThan(strpos($html, '>Text<'), strpos($html, 'Teksti'), 'Finnish first');
     }
 
     /** A filled honeypot looks like success to the bot and does nothing. */

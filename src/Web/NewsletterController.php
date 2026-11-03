@@ -8,6 +8,7 @@ use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterConfirmMail;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\Turnstile;
 use WP_REST_Request;
@@ -1153,24 +1154,29 @@ final class NewsletterController
     private function sendConfirmation(string $email, int $id): void
     {
         $site = (string) get_bloginfo('name');
-        $words = static fn (): array => [
-            'subject' => __('Confirm your subscription to the next events announcement', 'eventcrew'),
-            'body' => sprintf(
-                /* translators: %s: the site's name */
-                __('Someone, probably you, asked for the next events announcement of %s at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                $site
-            ),
-            'button' => __('Confirm', 'eventcrew'),
-        ];
+        $words = static fn (): array => NewsletterConfirmMail::words($site);
+        $why = static fn (): string => sprintf(
+            /* translators: %s: the site's name */
+            __('You get this email because this address was entered in the announcement form on %s.', 'eventcrew'),
+            $site
+        );
         $fi = Language::run(Language::FINNISH, $words);
         $en = Language::run(Language::ENGLISH, $words);
-        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
+        $url = Newsletter::confirmUrl($id);
+        $imageUrl = Newsletter::barImageId() > 0
+            ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'large')
+            : '';
 
-        $this->mailer->toUnconfirmedAddress(
+        $this->mailer->toSubscriber(
             $email,
-            $both('subject'),
-            $fi['body'] . "\n\n" . $en['body'],
-            [['label' => $both('button'), 'url' => Newsletter::confirmUrl($id)]]
+            NewsletterConfirmMail::both($fi['subject'], $en['subject']),
+            NewsletterConfirmMail::html($fi, $en, $url, $imageUrl),
+            NewsletterConfirmMail::text($fi, $en, $url),
+            NewsletterConfirmMail::both(
+                (string) Language::run(Language::FINNISH, $why),
+                (string) Language::run(Language::ENGLISH, $why)
+            ),
+            home_url('/')
         );
     }
 
