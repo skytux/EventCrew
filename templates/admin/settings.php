@@ -27,6 +27,8 @@
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var int $newsletter_days Days before an event the newsletter goes out.
+ * @var int $newsletter_bar_image The sign-up bar's background image (attachment id; 0 = none).
+ * @var string $newsletter_bar_image_url That image's medium size URL for the preview, or ''.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
  * @var int $door_link_crew Minutes before their own task the sales-desk crew can get the link.
  * @var int $door_scan_open Minutes before the event's start that ticket scans are taken.
@@ -1395,7 +1397,59 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Sign-up bar background image', 'eventcrew'); ?></th>
+                <td>
+                    <input type="hidden" id="ec-nl-bar-image" name="newsletter_bar_image"
+                        value="<?php echo esc_attr((string) $newsletter_bar_image); ?>">
+                    <img id="ec-nl-bar-image-preview" alt=""
+                        src="<?php echo esc_url($newsletter_bar_image_url); ?>"
+                        style="display:<?php echo '' !== $newsletter_bar_image_url ? 'block' : 'none'; ?>;max-width:320px;height:auto;margin-bottom:8px">
+                    <button type="button" class="button" id="ec-nl-bar-image-choose">
+                        <?php esc_html_e('Choose image', 'eventcrew'); ?>
+                    </button>
+                    <button type="button" class="button-link" id="ec-nl-bar-image-remove"
+                        <?php echo '' === $newsletter_bar_image_url ? 'hidden' : ''; ?>>
+                        <?php esc_html_e('Remove image', 'eventcrew'); ?>
+                    </button>
+                    <p class="description">
+                        <?php esc_html_e('Shown behind the sign-up bar at the bottom of the public pages, under a dark layer so the text stays readable. Without an image the bar has a plain dark background.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                </td>
+            </tr>
         </table>
+        <script>
+        // The Media Library picker for the sign-up bar's image. With JS off the
+        // buttons do nothing and the saved image stays as it is.
+        (function () {
+            var choose = document.getElementById('ec-nl-bar-image-choose');
+            if (!choose || !window.wp || !wp.media) { return; }
+            var input = document.getElementById('ec-nl-bar-image');
+            var preview = document.getElementById('ec-nl-bar-image-preview');
+            var remove = document.getElementById('ec-nl-bar-image-remove');
+            var frame = null;
+            choose.addEventListener('click', function () {
+                if (!frame) {
+                    frame = wp.media({ library: { type: 'image' }, multiple: false });
+                    frame.on('select', function () {
+                        var image = frame.state().get('selection').first().toJSON();
+                        var size = image.sizes && image.sizes.medium ? image.sizes.medium : image;
+                        input.value = String(image.id);
+                        preview.src = size.url;
+                        preview.style.display = 'block';
+                        remove.hidden = false;
+                    });
+                }
+                frame.open();
+            });
+            remove.addEventListener('click', function () {
+                input.value = '0';
+                preview.removeAttribute('src');
+                preview.style.display = 'none';
+                remove.hidden = true;
+            });
+        })();
+        </script>
 
         </div>
         <div class="ec-tab-panel" data-ec-tab="telegram">

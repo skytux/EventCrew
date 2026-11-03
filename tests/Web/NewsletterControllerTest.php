@@ -261,6 +261,56 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame('', self::bar($this->controller()));
     }
 
+    /** With an image chosen in Settings, the bar shows it under a dark layer. */
+    public function testTheBarShowsTheChosenImage(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->options[Newsletter::BAR_IMAGE_OPTION] = 21;
+        Functions\when('wp_get_attachment_image_url')->alias(
+            static fn (int $id): string => 'https://site.test/uploads/image-' . $id . '.jpg'
+        );
+        $this->onPublicPage();
+
+        $html = self::bar($this->controller());
+
+        self::assertStringContainsString('class="eventcrew-nl-bar has-image"', $html);
+        self::assertStringContainsString('linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55))', $html);
+        self::assertStringContainsString('url(https://site.test/uploads/image-21.jpg)', $html);
+    }
+
+    /** Without an image, the bar has its plain dark background and no image style. */
+    public function testTheBarHasNoImageWhenNoneIsChosen(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $html = self::bar($this->controller());
+
+        self::assertStringContainsString('<div class="eventcrew-nl-bar" id=', $html);
+        self::assertStringNotContainsString('background-image', $html);
+    }
+
+    /** The form is also a block, so it can sit in a template part where a shortcode is not expanded. */
+    public function testTheFormIsRegisteredAsABlock(): void
+    {
+        $registered = [];
+        Functions\when('wp_register_script')->justReturn(true);
+        Functions\when('plugins_url')->justReturn('https://site.test/editor.js');
+        Functions\when('register_block_type')->alias(
+            static function (string $name, array $args) use (&$registered): bool {
+                $registered[$name] = $args;
+
+                return true;
+            }
+        );
+
+        $this->controller()->registerBlock();
+
+        self::assertArrayHasKey(NewsletterController::BLOCK, $registered);
+        self::assertSame('eventcrew/newsletter', NewsletterController::BLOCK);
+        self::assertIsCallable($registered[NewsletterController::BLOCK]['render_callback']);
+    }
+
     public function testNoBarInWpAdmin(): void
     {
         $this->options[Newsletter::ENABLED_OPTION] = '1';

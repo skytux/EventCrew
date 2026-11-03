@@ -56,6 +56,9 @@ final class Newsletter
 
     public const STATE_OPTION = 'eventcrew_newsletter_state';
 
+    /** The Media Library image behind the sign-up bar (an attachment id; 0 = none). */
+    public const BAR_IMAGE_OPTION = 'eventcrew_newsletter_bar_image';
+
     public const DEFAULT_DAYS = 7;
 
     public const MIN_DAYS = 1;
@@ -139,6 +142,12 @@ final class Newsletter
         $days = (int) get_option(self::DAYS_OPTION, self::DEFAULT_DAYS);
 
         return $days < self::MIN_DAYS || $days > self::MAX_DAYS ? self::DEFAULT_DAYS : $days;
+    }
+
+    /** The sign-up bar's background image: an attachment id, or 0 for none. */
+    public static function barImageId(): int
+    {
+        return max(0, (int) get_option(self::BAR_IMAGE_OPTION, 0));
     }
 
     /** A typed value cut into MIN_DAYS..MAX_DAYS, for the settings form. */
