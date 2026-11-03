@@ -44,6 +44,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
@@ -133,6 +134,11 @@ final class Kernel
         // once per site, on the first request of any kind after the update.
         $this->container->get(OrganizeTaskBackfill::class)->maybeRun();
 
+        // Adds crew members with a verified email to the newsletter. Runs once
+        // per site, on the first request after the update, while the setting
+        // is on.
+        $this->container->get(NewsletterCrew::class)->maybeRun();
+
         // Empties the page cache once after each update, so no visitor gets a
         // page built by the old version.
         PageCacheFlush::boot();
@@ -206,6 +212,10 @@ final class Kernel
         // The welcome message: sent the moment a member confirms their email,
         // which happens on the front path (web sign-in, the bot's webhook).
         $this->container->get(WelcomeSender::class)->boot();
+
+        // A member who confirms their email joins the newsletter, with no
+        // email sent, unless they already have a subscriber row.
+        $this->container->get(NewsletterCrew::class)->boot();
 
         // Each person's bot command menu: changed when their organizer status
         // changes (bot, wp-admin) or they are marked arrived at the sales desk
@@ -366,6 +376,14 @@ final class Kernel
                 $container->get(NewsletterText::class),
                 $container->get(Mailer::class),
                 $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            NewsletterCrew::class,
+            fn (Container $container) => new NewsletterCrew(
+                $container->get(NewsletterSubscriberRepository::class),
+                $container->get(PersonRepository::class)
             )
         );
 

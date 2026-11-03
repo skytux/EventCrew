@@ -6138,3 +6138,12 @@ msgstr "Tätä Telegram-tiliä ei ole vielä yhdistetty crew-tiliin. Avaa botti 
 #: src/Web/SignupController.php:1044
 msgid "Your email address is not confirmed yet. Open the bot and press Start to confirm it, or sign in with email."
 msgstr "Sähköpostiosoitettasi ei ole vielä vahvistettu. Avaa botti ja paina Start vahvistaaksesi sen, tai kirjaudu sähköpostilla."
+
+msgid "Add crew members to the newsletter"
+msgstr "Lisää tiimin jäsenet uutiskirjeen tilaajiksi"
+
+msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
+msgstr "Tiimin jäsenet saavat myös tämän tiedotteen ja voivat lopettaa sen alla olevasta linkistä. Muut tiimin viestit eivät muutu."
+
+msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
+msgstr "Tiimin jäsenet, joiden sähköpostiosoite on vahvistettu, saavat tulevien tapahtumien tiedotteen ja voivat perua sen milloin tahansa jokaisen viestin linkistä."

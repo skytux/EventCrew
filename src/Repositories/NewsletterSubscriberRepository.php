@@ -119,6 +119,44 @@ final class NewsletterSubscriberRepository
     }
 
     /**
+     * Adds a crew member's verified address as a confirmed subscriber, with no
+     * email sent. Returns true only when a new row was written.
+     *
+     * An address that already has a row, in any state, is left as it is: a
+     * crew member who left the newsletter stays out, and a pending or
+     * confirmed sign-up is not touched.
+     */
+    public function addCrewMember(string $email): bool
+    {
+        global $wpdb;
+
+        $email = self::normalize($email);
+
+        if ('' === $email || strlen($email) > self::MAX_EMAIL_LENGTH) {
+            return false;
+        }
+
+        if (null !== $this->findByEmail($email)) {
+            return false;
+        }
+
+        $now = current_time('mysql');
+
+        $inserted = $wpdb->insert(
+            $this->table(),
+            [
+                'email' => $email,
+                'status' => self::STATUS_CONFIRMED,
+                'created_at' => $now,
+                'confirmed_at' => $now,
+            ],
+            ['%s', '%s', '%s', '%s']
+        );
+
+        return false !== $inserted && (int) $inserted > 0;
+    }
+
+    /**
      * Turns a pending row into a confirmed subscriber. Returns true when the
      * row is confirmed after the call (also when it already was).
      */

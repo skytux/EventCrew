@@ -21,6 +21,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
@@ -172,6 +173,7 @@ final class SettingsPage
                 'welcome_enabled' => WelcomeSender::enabled(),
                 'newsletter_enabled' => Newsletter::enabled(),
                 'newsletter_days' => Newsletter::days(),
+                'newsletter_crew' => NewsletterCrew::enabled(),
                 'newsletter_bar_image' => Newsletter::barImageId(),
                 'newsletter_bar_image_url' => Newsletter::barImageId() > 0
                     ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'medium')
@@ -637,6 +639,7 @@ final class SettingsPage
                 ? Newsletter::clampDays((int) $_POST['newsletter_days'])
                 : Newsletter::DEFAULT_DAYS
         );
+        update_option(NewsletterCrew::OPTION, isset($_POST['newsletter_crew']) ? '1' : '0');
         // Only an image from the Media Library is kept; anything else means none.
         $barImage = isset($_POST['newsletter_bar_image']) ? max(0, (int) $_POST['newsletter_bar_image']) : 0;
         update_option(

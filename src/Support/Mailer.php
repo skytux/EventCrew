@@ -137,6 +137,7 @@ final class Mailer
      * languages and $text the same as plain text. The footer is $footer
      * linked to $footerUrl (the subscriber's own unsubscribe link), and
      * $headers are added to the mail's headers (List-Unsubscribe).
+     * $footerNote, when not empty, is a plain line just above that link.
      *
      * @param array<int, string> $headers
      */
@@ -147,10 +148,18 @@ final class Mailer
         string $text,
         string $footer,
         string $footerUrl,
-        array $headers = []
+        array $headers = [],
+        string $footerNote = ''
     ): bool {
-        $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
-        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $footerUrl));
+        $text .= $this->signatureText() . "\n\n—\n"
+            . ('' === $footerNote ? '' : $footerNote . "\n")
+            . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
+        $html = $this->template->render(
+            $subject,
+            $content,
+            ('' === $footerNote ? '' : EmailBody::footerHtml($footerNote, ''))
+                . EmailBody::footerHtml($footer, $footerUrl)
+        );
 
         $parts = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
