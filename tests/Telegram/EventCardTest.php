@@ -78,7 +78,7 @@ final class EventCardTest extends TelegramTestCase
         $caption = EventCard::forEvent(7)['caption'];
 
         self::assertStringStartsWith(
-            "<b>Ecstatic Dance</b>\n<i>Ekstaattinen tanssi</i>\nDJs Milla Linna, Ty Alexander &amp; A &amp; B\n📅 25.7.2026",
+            "<b>Ecstatic Dance</b>\n<i>Ekstaattinen tanssi</i>\nMilla Linna, Ty Alexander &amp; A &amp; B\n📅 25.7.2026",
             $caption
         );
         self::assertStringNotContainsString('ECSTATIC', $caption);
