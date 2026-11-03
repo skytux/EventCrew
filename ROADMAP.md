@@ -34,6 +34,53 @@ Do not re-open these without new information.
 
 ## Where it stands
 
+### Now (1.95.1, 2026-11-03)
+
+The plugin runs in production. Everything listed in `README.md` is shipped; the
+changelog is in `readme.txt`. The latest releases:
+
+- 1.92.0–1.93.0: the next events announcement form is also a block (for the
+  footer); a thin sign-up bar at the bottom of public pages, with an optional
+  background image; the Cloudflare check shows only when it needs a click.
+- 1.94.0: `/say` lets an organizer post a message in the crew group, after a
+  preview with Confirm.
+- 1.95.0: the next events announcement is drawn as event cards (picture, price,
+  Buy a ticket, Listen to the DJ, event page) with a "Later" list of the other
+  coming events; the organizers' preview is the real HTML.
+- 1.95.1: the announcement's email field is named `eventcrew_email`, so Firefox
+  no longer fills a street address into it.
+
+**In progress:**
+
+- Bot About and Description texts (English and Finnish) set from **Settings →
+  Telegram bot** and sent to Telegram with `setMyShortDescription` /
+  `setMyDescription`. Telegram has no API for "Allow Groups"; that stays a
+  BotFather setting.
+- The bot leaves a group that adds it while the group lock is on and another
+  group holds the board. With the lock off, a new group takes the board, as
+  before.
+
+**Planned, in this order:**
+
+1. A Telegram event card: one photo message per event (picture, bold title,
+   date and time, price, excerpt, sold-out mark) with **Buy a ticket**,
+   **Crew app** and **Listen to the DJ** buttons. An organizer sends `/events`
+   in a private chat and gets a preview with Confirm/Cancel, like `/say`;
+   plain-words questions about the next events get the cards.
+2. The group board in card format: one photo message per event with its task
+   buttons under it, edited in place; days without an EventMesh event stay
+   text messages; the date-picker row goes away.
+3. Crew app sign-in with Telegram: the sign-in screen first asks "Email or
+   Telegram?"; Telegram shows the Telegram login button directly and signs in
+   the person whose row holds that Telegram id. The site's domain is already
+   registered with the bot in BotFather (`/setdomain`). The design is not
+   signed off yet.
+
+Still open from earlier: ticket-buyer import from `.xlsx` files, a column
+mapping for imported files, and more sender addresses allowed to email a list.
+
+### Early history
+
 **v0.1 and v0.2 are committed**: schema and migrations, task and person
 management in wp-admin, roles in Settings, and the vocabulary refactor below.
 58 tests, phpcs clean.
