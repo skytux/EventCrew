@@ -137,6 +137,14 @@ msgstr ""
 msgid "%1$s%2$s: %3$s (%4$d of %5$d places free)"
 msgstr ""
 
+#: src/Admin/NewsletterPage.php:274
+msgid "%1$s: %2$d subscribed"
+msgstr ""
+
+#: src/Admin/NewsletterPage.php:279
+msgid "%1$s: %2$d unsubscribed"
+msgstr ""
+
 #: src/Support/ClaimNotifier.php:194
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 msgid "%1$s: %2$s at %3$s. %4$s"
@@ -951,7 +959,7 @@ msgstr ""
 msgid "Bot chat: feedback from %s"
 msgstr ""
 
-#: src/Admin/Admin.php:321 src/Admin/Admin.php:322 templates/admin/bot-log.php:32
+#: src/Admin/Admin.php:335 src/Admin/Admin.php:336 templates/admin/bot-log.php:32
 msgid "Bot log"
 msgstr ""
 
@@ -961,6 +969,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1643
 msgid "Bot token"
+msgstr ""
+
+#: src/Admin/NewsletterPage.php:175
+msgid "Both languages"
 msgstr ""
 
 #: src/Telegram/FollowupCommand.php:67
@@ -1126,7 +1138,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:355 src/Support/NewsletterLayout.php:822
+#: src/Support/Newsletter.php:360 src/Support/NewsletterLayout.php:822
 msgid "Coming events"
 msgstr ""
 
@@ -1370,7 +1382,7 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Support/Newsletter.php:448
+#: src/Support/Newsletter.php:453
 msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
 msgstr ""
 
@@ -1507,7 +1519,7 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-#: src/Admin/Admin.php:330 src/Admin/Admin.php:331
+#: src/Admin/Admin.php:344 src/Admin/Admin.php:345
 msgid "Diagnostics"
 msgstr ""
 
@@ -1519,7 +1531,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Support/Newsletter.php:854 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
+#: src/Support/Newsletter.php:905 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -1585,10 +1597,10 @@ msgid "Edit the email template"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:137 src/Support/PrivacyExporter.php:220
-#: src/Support/PrivacyExporter.php:246 src/Support/PrivacyExporter.php:270 templates/admin/people.php:51 templates/admin/roster.php:194
-#: templates/admin/roster.php:206 templates/admin/roster.php:229 templates/admin/settings.php:94 templates/admin/settings.php:679
-#: templates/public/door.php:292 templates/public/signup.php:147 templates/public/signup.php:179 templates/public/signup.php:502
-#: templates/public/signup.php:525 templates/public/signup.php:786
+#: src/Support/PrivacyExporter.php:246 src/Support/PrivacyExporter.php:270 templates/admin/newsletter.php:115 templates/admin/people.php:51
+#: templates/admin/roster.php:194 templates/admin/roster.php:206 templates/admin/roster.php:229 templates/admin/settings.php:94
+#: templates/admin/settings.php:679 templates/public/door.php:292 templates/public/signup.php:147 templates/public/signup.php:179
+#: templates/public/signup.php:502 templates/public/signup.php:525 templates/public/signup.php:786
 msgid "Email"
 msgstr ""
 
@@ -1616,7 +1628,7 @@ msgstr ""
 msgid "Email me a sign-in link"
 msgstr ""
 
-#: src/Admin/Admin.php:313 src/Admin/Admin.php:314 src/Support/EmailTemplate.php:79 src/Support/EmailTemplate.php:82
+#: src/Admin/Admin.php:318 src/Admin/Admin.php:319 src/Support/EmailTemplate.php:79 src/Support/EmailTemplate.php:82
 msgid "Email template"
 msgstr ""
 
@@ -1668,7 +1680,7 @@ msgstr ""
 msgid "Enforce it"
 msgstr ""
 
-#: src/Support/TranslatedText.php:354
+#: src/Admin/NewsletterPage.php:174 src/Support/TranslatedText.php:354
 msgid "English"
 msgstr ""
 
@@ -1705,7 +1717,7 @@ msgstr ""
 msgid "Event start"
 msgstr ""
 
-#: src/Admin/Admin.php:262 src/Admin/Admin.php:263 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
+#: src/Admin/Admin.php:267 src/Admin/Admin.php:268 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
 #: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224 src/Telegram/ManageController.php:131
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
@@ -1764,7 +1776,7 @@ msgstr ""
 msgid "EventCrew tasks"
 msgstr ""
 
-#: src/Support/Mailer.php:268
+#: src/Support/Mailer.php:283
 msgid "EventCrew test email"
 msgstr ""
 
@@ -1844,6 +1856,10 @@ msgstr ""
 msgid "Extra sender addresses"
 msgstr ""
 
+#: templates/admin/newsletter.php:114
+msgid "Failed"
+msgstr ""
+
 #: src/Admin/SettingsPage.php:1338
 #. translators: %s: list of messages that failed
 msgid "Failed: %s. Diagnostics shows the logged reason."
@@ -1857,7 +1873,7 @@ msgstr ""
 msgid "Find a name on the list"
 msgstr ""
 
-#: src/Support/TranslatedText.php:353
+#: src/Admin/NewsletterPage.php:173 src/Support/TranslatedText.php:353
 msgid "Finnish"
 msgstr ""
 
@@ -2165,7 +2181,7 @@ msgstr ""
 msgid "Hi %s,"
 msgstr ""
 
-#: src/Support/Mailer.php:270
+#: src/Support/Mailer.php:285
 msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
 msgstr ""
 
@@ -2460,6 +2476,14 @@ msgstr ""
 msgid "Join the announcement"
 msgstr ""
 
+#: src/Admin/NewsletterPage.php:245
+msgid "Joins and leaves over time, with the sent newsletters marked"
+msgstr ""
+
+#: templates/admin/newsletter.php:50
+msgid "Joins, leaves and sent newsletters"
+msgstr ""
+
 #: templates/admin/settings.php:1719
 msgid "Keep the board locked to the first group the bot joins"
 msgstr ""
@@ -2626,7 +2650,7 @@ msgstr ""
 msgid "Manage your EventCrew account"
 msgstr ""
 
-#: src/Support/Mailer.php:388
+#: src/Support/Mailer.php:403
 msgid "Manage your account or stop these emails"
 msgstr ""
 
@@ -2771,6 +2795,21 @@ msgstr ""
 msgid "Newer"
 msgstr ""
 
+#: src/Admin/Admin.php:326 src/Admin/Admin.php:327 templates/admin/newsletter.php:31
+msgid "Newsletter"
+msgstr ""
+
+#: src/Admin/NewsletterPage.php:337
+#. translators: 1: newsletter number, 2: date, like 3.11.2026, 3: subject(s), 4: number of emails
+msgid "Newsletter %1$d, %2$s: %3$s. Sent to %4$d address."
+msgid_plural "Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/newsletter.php:95
+msgid "Newsletter sent (the number is its row below; point at it for the subject)"
+msgstr ""
+
 #: templates/public/signup.php:768
 msgid "Next"
 msgstr ""
@@ -2789,7 +2828,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/Newsletter.php:822
+#: src/Support/Newsletter.php:873
 #. translators: %s: the date the newsletter will be sent, like 14.11.2026
 msgid "Next events announcement preview: it goes out on %s"
 msgstr ""
@@ -2877,6 +2916,10 @@ msgstr ""
 #: src/Support/DoorDesk.php:562 src/Support/DoorDesk.php:1192 src/Support/DoorDesk.php:1203 src/Web/CrewAdminRoster.php:174
 #: templates/admin/roster.php:273
 msgid "No name"
+msgstr ""
+
+#: templates/admin/newsletter.php:104
+msgid "No newsletter has been sent since the history started."
 msgstr ""
 
 #: src/Telegram/BoardRenderer.php:311 templates/public/signup-board.php:42
@@ -3024,6 +3067,10 @@ msgstr ""
 msgid "Nothing on your calendar yet — tap a task on the board to sign up."
 msgstr ""
 
+#: templates/admin/newsletter.php:64
+msgid "Nothing recorded yet: no one has joined or left and no newsletter has been sent since then."
+msgstr ""
+
 #: src/Telegram/ManageController.php:128
 msgid "Nothing to do."
 msgstr ""
@@ -3122,6 +3169,10 @@ msgstr ""
 
 #: src/Support/OrganizerGuide.php:149
 msgid "On the night: roster and sales desk"
+msgstr ""
+
+#: templates/admin/newsletter.php:69
+msgid "One bar per"
 msgstr ""
 
 #: templates/admin/settings.php:2108
@@ -3308,7 +3359,7 @@ msgstr ""
 msgid "Open the sales desk on this device"
 msgstr ""
 
-#: src/Support/Mailer.php:281
+#: src/Support/Mailer.php:296
 msgid "Open the signup page"
 msgstr ""
 
@@ -3490,7 +3541,7 @@ msgstr ""
 msgid "Pending updates"
 msgstr ""
 
-#: src/Admin/Admin.php:291 src/Admin/Admin.php:292 templates/admin/people.php:24 templates/admin/people.php:27
+#: src/Admin/Admin.php:296 src/Admin/Admin.php:297 templates/admin/people.php:24 templates/admin/people.php:27
 #: templates/admin/settings.php:208 templates/public/signup.php:711 templates/public/signup.php:1715
 msgid "People"
 msgstr ""
@@ -3882,7 +3933,7 @@ msgstr ""
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr ""
 
-#: src/Admin/Admin.php:282 src/Admin/Admin.php:283 templates/admin/roster.php:59
+#: src/Admin/Admin.php:287 src/Admin/Admin.php:288 templates/admin/roster.php:59
 msgid "Roster"
 msgstr ""
 
@@ -4136,9 +4187,21 @@ msgstr ""
 msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
 msgstr ""
 
+#: templates/admin/newsletter.php:110
+msgid "Sent"
+msgstr ""
+
 #: src/Web/CrewAdminController.php:840
 #. translators: 1: the admin action's name, 2: date and time
 msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
+msgstr ""
+
+#: templates/admin/newsletter.php:101
+msgid "Sent newsletters"
+msgstr ""
+
+#: templates/admin/newsletter.php:113
+msgid "Sent to"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:1330
@@ -4179,7 +4242,7 @@ msgstr ""
 msgid "Set yourself up first: send /start to the bot."
 msgstr ""
 
-#: src/Admin/Admin.php:300 src/Admin/Admin.php:301 templates/public/signup.php:86 templates/public/signup.php:483
+#: src/Admin/Admin.php:305 src/Admin/Admin.php:306 templates/public/signup.php:86 templates/public/signup.php:483
 msgid "Settings"
 msgstr ""
 
@@ -4212,8 +4275,8 @@ msgstr ""
 msgid "Short notice (hours before the start)"
 msgstr ""
 
-#: templates/admin/bot-log.php:51 templates/admin/roster.php:87 templates/public/signup-admin-datebar.php:63 templates/public/signup.php:1565
-#: templates/public/signup.php:1572 templates/public/signup.php:1690
+#: templates/admin/bot-log.php:51 templates/admin/newsletter.php:76 templates/admin/roster.php:87 templates/public/signup-admin-datebar.php:63
+#: templates/public/signup.php:1565 templates/public/signup.php:1572 templates/public/signup.php:1690
 msgid "Show"
 msgstr ""
 
@@ -4478,12 +4541,16 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:904 src/Support/Newsletter.php:853
+#: src/Support/FollowupMail.php:904 src/Support/Newsletter.php:904 templates/admin/newsletter.php:112
 msgid "Subject"
 msgstr ""
 
 #: src/Web/NewsletterController.php:430 src/Web/NewsletterController.php:517
 msgid "Subscribe"
+msgstr ""
+
+#: templates/admin/newsletter.php:36 templates/admin/newsletter.php:87
+msgid "Subscribed"
 msgstr ""
 
 #: templates/public/door.php:211
@@ -4542,7 +4609,7 @@ msgstr ""
 msgid "Task updated."
 msgstr ""
 
-#: src/Admin/Admin.php:273 src/Admin/Admin.php:274 templates/admin/tasks.php:44 templates/public/signup.php:648
+#: src/Admin/Admin.php:278 src/Admin/Admin.php:279 templates/admin/tasks.php:44 templates/public/signup.php:648
 #: templates/public/signup.php:1539
 msgid "Tasks"
 msgstr ""
@@ -5095,6 +5162,11 @@ msgstr ""
 msgid "The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent."
 msgstr ""
 
+#: templates/admin/newsletter.php:57
+#. translators: %s: a date, like 3.11.2026
+msgid "The history starts on %s, the day this version was installed. There is no older data."
+msgstr ""
+
 #: templates/admin/settings.php:1235
 msgid "The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers are never touched while they hold the role."
 msgstr ""
@@ -5577,6 +5649,10 @@ msgstr ""
 msgid "This email already belongs to a member. Carry on with them."
 msgstr ""
 
+#: src/Admin/NewsletterPage.php:154
+msgid "This email copy does not exist."
+msgstr ""
+
 #: src/Telegram/SayCommand.php:90
 msgid "This goes to the group:"
 msgstr ""
@@ -5590,17 +5666,17 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Support/Newsletter.php:844
+#: src/Support/Newsletter.php:895
 #. translators: %d: number of subscribers who chose English
 msgid "This is the English version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:839
+#: src/Support/Newsletter.php:890
 #. translators: %d: number of subscribers who chose Finnish
 msgid "This is the Finnish version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:849
+#: src/Support/Newsletter.php:900
 #. translators: %d: number of subscribers who chose no language
 msgid "This is the two-language version. Subscribers who get it: %d."
 msgstr ""
@@ -5915,6 +5991,10 @@ msgstr ""
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
+#: templates/admin/newsletter.php:44 templates/admin/newsletter.php:91
+msgid "Unsubscribed"
+msgstr ""
+
 #: templates/admin/settings.php:1851
 msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
 msgstr ""
@@ -5991,6 +6071,14 @@ msgstr ""
 msgid "Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen."
 msgstr ""
 
+#: templates/admin/newsletter.php:111
+msgid "Version"
+msgstr ""
+
+#: templates/admin/newsletter.php:134
+msgid "View the email"
+msgstr ""
+
 #: templates/admin/settings.php:1273
 msgid "View the notice people are shown"
 msgstr ""
@@ -6001,6 +6089,10 @@ msgstr ""
 
 #: templates/admin/settings.php:916
 msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
+msgstr ""
+
+#: templates/admin/newsletter.php:40
+msgid "Waiting for confirmation"
 msgstr ""
 
 #: src/Support/FollowupMail.php:1075
@@ -6082,6 +6174,14 @@ msgstr ""
 
 #: templates/public/crew-app.php:63
 msgid "Website"
+msgstr ""
+
+#: src/Admin/NewsletterPage.php:272
+msgid "Week of %1$s: %2$d subscribed"
+msgstr ""
+
+#: src/Admin/NewsletterPage.php:277
+msgid "Week of %1$s: %2$d unsubscribed"
 msgstr ""
 
 #: src/Support/Roles.php:125
@@ -6460,7 +6560,7 @@ msgstr ""
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
-#: src/Admin/Admin.php:378 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:258
+#: src/Admin/Admin.php:392 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:258
 msgid "You do not have permission to do this."
 msgstr ""
 
@@ -6487,7 +6587,7 @@ msgstr ""
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:431
+#: src/Support/Newsletter.php:436
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
@@ -6817,6 +6917,10 @@ msgstr ""
 msgid "credits"
 msgstr ""
 
+#: templates/admin/newsletter.php:72
+msgid "day"
+msgstr ""
+
 #: templates/admin/settings.php:864
 msgid "days"
 msgstr ""
@@ -7014,6 +7118,10 @@ msgstr ""
 msgid "use the form on the left, or generate a whole event’s tasks from a linked event."
 msgstr ""
 
+#: templates/admin/newsletter.php:74
+msgid "week"
+msgstr ""
+
 #: src/Support/OrganizerGuide.php:96
 msgid "wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running."
 msgstr ""
@@ -7022,7 +7130,7 @@ msgstr ""
 msgid "years after someone’s last activity"
 msgstr ""
 
-#: src/Support/Mailer.php:395
+#: src/Support/Mailer.php:410
 #. translators: %s: the manage-account link
 msgid "—\nManage your account or stop these emails: %s"
 msgstr ""

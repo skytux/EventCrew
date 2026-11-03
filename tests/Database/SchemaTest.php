@@ -246,6 +246,25 @@ final class SchemaTest extends TestCase
         self::assertGreaterThanOrEqual(29, (int) Schema::DB_VERSION);
     }
 
+    /**
+     * Schema 30: the newsletter history. Joins and leaves are a time and a
+     * kind only; each sent version keeps its counts and its copy.
+     */
+    public function testTheNewsletterHistoryTablesHoldNoAddress(): void
+    {
+        $changes = $this->statementFor(Schema::NEWSLETTER_CHANGES);
+        $sends = $this->statementFor(Schema::NEWSLETTER_SENDS);
+
+        self::assertStringContainsString('created_at datetime NOT NULL,', $changes);
+        self::assertStringContainsString("kind varchar(12) NOT NULL DEFAULT '',", $changes);
+        self::assertStringNotContainsString('email', $changes);
+        self::assertStringNotContainsString('subscriber', $changes);
+        self::assertStringContainsString('html longtext NOT NULL,', $sends);
+        self::assertStringContainsString('KEY sent_at (sent_at)', $sends);
+        self::assertStringNotContainsString('email', $sends);
+        self::assertGreaterThanOrEqual(30, (int) Schema::DB_VERSION);
+    }
+
     private function moveCanLeadToRole(): void
     {
         $method = new ReflectionMethod(Schema::class, 'moveCanLeadToRole');

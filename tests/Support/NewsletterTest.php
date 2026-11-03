@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EmailTemplate;
@@ -108,7 +109,7 @@ final class NewsletterTest extends TestCase
         ];
     }
 
-    private function newsletter(): Newsletter
+    private function newsletter(?NewsletterHistoryRepository $history = null): Newsletter
     {
         $logger = new Logger();
 
@@ -117,7 +118,9 @@ final class NewsletterTest extends TestCase
             new PersonRepository(),
             new NewsletterText(new LlmClient($logger), $logger),
             new Mailer($logger, new EmailTemplate($logger)),
-            $logger
+            $logger,
+            null,
+            $history
         );
     }
 
@@ -378,6 +381,66 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Change your details or leave the announcement', $this->mails[1]['body']);
         // The one-click header still unsubscribes.
         self::assertStringContainsString('do=unsubscribe', implode("\n", $this->mails[0]['headers']));
+    }
+
+    /**
+     * Each language version is kept once, as its first email goes: the same
+     * email, but greeting no one by name and with "#" in place of the
+     * subscriber's own links. Its counts are set after the batch.
+     */
+    public function testACopyOfEachVersionIsKeptWithoutPersonalData(): void
+    {
+        $this->withPlan([
+            'id' => 7,
+            'status' => Newsletter::PLAN_SENDING,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+        ]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'email' => 'a@example.test', 'name' => 'Anna', 'language' => 'fi'],
+            ['id' => 6, 'email' => 'b@example.test', 'name' => 'Aino', 'language' => 'fi'],
+            ['id' => 8, 'email' => 'c@example.test', 'name' => 'Bo', 'language' => 'en'],
+        ];
+
+        self::assertSame(3, $this->newsletter(new NewsletterHistoryRepository())->sendBatch());
+
+        $copies = array_values(array_filter(
+            $this->wpdb->inserts,
+            static fn (array $insert): bool => 'wp_eventcrew_newsletter_sends' === $insert['table']
+        ));
+        self::assertCount(2, $copies, 'one copy per language version');
+        self::assertSame([7, 7], array_column(array_column($copies, 'data'), 'plan_id'));
+        self::assertSame(['fi', 'en'], array_column(array_column($copies, 'data'), 'lang'));
+
+        // The Finnish copy has the subject of the first (Finnish) email, the English one of the third.
+        self::assertSame($this->mails[0]['subject'], $copies[0]['data']['subject']);
+        self::assertSame($this->mails[2]['subject'], $copies[1]['data']['subject']);
+
+        foreach ($copies as $copy) {
+            $html = (string) $copy['data']['html'];
+
+            self::assertStringContainsString('Summer Social', $html);
+
+            foreach (['Anna', 'Aino', 'Bo', '@example.test', 'token=', 'do=manage', 'do=unsubscribe'] as $personal) {
+                self::assertStringNotContainsString($personal, $html);
+            }
+        }
+
+        self::assertStringContainsString('Hei!', (string) $copies[0]['data']['html']);
+        self::assertStringContainsString('Hi!', (string) $copies[1]['data']['html']);
+        // WordPress's esc_url() keeps "#" as it is; the test stub puts http:// in front.
+        self::assertMatchesRegularExpression('~href="(http://)?#"~', (string) $copies[0]['data']['html']);
+
+        $counts = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $update): bool => 'wp_eventcrew_newsletter_sends' === $update['table']
+        ));
+        self::assertSame(
+            [
+                ['data' => ['sent' => 2, 'failed' => 0], 'where' => ['id' => 1]],
+                ['data' => ['sent' => 1, 'failed' => 0], 'where' => ['id' => 2]],
+            ],
+            array_map(static fn (array $u): array => ['data' => $u['data'], 'where' => $u['where']], $counts)
+        );
     }
 
     public function testThePlainTextGreeting(): void

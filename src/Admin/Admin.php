@@ -232,6 +232,11 @@ final class Admin
             'admin_post_eventcrew_unban_person',
             [$this->container->get(PeoplePage::class), 'unban']
         );
+
+        add_action(
+            'admin_post_' . NewsletterPage::COPY_ACTION,
+            [$this->container->get(NewsletterPage::class), 'viewCopy']
+        );
     }
 
     /**
@@ -314,6 +319,15 @@ final class Admin
             __('Email template', 'eventcrew'),
             self::CAPABILITY,
             'post.php?post=' . $this->container->get(EmailTemplate::class)->postId() . '&action=edit'
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Newsletter', 'eventcrew'),
+            __('Newsletter', 'eventcrew'),
+            self::CAPABILITY,
+            NewsletterPage::PAGE_SLUG,
+            [$this->container->get(NewsletterPage::class), 'render']
         );
 
         add_submenu_page(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
+use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 
@@ -120,6 +121,9 @@ final class Newsletter
     public const LEDGER_STOPPED = 'stopped';
     public const LEDGER_MISSED = 'missed';
 
+    /** Stands in for the subscriber's own link in the kept copy of a sent newsletter. */
+    public const COPY_LINK = '#';
+
     /** The closed reasons that keep an event out, as in AssistantKnowledge. */
     private const HIDDEN_REASONS = ['unpublished', 'disabled', 'hidden'];
 
@@ -135,7 +139,8 @@ final class Newsletter
         private readonly NewsletterText $text,
         private readonly Mailer $mailer,
         private readonly Logger $logger,
-        private readonly ?NewsletterWriter $writer = null
+        private readonly ?NewsletterWriter $writer = null,
+        private readonly ?NewsletterHistoryRepository $history = null
     ) {
     }
 
@@ -719,6 +724,15 @@ final class Newsletter
                 $lang
             ) + ['footer' => self::footer($lang), 'crew_note' => self::crewNote($lang)];
             $mail = $mails[$lang];
+
+            if (null !== $this->history && ! isset($plan['copies'][$lang])) {
+                $plan['copies'][$lang] = [
+                    'id' => $this->keepCopy((int) $plan['id'], $lang, $mail),
+                    'sent' => 0,
+                    'failed' => 0,
+                ];
+            }
+
             $greeting = self::greeting($row['name'] ?? null, $lang);
             $unsubscribe = self::unsubscribeUrl($row['id']);
             $sent = $this->mailer->toSubscriber(
@@ -737,8 +751,17 @@ final class Newsletter
 
             $plan['cursor'] = $row['id'];
             $plan[$sent ? 'sent' : 'failed']++;
+
+            if (isset($plan['copies'][$lang])) {
+                $plan['copies'][$lang][$sent ? 'sent' : 'failed']++;
+            }
+
             $state['plan'] = $plan;
             $this->save($state);
+        }
+
+        foreach ($plan['copies'] ?? [] as $copy) {
+            $this->history?->setCounts((int) $copy['id'], (int) $copy['sent'], (int) $copy['failed']);
         }
 
         if (count($rows) >= self::BATCH) {
@@ -782,6 +805,34 @@ final class Newsletter
         ));
 
         return count($rows);
+    }
+
+    /**
+     * Keeps a copy of one version of the newsletter for the Newsletter page
+     * in wp-admin, as its first email goes, and returns the copy's id (0 when
+     * it could not be kept). The copy is the email the subscribers get, made
+     * the same way, but with the greeting that has no name and with "#" in
+     * place of the subscriber's own link, so it holds no personal data.
+     *
+     * @param array{subject: string, html: string, footer: string, crew_note: string} $mail
+     */
+    private function keepCopy(int $planId, string $lang, array $mail): int
+    {
+        try {
+            $html = $this->mailer->subscriberHtml(
+                $mail['subject'],
+                self::greeting(null, $lang)['html'] . $mail['html'],
+                $mail['footer'],
+                self::COPY_LINK,
+                $mail['crew_note']
+            );
+
+            return (int) $this->history?->addSend($planId, $lang, $mail['subject'], $html);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Newsletter: the copy of the email could not be kept (' . get_class($e) . ').');
+
+            return 0;
+        }
     }
 
     /**

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.131.1
+Stable tag: 1.132.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.132.0 =
+New wp-admin page EventCrew > Newsletter: how many people are subscribed, waiting for confirmation and unsubscribed; a graph of joins and leaves per day or week with each sent newsletter marked; and a list of sent newsletters with a copy of each email to open in the browser. The history starts on the day this version is installed. Database version 30 (two new tables, no personal data).
 
 = 1.131.1 =
 The organizers' newsletter preview email says "1 subscriber" in the singular and "2 subscribers" in the plural.
@@ -1147,6 +1150,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.132.0 =
+No settings change.
 
 = 1.131.1 =
 No settings change.

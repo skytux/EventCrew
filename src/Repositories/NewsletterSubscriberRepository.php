@@ -27,6 +27,15 @@ final class NewsletterSubscriberRepository
     /** The name column's width; a longer name is cut to this many characters. */
     public const MAX_NAME_LENGTH = 100;
 
+    /**
+     * $history records each join and leave (counts only) for the Newsletter
+     * page in wp-admin.
+     */
+    public function __construct(
+        private readonly NewsletterHistoryRepository $history = new NewsletterHistoryRepository()
+    ) {
+    }
+
     private function table(): string
     {
         return Schema::table(Schema::NEWSLETTER_SUBSCRIBERS);
@@ -185,12 +194,20 @@ final class NewsletterSubscriberRepository
 
             $inserted = $wpdb->insert($this->table(), $data, array_fill(0, count($data), '%s'));
 
-            return false !== $inserted && (int) $inserted > 0 ? (int) $wpdb->insert_id : 0;
+            if (false === $inserted || (int) $inserted <= 0) {
+                return 0;
+            }
+
+            $id = (int) $wpdb->insert_id;
+            $this->history->recordChange(NewsletterHistoryRepository::SUBSCRIBED);
+
+            return $id;
         }
 
         $data = [];
+        $joins = self::STATUS_CONFIRMED !== $existing['status'];
 
-        if (self::STATUS_CONFIRMED !== $existing['status']) {
+        if ($joins) {
             $data['status'] = self::STATUS_CONFIRMED;
             $data['confirmed_at'] = $now;
         }
@@ -204,13 +221,17 @@ final class NewsletterSubscriberRepository
         }
 
         if ([] !== $data) {
-            $wpdb->update(
+            $updated = $wpdb->update(
                 $this->table(),
                 $data,
                 ['id' => $existing['id']],
                 array_fill(0, count($data), '%s'),
                 ['%d']
             );
+
+            if ($joins && false !== $updated) {
+                $this->history->recordChange(NewsletterHistoryRepository::SUBSCRIBED);
+            }
         }
 
         return $existing['id'];
@@ -251,7 +272,13 @@ final class NewsletterSubscriberRepository
             ['%s', '%s', '%s', '%s']
         );
 
-        return false !== $inserted && (int) $inserted > 0;
+        if (false === $inserted || (int) $inserted <= 0) {
+            return false;
+        }
+
+        $this->history->recordChange(NewsletterHistoryRepository::SUBSCRIBED);
+
+        return true;
     }
 
     /**
@@ -284,6 +311,11 @@ final class NewsletterSubscriberRepository
             ['%d', '%s']
         );
 
+        // Only the request that changed the row counts the join.
+        if (is_int($updated) && $updated > 0) {
+            $this->history->recordChange(NewsletterHistoryRepository::SUBSCRIBED);
+        }
+
         return false !== $updated;
     }
 
@@ -313,6 +345,11 @@ final class NewsletterSubscriberRepository
             ['%s', '%s'],
             ['%d']
         );
+
+        // A leave counts only for a confirmed subscriber; a pending sign-up never joined.
+        if (false !== $updated && self::STATUS_CONFIRMED === $row['status']) {
+            $this->history->recordChange(NewsletterHistoryRepository::UNSUBSCRIBED);
+        }
 
         return false !== $updated;
     }
@@ -462,6 +499,33 @@ final class NewsletterSubscriberRepository
         foreach (is_array($rows) ? $rows : [] as $row) {
             $language = (string) ($row['language'] ?? '');
             $counts[in_array($language, ['fi', 'en'], true) ? $language : ''] += (int) ($row['n'] ?? 0);
+        }
+
+        return $counts;
+    }
+
+    /**
+     * How many addresses are in each state: confirmed (they get the
+     * newsletter), pending (signed up, not confirmed yet) and unsubscribed.
+     *
+     * @return array{confirmed: int, pending: int, unsubscribed: int}
+     */
+    public function countByStatus(): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            "SELECT status, COUNT(*) AS n FROM {$this->table()} GROUP BY status",
+            ARRAY_A
+        );
+        $counts = [self::STATUS_CONFIRMED => 0, self::STATUS_PENDING => 0, self::STATUS_UNSUBSCRIBED => 0];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $status = (string) ($row['status'] ?? '');
+
+            if (isset($counts[$status])) {
+                $counts[$status] += (int) ($row['n'] ?? 0);
+            }
         }
 
         return $counts;
