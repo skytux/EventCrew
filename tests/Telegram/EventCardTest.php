@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Telegram\EntityHtml;
 use EventCrew\Telegram\EventCard;
 
@@ -14,6 +15,7 @@ use EventCrew\Telegram\EventCard;
 final class EventCardTest extends TelegramTestCase
 {
     use FakeEvents;
+    use FakeEventNames;
 
     private const IMAGE = 'https://holvi-cdn.example.test/image/abc.jpg';
     private const SHOP = 'https://holvi.example.test/shop/x/product/1/';
@@ -62,6 +64,24 @@ final class EventCardTest extends TelegramTestCase
         $this->event(7, '2026-07-25', 'Night', ['_eventmesh_price' => '27.50 EUR']);
 
         self::assertStringContainsString('🎟 27,50 €', EventCard::forEvent(7)['caption']);
+    }
+
+    /** EventMesh's clean names and the DJ line in place of the title as written. */
+    public function testTheCleanNameAndTheDjLineHeadTheCaption(): void
+    {
+        $this->fakeEventNames(
+            [7 => ['en' => 'Ecstatic Dance', 'fi' => 'Ekstaattinen tanssi']],
+            [7 => ['Aino Testinen', 'Bo Kokeilu', 'A & B']]
+        );
+        $this->bilingualEvent(7, 'ECSTATIC DANCE 25.7.2026 / Aino Testinen', 'Dance all night.', 'Tanssia koko yön.');
+
+        $caption = EventCard::forEvent(7)['caption'];
+
+        self::assertStringStartsWith(
+            "<b>Ecstatic Dance</b>\n<i>Ekstaattinen tanssi</i>\nDJs Aino Testinen, Bo Kokeilu &amp; A &amp; B\n📅 25.7.2026",
+            $caption
+        );
+        self::assertStringNotContainsString('ECSTATIC', $caption);
     }
 
     public function testTheFinnishTextComesFirstThenTheEnglish(): void

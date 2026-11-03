@@ -30,6 +30,10 @@ namespace EventCrew\Support;
  *    title and a link to its tickets, and the event's picture small on its
  *    left, linked like the line, when it has one.
  *
+ * "The title" is the event's clean name with the DJ line under it when
+ * EventMesh has them (EventName), else the title as written; a picture's alt
+ * text keeps the title as written.
+ *
  * Every fixed word is written in both languages ("Osta lippu · Buy a
  * ticket"), so each picture appears once and a reader of either language
  * finds their part in the same card. All styles are inline, because email
@@ -140,9 +144,11 @@ final class NewsletterLayout
 
             foreach ($later as $event) {
                 $link = self::laterLink($event);
-                $lines[] = '- ' . self::when($event) . ' · ' . self::title($event)
+                $dj = self::dj($event);
+                $lines[] = '- ' . self::when($event) . ' · ' . self::name($event)
                     . (! empty($event['sold_out']) ? ' · ' . self::pair($words, 'sold_out') : '')
-                    . ('' === $link ? '' : ': ' . $link);
+                    . ('' === $link ? '' : ': ' . $link)
+                    . ('' === $dj ? '' : "\n  " . $dj);
             }
 
             $parts[] = implode("\n", $lines);
@@ -152,7 +158,7 @@ final class NewsletterLayout
     }
 
     /**
-     * One card as plain text: the date, the title, the card's own text when
+     * One card as plain text: the date, the title, the DJ line, the card's own text when
      * it has one, the practical information, then the ticket and music links.
      *
      * @param array<string, mixed> $card
@@ -162,7 +168,8 @@ final class NewsletterLayout
     {
         $text = self::bilingualText((string) ($card['text_fi'] ?? ''), (string) ($card['text_en'] ?? ''), '');
         $lines = array_merge(
-            [self::when($card), self::title($card)],
+            [self::when($card), self::name($card)],
+            '' === self::dj($card) ? [] : [self::dj($card)],
             '' === $text ? [] : [$text],
             self::practicalLines($card, $words)
         );
@@ -212,7 +219,14 @@ final class NewsletterLayout
         $image = (string) ($card['image'] ?? '');
         $soldOut = ! empty($card['sold_out']);
         $title = self::title($card);
-        $titleFi = self::plain((string) ($card['title_fi'] ?? ''));
+        $name = self::name($card);
+        $nameFi = self::nameFi($card);
+        // The lines under the name: the Finnish name when it is different,
+        // then the DJ line. The last one keeps the space below the title.
+        $under = array_values(array_filter(
+            [$nameFi !== $name ? $nameFi : '', self::dj($card)],
+            static fn (string $line): bool => '' !== $line
+        ));
 
         $html = '';
 
@@ -241,19 +255,20 @@ final class NewsletterLayout
         $body .= sprintf(
             '<h2 style="margin:0 0 %s;font-family:%s;font-size:20px;line-height:1.3;color:%s;text-align:center">'
                 . '%s</h2>',
-            '' !== $titleFi && $titleFi !== $title ? '2px' : '14px',
+            [] !== $under ? '2px' : '14px',
             $font,
             self::TEXT_COLOR,
-            esc_html($title)
+            esc_html($name)
         );
 
-        if ('' !== $titleFi && $titleFi !== $title) {
+        foreach ($under as $index => $line) {
             $body .= sprintf(
-                '<p style="margin:0 0 14px;font-family:%s;font-size:15px;line-height:1.4;color:%s;'
+                '<p style="margin:0 0 %s;font-family:%s;font-size:15px;line-height:1.4;color:%s;'
                     . 'text-align:center">%s</p>',
+                count($under) - 1 === $index ? '14px' : '2px',
                 $font,
                 self::MUTED_COLOR,
-                esc_html($titleFi)
+                esc_html($line)
             );
         }
 
@@ -357,10 +372,11 @@ final class NewsletterLayout
             $right = '';
         }
 
+        $dj = self::dj($event);
         $text = sprintf(
             '<strong>%s</strong><br>%s%s',
             esc_html(self::when($event)),
-            esc_html(self::title($event)),
+            esc_html(self::name($event)) . ('' === $dj ? '' : '<br>' . esc_html($dj)),
             '' === $right
                 ? ''
                 : '<br><span style="font-size:14px;color:' . self::MUTED_COLOR . '">' . $right . '</span>'
@@ -513,6 +529,28 @@ final class NewsletterLayout
     private static function title(array $event): string
     {
         return self::plain((string) ($event['title'] ?? ''));
+    }
+
+    /** The event's clean name (EventName), or its title when EventMesh has none. */
+    private static function name(array $event): string
+    {
+        return self::plain(
+            EventName::name((int) ($event['id'] ?? 0), Language::ENGLISH, (string) ($event['title'] ?? ''))
+        );
+    }
+
+    /** The clean Finnish name, or the Finnish title as before; '' when there is neither. */
+    private static function nameFi(array $event): string
+    {
+        return self::plain(
+            EventName::name((int) ($event['id'] ?? 0), Language::FINNISH, (string) ($event['title_fi'] ?? ''))
+        );
+    }
+
+    /** The DJ line (EventName::djLine()), '' when there is none. */
+    private static function dj(array $event): string
+    {
+        return self::plain(EventName::djLine((int) ($event['id'] ?? 0)));
     }
 
     private static function plain(string $text): string

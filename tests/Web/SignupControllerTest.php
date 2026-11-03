@@ -26,11 +26,14 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
 final class SignupControllerTest extends TestCase
 {
+    use FakeEventNames;
+
     /** @var array<int, string> */
     private array $mails = [];
 
@@ -213,6 +216,28 @@ final class SignupControllerTest extends TestCase
 
         self::assertStringContainsString('<header class="eventcrew-event-head">', $html);
         self::assertStringNotContainsString('has-image', $html);
+    }
+
+    /** With EventMesh's clean name the card header shows it, and the DJ line on its own line. */
+    public function testTheBoardShowsTheCleanNameAndTheDjLine(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+        Functions\when('get_the_title')->justReturn('ECSTATIC DANCE 14.11.2026 / Esimerkki');
+        $this->fakeEventNames([42 => ['en' => 'Ecstatic Dance']], [42 => ['Esimerkki']]);
+
+        $row = $this->taskRow();
+        $row['event_post_id'] = 42;
+        $this->wpdb->nextResults[] = [$row];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString(
+            '<h3 class="eventcrew-event-title">Ecstatic Dance<span class="eventcrew-event-dj">DJ Esimerkki</span></h3>',
+            $html
+        );
+        self::assertStringNotContainsString('ECSTATIC DANCE', $html);
     }
 
     /** The WordPress functions a full page render touches. */

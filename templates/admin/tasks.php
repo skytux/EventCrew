@@ -85,10 +85,16 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                                 <?php foreach ($events as $eventcrew_event) : ?>
                                     <option value="<?php echo esc_attr((string) $eventcrew_event['id']); ?>">
                                         <?php
+                                        // An option cannot break a line: the name and the DJ line share one.
+                                        $eventcrew_event_name = \EventCrew\Support\EventName::oneLine(
+                                            (int) $eventcrew_event['id'],
+                                            \EventCrew\Support\EventName::lang(),
+                                            $eventcrew_event['title']
+                                        );
                                         echo esc_html(
                                             '' === $eventcrew_event['date']
-                                                ? $eventcrew_event['title']
-                                                : $eventcrew_event['date'] . ' — ' . $eventcrew_event['title']
+                                                ? $eventcrew_event_name
+                                                : $eventcrew_event['date'] . ' — ' . $eventcrew_event_name
                                         );
                                         ?>
                                     </option>
@@ -134,10 +140,16 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                                         data-ends="<?php echo esc_attr(str_replace(' ', 'T', substr($eventcrew_event['ends_at'], 0, 16))); ?>"
                                         <?php selected($eventcrew_selected_event, (string) $eventcrew_event['id']); ?>>
                                         <?php
+                                        // An option cannot break a line: the name and the DJ line share one.
+                                        $eventcrew_event_name = \EventCrew\Support\EventName::oneLine(
+                                            (int) $eventcrew_event['id'],
+                                            \EventCrew\Support\EventName::lang(),
+                                            $eventcrew_event['title']
+                                        );
                                         echo esc_html(
                                             '' === $eventcrew_event['date']
-                                                ? $eventcrew_event['title']
-                                                : $eventcrew_event['date'] . ' — ' . $eventcrew_event['title']
+                                                ? $eventcrew_event_name
+                                                : $eventcrew_event['date'] . ' — ' . $eventcrew_event_name
                                         );
                                         ?>
                                     </option>

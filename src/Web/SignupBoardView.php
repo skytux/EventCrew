@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BoardVisibility;
+use EventCrew\Support\EventName;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
@@ -97,7 +98,7 @@ final class SignupBoardView
      * first. Each carries an add-to-calendar link and the task id, so the
      * profile can surface "what am I next on" with a one-tap calendar hold.
      *
-     * @return array<int, array{task_id: int, label: string, when: string, calendar_url: string, ticket_url: string, used: ?string}>
+     * @return array<int, array{task_id: int, label: string, dj: string, when: string, calendar_url: string, ticket_url: string, used: ?string}>
      */
     private function upcomingFor(int $personId): array
     {
@@ -117,12 +118,14 @@ final class SignupBoardView
 
             $time = $task->timeRange();
             $day = self::humanDate($task->taskDate);
+            $event = EventName::ofTask($task, EventName::lang());
 
             $rows[] = [
                 'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
                 'date' => $task->taskDate,
                 'task_id' => $task->id,
-                'label' => $task->roleLabel() . ' · ' . $task->eventName(),
+                'label' => $task->roleLabel() . ' · ' . $event['name'],
+                'dj' => $event['dj'],
                 'when' => '' === $time ? $day : $day . ' · ' . $time,
                 'calendar_url' => CalendarController::url($task->id),
                 'ticket_url' => TicketList::taskTicketUrl($assignment->id),
@@ -152,7 +155,7 @@ final class SignupBoardView
      * shown under "you're on next", and repeating it here as history would be
      * an odd thing to read.
      *
-     * @return array<int, array{when: string, label: string, status: string}>
+     * @return array<int, array{when: string, label: string, dj: string, status: string}>
      */
     private function historyFor(int $personId): array
     {
@@ -172,10 +175,12 @@ final class SignupBoardView
             }
 
             $task = $this->tasks->find($assignment->taskId);
+            $event = null === $task ? ['name' => '', 'dj' => ''] : EventName::ofTask($task, EventName::lang());
 
             $history[] = [
                 'when' => self::humanDate($date),
-                'label' => null === $task ? '' : $task->roleLabel() . ' · ' . $task->eventName(),
+                'label' => null === $task ? '' : $task->roleLabel() . ' · ' . $event['name'],
+                'dj' => $event['dj'],
                 'status' => AssignmentStatus::label($assignment->status),
             ];
         }
@@ -219,7 +224,7 @@ final class SignupBoardView
      * @param array<int, Task> $tasks
      * @param array<int, int> $occupancy
      * @param array<int, bool> $mine
-     * @return array<int, array{title: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool}>}>
+     * @return array<int, array{title: string, dj: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool}>}>
      */
     private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
@@ -241,8 +246,10 @@ final class SignupBoardView
                 : 'l:' . $task->eventLabel . '|' . $task->taskDate;
 
             if (! isset($groups[$key])) {
+                $event = EventName::ofTask($task, EventName::lang());
                 $groups[$key] = [
-                    'title' => $task->eventName(),
+                    'title' => $event['name'],
+                    'dj' => $event['dj'],
                     'image' => self::eventImage($task->eventPostId),
                     'tasks' => [],
                 ];

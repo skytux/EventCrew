@@ -6,6 +6,7 @@ namespace EventCrew\Admin;
 
 use EventCrew\Models\Task;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\EventName;
 use WP_List_Table;
 
 /**
@@ -152,7 +153,9 @@ final class TasksListTable extends WP_List_Table
      */
     public function column_event($item): string
     {
-        return esc_html($item->eventName());
+        $event = EventName::ofTask($item, EventName::lang());
+
+        return esc_html($event['name']) . ('' === $event['dj'] ? '' : '<br>' . esc_html($event['dj']));
     }
 
     /**

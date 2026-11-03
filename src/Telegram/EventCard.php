@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\Language;
 use EventCrew\Support\NewsletterLayout;
@@ -19,7 +20,8 @@ use EventCrew\Support\TicketMail;
  *   server, which Telegram can always fetch). '' when there is none: the card
  *   is then sent as a text message.
  * - caption: Telegram HTML. The title in bold (and the Finnish title in
- *   italics when it is different), the date and time, the price or a sold-out
+ *   italics when it is different), the DJ line (EventName: the title is then
+ *   EventMesh's clean name, without date and DJs), the date and time, the price or a sold-out
  *   mark, then a short description: the Finnish one, then the English one,
  *   like the email. The whole caption fits Telegram's 1024 characters: each
  *   description gets at most 300 characters or its half of the room left,
@@ -46,6 +48,12 @@ final class EventCard
      * descriptions, so both languages always fit.
      */
     private const TITLE_MAX = 200;
+
+    /**
+     * The longest DJ line, in characters. With it the title lines still leave
+     * more than 400 characters for the two descriptions.
+     */
+    private const DJ_MAX = 100;
 
     /** The closed reasons that keep an event out, as in the announcement email. */
     private const HIDDEN_REASONS = ['unpublished', 'disabled', 'hidden'];
@@ -110,8 +118,13 @@ final class EventCard
         $details = EventSource::card($postId) + [
             'date' => $event['date'],
             'time' => substr($event['starts_at'], 11, 5),
-            'title' => $event['title'],
-            'title_fi' => EventSource::translatedTitle($postId, Language::FINNISH),
+            'title' => EventName::name($postId, Language::ENGLISH, $event['title']),
+            'title_fi' => EventName::name(
+                $postId,
+                Language::FINNISH,
+                EventSource::translatedTitle($postId, Language::FINNISH)
+            ),
+            'dj' => EventName::djLine($postId),
             'sold_out' => 'sold_out' === EventSource::closedReason($postId),
             'app_url' => self::appUrl(),
         ];
@@ -163,7 +176,7 @@ final class EventCard
     }
 
     /**
-     * The caption, from the event's details: date, time, title, title_fi,
+     * The caption, from the event's details: date, time, title, title_fi, dj,
      * sold_out and EventSource::card()'s price and descriptions.
      *
      * @param array<string, mixed> $event
@@ -173,6 +186,7 @@ final class EventCard
         $words = self::words();
         $title = self::cut(self::plain((string) ($event['title'] ?? '')), self::TITLE_MAX);
         $titleFi = self::cut(self::plain((string) ($event['title_fi'] ?? '')), self::TITLE_MAX);
+        $dj = self::cut(self::plain((string) ($event['dj'] ?? '')), self::DJ_MAX);
         $time = (string) ($event['time'] ?? '');
         $date = (string) ($event['date'] ?? '');
         $price = NewsletterLayout::price((string) ($event['price'] ?? ''));
@@ -181,6 +195,10 @@ final class EventCard
 
         if ('' !== $titleFi && $titleFi !== $title) {
             $head[] = '<i>' . self::escape($titleFi) . '</i>';
+        }
+
+        if ('' !== $dj) {
+            $head[] = self::escape($dj);
         }
 
         if ('' !== $date) {
