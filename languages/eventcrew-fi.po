@@ -5929,3 +5929,7 @@ msgstr "Poista kuva"
 
 msgid "Shown behind the sign-up bar at the bottom of the public pages, under a dark layer so the text stays readable. Without an image the bar has a plain dark background."
 msgstr "Näkyy julkisten sivujen alareunan tilauspalkin takana tumman kerroksen alla, jotta teksti pysyy luettavana. Ilman kuvaa palkin tausta on tasaisen tumma."
+
+#: src/Web/NewsletterController.php:259
+msgid "About the next events announcement"
+msgstr "Tietoa tulevien tapahtumien tiedotteesta"

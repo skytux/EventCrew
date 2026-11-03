@@ -278,6 +278,33 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('url(https://site.test/uploads/image-21.jpg)', $html);
     }
 
+    /** With the full form on the page, the bar has an "i" that leads to it; both use the outline button. */
+    public function testTheBarLinksToTheFullFormWithAnInfoIcon(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $controller = $this->controller();
+
+        $form = $controller->renderShortcode();
+        $html = self::bar($controller);
+
+        self::assertStringContainsString('class="eventcrew-nl-bar-info" href="#' . NewsletterController::FORM_ANCHOR . '"', $html);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-nl-button">Subscribe</button>', $form);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-nl-button">Subscribe</button>', $html);
+        // The shared style is printed once per page, with the first form.
+        self::assertStringContainsString('.eventcrew-nl-button{', $form);
+        self::assertStringNotContainsString('.eventcrew-nl-button{', $html);
+    }
+
+    /** Without the full form on the page there is nothing for the "i" to lead to. */
+    public function testNoInfoIconWithoutTheFullForm(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        self::assertStringNotContainsString('class="eventcrew-nl-bar-info"', self::bar($this->controller()));
+    }
+
     /** Without an image, the bar has its plain dark background and no image style. */
     public function testTheBarHasNoImageWhenNoneIsChosen(): void
     {
@@ -373,6 +400,7 @@ final class NewsletterControllerTest extends TestCase
 
         self::assertSame(1, substr_count($all, Turnstile::SCRIPT_URL));
         self::assertSame(2, substr_count($all, 'class="cf-turnstile"'));
-        self::assertStringContainsString('data-appearance="interaction-only"', $all);
+        // Hidden in both unless Cloudflare needs a click.
+        self::assertSame(2, substr_count($all, 'data-appearance="interaction-only"'));
     }
 }

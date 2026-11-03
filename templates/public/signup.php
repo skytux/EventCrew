@@ -143,6 +143,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             class="cf-turnstile eventcrew-turnstile"
                             data-sitekey="<?php echo esc_attr($eventcrew_turnstile_site_key); ?>"
                             data-theme="auto"
+                            data-appearance="interaction-only"
                             data-size="flexible"></div>
                         <script>
                         // Turnstile's flexible widget is never narrower than
