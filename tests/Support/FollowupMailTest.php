@@ -343,6 +343,10 @@ final class FollowupMailTest extends TestCase
         self::assertSame(['anna@example.test', 'bo@example.test', 'gus@example.test'], array_keys($byAddress));
         self::assertStringContainsString('Thank you for dancing with us', $byAddress['anna@example.test']['subject']);
         self::assertStringContainsString('Hi Anna,', $byAddress['anna@example.test']['body']);
+        // No QR code, so the mail app's own colours (dark mode too), not forced light.
+        $anna = $byAddress['anna@example.test']['body'];
+        self::assertStringContainsString('<meta name="color-scheme" content="light">', $anna);
+        self::assertStringNotContainsString('light only', $anna);
         self::assertStringContainsString('We missed you this time', $byAddress['bo@example.test']['subject']);
         self::assertStringContainsString('Thank you for dancing with us', $byAddress['gus@example.test']['subject']);
 
@@ -577,6 +581,7 @@ final class FollowupMailTest extends TestCase
             $body = $mail['body'];
 
             self::assertLessThan(90 * 1024, strlen($body), 'under about 90 KB');
+            self::assertStringNotContainsString('light only', $body, 'no QR code, so not forced light');
             $fi = $came ? 'Kiitos, että tanssit kanssamme' : 'Kaipasimme sinua tällä kertaa';
             $en = $came ? 'Thank you for dancing with us' : 'We missed you this time';
             self::assertStringContainsString($fi, $mail['subject']);

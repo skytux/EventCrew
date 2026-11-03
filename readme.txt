@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.115.0
+Stable tag: 1.116.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.116.0 =
+The thank-you and sorry emails no longer force light colours (they have no QR code); mail apps may show them in dark mode like the announcement. Ticket emails stay light-only.
 
 = 1.115.0 =
 Announcement and thank-you email event cards: the venue, the address and the door times are aligned left, with an empty line after the address; the door times are one Finnish block and one English block, each with its FI / EN label; the listen button shows the play icon on its own line above the two languages. A card with a picture puts the date, the name and the DJ line in the picture's alt text, styled as a heading, so they show when images are not loaded; the intro texts are aligned left.
@@ -1063,6 +1066,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.116.0 =
+Email colours only.
 
 = 1.115.0 =
 Email layout only.
