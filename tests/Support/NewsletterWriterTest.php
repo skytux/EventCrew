@@ -257,6 +257,7 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringContainsString('2 to 3 sentences in English', $system);
         self::assertStringContainsString('Do not use the word "vol' . 'unteer"', $system);
         self::assertStringContainsString('Do not invent times, prices, places, names', $system);
+        self::assertStringContainsString('A DJ name is a person, never a place.', $system);
         self::assertStringContainsString('Say "dance floor", never "party".', $system);
         self::assertStringContainsString('Do not reuse their openings, phrases or sentence structure', $system);
         self::assertStringContainsString('Newest opening.', $system);
@@ -268,6 +269,7 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringContainsString('Event: Summer Social', $user);
         self::assertStringContainsString('Date: Monday 27 July 2026, 21:00', $user);
         self::assertStringContainsString(self::DESCRIPTION, $user);
+        self::assertStringContainsString('DJs (people who play the music, not places):', $user);
         self::assertStringContainsString('- DJ Aurora: Warm, rolling grooves. x', $user);
         self::assertStringContainsString('- DJ Kuu', $user);
         self::assertStringNotContainsString('not a name', $user);
@@ -280,8 +282,10 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertStringContainsString('opening text', self::system($opening));
         self::assertStringContainsString('Newest opening.', self::system($opening));
+        self::assertStringContainsString('A DJ name is a person, never a place.', self::system($opening));
         self::assertStringContainsString(
-            '- Monday 27 July 2026, 21:00: Summer Social. DJs: DJ Aurora, DJ Kuu',
+            "- Monday 27 July 2026, 21:00: Summer Social. DJs (people who play the music, not places): "
+            . "DJ Aurora, DJ Kuu\n  Text about this event: Come and dance to the warm grooves of DJ Aurora.",
             self::user($opening)
         );
         self::assertSame('Summer is here, and so is the dance floor.', self::user($openingFi));
