@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.122.0
+Stable tag: 1.122.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.122.1 =
+Fix: the sign-up script in the next events announcement box now runs. WordPress changed its "&" characters into "&#038;", which stopped the script, so the form still loaded the page again.
 
 = 1.122.0 =
 Fix: the next events announcement form and the bar now really send the sign-up without loading the page again. In 1.121.0 the script sent it to a wrong address and fell back to loading the page.
@@ -1087,6 +1090,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.122.1 =
+No settings change.
 
 = 1.122.0 =
 No settings change.

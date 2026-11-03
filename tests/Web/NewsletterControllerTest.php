@@ -453,6 +453,24 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringNotContainsString('fetch(f.action', $page);
     }
 
+    /**
+     * The script is printed in the block's HTML, where WordPress turns "&" into
+     * "&#038;" (after a "<" it reads as a tag), which breaks the script.
+     */
+    public function testTheSendingScriptHasNoAmpersandOrLessThan(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $page = $this->controller()->renderShortcode();
+        $start = strpos($page, '<script>(function(){if(window.eventcrewNlAjax)');
+        self::assertNotFalse($start);
+        $script = substr($page, $start + 8, strpos($page, '</script>', $start) - $start - 8);
+
+        self::assertStringNotContainsString('&', $script);
+        self::assertStringNotContainsString('<', $script);
+    }
+
     // ---- The manage page --------------------------------------------------
 
     /** Opening the link only shows the page, with the name and language filled in. */

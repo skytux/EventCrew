@@ -107,11 +107,15 @@ final class NewsletterController
      * Without fetch the forms post as before. When the request fails, the form
      * posts as before; when the answer cannot be placed, the page goes to the
      * address the plain form would have gone to.
+     *
+     * The script is printed inside the block's HTML, and WordPress changes "&"
+     * there into "&#038;" (after a "<" it reads as a tag). So the script has
+     * no "&" and no "<" in it.
      */
     private const AJAX_JS = '(function(){if(window.eventcrewNlAjax){return;}window.eventcrewNlAjax=1;'
         . 'if(!window.fetch||!window.FormData||!window.DOMParser){return;}'
         . 'var A=["eventcrew_newsletter_join","eventcrew_newsletter_name"],'
-        . 'still=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);'
+        . 'still=window.matchMedia?matchMedia("(prefers-reduced-motion: reduce)").matches:false;'
         . 'function widgets(el){if(!window.turnstile){return;}'
         . 'el.querySelectorAll(".cf-turnstile").forEach(function(c){if(!c.firstChild){'
         . 'try{turnstile.render(c);}catch(e){}}});}'
@@ -119,7 +123,7 @@ final class NewsletterController
         . 'var m=to.querySelector(".eventcrew-newsletter-message,.eventcrew-nl-bar-message");'
         . 'if(m){m.setAttribute("tabindex","-1");m.focus({preventScroll:true});}'
         . 'if(to.id!=="eventcrew-nl-bar"){var r=to.getBoundingClientRect();'
-        . 'if(r.top<0||r.top>window.innerHeight){to.scrollIntoView({behavior:still?"auto":"smooth",block:"start"});}}'
+        . 'if(0>r.top||r.top>window.innerHeight){to.scrollIntoView({behavior:still?"auto":"smooth",block:"start"});}}'
         . 'to.dispatchEvent(new CustomEvent("eventcrew-newsletter-answer",{bubbles:true,detail:{result:result}}));}'
         . 'function place(where,d){var doc=new DOMParser().parseFromString(String(d.html||""),"text/html"),to,from;'
         . 'if(where==="eventcrew-nl-bar"){to=document.getElementById("eventcrew-nl-bar");from=doc.body;}'
@@ -127,7 +131,7 @@ final class NewsletterController
         . 'if(!to||!from){return false;}to.innerHTML=from.innerHTML;settle(to,d.result);return true;}'
         . 'document.addEventListener("submit",function(e){var f=e.target;'
         . 'if(e.defaultPrevented||!f.closest||!f.closest(".eventcrew-newsletter,#eventcrew-nl-bar")){return;}'
-        . 'var a=f.querySelector("input[name=action]");if(!a||A.indexOf(a.value)<0){return;}'
+        . 'var a=f.querySelector("input[name=action]");if(!a||-1===A.indexOf(a.value)){return;}'
         . 'e.preventDefault();if(f.getAttribute("aria-busy")){return;}f.setAttribute("aria-busy","true");'
         . 'var bt=f.querySelector("button[type=submit]");if(bt){bt.disabled=true;}'
         . 'var fd=new FormData(f);fd.append("eventcrew_ajax","1");'
@@ -136,11 +140,11 @@ final class NewsletterController
         . 'fetch(f.getAttribute("action"),{method:"POST",body:fd,credentials:"same-origin"})'
         . '.then(function(r){if(!r.ok){throw new Error("http");}return r.json();})'
         . '.then(function(j){if(!j||!j.success||!j.data){throw new Error("json");}'
-        . 'if(!place(where,j.data)&&j.data.url){location.href=j.data.url;}})'
+        . 'if(!place(where,j.data)){if(j.data.url){location.href=j.data.url;}}})'
         . '.catch(function(){f.removeAttribute("aria-busy");if(bt){bt.disabled=false;}'
         . 'HTMLFormElement.prototype.submit.call(f);});});'
         . 'document.addEventListener("click",function(e){'
-        . 'var s=e.target.closest&&e.target.closest(".eventcrew-nl-skip"),f=s&&s.closest("form");'
+        . 'var s=e.target.closest?e.target.closest(".eventcrew-nl-skip"):null,f=s?s.closest("form"):null;'
         . 'if(!f||!f.closest(".eventcrew-newsletter,#eventcrew-nl-bar")){return;}e.preventDefault();'
         . 'var to=f.closest(".eventcrew-newsletter,#eventcrew-nl-bar");f.remove();settle(to,"sent");});})();';
 
