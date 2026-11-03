@@ -133,7 +133,7 @@ final class NewsletterController
         . 'var fd=new FormData(f);fd.append("eventcrew_ajax","1");'
         . 'fd.append("lang",document.documentElement.lang||"");'
         . 'var an=f.querySelector("input[name=anchor]"),where=an?an.value:"eventcrew-newsletter";'
-        . 'fetch(f.action,{method:"POST",body:fd,credentials:"same-origin"})'
+        . 'fetch(f.getAttribute("action"),{method:"POST",body:fd,credentials:"same-origin"})'
         . '.then(function(r){if(!r.ok){throw new Error("http");}return r.json();})'
         . '.then(function(j){if(!j||!j.success||!j.data){throw new Error("json");}'
         . 'if(!place(where,j.data)&&j.data.url){location.href=j.data.url;}})'

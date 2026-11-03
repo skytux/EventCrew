@@ -437,6 +437,22 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame(1, substr_count($page, 'window.eventcrewNlAjax=1'));
     }
 
+    /**
+     * The form has a hidden field named "action", so form.action is that field and
+     * not the address. The script must read the attribute.
+     */
+    public function testTheSendingScriptReadsTheFormAddressAttribute(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $page = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('<input type="hidden" name="action"', $page);
+        self::assertStringContainsString('fetch(f.getAttribute("action")', $page);
+        self::assertStringNotContainsString('fetch(f.action', $page);
+    }
+
     // ---- The manage page --------------------------------------------------
 
     /** Opening the link only shows the page, with the name and language filled in. */
