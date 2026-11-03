@@ -6005,3 +6005,37 @@ msgstr "Loppuunmyyty"
 #: src/Support/NewsletterLayout.php:440
 msgid "Listen to the DJ"
 msgstr "Kuuntele DJ:tä"
+
+#: src/Admin/SettingsPage.php:799 templates/admin/settings.php:1549
+msgid "About (English)"
+msgstr "Tietoja (englanti)"
+
+#: src/Admin/SettingsPage.php:800 templates/admin/settings.php:1550
+msgid "About (Finnish)"
+msgstr "Tietoja (suomi)"
+
+#: src/Admin/SettingsPage.php:801 templates/admin/settings.php:1551
+msgid "Description (English)"
+msgstr "Kuvaus (englanti)"
+
+#: src/Admin/SettingsPage.php:802 templates/admin/settings.php:1552
+msgid "Description (Finnish)"
+msgstr "Kuvaus (suomi)"
+
+#: templates/admin/settings.php:1589
+#. translators: %d: the most characters Telegram allows in this text
+msgid "At most %d characters."
+msgstr "Enintään %d merkkiä."
+
+#: templates/admin/settings.php:1596
+msgid "Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?"
+msgstr "Telegramin rajapinnassa ei ole asetusta, joka estää lisäämästä bottia muihin ryhmiin. Estä se poistamalla Allow Groups käytöstä BotFatherissa: /mybots → botti → Bot Settings → Allow Groups?"
+
+#: src/Admin/SettingsPage.php:779
+#. translators: %s: each text Telegram refused, with Telegram's reason
+msgid "Telegram did not accept these texts. They are sent again the next time you save: %s"
+msgstr "Telegram ei hyväksynyt näitä tekstejä. Ne lähetetään uudelleen, kun tallennat seuraavan kerran: %s"
+
+#: src/Admin/SettingsPage.php:788
+msgid "The changed About and Description texts were sent to Telegram."
+msgstr "Muuttuneet Tietoja- ja Kuvaus-tekstit lähetettiin Telegramiin."

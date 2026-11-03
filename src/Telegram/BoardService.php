@@ -507,12 +507,25 @@ final class BoardService
 
         $chatId = (int) ($chat['id'] ?? 0);
 
-        // With the lock on, only the first group ever holds the board; a later
-        // group adding the bot is ignored rather than stealing it.
-        if (0 !== $chatId && ! $this->moveBlocked($chatId)) {
-            $this->setBoardChat($chatId);
-            $this->refresh();
+        if (0 === $chatId) {
+            return;
         }
+
+        // With the lock on, only the first group ever holds the board. Any
+        // other group that adds the bot is left straight away, so the bot is
+        // never a member of a group it does not serve.
+        if ($this->moveBlocked($chatId)) {
+            $this->logger->info(sprintf(
+                'Bot added to group %d while the board is locked to another group; leaving it.',
+                $chatId
+            ));
+            $this->telegram->leaveChat($chatId);
+
+            return;
+        }
+
+        $this->setBoardChat($chatId);
+        $this->refresh();
     }
 
     /**

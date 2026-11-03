@@ -61,7 +61,7 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, profile: array<string, string>, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1542,6 +1542,63 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+            <?php
+            // The bot's About and Description, per language. Saving sends
+            // each changed text to Telegram; an empty field clears it there.
+            $eventcrew_profile_fields = [
+                ['telegram_about_en', __('About (English)', 'eventcrew'), 120, false],
+                ['telegram_about_fi', __('About (Finnish)', 'eventcrew'), 120, false],
+                ['telegram_description_en', __('Description (English)', 'eventcrew'), 512, true],
+                ['telegram_description_fi', __('Description (Finnish)', 'eventcrew'), 512, true],
+            ];
+            ?>
+            <?php foreach ($eventcrew_profile_fields as $eventcrew_pf) : ?>
+                <?php
+                [$eventcrew_pf_name, $eventcrew_pf_label, $eventcrew_pf_max, $eventcrew_pf_area] = $eventcrew_pf;
+                $eventcrew_pf_id = 'eventcrew-' . str_replace('_', '-', $eventcrew_pf_name);
+                $eventcrew_pf_text = $telegram['profile'][$eventcrew_pf_name] ?? '';
+                ?>
+                <tr>
+                    <th scope="row">
+                        <label for="<?php echo esc_attr($eventcrew_pf_id); ?>">
+                            <?php echo esc_html($eventcrew_pf_label); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <?php if ($eventcrew_pf_area) : ?>
+                            <textarea
+                                id="<?php echo esc_attr($eventcrew_pf_id); ?>"
+                                name="<?php echo esc_attr($eventcrew_pf_name); ?>"
+                                rows="4"
+                                maxlength="<?php echo esc_attr((string) $eventcrew_pf_max); ?>"
+                                class="large-text"><?php echo esc_textarea($eventcrew_pf_text); ?></textarea>
+                        <?php else : ?>
+                            <input
+                                type="text"
+                                id="<?php echo esc_attr($eventcrew_pf_id); ?>"
+                                name="<?php echo esc_attr($eventcrew_pf_name); ?>"
+                                maxlength="<?php echo esc_attr((string) $eventcrew_pf_max); ?>"
+                                value="<?php echo esc_attr($eventcrew_pf_text); ?>"
+                                class="large-text">
+                        <?php endif; ?>
+                        <p class="description">
+                            <span class="ec-char-count" data-ec-for="<?php echo esc_attr($eventcrew_pf_id); ?>"></span>
+                            <?php
+                            printf(
+                                /* translators: %d: the most characters Telegram allows in this text */
+                                esc_html__('At most %d characters.', 'eventcrew'),
+                                (int) $eventcrew_pf_max
+                            );
+                            ?>
+                        </p>
+                        <?php if ('telegram_description_fi' === $eventcrew_pf_name) : ?>
+                            <p class="description">
+                                <?php esc_html_e('Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                            </p>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
             <tr>
                 <th scope="row"><?php esc_html_e('REST workaround', 'eventcrew'); ?></th>
                 <td>
@@ -1580,6 +1637,19 @@ if (! defined('ABSPATH')) {
                 </tr>
             <?php endif; ?>
         </table>
+        <script>
+        // Live character counts for the bot's About and Description fields.
+        // With JS off the counts stay empty and maxlength still holds the limit.
+        (function () {
+            document.querySelectorAll('.ec-char-count').forEach(function (count) {
+                var field = document.getElementById(count.getAttribute('data-ec-for'));
+                if (!field) { return; }
+                function update() { count.textContent = field.value.length + ' / ' + field.maxLength + '.'; }
+                field.addEventListener('input', update);
+                update();
+            });
+        })();
+        </script>
 
         <?php if ($telegram['secret_in_url']) : ?>
             <div class="notice notice-warning inline" style="margin:1em 0">
