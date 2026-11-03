@@ -88,6 +88,7 @@ final class NewsletterController
         . 'height:24px;border:1.5px solid currentColor;border-radius:50%;font:italic 600 15px/1 Georgia,serif}'
         . '.eventcrew-nl-bar .cf-turnstile{position:absolute;bottom:100%;left:50%;transform:translateX(-50%)}'
         . '.eventcrew-nl-bar-message{margin:0 0 4px;text-align:center}'
+        . '.eventcrew-nl-top{margin:0 0 8px;text-align:center;font-size:14px}'
         . '.eventcrew-nl-bar-close{position:absolute;top:50%;right:4px;transform:translateY(-50%);background:none;'
         . 'border:0;color:inherit;font-size:22px;line-height:1;cursor:pointer;width:44px;height:44px;padding:0}'
         . '@media (max-width:600px){.eventcrew-nl-bar-label{display:none}}';
@@ -246,7 +247,8 @@ final class NewsletterController
             . '<div class="eventcrew-newsletter" id="' . esc_attr(self::FORM_ANCHOR) . '">';
 
         if ('' !== $message) {
-            $html .= '<p class="eventcrew-newsletter-message" role="status">' . esc_html($message) . '</p>';
+            $html .= '<p class="eventcrew-newsletter-message" role="status">' . esc_html($message) . '</p>'
+                . self::backToTop();
         }
 
         $html .= $this->formStart(self::FORM_ANCHOR)
@@ -306,7 +308,8 @@ final class NewsletterController
             . '<style>' . self::BAR_CSS . '</style>';
 
         if ('' !== $message) {
-            $html .= '<p class="eventcrew-nl-bar-message" role="status">' . esc_html($message) . '</p>';
+            $html .= '<p class="eventcrew-nl-bar-message" role="status">' . esc_html($message) . '</p>'
+                . self::backToTop();
         }
 
         // The "i" leads to the full form (with its note) when the page has one.
@@ -336,6 +339,12 @@ final class NewsletterController
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
         echo $html;
+    }
+
+    /** The link under the answer to a sign-up: back to the top of the page. */
+    private static function backToTop(): string
+    {
+        return '<p class="eventcrew-nl-top"><a href="#top">' . esc_html__('Back to top', 'eventcrew') . ' ↑</a></p>';
     }
 
     /**

@@ -5918,6 +5918,9 @@ msgstr "Tulevat tapahtumat sähköpostiisi"
 msgid "Subscribe"
 msgstr "Tilaa"
 
+msgid "Back to top"
+msgstr "Takaisin ylös"
+
 msgid "Sign-up bar background image"
 msgstr "Tilauspalkin taustakuva"
 

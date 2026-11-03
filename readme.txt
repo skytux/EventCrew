@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.97.8
+Stable tag: 1.97.9
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.97.9 =
+After the answer to a sign-up for the next events announcement (in the full form or in the bar), a "Back to top" link takes the visitor back to the top of the page.
 
 = 1.97.8 =
 The Cloudflare check of the next events announcement sign-up is only in the full form (e.g. the site footer) when the page has one. Subscribe in the sticky bar copies the address into that form, scrolls to it, and sends it once its check is done, so a visitor no longer gets two checks. A page without the full form keeps the check in the bar.
@@ -955,6 +958,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.97.9 =
+No database change.
 
 = 1.97.8 =
 No database change.

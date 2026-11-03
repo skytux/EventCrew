@@ -483,7 +483,7 @@ msgstr ""
 msgid "About (Finnish)"
 msgstr ""
 
-#: src/Web/NewsletterController.php:275
+#: src/Web/NewsletterController.php:318
 msgid "About the next events announcement"
 msgstr ""
 
@@ -784,6 +784,10 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
+#: src/Web/NewsletterController.php:347
+msgid "Back to top"
+msgstr ""
+
 #: templates/admin/settings.php:864
 msgid "Background job"
 msgstr ""
@@ -862,7 +866,7 @@ msgstr ""
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:441
+#: src/Support/NewsletterLayout.php:446
 msgid "Buy a ticket"
 msgstr ""
 
@@ -987,7 +991,7 @@ msgstr ""
 msgid "Client ID (the bot ID):"
 msgstr ""
 
-#: src/Web/NewsletterController.php:291 templates/public/door.php:234 templates/public/door.php:314 templates/public/door.php:342
+#: src/Web/NewsletterController.php:336 templates/public/door.php:234 templates/public/door.php:314 templates/public/door.php:342
 msgid "Close"
 msgstr ""
 
@@ -999,7 +1003,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:295 src/Support/NewsletterLayout.php:439
+#: src/Support/Newsletter.php:295 src/Support/NewsletterLayout.php:444
 msgid "Coming events"
 msgstr ""
 
@@ -1036,7 +1040,7 @@ msgstr ""
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:510 src/Telegram/SayCommand.php:94 src/Web/NewsletterController.php:577
+#: src/Telegram/AssistantService.php:510 src/Telegram/SayCommand.php:94 src/Web/NewsletterController.php:657
 msgid "Confirm"
 msgstr ""
 
@@ -1060,7 +1064,7 @@ msgstr ""
 msgid "Confirm your new email address"
 msgstr ""
 
-#: src/Web/NewsletterController.php:571
+#: src/Web/NewsletterController.php:651
 msgid "Confirm your subscription to the next events announcement"
 msgstr ""
 
@@ -1360,7 +1364,7 @@ msgstr ""
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr ""
 
-#: src/Support/Newsletter.php:582 src/Web/CrewAdminController.php:182 src/Web/NewsletterController.php:632
+#: src/Support/Newsletter.php:582 src/Web/CrewAdminController.php:182 src/Web/NewsletterController.php:712
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -1766,7 +1770,7 @@ msgstr ""
 msgid "Get my ticket"
 msgstr ""
 
-#: src/Web/NewsletterController.php:282
+#: src/Web/NewsletterController.php:325
 msgid "Get the coming events by email"
 msgstr ""
 
@@ -2252,7 +2256,7 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:440
+#: src/Support/NewsletterLayout.php:445
 msgid "Later"
 msgstr ""
 
@@ -2269,7 +2273,7 @@ msgstr ""
 msgid "Leave this blank and EventCrew uses the link it found by asking Telegram: %s. Anything you type here wins over it."
 msgstr ""
 
-#: src/Web/NewsletterController.php:360
+#: src/Web/NewsletterController.php:440
 msgid "Leave this field empty"
 msgstr ""
 
@@ -2305,7 +2309,7 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:443
+#: src/Support/NewsletterLayout.php:448
 msgid "Listen to the DJ"
 msgstr ""
 
@@ -2492,7 +2496,7 @@ msgstr ""
 msgid "Next date"
 msgstr ""
 
-#: src/Web/NewsletterController.php:606 src/Web/NewsletterController.php:610 templates/admin/settings.php:1372 templates/public/signup.php:637
+#: src/Web/NewsletterController.php:686 src/Web/NewsletterController.php:690 templates/admin/settings.php:1372 templates/public/signup.php:637
 #: templates/public/signup.php:1729
 msgid "Next events announcement"
 msgstr ""
@@ -3223,7 +3227,7 @@ msgstr ""
 msgid "Press again to send the rest."
 msgstr ""
 
-#: src/Web/NewsletterController.php:547
+#: src/Web/NewsletterController.php:627
 msgid "Press the button to stop this announcement. It will not be sent."
 msgstr ""
 
@@ -3934,7 +3938,7 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:444
+#: src/Support/NewsletterLayout.php:449
 msgid "Sold out"
 msgstr ""
 
@@ -3954,7 +3958,7 @@ msgstr ""
 msgid "Someone was made an organizer"
 msgstr ""
 
-#: src/Web/NewsletterController.php:574
+#: src/Web/NewsletterController.php:654
 #. translators: %s: the site's name
 msgid "Someone, probably you, asked for the next events announcement of %s at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days."
 msgstr ""
@@ -4019,7 +4023,7 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#: src/Web/NewsletterController.php:222 src/Web/NewsletterController.php:287
+#: src/Web/NewsletterController.php:264 src/Web/NewsletterController.php:330
 msgid "Subscribe"
 msgstr ""
 
@@ -4217,7 +4221,7 @@ msgstr ""
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
-#: src/Web/NewsletterController.php:337
+#: src/Web/NewsletterController.php:417
 msgid "Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent."
 msgstr ""
 
@@ -4257,7 +4261,7 @@ msgstr ""
 msgid "That did not go through. Check the connection and try again."
 msgstr ""
 
-#: src/Web/NewsletterController.php:338
+#: src/Web/NewsletterController.php:418
 msgid "That does not look like an email address. Please check it."
 msgstr ""
 
@@ -4418,7 +4422,7 @@ msgstr[1] ""
 msgid "The announcement is being sent now: %d emails so far."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:558
+#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:638
 msgid "The announcement is stopped. It will not be sent."
 msgstr ""
 
@@ -4466,7 +4470,7 @@ msgstr ""
 msgid "The changed About and Description texts were sent to Telegram."
 msgstr ""
 
-#: src/Web/NewsletterController.php:339
+#: src/Web/NewsletterController.php:419
 msgid "The check that you are not a bot failed. Please try again."
 msgstr ""
 
@@ -4940,7 +4944,7 @@ msgstr ""
 msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:127 src/Web/NewsletterController.php:560
+#: src/Web/CrewAdminNewsletter.php:127 src/Web/NewsletterController.php:640
 msgid "This announcement was already stopped or sent."
 msgstr ""
 
@@ -4981,7 +4985,7 @@ msgstr ""
 msgid "This link is invalid or has expired"
 msgstr ""
 
-#: src/Telegram/ManageController.php:62 src/Web/NewsletterController.php:594
+#: src/Telegram/ManageController.php:62 src/Web/NewsletterController.php:674
 msgid "This link is no longer valid."
 msgstr ""
 
@@ -5139,7 +5143,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:442 src/Support/WelcomeSender.php:431 templates/public/signup.php:418
+#: src/Support/NewsletterLayout.php:447 src/Support/WelcomeSender.php:431 templates/public/signup.php:418
 msgid "Tickets"
 msgstr ""
 
@@ -5189,7 +5193,7 @@ msgstr ""
 msgid "Token set, but the webhook is not installed — install it from the Settings page."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:559
+#: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:639
 msgid "Too late: the announcement is already being sent."
 msgstr ""
 
@@ -5345,7 +5349,7 @@ msgid_plural "We keep your record for %d years after your last activity — the 
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Web/NewsletterController.php:224
+#: src/Web/NewsletterController.php:266
 msgid "We send you an email to confirm. You can leave the announcement at any time with the link in every announcement."
 msgstr ""
 
@@ -5625,7 +5629,7 @@ msgstr ""
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: src/Web/NewsletterController.php:511
+#: src/Web/NewsletterController.php:591
 msgid "You are now subscribed to the next events announcement. Thank you!"
 msgstr ""
 
@@ -5707,7 +5711,7 @@ msgid_plural "You have %d free-entry credits. Pick an event to spend one on:"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Web/NewsletterController.php:527
+#: src/Web/NewsletterController.php:607
 msgid "You have left the announcement. You will not get it any more."
 msgstr ""
 
@@ -5783,7 +5787,7 @@ msgstr ""
 msgid "Your details"
 msgstr ""
 
-#: src/Web/NewsletterController.php:214 src/Web/NewsletterController.php:217 src/Web/NewsletterController.php:285
+#: src/Web/NewsletterController.php:256 src/Web/NewsletterController.php:259 src/Web/NewsletterController.php:328
 msgid "Your email address"
 msgstr ""
 
