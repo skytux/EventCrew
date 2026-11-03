@@ -233,6 +233,19 @@ final class SchemaTest extends TestCase
         self::assertGreaterThanOrEqual(21, (int) Schema::DB_VERSION);
     }
 
+    /**
+     * Schema 29: a subscriber keeps the name they are greeted with and the
+     * language their browser preferred.
+     */
+    public function testSubscribersHaveANameAndALanguage(): void
+    {
+        $sql = $this->statementFor(Schema::NEWSLETTER_SUBSCRIBERS);
+
+        self::assertStringContainsString('name varchar(100) DEFAULT NULL,', $sql);
+        self::assertStringContainsString("language varchar(2) NOT NULL DEFAULT '',", $sql);
+        self::assertGreaterThanOrEqual(29, (int) Schema::DB_VERSION);
+    }
+
     private function moveCanLeadToRole(): void
     {
         $method = new ReflectionMethod(Schema::class, 'moveCanLeadToRole');

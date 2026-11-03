@@ -431,7 +431,8 @@ final class Kernel
                 $container->get(Mailer::class),
                 $container->get(Logger::class),
                 $container->get(FollowupText::class),
-                $container->get(NewsletterWriter::class)
+                $container->get(NewsletterWriter::class),
+                $container->get(NewsletterSubscriberRepository::class)
             )
         );
 
@@ -961,7 +962,8 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(TicketBuyerRepository::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                $container->get(NewsletterSubscriberRepository::class)
             )
         );
 
@@ -971,7 +973,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(PersonEraser::class),
                 $container->get(TicketBuyerRepository::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                $container->get(NewsletterSubscriberRepository::class)
             )
         );
 

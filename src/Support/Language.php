@@ -73,7 +73,61 @@ final class Language
      */
     public static function fromBrowser(?string $header): ?string
     {
-        // Per language: its best q value, and where it was first listed.
+        $rank = self::browserRanks($header);
+        $finnish = $rank[self::FINNISH] ?? null;
+        $english = $rank[self::ENGLISH] ?? null;
+
+        if (null === $finnish || $finnish['q'] <= 0.0) {
+            return null;
+        }
+
+        if (
+            null === $english
+            || $finnish['q'] > $english['q']
+            || ($finnish['q'] === $english['q'] && $finnish['at'] < $english['at'])
+        ) {
+            return self::FINNISH;
+        }
+
+        return null;
+    }
+
+    /**
+     * Which of Finnish and English the browser lists first in its
+     * Accept-Language preference order (highest q value, then the earlier
+     * one): 'fi', 'en', or '' when it lists neither, or has no header.
+     * Unlike fromBrowser(), "no answer" stays distinct from English, so a
+     * stored value can tell "not known" apart.
+     */
+    public static function preferredInBrowser(?string $header): string
+    {
+        $best = '';
+        $bestQuality = 0.0;
+        $bestAt = PHP_INT_MAX;
+
+        foreach (self::browserRanks($header) as $language => $rank) {
+            if ($rank['q'] <= 0.0) {
+                continue;
+            }
+
+            if ($rank['q'] > $bestQuality || ($rank['q'] === $bestQuality && $rank['at'] < $bestAt)) {
+                $best = $language;
+                $bestQuality = $rank['q'];
+                $bestAt = $rank['at'];
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Per supported language in an Accept-Language header: its best q value,
+     * and the position where it was first listed.
+     *
+     * @return array<string, array{q: float, at: int}>
+     */
+    private static function browserRanks(?string $header): array
+    {
         $rank = [];
 
         foreach (explode(',', (string) $header) as $position => $part) {
@@ -97,22 +151,20 @@ final class Language
             }
         }
 
-        $finnish = $rank[self::FINNISH] ?? null;
-        $english = $rank[self::ENGLISH] ?? null;
+        return $rank;
+    }
 
-        if (null === $finnish || $finnish['q'] <= 0.0) {
-            return null;
-        }
+    /**
+     * preferredInBrowser() for the current request's Accept-Language header.
+     */
+    public static function preferredInRequest(): string
+    {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- isset checked inline.
+        $header = isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])
+            ? sanitize_text_field(wp_unslash((string) $_SERVER['HTTP_ACCEPT_LANGUAGE']))
+            : null;
 
-        if (
-            null === $english
-            || $finnish['q'] > $english['q']
-            || ($finnish['q'] === $english['q'] && $finnish['at'] < $english['at'])
-        ) {
-            return self::FINNISH;
-        }
-
-        return null;
+        return self::preferredInBrowser($header);
     }
 
     /**

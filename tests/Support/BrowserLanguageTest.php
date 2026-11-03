@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Functions;
 use EventCrew\Support\Language;
 use EventCrew\Tests\TestCase;
 
@@ -43,5 +44,56 @@ final class BrowserLanguageTest extends TestCase
     public function testTheBrowsersPreferenceDecides(?string $header, ?string $expected): void
     {
         self::assertSame($expected, Language::fromBrowser($header));
+    }
+
+    /**
+     * What a subscriber's language column is filled with: the first of
+     * Finnish and English in the browser's order, or '' for neither.
+     *
+     * @return array<string, array{0: ?string, 1: string}>
+     */
+    public static function preferences(): array
+    {
+        return [
+            'missing header' => [null, ''],
+            'empty header' => ['', ''],
+            'Finnish with a region' => ['fi-FI', 'fi'],
+            'English with a region' => ['en-GB', 'en'],
+            'English first, Finnish after' => ['en-US,en;q=0.9,fi;q=0.8', 'en'],
+            'Finnish first, English after' => ['fi-FI,fi;q=0.9,en;q=0.7', 'fi'],
+            'q-values beat the listed order' => ['en;q=0.5,fi;q=0.9', 'fi'],
+            'q-values beat the listed order, the other way' => ['fi;q=0.4,en-GB;q=0.6', 'en'],
+            'equal q, the first listed wins' => ['en;q=0.8,fi;q=0.8', 'en'],
+            'Swedish first, then English' => ['sv-SE,en;q=0.5', 'en'],
+            'neither language' => ['sv-SE,de;q=0.8', ''],
+            'refused with q=0' => ['en;q=0,de', ''],
+            'wildcard only' => ['*', ''],
+        ];
+    }
+
+    /**
+     * @dataProvider preferences
+     */
+    public function testTheSubscriberLanguageFollowsTheBrowsersOrder(?string $header, string $expected): void
+    {
+        self::assertSame($expected, Language::preferredInBrowser($header));
+    }
+
+    public function testTheRequestHeaderIsRead(): void
+    {
+        Functions\when('wp_unslash')->returnArg();
+        $saved = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
+
+        try {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-GB,en;q=0.9,fi;q=0.5';
+            self::assertSame('en', Language::preferredInRequest());
+
+            unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            self::assertSame('', Language::preferredInRequest());
+        } finally {
+            if (null !== $saved) {
+                $_SERVER['HTTP_ACCEPT_LANGUAGE'] = $saved;
+            }
+        }
     }
 }

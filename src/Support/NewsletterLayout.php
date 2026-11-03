@@ -138,6 +138,36 @@ final class NewsletterLayout
     }
 
     /**
+     * The greeting line at the top of one recipient's announcement, HTML and
+     * plain text: "Hei Anna! · Hi Anna!", or "Hei! · Hi!" without a name. The
+     * name is escaped in the HTML.
+     *
+     * @return array{html: string, text: string}
+     */
+    public static function greeting(?string $name): array
+    {
+        $name = null === $name ? '' : trim($name);
+        $words = static fn (): string => '' === $name
+            ? __('Hi!', 'eventcrew')
+            /* translators: %s: the name the subscriber wants to be greeted with */
+            : sprintf(__('Hi %s!', 'eventcrew'), $name);
+        $line = self::joinPair(
+            (string) Language::run(Language::FINNISH, $words),
+            (string) Language::run(Language::ENGLISH, $words)
+        );
+
+        return [
+            'html' => sprintf(
+                '<p style="margin:0 0 16px;font-family:%s;font-size:17px;line-height:1.4;color:%s">%s</p>',
+                EmailBody::FONT,
+                self::TEXT_COLOR,
+                self::pairHtml($line)
+            ),
+            'text' => $line,
+        ];
+    }
+
+    /**
      * The same content as plain text, for the multipart alternative.
      *
      * @param array<int, array<string, mixed>> $cards
