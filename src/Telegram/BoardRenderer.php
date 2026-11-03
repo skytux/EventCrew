@@ -154,6 +154,14 @@ final class BoardRenderer
                     $keyboard[] = [$this->taskButton($task, count($names), $daySuffix)];
                 }
             }
+
+            // A separator after each date; after the last one the foot rows
+            // already start with the divider button.
+            if ($date !== $shown[count($shown) - 1]) {
+                $lines[] = '';
+                $lines[] = self::DIVIDER;
+                $keyboard[] = [$this->spacerButton(self::DIVIDER)];
+            }
         }
 
         foreach ($this->footRows() as $row) {

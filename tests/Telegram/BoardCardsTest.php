@@ -197,10 +197,14 @@ final class BoardCardsTest extends TelegramTestCase
 
         $text = $this->lastCallTo('sendMessage');
         self::assertSame(
-            self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate: –\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate: –",
+            self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate: –\n\n" . BoardRenderer::DIVIDER
+                . "\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate: –",
             $text['text']
         );
         self::assertSame(['t:1', 't:2:2026-08-02'], self::taskTargets($text));
+        // Lou 2026-11-04: a separator after each date, in the buttons too
+        // (name, date, task, separator).
+        self::assertSame(BoardRenderer::DIVIDER, self::labels($text)[3]);
 
         $board = $this->options[BoardService::BOARD_OPTION];
         self::assertSame(62, $board['message_id']);
@@ -283,7 +287,7 @@ final class BoardCardsTest extends TelegramTestCase
         $text = $this->lastCallTo('sendMessage');
         self::assertSame(
             self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate: Anna, someone"
-                . "\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate: Ben",
+                . "\n\n" . BoardRenderer::DIVIDER . "\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate: Ben",
             $text['text']
         );
         self::assertStringContainsString('2/2', self::labels($text)[2]);
