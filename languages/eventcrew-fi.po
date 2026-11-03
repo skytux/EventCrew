@@ -6039,3 +6039,51 @@ msgstr "Telegram ei hyväksynyt näitä tekstejä. Ne lähetetään uudelleen, k
 #: src/Admin/SettingsPage.php:788
 msgid "The changed About and Description texts were sent to Telegram."
 msgstr "Muuttuneet Tietoja- ja Kuvaus-tekstit lähetettiin Telegramiin."
+
+#: templates/admin/settings-telegram-login.php:21
+msgid "Allow sign-in with Telegram on the Crew app"
+msgstr "Salli kirjautuminen Telegramilla Crew-sovellukseen"
+
+#: templates/public/signup.php:229
+msgid "Back"
+msgstr "Takaisin"
+
+#: templates/admin/settings-telegram-login.php:31
+msgid "Client ID (the bot ID):"
+msgstr "Client ID (botin tunnus):"
+
+#: templates/public/signup.php:141
+msgid "How do you want to sign in?"
+msgstr "Miten haluat kirjautua?"
+
+#: src/Support/PrivacyPolicy.php:413
+msgid "If you sign in with Telegram, Telegram sends us your account number, name, username and profile photo address. We use only the account number, to find your crew account, and we do not store the rest."
+msgstr "Jos kirjaudut Telegramilla, Telegram lähettää meille tilisi numeron, nimesi, käyttäjänimesi ja profiilikuvasi osoitteen. Käytämme vain tilin numeroa crew-tilisi löytämiseen, emmekä tallenna muuta."
+
+#: templates/public/signup.php:148
+msgid "Open the bot"
+msgstr "Avaa botti"
+
+#: templates/admin/settings-telegram-login.php:13 templates/public/signup.php:144
+msgid "Sign in with Telegram"
+msgstr "Kirjaudu Telegramilla"
+
+#: templates/admin/settings-telegram-login.php:24
+msgid "Telegram only allows this on addresses you name. In the @BotFather chat, tap Open, then this bot, then Bot Settings, then Web Login (called Login Widget in some versions), and add this address under Allowed URLs:"
+msgstr "Telegram sallii tämän vain osoitteissa, jotka annat sille. Paina @BotFather-keskustelussa Open, valitse tämä botti, sitten Bot Settings ja Web Login (joissain versioissa Login Widget), ja lisää tämä osoite kohtaan Allowed URLs:"
+
+#: src/Web/SignupController.php:1045
+msgid "Telegram sign-in did not work. Please try again, or sign in with email."
+msgstr "Kirjautuminen Telegramilla ei onnistunut. Yritä uudelleen tai kirjaudu sähköpostilla."
+
+#: src/Support/PrivacyPolicy.php:472
+msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy), and signing in with Telegram goes through their service. Linking is entirely optional; the web page does everything the bot does."
+msgstr "Telegram, jos päätät yhdistää Telegram-tilin — botin sinulle lähettämät viestit kulkevat heidän palvelunsa kautta heidän oman tietosuojakäytäntönsä mukaisesti (https://telegram.org/privacy), ja kirjautuminen Telegramilla kulkee heidän palvelunsa kautta. Yhdistäminen on täysin valinnaista; verkkosivu tekee kaiken, minkä botti tekee."
+
+#: src/Web/SignupController.php:1042
+msgid "This Telegram account is not linked to a crew account yet. Open the bot and press Start to sign up, or sign in with email."
+msgstr "Tätä Telegram-tiliä ei ole vielä yhdistetty crew-tiliin. Avaa botti ja paina Start liittyäksesi, tai kirjaudu sähköpostilla."
+
+#: src/Web/SignupController.php:1044
+msgid "Your email address is not confirmed yet. Open the bot and press Start to confirm it, or sign in with email."
+msgstr "Sähköpostiosoitettasi ei ole vielä vahvistettu. Avaa botti ja paina Start vahvistaaksesi sen, tai kirjaudu sähköpostilla."

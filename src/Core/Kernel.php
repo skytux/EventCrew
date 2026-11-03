@@ -64,6 +64,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
@@ -601,7 +602,16 @@ final class Kernel
                 $container->get(TicketRedemptionService::class),
                 $container->get(SalesDeskGate::class),
                 $container->get(DoorLinkSender::class),
-                $container->get(CrewAdminController::class)
+                $container->get(CrewAdminController::class),
+                $container->get(TelegramLogin::class)
+            )
+        );
+
+        $this->container->singleton(
+            TelegramLogin::class,
+            fn (Container $container) => new TelegramLogin(
+                $container->get(Logger::class),
+                $container->get(DohResolver::class)
             )
         );
 

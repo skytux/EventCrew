@@ -115,6 +115,55 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in or sign up', 'eventcrew'); ?></h2>
             </header>
             <div class="eventcrew-card-body">
+            <?php
+            /*
+             * The choice between email and Telegram, when the Telegram login is
+             * available. It starts hidden and the script below reveals it, so
+             * without JavaScript - or when Telegram's script cannot load - the
+             * email form is what shows, exactly as before. The nonce is not in
+             * the markup: signed-out pages are cached, so the script fetches a
+             * fresh one for this browser.
+             */
+            $eventcrew_tg_login = is_array($view['telegram_login'] ?? null) ? $view['telegram_login'] : null;
+            ?>
+            <?php if (null !== $eventcrew_tg_login) : ?>
+                <div
+                    class="eventcrew-signin-choice"
+                    data-eventcrew-tg-login
+                    data-ajax="<?php echo esc_url($eventcrew_ajax); ?>"
+                    data-here="<?php echo esc_url($eventcrew_here); ?>"
+                    data-client-id="<?php echo esc_attr($eventcrew_tg_login['client_id']); ?>"
+                    data-lang="<?php echo esc_attr($eventcrew_tg_login['lang']); ?>"
+                    data-script="<?php echo esc_url($eventcrew_tg_login['script']); ?>"
+                    data-nonce-action="<?php echo esc_attr($eventcrew_tg_login['nonce_action']); ?>"
+                    data-login-action="<?php echo esc_attr($eventcrew_tg_login['login_action']); ?>"
+                    hidden>
+                    <p class="eventcrew-signin-choice-prompt">
+                        <?php esc_html_e('How do you want to sign in?', 'eventcrew'); ?>
+                    </p>
+                    <div class="eventcrew-signin-choice-row">
+                        <button type="button" class="wp-element-button" data-eventcrew-tg-email>
+                            <?php esc_html_e('Email', 'eventcrew'); ?>
+                        </button>
+                        <button
+                            type="button"
+                            class="tg-auth-button"
+                            aria-label="<?php esc_attr_e('Sign in with Telegram', 'eventcrew'); ?>">
+                            <?php esc_html_e('Sign in with Telegram', 'eventcrew'); ?>
+                        </button>
+                    </div>
+                    <div class="eventcrew-tg-help" data-eventcrew-tg-help hidden>
+                        <p class="eventcrew-muted eventcrew-hint" data-eventcrew-tg-help-text></p>
+                        <p>
+                            <a
+                                class="wp-element-button"
+                                href="<?php echo esc_url($eventcrew_tg_login['bot_link']); ?>"
+                                target="_blank"
+                                rel="noopener"><?php esc_html_e('Open the bot', 'eventcrew'); ?></a>
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
@@ -191,6 +240,11 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <?php endif; ?>
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+            <?php if (null !== $eventcrew_tg_login) : ?>
+                <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
+                    <a href="#"><?php esc_html_e('Back', 'eventcrew'); ?></a>
+                </p>
+            <?php endif; ?>
             </div>
         </section>
 
@@ -2591,5 +2645,160 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             submitting = false;
         });
     }
+})();
+
+/*
+ * Sign in with Telegram. When the login is available the sign-in card offers
+ * a choice: the email form, or Telegram's own button, which opens Telegram's
+ * popup. The popup hands back an ID token, which is posted to the server; the
+ * server checks it and starts the session, and the page reloads signed in.
+ *
+ * The choice is revealed only once Telegram's script has loaded and this
+ * browser has its one-time nonce, so the button always works when it shows.
+ * If either fails, the email form simply stays.
+ */
+(function () {
+    var choice = document.querySelector('[data-eventcrew-tg-login]');
+    if (!choice || !window.fetch) { return; }
+
+    var form = document.querySelector('form[data-eventcrew-signin]');
+    var sent = document.getElementById('eventcrew-signin-sent');
+    var back = document.querySelector('[data-eventcrew-tg-back]');
+    var emailButton = choice.querySelector('[data-eventcrew-tg-email]');
+    var help = choice.querySelector('[data-eventcrew-tg-help]');
+    var helpText = choice.querySelector('[data-eventcrew-tg-help-text]');
+    var ajax = choice.getAttribute('data-ajax');
+    var failedText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_failed')); ?>;
+    var scriptReady = false;
+    var nonce = '';
+    var revealed = false;
+    var gaveUp = false;
+    var posting = false;
+
+    function toast(text) {
+        // The board script above moved the toast to <body>; it hides itself.
+        var box = document.getElementById('eventcrew-toast');
+        if (!box || !text) { return; }
+        box.textContent = text;
+        box.classList.add('show');
+        setTimeout(function () { box.classList.remove('show'); }, 6000);
+    }
+
+    function showChoice() {
+        choice.hidden = false;
+        if (form) { form.hidden = true; }
+        if (sent) { sent.hidden = true; }
+        if (back) { back.hidden = true; }
+    }
+
+    function showEmail() {
+        choice.hidden = true;
+        if (form) { form.hidden = false; }
+        // "Back" only while the choice can still be offered.
+        if (back) { back.hidden = gaveUp; }
+    }
+
+    // Telegram's script or the nonce failed: the email form is all there is.
+    function giveUp() {
+        gaveUp = true;
+        showEmail();
+    }
+
+    function post(data) {
+        var body = new FormData();
+        Object.keys(data).forEach(function (key) { body.append(key, data[key]); });
+
+        return fetch(ajax, { method: 'POST', body: body, credentials: 'same-origin', cache: 'no-store' })
+            .then(function (response) { return response.json(); });
+    }
+
+    function fetchNonce() {
+        nonce = '';
+
+        return post({ action: choice.getAttribute('data-nonce-action') }).then(function (data) {
+            nonce = data && typeof data.nonce === 'string' ? data.nonce : '';
+            if (!nonce) { giveUp(); return; }
+            ready();
+        }).catch(giveUp);
+    }
+
+    function ready() {
+        if (gaveUp || !scriptReady || !nonce) { return; }
+        if (!window.Telegram || !window.Telegram.Login) { giveUp(); return; }
+
+        try {
+            window.Telegram.Login.init({
+                client_id: choice.getAttribute('data-client-id'),
+                scope: ['profile'],
+                nonce: nonce,
+                lang: choice.getAttribute('data-lang')
+            }, onAuth);
+        } catch (err) {
+            giveUp();
+            return;
+        }
+
+        if (!revealed) {
+            revealed = true;
+            showChoice();
+        }
+    }
+
+    function onAuth(result) {
+        if (!result || posting) { return; }
+
+        if (result.error || !result.id_token) {
+            // Closing the popup is not an error worth a message.
+            if (result.error !== 'popup_closed') { toast(failedText); }
+            return;
+        }
+
+        posting = true;
+        post({ action: choice.getAttribute('data-login-action'), id_token: result.id_token }).then(function (data) {
+            var code = data && data.code ? data.code : 'tg_failed';
+
+            if (code === 'signed_in') {
+                // A fresh address, so a cached signed-out copy is not shown again.
+                var url = new URL(choice.getAttribute('data-here'), window.location.href);
+                url.searchParams.set('eventcrew_notice', 'signed_in');
+                window.location.assign(url.toString());
+                return;
+            }
+
+            if ((code === 'tg_not_linked' || code === 'tg_not_verified') && help && helpText) {
+                helpText.textContent = data.notice || '';
+                help.hidden = false;
+            } else {
+                toast((data && data.notice) || failedText);
+            }
+
+            posting = false;
+            fetchNonce(); // the nonce was used up; a second try needs a new one
+        }).catch(function () {
+            posting = false;
+            toast(failedText);
+            fetchNonce();
+        });
+    }
+
+    if (emailButton) {
+        emailButton.addEventListener('click', function () { showEmail(); });
+    }
+
+    if (back) {
+        back.addEventListener('click', function (event) {
+            event.preventDefault();
+            showChoice();
+        });
+    }
+
+    var script = document.createElement('script');
+    script.src = choice.getAttribute('data-script');
+    script.async = true;
+    script.onload = function () { scriptReady = true; ready(); };
+    script.onerror = giveUp;
+    document.head.appendChild(script);
+
+    fetchNonce();
 })();
 </script>

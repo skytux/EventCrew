@@ -823,6 +823,33 @@
     border: 1px solid var(--eventcrew-ink);
 }
 
+/*
+ * The sign-in choice: the Email button and Telegram's own button side by side,
+ * one height. Telegram's button keeps the look its script gives it.
+ */
+.eventcrew-signup .eventcrew-signin-choice[hidden],
+.eventcrew-signup .eventcrew-signin[hidden],
+.eventcrew-signup .eventcrew-signin-back[hidden],
+.eventcrew-signup .eventcrew-tg-help[hidden] { display: none; }
+.eventcrew-signup .eventcrew-signin-choice-prompt { margin: 0 0 .75em; }
+.eventcrew-signup .eventcrew-signin-choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75em;
+}
+.eventcrew-signup .eventcrew-signin-choice-row .wp-element-button {
+    box-sizing: border-box;
+    height: 44px;
+    padding-block: 0;
+    padding-inline: 1.5em;
+    font-size: 1rem;
+    line-height: 1;
+    border-radius: var(--eventcrew-radius);
+}
+.eventcrew-signup .eventcrew-tg-help { margin-top: .75em; }
+.eventcrew-signup .eventcrew-signin-back { margin: .5em 0 0; font-size: .9em; }
+
 .eventcrew-signin-row .wp-element-input {
     background-color: var(--eventcrew-surface);
     color: var(--eventcrew-ink);

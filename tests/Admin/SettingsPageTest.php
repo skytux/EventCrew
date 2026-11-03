@@ -9,6 +9,7 @@ use EventCrew\Admin\View;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\TelegramLogin;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
@@ -310,5 +311,91 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
         // Left unstamped, so configuring a token later still triggers the install.
         self::assertArrayNotHasKey(self::WEBHOOK_VERSION_OPTION, $this->options);
+    }
+
+    /**
+     * The main settings form, run until it has written the Telegram sign-in
+     * switch; the rest of the form is not this test's business.
+     *
+     * @param array<string, mixed> $post
+     */
+    private function saveTelegramSection(array $post): void
+    {
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
+        \Brain\Monkey\Functions\when('wp_unslash')->returnArg(1);
+        \Brain\Monkey\Functions\when('sanitize_text_field')->returnArg(1);
+        \Brain\Monkey\Functions\when('esc_url_raw')->returnArg(1);
+        \Brain\Monkey\Functions\when('update_option')->alias(function (string $name, mixed $value): bool {
+            $this->options[$name] = $value;
+
+            if (TelegramLogin::ENABLED_OPTION === $name) {
+                throw new \RuntimeException('saved');
+            }
+
+            return true;
+        });
+
+        $_POST = $post;
+
+        try {
+            $this->page()->save();
+            self::fail('The Telegram sign-in switch was never saved.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('saved', $e->getMessage());
+        }
+    }
+
+    public function testTheTelegramSignInSwitchSaves(): void
+    {
+        $this->saveTelegramSection(['telegram_web_login' => '1']);
+        self::assertTrue($this->options[TelegramLogin::ENABLED_OPTION]);
+
+        $this->saveTelegramSection([]);
+        self::assertFalse($this->options[TelegramLogin::ENABLED_OPTION]);
+    }
+
+    public function testTheSignInHintShowsTheSiteAddressAndTheBotIdButNeverTheToken(): void
+    {
+        $token = '123456789:AAsecret-part-of-the-token';
+        $this->options[TelegramClient::TOKEN_OPTION] = $token;
+        $this->options[TelegramLogin::ENABLED_OPTION] = true;
+        \Brain\Monkey\Functions\when('home_url')->alias(
+            static fn (string $p = '/'): string => 'https://crew.example.org' . $p
+        );
+        \Brain\Monkey\Functions\when('wp_parse_url')->alias(
+            static fn (string $url, int $part = -1): mixed => parse_url($url, $part)
+        );
+
+        $view = SettingsPage::webLoginView();
+        self::assertSame(
+            ['enabled' => true, 'origin' => 'https://crew.example.org', 'client_id' => '123456789'],
+            $view
+        );
+
+        \Brain\Monkey\Functions\when('checked')->alias(static function (mixed $value): void {
+            echo $value ? ' checked=\'checked\'' : '';
+        });
+        \Brain\Monkey\Functions\when('esc_html')->alias(
+            static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES)
+        );
+        \Brain\Monkey\Functions\when('esc_html_e')->alias(static function (string $text): void {
+            echo esc_html($text);
+        });
+
+        ob_start();
+
+        try {
+            (new View())->render('settings-telegram-login', ['telegram' => ['web_login' => $view]]);
+        } finally {
+            $html = (string) ob_get_clean();
+        }
+
+        self::assertStringContainsString('name="telegram_web_login"', $html);
+        self::assertStringContainsString("checked='checked'", $html);
+        self::assertStringContainsString('<code>https://crew.example.org</code>', $html);
+        self::assertStringContainsString('<code>123456789</code>', $html);
+        self::assertStringNotContainsString('AAsecret', $html);
+        self::assertStringNotContainsString($token, $html);
     }
 }
