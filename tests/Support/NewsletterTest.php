@@ -15,6 +15,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SignedLink;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -331,6 +332,73 @@ final class NewsletterTest extends TestCase
         self::assertSame(2, $state['last']['sent']);
         self::assertArrayNotHasKey(NewsletterText::OPTION, $this->options);
         self::assertSame([], $this->scheduled);
+    }
+
+    /**
+     * Every announcement starts with a greeting of its own: the name when the
+     * subscriber gave one (escaped), a plain "Hei! · Hi!" without. The footer
+     * link opens that subscriber's manage page.
+     */
+    public function testEachSubscriberIsGreetedByName(): void
+    {
+        $this->withPlan([
+            'status' => Newsletter::PLAN_SENDING,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+        ]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'email' => 'a@example.test', 'name' => 'Anna', 'language' => 'fi'],
+            ['id' => 6, 'email' => 'b@example.test', 'name' => null, 'language' => ''],
+            ['id' => 8, 'email' => 'c@example.test', 'name' => '<i>Bo</i>', 'language' => 'en'],
+        ];
+
+        self::assertSame(3, $this->newsletter()->sendBatch());
+
+        self::assertStringContainsString('Hei Anna! · Hi Anna!', $this->mails[0]['body']);
+        self::assertStringContainsString('Hei! · Hi!', $this->mails[1]['body']);
+        self::assertStringNotContainsString('Anna', $this->mails[1]['body'], 'one greeting per subscriber');
+        self::assertStringContainsString('Hei &lt;i&gt;Bo&lt;/i&gt;!', $this->mails[2]['body']);
+        self::assertStringNotContainsString('<i>Bo</i>', $this->mails[2]['body']);
+        self::assertLessThan(
+            strpos($this->mails[0]['body'], 'Summer Social'),
+            strpos($this->mails[0]['body'], 'Hei Anna!'),
+            'the greeting comes first'
+        );
+
+        preg_match('/do=manage&(?:amp;)?token=([A-Za-z0-9_.\-]+)/', $this->mails[0]['body'], $token);
+        self::assertNotEmpty($token, 'the footer links to the manage page');
+        self::assertSame(4, SignedLink::verify(Newsletter::PURPOSE_MANAGE, $token[1]));
+        self::assertStringContainsString('Change your details or leave the announcement', $this->mails[0]['body']);
+        // The one-click header still unsubscribes.
+        self::assertStringContainsString('do=unsubscribe', implode("\n", $this->mails[0]['headers']));
+    }
+
+    public function testThePlainTextGreeting(): void
+    {
+        self::assertSame('Hei Anna! · Hi Anna!', Newsletter::greeting('Anna')['text']);
+        self::assertSame('Hei! · Hi!', Newsletter::greeting(null)['text']);
+        self::assertSame('Hei! · Hi!', Newsletter::greeting('')['text']);
+        // A long name puts each language on its own line.
+        self::assertSame(
+            "Hei Maria-Kristiina Eleonoora!\nHi Maria-Kristiina Eleonoora!",
+            Newsletter::greeting('Maria-Kristiina Eleonoora')['text']
+        );
+    }
+
+    /** The organizers' preview starts with the greeting a subscriber gets, with the organizer's own name. */
+    public function testThePreviewGreetsTheOrganizerByName(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')]]);
+        $this->wpdb->nextVars[] = 12; // countConfirmed
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
+        ];
+
+        $method = new \ReflectionMethod(Newsletter::class, 'sendPreview');
+        $method->setAccessible(true);
+
+        self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
+        self::assertStringContainsString('Hei Olli! · Hi Olli!', $this->mails[0]['body']);
     }
 
     public function testAFullBatchAsksForTheNextOne(): void

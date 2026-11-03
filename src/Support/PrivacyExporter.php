@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -36,7 +37,8 @@ final class PrivacyExporter
         private readonly RedemptionRepository $redemptions,
         private readonly CreditGrantRepository $credits,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
-        private readonly GuestRepository $guests = new GuestRepository()
+        private readonly GuestRepository $guests = new GuestRepository(),
+        private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository()
     ) {
     }
 
@@ -101,6 +103,14 @@ final class PrivacyExporter
         // Guests from a mailed guest list that carried their email address.
         foreach ($this->guestTickets($email) as $item) {
             $data[] = $item;
+        }
+
+        // The next events announcement: anyone can sign up with just an
+        // address, so this too is looked up by email alone.
+        $subscriber = $this->subscribers->findByEmail($email);
+
+        if (null !== $subscriber) {
+            $data[] = $this->subscription($subscriber);
         }
 
         return ['data' => $data, 'done' => true];
@@ -240,6 +250,31 @@ final class PrivacyExporter
         }
 
         return $items;
+    }
+
+    /**
+     * The announcement subscription: the address, its state, the name it is
+     * greeted with and the language.
+     *
+     * @param array{email: string, status: string, created_at: string, confirmed_at: ?string,
+     *     name: ?string, language: string} $row
+     * @return array<string, mixed>
+     */
+    private function subscription(array $row): array
+    {
+        return [
+            'group_id' => self::GROUP . '-announcement',
+            'group_label' => __('EventCrew next events announcement', 'eventcrew'),
+            'item_id' => self::GROUP . '-announcement',
+            'data' => [
+                ['name' => __('Email', 'eventcrew'), 'value' => $row['email']],
+                ['name' => __('Status', 'eventcrew'), 'value' => $row['status']],
+                ['name' => __('Name', 'eventcrew'), 'value' => (string) ($row['name'] ?? '')],
+                ['name' => __('Language', 'eventcrew'), 'value' => $row['language']],
+                ['name' => __('Signed up', 'eventcrew'), 'value' => $row['created_at']],
+                ['name' => __('Confirmed', 'eventcrew'), 'value' => (string) ($row['confirmed_at'] ?? '')],
+            ],
+        ];
     }
 
     /**

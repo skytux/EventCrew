@@ -667,7 +667,7 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We do not store your name for the announcement.',
+                'If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We also store the name you want us to greet you with, if you give one, and the language your browser prefers (Finnish or English). You can change the name and the language, or leave, with the link at the end of every announcement. When you leave, the name is deleted.',
                 'eventcrew'
             ),
         ];
@@ -712,7 +712,7 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'You are added to the next events announcement only if you confirm that you want it. Not joining has no effect on your ticket.',
+                'You are added to the next events announcement only if you press its button in that message. We then take the first word of the name on your ticket as the name to greet you with. Not joining has no effect on your ticket.',
                 'eventcrew'
             ),
         ];

@@ -25,12 +25,23 @@ use WP_REST_Request;
  *   in that email makes the address a subscriber (double opt-in). The answer
  *   on the page is the same whether or not the address was already known, so
  *   the form cannot be used to find out who subscribes.
+ * - After the address is saved, the form asks, optionally, what to call the
+ *   person (the second step, NAME_ACTION). The first step hands back a signed
+ *   token that expires in NAME_TOKEN_SECONDS and names the one row that this
+ *   submission wrote, so the second step can set the name of that row and of
+ *   no other. When the submission wrote nothing (the address was already
+ *   confirmed, or its sign-up is less than an hour old, or a bot filled the
+ *   honeypot), the token names no row: the page looks the same, and the name
+ *   goes nowhere. The language the browser prefers (Accept-Language) is
+ *   stored with the sign-up.
  * - The REST route Newsletter::ROUTE answers the signed links: confirm (a
  *   GET confirms), unsubscribe (a GET or a POST unsubscribes; the POST is the
  *   one-click unsubscribe of the List-Unsubscribe-Post header), and stop (an
  *   organizer's link from the preview email: a GET shows a button, the POST
  *   stops the newsletter, so a mail client opening links in advance cannot
- *   stop it).
+ *   stop it), and manage (the footer link of every announcement: a GET shows
+ *   the subscriber's page, where a POST changes their name and language, or
+ *   leaves the announcement).
  */
 final class NewsletterController
 {
@@ -58,6 +69,23 @@ final class NewsletterController
     public const RESULT_INVALID = 'invalid';
     public const RESULT_CAPTCHA = 'captcha';
 
+    /** After the optional second step (the name) was answered. */
+    public const RESULT_NAMED = 'named';
+
+    /** After the subscribe button in a thank-you email (FollowupMail::joinClick()). */
+    public const RESULT_JOINED = 'joined';
+
+    /** The second step's form action, field, and the query argument of its token. */
+    public const NAME_ACTION = 'eventcrew_newsletter_name';
+    public const NAME_FIELD = 'eventcrew_name';
+    public const NAME_TOKEN_ARG = 'eventcrew_nl_name';
+
+    /** The signed-token purpose of the second step. */
+    public const PURPOSE_NAME = 'newsletter_name';
+
+    /** How long the second step's token is good for. */
+    public const NAME_TOKEN_SECONDS = 30 * MINUTE_IN_SECONDS;
+
     /** The id of the full form, and of the bar; the answer comes back to one of them. */
     public const FORM_ANCHOR = 'eventcrew-newsletter';
     public const BAR_ANCHOR = 'eventcrew-nl-bar';
@@ -80,7 +108,8 @@ final class NewsletterController
         . '.eventcrew-nl-bar form{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;'
         . 'margin:0}'
         . '.eventcrew-nl-bar-label{white-space:nowrap}'
-        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;min-height:40px;'
+        . '.eventcrew-nl-bar input[type=email],.eventcrew-nl-bar input[type=text]'
+        . '{flex:1 1 200px;max-width:320px;min-width:0;min-height:40px;'
         . 'box-sizing:border-box;padding:6px 14px;font-size:16px;border-radius:999px}'
         . '.eventcrew-nl-bar-info{flex:none;display:inline-flex;align-items:center;justify-content:center;'
         . 'width:40px;height:40px;color:inherit;text-decoration:none}'
@@ -104,7 +133,9 @@ final class NewsletterController
         . '.eventcrew-nl-button:hover,.eventcrew-nl-button:focus-visible{background:rgba(255,255,255,.15)}'
         . '.eventcrew-newsletter{text-align:center}'
         . '.eventcrew-newsletter label{display:block;margin-bottom:6px}'
-        . '.eventcrew-newsletter input[type=email]{display:block;width:100%;max-width:22em;min-height:40px;'
+        . '.eventcrew-nl-skip{display:inline-block;margin-left:12px;color:inherit;font-size:14px}'
+        . '.eventcrew-newsletter input[type=email],.eventcrew-newsletter input[type=text]'
+        . '{display:block;width:100%;max-width:22em;min-height:40px;'
         . 'margin:0 auto;box-sizing:border-box;padding:6px 14px;font-size:16px;border-radius:999px}'
         . '.eventcrew-newsletter .cf-turnstile{display:flex;justify-content:center}'
         . '.eventcrew-newsletter .eventcrew-muted{font-size:13px;line-height:1.4;opacity:.7}';
@@ -181,6 +212,12 @@ final class NewsletterController
     /** Set when the Turnstile script tag was printed on this page. */
     private bool $captchaScriptAdded = false;
 
+    /** Set when the full form printed its email field (and so its own check). */
+    private bool $formAsksEmail = false;
+
+    /** The second step's token from the last join(): see nameToken(). */
+    private string $nameToken = '';
+
     public function __construct(
         private readonly NewsletterSubscriberRepository $subscribers,
         private readonly Mailer $mailer,
@@ -194,6 +231,8 @@ final class NewsletterController
         add_shortcode(self::SHORTCODE, [$this, 'renderShortcode']);
         add_action('wp_ajax_' . self::JOIN_ACTION, [$this, 'handleJoin']);
         add_action('wp_ajax_nopriv_' . self::JOIN_ACTION, [$this, 'handleJoin']);
+        add_action('wp_ajax_' . self::NAME_ACTION, [$this, 'handleName']);
+        add_action('wp_ajax_nopriv_' . self::NAME_ACTION, [$this, 'handleName']);
         add_action('rest_api_init', [$this, 'registerRoutes']);
         add_action('wp_footer', [$this, 'renderBar']);
         add_filter('template_include', [$this, 'resizingViewport'], 100);
@@ -251,6 +290,15 @@ final class NewsletterController
                 . self::backToTop();
         }
 
+        $nameToken = $this->pendingNameToken();
+
+        if ('' !== $nameToken) {
+            $this->formShown = true;
+
+            return $html . $this->nameForm($nameToken, self::FORM_ANCHOR, false) . '</div>';
+        }
+
+        $this->formAsksEmail = true;
         $html .= $this->formStart(self::FORM_ANCHOR)
             . '<p><label for="eventcrew-newsletter-email" class="screen-reader-text">'
             . esc_html__('Your email address', 'eventcrew') . '</label>'
@@ -312,6 +360,22 @@ final class NewsletterController
                 . self::backToTop();
         }
 
+        // The second step shows in the bar when the sign-up came from the bar.
+        $nameToken = $this->formShown ? '' : $this->pendingNameToken();
+
+        if ('' !== $nameToken) {
+            $html .= $this->nameForm($nameToken, self::BAR_ANCHOR, true)
+                . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
+                . esc_attr__('Close', 'eventcrew') . '">×</button>'
+                . '</div>'
+                . '<script>' . self::BAR_JS . '</script>';
+
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
+            echo $html;
+
+            return;
+        }
+
         // The "i" leads to the full form (with its note) when the page has one.
         $info = $this->formShown
             ? '<a class="eventcrew-nl-bar-info" href="#' . esc_attr(self::FORM_ANCHOR) . '" aria-label="'
@@ -328,9 +392,10 @@ final class NewsletterController
             . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '" class="wp-element-input">'
             . self::honeypot()
             . '<button type="submit" class="eventcrew-nl-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
-            // With the full form on the page, the Cloudflare check is only
-            // there: the bar's script hands its address to that form.
-            . ($this->formShown ? '' : $this->captcha(true))
+            // With the full form's email field on the page, the Cloudflare
+            // check is only there: the bar's script hands its address to that
+            // form. (While the full form asks for the name, the bar has its own.)
+            . ($this->formAsksEmail ? '' : $this->captcha(true))
             . '</form>'
             . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
             . esc_attr__('Close', 'eventcrew') . '">×</button>'
@@ -417,8 +482,158 @@ final class NewsletterController
             self::RESULT_SENT => __('Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             self::RESULT_INVALID => __('That does not look like an email address. Please check it.', 'eventcrew'),
             self::RESULT_CAPTCHA => __('The check that you are not a bot failed. Please try again.', 'eventcrew'),
+            self::RESULT_NAMED => __('Thank you. Now check your inbox: the announcement starts only after you press the link in the email we sent.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            self::RESULT_JOINED => __(
+                'You are now subscribed to the next events announcement. Thank you!',
+                'eventcrew'
+            ),
             default => '',
         };
+    }
+
+    /**
+     * The second step's token from this page's address, when the page is the
+     * answer to a sign-up and the token is one this site signed and is still
+     * valid; else ''. Only the signature and the time are checked here: a
+     * token that names no row shows the same form.
+     */
+    private function pendingNameToken(): string
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed token is the check.
+        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
+        $token = isset($_GET[self::NAME_TOKEN_ARG])
+            ? (string) preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($_GET[self::NAME_TOKEN_ARG]))
+            : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        if (self::RESULT_SENT !== $result || '' === $token) {
+            return '';
+        }
+
+        return null === self::nameTokenRow($token) ? '' : $token;
+    }
+
+    /**
+     * The optional second step: what to call the person. $inBar is the
+     * one-line version in the bar. "Skip" goes back to the plain answer.
+     */
+    private function nameForm(string $token, string $anchor, bool $inBar): string
+    {
+        $skip = add_query_arg([self::RESULT_ARG => self::RESULT_SENT], self::currentUrl()) . '#' . $anchor;
+        $question = esc_html__('What should we call you?', 'eventcrew');
+        $id = $inBar ? 'eventcrew-nl-bar-name' : 'eventcrew-newsletter-name';
+        $input = '<input type="text" id="' . $id . '" name="' . self::NAME_FIELD . '"'
+            . ' maxlength="' . NewsletterSubscriberRepository::MAX_NAME_LENGTH . '" autocomplete="given-name"'
+            . ' placeholder="' . esc_attr__('Your first name (optional)', 'eventcrew') . '" class="wp-element-input">';
+        $button = '<button type="submit" class="eventcrew-nl-button">' . esc_html__('Save', 'eventcrew') . '</button>';
+        $skipLink = '<a class="eventcrew-nl-skip" href="' . esc_url($skip) . '">'
+            . esc_html__('Skip', 'eventcrew') . '</a>';
+
+        $html = '<form method="post" action="' . esc_url(admin_url('admin-ajax.php')) . '">'
+            . '<input type="hidden" name="action" value="' . esc_attr(self::NAME_ACTION) . '">'
+            . '<input type="hidden" name="redirect_to" value="' . esc_attr(self::currentUrl()) . '">'
+            . '<input type="hidden" name="anchor" value="' . esc_attr($anchor) . '">'
+            . '<input type="hidden" name="token" value="' . esc_attr($token) . '">';
+
+        if ($inBar) {
+            return $html . '<label for="' . $id . '" class="eventcrew-nl-bar-label">' . $question . '</label>'
+                . $input . $button . $skipLink . '</form>';
+        }
+
+        return $html . '<p><label for="' . $id . '">' . $question . '</label>' . $input . '</p>'
+            . '<p>' . $button . $skipLink . '</p>'
+            . '<p class="eventcrew-muted">'
+            . esc_html__('We use it only to greet you in the announcement. You can change it with the link at the end of every announcement.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            . '</p></form>';
+    }
+
+    /**
+     * The second step's token for $rowId: the row this submission wrote, or
+     * 0 for none. Signed, and good for NAME_TOKEN_SECONDS.
+     */
+    public static function signNameToken(int $rowId, ?int $now = null): string
+    {
+        $expires = ($now ?? time()) + self::NAME_TOKEN_SECONDS;
+
+        return SignedLink::signPayload(self::PURPOSE_NAME, max(0, $rowId) . "\n" . $expires);
+    }
+
+    /**
+     * The row a second-step token names (0 for none), or null when the token
+     * is not one this site signed, or has expired.
+     */
+    public static function nameTokenRow(string $token, ?int $now = null): ?int
+    {
+        $payload = SignedLink::verifyPayload(self::PURPOSE_NAME, $token);
+
+        if (null === $payload) {
+            return null;
+        }
+
+        $parts = explode("\n", $payload);
+
+        if (2 !== count($parts) || ! ctype_digit($parts[0]) || ! ctype_digit($parts[1])) {
+            return null;
+        }
+
+        if ((int) $parts[1] < ($now ?? time())) {
+            return null;
+        }
+
+        return (int) $parts[0];
+    }
+
+    /** The second step's token from the last join(), or '' when it gave none. */
+    public function nameToken(): string
+    {
+        return $this->nameToken;
+    }
+
+    /** The second step's POST: saves the name and goes back to the page. */
+    public function handleName(): void
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- the signed token is the check; see the class comment.
+        $token = isset($_POST['token'])
+            ? (string) preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($_POST['token']))
+            : '';
+        $name = isset($_POST[self::NAME_FIELD]) ? sanitize_text_field(wp_unslash($_POST[self::NAME_FIELD])) : '';
+        $requested = isset($_POST['redirect_to']) ? (string) wp_unslash($_POST['redirect_to']) : '';
+        $anchor = isset($_POST['anchor']) && self::BAR_ANCHOR === wp_unslash($_POST['anchor'])
+            ? self::BAR_ANCHOR
+            : self::FORM_ANCHOR;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $result = $this->saveName($token, $name);
+        $back = wp_validate_redirect($requested, home_url('/'));
+
+        wp_safe_redirect(add_query_arg(self::RESULT_ARG, $result, $back) . '#' . $anchor);
+        exit;
+    }
+
+    /**
+     * The second step: sets the name of the row the token names, while that
+     * row is still the pending sign-up the token was given for. Answers
+     * RESULT_NAMED whatever happened (also for a token that names no row),
+     * so the answer tells nothing about the address; RESULT_SENT only for a
+     * token that is not valid at all, which shows the plain answer again.
+     */
+    public function saveName(string $token, string $name): string
+    {
+        $rowId = self::nameTokenRow($token);
+
+        if (null === $rowId) {
+            return self::RESULT_SENT;
+        }
+
+        if ($rowId > 0 && null !== NewsletterSubscriberRepository::cleanName($name)) {
+            $row = $this->subscribers->find($rowId);
+
+            if (null !== $row && NewsletterSubscriberRepository::STATUS_PENDING === $row['status']) {
+                $this->subscribers->setName($rowId, $name);
+            }
+        }
+
+        return self::RESULT_NAMED;
     }
 
     /** The form tag and its hidden fields; the answer comes back to $anchor on this page. */
@@ -480,7 +695,7 @@ final class NewsletterController
             return home_url('/');
         }
 
-        return remove_query_arg(self::RESULT_ARG, set_url_scheme('//' . $host . $uri));
+        return remove_query_arg([self::RESULT_ARG, self::NAME_TOKEN_ARG], set_url_scheme('//' . $host . $uri));
     }
 
     /** The form's POST: records the sign-up and goes back to the page. */
@@ -500,10 +715,15 @@ final class NewsletterController
             : self::FORM_ANCHOR;
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        $result = $this->join($email, $honeypot, $token, $this->clientIp());
+        $result = $this->join($email, $honeypot, $token, $this->clientIp(), Language::preferredInRequest());
         $back = wp_validate_redirect($requested, home_url('/'));
+        $args = [self::RESULT_ARG => $result];
 
-        wp_safe_redirect(add_query_arg(self::RESULT_ARG, $result, $back) . '#' . $anchor);
+        if ('' !== $this->nameToken) {
+            $args[self::NAME_TOKEN_ARG] = $this->nameToken;
+        }
+
+        wp_safe_redirect(add_query_arg($args, $back) . '#' . $anchor);
         exit;
     }
 
@@ -514,10 +734,24 @@ final class NewsletterController
      * learns nothing. A confirmed address gets no email. A pending address
      * gets a new confirmation email only when the last one is more than an
      * hour old, so the form cannot be used to flood a mailbox.
+     *
+     * Every RESULT_SENT also leaves a second-step token (nameToken()). It
+     * names the row only when this call wrote it; in every other case it
+     * names no row, so the next page is the same either way. $language
+     * ('fi', 'en' or '') is the browser's preference, stored with a sign-up.
      */
-    public function join(string $email, string $honeypot, string $captchaToken, string $ip = ''): string
-    {
+    public function join(
+        string $email,
+        string $honeypot,
+        string $captchaToken,
+        string $ip = '',
+        string $language = ''
+    ): string {
+        $this->nameToken = '';
+
         if ('' !== $honeypot) {
+            $this->nameToken = self::signNameToken(0);
+
             return self::RESULT_SENT;
         }
 
@@ -532,6 +766,7 @@ final class NewsletterController
         }
 
         $existing = $this->subscribers->findByEmail($email);
+        $this->nameToken = self::signNameToken(0);
 
         if (null !== $existing) {
             if (NewsletterSubscriberRepository::STATUS_CONFIRMED === $existing['status']) {
@@ -546,9 +781,10 @@ final class NewsletterController
             }
         }
 
-        $id = $this->subscribers->addPending($email);
+        $id = $this->subscribers->addPending($email, $language);
 
         if ($id > 0) {
+            $this->nameToken = self::signNameToken($id);
             $this->sendConfirmation($email, $id);
         }
 
@@ -560,7 +796,12 @@ final class NewsletterController
         $page = $this->respond(
             (string) $request->get_param('do'),
             $request->get_method(),
-            (string) $request->get_param('token')
+            (string) $request->get_param('token'),
+            [
+                'act' => (string) $request->get_param('act'),
+                'name' => sanitize_text_field((string) $request->get_param('name')),
+                'language' => (string) $request->get_param('language'),
+            ]
         );
 
         status_header($page['status']);
@@ -574,13 +815,19 @@ final class NewsletterController
     }
 
     /**
-     * What a signed link does and the page it answers with.
+     * What a signed link does and the page it answers with. $fields are the
+     * manage page's posted fields: act ('save' or 'leave'), name, language.
      *
+     * @param array{act?: string, name?: string, language?: string} $fields
      * @return array{status: int, html: string}
      */
-    public function respond(string $do, string $method, string $token): array
+    public function respond(string $do, string $method, string $token, array $fields = []): array
     {
         $post = 'POST' === strtoupper($method);
+
+        if ('manage' === $do) {
+            return $this->manage($post, $token, $fields);
+        }
 
         if ('confirm' === $do) {
             $id = SignedLink::verify(Newsletter::PURPOSE_CONFIRM, $token);
@@ -642,6 +889,102 @@ final class NewsletterController
         }
 
         return $this->invalid();
+    }
+
+    /**
+     * The subscriber's own page, from the footer link of every announcement.
+     * A GET only shows it (a mail client that opens links in advance changes
+     * nothing); a POST with act=save sets the name and the language, a POST
+     * with act=leave unsubscribes.
+     *
+     * @param array{act?: string, name?: string, language?: string} $fields
+     * @return array{status: int, html: string}
+     */
+    private function manage(bool $post, string $token, array $fields): array
+    {
+        $id = SignedLink::verify(Newsletter::PURPOSE_MANAGE, $token);
+        $row = null === $id ? null : $this->subscribers->find($id);
+
+        if (null === $id || null === $row || NewsletterSubscriberRepository::STATUS_PENDING === $row['status']) {
+            return $this->invalid();
+        }
+
+        $left = static fn (): string => __(
+            'You have left the announcement. You will not get it any more.',
+            'eventcrew'
+        );
+
+        if (NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED === $row['status']) {
+            return $this->page(200, $left);
+        }
+
+        $act = $post ? (string) ($fields['act'] ?? '') : '';
+
+        if ('leave' === $act) {
+            return $this->subscribers->unsubscribe($id) ? $this->page(200, $left) : $this->invalid();
+        }
+
+        $message = static fn (): string => __(
+            'Here you can change the name we greet you with and your language, or leave the announcement.',
+            'eventcrew'
+        );
+
+        if ('save' === $act) {
+            $this->subscribers->setName($id, (string) ($fields['name'] ?? ''));
+            $language = Language::normalize($fields['language'] ?? '');
+
+            if (null !== $language) {
+                $this->subscribers->setLanguage($id, $language);
+            }
+
+            $row = $this->subscribers->find($id) ?? $row;
+            $message = static fn (): string => __('Saved.', 'eventcrew');
+        }
+
+        return $this->page(200, $message, $this->manageForm($token, $row));
+    }
+
+    /**
+     * The manage page's two forms: the name and language with Save, and the
+     * Leave button on its own.
+     *
+     * @param array{name: ?string, language: string} $row
+     */
+    private function manageForm(string $token, array $row): string
+    {
+        $both = static function (callable $words): string {
+            $fi = (string) Language::run(Language::FINNISH, $words);
+            $en = (string) Language::run(Language::ENGLISH, $words);
+
+            return $fi === $en ? $en : $fi . ' / ' . $en;
+        };
+        $hidden = static fn (string $act): string => '<input type="hidden" name="do" value="manage">'
+            . '<input type="hidden" name="token" value="' . esc_attr($token) . '">'
+            . '<input type="hidden" name="act" value="' . esc_attr($act) . '">';
+        $field = 'display:block;width:100%;box-sizing:border-box;margin-top:.3em;padding:.5em;font-size:1em';
+        $radio = static fn (string $value, string $label): string => '<label style="margin-right:1.2em">'
+            . '<input type="radio" name="language" value="' . esc_attr($value) . '"'
+            . ($value === $row['language'] ? ' checked' : '') . '> ' . esc_html($label) . '</label>';
+
+        return '<form method="post" style="margin:1.5em 0">' . $hidden('save')
+            . '<p><label for="eventcrew-manage-name">'
+            . esc_html($both(static fn (): string => __('What should we call you?', 'eventcrew')))
+            . '</label><input type="text" id="eventcrew-manage-name" name="name" maxlength="'
+            . NewsletterSubscriberRepository::MAX_NAME_LENGTH . '" autocomplete="given-name" value="'
+            . esc_attr((string) ($row['name'] ?? '')) . '" style="' . $field . '"></p>'
+            . '<fieldset style="border:0;margin:0 0 1em;padding:0"><legend style="padding:0;margin-bottom:.3em">'
+            . esc_html($both(static fn (): string => __('Language', 'eventcrew')))
+            . '</legend>' . $radio(Language::FINNISH, 'Suomi') . $radio(Language::ENGLISH, 'English')
+            . '<p style="margin:.4em 0 0;font-size:.85em;color:#5b6470">'
+            . esc_html($both(static fn (): string => __('For now the announcement comes in both languages.', 'eventcrew'))) // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            . '</p></fieldset>'
+            . '<button type="submit" style="padding:.6em 1em">'
+            . esc_html($both(static fn (): string => __('Save', 'eventcrew'))) . '</button></form>'
+            . '<form method="post" style="margin:2em 0 1em;padding-top:1em;border-top:1px solid #ddd">'
+            . $hidden('leave')
+            . '<button type="submit" style="padding:.6em 1em;color:#b32d2e">'
+            . esc_html($both(static fn (): string => __('Leave the announcement', 'eventcrew')))
+            . '</button></form>';
     }
 
     private function sendConfirmation(string $email, int $id): void
