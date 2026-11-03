@@ -5817,8 +5817,8 @@ msgstr "Lähetä tulevien tapahtumien tiedote"
 msgid "Someone, probably you, asked for the next events announcement of %s at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days."
 msgstr "Joku, luultavasti sinä, tilasi sivuston %s tulevien tapahtumien tiedotteen tähän sähköpostiosoitteeseen. Aloita tilaus painamalla alla olevaa painiketta. Jos se et ollut sinä, voit jättää tämän viestin huomiotta: osoite poistetaan 7 päivän kuluttua."
 
-msgid "Stop this announcement"
-msgstr "Pysäytä tämä tiedote"
+msgid "Do not send this announcement"
+msgstr "Älä lähetä tätä tiedotetta"
 
 msgid "Subject"
 msgstr "Aihe"

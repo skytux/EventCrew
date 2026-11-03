@@ -629,7 +629,7 @@ final class NewsletterController
 
     private function stopForm(string $token): string
     {
-        $words = static fn (): string => __('Stop this announcement', 'eventcrew');
+        $words = static fn (): string => __('Do not send this announcement', 'eventcrew');
         $label = (string) Language::run(Language::FINNISH, $words);
         $labelEn = (string) Language::run(Language::ENGLISH, $words);
 
