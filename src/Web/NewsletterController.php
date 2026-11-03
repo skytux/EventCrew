@@ -112,13 +112,15 @@ final class NewsletterController
      * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
      * answer to a sign-up from the bar shows anyway), hides it while a full
      * form is on screen, and keeps room for it at the bottom of the page.
+     * While focus is in the bar it stays shown, and sits above an on-screen
+     * keyboard that covers the page.
      */
     private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
         . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
         . 'try{var t=+localStorage.getItem(K);closed=t>0&&Date.now()-t<d*864e5;}catch(e){}'
         . 'if(closed&&!b.hasAttribute("data-message")){return;}'
         . 'var forms=document.querySelectorAll(".eventcrew-newsletter"),inView=[],off=false;'
-        . 'function show(){var hide=off||inView.length>0;b.hidden=hide;'
+        . 'function show(){var hide=off||(inView.length>0&&!b.contains(document.activeElement));b.hidden=hide;'
         . 'document.body.style.paddingBottom=hide?"":b.offsetHeight+"px";}'
         . 'b.querySelector(".eventcrew-nl-bar-close").addEventListener("click",function(){off=true;'
         . 'try{localStorage.setItem(K,String(Date.now()));}catch(e){}show();});'
@@ -126,6 +128,11 @@ final class NewsletterController
         . 'es.forEach(function(e){var i=inView.indexOf(e.target);'
         . 'if(e.isIntersecting&&i<0){inView.push(e.target);}if(!e.isIntersecting&&i>=0){inView.splice(i,1);}});'
         . 'show();});forms.forEach(function(f){io.observe(f);});}'
+        . 'var vv=window.visualViewport;function lift(){if(vv&&b.contains(document.activeElement)){'
+        . 'b.style.bottom=Math.max(0,innerHeight-vv.height-vv.offsetTop)+"px";}}'
+        . 'if(vv){vv.addEventListener("resize",lift);vv.addEventListener("scroll",lift);}'
+        . 'b.addEventListener("focusin",function(){lift();setTimeout(lift,350);});'
+        . 'b.addEventListener("focusout",function(e){if(!b.contains(e.relatedTarget)){b.style.bottom="";show();}});'
         . 'window.addEventListener("resize",show);show();})();';
 
     /** Set when the full form was rendered on this page. */

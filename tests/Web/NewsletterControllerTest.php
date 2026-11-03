@@ -252,6 +252,9 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('name="anchor" value="' . NewsletterController::BAR_ANCHOR . '"', $html);
         self::assertStringContainsString('eventcrew-nl-bar-close', $html);
         self::assertStringContainsString('localStorage', $html);
+        // It stays shown while focus is in it, and sits above an on-screen keyboard.
+        self::assertStringContainsString('!b.contains(document.activeElement)', $html);
+        self::assertStringContainsString('visualViewport', $html);
     }
 
     public function testNoBarWhenTheNewsletterIsOff(): void
