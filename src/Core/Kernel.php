@@ -73,6 +73,7 @@ use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\NewsletterCommand;
+use EventCrew\Telegram\SayCommand;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
@@ -381,6 +382,14 @@ final class Kernel
             fn (Container $container) => new CrewAdminNewsletter(
                 $container->get(Newsletter::class),
                 $container->get(NewsletterText::class)
+            )
+        );
+
+        $this->container->singleton(
+            SayCommand::class,
+            fn (Container $container) => new SayCommand(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -1027,7 +1036,8 @@ final class Kernel
                 $container->get(RoleTaskBot::class),
                 $container->get(HelpService::class),
                 $container->get(AssistantService::class),
-                $container->get(NewsletterCommand::class)
+                $container->get(NewsletterCommand::class),
+                $container->get(SayCommand::class)
             )
         );
 

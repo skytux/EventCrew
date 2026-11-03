@@ -205,6 +205,24 @@ final class AssistantActionsTest extends TestCase
         }
     }
 
+    public function testOnlyAnOrganizerMayPostInTheGroup(): void
+    {
+        $crew = ['organizer' => false, 'welcomeCrew' => true, 'verified' => true];
+
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/say Hello', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/say Hello', $crew)['error']);
+    }
+
+    public function testAMessageForTheGroupKeepsItsTextExactlyAndRunsWithoutTheHelpersConfirm(): void
+    {
+        $result = self::check("/say  Hi  all,\n\n\nsee you!  ", self::organizer());
+
+        self::assertTrue($result['ok']);
+        self::assertFalse($result['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $result['run']);
+        self::assertSame("/say Hi  all,\n\n\nsee you!", $result['payload']);
+    }
+
     public function testShowingTheNewsletterTextRunsWithoutConfirm(): void
     {
         $result = self::check('/newsletter', self::organizer());

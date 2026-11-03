@@ -109,6 +109,13 @@ final class AssistantActions
                 true
             );
             $list[] = self::entry(
+                '/say <text>',
+                'post a message in the crew group; the bot shows it to the person first with Confirm and Cancel;'
+                    . ' <text> is the message itself, word for word as the person wrote it (line breaks allowed),'
+                    . ' never reworded or translated unless the person asks for that',
+                false
+            );
+            $list[] = self::entry(
                 '/newsletter clear',
                 "remove the organizers' own text from the next newsletter",
                 true
@@ -142,6 +149,11 @@ final class AssistantActions
         // line breaks.
         if (1 === preg_match('#^\s*/newsletter(?=\s|$)(.*)$#isu', $action, $m)) {
             return self::validateNewsletter($m[1], $audience);
+        }
+
+        // The same for a message for the group: kept exactly as written.
+        if (1 === preg_match('#^\s*/say(?=\s|$)(.*)$#isu', $action, $m)) {
+            return self::validateSay($m[1], $audience);
         }
 
         $action = trim((string) preg_replace('/\s+/u', ' ', $action));
@@ -333,6 +345,36 @@ final class AssistantActions
         $line = '/newsletter ' . $text;
 
         return self::accept($line, true, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * "/say <text>": a message for the group. Organizers only. It does not
+     * ask to confirm here, because /say itself shows the message with Confirm
+     * and Cancel. The text is kept exactly (only trimmed), so the formatting of
+     * the person's own message can be carried onto it.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateSay(string $rest, array $audience): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $text = trim(str_replace("\r\n", "\n", $rest));
+
+        if ('' === $text) {
+            return self::accept('/say', false, self::RUN_MESSAGE, '/say');
+        }
+
+        if (mb_strlen($text) > SayCommand::MAX_LENGTH) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = '/say ' . $text;
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
     }
 
     /**
