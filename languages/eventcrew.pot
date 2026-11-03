@@ -35,6 +35,11 @@ msgstr ""
 msgid "%1$d of %2$d events were posted in the group. The others could not be posted."
 msgstr ""
 
+#: src/Telegram/TicketController.php:409
+#. translators: 1: how many of the tickets are checked in, 2: how many tickets there are
+msgid "%1$d of %2$d used"
+msgstr ""
+
 #: src/Admin/TasksPage.php:243 src/Web/CrewAdminTasks.php:323
 #. translators: 1: number of tasks created, 2: how many of them have no times
 msgid "%1$d task created, %2$d without times - the role has no offsets, or the event has no end recorded."
@@ -673,6 +678,11 @@ msgstr ""
 msgid "Already on tonight’s list: %s"
 msgstr ""
 
+#: src/Telegram/TicketController.php:417
+#. translators: %s: the time the ticket was checked in at the door, like 21:05
+msgid "Already used · %s"
+msgstr ""
+
 #: templates/admin/settings.php:885
 msgid "Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)"
 msgstr ""
@@ -1283,7 +1293,7 @@ msgstr ""
 msgid "Crew working"
 msgstr ""
 
-#: src/Telegram/TicketController.php:315
+#: src/Telegram/TicketController.php:366
 msgid "DISABLED"
 msgstr ""
 
@@ -1763,7 +1773,7 @@ msgstr ""
 msgid "Found a replacement"
 msgstr ""
 
-#: src/Support/TicketList.php:68 src/Telegram/TicketController.php:275 templates/admin/roster.php:130
+#: src/Support/TicketList.php:68 src/Telegram/TicketController.php:321 templates/admin/roster.php:130
 msgid "Free entry"
 msgstr ""
 
@@ -1922,7 +1932,7 @@ msgstr ""
 msgid "Guest added."
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:66 src/Telegram/TicketController.php:167 src/Web/CrewAdminController.php:170 templates/admin/roster.php:182
+#: src/Telegram/MenuButtons.php:66 src/Telegram/TicketController.php:206 src/Web/CrewAdminController.php:170 templates/admin/roster.php:182
 #: templates/public/signup.php:1168
 msgid "Guest list"
 msgstr ""
@@ -1932,7 +1942,7 @@ msgstr ""
 msgid "Guest list — %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:164
+#: src/Telegram/TicketController.php:203
 #. translators: %d: how many people the guest may bring
 msgid "Guest list, +%d person"
 msgid_plural "Guest list, +%d people"
@@ -2252,7 +2262,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:424
+#: src/Telegram/TicketController.php:512
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -4662,7 +4672,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:434
+#: src/Telegram/TicketController.php:522
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -5251,7 +5261,7 @@ msgstr ""
 msgid "This ticket"
 msgstr ""
 
-#: src/Telegram/TicketController.php:307
+#: src/Telegram/TicketController.php:358
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -5275,7 +5285,7 @@ msgstr ""
 msgid "Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max."
 msgstr ""
 
-#: src/Telegram/TicketController.php:134 templates/public/door.php:240 templates/public/signup.php:394
+#: src/Telegram/TicketController.php:138 templates/public/door.php:240 templates/public/signup.php:394
 msgid "Ticket"
 msgstr ""
 
@@ -5334,7 +5344,7 @@ msgstr ""
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
-#: src/Telegram/TicketController.php:302
+#: src/Telegram/TicketController.php:353
 msgid "Ticket not found"
 msgstr ""
 
@@ -5554,7 +5564,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:314
+#: src/Telegram/TicketController.php:399 src/Telegram/TicketController.php:406
 msgid "VALID"
 msgstr ""
 
@@ -6064,7 +6074,7 @@ msgstr ""
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:311
+#: src/Telegram/TicketController.php:362
 msgid "Your EventCrew ticket"
 msgstr ""
 

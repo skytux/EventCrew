@@ -63,6 +63,45 @@ final class CheckinRepository
     }
 
     /**
+     * When each of these entries of one kind was marked in on $date, keyed by
+     * ref_id. An entry not in has no row, and no key.
+     *
+     * @param array<int, int> $refIds
+     * @return array<int, string> ref_id => checked_in_at (site time)
+     */
+    public function checkedInAt(string $date, string $kind, array $refIds): array
+    {
+        global $wpdb;
+
+        $refIds = array_values(array_unique(array_map('intval', $refIds)));
+
+        if ([] === $refIds) {
+            return [];
+        }
+
+        $in = implode(', ', array_fill(0, count($refIds), '%d'));
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders only; the table name comes from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ref_id, checked_in_at FROM {$this->table()}
+                WHERE event_date = %s AND kind = %s AND ref_id IN ({$in})",
+                ...array_merge([$date, $kind], $refIds)
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        $times = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $times[(int) $row['ref_id']] = (string) $row['checked_in_at'];
+        }
+
+        return $times;
+    }
+
+    /**
      * Marks one entry in. A second mark of the same entry - two door phones
      * tapping at once - lands on the unique key and only refreshes plus_ones,
      * so there is never a second row. Returns true when this call created the
