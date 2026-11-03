@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.84.0
+Stable tag: 1.85.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.85.0 =
+The bot's helper knows the official email address: the contact set in Settings > Privacy. (It already knew the coming events from EventMesh.)
 
 = 1.84.0 =
 The bot's helper knows the organizer guide and the infrastructure note when an organizer writes to it in a private chat, so it can answer how-to questions about running the crew. Not in the group chat and not for anyone else.
@@ -884,6 +887,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.85.0 =
+No database change.
 
 = 1.84.0 =
 No database change.

@@ -15,6 +15,7 @@ use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\OrganizerGuide;
+use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\HelpService;
@@ -389,6 +390,28 @@ final class AssistantServiceTest extends TelegramTestCase
 
         self::assertStringNotContainsString('ORGANIZER GUIDE', $this->systemPrompt(0));
         self::assertStringNotContainsString('free host', $this->systemPrompt(0));
+    }
+
+    public function testTheFactsGiveTheOfficialEmailAddressFromThePrivacyContact(): void
+    {
+        $this->options[PrivacyPolicy::CONTACT_OPTION] = 'crew@example.org';
+        $this->reply(true, true, 'Write to crew@example.org.');
+
+        $this->ask(self::privateMessage('what is your email?'));
+
+        self::assertStringContainsString(
+            "## Contact\nThe official email address: crew@example.org",
+            $this->systemPrompt(0)
+        );
+    }
+
+    public function testWithoutAPrivacyContactTheFactsHaveNoContact(): void
+    {
+        $this->reply(true, true, 'I do not know.');
+
+        $this->ask(self::privateMessage('what is your email?'));
+
+        self::assertStringNotContainsString('## Contact', $this->systemPrompt(0));
     }
 
     public function testTheBotKnowsItsName(): void
