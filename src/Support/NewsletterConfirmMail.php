@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * The email that asks a new address to confirm the next events announcement,
- * in the site's look: one dark card with a gold edge, in this order:
+ * The email that asks a new address to confirm the next events announcement
+ * (and the one to an address that is already subscribed), in the site's look:
+ * one dark card with a gold edge, in this order:
  *
  * 1. The sign-up bar's picture (Newsletter::barImageId()), when one is set.
  * 2. A gold sparkle, the heading "Enää yksi askel" with "One step left"
- *    under it, and the promise line in both languages.
+ *    under it, and the promise line in both languages (left out when empty).
  * 3. The Finnish text, the English text, then the gold Confirm button
  *    (both texts say "the button below").
  *
@@ -45,6 +46,28 @@ final class NewsletterConfirmMail
                 $site
             ),
             'button' => __('Confirm', 'eventcrew'),
+        ];
+    }
+
+    /**
+     * The words of the email to an address that is already subscribed and was
+     * entered in the form again. The button writes to $contact.
+     *
+     * @return array{subject: string, heading: string, promise: string, body: string, button: string}
+     */
+    public static function alreadyWords(string $site, string $contact): array
+    {
+        return [
+            'subject' => __('You are already subscribed to the next events announcement', 'eventcrew'),
+            'heading' => __('You are already subscribed', 'eventcrew'),
+            'promise' => '',
+            'body' => sprintf(
+                /* translators: 1: the site's name, 2: the site's email address */
+                __('This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                $site,
+                $contact
+            ),
+            'button' => __('Write to us', 'eventcrew'),
         ];
     }
 
@@ -88,7 +111,7 @@ final class NewsletterConfirmMail
             );
         }
 
-        $promise = sprintf(
+        $promise = '' === $fi['promise'] ? '' : sprintf(
             '<p style="margin:14px 0 0;font-family:%s;font-size:16px;line-height:1.5;font-style:italic;color:%s">'
                 . '%s</p>',
             $font,
@@ -157,6 +180,10 @@ final class NewsletterConfirmMail
         if ($fi['body'] !== $en['body']) {
             $lines[] = '';
             $lines[] = $en['body'];
+        }
+
+        if ('' === $fi['promise']) {
+            unset($lines[1]);
         }
 
         return implode("\n", $lines);
