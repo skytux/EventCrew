@@ -388,7 +388,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
         self::assertSame(1, substr_count($html, 'Buy a ticket'));
         self::assertStringContainsString('href="https://music.test/dj"', $html);
-        self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ', $html);
+        self::assertStringContainsString('▶ Kuuntele DJ:tä<br>Listen to the DJ</a>', $html);
         self::assertStringContainsString('Loppuunmyyty · Sold out', $html);
         self::assertGreaterThan(strpos($html, 'Myöhemmin · Later'), strpos($html, 'Autumn Night'));
 
@@ -397,6 +397,61 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
         self::assertStringContainsString('Kuuntele DJ:tä · Listen to the DJ: https://music.test/dj', $text);
         self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
+    }
+
+    /**
+     * A card has no "Event page" link, in the HTML or the text. The picture
+     * still opens the ticket shop, or the event page when there is no ticket.
+     */
+    public function testACardHasNoEventPageLink(): void
+    {
+        $withTicket = [
+            'image' => 'https://cdn.test/1.jpg',
+            'ticket_url' => 'https://shop.test/p/1',
+        ] + self::planEvent(1, '2026-07-27', 'Summer Dance');
+        $noTicket = ['image' => 'https://cdn.test/2.jpg'] + self::planEvent(2, '2026-07-28', 'Open Floor');
+
+        $html = NewsletterLayout::html([$withTicket, $noTicket], [], null, '#7a3cff');
+        $text = NewsletterLayout::text([$withTicket, $noTicket], [], null);
+
+        foreach ([$html, $text] as $out) {
+            self::assertStringNotContainsString('Event page', $out);
+            self::assertStringNotContainsString('Tapahtuman sivu', $out);
+        }
+
+        self::assertStringNotContainsString('https://site.test/event-1/', $html);
+        self::assertSame(1, substr_count($html, 'href="https://site.test/event-2/"'));
+        self::assertStringContainsString('<a href="https://site.test/event-2/"><img', $html);
+        self::assertStringNotContainsString('site.test/event-', $text);
+    }
+
+    /**
+     * A description with blank lines is one paragraph per block, the FI / EN
+     * label on the first only, and single line breaks stay <br>. The text
+     * keeps the lines under its label and leaves a blank line between the
+     * languages.
+     */
+    public function testADescriptionKeepsItsParagraphsAndLines(): void
+    {
+        $card = [
+            'excerpt_fi' => "Tanssimme koko yön.\nOvet klo 21.\n\nOta kengät mukaan.",
+            'excerpt_en' => "We dance all night.\nDoors at 21.\n\nBring shoes.",
+        ] + self::planEvent(1, '2026-07-27', 'Summer Dance');
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
+
+        self::assertSame(1, substr_count($html, '>FI</span>'));
+        self::assertSame(1, substr_count($html, '>EN</span>'));
+        self::assertStringContainsString('Tanssimme koko yön.<br>Ovet klo 21.</p>', $html);
+        self::assertMatchesRegularExpression('~<p style="[^"]*">Ota kengät mukaan\.</p>~', $html);
+        self::assertMatchesRegularExpression('~<p style="[^"]*">Bring shoes\.</p>~', $html);
+        self::assertStringNotContainsString('<br><br>', $html);
+
+        self::assertStringContainsString(
+            "FI: Tanssimme koko yön.\nOvet klo 21.\n\nOta kengät mukaan.\n\n"
+                . "EN: We dance all night.\nDoors at 21.\n\nBring shoes.",
+            NewsletterLayout::text([$card], [], null)
+        );
     }
 
     /** A sending plan lists the coming events it does not carry under "Later". */

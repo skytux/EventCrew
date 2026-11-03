@@ -127,4 +127,93 @@ final class EventSourceTest extends TestCase
         $meta['_eventmesh_tr_fi_hash'] = md5("Old Title\0Body");
         self::assertSame('', EventSource::translatedTitle(12, 'fi'));
     }
+
+    /**
+     * @param array<string, string> $meta
+     */
+    private function stubCardEvent(string $content, string $excerpt, array &$meta): void
+    {
+        $post = (object) [
+            'ID' => 12,
+            'post_type' => 'eventmesh_event',
+            'post_title' => 'Summer Dance',
+            'post_content' => $content,
+            'post_excerpt' => $excerpt,
+        ];
+
+        Functions\when('get_post')->justReturn($post);
+        Functions\when('get_post_meta')->alias(
+            static function (int $id, string $key) use (&$meta): string {
+                return $meta[$key] ?? '';
+            }
+        );
+    }
+
+    /**
+     * The card's description is the whole text, not EventMesh's excerpt,
+     * which is cut to 55 words. The excerpt is used only when there is no
+     * text.
+     */
+    public function testTheCardShowsTheWholeTextNotTheExcerpt(): void
+    {
+        $long = implode(' ', array_fill(0, 80, 'dance')) . ' until the end.';
+        $meta = ['_eventmesh_original_lang' => 'en'];
+        $this->stubCardEvent('<p>' . $long . '</p>', implode(' ', array_fill(0, 55, 'dance')), $meta);
+
+        $card = EventSource::card(12);
+
+        self::assertSame($long, $card['excerpt_en']);
+        self::assertSame('', $card['excerpt']);
+
+        $this->stubCardEvent('', 'Only the excerpt.', $meta);
+
+        self::assertSame('Only the excerpt.', EventSource::card(12)['excerpt_en']);
+    }
+
+    /**
+     * A <br> and the end of a paragraph, div, list item or heading become a
+     * line break; spaces inside a line are squeezed, each line is trimmed,
+     * and more than one blank line becomes one.
+     */
+    public function testTheCardKeepsTheLineBreaks(): void
+    {
+        $content = "<h2>Summer  Dance</h2>\n\n<p>Doors \t open at 21.<br>Music &amp; dancing.</p>\n\n\n\n"
+            . "<ul><li>Lesson first</li><li> Then  the party </li></ul>\n<div>The end</div>";
+        $meta = [];
+        $this->stubCardEvent($content, '', $meta);
+
+        self::assertSame(
+            "Summer Dance\n\nDoors open at 21.\nMusic & dancing.\n\nLesson first\nThen the party\n\nThe end",
+            EventSource::card(12)['excerpt']
+        );
+    }
+
+    /**
+     * The other language is EventMesh's translation of the whole text, kept
+     * with its lines, under the same current-hash rule as the title. Its
+     * translated excerpt is used only when there is no translated text.
+     */
+    public function testTheCardUsesTheTranslatedText(): void
+    {
+        $content = '<p>We dance all night.</p><p>Bring shoes.</p>';
+        $meta = [
+            '_eventmesh_original_lang' => 'en',
+            '_eventmesh_tr_fi_hash' => md5("Summer Dance\0" . $content),
+            '_eventmesh_tr_fi_content' => "<p>Tanssimme koko yön.</p>\n\n<p>Ota kengät mukaan.</p>",
+            '_eventmesh_tr_fi_excerpt' => 'Tanssimme',
+        ];
+        $this->stubCardEvent($content, 'We dance', $meta);
+
+        $card = EventSource::card(12);
+
+        self::assertSame("We dance all night.\nBring shoes.", $card['excerpt_en']);
+        self::assertSame("Tanssimme koko yön.\n\nOta kengät mukaan.", $card['excerpt_fi']);
+
+        $meta['_eventmesh_tr_fi_content'] = '';
+        self::assertSame('Tanssimme', EventSource::card(12)['excerpt_fi']);
+
+        $meta['_eventmesh_tr_fi_content'] = 'Tanssimme koko yön.';
+        $meta['_eventmesh_tr_fi_hash'] = md5("Summer Dance\0Old text");
+        self::assertSame('', EventSource::card(12)['excerpt_fi']);
+    }
 }
