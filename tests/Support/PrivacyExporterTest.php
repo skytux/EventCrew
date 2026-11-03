@@ -132,8 +132,44 @@ final class PrivacyExporterTest extends TestCase
         self::assertSame('Cy Guest', $values['Name']);
         self::assertSame('cy@example.test', $values['Email']);
         self::assertSame('2', $values['Plus-ones']);
-        self::assertSame(
+        self::assertContains(
             "SELECT * FROM wp_eventcrew_guests WHERE email = 'cy@example.test' ORDER BY event_date ASC, id ASC",
+            $this->wpdb->queries
+        );
+    }
+
+    /**
+     * An announcement subscriber is exported by email alone, with the name
+     * they are greeted with and their language.
+     */
+    public function testAnAnnouncementSubscriberGetsTheirSubscription(): void
+    {
+        $this->wpdb->nextRows[] = null; // no crew record
+        $this->wpdb->nextResults[] = []; // no ticket buyer rows
+        $this->wpdb->nextResults[] = []; // no guest rows
+        $this->wpdb->nextRows[] = [
+            'id' => 4,
+            'email' => 'fan@example.test',
+            'status' => 'confirmed',
+            'created_at' => '2026-07-01 10:00:00',
+            'confirmed_at' => '2026-07-01 10:05:00',
+            'name' => 'Anna',
+            'language' => 'fi',
+        ];
+
+        $result = $this->exporter()->export('fan@example.test');
+
+        self::assertCount(1, $result['data']);
+        self::assertSame('eventcrew-announcement', $result['data'][0]['group_id']);
+
+        $values = array_column($result['data'][0]['data'], 'value', 'name');
+        self::assertSame('fan@example.test', $values['Email']);
+        self::assertSame('confirmed', $values['Status']);
+        self::assertSame('Anna', $values['Name']);
+        self::assertSame('fi', $values['Language']);
+        self::assertSame('2026-07-01 10:05:00', $values['Confirmed']);
+        self::assertSame(
+            "SELECT * FROM wp_eventcrew_newsletter_subscribers WHERE email = 'fan@example.test'",
             $this->wpdb->lastQuery()
         );
     }
