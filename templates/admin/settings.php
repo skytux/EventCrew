@@ -1257,7 +1257,7 @@ if (! defined('ABSPATH')) {
                         <?php
                         printf(
                             /* translators: 1: the shortcode, already wrapped in <code>, 2: number of days */
-                            esc_html__('The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop\'s order export, that buyers can type a dash instead of their address in the shop, that they are emailed a thank-you message with their ticket after the import, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the newsletter. Link to it from your shop.', 'eventcrew'),
+                            esc_html__('The page carrying the %1$s shortcode: the public notice for people who bought a ticket in the web shop. It says what is taken from the shop\'s order export, that buyers can type a dash instead of their address in the shop, that they are emailed a thank-you message with their ticket after the import, and that their email address, name and ticket code are deleted %2$d days after the event unless they joined the next events announcement. Link to it from your shop.', 'eventcrew'),
                             '<code>[eventcrew_ticket_privacy]</code>', // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- literal.
                             (int) \EventCrew\Support\PrivacyPolicy::BUYER_EMAIL_DAYS
                         );
@@ -1367,10 +1367,10 @@ if (! defined('ABSPATH')) {
             </tr>
         </table>
 
-        <h2><?php esc_html_e('Newsletter', 'eventcrew'); ?></h2>
+        <h2><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h2>
         <table class="form-table" role="presentation">
             <tr>
-                <th scope="row"><?php esc_html_e('Send the newsletter', 'eventcrew'); ?></th>
+                <th scope="row"><?php esc_html_e('Send the next events announcement', 'eventcrew'); ?></th>
                 <td>
                     <label>
                         <input type="checkbox" name="newsletter_enabled" value="1"
@@ -1378,7 +1378,7 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('On', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the newsletter and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>
@@ -1391,7 +1391,7 @@ if (! defined('ABSPATH')) {
                         min="1" max="60" step="1" class="small-text"
                         value="<?php echo esc_attr((string) $newsletter_days); ?>">
                     <p class="description">
-                        <?php esc_html_e('How many days before each event the newsletter goes out. Events that fall in the same window go in one newsletter.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        <?php esc_html_e('How many days before each event the next events announcement goes out. Events that fall in the same window go in one announcement.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>

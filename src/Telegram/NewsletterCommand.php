@@ -58,13 +58,13 @@ final class NewsletterCommand
 
         if (self::CLEAR === strtolower($arguments)) {
             $this->text->clear();
-            $this->telegram->sendMessage($chatId, __('The text for the next newsletter is removed.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, __('The text for the next announcement is removed.', 'eventcrew'));
 
             return;
         }
 
         $result = $this->text->set($arguments, $person->id);
-        $reply = __('Saved. The next newsletter carries this text:', 'eventcrew')
+        $reply = __('Saved. The next announcement carries this text:', 'eventcrew')
             . "\n\n" . self::both($result['fi'], $result['en']);
 
         if (! $result['translated']) {
@@ -81,12 +81,12 @@ final class NewsletterCommand
         $stored = $this->text->get();
 
         if (null === $stored) {
-            return __('There is no text for the next newsletter.', 'eventcrew') . "\n\n"
+            return __('There is no text for the next announcement.', 'eventcrew') . "\n\n"
                 . __('To add one, send /newsletter followed by the text, for example:', 'eventcrew') . "\n"
                 . __('/newsletter See you on the dance floor!', 'eventcrew');
         }
 
-        $reply = __('The text for the next newsletter:', 'eventcrew') . "\n\n"
+        $reply = __('The text for the next announcement:', 'eventcrew') . "\n\n"
             . self::both($stored['fi'], $stored['en']);
 
         if (! $stored['translated']) {

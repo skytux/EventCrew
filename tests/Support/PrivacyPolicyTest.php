@@ -218,9 +218,9 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('date of the event', $text);
         self::assertStringContainsString('a dash ("-") in the address field', $text);
         self::assertStringContainsString('check you in at the door', $text);
-        self::assertStringContainsString('invites you to join our newsletter', $text);
+        self::assertStringContainsString('invites you to join our next events announcement', $text);
         self::assertStringContainsString('We delete your email address, your name and your ticket code 60 days after the event', $text);
-        self::assertStringContainsString('unless you have joined our newsletter', $text);
+        self::assertStringContainsString('unless you have joined our next events announcement', $text);
         self::assertStringContainsString('You can leave it at any time', $text);
         self::assertStringContainsString('we email you a thank-you message with your ticket', $text);
         self::assertStringContainsString('guest list with your email address', $text);

@@ -331,3 +331,13 @@ class FakeWpdb
 }
 
 $GLOBALS['wpdb'] = new FakeWpdb();
+
+/** A stand-in for the post object; only the fields the code reads. */
+if (! class_exists('WP_Post')) {
+    class WP_Post
+    {
+        public int $ID = 0;
+
+        public string $post_content = '';
+    }
+}

@@ -203,7 +203,126 @@ final class NewsletterControllerTest extends TestCase
         self::assertNotNull($this->options[Newsletter::STATE_OPTION]['plan']);
 
         $page = $this->controller()->respond('stop', 'POST', $token);
-        self::assertStringContainsString('The newsletter is stopped.', $page['html']);
+        self::assertStringContainsString('The announcement is stopped.', $page['html']);
         self::assertNull($this->options[Newsletter::STATE_OPTION]['plan']);
+    }
+
+    /** Stubs for drawing the form and the bar on a public page; $post is the page shown. */
+    private function onPublicPage(?\WP_Post $post = null, bool $admin = false): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('admin_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-admin/' . $p);
+        Functions\when('remove_query_arg')->returnArg(2);
+        Functions\when('set_url_scheme')->alias(static fn (string $url): string => 'https:' . $url);
+        Functions\when('is_admin')->justReturn($admin);
+        Functions\when('is_feed')->justReturn(false);
+        Functions\when('is_embed')->justReturn(false);
+        Functions\when('is_singular')->justReturn(null !== $post);
+        Functions\when('get_queried_object')->justReturn($post);
+        Functions\when('has_shortcode')->alias(
+            static fn (string $content, string $tag): bool => str_contains($content, '[' . $tag)
+        );
+        Functions\when('has_block')->justReturn(false);
+    }
+
+    private static function bar(NewsletterController $controller): string
+    {
+        ob_start();
+        $controller->renderBar();
+
+        return (string) ob_get_clean();
+    }
+
+    protected function tearDown(): void
+    {
+        unset($_GET[NewsletterController::RESULT_ARG]);
+        parent::tearDown();
+    }
+
+    /** With the newsletter on, the bar is printed hidden (its script shows it), with a close button. */
+    public function testTheBarIsPrintedWhenTheNewsletterIsOn(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $html = self::bar($this->controller());
+
+        self::assertStringContainsString('id="' . NewsletterController::BAR_ANCHOR . '" hidden', $html);
+        self::assertStringContainsString('data-close-days="30"', $html);
+        self::assertStringContainsString('name="anchor" value="' . NewsletterController::BAR_ANCHOR . '"', $html);
+        self::assertStringContainsString('eventcrew-nl-bar-close', $html);
+        self::assertStringContainsString('localStorage', $html);
+    }
+
+    public function testNoBarWhenTheNewsletterIsOff(): void
+    {
+        $this->onPublicPage();
+
+        self::assertSame('', self::bar($this->controller()));
+    }
+
+    public function testNoBarInWpAdmin(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage(null, true);
+
+        self::assertSame('', self::bar($this->controller()));
+    }
+
+    /** The crew app and sign-in page (the eventcrew_signup shortcode) has no bar. */
+    public function testNoBarOnTheCrewAppPage(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $page = new \WP_Post();
+        $page->post_content = '<!-- wp:shortcode -->[eventcrew_signup]<!-- /wp:shortcode -->';
+        $this->onPublicPage($page);
+
+        self::assertSame('', self::bar($this->controller()));
+    }
+
+    /** Without a full form on the page, the answer to a sign-up shows in the bar, even if it was closed. */
+    public function testTheAnswerShowsInTheBarWhenThePageHasNoForm(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $_GET[NewsletterController::RESULT_ARG] = NewsletterController::RESULT_SENT;
+
+        $html = self::bar($this->controller());
+
+        self::assertStringContainsString('data-message="1"', $html);
+        self::assertStringContainsString('<p class="eventcrew-nl-bar-message"', $html);
+    }
+
+    /** With a full form on the page, the answer shows there once, and the bar sends its answer to that form. */
+    public function testTheAnswerShowsInTheFullFormWhenThePageHasOne(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $_GET[NewsletterController::RESULT_ARG] = NewsletterController::RESULT_SENT;
+        $controller = $this->controller();
+
+        $form = $controller->renderShortcode();
+        $html = self::bar($controller);
+
+        self::assertStringContainsString('eventcrew-newsletter-message', $form);
+        self::assertStringNotContainsString('<p class="eventcrew-nl-bar-message"', $html);
+        self::assertStringNotContainsString(' data-message="1"', $html);
+        self::assertStringContainsString('name="anchor" value="' . NewsletterController::FORM_ANCHOR . '"', $html);
+    }
+
+    /** With Turnstile set up, its script tag is printed once even with both the form and the bar. */
+    public function testTheTurnstileScriptIsAddedOnce(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->options[Turnstile::SITE_KEY_OPTION] = 'site-key';
+        $this->options[Turnstile::SECRET_KEY_OPTION] = 'secret';
+        $this->onPublicPage();
+        $controller = $this->controller();
+
+        $all = $controller->renderShortcode() . self::bar($controller);
+
+        self::assertSame(1, substr_count($all, Turnstile::SCRIPT_URL));
+        self::assertSame(2, substr_count($all, 'class="cf-turnstile"'));
+        self::assertStringContainsString('data-appearance="interaction-only"', $all);
     }
 }

@@ -269,7 +269,7 @@ final class OrganizerGuide
                 self::windowStart(),
                 self::windowEnd()
             ),
-            __('📰 The newsletter, if an administrator has switched it on, emails the coming events to everyone who joined it. The day before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next newsletter, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in Finnish or in English: it is translated into the other language.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. The day before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in Finnish or in English: it is translated into the other language.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];
     }
 

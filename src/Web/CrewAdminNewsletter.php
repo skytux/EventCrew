@@ -121,10 +121,10 @@ final class CrewAdminNewsletter
         $map = [
             'admin_newsletter_saved' => __('Saved. The text is translated; both versions are shown below.', 'eventcrew'),
             'admin_newsletter_saved_untranslated' => __('Saved, but the text could not be translated, so both languages show it as you wrote it.', 'eventcrew'),
-            'admin_newsletter_cleared' => __('The text for the next newsletter is removed.', 'eventcrew'),
-            'admin_newsletter_stopped' => __('The newsletter is stopped. It will not be sent.', 'eventcrew'),
-            'admin_newsletter_too_late' => __('Too late: the newsletter is already being sent.', 'eventcrew'),
-            'admin_newsletter_already' => __('This newsletter was already stopped or sent.', 'eventcrew'),
+            'admin_newsletter_cleared' => __('The text for the next announcement is removed.', 'eventcrew'),
+            'admin_newsletter_stopped' => __('The announcement is stopped. It will not be sent.', 'eventcrew'),
+            'admin_newsletter_too_late' => __('Too late: the announcement is already being sent.', 'eventcrew'),
+            'admin_newsletter_already' => __('This announcement was already stopped or sent.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 

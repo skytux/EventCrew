@@ -104,6 +104,12 @@ final class Newsletter
     /** Between the Finnish and the English part of the plain-text email. */
     private const DIVIDER_TEXT = '————————';
 
+    /**
+     * The first line of every announcement, above the Finnish part. Always in
+     * English, never translated: it is for the reader who does not read Finnish.
+     */
+    public const ENGLISH_BELOW = 'English version below ↓';
+
     /** Between the Finnish and the English part of the HTML email. */
     private const DIVIDER_HTML = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">';
 
@@ -292,8 +298,10 @@ final class Newsletter
         return [
             'subject' => self::both(static fn (): string => __('Coming events', 'eventcrew'))
                 . ' – ' . (string) get_bloginfo('name'),
-            'html' => EmailBody::toHtml($fi) . self::DIVIDER_HTML . EmailBody::toHtml($en),
-            'text' => $fi . "\n\n" . self::DIVIDER_TEXT . "\n\n" . $en,
+            'html' => '<p style="margin:0 0 16px;color:#6b6b76;font-size:14px">'
+                . esc_html(self::ENGLISH_BELOW) . '</p>'
+                . EmailBody::toHtml($fi) . self::DIVIDER_HTML . EmailBody::toHtml($en),
+            'text' => self::ENGLISH_BELOW . "\n\n" . $fi . "\n\n" . self::DIVIDER_TEXT . "\n\n" . $en,
         ];
     }
 
@@ -302,7 +310,7 @@ final class Newsletter
     {
         return self::both(
             static fn (): string => __(
-                'You get this email because you joined the newsletter. Leave the newsletter',
+                'You get this email because you joined the next events announcement. Leave the announcement',
                 'eventcrew'
             )
         );
@@ -561,17 +569,17 @@ final class Newsletter
             $words = Language::forPerson($person, static fn (): array => [
                 'subject' => sprintf(
                     /* translators: %s: the date the newsletter will be sent, like 14.11.2026 */
-                    __('Newsletter preview: it goes out on %s', 'eventcrew'),
+                    __('Next events announcement preview: it goes out on %s', 'eventcrew'),
                     TicketMail::shortDate($plan['send_on'])
                 ),
                 'intro' => sprintf(
                     /* translators: 1: the send date, like 14.11.2026, 2: number of subscribers */
-                    __('This newsletter goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    __('This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     TicketMail::shortDate($plan['send_on']),
                     $count
                 ),
                 'subject_line' => __('Subject', 'eventcrew'),
-                'stop' => __('Stop this newsletter', 'eventcrew'),
+                'stop' => __('Stop this announcement', 'eventcrew'),
             ]);
 
             $body = $words['intro'] . "\n\n" . self::DIVIDER_TEXT . "\n\n"

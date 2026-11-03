@@ -579,7 +579,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             ];
 
             if (isset($eventcrew_admin['newsletter'])) {
-                $eventcrew_subtabs['newsletter'] = __('Newsletter', 'eventcrew');
+                $eventcrew_subtabs['newsletter'] = __('Next events announcement', 'eventcrew');
             }
             ?>
             <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
@@ -1671,17 +1671,17 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <div class="eventcrew-subpanel" id="eventcrew-admin-newsletter" data-eventcrew-subpanel="newsletter">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Newsletter', 'eventcrew'); ?></h3>
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h3>
                 </header>
                 <div class="eventcrew-card-body">
                     <?php if (! $eventcrew_news['enabled']) : ?>
-                        <p class="eventcrew-muted"><?php esc_html_e('The newsletter is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                        <p class="eventcrew-muted"><?php esc_html_e('The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                     <?php else : ?>
                         <p><?php echo esc_html(sprintf(
                             /* translators: %d: number of days */
                             _n(
-                                'The newsletter goes out by itself %d day before each event.',
-                                'The newsletter goes out by itself %d days before each event.',
+                                'The announcement goes out by itself %d day before each event.',
+                                'The announcement goes out by itself %d days before each event.',
                                 $eventcrew_news['days'],
                                 'eventcrew'
                             ),
@@ -1697,13 +1697,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <?php if ($eventcrew_news['plan']['sending']) : ?>
                             <p><?php echo esc_html(sprintf(
                                 /* translators: %d: number of emails sent so far */
-                                __('The newsletter is being sent now: %d emails so far.', 'eventcrew'),
+                                __('The announcement is being sent now: %d emails so far.', 'eventcrew'),
                                 $eventcrew_news['plan']['sent']
                             )); ?></p>
                         <?php else : ?>
                             <p><?php echo esc_html(sprintf(
                                 /* translators: %s: the send date, like 14.11.2026 */
-                                __('Next newsletter: %s, about these events:', 'eventcrew'),
+                                __('Next announcement: %s, about these events:', 'eventcrew'),
                                 $eventcrew_news['plan']['send_on']
                             )); ?></p>
                         <?php endif; ?>
@@ -1722,7 +1722,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 <input type="hidden" name="plan_id"
                                     value="<?php echo esc_attr((string) $eventcrew_news['plan']['id']); ?>">
                                 <button type="submit" class="wp-element-button">
-                                    <?php esc_html_e('Stop this newsletter', 'eventcrew'); ?>
+                                    <?php esc_html_e('Stop this announcement', 'eventcrew'); ?>
                                 </button>
                             </form>
                         <?php endif; ?>
@@ -1730,7 +1730,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php if (null !== $eventcrew_news['last']) : ?>
                         <p class="eventcrew-muted"><?php echo esc_html(sprintf(
                             /* translators: 1: date, like 14.11.2026, 2: number of emails sent */
-                            __('Last newsletter: %1$s, %2$d emails.', 'eventcrew'),
+                            __('Last announcement: %1$s, %2$d emails.', 'eventcrew'),
                             $eventcrew_news['last']['at'],
                             $eventcrew_news['last']['sent']
                         )); ?></p>
@@ -1743,13 +1743,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
                         <p>
                             <label for="eventcrew-admin-newsletter-text">
-                                <?php esc_html_e('Text for the next newsletter', 'eventcrew'); ?>
+                                <?php esc_html_e('Text for the next announcement', 'eventcrew'); ?>
                             </label>
                             <textarea name="newsletter_text" id="eventcrew-admin-newsletter-text" rows="5"
                                 maxlength="<?php
                                 echo (int) \EventCrew\Support\NewsletterText::MAX_LENGTH;
                                 ?>"></textarea>
-                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save, and removed after the newsletter is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                         </p>
                         <button type="submit" name="op" value="save" class="wp-element-button">
                             <?php esc_html_e('Save', 'eventcrew'); ?>

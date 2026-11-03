@@ -48,8 +48,54 @@ final class NewsletterController
     public const RESULT_INVALID = 'invalid';
     public const RESULT_CAPTCHA = 'captcha';
 
+    /** The id of the full form, and of the bar; the answer comes back to one of them. */
+    public const FORM_ANCHOR = 'eventcrew-newsletter';
+    public const BAR_ANCHOR = 'eventcrew-nl-bar';
+
+    /** Days the bar stays away after the visitor closes it. */
+    public const CLOSE_DAYS = 30;
+
     /** A pending sign-up gets a new confirmation email only after this long. */
     private const RESEND_AFTER_SECONDS = HOUR_IN_SECONDS;
+
+    private const BAR_CSS = '.eventcrew-nl-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;'
+        . 'background:var(--wp--preset--color--contrast,#111);color:var(--wp--preset--color--base,#fff);'
+        . 'padding:10px 48px 10px 16px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:15px}'
+        . '.eventcrew-nl-bar[hidden]{display:none}'
+        . '.eventcrew-nl-bar form{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;'
+        . 'margin:0}'
+        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;padding:8px 10px}'
+        . '.eventcrew-nl-bar .wp-element-button{padding:8px 16px}'
+        . '.eventcrew-nl-bar .cf-turnstile{flex-basis:100%;display:flex;justify-content:center}'
+        . '.eventcrew-nl-bar-message{margin:0 0 6px;text-align:center}'
+        . '.eventcrew-nl-bar-close{position:absolute;top:6px;right:8px;background:none;border:0;color:inherit;'
+        . 'font-size:24px;line-height:1;cursor:pointer;padding:4px 8px}';
+
+    /**
+     * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
+     * answer to a sign-up from the bar shows anyway), hides it while a full
+     * form is on screen, and keeps room for it at the bottom of the page.
+     */
+    private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
+        . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
+        . 'try{var t=+localStorage.getItem(K);closed=t>0&&Date.now()-t<d*864e5;}catch(e){}'
+        . 'if(closed&&!b.hasAttribute("data-message")){return;}'
+        . 'var forms=document.querySelectorAll(".eventcrew-newsletter"),inView=[],off=false;'
+        . 'function show(){var hide=off||inView.length>0;b.hidden=hide;'
+        . 'document.body.style.paddingBottom=hide?"":b.offsetHeight+"px";}'
+        . 'b.querySelector(".eventcrew-nl-bar-close").addEventListener("click",function(){off=true;'
+        . 'try{localStorage.setItem(K,String(Date.now()));}catch(e){}show();});'
+        . 'if(forms.length&&"IntersectionObserver" in window){var io=new IntersectionObserver(function(es){'
+        . 'es.forEach(function(e){var i=inView.indexOf(e.target);'
+        . 'if(e.isIntersecting&&i<0){inView.push(e.target);}if(!e.isIntersecting&&i>=0){inView.splice(i,1);}});'
+        . 'show();});forms.forEach(function(f){io.observe(f);});}'
+        . 'window.addEventListener("resize",show);show();})();';
+
+    /** Set when the full form was rendered on this page. */
+    private bool $formShown = false;
+
+    /** Set when the Turnstile script tag was printed on this page. */
+    private bool $captchaScriptAdded = false;
 
     public function __construct(
         private readonly NewsletterSubscriberRepository $subscribers,
@@ -65,6 +111,7 @@ final class NewsletterController
         add_action('wp_ajax_' . self::JOIN_ACTION, [$this, 'handleJoin']);
         add_action('wp_ajax_nopriv_' . self::JOIN_ACTION, [$this, 'handleJoin']);
         add_action('rest_api_init', [$this, 'registerRoutes']);
+        add_action('wp_footer', [$this, 'renderBar']);
     }
 
     public function registerRoutes(): void
@@ -83,51 +130,172 @@ final class NewsletterController
     /** The sign-up form. */
     public function renderShortcode(): string
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks which message to show.
-        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
-        $message = match ($result) {
-            self::RESULT_SENT => __('Thank you. Check your inbox: the newsletter starts only after you press the link in the email we sent.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            self::RESULT_INVALID => __('That does not look like an email address. Please check it.', 'eventcrew'),
-            self::RESULT_CAPTCHA => __('The check that you are not a bot failed. Please try again.', 'eventcrew'),
-            default => '',
-        };
-
-        $siteKey = $this->turnstile->isEnabled() ? $this->turnstile->siteKey() : '';
-        $here = (string) get_permalink();
-
-        $html = '<div class="eventcrew-newsletter" id="eventcrew-newsletter">';
+        $message = $this->resultMessage();
+        $html = '<div class="eventcrew-newsletter" id="' . esc_attr(self::FORM_ANCHOR) . '">';
 
         if ('' !== $message) {
             $html .= '<p class="eventcrew-newsletter-message" role="status">' . esc_html($message) . '</p>';
         }
 
-        $html .= '<form method="post" action="' . esc_url(admin_url('admin-ajax.php')) . '">'
-            . '<input type="hidden" name="action" value="' . esc_attr(self::JOIN_ACTION) . '">'
-            . '<input type="hidden" name="redirect_to" value="' . esc_attr($here) . '">'
+        $html .= $this->formStart(self::FORM_ANCHOR)
             . '<p><label for="eventcrew-newsletter-email">'
             . esc_html__('Your email address', 'eventcrew') . '</label><br>'
             . '<input type="email" id="eventcrew-newsletter-email" name="email" required autocomplete="email"'
             . ' class="wp-element-input"></p>'
-            // Hidden from people (off screen, skipped by the tab key and by
-            // screen readers); a bot that fills every field fills this one too.
-            . '<p style="position:absolute;left:-9999px" aria-hidden="true"><label>'
+            . self::honeypot()
+            . $this->captcha(false)
+            . '<p><button type="submit" class="wp-element-button">'
+            . esc_html__('Get the next events announcement', 'eventcrew') . '</button></p>'
+            . '<p class="eventcrew-muted">'
+            . esc_html__('We send you an email to confirm. You can leave the announcement at any time with the link in every announcement.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            . '</p></form></div>';
+
+        $this->formShown = true;
+
+        return $html;
+    }
+
+    /**
+     * The bar fixed to the bottom of the screen, printed by wp_footer: the
+     * same sign-up in one line, with a close button.
+     *
+     * It is printed hidden; its script shows it unless the visitor closed it
+     * in the last CLOSE_DAYS days (kept in the visitor's browser), and hides
+     * it while a full form (the shortcode, e.g. in the site footer) is on
+     * screen. Not printed when the newsletter is off, nor on the crew app and
+     * sign-in page (a page with the eventcrew_signup shortcode or block).
+     */
+    public function renderBar(): void
+    {
+        if (! $this->barBelongsHere()) {
+            return;
+        }
+
+        // The answer to a sign-up from the bar shows in the full form when the
+        // page has one, and in the bar when it has not.
+        $message = $this->formShown ? '' : $this->resultMessage();
+        $anchor = $this->formShown ? self::FORM_ANCHOR : self::BAR_ANCHOR;
+
+        $html = '<div class="eventcrew-nl-bar" id="' . esc_attr(self::BAR_ANCHOR) . '" hidden'
+            . ' data-close-days="' . esc_attr((string) self::CLOSE_DAYS) . '"'
+            . ('' !== $message ? ' data-message="1"' : '') . '>'
+            . '<style>' . self::BAR_CSS . '</style>';
+
+        if ('' !== $message) {
+            $html .= '<p class="eventcrew-nl-bar-message" role="status">' . esc_html($message) . '</p>';
+        }
+
+        $html .= $this->formStart($anchor)
+            . '<label for="eventcrew-nl-bar-email" class="eventcrew-nl-bar-label">'
+            . esc_html__('Get the coming events by email', 'eventcrew') . '</label>'
+            . '<input type="email" id="eventcrew-nl-bar-email" name="email" required autocomplete="email"'
+            . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '" class="wp-element-input">'
+            . self::honeypot()
+            . '<button type="submit" class="wp-element-button">' . esc_html__('Subscribe', 'eventcrew') . '</button>'
+            . $this->captcha(true)
+            . '</form>'
+            . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
+            . esc_attr__('Close', 'eventcrew') . '">×</button>'
+            . '</div>'
+            . '<script>' . self::BAR_JS . '</script>';
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
+        echo $html;
+    }
+
+    /** Whether the bar is printed on this request. */
+    public function barBelongsHere(): bool
+    {
+        if (! Newsletter::enabled() || is_admin() || is_feed() || is_embed()) {
+            return false;
+        }
+
+        $post = is_singular() ? get_queried_object() : null;
+
+        if (
+            $post instanceof \WP_Post
+            && (has_shortcode((string) $post->post_content, 'eventcrew_signup') || has_block('eventcrew/signup', $post))
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** The message for the ?eventcrew_newsletter= answer, or ''. */
+    private function resultMessage(): string
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks which message to show.
+        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
+
+        return match ($result) {
+            self::RESULT_SENT => __('Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            self::RESULT_INVALID => __('That does not look like an email address. Please check it.', 'eventcrew'),
+            self::RESULT_CAPTCHA => __('The check that you are not a bot failed. Please try again.', 'eventcrew'),
+            default => '',
+        };
+    }
+
+    /** The form tag and its hidden fields; the answer comes back to $anchor on this page. */
+    private function formStart(string $anchor): string
+    {
+        return '<form method="post" action="' . esc_url(admin_url('admin-ajax.php')) . '">'
+            . '<input type="hidden" name="action" value="' . esc_attr(self::JOIN_ACTION) . '">'
+            . '<input type="hidden" name="redirect_to" value="' . esc_attr(self::currentUrl()) . '">'
+            . '<input type="hidden" name="anchor" value="' . esc_attr($anchor) . '">';
+    }
+
+    /**
+     * Hidden from people (off screen, skipped by the tab key and by screen
+     * readers); a bot that fills every field fills this one too.
+     */
+    private static function honeypot(): string
+    {
+        return '<p style="position:absolute;left:-9999px" aria-hidden="true"><label>'
             . esc_html__('Leave this field empty', 'eventcrew')
             . ' <input type="text" name="' . esc_attr(self::HONEYPOT) . '" value="" tabindex="-1" autocomplete="off">'
             . '</label></p>';
+    }
 
-        if ('' !== $siteKey) {
-            $html .= '<div class="cf-turnstile" data-sitekey="' . esc_attr($siteKey) . '" data-theme="auto"></div>'
-                // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- the widget script loads only where the form is.
-                . '<script src="' . esc_url(Turnstile::SCRIPT_URL) . '" async defer></script>';
+    /**
+     * The Turnstile widget when it is set up; its script is added once per
+     * page. In the bar it shows only when Cloudflare asks the visitor to act.
+     */
+    private function captcha(bool $inBar): string
+    {
+        $siteKey = $this->turnstile->isEnabled() ? $this->turnstile->siteKey() : '';
+
+        if ('' === $siteKey) {
+            return '';
         }
 
-        $html .= '<p><button type="submit" class="wp-element-button">'
-            . esc_html__('Join the newsletter', 'eventcrew') . '</button></p>'
-            . '<p class="eventcrew-muted">'
-            . esc_html__('We send you an email to confirm. You can leave the newsletter at any time with the link in every newsletter.', 'eventcrew') // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            . '</p></form></div>';
+        $html = '<div class="cf-turnstile" data-sitekey="' . esc_attr($siteKey) . '" data-theme="auto"'
+            . ($inBar ? ' data-appearance="interaction-only"' : '') . '></div>';
+
+        if (! $this->captchaScriptAdded) {
+            $this->captchaScriptAdded = true;
+            // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- the widget script loads only where the form is.
+            $html .= '<script src="' . esc_url(Turnstile::SCRIPT_URL) . '" async defer></script>';
+        }
 
         return $html;
+    }
+
+    /**
+     * The address of this page without an earlier answer on it: where the
+     * form sends the visitor back to. get_permalink() would be wrong in a
+     * site footer on a list of posts.
+     */
+    private static function currentUrl(): string
+    {
+        $host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
+        $uri = isset($_SERVER['REQUEST_URI']) ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])) : '/';
+
+        if ('' === $host) {
+            return home_url('/');
+        }
+
+        return remove_query_arg(self::RESULT_ARG, set_url_scheme('//' . $host . $uri));
     }
 
     /** The form's POST: records the sign-up and goes back to the page. */
@@ -140,12 +308,15 @@ final class NewsletterController
             ? sanitize_text_field(wp_unslash($_POST[Turnstile::RESPONSE_FIELD]))
             : '';
         $requested = isset($_POST['redirect_to']) ? (string) wp_unslash($_POST['redirect_to']) : '';
+        $anchor = isset($_POST['anchor']) && self::BAR_ANCHOR === wp_unslash($_POST['anchor'])
+            ? self::BAR_ANCHOR
+            : self::FORM_ANCHOR;
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $result = $this->join($email, $honeypot, $token, $this->clientIp());
         $back = wp_validate_redirect($requested, home_url('/'));
 
-        wp_safe_redirect(add_query_arg(self::RESULT_ARG, $result, $back) . '#eventcrew-newsletter');
+        wp_safe_redirect(add_query_arg(self::RESULT_ARG, $result, $back) . '#' . $anchor);
         exit;
     }
 
@@ -230,7 +401,10 @@ final class NewsletterController
             if (null !== $id && $this->subscribers->confirm($id)) {
                 return $this->page(
                     200,
-                    static fn (): string => __('You are now subscribed to the newsletter. Thank you!', 'eventcrew')
+                    static fn (): string => __(
+                        'You are now subscribed to the next events announcement. Thank you!',
+                        'eventcrew'
+                    )
                 );
             }
 
@@ -244,7 +418,7 @@ final class NewsletterController
                 return $this->page(
                     200,
                     static fn (): string => __(
-                        'You have left the newsletter. You will not get it any more.',
+                        'You have left the announcement. You will not get it any more.',
                         'eventcrew'
                     )
                 );
@@ -264,7 +438,7 @@ final class NewsletterController
                 return $this->page(
                     200,
                     static fn (): string => __(
-                        'Press the button to stop this newsletter. It will not be sent.',
+                        'Press the button to stop this announcement. It will not be sent.',
                         'eventcrew'
                     ),
                     $this->stopForm($token)
@@ -274,9 +448,9 @@ final class NewsletterController
             $answer = $this->newsletter->stop($planId);
 
             return $this->page(200, static fn (): string => match ($answer) {
-                Newsletter::STOPPED => __('The newsletter is stopped. It will not be sent.', 'eventcrew'),
-                Newsletter::TOO_LATE => __('Too late: the newsletter is already being sent.', 'eventcrew'),
-                default => __('This newsletter was already stopped or sent.', 'eventcrew'),
+                Newsletter::STOPPED => __('The announcement is stopped. It will not be sent.', 'eventcrew'),
+                Newsletter::TOO_LATE => __('Too late: the announcement is already being sent.', 'eventcrew'),
+                default => __('This announcement was already stopped or sent.', 'eventcrew'),
             });
         }
 
@@ -287,10 +461,10 @@ final class NewsletterController
     {
         $site = (string) get_bloginfo('name');
         $words = static fn (): array => [
-            'subject' => __('Confirm your newsletter subscription', 'eventcrew'),
+            'subject' => __('Confirm your subscription to the next events announcement', 'eventcrew'),
             'body' => sprintf(
                 /* translators: %s: the site's name */
-                __('Someone, probably you, asked for the %s newsletter at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Someone, probably you, asked for the next events announcement of %s at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $site
             ),
             'button' => __('Confirm', 'eventcrew'),
@@ -320,8 +494,14 @@ final class NewsletterController
      */
     private function page(int $status, callable $message, string $extra = ''): array
     {
-        $title = (string) Language::run(Language::FINNISH, static fn (): string => __('Newsletter', 'eventcrew'));
-        $titleEn = (string) Language::run(Language::ENGLISH, static fn (): string => __('Newsletter', 'eventcrew'));
+        $title = (string) Language::run(
+            Language::FINNISH,
+            static fn (): string => __('Next events announcement', 'eventcrew')
+        );
+        $titleEn = (string) Language::run(
+            Language::ENGLISH,
+            static fn (): string => __('Next events announcement', 'eventcrew')
+        );
         $fi = (string) Language::run(Language::FINNISH, $message);
         $en = (string) Language::run(Language::ENGLISH, $message);
 
@@ -342,7 +522,7 @@ final class NewsletterController
 
     private function stopForm(string $token): string
     {
-        $words = static fn (): string => __('Stop this newsletter', 'eventcrew');
+        $words = static fn (): string => __('Stop this announcement', 'eventcrew');
         $label = (string) Language::run(Language::FINNISH, $words);
         $labelEn = (string) Language::run(Language::ENGLISH, $words);
 
