@@ -14,6 +14,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Telegram\TicketController;
+use EventCrew\Web\SignupBoardView;
 
 /**
  * The ticket email: after an import, every imported ticket buyer with an email
@@ -73,6 +74,20 @@ final class TicketMail
 
     /** The REST route of the ticket page (Telegram\TicketController). */
     private const PAGE_ROUTE = 'eventcrew/v1/ticket';
+
+    /**
+     * The ticket page's font (system-ui) with fallbacks for the mail apps
+     * that do not know it, written as the start of a style attribute.
+     */
+    private const PAGE_FONT = "font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
+
+    /**
+     * The widest the QR code is drawn, quiet zone included, in pixels. On a
+     * 360 pixel wide phone the default email template leaves about 270
+     * pixels for the message; the ticket's grey surround and the card's
+     * padding take 46 of them.
+     */
+    private const QR_WIDTH = 224;
 
     public function __construct(
         private readonly TicketBuyerRepository $buyers,
@@ -497,7 +512,7 @@ final class TicketMail
     public function compose(TicketBuyer|Guest|CrewTicket $row): array
     {
         $date = self::shortDate($row->eventDate);
-        $event = $this->eventName($row->eventDate);
+        [$event, $image] = $this->event($row->eventDate);
         $fi = Language::run(Language::FINNISH, fn (): array => $this->words($row, $event, $date));
         $en = Language::run(Language::ENGLISH, fn (): array => $this->words($row, $event, $date));
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
@@ -518,36 +533,42 @@ final class TicketMail
         }
 
         // The site's icon (or logo) in the middle, as on the web ticket.
-        $qrHtml = $this->qr->table(self::qrData($row), 6, EmailTemplate::qrMarkUrl());
+        $logo = EmailTemplate::qrMarkUrl();
+        $qrHtml = $this->qr->table(
+            self::qrData($row),
+            $this->qr->fitCell(self::qrData($row), self::QR_WIDTH, $logo),
+            $logo
+        );
         // The same ticket note as the web ticket (door code, address), as typed.
         $note = trim((string) get_option(TicketController::NOTE_OPTION, ''));
 
-        $muted = 'font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b6b70';
-        $ticket = '<div style="margin:24px 0 8px;padding:20px 12px;border:1px solid #d9d9de;border-radius:12px;'
-            . 'text-align:center;background:#ffffff">'
-            . '<p style="margin:0 0 12px;' . $muted . '">' . esc_html($event . ' · ' . $date) . '</p>'
-            . $qrHtml
-            . ('' === $code ? '' : sprintf(
-                '<p style="margin:12px 0 0;font-family:Consolas,Menlo,monospace;font-size:22px;font-weight:700;'
-                    . 'letter-spacing:.08em;color:#1d1d1f">%s</p>',
-                esc_html($code)
-            ))
-            . ('' === $holder ? '' : sprintf(
-                '<p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:17px;color:#1d1d1f">%s</p>',
+        $ticket = $this->ticketCard(
+            $this->ticketHead($both('subject'), $event, $date, $image),
+            ('' === $holder ? '' : sprintf(
+                '<p style="margin:0 0 4px;%1$sfont-size:30px;font-weight:700;line-height:1.15;color:#1d1d1f">%2$s</p>',
+                self::PAGE_FONT,
                 esc_html($holder)
             ))
+            . $qrHtml
+            . ('' === $code ? '' : sprintf(
+                '<p style="margin:0 0 16px;font-family:Menlo,Consolas,\'Courier New\',monospace;font-size:22px;'
+                    . 'font-weight:700;line-height:1.3;letter-spacing:.08em;color:#1d1d1f">%s</p>',
+                esc_html($code)
+            ))
             . ('' === $note ? '' : sprintf(
-                '<p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;'
-                    . 'color:#1d1d1f;white-space:pre-line">%s</p>',
+                '<p style="margin:16px 0 0;%1$sfont-size:16px;line-height:1.5;color:#1d1d1f;white-space:pre-line">'
+                    . '%2$s</p>',
+                self::PAGE_FONT,
                 esc_html($note)
             ))
             . sprintf(
-                '<p style="margin:16px 0 0;%1$s"><a href="%2$s" style="color:#6b6b70">%3$s</a></p>',
-                $muted,
+                '<p style="margin:16px 0 0;%1$sfont-size:13px;line-height:1.5;color:#616165">'
+                    . '<a href="%2$s" style="color:#616165;text-decoration:underline">%3$s</a></p>',
+                self::PAGE_FONT,
                 esc_url($url),
                 esc_html($both('open'))
             )
-            . '</div>';
+        );
 
         // Each language's text starts with its FI / EN tag, when the two differ.
         $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
@@ -673,20 +694,88 @@ final class TicketMail
     }
 
     /**
+     * The ticket as the ticket page draws it (Telegram\TicketController): a
+     * white card with rounded corners on the page's grey, the dark header on
+     * top and $body centred under it. Tables and inline styles only, so mail
+     * apps that drop a style block or flex layout draw it the same.
+     */
+    private function ticketCard(string $head, string $body): string
+    {
+        return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8e6e3"'
+            . ' style="margin:24px 0 8px;background-color:#e8e6e3;border-radius:12px">'
+            . '<tr><td align="center" style="padding:16px 6px">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"'
+            . ' style="width:100%;max-width:416px;margin:0 auto;background-color:#ffffff;border-radius:16px;'
+            . 'box-shadow:0 2px 12px rgba(0,0,0,.18)">'
+            . '<tr>' . $head . '</tr>'
+            . '<tr><td align="center" style="padding:19px 16px;text-align:center;border-radius:0 0 16px 16px">'
+            . $body
+            . '</td></tr></table></td></tr></table>';
+    }
+
+    /**
+     * The card's header cell, as on the ticket page: $kicker small and in
+     * capitals, the event's name large, the date, white on dark. With the
+     * event's picture, the picture is behind it under the page's dark
+     * layer; a mail app that does not load it shows the plain dark.
+     *
+     * The dark is also a one-colour background image, which the mail apps
+     * that recolour in dark mode leave alone, as the QR code's cells do. The
+     * picture URL goes through esc_url() inside &quot; quotes, as on the page.
+     */
+    private function ticketHead(string $kicker, string $event, string $date, string $image): string
+    {
+        $layers = '' === $image
+            ? 'linear-gradient(#2b2b30,#2b2b30)'
+            : 'linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.72)),url(&quot;' . esc_url($image) . '&quot;)';
+        $shadow = 'text-shadow:0 1px 3px rgba(0,0,0,.6)';
+
+        return sprintf(
+            '<td align="center" bgcolor="#2b2b30" style="padding:%1$s;text-align:center;background-color:#2b2b30;'
+                . 'background-image:%2$s;background-position:center 25%%;background-size:cover;'
+                . 'background-repeat:no-repeat;border-radius:16px 16px 0 0">'
+                . '<p style="margin:0;%3$sfont-size:12px;line-height:1.4;letter-spacing:.08em;text-transform:uppercase;'
+                . 'color:#dcdcde;%4$s">%5$s</p>'
+                . '<p style="margin:3px 0;%3$sfont-size:24px;font-weight:700;line-height:1.2;color:#ffffff;%4$s">'
+                . '%6$s</p>'
+                . '<p style="margin:0;%3$sfont-size:15px;line-height:1.4;color:#ffffff;%4$s">%7$s</p></td>',
+            '' === $image ? '19px' : '76px 19px 19px',
+            $layers,
+            self::PAGE_FONT,
+            $shadow,
+            esc_html($kicker),
+            esc_html($event),
+            esc_html($date)
+        );
+    }
+
+    /**
      * The name of the event on $date: its first task's event, or the site's
      * name when the night has no tasks.
      */
     private function eventName(string $date): string
     {
+        return $this->event($date)[0];
+    }
+
+    /**
+     * The event on $date: [its name, the URL of its picture or ''], from its
+     * first task with an event name, or [the site's name, ''] when the night
+     * has no tasks.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function event(string $date): array
+    {
         foreach ($this->tasks->forDate($date) as $task) {
             $name = trim($task->eventName());
 
             if ('' !== $name) {
-                return $name;
+                return [$name, SignupBoardView::eventImage($task->eventPostId)];
             }
         }
 
-        return (string) get_bloginfo('name');
+        return [(string) get_bloginfo('name'), ''];
     }
 
     /** "14.11.2026": the date as written in Finnish and read in English. */

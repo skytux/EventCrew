@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.128.2
+Stable tag: 1.129.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.129.0 =
+Ticket email: the ticket is drawn like the ticket page (white card on grey, dark header with the event name and date, large name, larger QR, code, note, link).
 
 = 1.128.2 =
 Board: a separator line after each date on the card board (text and buttons), as Lou asked.
@@ -1132,6 +1135,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.129.0 =
+No settings change.
 
 = 1.128.2 =
 No settings change.
