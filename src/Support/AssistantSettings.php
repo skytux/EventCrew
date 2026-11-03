@@ -205,42 +205,12 @@ final class AssistantSettings
     /** base64(nonce . secretbox(plain)). */
     public static function encrypt(string $plain): string
     {
-        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-
-        return base64_encode($nonce . sodium_crypto_secretbox($plain, $nonce, self::encryptionKey()));
+        return SecretBox::encrypt($plain, self::KEY_CONTEXT);
     }
 
     /** The plain text, or null when $stored is not a box this site can open. */
     public static function decrypt(string $stored): ?string
     {
-        $raw = base64_decode($stored, true);
-
-        if (false === $raw || strlen($raw) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES) {
-            return null;
-        }
-
-        $nonce = substr($raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-        $box = substr($raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
-
-        try {
-            $plain = sodium_crypto_secretbox_open($box, $nonce, self::encryptionKey());
-        } catch (\SodiumException) {
-            return null;
-        }
-
-        return false === $plain ? null : $plain;
-    }
-
-    private static function encryptionKey(): string
-    {
-        // The same fallback as SignedLink: wp_salt() always exists in
-        // WordPress; only the unit tests run without it.
-        $salt = function_exists('wp_salt') ? wp_salt('auth') : 'eventcrew-test-key';
-
-        return sodium_crypto_generichash(
-            $salt . self::KEY_CONTEXT,
-            '',
-            SODIUM_CRYPTO_SECRETBOX_KEYBYTES
-        );
+        return SecretBox::decrypt($stored, self::KEY_CONTEXT);
     }
 }

@@ -5583,6 +5583,9 @@ msgstr "Anna LLM-API:n osoite ja malli ja tallenna ennen testiä."
 msgid "EventCrew: the stored LLM API key cannot be decrypted, so the bot sends no key. Enter the key again in Settings > Telegram bot."
 msgstr "EventCrew: tallennettua LLM-API-avainta ei voi purkaa, joten botti ei lähetä avainta. Anna avain uudelleen kohdassa Asetukset > Telegram-botti."
 
+msgid "EventCrew: the stored mailbox password cannot be decrypted, so the site cannot read the mailbox. Enter the password again in Settings > Email."
+msgstr "EventCrew: tallennettua postilaatikon salasanaa ei voi purkaa, joten sivusto ei voi lukea postilaatikkoa. Anna salasana uudelleen kohdassa Asetukset > Sähköposti."
+
 msgid "First sign up with /start."
 msgstr "Rekisteröidy ensin komennolla /start."
 
