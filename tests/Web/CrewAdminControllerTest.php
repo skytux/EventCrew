@@ -27,7 +27,9 @@ use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
@@ -47,6 +49,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
@@ -125,7 +128,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $this->roleTasks(),
             $this->rosterScreen(),
             new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing()),
-            $this->tasksScreen()
+            $this->tasksScreen(),
+            null,
+            new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()))
         );
     }
 
@@ -504,6 +509,56 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([], $this->telegramCalls);
         self::assertSame([], $this->wpdb->updates);
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerSetsAndRemovesAOneTimePostEventText(): void
+    {
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        $option = FollowupText::NEXT_OPTIONS[FollowupText::CAME];
+
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(
+            CrewAdminController::FOLLOWUP_TEXT_ACTION,
+            ['variant' => 'came', 'followup_text' => 'Thanks for coming!']
+        );
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_followup_saved_untranslated'], $result);
+        self::assertSame('Thanks for coming!', $this->options[$option]['en'] ?? null);
+        self::assertSame(1, $this->options[$option]['by'] ?? null);
+
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(CrewAdminController::FOLLOWUP_TEXT_ACTION, ['variant' => 'came', 'op' => 'clear']);
+
+        self::assertSame('admin_followup_cleared', $result['notice']);
+        self::assertArrayNotHasKey($option, $this->options);
+
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(
+            CrewAdminController::FOLLOWUP_TEXT_ACTION,
+            ['variant' => 'maybe', 'followup_text' => 'Thanks!']
+        );
+
+        self::assertSame('admin_followup_unknown', $result['notice']);
+        self::assertSame([], array_intersect_key($this->options, array_flip(FollowupText::NEXT_OPTIONS)));
+    }
+
+    public function testAMemberCannotSetAPostEventText(): void
+    {
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+
+        $result = $this->post(
+            CrewAdminController::FOLLOWUP_TEXT_ACTION,
+            ['variant' => 'came', 'followup_text' => 'Thanks!'],
+            8
+        );
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
     }
 
     public function testAnOrganizerEditsAPersonAndTheOrganizerFlagIsNeverWritten(): void

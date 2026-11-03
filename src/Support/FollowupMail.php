@@ -20,6 +20,11 @@ use EventCrew\Web\NewsletterController;
  *   them soon.
  *
  * Both are in Finnish and in English, Finnish first, like the ticket email.
+ * The main text of each comes from FollowupText: a one-time text an organizer
+ * set for the next post-event email, else the text in Settings > Email, else
+ * the built-in text. The one-time texts are removed once the next night's
+ * emails are all sent, or when that night (its preview sent) is stopped or
+ * left too late to send.
  * Under the text are the coming events the way the next events announcement
  * shows them (Newsletter::content()): its heading, the next three as cards
  * with their pictures and the rest as short lines under "Later". A card shows
@@ -119,13 +124,18 @@ final class FollowupMail
     /** @var array<string, array<int, array<string, mixed>>> The coming events per night. */
     private array $events = [];
 
+    private readonly FollowupText $text;
+
     public function __construct(
         private readonly FollowupRepository $rows,
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
-        private readonly ?Logger $logger = null
+        private readonly ?Logger $logger = null,
+        ?FollowupText $text = null
     ) {
+        $textLogger = $logger ?? new Logger();
+        $this->text = $text ?? new FollowupText(new LlmClient($textLogger), $textLogger);
     }
 
     public function boot(): void
@@ -239,6 +249,13 @@ final class FollowupMail
             $state['stopped'][$date] = true;
             $this->save($state);
             $this->rows->markUnsent($date, self::STATUS_STOPPED);
+
+            // The night whose preview went out was the next send: its
+            // one-time texts are not kept for a later one.
+            if (isset($state['previewed'][$date])) {
+                $this->text->clearNext();
+            }
+
             $this->log(sprintf('Post-event email for %s stopped.', $date));
             $answer = self::STOPPED;
         });
@@ -483,8 +500,16 @@ final class FollowupMail
     {
         $shortDate = TicketMail::shortDate($date);
         $event = $this->eventName($date);
-        $fi = Language::run(Language::FINNISH, fn (): array => self::words($came, $name, $event, $shortDate));
-        $en = Language::run(Language::ENGLISH, fn (): array => self::words($came, $name, $event, $shortDate));
+        $variant = $came ? FollowupText::CAME : FollowupText::MISSED;
+        $main = fn (string $lang): string => FollowupText::fill(
+            $this->text->text($variant, $lang)['text'],
+            $event,
+            $shortDate
+        );
+        $fiText = $main(Language::FINNISH);
+        $enText = $main(Language::ENGLISH);
+        $fi = Language::run(Language::FINNISH, static fn (): array => self::words($came, $name, $fiText));
+        $en = Language::run(Language::ENGLISH, static fn (): array => self::words($came, $name, $enText));
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
         $pair = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' · ' . $en[$key];
 
@@ -582,6 +607,19 @@ final class FollowupMail
 
             $sendAt = self::sendAt($date)->getTimestamp();
 
+            // A previewed night that never started and is now too late to
+            // send: its one-time texts are not kept for a later night.
+            if (
+                isset($state['previewed'][$date])
+                && ! isset($state['started'][$date])
+                && ! isset($state['expired'][$date])
+                && $at >= $sendAt + self::LATE_DAYS * DAY_IN_SECONDS
+            ) {
+                $state['expired'][$date] = true;
+                $this->text->clearNext();
+                continue;
+            }
+
             if (! isset($state['previewed'][$date]) && $at >= self::previewAt($date)->getTimestamp() && $at < $sendAt) {
                 $state['previewed'][$date] = true;
                 $this->save($state);
@@ -595,6 +633,11 @@ final class FollowupMail
                 && $at >= $sendAt
                 && ($at < $sendAt + self::LATE_DAYS * DAY_IN_SECONDS || isset($state['started'][$date]))
             ) {
+                if (! isset($state['started'][$date])) {
+                    // The one-time texts this night starts with; removed when it is done.
+                    $state['texts'][$date] = $this->text->revisions();
+                }
+
                 $state['started'][$date] = true;
                 $this->save($state);
                 $state = $this->sendNight($date, $state);
@@ -609,8 +652,8 @@ final class FollowupMail
      * WP-Cron for another batch when some are left; marks the night done
      * when none are.
      *
-     * @param array<string, array<string, bool>> $state
-     * @return array<string, array<string, bool>>
+     * @param array<string, array<string, mixed>> $state
+     * @return array<string, array<string, mixed>>
      */
     private function sendNight(string $date, array $state): array
     {
@@ -686,6 +729,9 @@ final class FollowupMail
             }
         } else {
             $state['done'][$date] = true;
+            $this->text->clearIfRevisions(
+                is_array($state['texts'][$date] ?? null) ? $state['texts'][$date] : $this->text->revisions()
+            );
         }
 
         return $state;
@@ -699,6 +745,8 @@ final class FollowupMail
     {
         $came = $this->compose($date, true, self::sampleName(), self::KIND_SAMPLE, 0);
         $missed = $this->compose($date, false, self::sampleName(), self::KIND_SAMPLE, 0);
+        $cameNext = $this->text->hasNext(FollowupText::CAME);
+        $missedNext = $this->text->hasNext(FollowupText::MISSED);
         $count = count(array_unique(array_map(
             static fn (array $row): string => strtolower($row['email']),
             $this->rows->recipients($date)
@@ -725,24 +773,33 @@ final class FollowupMail
                 'missed' => __('To those who did not come', 'eventcrew'),
                 'subject_line' => __('Subject', 'eventcrew'),
                 'stop' => __('Do not send the post-event email', 'eventcrew'),
+                'text_next' => __('Text: a one-time text an organizer set for this email. After this send, the text in Settings is used again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'text_settings' => __('Text: the one in Settings. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ]);
 
-            $heading = static fn (string $label, string $subject): string => sprintf(
+            $heading = static fn (string $label, string $subject, string $which): string => sprintf(
                 '<p style="margin:0 0 16px;font-family:%s;font-size:13px;font-weight:700;letter-spacing:.04em;'
                     . 'text-transform:uppercase;color:#5b6470">%s</p>'
-                    . '<p style="margin:0 0 20px;font-family:%s;font-size:15px;color:#1f2328">%s: %s</p>',
+                    . '<p style="margin:0 0 8px;font-family:%s;font-size:15px;color:#1f2328">%s: %s</p>'
+                    . '<p style="margin:0 0 20px;font-family:%s;font-size:13px;color:#5b6470">%s</p>',
                 EmailBody::FONT,
                 esc_html($label),
                 EmailBody::FONT,
                 esc_html($words['subject_line']),
-                esc_html($subject)
+                esc_html($subject),
+                EmailBody::FONT,
+                esc_html($which)
             );
-            $html = $heading($words['came'], $came['subject']) . $came['html']
+            $cameWhich = $cameNext ? $words['text_next'] : $words['text_settings'];
+            $missedWhich = $missedNext ? $words['text_next'] : $words['text_settings'];
+            $html = $heading($words['came'], $came['subject'], $cameWhich) . $came['html']
                 . '<hr style="border:0;border-top:3px solid #e3e3e8;margin:32px 0">'
-                . $heading($words['missed'], $missed['subject']) . $missed['html'];
-            $text = mb_strtoupper($words['came']) . "\n" . $words['subject_line'] . ': ' . $came['subject'] . "\n\n"
+                . $heading($words['missed'], $missed['subject'], $missedWhich) . $missed['html'];
+            $text = mb_strtoupper($words['came']) . "\n" . $words['subject_line'] . ': ' . $came['subject'] . "\n"
+                . $cameWhich . "\n\n"
                 . $came['text'] . "\n\n————————\n\n"
-                . mb_strtoupper($words['missed']) . "\n" . $words['subject_line'] . ': ' . $missed['subject'] . "\n\n"
+                . mb_strtoupper($words['missed']) . "\n" . $words['subject_line'] . ': ' . $missed['subject'] . "\n"
+                . $missedWhich . "\n\n"
                 . $missed['text'];
 
             if (
@@ -784,11 +841,12 @@ final class FollowupMail
     }
 
     /**
-     * One language's words, composed in the current language.
+     * One language's words, composed in the current language. $main is the
+     * email's main text in that language (FollowupText), already filled in.
      *
      * @return array{body: string, subject: string, site: string, join: string, invite: string}
      */
-    private static function words(bool $came, string $name, string $event, string $date): array
+    private static function words(bool $came, string $name, string $main): array
     {
         $first = DoorDesk::firstName($name);
         $hello = '' === $first
@@ -796,28 +854,7 @@ final class FollowupMail
             /* translators: %s: the ticket holder's first name */
             : sprintf(__('Hi %s,', 'eventcrew'), $first);
 
-        $lines = $came
-            ? [
-                $hello,
-                sprintf(
-                    /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
-                    __('Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    $event,
-                    $date
-                ),
-                __('The next evenings are already on their way. Have a look at what is coming and secure your spot for your next ecstatic dance. We would love to dance with you again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ]
-            : [
-                $hello,
-                sprintf(
-                    /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
-                    __('We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    $event,
-                    $date
-                ),
-                __('There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ];
-
+        $lines = [$hello, trim($main)];
         $lines[] = __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
 
         return [
@@ -849,11 +886,17 @@ final class FollowupMail
     }
 
     /**
+     * texts holds, per started night, the revisions of the one-time texts it
+     * started with (FollowupText::revisions()); expired holds the previewed
+     * nights that were left too late to send.
+     *
      * @return array{
      *     previewed: array<string, bool>,
      *     stopped: array<string, bool>,
      *     started: array<string, bool>,
-     *     done: array<string, bool>
+     *     done: array<string, bool>,
+     *     texts: array<string, array<string, int>>,
+     *     expired: array<string, bool>
      * }
      */
     private function state(): array
@@ -862,14 +905,14 @@ final class FollowupMail
         $stored = is_array($stored) ? $stored : [];
         $state = [];
 
-        foreach (['previewed', 'stopped', 'started', 'done'] as $key) {
+        foreach (['previewed', 'stopped', 'started', 'done', 'texts', 'expired'] as $key) {
             $state[$key] = is_array($stored[$key] ?? null) ? $stored[$key] : [];
         }
 
         return $state;
     }
 
-    /** @param array<string, array<string, bool>> $state */
+    /** @param array<string, array<string, mixed>> $state */
     private function save(array $state): void
     {
         update_option(self::STATE_OPTION, $state, false);
@@ -878,8 +921,8 @@ final class FollowupMail
     /**
      * $state without the nights more than KEEP_DAYS before $today.
      *
-     * @param array<string, array<string, bool>> $state
-     * @return array<string, array<string, bool>>
+     * @param array<string, array<string, mixed>> $state
+     * @return array<string, array<string, mixed>>
      */
     private static function pruned(array $state, string $today): array
     {

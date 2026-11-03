@@ -41,6 +41,7 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
@@ -86,6 +87,7 @@ use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\NewsletterCommand;
 use EventCrew\Telegram\SayCommand;
 use EventCrew\Telegram\EventsCommand;
+use EventCrew\Telegram\FollowupCommand;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
@@ -111,6 +113,7 @@ use EventCrew\Telegram\WebLoginBot;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminNewsletter;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
@@ -426,7 +429,30 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
+                $container->get(Logger::class),
+                $container->get(FollowupText::class)
+            )
+        );
+
+        $this->container->singleton(
+            FollowupText::class,
+            fn (Container $container) => new FollowupText(
+                $container->get(LlmClient::class),
                 $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminFollowup::class,
+            fn (Container $container) => new CrewAdminFollowup($container->get(FollowupText::class))
+        );
+
+        $this->container->singleton(
+            FollowupCommand::class,
+            fn (Container $container) => new FollowupCommand(
+                $container->get(PersonRepository::class),
+                $container->get(FollowupText::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -730,7 +756,8 @@ final class Kernel
                 $container->get(CrewAdminRoster::class),
                 $container->get(CrewAdminPeople::class),
                 $container->get(CrewAdminTasks::class),
-                $container->get(CrewAdminNewsletter::class)
+                $container->get(CrewAdminNewsletter::class),
+                $container->get(CrewAdminFollowup::class)
             )
         );
 
@@ -1173,7 +1200,8 @@ final class Kernel
                 $container->get(SayCommand::class),
                 $container->get(EventsCommand::class),
                 $container->get(WebLoginBot::class),
-                $container->get(BotLog::class)
+                $container->get(BotLog::class),
+                $container->get(FollowupCommand::class)
             )
         );
 

@@ -648,6 +648,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (isset($eventcrew_admin['newsletter'])) {
                 $eventcrew_subtabs['newsletter'] = __('Next events announcement', 'eventcrew');
             }
+
+            if (isset($eventcrew_admin['followup'])) {
+                $eventcrew_subtabs['followup'] = __('Post-event email', 'eventcrew');
+            }
             ?>
             <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
                 <?php foreach ($eventcrew_subtabs as $eventcrew_sub_key => $eventcrew_sub_label) : ?>
@@ -1862,6 +1866,79 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             </p>
                         <?php endif; ?>
                     <?php endif; ?>
+                </div>
+            </section>
+            </div>
+            <?php endif; ?>
+
+            <?php if (isset($eventcrew_admin['followup'])) : ?>
+                <?php
+                $eventcrew_follow = $eventcrew_admin['followup'];
+                $eventcrew_follow_labels = [
+                    \EventCrew\Support\FollowupText::CAME => __('Thank-you text (came)', 'eventcrew'),
+                    \EventCrew\Support\FollowupText::MISSED => __('Sorry text (missed)', 'eventcrew'),
+                ];
+                ?>
+            <div class="eventcrew-subpanel" id="eventcrew-admin-followup" data-eventcrew-subpanel="followup">
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Post-event email', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <?php if (! $eventcrew_follow['enabled']) : ?>
+                        <p class="eventcrew-muted"><?php esc_html_e('The post-event email is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <?php endif; ?>
+                    <p class="eventcrew-muted"><?php esc_html_e('The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text in Settings is used again. {event} becomes the event’s name and {date} its date.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <?php foreach ($eventcrew_follow_labels as $eventcrew_follow_variant => $eventcrew_follow_label) : ?>
+                        <?php
+                        $eventcrew_follow_text = $eventcrew_follow['texts'][$eventcrew_follow_variant];
+                        $eventcrew_follow_id = 'eventcrew-admin-followup-' . $eventcrew_follow_variant;
+                        ?>
+                        <h4><?php echo esc_html($eventcrew_follow_label); ?></h4>
+                        <p class="eventcrew-muted">
+                            <?php
+                            if ($eventcrew_follow_text['next']) {
+                                esc_html_e('The next email uses a one-time text.', 'eventcrew');
+                            } else {
+                                esc_html_e('The next email uses the text in Settings.', 'eventcrew');
+                            }
+                            ?>
+                        </p>
+                        <p><strong><?php esc_html_e('In Finnish:', 'eventcrew'); ?></strong></p>
+                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_text['fi']); ?></p>
+                        <p><strong><?php esc_html_e('In English:', 'eventcrew'); ?></strong></p>
+                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_text['en']); ?></p>
+                        <?php if (! $eventcrew_follow_text['translated']) : ?>
+                            <p class="eventcrew-muted">
+                                <?php esc_html_e('This text is not translated: both languages show it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                            </p>
+                        <?php endif; ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                            <input type="hidden" name="action"
+                                value="<?php echo esc_attr($eventcrew_admin['followup_text_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                            <input type="hidden" name="variant" value="<?php echo esc_attr($eventcrew_follow_variant); ?>">
+                            <p>
+                                <label for="<?php echo esc_attr($eventcrew_follow_id); ?>">
+                                    <?php esc_html_e('One-time text for the next email', 'eventcrew'); ?>
+                                </label>
+                                <textarea name="followup_text" id="<?php echo esc_attr($eventcrew_follow_id); ?>" rows="5"
+                                    maxlength="<?php
+                                    echo (int) \EventCrew\Support\FollowupText::MAX_LENGTH;
+                                    ?>"></textarea>
+                                <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
+                            </p>
+                            <button type="submit" name="op" value="save" class="wp-element-button">
+                                <?php esc_html_e('Save', 'eventcrew'); ?>
+                            </button>
+                            <?php if ($eventcrew_follow_text['next']) : ?>
+                                <button type="submit" name="op" value="clear" class="wp-element-button">
+                                    <?php esc_html_e('Remove the one-time text', 'eventcrew'); ?>
+                                </button>
+                            <?php endif; ?>
+                        </form>
+                    <?php endforeach; ?>
                 </div>
             </section>
             </div>

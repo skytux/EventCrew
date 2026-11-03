@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupText;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
@@ -714,7 +715,163 @@ final class FollowupMailTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
+    // ---- The main text (FollowupText) -------------------------------------
+
+    /** With no text saved anywhere, the email's text is exactly the old one. */
+    public function testWithNothingSavedTheTextIsTheOldOne(): void
+    {
+        $came = $this->followup()->compose(self::NIGHT, true, 'Anna Example', 'b', 1)['text'];
+
+        self::assertStringContainsString(
+            "Hi Anna,\n\n"
+                . 'Thank you for coming to Test Site on 14.11.2026. It was lovely to share the evening and the dance'
+                . ' floor with you, and we hope some of that warmth went home with you.'
+                . "\n\n"
+                . 'The next evenings are already on their way. Have a look at what is coming and secure your spot'
+                . ' for your next ecstatic dance. We would love to dance with you again.'
+                . "\n\nWarmly,\nTest Site",
+            $came
+        );
+        self::assertStringContainsString("Hei Anna,\n\nKiitos, että olit mukana Test Site", $came);
+
+        $missed = $this->followup()->compose(self::NIGHT, false, 'Anna Example', 'b', 1)['text'];
+
+        self::assertStringContainsString(
+            "Hi Anna,\n\n"
+                . 'We missed you at Test Site on 14.11.2026. We are sorry you could not make it this time. We'
+                . ' understand it may have been frustrating, and we hope all is well with you.'
+                . "\n\n"
+                . 'There are more evenings to come, and there is a place for you on the dance floor. The next ones'
+                . ' are below. We hope to see you soon.'
+                . "\n\nWarmly,\nTest Site",
+            $missed
+        );
+    }
+
+    public function testTheTextInSettingsIsUsedWithTheEventAndTheDate(): void
+    {
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
+            'source' => 'Sorry about {event} on {date}.',
+            'texts' => ['fi' => 'Harmi, {event} {date}.', 'en' => 'Sorry about {event} on {date}.'],
+            'manual' => ['fi' => false, 'en' => false],
+        ];
+
+        $mail = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 1);
+
+        self::assertStringContainsString("Hei Anna,\n\nHarmi, Test Site 14.11.2026.\n\n", $mail['text']);
+        self::assertStringContainsString("Hi Anna,\n\nSorry about Test Site on 14.11.2026.\n\nWarmly,", $mail['text']);
+        self::assertStringNotContainsString('We are sorry you could not make it', $mail['text']);
+        self::assertLessThan(strpos($mail['text'], 'Sorry about'), strpos($mail['text'], 'Harmi'), 'Finnish first');
+
+        $came = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+        self::assertStringContainsString('Thank you for coming to Test Site', $came['text'], 'the other is unchanged');
+    }
+
+    /** The one-time text goes out with the next night's emails, and is removed once they are all sent. */
+    public function testTheOneTimeTextIsUsedForTheNextSendOnly(): void
+    {
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = ['source' => 'The usual text.'];
+        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 4);
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->db->checkins = [['kind' => FollowupRepository::KIND_BUYER, 'ref_id' => 1]];
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('Only this time.', $this->mails[0]['body']);
+        self::assertStringContainsString('Vain tällä kertaa.', $this->mails[0]['body']);
+        self::assertStringNotContainsString('The usual text.', $this->mails[0]['body']);
+        self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
+
+        $after = $this->followup()->compose('2026-11-21', true, 'Bo', 'b', 2)['text'];
+        self::assertStringContainsString('The usual text.', $after, 'the next night has the Settings text again');
+    }
+
+    /** A one-time text saved while a night is still sending is kept for the next night. */
+    public function testAOneTimeTextSavedDuringTheSendIsKept(): void
+    {
+        for ($i = 1; $i <= 26; $i++) {
+            $this->buyer($i, 'Person ' . $i, 'p' . $i . '@example.test');
+        }
+
+        $this->nextText(FollowupText::MISSED, 'First text.', 'Ensimmäinen.', 1);
+        $this->previewed();
+        $mail = $this->followup();
+        $mail->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(
+            [FollowupText::CAME => 0, FollowupText::MISSED => 1],
+            $this->state()['texts'][self::NIGHT] ?? null
+        );
+
+        $this->nextText(FollowupText::MISSED, 'Second text.', 'Toinen.', 2);
+        $mail->sendBatch();
+
+        self::assertTrue($this->state()['done'][self::NIGHT] ?? false);
+        self::assertSame('Second text.', $this->options[FollowupText::NEXT_OPTIONS[FollowupText::MISSED]]['en'] ?? null);
+    }
+
+    public function testStopRemovesTheOneTimeTexts(): void
+    {
+        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 1);
+        $this->nextText(FollowupText::MISSED, 'Sorry this time.', 'Harmi tällä kertaa.', 1);
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->previewed();
+
+        self::assertSame(FollowupMail::STOPPED, $this->followup()->stop(self::NIGHT));
+
+        self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
+        self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::MISSED], $this->options);
+    }
+
+    public function testANightLeftTooLateRemovesTheOneTimeTexts(): void
+    {
+        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 1);
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-17 12:00'));
+
+        self::assertSame([], $this->mails);
+        self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
+        self::assertTrue($this->state()['expired'][self::NIGHT] ?? false);
+    }
+
+    /** The preview says, for each version, which text it has. */
+    public function testThePreviewSaysWhichTextIsUsed(): void
+    {
+        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 1);
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->organizer();
+
+        $this->followup()->run($this->at('2026-11-13 12:00'));
+
+        self::assertCount(1, $this->mails);
+        $body = $this->mails[0]['body'];
+        $next = strpos($body, 'Text: a one-time text an organizer set for this email.');
+        $settings = strpos($body, 'Text: the one in Settings.');
+        self::assertNotFalse($next);
+        self::assertNotFalse($settings);
+        self::assertLessThan($settings, $next, 'the thank-you comes first, with its one-time text');
+        self::assertStringContainsString('Only this time.', $body);
+        self::assertArrayHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options, 'kept for the send');
+    }
+
     // ---- Helpers ----------------------------------------------------------
+
+    private function nextText(string $variant, string $en, string $fi, int $rev): void
+    {
+        $this->options[FollowupText::NEXT_OPTIONS[$variant]] = [
+            'fi' => $fi,
+            'en' => $en,
+            'source' => 'en',
+            'translated' => true,
+            'by' => 9,
+            'at' => '2026-11-10 10:00:00',
+            'rev' => $rev,
+        ];
+    }
 
     private function followup(): FollowupMail
     {
@@ -762,7 +919,7 @@ final class FollowupMailTest extends TestCase
         $this->options[FollowupMail::STATE_OPTION] = ['previewed' => [$date => true]];
     }
 
-    /** @return array<string, array<string, bool>> */
+    /** @return array<string, array<string, mixed>> */
     private function state(): array
     {
         return $this->options[FollowupMail::STATE_OPTION] ?? [];

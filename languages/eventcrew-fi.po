@@ -6642,3 +6642,72 @@ msgstr "henkilö #%d"
 #, php-format
 msgid "unlinked user #%d"
 msgstr "yhdistämätön käyttäjä #%d"
+
+msgid "Thank-you text (came)"
+msgstr "Kiitosteksti (tulleet)"
+
+msgid "Sorry text (missed)"
+msgstr "Harmiteksti (poissa olleet)"
+
+msgid "The text between “Hi Alex,” and the sign-off. {event} becomes the event’s name and {date} its date. Empty, or the same as the built-in text, means the built-in text. An organizer can replace it for the next email only, in the crew app’s Admin tab or with /followup in the bot."
+msgstr "Teksti tervehdyksen “Hei Alex,” ja lopputervehdyksen välissä. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Tyhjä teksti tai sama kuin valmis teksti tarkoittaa valmista tekstiä. Järjestäjä voi vaihtaa sen vain seuraavaan viestiin Crew-sovelluksen Admin-välilehdellä tai botin komennolla /followup."
+
+msgid "Text for the next post-event email"
+msgstr "Teksti seuraavaan tapahtuman jälkeiseen viestiin"
+
+msgid "Text: a one-time text an organizer set for this email. After this send, the text in Settings is used again."
+msgstr "Teksti: kertateksti, jonka järjestäjä asetti tähän viestiin. Tämän lähetyksen jälkeen käytetään taas asetusten tekstiä."
+
+msgid "Text: the one in Settings. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
+msgstr "Teksti: asetusten teksti. Järjestäjä voi asettaa tähän viestiin kertatekstin botin komennolla /followup tai Crew-sovelluksen Admin-välilehdellä."
+
+msgid "Use /followup in a private chat with me."
+msgstr "Käytä komentoa /followup yksityiskeskustelussa kanssani."
+
+msgid "Only organizers can use /followup."
+msgstr "Vain järjestäjät voivat käyttää komentoa /followup."
+
+msgid "Both one-time texts are removed. The next post-event email uses the texts in Settings."
+msgstr "Molemmat kertatekstit on poistettu. Seuraava tapahtuman jälkeinen viesti käyttää asetusten tekstejä."
+
+msgid "The one-time text is removed. The next post-event email uses the text in Settings."
+msgstr "Kertateksti on poistettu. Seuraava tapahtuman jälkeinen viesti käyttää asetusten tekstiä."
+
+msgid "Saved for the next post-event email only:"
+msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin:"
+
+msgid "The next email uses the text in Settings."
+msgstr "Seuraava viesti käyttää asetusten tekstiä."
+
+msgid "The next email uses a one-time text."
+msgstr "Seuraava viesti käyttää kertatekstiä."
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
+msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettämällä /followup came ja sen perään kiitosteksti, tai /followup missed ja sen perään harmiteksti. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Poista kertateksti lähettämällä /followup came clear tai /followup missed clear; /followup clear poistaa molemmat."
+
+msgid "Saved for the next post-event email only. The text is translated; both versions are shown below."
+msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin. Teksti on käännetty; molemmat versiot näkyvät alla."
+
+msgid "Saved for the next post-event email only, but the text could not be translated, so both languages show it as you wrote it."
+msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin, mutta tekstiä ei voitu kääntää, joten molemmat kielet näyttävät sen sellaisenaan."
+
+msgid "Nothing was saved: choose the thank-you text or the sorry text."
+msgstr "Mitään ei tallennettu: valitse kiitosteksti tai harmiteksti."
+
+msgid "One-time text for the next email"
+msgstr "Kertateksti seuraavaan viestiin"
+
+msgid "Remove the one-time text"
+msgstr "Poista kertateksti"
+
+msgid "The post-event email is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
+msgstr "Tapahtuman jälkeinen viesti on pois päältä. Ylläpitäjä voi kytkeä sen päälle wp-adminissa kohdassa EventCrew > Settings > Email."
+
+msgid "The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text in Settings is used again. {event} becomes the event’s name and {date} its date."
+msgstr "Teksti tervehdyksen ja lopputervehdyksen välissä. Voit vaihtaa sen vain seuraavaan viestiin; kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas asetusten tekstiä. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä."
+
+msgid "Write it in Finnish or in English. It is translated into the other language when you save."
+msgstr "Kirjoita se suomeksi tai englanniksi. Se käännetään toiselle kielelle, kun tallennat."
+
+msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Settings > Email. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into Finnish and English. After that email is sent, or when that night is stopped, the text in Settings is used again. Send /followup alone to see both texts."
+msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Settings > Email. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään suomeksi ja englanniksi. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas asetusten tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."

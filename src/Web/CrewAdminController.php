@@ -71,6 +71,7 @@ final class CrewAdminController
     public const ROLE_ACTION = 'eventcrew_web_admin_role';
     public const NEWSLETTER_TEXT_ACTION = 'eventcrew_web_admin_newsletter_text';
     public const NEWSLETTER_STOP_ACTION = 'eventcrew_web_admin_newsletter_stop';
+    public const FOLLOWUP_TEXT_ACTION = 'eventcrew_web_admin_followup_text';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -99,6 +100,7 @@ final class CrewAdminController
         self::ROLE_ACTION,
         self::NEWSLETTER_TEXT_ACTION,
         self::NEWSLETTER_STOP_ACTION,
+        self::FOLLOWUP_TEXT_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -137,7 +139,8 @@ final class CrewAdminController
         private readonly CrewAdminRoster $rosterScreen,
         private readonly CrewAdminPeople $peopleScreen,
         private readonly CrewAdminTasks $tasksScreen,
-        private readonly ?CrewAdminNewsletter $newsletterScreen = null
+        private readonly ?CrewAdminNewsletter $newsletterScreen = null,
+        private readonly ?CrewAdminFollowup $followupScreen = null
     ) {
     }
 
@@ -180,6 +183,7 @@ final class CrewAdminController
             self::ROLE_ACTION => __('Edit a role', 'eventcrew'),
             self::NEWSLETTER_TEXT_ACTION => __('Text for the next announcement', 'eventcrew'),
             self::NEWSLETTER_STOP_ACTION => __('Do not send this announcement', 'eventcrew'),
+            self::FOLLOWUP_TEXT_ACTION => __('Text for the next post-event email', 'eventcrew'),
         ];
     }
 
@@ -275,6 +279,12 @@ final class CrewAdminController
             self::NEWSLETTER_STOP_ACTION => null === $this->newsletterScreen
                 ? ''
                 : $this->newsletterScreen->stop((int) ($post['plan_id'] ?? 0)),
+            self::FOLLOWUP_TEXT_ACTION => null === $this->followupScreen ? '' : $this->followupScreen->saveText(
+                $organizer,
+                sanitize_key((string) ($post['variant'] ?? '')),
+                sanitize_key((string) ($post['op'] ?? '')),
+                sanitize_textarea_field((string) ($post['followup_text'] ?? ''))
+            ),
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
@@ -669,6 +679,9 @@ final class CrewAdminController
             'newsletter_text_action' => self::NEWSLETTER_TEXT_ACTION,
             'newsletter_stop_action' => self::NEWSLETTER_STOP_ACTION,
             'newsletter' => $this->newsletterScreen->view(),
+        ]) + (null === $this->followupScreen ? [] : [
+            'followup_text_action' => self::FOLLOWUP_TEXT_ACTION,
+            'followup' => $this->followupScreen->view(),
         ]);
     }
 
@@ -776,6 +789,10 @@ final class CrewAdminController
 
         if (! isset($map[$code]) && '' !== CrewAdminNewsletter::noticeText($code)) {
             return CrewAdminNewsletter::noticeText($code);
+        }
+
+        if (! isset($map[$code]) && '' !== CrewAdminFollowup::noticeText($code)) {
+            return CrewAdminFollowup::noticeText($code);
         }
 
         if (! isset($map[$code]) && '' !== CrewAdminTasks::noticeText($code)) {
