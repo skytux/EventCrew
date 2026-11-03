@@ -247,6 +247,28 @@ final class TicketMailTest extends TestCase
         self::assertLessThan($en, $fi);
     }
 
+    /**
+     * With a logo set, the QR has it in the middle, as one linked image; the
+     * code's data is the same as without.
+     */
+    public function testTheEmailQrHasTheSiteLogoInTheMiddle(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => EmailTemplate::LOGO_OPTION === $name
+                ? 'https://site.test/logo.png'
+                : $default
+        );
+        $buyer = TicketBuyer::fromRow($this->buyerRow(1));
+        $mail = $this->ticketMail()->compose($buyer);
+
+        self::assertSame(1, substr_count($mail['html'], '<img'));
+        self::assertStringContainsString('<img src="https://site.test/logo.png"', $mail['html']);
+        self::assertStringContainsString(
+            (new TicketQr())->table(TicketMail::qrData($buyer), 6, 'https://site.test/logo.png'),
+            $mail['html']
+        );
+    }
+
     public function testTheEmailShowsTheTicketNoteUnderTheTicket(): void
     {
         Functions\when('get_option')->alias(
@@ -270,10 +292,12 @@ final class TicketMailTest extends TestCase
     }
 
     /**
-     * Every cell of the QR has its size in pixels and its colour twice, no
-     * text, and nothing that could stretch it; read back cell by cell, the
-     * tables give exactly the code's modules inside a white quiet zone of 4
-     * modules, 6 pixels each.
+     * Every cell of the QR has its size in pixels, no text, and nothing that
+     * could stretch it; a black cell has its colour three times (bgcolor,
+     * background-color and a gradient image for dark mode), a white cell
+     * shows its row table's white, which has the same three. Read back cell
+     * by cell, the tables give exactly the code's modules inside a white
+     * quiet zone of 4 modules, 6 pixels each.
      */
     public function testTheQrTablesDrawEveryModuleInFixedCells(): void
     {
@@ -284,27 +308,34 @@ final class TicketMailTest extends TestCase
         $side = count($matrix) + 8;
 
         self::assertStringNotContainsString('&nbsp;', $html);
+        self::assertStringNotContainsString('<img', $html);
         self::assertStringStartsWith(
             '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="' . ($side * 6) . '"',
             $html
         );
 
-        $cells = '/<td width="(\d+)" height="(\d+)" bgcolor="(#000000|#ffffff)"'
-            . ' style="background-color:(#000|#fff);font-size:0;line-height:0"><\/td>/';
+        $black = ' bgcolor="#000000" style="background-color:#000;background-image:linear-gradient(#000000,#000000);';
+        $cells = '/<td width="(\d+)" height="(\d+)"(' . preg_quote($black, '/') . '| style=")'
+            . 'font-size:0;line-height:0"><\/td>/';
         self::assertSame(
             substr_count($html, '<td width='),
             preg_match_all($cells, $html, $all, PREG_SET_ORDER),
-            'every QR cell has a fixed size, both colours and no text'
+            'every QR cell has a fixed size, black ones all three colours, and no text'
         );
-        foreach ($all as $cell) {
-            self::assertSame(substr($cell[3], 0, 4), $cell[4], 'both colours of a cell agree');
-        }
         self::assertSame(0, preg_match('/<td[^>]*>[^<]/', $html), 'no cell holds text');
 
-        // Error correction level M: the two level bits of the format
+        $white = 'bgcolor="#ffffff" style="border-collapse:collapse;'
+            . 'background-color:#fff;background-image:linear-gradient(#ffffff,#ffffff)"';
+        self::assertSame(
+            substr_count($html, '<table cellpadding'),
+            substr_count($html, $white),
+            'every row table is white three times over'
+        );
+
+        // Error correction level H: the two level bits of the format
         // information, at column 8 of the last two rows (mask 0b10 applied).
         $n = count($matrix);
-        self::assertSame(0, (((int) $matrix[$n - 1][8] ^ 1) << 1) | (int) $matrix[$n - 2][8]);
+        self::assertSame(0b10, (((int) $matrix[$n - 1][8] ^ 1) << 1) | (int) $matrix[$n - 2][8]);
 
         // Read the modules back: one inner table per row.
         preg_match_all('/<table cellpadding[^>]*><tr>(.*?)<\/tr><\/table>/', $html, $rows);
@@ -317,7 +348,7 @@ final class TicketMailTest extends TestCase
 
             foreach ($runs as $run) {
                 self::assertSame($height, (int) $run[2]);
-                $modules = array_merge($modules, array_fill(0, intdiv((int) $run[1], 6), '#000000' === $run[3]));
+                $modules = array_merge($modules, array_fill(0, intdiv((int) $run[1], 6), $black === $run[3]));
             }
 
             self::assertCount($side, $modules);
@@ -340,8 +371,9 @@ final class TicketMailTest extends TestCase
 
     /**
      * Gmail clips a message over 102 KB, which would hide the QR. The whole
-     * HTML of a buyer's email stays under 60 KB, with a 32-character code in
-     * lower case (byte mode, the largest QR such a code makes).
+     * HTML of a buyer's email stays under 85 KB, with a 32-character code in
+     * lower case (byte mode, the largest QR such a code makes: version 4 at
+     * level H, 33 modules a side). It asks mail apps for light colours only.
      */
     public function testTheWholeBuyerEmailStaysSmall(): void
     {
@@ -354,7 +386,13 @@ final class TicketMailTest extends TestCase
         self::assertCount(1, $this->mails);
         self::assertStringContainsString('<table', $this->mails[0]['body']);
         self::assertStringNotContainsString('cid:', $this->mails[0]['body']);
-        self::assertLessThan(60 * 1024, strlen($this->mails[0]['body']));
+        self::assertLessThan(85 * 1024, strlen($this->mails[0]['body']));
+        self::assertStringContainsString('<meta name="color-scheme" content="light only">', $this->mails[0]['body']);
+        self::assertStringContainsString(
+            '<meta name="supported-color-schemes" content="light only">',
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString(':root{color-scheme:light only}', $this->mails[0]['body']);
     }
 
     /**
@@ -375,7 +413,7 @@ final class TicketMailTest extends TestCase
         self::assertStringContainsString('<table', $this->mails[0]['body']);
         self::assertStringNotContainsString('cid:', $this->mails[0]['body']);
 
-        self::assertLessThan(60 * 1024, strlen($this->mails[0]['body']));
+        self::assertLessThan(85 * 1024, strlen($this->mails[0]['body']));
     }
 
     /**

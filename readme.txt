@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.99.4
+Stable tag: 1.99.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.99.5 =
+Ticket email: the QR code has the site's icon in the middle, like the web ticket, and stays black on white in mail apps' dark mode (error correction level H, colours also set as background images, and the email asks for light colours only). If the icon does not load, its square stays white and the code still scans.
 
 = 1.99.4 =
 Crew app sign-in: the Back link sits above the email field, with an arrow, at normal size and in bold, instead of in small text under the explanation lines.
@@ -982,6 +985,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.99.5 =
+No database change.
 
 = 1.99.4 =
 No database change.

@@ -102,7 +102,8 @@ final class Mailer
     ): bool {
         $board = $this->boardUrl();
         $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $board ? '' : ': ' . $board);
-        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board));
+        // Light only: the QR code in a ticket must stay black on white.
+        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board), true);
 
         $parts = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
