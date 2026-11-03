@@ -125,6 +125,41 @@ final class EventSource
     }
 
     /**
+     * EventMesh's translation of the event's title into $lang ('fi', 'en'),
+     * or '' when there is none to use: the event is already in $lang, its
+     * original language is unknown, no translation was stored, or the stored
+     * one was made from an older title or text. This mirrors the rule
+     * EventMesh itself uses before it shows a translation.
+     */
+    public static function translatedTitle(int $postId, string $lang): string
+    {
+        if ($postId <= 0 || '' === $lang || ! self::isAvailable()) {
+            return '';
+        }
+
+        $post = get_post($postId);
+
+        if (null === $post || self::POST_TYPE !== $post->post_type) {
+            return '';
+        }
+
+        $original = (string) get_post_meta($postId, self::SCRAPED_PREFIX . 'original_lang', true);
+
+        if ('' === $original || $original === $lang) {
+            return '';
+        }
+
+        $prefix = self::SCRAPED_PREFIX . 'tr_' . $lang . '_';
+        $hash = (string) get_post_meta($postId, $prefix . 'hash', true);
+
+        if ('' === $hash || md5((string) $post->post_title . "\0" . (string) $post->post_content) !== $hash) {
+            return '';
+        }
+
+        return trim((string) get_post_meta($postId, $prefix . 'title', true));
+    }
+
+    /**
      * Why the linked event no longer takes free-entry credits, or '' while it
      * still does: 'unpublished' (the sync sets an event removed from the shop
      * back to draft), 'disabled', 'hidden' or 'sold_out'. '' too when nothing

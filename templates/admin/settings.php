@@ -25,6 +25,8 @@
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
  * @var bool $welcome_enabled Whether the welcome message goes out.
+ * @var bool $newsletter_enabled Whether the newsletter goes out.
+ * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
  * @var int $door_link_crew Minutes before their own task the sales-desk crew can get the link.
  * @var int $door_scan_open Minutes before the event's start that ticket scans are taken.
@@ -1360,6 +1362,36 @@ if (! defined('ABSPATH')) {
                     </p>
                     <p class="description">
                         <?php esc_html_e('Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Newsletter', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Send the newsletter', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="newsletter_enabled" value="1"
+                            <?php checked($newsletter_enabled); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the newsletter and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="ec-newsletter-days"><?php esc_html_e('Days before the event', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input type="number" id="ec-newsletter-days" name="newsletter_days"
+                        min="1" max="60" step="1" class="small-text"
+                        value="<?php echo esc_attr((string) $newsletter_days); ?>">
+                    <p class="description">
+                        <?php esc_html_e('How many days before each event the newsletter goes out. Events that fall in the same window go in one newsletter.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>

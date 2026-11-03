@@ -475,6 +475,13 @@ final class PrivacyPolicy
             );
         }
 
+        if (Newsletter::enabled() && AssistantSettings::isConfigured()) {
+            $processors[] = __(
+                'The server of the language model, for organizers who write a text for the newsletter — the text is sent there to be translated into the other language of the newsletter.',
+                'eventcrew'
+            );
+        }
+
         if (self::turnstileEnabled()) {
             $processors[] = __(
                 'Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record.',
@@ -618,6 +625,10 @@ final class PrivacyPolicy
                 'At the door we also note whether you came in.',
                 'eventcrew'
             ),
+            __(
+                'If you join our newsletter, we store your email address, whether you have confirmed it or left the newsletter, the date you signed up and the date you confirmed. We do not store your name for the newsletter.',
+                'eventcrew'
+            ),
         ];
     }
 
@@ -694,8 +705,16 @@ final class PrivacyPolicy
                 self::BUYER_EMAIL_DAYS
             ),
             __(
-                'If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time.',
+                'If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time with the link in every newsletter. When you leave, we keep your address marked as left, and send you no more newsletters.',
                 'eventcrew'
+            ),
+            sprintf(
+                /* translators: %d: number of days */
+                __(
+                    'If you sign up for the newsletter but do not confirm your address, the sign-up is deleted after %d days.',
+                    'eventcrew'
+                ),
+                Newsletter::PENDING_DAYS
             ),
             __(
                 'Until then, your name, your ticket code and whether you came in are on that night\'s door list. After that, the list keeps only how many tickets were sold and used.',

@@ -44,7 +44,8 @@ final class UpdateRouter
         private readonly ?LanguageService $language = null,
         private readonly ?RoleTaskBot $roleTasks = null,
         private readonly ?HelpService $help = null,
-        private readonly ?AssistantService $assistant = null
+        private readonly ?AssistantService $assistant = null,
+        private readonly ?NewsletterCommand $newsletter = null
     ) {
     }
 
@@ -257,6 +258,12 @@ final class UpdateRouter
             if (null !== $this->roleTasks && 0 !== $fromId) {
                 $this->roleTasks->sendIfAny($fromId);
             }
+
+            return;
+        }
+
+        if (null !== $this->newsletter && $this->isCommand($text, 'newsletter')) {
+            $this->newsletter->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'newsletter'));
 
             return;
         }

@@ -69,6 +69,8 @@ final class CrewAdminController
     public const TEMPLATE_ACTION = 'eventcrew_web_admin_template';
     public const OPEN_TASK_ACTION = 'eventcrew_web_admin_open_task';
     public const ROLE_ACTION = 'eventcrew_web_admin_role';
+    public const NEWSLETTER_TEXT_ACTION = 'eventcrew_web_admin_newsletter_text';
+    public const NEWSLETTER_STOP_ACTION = 'eventcrew_web_admin_newsletter_stop';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -95,6 +97,8 @@ final class CrewAdminController
         self::TEMPLATE_ACTION,
         self::OPEN_TASK_ACTION,
         self::ROLE_ACTION,
+        self::NEWSLETTER_TEXT_ACTION,
+        self::NEWSLETTER_STOP_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -132,7 +136,8 @@ final class CrewAdminController
         private readonly RoleTaskService $roleTasks,
         private readonly CrewAdminRoster $rosterScreen,
         private readonly CrewAdminPeople $peopleScreen,
-        private readonly CrewAdminTasks $tasksScreen
+        private readonly CrewAdminTasks $tasksScreen,
+        private readonly ?CrewAdminNewsletter $newsletterScreen = null
     ) {
     }
 
@@ -173,6 +178,8 @@ final class CrewAdminController
             self::TEMPLATE_ACTION => __('Create an event\'s tasks', 'eventcrew'),
             self::OPEN_TASK_ACTION => __('Send open-task email now', 'eventcrew'),
             self::ROLE_ACTION => __('Edit a role', 'eventcrew'),
+            self::NEWSLETTER_TEXT_ACTION => __('Text for the next newsletter', 'eventcrew'),
+            self::NEWSLETTER_STOP_ACTION => __('Stop this newsletter', 'eventcrew'),
         ];
     }
 
@@ -260,6 +267,14 @@ final class CrewAdminController
             self::TEMPLATE_ACTION => $this->tasksScreen->applyTemplate((int) ($post['template_event'] ?? 0)),
             self::OPEN_TASK_ACTION => $this->tasksScreen->sendOpenTaskEmail(),
             self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
+            self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
+                $organizer,
+                sanitize_key((string) ($post['op'] ?? '')),
+                sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''))
+            ),
+            self::NEWSLETTER_STOP_ACTION => null === $this->newsletterScreen
+                ? ''
+                : $this->newsletterScreen->stop((int) ($post['plan_id'] ?? 0)),
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
@@ -647,7 +662,11 @@ final class CrewAdminController
             'open_task_action' => self::OPEN_TASK_ACTION,
             'role_action' => self::ROLE_ACTION,
             'tasks' => $this->tasksScreen->view(...self::tasksQuery()),
-        ];
+        ] + (null === $this->newsletterScreen ? [] : [
+            'newsletter_text_action' => self::NEWSLETTER_TEXT_ACTION,
+            'newsletter_stop_action' => self::NEWSLETTER_STOP_ACTION,
+            'newsletter' => $this->newsletterScreen->view(),
+        ]);
     }
 
     /**
@@ -750,6 +769,10 @@ final class CrewAdminController
 
         if (! isset($map[$code]) && '' !== CrewAdminPeople::noticeText($code)) {
             return CrewAdminPeople::noticeText($code);
+        }
+
+        if (! isset($map[$code]) && '' !== CrewAdminNewsletter::noticeText($code)) {
+            return CrewAdminNewsletter::noticeText($code);
         }
 
         if (! isset($map[$code]) && '' !== CrewAdminTasks::noticeText($code)) {

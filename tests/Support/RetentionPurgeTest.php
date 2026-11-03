@@ -204,8 +204,10 @@ final class RetentionPurgeTest extends TestCase
         self::assertSame(0, $purge->run());
         self::assertSame([], $this->wpdb->queries);
 
+        // Two queries: the confirmed newsletter subscribers to keep, then the purge.
         $purge->purgeBuyers();
-        self::assertCount(1, $this->wpdb->queries);
+        self::assertCount(2, $this->wpdb->queries);
+        self::assertStringContainsString('UPDATE wp_eventcrew_ticket_buyers', $this->wpdb->lastQuery());
     }
 
     /**
@@ -227,16 +229,36 @@ final class RetentionPurgeTest extends TestCase
     }
 
     /**
-     * There is no newsletter yet, so no address is kept and the query has no
-     * exception list.
+     * With no confirmed newsletter subscriber, no address is kept and the
+     * query has no exception list.
      */
-    public function testNoBuyerEmailIsKeptUntilTheNewsletterExists(): void
+    public function testNoBuyerEmailIsKeptWithoutConfirmedSubscribers(): void
     {
         $this->withOptions([]);
+        $this->wpdb->nextCols = [[], []];
 
         self::assertSame([], $this->purge()->buyerEmailsToKeep());
 
         $this->purge()->purgeBuyers();
         self::assertStringNotContainsString('NOT IN', $this->wpdb->lastQuery());
+    }
+
+    /**
+     * A confirmed newsletter subscriber's address is kept: the buyer purge
+     * skips it, and the subscriber query asks for confirmed rows only.
+     */
+    public function testConfirmedSubscribersKeepTheirBuyerEmail(): void
+    {
+        $this->withOptions([]);
+        $this->wpdb->nextCols = [['fan@example.test']];
+
+        $this->purge()->purgeBuyers();
+
+        $subscriberQuery = $this->wpdb->queries[0];
+        self::assertStringContainsString('wp_eventcrew_newsletter_subscribers', $subscriberQuery);
+        self::assertStringContainsString("status = 'confirmed'", $subscriberQuery);
+
+        $sql = $this->wpdb->lastQuery();
+        self::assertStringContainsString("email NOT IN ('fan@example.test')", $sql);
     }
 }

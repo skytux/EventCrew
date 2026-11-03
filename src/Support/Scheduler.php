@@ -44,7 +44,8 @@ final class Scheduler
         private readonly RoleNotifier $roleNotifier,
         private readonly RetentionPurge $retention,
         private readonly WelcomeSender $welcome,
-        private readonly CommandMenu $commandMenu
+        private readonly CommandMenu $commandMenu,
+        private readonly ?Newsletter $newsletter = null
     ) {
     }
 
@@ -108,6 +109,13 @@ final class Scheduler
             // ones from before it existed, and anyone who linked Telegram or
             // became an organizer since. Does nothing while switched off.
             $this->welcome->sendDue(self::BATCH);
+
+            // The newsletter: plans the next one and mails the organizers its
+            // preview, or starts sending one whose day has come. The sending
+            // itself runs in its own WP-Cron batches. Inside the window, so
+            // neither the preview nor the newsletter goes out at night. Does
+            // nothing while switched off.
+            $this->newsletter?->run();
         }
 
         // Not gated: editing the pinned board in place sends nobody a
@@ -183,5 +191,6 @@ final class Scheduler
         wp_clear_scheduled_hook(DoorLinkSender::HOOK);
         wp_clear_scheduled_hook(MailImporter::HOOK);
         wp_clear_scheduled_hook(TicketMail::HOOK);
+        wp_clear_scheduled_hook(Newsletter::HOOK);
     }
 }
