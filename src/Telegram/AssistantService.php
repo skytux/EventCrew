@@ -29,7 +29,10 @@ use EventCrew\Support\Logger;
  * server for ten minutes under a random id, bound to the person's Telegram
  * id, and checked again when Confirm is tapped.
  *
- * The message text goes to the configured server and is not stored or logged.
+ * The message text goes to the configured server and is never logged. In a
+ * private chat the messages and the helper's answers are kept for 24 hours
+ * (ConversationLog) and sent along, so the model can follow the
+ * conversation; nothing from a group is kept.
  *
  * The model is asked after the webhook has answered Telegram (on shutdown,
  * after fastcgi_finish_request() or litespeed_finish_request() where the
@@ -292,9 +295,17 @@ final class AssistantService
 
         $audience = $this->help->audience($fromId);
         $knowledge = $this->knowledge->build();
+        $history = '';
+
+        if ($isPrivate) {
+            // Read before this message is added: the message itself goes as
+            // the user turn.
+            $history = ConversationLog::forPrompt($fromId);
+            ConversationLog::add($fromId, ConversationLog::PERSON, $text);
+        }
 
         $result = $this->llm->chat([
-            ['role' => 'system', 'content' => $this->instructions($message, $audience, $knowledge['facts'])],
+            ['role' => 'system', 'content' => $this->instructions($message, $audience, $knowledge['facts'], $history)],
             ['role' => 'user', 'content' => mb_substr($text, 0, self::MAX_INPUT_CHARS)],
         ]);
 
@@ -307,7 +318,7 @@ final class AssistantService
             }
 
             if ($isPrivate) {
-                $this->telegram->sendMessage($chatId, $this->fixed($chosen, 'fallback'));
+                $this->tell($chatId, $fromId, $this->fixed($chosen, 'fallback'));
             }
 
             return;
@@ -328,7 +339,7 @@ final class AssistantService
         }
 
         if ($parsed['known'] && '' !== $parsed['reply']) {
-            $this->telegram->sendMessage($chatId, $this->clip($parsed['reply']));
+            $this->tell($chatId, $fromId, $this->clip($parsed['reply']));
 
             return;
         }
@@ -343,7 +354,7 @@ final class AssistantService
             $reply .= "\n\n/help";
         }
 
-        $this->telegram->sendMessage($chatId, $this->clip($reply));
+        $this->tell($chatId, $fromId, $this->clip($reply));
     }
 
     /**
@@ -405,8 +416,9 @@ final class AssistantService
         );
 
         if (! $checked['ok']) {
-            $this->telegram->sendMessage(
+            $this->tell(
                 $chatId,
+                $fromId,
                 $this->fixed(
                     $language,
                     AssistantActions::ERROR_NOT_REGISTERED === $checked['error'] ? 'register' : 'cannot'
@@ -418,7 +430,7 @@ final class AssistantService
 
         if (! $checked['confirm']) {
             if ('' !== $parsed['reply']) {
-                $this->telegram->sendMessage($chatId, $this->clip($parsed['reply']));
+                $this->tell($chatId, $fromId, $this->clip($parsed['reply']));
             }
 
             if (AssistantActions::RUN_TAP === $checked['run']) {
@@ -456,7 +468,18 @@ final class AssistantService
             ['text' => '✖️ ' . __('Cancel', 'eventcrew'), 'callback_data' => self::PREFIX . 'no:' . $id],
         ]);
 
-        $this->telegram->sendMessage($chatId, $text, ['inline_keyboard' => [$buttons]]);
+        $this->tell($chatId, $fromId, $text, ['inline_keyboard' => [$buttons]]);
+    }
+
+    /**
+     * Sends an answer in a private chat and keeps it in the conversation.
+     *
+     * @param array<string, mixed>|null $markup
+     */
+    private function tell(int $chatId, int $userId, string $text, ?array $markup = null): void
+    {
+        $this->telegram->sendMessage($chatId, $text, $markup);
+        ConversationLog::add($userId, ConversationLog::BOT, $text);
     }
 
     /**
@@ -466,7 +489,7 @@ final class AssistantService
      * @param array<string, mixed> $message
      * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
      */
-    private function instructions(array $message, array $audience, string $facts): string
+    private function instructions(array $message, array $audience, string $facts, string $history = ''): string
     {
         $isPrivate = 'private' === $message['chat']['type'];
         $yes = static fn (bool $value): string => $value ? 'yes' : 'no';
@@ -501,6 +524,12 @@ final class AssistantService
 
         if ($isPrivate) {
             $lines[] = '- This is a private chat with one person: "aimed" is true.';
+            $lines[] = '- You remember this private chat for 24 hours: CONVERSATION below has what was said,'
+                . ' oldest first (commands and what they showed are not in it). Use it to understand what'
+                . ' the person refers to, like "that one" or "and on Sunday?". When the FACTS and the'
+                . ' conversation disagree, the FACTS are right: they are newer.';
+            $lines[] = '- In a greeting, also say that you remember this chat for 24 hours, so the person can'
+                . ' refer back to what was said.';
         } else {
             $lines[] = '- This is the crew\'s group chat. "aimed" is true only when the message is written to the'
                 . ' bot: it mentions the bot, replies to the bot, or asks the bot something. Messages between'
@@ -531,6 +560,12 @@ final class AssistantService
         $lines[] = '';
         $lines[] = 'FACTS:';
         $lines[] = $facts;
+
+        if ($isPrivate) {
+            $lines[] = '';
+            $lines[] = 'CONVERSATION (this private chat, last 24 hours):';
+            $lines[] = '' !== $history ? $history : '(nothing yet)';
+        }
 
         return implode("\n", $lines);
     }
