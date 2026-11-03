@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.97.6
+Stable tag: 1.97.7
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.97.7 =
+The next events announcement bar on the public pages fades in only after the visitor's first interaction with the page (a scroll, wheel, touch, click or key press). An answer to a sign-up from the bar still shows at once.
 
 = 1.97.6 =
 * The buttons in the next events announcement (Buy a ticket, Listen to the DJ, the sold-out mark) and the "Do not send this announcement" button in the organizers' preview email are centred.
@@ -949,6 +952,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.97.7 =
+No database change.
 
 = 1.97.6 =
 No database change.

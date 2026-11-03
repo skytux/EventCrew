@@ -112,8 +112,10 @@ final class NewsletterController
     private bool $formCssAdded = false;
 
     /**
-     * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
-     * answer to a sign-up from the bar shows anyway), hides it while a full
+     * Shows the bar after the visitor's first interaction with the page (a
+     * scroll, wheel, touch, click or key press), unless it was closed in the
+     * last CLOSE_DAYS days. An answer to a sign-up from the bar shows at once
+     * and in any case. It hides the bar while a full
      * form is on screen, and keeps room for it at the bottom of the page.
      * It fades in and out (the class is-out), and gets `hidden` when the fade
      * out ends; with reduced motion it switches at once. While focus is in the
@@ -131,8 +133,13 @@ final class NewsletterController
         . 'try{var t=+localStorage.getItem(K);closed=t>0&&Date.now()-t<d*864e5;}catch(e){}'
         . 'if(closed&&!b.hasAttribute("data-message")){return;}'
         . 'var forms=document.querySelectorAll(".eventcrew-newsletter"),inView=[],off=false,tm=0,'
+        . 'wait=!b.hasAttribute("data-message"),ev=["scroll","wheel","touchstart","pointerdown","keydown"],'
         . 'still=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);'
-        . 'function show(){var hide=off||(inView.length>0&&!b.contains(document.activeElement));clearTimeout(tm);'
+        . 'function go(){if(!wait){return;}wait=false;'
+        . 'ev.forEach(function(n){window.removeEventListener(n,go,true);});show();}'
+        . 'if(wait){ev.forEach(function(n){window.addEventListener(n,go,{capture:true,passive:true});});}'
+        . 'function show(){var hide=off||wait||(inView.length>0&&!b.contains(document.activeElement));'
+        . 'clearTimeout(tm);'
         . 'if(hide){b.classList.add("is-out");if(still){b.hidden=true;}'
         . 'else if(!b.hidden){tm=setTimeout(function(){b.hidden=true;},250);}}'
         . 'else{if(b.hidden){b.classList.add("is-out");b.hidden=false;void b.offsetWidth;}'

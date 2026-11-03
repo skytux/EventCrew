@@ -268,6 +268,10 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('document.documentElement.clientHeight-vv.height-vv.offsetTop', $html);
         self::assertStringContainsString('c>100?', $html);
         self::assertStringContainsString('requestAnimationFrame(lift)', $html);
+        // It waits for the first interaction, except with an answer to a bar sign-up.
+        self::assertStringContainsString('wait=!b.hasAttribute("data-message")', $html);
+        self::assertStringContainsString('ev=["scroll","wheel","touchstart","pointerdown","keydown"]', $html);
+        self::assertStringContainsString('var hide=off||wait||', $html);
     }
 
     /** On a page with the bar, a block theme's viewport meta lets the keyboard resize the page. */
