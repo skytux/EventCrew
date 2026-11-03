@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.99.5
+Stable tag: 1.99.6
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.99.6 =
+Sign-up confirmations (Telegram message and email) say you can cancel without it affecting your standing up to 48 hours before the task (the late-cancellation notice set in Settings; left out when it is 0).
 
 = 1.99.5 =
 Ticket email: the QR code has the site's icon in the middle, like the web ticket, and stays black on white in mail apps' dark mode (error correction level H, colours also set as background images, and the email asks for light colours only). If the icon does not load, its square stays white and the code still scans.
@@ -985,6 +988,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.99.6 =
+No database change.
 
 = 1.99.5 =
 No database change.
