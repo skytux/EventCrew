@@ -42,6 +42,7 @@ use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Support\TicketMail;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
@@ -1311,6 +1312,65 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertCount(1, $deletes);
         self::assertStringContainsString("event_date = '" . self::NIGHT . "'", $deletes[0]);
         self::assertSame('3 ticket buyers deleted.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    /** A ticket send waiting, in the options map. */
+    private function aTicketSendIsWaiting(): void
+    {
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->justReturn(1);
+    }
+
+    public function testAnOrganizerCancelsTheWaitingTicketSend(): void
+    {
+        $this->aTicketSendIsWaiting();
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(
+            CrewAdminController::BUYERS_ACTION,
+            ['roster_date' => self::NIGHT, 'op' => 'mail_cancel']
+        );
+
+        self::assertSame('admin_tickets_cancelled', $result['notice']);
+        self::assertNull(TicketMail::pending());
+        self::assertSame(
+            'Sending cancelled. No ticket email was sent.',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testCancelSendingWithABadTokenOrFromAMemberIsRefused(): void
+    {
+        $this->aTicketSendIsWaiting();
+        $this->signIn($this->organizerRow(1));
+
+        $stale = $this->admin()->handle(
+            CrewAdminController::BUYERS_ACTION,
+            'POST',
+            ['roster_date' => self::NIGHT, 'op' => 'mail_cancel', 'csrf' => 'stale'],
+            self::IP
+        );
+
+        self::assertSame(CrewAdminController::REFUSED, $stale['code']);
+        self::assertNotNull(TicketMail::pending());
+
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];
+
+        $member = $this->post(
+            CrewAdminController::BUYERS_ACTION,
+            ['roster_date' => self::NIGHT, 'op' => 'mail_cancel'],
+            8
+        );
+
+        self::assertSame(CrewAdminController::FORGED, $member['code']);
+        self::assertNotNull(TicketMail::pending());
     }
 
     public function testAnUnknownOpChangesNothing(): void

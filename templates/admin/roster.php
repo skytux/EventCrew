@@ -13,6 +13,7 @@
  * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
  * @var string $ticket_mail_buyers "Ticket emails: 38 sent · 2 failed · 2 not sent" for the buyers; '' when none can be emailed.
  * @var string $ticket_mail_guests The same for guests with an email address; '' when there are none.
+ * @var string $ticket_mail_pending "Ticket emails go out at 21:40 to 12 buyers." while a send waits; '' when none.
  * @var string $followup_mail "Post-event email: 38 sent · 2 failed · 6 clicked", or when it goes out; '' when nobody can be emailed.
  * @var bool $followup_can_stop Whether the shown night's post-event email can still be stopped.
  * @var bool $free_entry_closed Whether an organizer closed free entry for the shown date.
@@ -275,6 +276,22 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                         <li><?php echo esc_html($eventcrew_buyer_name); ?></li>
                     <?php endforeach; ?>
                 </ul>
+            <?php endif; ?>
+            <?php if ('' !== $ticket_mail_pending) : ?>
+                <div class="notice notice-warning inline" style="max-width:820px">
+                    <p><strong><?php echo esc_html($ticket_mail_pending); ?></strong></p>
+                    <form
+                        method="post"
+                        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                        style="margin:0 0 .75em">
+                        <input type="hidden" name="action" value="eventcrew_cancel_ticket_send">
+                        <?php wp_nonce_field($nonce_action); ?>
+                        <input type="hidden" name="roster_date" value="<?php echo esc_attr($selected_date); ?>">
+                        <button type="submit" class="button">
+                            <?php esc_html_e('Cancel sending', 'eventcrew'); ?>
+                        </button>
+                    </form>
+                </div>
             <?php endif; ?>
             <?php if ('' !== $ticket_mail_buyers) : ?>
                 <p><?php echo esc_html($ticket_mail_buyers); ?></p>

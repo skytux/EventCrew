@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -1277,6 +1277,22 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                     <li><?php echo esc_html($eventcrew_buyer_name); ?></li>
                                 <?php endforeach; ?>
                             </ul>
+                        <?php endif; ?>
+                        <?php if ('' !== $eventcrew_night['ticket_mail_pending']) : ?>
+                            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                <input type="hidden" name="action"
+                                    value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                <input type="hidden" name="redirect_to"
+                                    value="<?php echo esc_attr($eventcrew_roster_here); ?>">
+                                <input type="hidden" name="roster_date"
+                                    value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                                <p><strong><?php echo esc_html($eventcrew_night['ticket_mail_pending']); ?></strong></p>
+                                <button type="submit" name="op" value="mail_cancel"
+                                    class="eventcrew-textlink eventcrew-textlink-danger">
+                                    <?php esc_html_e('Cancel sending', 'eventcrew'); ?>
+                                </button>
+                            </form>
                         <?php endif; ?>
                         <?php if ('' !== $eventcrew_night['ticket_mail_buyers']) : ?>
                             <p class="eventcrew-muted"><?php echo esc_html($eventcrew_night['ticket_mail_buyers']); ?></p>

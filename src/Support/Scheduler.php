@@ -209,6 +209,8 @@ final class Scheduler
         wp_clear_scheduled_hook(DoorLinkSender::HOOK);
         wp_clear_scheduled_hook(MailImporter::HOOK);
         wp_clear_scheduled_hook(TicketMail::HOOK);
+        // A ticket send still waiting is cancelled with its event.
+        TicketMail::cancel();
         wp_clear_scheduled_hook(Newsletter::HOOK);
         wp_clear_scheduled_hook(FollowupMail::HOOK);
         wp_clear_scheduled_hook(BoardDjText::HOOK);

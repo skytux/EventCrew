@@ -716,4 +716,181 @@ final class TicketMailTest extends TestCase
         );
         self::assertSame('', TicketMail::statusLine(['sent' => 0, 'failed' => 0, 'unsent' => 0]));
     }
+
+    // --- the 10-minute wait before a send ------------------------------------
+
+    /** @var array<string, mixed> */
+    private array $options = [];
+
+    /** @var list<array{at: int, hook: string}> */
+    private array $events = [];
+
+    /** @var list<string> */
+    private array $cleared = [];
+
+    /**
+     * Options kept in memory, and every scheduled event with its time, so a
+     * test can read the waiting send and when it goes out.
+     */
+    private function useOptionStore(): void
+    {
+        $this->options = [];
+        $this->events = [];
+        $this->cleared = [];
+
+        Functions\when('get_option')->alias(
+            fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
+        );
+        Functions\when('update_option')->alias(function (string $name, mixed $value): bool {
+            $this->options[$name] = $value;
+
+            return true;
+        });
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_schedule_single_event')->alias(function (int $time, string $hook): bool {
+            $this->scheduled[] = $hook;
+            $this->events[] = ['at' => $time, 'hook' => $hook];
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->alias(function (string $hook): int {
+            $this->cleared[] = $hook;
+
+            return 1;
+        });
+    }
+
+    public function testASendWaitsTenMinutesAndNothingGoesOutAtOnce(): void
+    {
+        $this->useOptionStore();
+        $before = time();
+
+        TicketMail::schedule();
+
+        self::assertCount(1, $this->events);
+        self::assertSame(TicketMail::START_HOOK, $this->events[0]['hook']);
+        self::assertGreaterThanOrEqual($before + 600, $this->events[0]['at']);
+        self::assertLessThanOrEqual(time() + 600, $this->events[0]['at']);
+        self::assertSame($this->events[0]['at'], TicketMail::pending()['at'] ?? null);
+
+        // A batch run while the send waits sends nothing and reads no row.
+        self::assertSame(0, $this->ticketMail()->run());
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->queries);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testWhenTheTimeComesTheSendGoesOutAsBefore(): void
+    {
+        $this->useOptionStore();
+        TicketMail::schedule();
+        $this->wpdb->nextResults[] = [$this->buyerRow(1)]; // buyers
+        $this->wpdb->nextResults[] = [];                    // guests
+
+        self::assertSame(1, $this->ticketMail()->start());
+        self::assertSame(['anna1@example.test'], array_column($this->mails, 'to'));
+        self::assertSame('sent', $this->updates()[0]['data']['ticket_mail_status']);
+        self::assertNull(TicketMail::pending());
+    }
+
+    public function testCancelSendsNothingAndTheTicketsStayNotSent(): void
+    {
+        $this->useOptionStore();
+        TicketMail::schedule();
+
+        self::assertTrue(TicketMail::cancel());
+        self::assertSame([TicketMail::START_HOOK], $this->cleared);
+        self::assertNull(TicketMail::pending());
+
+        // Should the event still fire, it finds nothing to start.
+        $this->wpdb->nextResults[] = [$this->buyerRow(1)];
+        self::assertSame(0, $this->ticketMail()->start());
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->queries);
+
+        // A second cancel finds nothing waiting.
+        self::assertFalse(TicketMail::cancel());
+    }
+
+    public function testPressingSendTwiceLeavesOneWaitingSend(): void
+    {
+        $this->useOptionStore();
+
+        $first = TicketMail::scheduleRest('2026-11-14', TicketMail::KIND_BUYERS);
+        $second = TicketMail::scheduleRest('2026-11-14', TicketMail::KIND_BUYERS);
+        $guests = TicketMail::scheduleRest('2026-11-14', TicketMail::KIND_GUESTS);
+        TicketMail::schedule(); // an import meanwhile
+
+        self::assertTrue($first['started']);
+        self::assertFalse($second['started']);
+        self::assertFalse($guests['started']);
+        self::assertSame($first['at'], $second['at']);
+        self::assertSame($first['at'], $guests['at']);
+        self::assertSame([TicketMail::START_HOOK], $this->scheduled);
+        self::assertSame(['2026-11-14|buyers', '2026-11-14|guests'], TicketMail::pending()['rest'] ?? null);
+        self::assertSame([], $this->mails);
+    }
+
+    /** "Send the rest now" retries the night's failed tickets once the send starts. */
+    public function testTheRestOfANightIsRetriedWhenTheSendStarts(): void
+    {
+        $this->useOptionStore();
+        TicketMail::scheduleRest('2026-11-14', TicketMail::KIND_BUYERS);
+        $this->wpdb->nextResults[] = [];                                // buyers not tried
+        $this->wpdb->nextResults[] = [];                                // guests not tried
+        $this->wpdb->nextResults[] = [$this->buyerRow(1, 'failed')];    // the night's not sent
+        $this->wpdb->nextResults[] = [['status' => 'sent', 'n' => 3]];  // counts afterwards
+
+        self::assertSame(1, $this->ticketMail()->start());
+        self::assertSame(['anna1@example.test'], array_column($this->mails, 'to'));
+        self::assertArrayNotHasKey(TicketMail::REST_OPTION, $this->options);
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testTheTestSendIsNotDelayed(): void
+    {
+        $this->useOptionStore();
+        TicketMail::schedule();
+        $this->wpdb->nextResults[] = [$this->buyerRow(1)];
+
+        self::assertSame(TicketMail::TEST_SENT, $this->ticketMail()->sendTest('2026-11-14', 'lou@example.test'));
+        self::assertSame(['lou@example.test'], array_column($this->mails, 'to'));
+        self::assertNotNull(TicketMail::pending());
+    }
+
+    public function testAnImportStartsTheDelayedSendAndMailsNobodyYet(): void
+    {
+        $this->useOptionStore();
+        $this->wpdb->nextVars[] = '0';   // hasBatch: not seen before
+        $this->wpdb->nextResults[] = []; // nobody on the list yet
+        $import = new \EventCrew\Support\BuyerImport(
+            new TicketBuyerRepository(),
+            new \EventCrew\Support\DoorAccess(new TaskRepository(), new AssignmentRepository())
+        );
+
+        $result = $import->import('2026-11-14', "Anna\nBo", 'email', 'b1');
+
+        self::assertSame(2, $result['added']);
+        self::assertSame([TicketMail::START_HOOK], array_column($this->events, 'hook'));
+        self::assertGreaterThanOrEqual(time() + 599, $this->events[0]['at']);
+        self::assertSame([], $this->mails);
+    }
+
+    /** Without wp_date (as in these tests) the clock falls back to UTC. */
+    public function testThePendingLineSaysWhenAndToHowMany(): void
+    {
+        self::assertSame(
+            'Ticket emails go out at 21:40 to 12 buyers, 2 guests.',
+            TicketMail::pendingLine(['at' => gmmktime(21, 40, 0, 11, 4, 2026), 'buyers' => 12, 'guests' => 2])
+        );
+        self::assertSame(
+            'Ticket emails go out at 21:40 to 1 buyer.',
+            TicketMail::pendingLine(['at' => gmmktime(21, 40, 0, 11, 4, 2026), 'buyers' => 1, 'guests' => 0])
+        );
+    }
 }

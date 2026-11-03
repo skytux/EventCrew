@@ -169,6 +169,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_cancel_ticket_send',
+            [$this->container->get(RosterPage::class), 'cancelTicketSend']
+        );
+
+        add_action(
             'admin_post_eventcrew_send_followup_test',
             [$this->container->get(RosterPage::class), 'sendFollowupTest']
         );

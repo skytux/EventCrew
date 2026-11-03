@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -55,6 +56,7 @@ final class BuyerImportTest extends TestCase
 
     public function testImportCountsAddedAndSkipped(): void
     {
+        Functions\when('get_option')->justReturn(false); // no ticket send waiting
         $this->wpdb->nextVars[] = '0'; // hasBatch: not seen before
         $this->wpdb->nextResults[] = [['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna']];
 

@@ -487,6 +487,7 @@ final class CrewAdminController
                 'reset' => $this->rosterScreen->resetBuyers($date),
                 'mail_test' => $this->rosterScreen->sendTicketTest($date, $organizer),
                 'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'buyers'),
+                'mail_cancel' => $this->rosterScreen->cancelTicketSend(),
                 'followup_test' => $this->rosterScreen->sendFollowupTest($date, $organizer),
                 'followup_stop' => $this->rosterScreen->stopFollowup($date),
                 default => 'admin_change_failed',

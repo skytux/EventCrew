@@ -350,6 +350,18 @@ final class BuyerImportController
                 ));
         }
 
+        // The import started the waiting ticket send: say when it goes out
+        // and where to cancel it.
+        $pending = $added > 0 ? TicketMail::pending() : null;
+
+        if (null !== $pending) {
+            $body .= "\n\n" . sprintf(
+                /* translators: %s: time of day, e.g. 21:40 */
+                __('The ticket emails go out at %s. To stop them, press "Cancel sending" on the Roster page before then.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                TicketMail::clock($pending['at'])
+            );
+        }
+
         $body .= "\n\n" . sprintf(
             /* translators: %s: the email address the list was sent from */
             __('The list was sent from %s.', 'eventcrew'),

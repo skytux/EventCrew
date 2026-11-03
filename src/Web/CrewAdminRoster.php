@@ -114,6 +114,7 @@ final class CrewAdminRoster
      *     buyers: list<string>,
      *     ticket_mail_buyers: string,
      *     ticket_mail_guests: string,
+     *     ticket_mail_pending: string,
      *     followup_mail: string,
      *     followup_can_stop: bool,
      *     mailbox: string,
@@ -131,6 +132,7 @@ final class CrewAdminRoster
             'buyers' => [],
             'ticket_mail_buyers' => '',
             'ticket_mail_guests' => '',
+            'ticket_mail_pending' => '',
             'followup_mail' => '',
             'followup_can_stop' => false,
             'mailbox' => BuyerImportController::mailbox(),
@@ -180,6 +182,8 @@ final class CrewAdminRoster
             $view['ticket_mail_guests'] = TicketMail::statusLine(
                 $this->ticketMail->counts($date, TicketMail::KIND_GUESTS)
             );
+            $pending = $this->ticketMail->pendingSummary();
+            $view['ticket_mail_pending'] = null === $pending ? '' : TicketMail::pendingLine($pending);
         }
 
         if (null !== $this->followup) {
@@ -418,8 +422,10 @@ final class CrewAdminRoster
     }
 
     /**
-     * "Send the rest now": up to one batch of the night's ticket emails that
-     * have not gone out, failed ones included. $kind is "buyers" or "guests".
+     * "Send the rest now": starts a send, TicketMail::DELAY seconds from now,
+     * of the night's ticket emails that have not gone out, failed ones
+     * included. $kind is "buyers" or "guests". While a send waits, pressing
+     * again joins it instead of starting a second one.
      */
     public function sendTicketsRest(string $date, string $kind): string
     {
@@ -427,13 +433,15 @@ final class CrewAdminRoster
             return 'admin_change_failed';
         }
 
-        $result = $this->ticketMail->sendRest(
-            $date,
-            TicketMail::KIND_GUESTS === $kind ? TicketMail::KIND_GUESTS : TicketMail::KIND_BUYERS
-        );
+        $send = TicketMail::scheduleRest($date, $kind);
 
-        return sprintf('admin_tickets_sent_%d_%d', $result['sent'], $result['failed'])
-            . ($result['more'] ? '_more' : '');
+        return sprintf('admin_tickets_queued_%d_%d', $send['at'], $send['started'] ? 1 : 0);
+    }
+
+    /** Cancel on the waiting ticket send: none of it goes out. */
+    public function cancelTicketSend(): string
+    {
+        return TicketMail::cancel() ? 'admin_tickets_cancelled' : 'admin_tickets_cancel_none';
     }
 
     /**
@@ -534,6 +542,8 @@ final class CrewAdminRoster
             'admin_tickets_test_sent' => __('A test ticket email was sent to your own address.', 'eventcrew'),
             'admin_tickets_test_failed' => RosterPage::ticketTestMessage(TicketMail::TEST_FAILED, ''),
             'admin_tickets_test_none' => RosterPage::ticketTestMessage(TicketMail::TEST_NONE, ''),
+            'admin_tickets_cancelled' => RosterPage::ticketsCancelMessage(true),
+            'admin_tickets_cancel_none' => RosterPage::ticketsCancelMessage(false),
             'admin_followup_test_' . FollowupMail::TEST_SENT => __(
                 'Both post-event emails were sent to your own address as a test.',
                 'eventcrew'
@@ -573,8 +583,8 @@ final class CrewAdminRoster
             );
         }
 
-        if (1 === preg_match('/^admin_tickets_sent_(\d+)_(\d+)(_more)?$/', $code, $m)) {
-            return RosterPage::ticketsSentMessage((int) $m[1], (int) $m[2], isset($m[3]) && '' !== $m[3]);
+        if (1 === preg_match('/^admin_tickets_queued_(\d+)_([01])$/', $code, $m)) {
+            return RosterPage::ticketsScheduledMessage((int) $m[1], '1' === $m[2]);
         }
 
         if (1 === preg_match('/^admin_buyers_deleted_(\d+)$/', $code, $m)) {

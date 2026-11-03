@@ -42,6 +42,13 @@ use EventCrew\Web\SignupBoardView;
  * or 'failed'. The automatic run only tries '' rows, so a failed address is
  * not retried by itself; "Send the rest now" tries every row not 'sent'.
  *
+ * Every send to ticket holders waits DELAY seconds first, whether an import
+ * or "Send the rest now" started it, so an organizer can cancel it after a
+ * mistake. The waiting send is one option (PENDING_OPTION) and one single
+ * START_HOOK event. While it waits, a second start joins it instead of
+ * starting another, and the batch runner sends nothing. cancel() deletes both;
+ * no row's status changes, so a later send still reaches everyone.
+ *
  * Crew get the same email, sent at once rather than by cron: a sign-up for a
  * task (sendCrewTicket()) and a free-entry credit spent on a night
  * (sendCreditTicket()). Its QR holds a short signed code of its own (crewCode(),
@@ -57,6 +64,21 @@ final class TicketMail
 {
     /** The single cron event that sends one batch. */
     public const HOOK = 'eventcrew_send_tickets';
+
+    /** The single cron event that starts a waiting send when its time comes. */
+    public const START_HOOK = 'eventcrew_send_tickets_start';
+
+    /**
+     * The waiting send: ['at' => unix time, 'rest' => list of "Y-m-d|kind"
+     * that "Send the rest now" asked for]. Absent when nothing waits.
+     */
+    public const PENDING_OPTION = 'eventcrew_ticket_send_pending';
+
+    /** The "Send the rest now" requests of a send that has started. */
+    public const REST_OPTION = 'eventcrew_ticket_send_rest';
+
+    /** How long a send waits before anything goes out: 10 minutes. */
+    public const DELAY = 600;
 
     /** Emails per cron run or per "Send the rest now". */
     public const BATCH = 25;
@@ -103,30 +125,141 @@ final class TicketMail
     public function boot(): void
     {
         add_action(self::HOOK, [$this, 'run']);
+        add_action(self::START_HOOK, [$this, 'start']);
     }
 
     /**
-     * Asks WP-Cron to send the waiting tickets on its next run, unless that is
-     * already asked. Called after an import adds rows.
+     * Starts a send of the tickets not tried yet, DELAY seconds from now,
+     * unless a send is already waiting (it will send these too). Called after
+     * an import adds rows.
      */
     public static function schedule(): void
     {
-        if (! function_exists('wp_next_scheduled') || ! function_exists('wp_schedule_single_event')) {
-            return;
-        }
-
-        if (false === wp_next_scheduled(self::HOOK)) {
-            wp_schedule_single_event(time(), self::HOOK);
-        }
+        self::request('');
     }
 
     /**
-     * The cron event: sends up to BATCH tickets not tried yet, for tonight and
-     * later nights, buyers before guests, and schedules the next batch when
-     * this one was full. Returns how many emails were tried.
+     * "Send the rest now" for $date and $kind: the same waiting send, which
+     * then also tries that night's failed tickets of $kind. Returns when the
+     * send goes out, and whether this call started it (false: it joined the
+     * send already waiting, which keeps its time).
+     *
+     * @return array{at: int, started: bool}
+     */
+    public static function scheduleRest(string $date, string $kind): array
+    {
+        return self::request($date . '|' . (self::KIND_GUESTS === $kind ? self::KIND_GUESTS : self::KIND_BUYERS));
+    }
+
+    /**
+     * The waiting send, or null when nothing waits.
+     *
+     * @return array{at: int, rest: list<string>}|null
+     */
+    public static function pending(): ?array
+    {
+        $value = function_exists('get_option') ? get_option(self::PENDING_OPTION, null) : null;
+
+        if (! is_array($value) || ! isset($value['at']) || (int) $value['at'] <= 0) {
+            return null;
+        }
+
+        return [
+            'at' => (int) $value['at'],
+            'rest' => array_values(array_filter(
+                is_array($value['rest'] ?? null) ? $value['rest'] : [],
+                'is_string'
+            )),
+        ];
+    }
+
+    /**
+     * Cancels the waiting send: nothing of it goes out and no ticket's status
+     * changes. Returns false when nothing was waiting.
+     */
+    public static function cancel(): bool
+    {
+        $pending = self::pending();
+
+        if (function_exists('wp_clear_scheduled_hook')) {
+            wp_clear_scheduled_hook(self::START_HOOK);
+        }
+
+        if (function_exists('delete_option')) {
+            delete_option(self::PENDING_OPTION);
+        }
+
+        return null !== $pending;
+    }
+
+    /**
+     * Starts or joins the waiting send; $rest is a "Y-m-d|kind" to retry, or
+     * '' for the automatic send only.
+     *
+     * @return array{at: int, started: bool}
+     */
+    private static function request(string $rest): array
+    {
+        $pending = self::pending();
+
+        if (null !== $pending) {
+            if ('' !== $rest && ! in_array($rest, $pending['rest'], true)) {
+                $pending['rest'][] = $rest;
+                update_option(self::PENDING_OPTION, $pending, false);
+            }
+
+            return ['at' => $pending['at'], 'started' => false];
+        }
+
+        $at = time() + self::DELAY;
+
+        if (! function_exists('wp_schedule_single_event') || ! function_exists('update_option')) {
+            return ['at' => $at, 'started' => false];
+        }
+
+        update_option(self::PENDING_OPTION, ['at' => $at, 'rest' => '' === $rest ? [] : [$rest]], false);
+        wp_schedule_single_event($at, self::START_HOOK);
+
+        return ['at' => $at, 'started' => true];
+    }
+
+    /**
+     * START_HOOK: the waiting send's time has come. Its "Send the rest now"
+     * requests are handed to the batch runner, and the first batch goes out.
+     * Does nothing when the send was cancelled.
+     */
+    public function start(): int
+    {
+        $pending = self::pending();
+
+        if (null === $pending) {
+            return 0;
+        }
+
+        delete_option(self::PENDING_OPTION);
+
+        if ([] !== $pending['rest']) {
+            $rest = array_values(array_unique(array_merge(self::restRequests(), $pending['rest'])));
+            update_option(self::REST_OPTION, $rest, false);
+        }
+
+        return $this->run();
+    }
+
+    /**
+     * The batch runner (HOOK): sends up to BATCH tickets not tried yet, for
+     * tonight and later nights, buyers before guests. When those are done, it
+     * works through the started send's "Send the rest now" requests, one
+     * batch at a time. It schedules the next batch while work remains. Sends
+     * nothing while a send is waiting: that send's start runs it. Returns how
+     * many emails were tried.
      */
     public function run(): int
     {
+        if (null !== self::pending()) {
+            return 0;
+        }
+
         $today = (string) current_time('Y-m-d');
         $rows = $this->buyers->unsentFrom($today, self::BATCH);
 
@@ -139,10 +272,114 @@ final class TicketMail
         }
 
         if (count($rows) >= self::BATCH) {
-            self::schedule();
+            self::nextBatch();
+
+            return count($rows);
         }
 
-        return count($rows);
+        $rest = self::restRequests();
+
+        if ([] === $rest) {
+            return count($rows);
+        }
+
+        [$date, $kind] = array_pad(explode('|', $rest[0], 2), 2, '');
+        $result = $this->sendRest($date, $kind);
+        // Keep at this night while a batch still sends something, or rows
+        // never tried are left; failed rows that fail again end it.
+        $again = $result['more']
+            && ($result['sent'] > 0 || $this->counts($date, $kind)['unsent'] > 0);
+
+        if (! $again) {
+            array_shift($rest);
+        }
+
+        if ([] === $rest) {
+            delete_option(self::REST_OPTION);
+        } else {
+            update_option(self::REST_OPTION, $rest, false);
+            self::nextBatch();
+        }
+
+        return count($rows) + $result['sent'] + $result['failed'];
+    }
+
+    /** The next batch of a send that has started: at once, no wait. */
+    private static function nextBatch(): void
+    {
+        if (function_exists('wp_next_scheduled') && false === wp_next_scheduled(self::HOOK)) {
+            wp_schedule_single_event(time(), self::HOOK);
+        }
+    }
+
+    /** @return list<string> */
+    private static function restRequests(): array
+    {
+        $value = get_option(self::REST_OPTION, []);
+
+        return is_array($value) ? array_values(array_filter($value, 'is_string')) : [];
+    }
+
+    /**
+     * Who the waiting send will email: the tickets not tried yet from today
+     * on, plus the failed ones of each "Send the rest now" night. Null when
+     * nothing waits.
+     *
+     * @return array{at: int, buyers: int, guests: int}|null
+     */
+    public function pendingSummary(): ?array
+    {
+        $pending = self::pending();
+
+        if (null === $pending) {
+            return null;
+        }
+
+        $today = (string) current_time('Y-m-d');
+        $counts = [
+            self::KIND_BUYERS => count($this->buyers->unsentFrom($today, 10000)),
+            self::KIND_GUESTS => count($this->guests->unsentFrom($today, 10000)),
+        ];
+
+        foreach ($pending['rest'] as $entry) {
+            [$date, $kind] = array_pad(explode('|', $entry, 2), 2, '');
+            $kind = self::KIND_GUESTS === $kind ? self::KIND_GUESTS : self::KIND_BUYERS;
+            $night = $this->counts($date, $kind);
+            // A past night's untried rows are not in the count from today.
+            $counts[$kind] += $night['failed'] + ($date < $today ? $night['unsent'] : 0);
+        }
+
+        return ['at' => $pending['at'], 'buyers' => $counts[self::KIND_BUYERS], 'guests' => $counts[self::KIND_GUESTS]];
+    }
+
+    /** "21:40": a unix time as the site's clock shows it. */
+    public static function clock(int $at): string
+    {
+        return function_exists('wp_date') ? (string) wp_date('H:i', $at) : gmdate('H:i', $at);
+    }
+
+    /**
+     * "Ticket emails go out at 21:40 to 12 buyers, 2 guests." for a
+     * pendingSummary().
+     *
+     * @param array{at: int, buyers: int, guests: int} $summary
+     */
+    public static function pendingLine(array $summary): string
+    {
+        /* translators: %d: number of ticket buyers */
+        $who = sprintf(_n('%d buyer', '%d buyers', $summary['buyers'], 'eventcrew'), $summary['buyers']);
+
+        if ($summary['guests'] > 0) {
+            /* translators: %d: number of guests */
+            $who .= ', ' . sprintf(_n('%d guest', '%d guests', $summary['guests'], 'eventcrew'), $summary['guests']);
+        }
+
+        return sprintf(
+            /* translators: 1: time of day, e.g. 21:40, 2: who gets them, e.g. "12 buyers, 2 guests" */
+            __('Ticket emails go out at %1$s to %2$s.', 'eventcrew'),
+            self::clock($summary['at']),
+            $who
+        );
     }
 
     /**

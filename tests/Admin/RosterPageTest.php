@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\TicketMail;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -89,5 +90,78 @@ final class RosterPageTest extends TestCase
         self::assertSame('arrived', $update['data']['status']);
         self::assertSame(3, $update['data']['changed_by']);
         self::assertSame(MarkedBy::WP_USER, $update['data']['changed_by_kind']);
+    }
+
+    // --- "Cancel sending" ----------------------------------------------------
+
+    /** @var array<string, mixed> */
+    private array $options = [];
+
+    /** A ticket send waiting in an in-memory option store. */
+    private function aSendIsWaiting(): void
+    {
+        $this->options = [TicketMail::PENDING_OPTION => ['at' => time() + 300, 'rest' => []]];
+
+        Functions\when('get_option')->alias(
+            fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
+        );
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->justReturn(1);
+        Functions\when('sanitize_text_field')->returnArg(1);
+        $_POST = ['roster_date' => '2026-07-20'];
+    }
+
+    public function testCancelSendingStopsTheWaitingSend(): void
+    {
+        $this->aSendIsWaiting();
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->cancelTicketSend());
+
+        self::assertNull(TicketMail::pending());
+    }
+
+    public function testCancelSendingWithoutTheCapabilityIsRefused(): void
+    {
+        $this->aSendIsWaiting();
+        Functions\when('current_user_can')->justReturn(false);
+        Functions\when('wp_die')->alias(static function (): void {
+            throw new \RuntimeException('died');
+        });
+
+        $page = $this->page();
+
+        try {
+            $page->cancelTicketSend();
+            self::fail('Expected wp_die.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('died', $e->getMessage());
+        }
+
+        self::assertNotNull(TicketMail::pending());
+    }
+
+    public function testCancelSendingWithABadNonceIsRefused(): void
+    {
+        $this->aSendIsWaiting();
+        // WordPress dies inside check_admin_referer on a bad nonce.
+        Functions\when('check_admin_referer')->alias(static function (string $action): void {
+            throw new \RuntimeException('bad nonce for ' . $action);
+        });
+
+        $page = $this->page();
+
+        try {
+            $page->cancelTicketSend();
+            self::fail('Expected the nonce check to stop it.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('bad nonce for eventcrew_attendance', $e->getMessage());
+        }
+
+        self::assertNotNull(TicketMail::pending());
     }
 }

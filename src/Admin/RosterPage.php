@@ -90,6 +90,7 @@ final class RosterPage
                 'ticket_mail_guests' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
                     $this->ticketMail->counts($selected, TicketMail::KIND_GUESTS)
                 ),
+                'ticket_mail_pending' => $this->pendingLine(),
                 'followup_mail' => '' === $selected || null === $this->followup ? '' : FollowupMail::statusLine(
                     $this->followup->counts($selected),
                     $this->followup->nightStatus($selected),
@@ -551,9 +552,10 @@ final class RosterPage
     }
 
     /**
-     * "Send the rest now": up to one batch of the night's ticket emails that
-     * have not gone out, failed ones included. ticket_kind is "buyers" or
-     * "guests".
+     * "Send the rest now": starts a send, TicketMail::DELAY seconds from now,
+     * of the night's ticket emails that have not gone out, failed ones
+     * included. ticket_kind is "buyers" or "guests". While a send waits,
+     * pressing again joins it instead of starting a second one.
      */
     public function sendTicketsNow(): void
     {
@@ -564,14 +566,43 @@ final class RosterPage
         $kind = isset($_POST['ticket_kind']) ? sanitize_key(wp_unslash($_POST['ticket_kind'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
-        $result = $this->isValidDate($date) && null !== $this->ticketMail
-            ? $this->ticketMail->sendRest($date, TicketMail::KIND_GUESTS === $kind ? $kind : TicketMail::KIND_BUYERS)
-            : ['sent' => 0, 'failed' => 0, 'more' => false];
+        if (! $this->isValidDate($date) || null === $this->ticketMail) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That change could not be applied.', 'eventcrew'),
+                'error',
+                $this->dateArg($date)
+            );
+        }
+
+        $send = TicketMail::scheduleRest($date, $kind);
 
         Admin::redirectTo(
             self::PAGE_SLUG,
-            self::ticketsSentMessage($result['sent'], $result['failed'], $result['more']),
-            0 === $result['failed'] ? 'success' : 'error',
+            self::ticketsScheduledMessage($send['at'], $send['started']),
+            'success',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * Cancel on the waiting ticket send: none of it goes out, and no ticket's
+     * status changes. The same capability and nonce as "Send the rest now".
+     */
+    public function cancelTicketSend(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $cancelled = TicketMail::cancel();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            self::ticketsCancelMessage($cancelled),
+            $cancelled ? 'success' : 'error',
             $this->dateArg($date)
         );
     }
@@ -662,16 +693,35 @@ final class RosterPage
     }
 
     /** The notice after "Send the rest now". Shared with the crew app. */
-    public static function ticketsSentMessage(int $sent, int $failed, bool $more): string
+    public static function ticketsScheduledMessage(int $at, bool $started): string
     {
-        $message = sprintf(
-            /* translators: 1: ticket emails sent, 2: ticket emails that failed */
-            __('Ticket emails: %1$d sent, %2$d failed.', 'eventcrew'),
-            $sent,
-            $failed
-        );
+        return $started
+            ? sprintf(
+                /* translators: %s: time of day, e.g. 21:40 */
+                __('Ticket emails go out at %s. Until then you can cancel them.', 'eventcrew'),
+                TicketMail::clock($at)
+            )
+            : sprintf(
+                /* translators: %s: time of day, e.g. 21:40 */
+                __('A send is already waiting. It goes out at %s.', 'eventcrew'),
+                TicketMail::clock($at)
+            );
+    }
 
-        return $more ? $message . ' ' . __('Press again to send the rest.', 'eventcrew') : $message;
+    /** The notice after Cancel on the waiting ticket send. Shared with the crew app. */
+    public static function ticketsCancelMessage(bool $cancelled): string
+    {
+        return $cancelled
+            ? __('Sending cancelled. No ticket email was sent.', 'eventcrew')
+            : __('No send was waiting. It may have gone out already.', 'eventcrew');
+    }
+
+    /** The waiting ticket send's line, or '' when nothing waits. */
+    private function pendingLine(): string
+    {
+        $summary = $this->ticketMail?->pendingSummary();
+
+        return null === $summary ? '' : TicketMail::pendingLine($summary);
     }
 
     /**

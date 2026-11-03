@@ -28,6 +28,9 @@ final class GuestListService
     /** Callback data prefix for a night button: gl:<Y-m-d>. */
     private const SELECT_PREFIX = 'gl:';
 
+    /** Callback data of the button that cancels the waiting ticket send. */
+    private const CANCEL_DATA = 'gl:cancel';
+
     /** Night buttons per keyboard row. */
     private const BUTTONS_PER_ROW = 2;
 
@@ -97,7 +100,22 @@ final class GuestListService
         }
 
         $text = '' === $done ? $this->render($person, $date) : $done . "\n\n" . $this->render($person, $date);
-        $this->telegram->sendMessage($telegramUserId, $text, $this->markup($person, $date));
+        $markup = $this->markup($person, $date);
+        // A guest added with an email address starts the waiting ticket send:
+        // say when it goes out, with a button that cancels it.
+        $pending = GuestCommand::ADD === $command['action'] && '' !== (string) ($command['email'] ?? '')
+            ? $this->ticketMail?->pendingSummary()
+            : null;
+
+        if (null !== $pending) {
+            $text .= "\n\n" . TicketMail::pendingLine($pending);
+            $markup = ['inline_keyboard' => array_merge(
+                $markup['inline_keyboard'] ?? [],
+                [[['text' => __('Cancel sending', 'eventcrew'), 'callback_data' => self::CANCEL_DATA]]]
+            )];
+        }
+
+        $this->telegram->sendMessage($telegramUserId, $text, $markup);
         $this->sentDmNote($chatId, $isPrivate);
     }
 
@@ -114,6 +132,12 @@ final class GuestListService
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $messageId = (int) ($message['message_id'] ?? 0);
         $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
+
+        if (self::CANCEL_DATA === (string) ($callbackQuery['data'] ?? '')) {
+            $this->onCancel($callbackId, $telegramUserId);
+
+            return;
+        }
 
         if (1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date) || 0 === $chatId || 0 === $messageId) {
             $this->telegram->answerCallbackQuery($callbackId);
@@ -135,6 +159,34 @@ final class GuestListService
             $messageId,
             $this->render($person, $date),
             $this->markup($person, $date)
+        );
+    }
+
+    /**
+     * Cancel under a guest added with an email address: cancels the waiting
+     * ticket send, as Cancel on the Roster page does. Organizers only, the
+     * same people who can add a guest here.
+     */
+    private function onCancel(string $callbackId, int $telegramUserId): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isOrganizer) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('Only organizers can change the guest list.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            TicketMail::cancel()
+                ? __('Sending cancelled. No ticket email was sent.', 'eventcrew')
+                : __('No send was waiting. It may have gone out already.', 'eventcrew'),
+            true
         );
     }
 
