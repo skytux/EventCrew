@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\BotLogRepository;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\CommandMenu;
@@ -210,5 +211,6 @@ final class Scheduler
         wp_clear_scheduled_hook(TicketMail::HOOK);
         wp_clear_scheduled_hook(Newsletter::HOOK);
         wp_clear_scheduled_hook(FollowupMail::HOOK);
+        wp_clear_scheduled_hook(BoardDjText::HOOK);
     }
 }

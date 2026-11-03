@@ -292,6 +292,54 @@ final class TaskRepository
     }
 
     /**
+     * Who holds a slot of each of the given tasks, keyed by task id: each
+     * person's display name ('' when they gave none), in sign-up order. Only
+     * statuses that occupy a slot count, as in occupancyFor(); the length of
+     * a task's list is its occupancy. Never the email address.
+     *
+     * @param array<int, int> $taskIds
+     * @return array<int, list<string>>
+     */
+    public function occupantsFor(array $taskIds): array
+    {
+        global $wpdb;
+
+        $taskIds = array_values(array_unique(array_map('intval', $taskIds)));
+
+        if ([] === $taskIds) {
+            return [];
+        }
+
+        $idPlaceholders = implode(',', array_fill(0, count($taskIds), '%d'));
+        $statuses = AssignmentStatus::occupying();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+        $people = Schema::table(Schema::PEOPLE);
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders only; the table names come from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT a.task_id, p.display_name
+                FROM {$this->assignmentsTable()} a
+                LEFT JOIN {$people} p ON p.id = a.person_id
+                WHERE a.task_id IN ({$idPlaceholders})
+                  AND a.status IN ({$statusPlaceholders})
+                ORDER BY a.signed_up_at ASC, a.id ASC",
+                ...array_merge($taskIds, $statuses)
+            ),
+            ARRAY_A
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        $names = array_fill_keys($taskIds, []);
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $names[(int) $row['task_id']][] = trim((string) ($row['display_name'] ?? ''));
+        }
+
+        return $names;
+    }
+
+    /**
      * How many slots of each of the given tasks are currently taken, keyed by
      * task id. Only statuses that still occupy a slot are counted, so a
      * no-show frees their place for someone else.
