@@ -257,15 +257,15 @@
 }
 .eventcrew-signup .eventcrew-board-grid .eventcrew-event { margin: 0; }
 /*
- * Signed in, the Board tab sits under the header card, which is 32em wide and
- * centred. The board took the whole page width, so on a desktop it reached
- * far past the card's edges. Same width and centring as the card, so both
- * share one left and one right edge. On a phone 32em is wider than the
- * screen, so nothing changes there. Signed out the board stays as wide as
- * the sign-in card above it. The 2px are the card's two 1px borders, which
- * its 32em does not include.
+ * Signed in, every tab (Board, Me, Settings, Help, Admin) sits under the
+ * header card, which is 32em wide and centred. The panels took the whole page
+ * width, so on a desktop they reached far past the card's edges. Same width
+ * and centring as the card, so all share one left and one right edge. On a
+ * phone 32em is wider than the screen, so nothing changes there. Signed out
+ * the board is not in a panel and stays as wide as the sign-in card above it.
+ * The 2px are the card's two 1px borders, which its 32em does not include.
  */
-.eventcrew-signup .eventcrew-panel > .eventcrew-board { max-width: calc(32em + 2px); margin-inline: auto; }
+.eventcrew-signup .eventcrew-panel { max-width: calc(32em + 2px); margin-inline: auto; }
 /*
  * At that width two 18rem columns still fit, and each was then too narrow for
  * a task row: a long button such as "Cacao fairy only" took its full width and
