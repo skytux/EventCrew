@@ -520,15 +520,9 @@ final class FollowupMail
      */
     public function joinClick(string $token, string $language = ''): ?string
     {
-        $payload = SignedLink::verifyPayload(self::PURPOSE_JOIN, $token);
+        $parts = self::joinPayload($token);
 
-        if (null === $payload) {
-            return null;
-        }
-
-        $parts = explode("\n", $payload, 3);
-
-        if (3 !== count($parts) || ! ctype_digit($parts[1])) {
+        if (null === $parts) {
             return null;
         }
 
@@ -556,6 +550,38 @@ final class FollowupMail
         }
 
         return self::withUtm($page, $campaign) . '#' . NewsletterController::FORM_ANCHOR;
+    }
+
+    /**
+     * Whether $token is a subscribe button token this site signed. Checks
+     * the signature only: records nothing and subscribes nobody.
+     */
+    public static function isJoinToken(string $token): bool
+    {
+        return null !== self::joinPayload($token);
+    }
+
+    /**
+     * The kind, row id and campaign signed into a subscribe button token,
+     * or null when the token does not verify.
+     *
+     * @return array{0: string, 1: string, 2: string}|null
+     */
+    private static function joinPayload(string $token): ?array
+    {
+        $payload = SignedLink::verifyPayload(self::PURPOSE_JOIN, $token);
+
+        if (null === $payload) {
+            return null;
+        }
+
+        $parts = explode("\n", $payload, 3);
+
+        if (3 !== count($parts) || ! ctype_digit($parts[1])) {
+            return null;
+        }
+
+        return [$parts[0], $parts[1], $parts[2]];
     }
 
     /** The organizers' Stop link for $date's email. */
