@@ -319,7 +319,47 @@ final class NewsletterControllerTest extends TestCase
         $form = $this->controller()->renderShortcode();
 
         self::assertStringNotContainsString('What should we call you?', $form);
-        self::assertStringContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $form);
+        self::assertStringContainsString('eventcrew-newsletter-message', $form);
+        self::assertStringNotContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $form);
+    }
+
+    /** After a sign-up that went through, only the thank-you stays: no form and no footnote. */
+    public function testAFinishedSignupShowsOnlyTheThankYou(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $finished = [
+            NewsletterController::RESULT_SENT,
+            NewsletterController::RESULT_NAMED,
+            NewsletterController::RESULT_JOINED,
+        ];
+
+        foreach ($finished as $result) {
+            $_GET[NewsletterController::RESULT_ARG] = $result;
+            $form = $this->controller()->renderShortcode();
+
+            self::assertStringContainsString('eventcrew-newsletter-message', $form, $result);
+            self::assertStringNotContainsString('<form', $form, $result);
+            self::assertStringNotContainsString('<p class="eventcrew-muted">', $form, $result);
+            self::assertStringEndsWith('</div>', $form, $result);
+        }
+    }
+
+    /** A wrong address or a failed bot check keeps the form, to try again. */
+    public function testAFailedSignupKeepsTheForm(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        foreach ([NewsletterController::RESULT_INVALID, NewsletterController::RESULT_CAPTCHA] as $result) {
+            $_GET[NewsletterController::RESULT_ARG] = $result;
+            $form = $this->controller()->renderShortcode();
+
+            self::assertStringContainsString('eventcrew-newsletter-message', $form, $result);
+            self::assertStringContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $form, $result);
+            self::assertStringContainsString('<p class="eventcrew-muted">', $form, $result);
+        }
     }
 
     // ---- The manage page --------------------------------------------------
