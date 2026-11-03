@@ -602,24 +602,24 @@ final class NewsletterTest extends TestCase
         $html = NewsletterLayout::html([$card], [$later], null, '#7a3cff');
 
         self::assertStringContainsString(
-            'width="536" alt="27.7.2026 · 21:00 — Ecstatic Dance — Ekstaattinen tanssi — DJ Esimerkki"',
+            'width="536" alt="27.7.2026 · 21:00 — Ecstatic Dance — Ekstaattinen tanssi — Esimerkki"',
             $html
         );
         self::assertStringNotContainsString('>Ecstatic Dance<', $html);
         self::assertStringNotContainsString('>Ekstaattinen tanssi<', $html);
-        self::assertStringNotContainsString('>DJ Esimerkki<', $html);
+        self::assertStringNotContainsString('>Esimerkki<', $html);
         self::assertStringNotContainsString('>27.7.2026 · 21:00<', $html);
         self::assertStringNotContainsString('<h2 style="margin:0 0', $html, 'no title under the picture');
-        self::assertStringContainsString('Open Floor<br>DJs Aino Testinen &amp; Bo Kokeilu', $html);
+        self::assertStringContainsString('Open Floor<br>Aino Testinen &amp; Bo Kokeilu', $html);
         self::assertStringContainsString('alt="OPEN FLOOR 10.8.2026 / Aino Testinen &amp; Bo Kokeilu"', $html);
         self::assertStringNotContainsString('>ECSTATIC DANCE', $html);
         self::assertStringNotContainsString('EKSTAATTINEN', $html);
 
         $text = NewsletterLayout::text([$card], [$later], null);
 
-        self::assertStringContainsString("27.7.2026 · 21:00\nEcstatic Dance\nDJ Esimerkki", $text);
+        self::assertStringContainsString("27.7.2026 · 21:00\nEcstatic Dance\nEsimerkki", $text);
         self::assertStringContainsString(
-            "- 10.8.2026 · 21:00 · Open Floor: https://site.test/event-2/\n  DJs Aino Testinen & Bo Kokeilu",
+            "- 10.8.2026 · 21:00 · Open Floor: https://site.test/event-2/\n  Aino Testinen & Bo Kokeilu",
             $text
         );
         self::assertStringNotContainsString('OPEN FLOOR', $text);
@@ -636,7 +636,7 @@ final class NewsletterTest extends TestCase
 
         self::assertSame(1, substr_count($html, 'Ecstatic Dance'));
         self::assertStringNotContainsString('EKSTAATTINEN', $html);
-        self::assertStringContainsString('DJ Esimerkki', $html);
+        self::assertStringContainsString('Esimerkki', $html);
     }
 
     /** A card with no picture writes the date, the name, the Finnish name and the DJ line as text. */
@@ -654,7 +654,7 @@ final class NewsletterTest extends TestCase
         self::assertMatchesRegularExpression('~<p style="margin:0 0 6px;[^"]*">27\.7\.2026 · 21:00</p>~u', $html);
         self::assertMatchesRegularExpression('~<h2 style="margin:0 0 2px;[^"]*">Ecstatic Dance</h2>~', $html);
         self::assertMatchesRegularExpression('~<p style="margin:0 0 2px;[^"]*">Ekstaattinen tanssi</p>~', $html);
-        self::assertMatchesRegularExpression('~<p style="margin:0 0 14px;[^"]*">DJ Esimerkki</p>~u', $html);
+        self::assertMatchesRegularExpression('~<p style="margin:0 0 14px;[^"]*">Esimerkki</p>~u', $html);
     }
 
     /**

@@ -6719,12 +6719,6 @@ msgstr "Kirjoita se suomeksi tai englanniksi. Se käännetään toiselle kielell
 msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Settings > Email. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into Finnish and English. After that email is sent, or when that night is stopped, the text in Settings is used again. Send /followup alone to see both texts."
 msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Settings > Email. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään suomeksi ja englanniksi. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas asetusten tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."
 
-msgid "DJ %s"
-msgstr "DJ %s"
-
-msgid "DJs %s"
-msgstr "DJs %s"
-
 msgid "Hi!"
 msgstr "Hei!"
 

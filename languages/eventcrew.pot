@@ -1372,16 +1372,6 @@ msgstr ""
 msgid "DISABLED"
 msgstr ""
 
-#: src/Support/EventName.php:61
-#. translators: %s: the name of the event's one DJ. The same in every language.
-msgid "DJ %s"
-msgstr ""
-
-#: src/Support/EventName.php:70
-#. translators: %s: the DJs' names, like "Aino Testinen & Bo Kokeilu". The same in every language.
-msgid "DJs %s"
-msgstr ""
-
 #: templates/admin/settings.php:1661
 msgid "DNS workaround"
 msgstr ""
