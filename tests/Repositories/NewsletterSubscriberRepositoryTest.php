@@ -79,8 +79,139 @@ final class NewsletterSubscriberRepositoryTest extends TestCase
         $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
 
         self::assertTrue((new NewsletterSubscriberRepository())->unsubscribe(5));
-        self::assertSame(['status' => 'unsubscribed'], $this->wpdb->updates[0]['data']);
+        self::assertSame(['status' => 'unsubscribed', 'name' => null], $this->wpdb->updates[0]['data']);
         self::assertSame([], $this->wpdb->deletes);
+    }
+
+    /** A sign-up from the website stores the browser's language on a new row. */
+    public function testANewAddressKeepsTheBrowserLanguage(): void
+    {
+        (new NewsletterSubscriberRepository())->addPending('fan@example.test', 'fi');
+
+        self::assertSame('fi', $this->wpdb->inserts[0]['data']['language']);
+    }
+
+    /** A language chosen on the manage page is not replaced by a browser. */
+    public function testAnExistingLanguageIsNotOverwrittenBySigningUpAgain(): void
+    {
+        $this->wpdb->nextRows[] = ['language' => 'en']
+            + self::row(5, NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED);
+
+        (new NewsletterSubscriberRepository())->addPending('fan@example.test', 'fi');
+
+        self::assertArrayNotHasKey('language', $this->wpdb->updates[0]['data']);
+    }
+
+    /** The thank-you button makes a new address a confirmed subscriber, with the first name. */
+    public function testATicketHolderIsAddedConfirmedWithTheirFirstName(): void
+    {
+        $id = (new NewsletterSubscriberRepository())->addFromTicket('Bo@Example.test', 'Bo', 'en');
+
+        self::assertSame(1, $id);
+        self::assertSame(
+            [
+                'email' => 'bo@example.test',
+                'status' => 'confirmed',
+                'created_at' => '2026-07-20 12:00:00',
+                'confirmed_at' => '2026-07-20 12:00:00',
+                'name' => 'Bo',
+                'language' => 'en',
+            ],
+            $this->wpdb->inserts[0]['data']
+        );
+    }
+
+    /** A pending sign-up is confirmed by the button, and its empty name is filled. */
+    public function testATicketHolderWithAPendingRowIsConfirmed(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
+
+        self::assertSame(5, (new NewsletterSubscriberRepository())->addFromTicket('fan@example.test', 'Anna'));
+        self::assertSame(
+            ['status' => 'confirmed', 'confirmed_at' => '2026-07-20 12:00:00', 'name' => 'Anna'],
+            $this->wpdb->updates[0]['data']
+        );
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** A name the person typed in is never replaced by the one on a ticket. */
+    public function testATicketNameDoesNotReplaceAChosenName(): void
+    {
+        $this->wpdb->nextRows[] = ['name' => 'Annie', 'language' => 'fi']
+            + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        self::assertSame(5, (new NewsletterSubscriberRepository())->addFromTicket('fan@example.test', 'Anna', 'en'));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** A confirmed row with no name gets the ticket's first name and nothing else. */
+    public function testAConfirmedRowWithoutANameGetsTheTicketName(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        (new NewsletterSubscriberRepository())->addFromTicket('fan@example.test', 'Anna');
+
+        self::assertSame(['name' => 'Anna'], $this->wpdb->updates[0]['data']);
+    }
+
+    /** Someone who had left joins again by pressing the button. */
+    public function testALeftTicketHolderIsSubscribedAgain(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED);
+
+        (new NewsletterSubscriberRepository())->addFromTicket('fan@example.test', '');
+
+        self::assertSame(
+            ['status' => 'confirmed', 'confirmed_at' => '2026-07-20 12:00:00'],
+            $this->wpdb->updates[0]['data']
+        );
+    }
+
+    public function testSetNameStoresACleanNameAndClearsAnEmptyOne(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        self::assertTrue($repository->setName(5, "  <b>Anna</b>\n  Maria "));
+        self::assertSame(['name' => 'Anna Maria'], $this->wpdb->updates[0]['data']);
+
+        self::assertTrue($repository->setName(5, '   '));
+        self::assertSame(['name' => null], $this->wpdb->updates[1]['data']);
+
+        self::assertFalse($repository->setName(0, 'Anna'));
+        self::assertCount(2, $this->wpdb->updates);
+    }
+
+    public function testCleanNameCutsALongName(): void
+    {
+        $name = NewsletterSubscriberRepository::cleanName(str_repeat('ä', 150));
+
+        self::assertSame(100, mb_strlen((string) $name));
+        self::assertNull(NewsletterSubscriberRepository::cleanName("\u{200B}\t"));
+    }
+
+    public function testSetLanguageAcceptsOnlyFinnishEnglishOrNothing(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        self::assertTrue($repository->setLanguage(5, 'en'));
+        self::assertTrue($repository->setLanguage(5, ''));
+        self::assertFalse($repository->setLanguage(5, 'sv'));
+
+        self::assertSame(
+            [['language' => 'en'], ['language' => '']],
+            array_column($this->wpdb->updates, 'data')
+        );
+    }
+
+    public function testDeleteByEmailRemovesTheRow(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(1, (new NewsletterSubscriberRepository())->deleteByEmail(' Fan@Example.test'));
+        self::assertSame(
+            "DELETE FROM wp_eventcrew_newsletter_subscribers WHERE email = 'fan@example.test'",
+            $this->wpdb->lastQuery()
+        );
     }
 
     public function testThePurgeDeletesOnlyOldPendingRows(): void
@@ -95,11 +226,20 @@ final class NewsletterSubscriberRepositoryTest extends TestCase
 
     public function testTheBatchReadsConfirmedRowsAfterTheCursor(): void
     {
-        $this->wpdb->nextResults[] = [['id' => '7', 'email' => 'fan@example.test']];
+        $this->wpdb->nextResults[] = [
+            ['id' => '7', 'email' => 'fan@example.test', 'name' => null, 'language' => ''],
+            ['id' => '8', 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi'],
+        ];
 
         $rows = (new NewsletterSubscriberRepository())->confirmedAfter(6, 20);
 
-        self::assertSame([['id' => 7, 'email' => 'fan@example.test']], $rows);
+        self::assertSame(
+            [
+                ['id' => 7, 'email' => 'fan@example.test', 'name' => null, 'language' => ''],
+                ['id' => 8, 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi'],
+            ],
+            $rows
+        );
         self::assertStringContainsString(
             "status = 'confirmed' AND id > 6 ORDER BY id ASC LIMIT 20",
             $this->wpdb->lastQuery()

@@ -182,6 +182,246 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame('unsubscribed', $this->wpdb->updates[1]['data']['status']);
     }
 
+    // ---- The second step: what to call the person ------------------------
+
+    /** A new sign-up leaves a token naming its own row; the browser's language is stored. */
+    public function testANewSignUpGetsATokenForItsOwnRow(): void
+    {
+        $controller = $this->controller();
+
+        $controller->join('fan@example.test', '', '', '', 'en');
+
+        self::assertSame(1, NewsletterController::nameTokenRow($controller->nameToken()));
+        self::assertSame('en', $this->wpdb->inserts[0]['data']['language']);
+    }
+
+    /**
+     * An address that is already subscribed, a repeat within the hour and the
+     * honeypot all get a token too, naming no row, so the next page looks
+     * the same whatever the address.
+     */
+    public function testOtherAnswersGetATokenThatNamesNoRow(): void
+    {
+        $controller = $this->controller();
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $controller->join('fan@example.test', '', '');
+        self::assertSame(0, NewsletterController::nameTokenRow($controller->nameToken()));
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING, '2026-07-20 11:30:00');
+        $controller->join('fan@example.test', '', '');
+        self::assertSame(0, NewsletterController::nameTokenRow($controller->nameToken()));
+
+        $controller->join('fan@example.test', 'bot', '');
+        self::assertSame(0, NewsletterController::nameTokenRow($controller->nameToken()));
+
+        // A refused address gets no second step at all.
+        $controller->join('not an address', '', '');
+        self::assertSame('', $controller->nameToken());
+    }
+
+    public function testTheNameTokenExpiresAndCannotBeForged(): void
+    {
+        $token = NewsletterController::signNameToken(5, 1_000_000);
+
+        self::assertSame(5, NewsletterController::nameTokenRow($token, 1_000_000 + 1799));
+        self::assertNull(NewsletterController::nameTokenRow($token, 1_000_000 + 1801), 'after 30 minutes');
+        self::assertNull(NewsletterController::nameTokenRow($token . 'x', 1_000_000));
+        self::assertNull(NewsletterController::nameTokenRow(SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5)));
+    }
+
+    /** The name is saved on the pending row the token names. */
+    public function testTheSecondStepNamesThePendingRow(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
+
+        $result = $this->controller()->saveName(NewsletterController::signNameToken(5), '  Anna ');
+
+        self::assertSame(NewsletterController::RESULT_NAMED, $result);
+        self::assertSame(['name' => 'Anna'], $this->wpdb->updates[0]['data']);
+        self::assertSame(['id' => 5], $this->wpdb->updates[0]['where']);
+    }
+
+    /**
+     * Nothing is written for a token naming no row, for a row that is no
+     * longer pending, or for a forged token - and the first two answer just
+     * like a real save.
+     */
+    public function testTheSecondStepWritesNothingElse(): void
+    {
+        $controller = $this->controller();
+
+        $named = NewsletterController::RESULT_NAMED;
+
+        self::assertSame($named, $controller->saveName(NewsletterController::signNameToken(0), 'Anna'));
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        self::assertSame($named, $controller->saveName(NewsletterController::signNameToken(5), 'Anna'));
+
+        $forged = SignedLink::signPayload('other', "5\n9999999999");
+        self::assertSame(NewsletterController::RESULT_SENT, $controller->saveName($forged, 'Anna'));
+        self::assertSame(
+            NewsletterController::RESULT_SENT,
+            $controller->saveName(NewsletterController::signNameToken(5, time() - 3600), 'Anna'),
+            'expired'
+        );
+
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** After a sign-up in the full form, the form asks what to call the person. */
+    public function testTheFullFormAsksForTheNameAfterTheSignUp(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $token = NewsletterController::signNameToken(5);
+        $_GET[NewsletterController::RESULT_ARG] = NewsletterController::RESULT_SENT;
+        $_GET[NewsletterController::NAME_TOKEN_ARG] = $token;
+        $controller = $this->controller();
+
+        $form = $controller->renderShortcode();
+        $bar = self::bar($controller);
+
+        self::assertStringContainsString('What should we call you?', $form);
+        self::assertStringContainsString('name="' . NewsletterController::NAME_FIELD . '"', $form);
+        self::assertStringContainsString('autocomplete="given-name"', $form);
+        self::assertStringContainsString('name="action" value="' . NewsletterController::NAME_ACTION . '"', $form);
+        self::assertStringContainsString('name="token" value="' . $token . '"', $form);
+        self::assertStringContainsString('class="eventcrew-nl-skip"', $form);
+        self::assertStringNotContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $form);
+        self::assertStringNotContainsString('What should we call you?', $bar, 'asked once, in the full form');
+    }
+
+    /** Without the full form on the page, the bar asks. */
+    public function testTheBarAsksForTheNameWhenThePageHasNoForm(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $_GET[NewsletterController::RESULT_ARG] = NewsletterController::RESULT_SENT;
+        $_GET[NewsletterController::NAME_TOKEN_ARG] = NewsletterController::signNameToken(0);
+
+        $bar = self::bar($this->controller());
+
+        self::assertStringContainsString('data-message="1"', $bar);
+        self::assertStringContainsString('<label for="eventcrew-nl-bar-name"', $bar);
+        self::assertStringContainsString('name="anchor" value="' . NewsletterController::BAR_ANCHOR . '"', $bar);
+        self::assertStringNotContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $bar);
+    }
+
+    /** A forged or expired token shows the plain answer, with no second step. */
+    public function testABadNameTokenShowsNoSecondStep(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $_GET[NewsletterController::RESULT_ARG] = NewsletterController::RESULT_SENT;
+        $_GET[NewsletterController::NAME_TOKEN_ARG] = NewsletterController::signNameToken(5, time() - 3600);
+
+        $form = $this->controller()->renderShortcode();
+
+        self::assertStringNotContainsString('What should we call you?', $form);
+        self::assertStringContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $form);
+    }
+
+    // ---- The manage page --------------------------------------------------
+
+    /** Opening the link only shows the page, with the name and language filled in. */
+    public function testTheManagePageShowsTheNameAndLanguage(): void
+    {
+        $this->wpdb->nextRows[] = ['name' => 'Anna <b>', 'language' => 'fi']
+            + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $token = SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5);
+
+        $page = $this->controller()->respond('manage', 'GET', $token);
+
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('id="eventcrew-manage-name" name="name"', $page['html']);
+        self::assertStringContainsString('value="Anna &lt;b&gt;"', $page['html']);
+        self::assertStringContainsString('name="language" value="fi" checked', $page['html']);
+        self::assertStringContainsString('name="language" value="en">', $page['html']);
+        self::assertStringContainsString('name="act" value="leave"', $page['html']);
+        self::assertStringContainsString('value="' . $token . '"', $page['html']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** A GET with act=leave (a link scanner) changes nothing. */
+    public function testTheManagePageNeedsThePostToChange(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $token = SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5);
+
+        $this->controller()->respond('manage', 'GET', $token, ['act' => 'leave']);
+
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testSavingSetsTheNameAndTheLanguage(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $this->wpdb->nextRows[] = ['name' => 'Annie', 'language' => 'en']
+            + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $page = $this->controller()->respond(
+            'manage',
+            'POST',
+            SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5),
+            ['act' => 'save', 'name' => 'Annie', 'language' => 'en']
+        );
+
+        self::assertStringContainsString('Saved.', $page['html']);
+        self::assertSame([['name' => 'Annie'], ['language' => 'en']], array_column($this->wpdb->updates, 'data'));
+        self::assertStringContainsString('name="language" value="en" checked', $page['html']);
+    }
+
+    public function testAnUnknownLanguageIsNotSaved(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $this->controller()->respond(
+            'manage',
+            'POST',
+            SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5),
+            ['act' => 'save', 'name' => '', 'language' => 'sv']
+        );
+
+        self::assertSame([['name' => null]], array_column($this->wpdb->updates, 'data'));
+    }
+
+    public function testLeavingUnsubscribesAndForgetsTheName(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $page = $this->controller()->respond(
+            'manage',
+            'POST',
+            SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5),
+            ['act' => 'leave']
+        );
+
+        self::assertStringContainsString('You have left the announcement.', $page['html']);
+        self::assertSame(['status' => 'unsubscribed', 'name' => null], $this->wpdb->updates[0]['data']);
+    }
+
+    /** A left subscriber sees that they left; a pending row and a foreign token are not valid. */
+    public function testTheManagePageRefusesWhatItCannotManage(): void
+    {
+        $controller = $this->controller();
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED);
+        $left = $controller->respond('manage', 'GET', SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5));
+        self::assertStringContainsString('You have left the announcement.', $left['html']);
+        self::assertStringNotContainsString('eventcrew-manage-name', $left['html']);
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
+        $pending = $controller->respond('manage', 'GET', SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5));
+        self::assertSame(404, $pending['status']);
+
+        $foreign = $controller->respond('manage', 'GET', SignedLink::sign(Newsletter::PURPOSE_UNSUBSCRIBE, 5));
+        self::assertSame(404, $foreign['status']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     /** Opening the stop link only shows the button; the POST stops. */
     public function testTheStopLinkNeedsThePost(): void
     {
@@ -235,7 +475,7 @@ final class NewsletterControllerTest extends TestCase
 
     protected function tearDown(): void
     {
-        unset($_GET[NewsletterController::RESULT_ARG]);
+        unset($_GET[NewsletterController::RESULT_ARG], $_GET[NewsletterController::NAME_TOKEN_ARG]);
         parent::tearDown();
     }
 

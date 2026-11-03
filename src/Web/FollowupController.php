@@ -14,6 +14,9 @@ use WP_REST_Request;
  * - ?eventcrew_go=<token> on any page: a link in the email. Counts the row's
  *   first click and answers with a 302 to the address signed into the
  *   token. Anything else is sent to the front page.
+ * - ?eventcrew_join=<token> on any page: the subscribe button. Counts the
+ *   row's first click, subscribes the row's address to the next events
+ *   announcement, and sends the browser to the subscribe form.
  * - /wp-json/eventcrew/v1/followup?do=stop&token=…: the Stop link in the
  *   organizers' preview. Opening it shows a button (a mail scanner that
  *   opens links must not stop the email); pressing it stops that night's
@@ -48,6 +51,11 @@ final class FollowupController
     public function handleClick(): void
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a signed link from an email; the token is the check.
+        if (isset($_GET[FollowupMail::JOIN_ARG])) {
+            $this->handleJoin();
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a signed link from an email; the token is the check.
         if (! isset($_GET[FollowupMail::GO_ARG])) {
             return;
         }
@@ -69,6 +77,26 @@ final class FollowupController
         // sign a token, and clickTarget() allows only http(s).
         // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- signed target, see above.
         wp_redirect($target, 302, 'EventCrew');
+        exit;
+    }
+
+    /**
+     * The subscribe button: counts the click, subscribes the ticket holder
+     * (FollowupMail::joinClick()) in the language their browser prefers, and
+     * redirects to the subscribe form on this site.
+     */
+    private function handleJoin(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a signed link from an email; the token is the check.
+        $token = (string) wp_unslash($_GET[FollowupMail::JOIN_ARG]);
+        $target = $this->followup->joinClick(
+            preg_replace('/[^A-Za-z0-9_.\-]/', '', $token) ?? '',
+            Language::preferredInRequest()
+        );
+
+        nocache_headers();
+        header('X-Robots-Tag: noindex, nofollow', true);
+        wp_safe_redirect($target ?? home_url('/'), 302);
         exit;
     }
 

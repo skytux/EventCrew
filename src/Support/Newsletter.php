@@ -105,6 +105,9 @@ final class Newsletter
 
     public const PURPOSE_STOP = 'newsletter_stop';
 
+    /** The subscriber's own page: change the name and language, or leave. */
+    public const PURPOSE_MANAGE = 'newsletter_manage';
+
     /** stop()'s answers. */
     public const STOPPED = 'stopped';
     public const ALREADY = 'already';
@@ -187,6 +190,23 @@ final class Newsletter
     public static function unsubscribeUrl(int $subscriberId): string
     {
         return self::link('unsubscribe', SignedLink::sign(self::PURPOSE_UNSUBSCRIBE, $subscriberId));
+    }
+
+    /** The footer link of one subscriber's announcement: their manage page. */
+    public static function manageUrl(int $subscriberId): string
+    {
+        return self::link('manage', SignedLink::sign(self::PURPOSE_MANAGE, $subscriberId));
+    }
+
+    /**
+     * The greeting at the top of one recipient's announcement (see
+     * NewsletterLayout::greeting()).
+     *
+     * @return array{html: string, text: string}
+     */
+    public static function greeting(?string $name): array
+    {
+        return NewsletterLayout::greeting($name);
     }
 
     public static function stopUrl(int $planId): string
@@ -349,12 +369,15 @@ final class Newsletter
         ];
     }
 
-    /** The footer line, in both languages: the way out of the newsletter. */
+    /**
+     * The footer line, in both languages: the link to the subscriber's own
+     * page, where they change their name or leave the newsletter.
+     */
     public static function footer(): string
     {
         return self::both(
             static fn (): string => __(
-                'You get this email because you joined the next events announcement. Leave the announcement',
+                'You get this email because you joined the next events announcement. Change your details or leave the announcement', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 'eventcrew'
             )
         );
@@ -623,14 +646,16 @@ final class Newsletter
         $crewNote = self::crewNote();
 
         foreach ($rows as $row) {
+            // Composed once per batch; only the greeting is the recipient's own.
+            $greeting = self::greeting($row['name'] ?? null);
             $unsubscribe = self::unsubscribeUrl($row['id']);
             $sent = $this->mailer->toSubscriber(
                 $row['email'],
                 $mail['subject'],
-                $mail['html'],
-                $mail['text'],
+                $greeting['html'] . $mail['html'],
+                $greeting['text'] . "\n\n" . $mail['text'],
                 $footer,
-                $unsubscribe,
+                self::manageUrl($row['id']),
                 [
                     'List-Unsubscribe: <' . $unsubscribe . '>',
                     'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
@@ -724,14 +749,16 @@ final class Newsletter
             ]);
 
             $intro = $words['intro'] . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
+            // The organizer sees the greeting a subscriber gets, with their own name.
+            $greeting = self::greeting(DoorDesk::firstName($person->name()));
 
             $sent = $this->mailer->toPersonWithContent(
                 $person->id,
                 $person->email,
                 $words['subject'],
                 $intro,
-                $mail['html'],
-                $mail['text'],
+                $greeting['html'] . $mail['html'],
+                $greeting['text'] . "\n\n" . $mail['text'],
                 [['label' => $words['stop'], 'url' => $stopUrl]]
             );
 

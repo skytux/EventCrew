@@ -106,6 +106,28 @@ final class PrivacyEraserTest extends TestCase
     }
 
     /**
+     * An announcement subscriber's row is deleted entirely: it holds only the
+     * address, the name to greet and the language.
+     */
+    public function testAnAnnouncementSubscriptionIsDeleted(): void
+    {
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 0; // no ticket buyer rows
+        $this->wpdb->nextQueryResults[] = 0; // no guest rows
+        $this->wpdb->nextQueryResults[] = 1; // the subscriber row
+
+        $result = $this->eraser()->erase('Fan@Example.test');
+
+        self::assertTrue($result['items_removed']);
+        self::assertCount(1, $result['messages']);
+        self::assertStringContainsString('next events announcement', $result['messages'][0]);
+        self::assertSame(
+            "DELETE FROM wp_eventcrew_newsletter_subscribers WHERE email = 'fan@example.test'",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    /**
      * A ticket buyer who is not a crew member is erased from the ticket
      * buyers table by email: name and email go, the row stays.
      */
@@ -141,9 +163,9 @@ final class PrivacyEraserTest extends TestCase
         self::assertTrue($result['items_removed']);
         self::assertCount(1, $result['messages']);
         self::assertStringContainsString('guest list', $result['messages'][0]);
-        self::assertSame(
+        self::assertContains(
             "UPDATE wp_eventcrew_guests SET email = NULL, name = '' WHERE email = 'cy@example.test'",
-            $this->wpdb->lastQuery()
+            $this->wpdb->queries
         );
         self::assertSame([], $this->wpdb->deletes);
     }

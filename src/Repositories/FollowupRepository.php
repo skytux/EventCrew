@@ -149,6 +149,36 @@ final class FollowupRepository
     }
 
     /**
+     * One ticket holder's name and email address, for the subscribe button
+     * in their post-event email. Null when there is no such row, or its email
+     * was deleted (by the retention purge or an erasure request).
+     *
+     * @return array{name: string, email: string}|null
+     */
+    public function holder(string $kind, int $id): ?array
+    {
+        global $wpdb;
+
+        if ($id <= 0 || ! in_array($kind, [self::KIND_BUYER, self::KIND_GUEST], true)) {
+            return null;
+        }
+
+        $table = self::tableOf($kind);
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT name, email FROM {$table} WHERE id = %d", $id),
+            ARRAY_A
+        );
+
+        if (! is_array($row)) {
+            return null;
+        }
+
+        $email = trim((string) ($row['email'] ?? ''));
+
+        return '' === $email ? null : ['name' => (string) ($row['name'] ?? ''), 'email' => $email];
+    }
+
+    /**
      * Records the first click on a link in one row's post-event email. Only
      * the time is stored, and only once: a second click changes nothing.
      * Returns whether this was the first.
