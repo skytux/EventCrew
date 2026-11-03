@@ -6147,3 +6147,9 @@ msgstr "Tiimin jäsenet saavat myös tämän tiedotteen ja voivat lopettaa sen a
 
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr "Tiimin jäsenet, joiden sähköpostiosoite on vahvistettu, saavat tulevien tapahtumien tiedotteen ja voivat perua sen milloin tahansa jokaisen viestin linkistä."
+
+#. translators: %d: hours before the task's start
+msgid "You can cancel without it affecting your standing up to %d hour before the task."
+msgid_plural "You can cancel without it affecting your standing up to %d hours before the task."
+msgstr[0] "Voit perua ilman vaikutusta luotettavuuteesi, kun perut viimeistään %d tunnin ennen tehtävää."
+msgstr[1] "Voit perua ilman vaikutusta luotettavuuteesi, kun perut viimeistään %d tuntia ennen tehtävää."

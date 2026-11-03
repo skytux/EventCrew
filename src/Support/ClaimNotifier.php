@@ -54,6 +54,7 @@ final class ClaimNotifier
         $standingLine = $this->standingLine($person);
         $about = RoleGuide::aboutLine($task);
         $aboutBlock = '' === $about ? '' : "\n\n" . $about;
+        $freeCancel = self::freeCancelLine();
 
         $this->dm(
             $person,
@@ -64,7 +65,7 @@ final class ClaimNotifier
                 $task->roleLabel(),
                 $task->eventName(),
                 $this->whenText($task)
-            ) . $aboutBlock . "\n\n" . $standingLine,
+            ) . $freeCancel . $aboutBlock . "\n\n" . $standingLine,
             ['inline_keyboard' => $this->signupKeyboard($task->id, $assignment->id)]
         );
 
@@ -86,7 +87,7 @@ final class ClaimNotifier
                 $task->eventName(),
                 $this->whenText($task),
                 $standingLine
-            ) . $aboutBlock,
+            ) . $freeCancel . $aboutBlock,
             // The ticket first: it is the thing this email exists to hand over.
             // The calendar hold second, since a task in someone's own calendar,
             // with its own alarm, is the strongest nudge there is against a
@@ -97,6 +98,33 @@ final class ClaimNotifier
                 ['label' => __('Add to calendar', 'eventcrew'), 'url' => CalendarController::url($task->id)],
                 RoleGuide::emailAction(),
             ]))
+        );
+    }
+
+    /**
+     * " You can cancel without it affecting your standing up to N hours
+     * before the task.", added after the cancel instructions of the sign-up
+     * DM and email. N is the late-cancellation notice (Settings), the same
+     * number SignupService uses to tell a cancellation from a late one. ''
+     * when that notice is 0: then every cancellation is free.
+     */
+    private static function freeCancelLine(): string
+    {
+        $hours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
+
+        if (0 === $hours) {
+            return '';
+        }
+
+        return ' ' . sprintf(
+            /* translators: %d: hours before the task's start */
+            _n(
+                'You can cancel without it affecting your standing up to %d hour before the task.',
+                'You can cancel without it affecting your standing up to %d hours before the task.',
+                $hours,
+                'eventcrew'
+            ),
+            $hours
         );
     }
 
