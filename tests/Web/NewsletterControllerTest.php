@@ -128,6 +128,12 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('✦', $body);
         self::assertStringContainsString('announcement form on', $body);
         self::assertStringNotContainsString('border-radius:15px 15px 0 0', $body, 'no bar picture set, no picture');
+        // The button has a centred row of its own and stays on one line.
+        self::assertMatchesRegularExpression(
+            '~<tr><td align="center" style="[^"]*text-align:center"><table[^>]*>.*Vahvista / Confirm</a>~s',
+            $body
+        );
+        self::assertStringContainsString('white-space:nowrap">Vahvista / Confirm</a>', $body);
     }
 
     /** The plain-text part writes the link out. */

@@ -12,8 +12,10 @@ namespace EventCrew\Support;
  * 1. The sign-up bar's picture (Newsletter::barImageId()), when one is set.
  * 2. A gold sparkle, the heading "Enää yksi askel" with "One step left"
  *    under it, and the promise line in both languages (left out when empty).
- * 3. The Finnish text, the English text, then the gold Confirm button
- *    (both texts say "the button below").
+ * 3. The Finnish text, the English text, then the gold Confirm button in a
+ *    row of its own, centred on the cell (mail apps such as Gmail ignore a
+ *    centred table inside a left-aligned cell). A label of up to 22
+ *    characters stays on one line; it fits a phone-wide card.
  *
  * The card's colours are fixed, so it looks the same in a light and a dark
  * mail app. The plain-text part says the same, with the link written out.
@@ -118,19 +120,21 @@ final class NewsletterConfirmMail
             self::TEXT_COLOR,
             esc_html(self::both($fi['promise'], $en['promise']))
         );
+        $label = self::both($fi['button'], $en['button']);
         $button = sprintf(
             '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
-                . ' style="margin:22px auto">'
+                . ' style="margin:0 auto">'
                 . '<tr><td style="border-radius:999px;background:%1$s;'
                 . 'background-image:linear-gradient(135deg,#f6dcaa,%1$s);box-shadow:0 0 18px rgba(240,201,135,.45)">'
-                . '<a href="%2$s" style="display:inline-block;padding:14px 34px;font-family:%3$s;font-size:16px;'
-                . 'font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:%4$s;text-decoration:none;'
-                . 'border-radius:999px">%5$s</a></td></tr></table>',
+                . '<a href="%2$s" style="display:inline-block;padding:13px 22px;font-family:%3$s;font-size:14px;'
+                . 'font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:%4$s;text-decoration:none;'
+                . 'text-align:center;border-radius:999px%6$s">%5$s</a></td></tr></table>',
             self::BUTTON_BACKGROUND,
             esc_url($confirmUrl),
             $font,
             self::BUTTON_TEXT,
-            esc_html(self::both($fi['button'], $en['button']))
+            esc_html($label),
+            mb_strlen($label) <= 22 ? ';white-space:nowrap' : ''
         );
         $paragraph = static fn (string $text, string $color, string $margin): string => sprintf(
             '<p style="margin:%s;font-family:%s;font-size:15px;line-height:1.6;color:%s;text-align:left">%s</p>',
@@ -141,22 +145,23 @@ final class NewsletterConfirmMail
         );
         // Both texts say "press the button below", so both stand above the button.
         $texts = $paragraph($fi['body'], self::TEXT_COLOR, '0')
-            . ($fi['body'] === $en['body'] ? '' : $paragraph($en['body'], self::MUTED_COLOR, '14px 0 0'))
-            . $button;
+            . ($fi['body'] === $en['body'] ? '' : $paragraph($en['body'], self::MUTED_COLOR, '14px 0 0'));
 
         return sprintf(
             '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="max-width:%dpx;margin:0 auto;border-collapse:separate;background:%s;'
                 . 'border:1px solid %s;border-radius:16px">'
                 . '%s<tr><td align="center" style="padding:28px 26px 26px;text-align:center">%s%s</td></tr>'
-                . '<tr><td style="padding:0 26px 28px">%s</td></tr></table>',
+                . '<tr><td style="padding:0 26px">%s</td></tr>'
+                . '<tr><td align="center" style="padding:22px 16px 28px;text-align:center">%s</td></tr></table>',
             self::IMAGE_WIDTH,
             self::CARD_BACKGROUND,
             self::CARD_EDGE,
             $image,
             $heading,
             $promise,
-            $texts
+            $texts,
+            $button
         );
     }
 
