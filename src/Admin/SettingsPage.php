@@ -23,6 +23,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
+use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
@@ -36,6 +37,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketFormats;
+use EventCrew\Support\TranslatedText;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
@@ -62,24 +64,6 @@ final class SettingsPage
     private const NONCE_ACTION = 'eventcrew_settings';
     private const SETUP_NONCE_ACTION = 'eventcrew_telegram_setup';
 
-    /**
-     * The bot's About and Description texts. Each posted field maps to its
-     * option, the Bot API method that sends it, the language code ('' = the
-     * text for every language without its own) and Telegram's length limit.
-     */
-    private const BOT_PROFILE_FIELDS = [
-        'telegram_about_en' => ['eventcrew_telegram_about_en', 'setMyShortDescription', '', 120],
-        'telegram_about_fi' => ['eventcrew_telegram_about_fi', 'setMyShortDescription', 'fi', 120],
-        'telegram_description_en' => ['eventcrew_telegram_description_en', 'setMyDescription', '', 512],
-        'telegram_description_fi' => ['eventcrew_telegram_description_fi', 'setMyDescription', 'fi', 512],
-    ];
-
-    /**
-     * The texts Telegram last accepted, per posted field. A field is sent only
-     * when it differs from this, so a send that failed is tried again on the
-     * next save.
-     */
-    private const BOT_PROFILE_SENT_OPTION = 'eventcrew_telegram_profile_sent';
     public const EMAIL_NONCE_ACTION = 'eventcrew_email_template';
 
     private const WELCOME_NONCE_ACTION = 'eventcrew_welcome_test';
@@ -176,6 +160,11 @@ final class SettingsPage
                 'followup_enabled' => FollowupMail::enabled(),
                 'newsletter_days' => Newsletter::days(),
                 'newsletter_crew' => NewsletterCrew::enabled(),
+                'newsletter_preview_mode' => NewsletterSchedule::previewMode(),
+                'newsletter_preview_hours' => NewsletterSchedule::previewHours(),
+                'newsletter_preview_days' => NewsletterSchedule::previewDays(),
+                'newsletter_preview_time' => NewsletterSchedule::previewTime(),
+                'newsletter_send_time' => NewsletterSchedule::sendTime(),
                 'newsletter_bar_image' => Newsletter::barImageId(),
                 'newsletter_bar_image_url' => Newsletter::barImageId() > 0
                     ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'medium')
@@ -339,10 +328,10 @@ final class SettingsPage
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
-            'profile' => array_map(
-                static fn (array $spec): string => (string) get_option($spec[0], ''),
-                self::BOT_PROFILE_FIELDS
-            ),
+            'profile' => [
+                'about' => BotProfileSettings::value('about'),
+                'description' => BotProfileSettings::value('description'),
+            ],
             'setup_nonce_action' => self::SETUP_NONCE_ACTION,
         ];
     }
@@ -407,6 +396,7 @@ final class SettingsPage
             'default_pages' => $defaults,
             'test_url' => $link('eventcrew_assistant_test'),
             'remove_key_url' => $link('eventcrew_assistant_remove_key'),
+            'translate_auto' => TranslatedText::autoEnabled(),
         ];
     }
 
@@ -638,6 +628,7 @@ final class SettingsPage
             Newsletter::BAR_IMAGE_OPTION,
             $barImage > 0 && wp_attachment_is_image($barImage) ? $barImage : 0
         );
+        $this->saveNewsletterSchedule();
 
         update_option(
             Turnstile::SITE_KEY_OPTION,
@@ -706,6 +697,8 @@ final class SettingsPage
         $this->savePrivacy();
         $assistantError = $this->saveAssistant();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
+        // Before the bot texts, so they are translated (or not) by the new switch.
+        $this->saveTranslateSwitch();
         $profile = $this->saveBotProfile();
         $profileSuffix = '' === $profile['message'] ? '' : ' ' . $profile['message'];
 
@@ -742,87 +735,81 @@ final class SettingsPage
     }
 
     /**
-     * Saves the bot's About and Description texts and sends each one that
-     * changed to Telegram. An empty text is sent as "", which clears it on
-     * Telegram. Fields that were not posted are left as they are.
-     *
-     * Returns the sentence to add to the save notice ('' when nothing was
-     * sent) and whether every send worked.
+     * Saves the bot's About and Description texts (BotProfileSettings) and
+     * sends each changed language text to Telegram.
      *
      * @return array{ok: bool, message: string}
      */
     private function saveBotProfile(): array
     {
-        $sent = get_option(self::BOT_PROFILE_SENT_OPTION, []);
-        $sent = is_array($sent) ? $sent : [];
-        $changed = 0;
-        $failed = [];
+        $profile = new BotProfileSettings(
+            $this->telegram,
+            new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger())
+        );
 
-        foreach (self::BOT_PROFILE_FIELDS as $field => [$option, $method, $language, $max]) {
-            // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-            if (! isset($_POST[$field])) {
-                continue;
-            }
-
-            // sanitize_textarea_field for the description: its line breaks
-            // are kept, and Telegram shows them.
-            $text = 'setMyDescription' === $method
-                ? sanitize_textarea_field(wp_unslash((string) $_POST[$field]))
-                : sanitize_text_field(wp_unslash((string) $_POST[$field]));
-            // phpcs:enable WordPress.Security.NonceVerification.Missing
-            $text = mb_substr($text, 0, $max);
-            update_option($option, $text);
-
-            if ($text === (string) ($sent[$field] ?? '')) {
-                continue;
-            }
-
-            $changed++;
-            $result = 'setMyDescription' === $method
-                ? $this->telegram->setMyDescription($text, $language)
-                : $this->telegram->setMyShortDescription($text, $language);
-
-            if (null === $result) {
-                $failed[] = $this->botProfileLabel($field) . ': ' . $this->telegram->lastError();
-
-                continue;
-            }
-
-            $sent[$field] = $text;
-        }
-
-        update_option(self::BOT_PROFILE_SENT_OPTION, $sent, false);
-
-        if ([] !== $failed) {
-            return [
-                'ok' => false,
-                'message' => sprintf(
-                    /* translators: %s: each text Telegram refused, with Telegram's reason */
-                    __('Telegram did not accept these texts. They are sent again the next time you save: %s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
-                    implode('; ', $failed)
-                ),
-            ];
-        }
-
-        return [
-            'ok' => true,
-            'message' => $changed > 0
-                ? __('The changed About and Description texts were sent to Telegram.', 'eventcrew')
-                : '',
-        ];
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
+        return $profile->save($_POST[BotProfileSettings::POST_NAME] ?? null);
     }
 
     /**
-     * The form label of one About / Description field, for the save notice.
+     * The switch "Translate texts automatically with the language model".
+     * Saved only when its form section was posted (the hidden presence
+     * field), so a form without it cannot switch it off.
      */
-    private function botProfileLabel(string $field): string
+    private function saveTranslateSwitch(): void
     {
-        return match ($field) {
-            'telegram_about_en' => __('About (English)', 'eventcrew'),
-            'telegram_about_fi' => __('About (Finnish)', 'eventcrew'),
-            'telegram_description_en' => __('Description (English)', 'eventcrew'),
-            default => __('Description (Finnish)', 'eventcrew'),
-        };
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        if (! isset($_POST['translate_auto_present'])) {
+            return;
+        }
+
+        update_option(TranslatedText::AUTO_OPTION, isset($_POST['translate_auto']) ? '1' : '0');
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+    }
+
+    /**
+     * When the newsletter's preview and the newsletter go out
+     * (NewsletterSchedule). A field that was not posted, or a time that is
+     * not a time of day, keeps the stored value.
+     */
+    private function saveNewsletterSchedule(): void
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        if (isset($_POST['newsletter_preview_mode'])) {
+            $mode = sanitize_key(wp_unslash($_POST['newsletter_preview_mode']));
+            update_option(
+                NewsletterSchedule::PREVIEW_MODE_OPTION,
+                NewsletterSchedule::PREVIEW_BEFORE_EVENT === $mode
+                    ? NewsletterSchedule::PREVIEW_BEFORE_EVENT
+                    : NewsletterSchedule::PREVIEW_AFTER_PREVIOUS
+            );
+        }
+        if (isset($_POST['newsletter_preview_hours'])) {
+            update_option(
+                NewsletterSchedule::PREVIEW_HOURS_OPTION,
+                NewsletterSchedule::clampPreviewHours((int) $_POST['newsletter_preview_hours'])
+            );
+        }
+        if (isset($_POST['newsletter_preview_days'])) {
+            update_option(
+                NewsletterSchedule::PREVIEW_DAYS_OPTION,
+                NewsletterSchedule::clampPreviewDays((int) $_POST['newsletter_preview_days'])
+            );
+        }
+        $times = [
+            'newsletter_preview_time' => NewsletterSchedule::PREVIEW_TIME_OPTION,
+            'newsletter_send_time' => NewsletterSchedule::SEND_TIME_OPTION,
+        ];
+        foreach ($times as $field => $option) {
+            if (! isset($_POST[$field])) {
+                continue;
+            }
+            $time = NewsletterSchedule::parseTime(sanitize_text_field(wp_unslash($_POST[$field])));
+            if (null !== $time) {
+                update_option($option, $time);
+            }
+        }
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
     }
 
     /**

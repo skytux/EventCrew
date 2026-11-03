@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.101.0
+Stable tag: 1.102.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.102.0 =
+Next events announcement: preview and send times in Settings; write-once translated text fields (bot About/Description) with a global auto-translate switch.
 
 = 1.101.0 =
 Post-event email: the day after a night, ticket holders get a thank-you email (if they came) or a we-missed-you email (if they did not), in Finnish and English, with the coming events. Organizers get a preview the day before and can stop it. Off until switched on in wp-admin; switching on never mails a night that is already over.
@@ -1000,6 +1003,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.102.0 =
+No DB change.
 
 = 1.101.0 =
 Database version 25: three post-event email columns on the guests and ticket buyers tables.

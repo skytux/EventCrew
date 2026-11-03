@@ -13,6 +13,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterLayout;
+use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Tests\TestCase;
 
@@ -473,5 +474,216 @@ final class NewsletterTest extends TestCase
         self::assertSame('5 €', NewsletterLayout::price('5 €'));
         self::assertSame('Free', NewsletterLayout::price('Free'));
         self::assertSame('', NewsletterLayout::price(''));
+    }
+
+    /**
+     * The default preview time: 0 hours after the previous event ends. The
+     * previous night ended at 02:00 today, so the plan is made and the
+     * preview goes now, days before the send time, which is 3 days before
+     * the event at the send time setting.
+     */
+    public function testThePreviewGoesAfterThePreviousEventEnds(): void
+    {
+        $this->options[Newsletter::DAYS_OPTION] = 3;
+        $this->options[NewsletterSchedule::SEND_TIME_OPTION] = '18:30';
+        $this->event(1, '2026-07-19', 'Last Night', ['_eventmesh_ends_at' => '2026-07-20T02:00:00']);
+        $this->event(2, '2026-07-27', 'Next Night');
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        $plan = $this->state()['plan'];
+        self::assertSame('2026-07-24', $plan['send_on']);
+        self::assertSame('2026-07-24 18:30:00', $plan['send_at']);
+        self::assertSame('2026-07-20 02:00:00', $plan['preview_at']);
+        self::assertTrue($plan['previewed']);
+        self::assertSame([2], array_column($plan['events'], 'id'));
+        self::assertArrayNotHasKey('starts_at', $plan['events'][0]);
+        self::assertCount(1, $this->mails);
+    }
+
+    /** X hours after the previous event: nothing happens before that moment. */
+    public function testThePreviewWaitsTheSetHours(): void
+    {
+        $this->options[Newsletter::DAYS_OPTION] = 3;
+        $this->options[NewsletterSchedule::PREVIEW_HOURS_OPTION] = 11;
+        $this->event(1, '2026-07-19', 'Last Night', ['_eventmesh_ends_at' => '2026-07-20T02:00:00']);
+        $this->event(2, '2026-07-27', 'Next Night');
+
+        $this->newsletter()->run();
+        self::assertNull($this->state()['plan']);
+
+        $this->options[NewsletterSchedule::PREVIEW_HOURS_OPTION] = 10;
+        $this->queueOrganizer();
+        $this->newsletter()->run();
+
+        self::assertSame('2026-07-20 12:00:00', $this->state()['plan']['preview_at']);
+        self::assertCount(1, $this->mails);
+    }
+
+    /**
+     * A previous event with no end time: the preview falls back to N days
+     * before the event at HH:MM (by default the day before the send day, at
+     * the send time).
+     */
+    public function testWithoutAnEndTimeThePreviewFallsBackToDaysBefore(): void
+    {
+        $this->options[Newsletter::DAYS_OPTION] = 3;
+        $this->event(1, '2026-07-19', 'Last Night');
+        $this->event(2, '2026-07-27', 'Next Night');
+
+        $this->newsletter()->run();
+        self::assertNull($this->state()['plan'], 'The default is 4 days before: 2026-07-23 09:00.');
+
+        $this->options[NewsletterSchedule::PREVIEW_DAYS_OPTION] = 8;
+        $this->options[NewsletterSchedule::PREVIEW_TIME_OPTION] = '07:15';
+        $this->queueOrganizer();
+        $this->newsletter()->run();
+
+        $plan = $this->state()['plan'];
+        self::assertSame('2026-07-19 07:15:00', $plan['preview_at']);
+        self::assertSame('2026-07-24 09:00:00', $plan['send_at']);
+        self::assertCount(1, $this->mails);
+    }
+
+    /**
+     * "N days before" chosen even with a previous event: its end is not
+     * used. A plan made before its preview time keeps the preview back.
+     */
+    public function testDaysBeforeIgnoresThePreviousEvent(): void
+    {
+        $this->options[Newsletter::DAYS_OPTION] = 2;
+        $this->options[NewsletterSchedule::PREVIEW_MODE_OPTION] = NewsletterSchedule::PREVIEW_BEFORE_EVENT;
+        $this->options[NewsletterSchedule::PREVIEW_DAYS_OPTION] = 3;
+        $this->options[NewsletterSchedule::PREVIEW_TIME_OPTION] = '20:00';
+        $this->event(1, '2026-07-19', 'Last Night', ['_eventmesh_ends_at' => '2026-07-20T02:00:00']);
+        $this->event(2, '2026-07-23', 'Next Night');
+
+        $this->newsletter()->run();
+
+        // The send time is 2026-07-21 09:00, so the plan is made a day before
+        // it (now), and the preview waits for 20:00.
+        $plan = $this->state()['plan'];
+        self::assertSame('2026-07-20 20:00:00', $plan['preview_at']);
+        self::assertFalse($plan['previewed']);
+        self::assertSame([], $this->mails);
+    }
+
+    /** A preview time that is not before the send time: the preview goes with the plan. */
+    public function testAPreviewNotBeforeTheSendTimeGoesWithThePlan(): void
+    {
+        $this->options[Newsletter::DAYS_OPTION] = 3;
+        $this->options[NewsletterSchedule::PREVIEW_MODE_OPTION] = NewsletterSchedule::PREVIEW_BEFORE_EVENT;
+        $this->options[NewsletterSchedule::PREVIEW_DAYS_OPTION] = 2;
+        $this->event(2, '2026-07-24', 'Next Night');
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        $plan = $this->state()['plan'];
+        self::assertSame('2026-07-21 09:00:00', $plan['send_at']);
+        self::assertSame('2026-07-22 09:00:00', $plan['preview_at']);
+        self::assertTrue($plan['previewed']);
+        self::assertCount(1, $this->mails);
+    }
+
+    /** A held-back preview goes at the first run at or after its time. */
+    public function testAHeldPreviewGoesAtItsTime(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $plan = [
+            'send_at' => '2026-07-21 09:00:00',
+            'preview_at' => '2026-07-20 13:00:00',
+            'previewed' => false,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ];
+        $this->withPlan($plan);
+
+        $this->newsletter()->run();
+        self::assertSame([], $this->mails);
+        self::assertFalse($this->state()['plan']['previewed']);
+
+        $this->withPlan(['preview_at' => '2026-07-20 12:00:00'] + $plan);
+        $this->queueOrganizer();
+        $this->newsletter()->run();
+
+        self::assertCount(1, $this->mails);
+        self::assertTrue($this->state()['plan']['previewed']);
+        self::assertSame(Newsletter::PLAN_PLANNED, $this->state()['plan']['status']);
+    }
+
+    /** The sending starts at the first run at or after the send time, not the start of its day. */
+    public function testTheSendingStartsAtTheSendTime(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $plan = [
+            'send_on' => '2026-07-20',
+            'send_at' => '2026-07-20 12:30:00',
+            'preview_at' => '2026-07-19 09:00:00',
+            'previewed' => true,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ];
+        $this->withPlan($plan);
+
+        $this->newsletter()->run();
+        self::assertSame(Newsletter::PLAN_PLANNED, $this->state()['plan']['status']);
+
+        $this->withPlan(['send_at' => '2026-07-20 12:00:00'] + $plan);
+        $this->newsletter()->run();
+        self::assertSame(Newsletter::PLAN_SENDING, $this->state()['plan']['status']);
+    }
+
+    /** The send time came before the preview went: the preview first, the sending on the next run. */
+    public function testAPreviewNotYetSentGoesBeforeTheSending(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->withPlan([
+            'send_on' => '2026-07-20',
+            'send_at' => '2026-07-20 11:00:00',
+            'preview_at' => '2026-07-20 10:00:00',
+            'previewed' => false,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ]);
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+        self::assertCount(1, $this->mails);
+        self::assertSame(Newsletter::PLAN_PLANNED, $this->state()['plan']['status']);
+
+        $this->newsletter()->run();
+        self::assertSame(Newsletter::PLAN_SENDING, $this->state()['plan']['status']);
+    }
+
+    /** A text change before the preview went sends no preview; the preview carries it later. */
+    public function testATextChangeBeforeThePreviewSendsNothing(): void
+    {
+        $this->withPlan([
+            'preview_at' => '2026-07-20 20:00:00',
+            'previewed' => false,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ]);
+
+        $this->newsletter()->onTextChanged();
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testScheduleSettingsReadAndClamp(): void
+    {
+        self::assertSame(NewsletterSchedule::PREVIEW_AFTER_PREVIOUS, NewsletterSchedule::previewMode());
+        self::assertSame(0, NewsletterSchedule::previewHours());
+        self::assertSame(8, NewsletterSchedule::previewDays());
+        self::assertSame('09:00', NewsletterSchedule::sendTime());
+        self::assertSame('09:00', NewsletterSchedule::previewTime());
+
+        $this->options['eventcrew_notify_hour'] = 7;
+        self::assertSame('07:00', NewsletterSchedule::sendTime(), 'The default follows the send window.');
+
+        self::assertSame('07:05', NewsletterSchedule::parseTime('7:05'));
+        self::assertNull(NewsletterSchedule::parseTime('24:00'));
+        self::assertNull(NewsletterSchedule::parseTime('9'));
+        self::assertSame(168, NewsletterSchedule::clampPreviewHours(500));
+        self::assertSame(1, NewsletterSchedule::clampPreviewDays(0));
+        self::assertSame('2026-03-01 01:00:00', NewsletterSchedule::addHours('2026-02-28 23:00:00', 2));
     }
 }

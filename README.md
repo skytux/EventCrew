@@ -172,6 +172,27 @@ the model:
 `\EventCrew\Support\AssistantSettings::saveConnection($url, $model, $apiKey, $enabled)` sets the
 connection from a one-off script (`wp eval`).
 
+### Translated texts
+
+Some texts are written once, in any language, and kept in Finnish and English
+(`\EventCrew\Support\TranslatedText`): the bot's About and Description, and the
+organizer text of the next events announcement. Each stores the text as written,
+one text per language, and a per-language "edited by hand" mark.
+
+- With **Translate texts automatically with the language model** on (the
+  default, under the language model settings), a save sends the text to the
+  model, which fills every language field not edited by hand. A field in the
+  language the text was written in gets the text itself.
+- A field changed by hand is marked and not overwritten. **Translate again**
+  translates every language, the hand-edited ones too, and clears the marks.
+  Emptying a field clears its mark.
+- With the switch off, nothing is sent to the model. Without a model, or when
+  the translation fails, the fields keep what they had, empty ones get the text
+  as written, and the admin sees a notice.
+- The four old About/Description fields (English, Finnish) were moved into this
+  form once: both texts are kept and marked as edited by hand, and the English
+  one becomes the written text.
+
 The board itself is grouped by event: two inert heading rows — `📅` and the
 event's name, then its date — introduce each group, and its tasks follow as
 Join/leave buttons leading with the job (`🎈 Decorate · 17:00–18:30 · 1/3`).
@@ -285,20 +306,27 @@ events announcement**.
   status (pending, confirmed, left), the sign-up time and the confirm time; no
   name.
 - **Timing.** The announcement goes out by itself a set number of days before
-  each event (**Days before the event**, default 7). Events that fall in the
-  same window go into one announcement, and each event is in at most one
-  announcement. The day before sending, every organizer gets a preview email with
-  the announcement exactly as subscribers get it (HTML) and a signed **Stop this
-  announcement** link; the crew app's
-  Admin tab has the same button. A stopped announcement is not sent. Sending runs
-  in WP-Cron batches of 20.
+  each event at a set time (**Send the newsletter**: days, default 7, and a time,
+  default the hour the send window opens). Events that fall in the same window
+  go into one announcement, and each event is in at most one announcement.
+  Before sending, every organizer gets a preview email with the announcement
+  exactly as subscribers get it (HTML) and a signed **Stop this announcement**
+  link; the crew app's Admin tab has the same button. **Send the preview** is
+  either a number of hours after the previous event ends (the default, 0 hours)
+  or a number of days before the event at a set time; the first uses the second
+  when there is no previous event or it has no end time. The sending is planned
+  at the preview time, and at the latest one day before the sending; a preview
+  time that is not before the sending time sends the preview then. All times are
+  in the site time zone; the hourly run acts at its first run after each time.
+  A stopped announcement is not sent. Sending runs in WP-Cron batches of 20.
 - **Organizer text.** An organizer can add a text to the next announcement, with
   `/newsletter <text>` in a private chat with the bot, by telling the bot in
   plain words in that chat (the bot shows the exact text with a Confirm button
-  before saving it), or in the crew app's Admin tab. The text is written once, in Finnish or English, and translated
-  into the other language through the language model when it is saved. Without
-  a model, or when the translation fails, both languages show the text as it
-  was written and the organizer is told. The text is removed after the
+  before saving it), or in the crew app's Admin tab. The text is written once, in any language, and translated
+  into Finnish and English through the language model when it is saved (see
+  *Translated texts*). With the translation switch off, without a model, or when
+  the translation fails, both languages show the text as it was written and the
+  organizer is told. The text is removed after the
   announcement is sent.
 - **Language.** Every card and the organizer text carry Finnish first, then
   English, each labelled. A card shows EventMesh's Finnish title under the
@@ -387,7 +415,11 @@ shipped code actually reads, so there are no dead switches.
   webhook*, then add the bot to your group. On hosts that block `/wp-json`, tick
   the admin-ajax fallback; where DNS is filtered, tick the DoH bypass. Re-run the
   webhook install after upgrades so new commands appear in the bot menu. The live
-  webhook status is shown on the page.
+  webhook status is shown on the page. The bot's **About** and **Description**
+  are each written once, in any language, under *Write in any language*; the
+  Finnish and English fields below it are filled by the language model (see
+  *Translated texts*). On save, each language text that changed is sent to
+  Telegram: English as the default (no language code), Finnish with `fi`.
 - **Settings → Reputation** — outcome weights, the good-standing threshold, the
   sign-up gate, tasks-per-credit, "rated after" and the recency half-life.
 - **Settings → Notifications** — enable the on-request cron fallback if your host

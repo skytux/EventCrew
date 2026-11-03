@@ -9,6 +9,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\TranslatedText;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -86,7 +87,7 @@ final class NewsletterTextTest extends TestCase
     public function testAFinnishTextIsTranslatedIntoEnglish(): void
     {
         $this->withModel();
-        $this->answer = '{"lang": "fi", "translation": "See you on the dance floor!"}';
+        $this->answer = '{"lang": "fi", "en": "See you on the dance floor!"}';
 
         $result = $this->text()->set('  Nähdään tanssilattialla!  ', 7);
 
@@ -110,13 +111,46 @@ final class NewsletterTextTest extends TestCase
     public function testAnEnglishTextIsTranslatedIntoFinnish(): void
     {
         $this->withModel();
-        $this->answer = "```json\n{\"lang\": \"en\", \"translation\": \"Tervetuloa!\"}\n```";
+        $this->answer = "```json\n{\"lang\": \"en\", \"fi\": \"Tervetuloa!\"}\n```";
 
         $result = $this->text()->set('Welcome!', 7);
 
         self::assertTrue($result['translated']);
         self::assertSame('Tervetuloa!', $result['fi']);
         self::assertSame('Welcome!', $result['en']);
+    }
+
+    /** A text in a third language is translated into both. */
+    public function testATextInAnotherLanguageIsTranslatedIntoBoth(): void
+    {
+        $this->withModel();
+        $this->answer = '{"lang": "sv", "fi": "Tervetuloa!", "en": "Welcome!"}';
+
+        $result = $this->text()->set('Välkommen!', 7);
+
+        self::assertTrue($result['translated']);
+        self::assertSame('Tervetuloa!', $result['fi']);
+        self::assertSame('Welcome!', $result['en']);
+        self::assertSame('sv', $result['source']);
+    }
+
+    /**
+     * The switch "Translate texts automatically" off: the model is set up
+     * but nothing is sent to it, and both languages hold the text as written.
+     */
+    public function testWithTheSwitchOffNothingIsSentToTheModel(): void
+    {
+        $this->withModel();
+        $this->options[TranslatedText::AUTO_OPTION] = '0';
+        $this->answer = '{"lang": "fi", "en": "Welcome!"}';
+
+        $result = $this->text()->set('Tervetuloa!', 7);
+
+        self::assertTrue($result['saved']);
+        self::assertFalse($result['translated']);
+        self::assertSame(TranslatedText::ERROR_OFF, $result['error']);
+        self::assertSame('Tervetuloa!', $result['en']);
+        self::assertSame([], $this->requests);
     }
 
     /**
@@ -179,15 +213,5 @@ final class NewsletterTextTest extends TestCase
 
         $this->text()->clearIfRevision(2);
         self::assertNull($this->text()->get());
-    }
-
-    public function testParseRejectsAnotherLanguage(): void
-    {
-        self::assertNull(NewsletterText::parse('{"lang": "sv", "translation": "Välkommen"}'));
-        self::assertNull(NewsletterText::parse('{"lang": "fi", "translation": ""}'));
-        self::assertSame(
-            ['lang' => 'en', 'translation' => 'Hei'],
-            NewsletterText::parse('{"lang":"EN","translation":"Hei"}')
-        );
     }
 }

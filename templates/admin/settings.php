@@ -28,6 +28,11 @@
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
  * @var int $newsletter_days Days before an event the newsletter goes out.
+ * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
+ * @var int $newsletter_preview_hours Hours after the previous event ends that the preview goes.
+ * @var int $newsletter_preview_days Days before the event that the preview goes (the other choice).
+ * @var string $newsletter_preview_time The preview time of day, HH:MM.
+ * @var string $newsletter_send_time The time of day the newsletter goes, HH:MM.
  * @var bool $newsletter_crew Whether crew members with a verified email are added to the newsletter.
  * @var int $newsletter_bar_image The sign-up bar's background image (attachment id; 0 = none).
  * @var string $newsletter_bar_image_url That image's medium size URL for the preview, or ''.
@@ -63,8 +68,8 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, profile: array<string, string>, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
- * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string, translate_auto: bool} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
 
@@ -1405,18 +1410,60 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('On', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. Before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Send the preview', 'eventcrew'); ?></th>
+                <td>
+                    <?php $ec_schedule = \EventCrew\Support\NewsletterSchedule::class; ?>
+                    <fieldset>
+                        <label>
+                            <input type="radio" name="newsletter_preview_mode"
+                                value="<?php echo esc_attr($ec_schedule::PREVIEW_AFTER_PREVIOUS); ?>"
+                                <?php checked($newsletter_preview_mode, $ec_schedule::PREVIEW_AFTER_PREVIOUS); ?>>
+                            <input type="number" name="newsletter_preview_hours"
+                                min="0" max="<?php echo esc_attr((string) $ec_schedule::MAX_PREVIEW_HOURS); ?>"
+                                step="1" class="small-text"
+                                aria-label="<?php esc_attr_e('Hours', 'eventcrew'); ?>"
+                                value="<?php echo esc_attr((string) $newsletter_preview_hours); ?>">
+                            <?php esc_html_e('hours after the previous event ends', 'eventcrew'); ?>
+                        </label>
+                        <br>
+                        <label>
+                            <input type="radio" name="newsletter_preview_mode"
+                                value="<?php echo esc_attr($ec_schedule::PREVIEW_BEFORE_EVENT); ?>"
+                                <?php checked($newsletter_preview_mode, $ec_schedule::PREVIEW_BEFORE_EVENT); ?>>
+                            <input type="number" name="newsletter_preview_days"
+                                min="<?php echo esc_attr((string) $ec_schedule::MIN_PREVIEW_DAYS); ?>"
+                                max="<?php echo esc_attr((string) $ec_schedule::MAX_PREVIEW_DAYS); ?>"
+                                step="1" class="small-text"
+                                aria-label="<?php esc_attr_e('Days', 'eventcrew'); ?>"
+                                value="<?php echo esc_attr((string) $newsletter_preview_days); ?>">
+                            <?php esc_html_e('days before the event, at', 'eventcrew'); ?>
+                            <input type="time" name="newsletter_preview_time"
+                                aria-label="<?php esc_attr_e('Time', 'eventcrew'); ?>"
+                                value="<?php echo esc_attr($newsletter_preview_time); ?>">
+                        </label>
+                    </fieldset>
+                    <p class="description">
+                        <?php esc_html_e('When every organizer gets the preview email. With no previous event, or a previous event with no end time, the second choice is used. A preview time that is not before the sending time sends the preview one day before the sending. Times are in the site time zone and are checked once an hour.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>
             <tr>
                 <th scope="row">
-                    <label for="ec-newsletter-days"><?php esc_html_e('Days before the event', 'eventcrew'); ?></label>
+                    <label for="ec-newsletter-days"><?php esc_html_e('Send the newsletter', 'eventcrew'); ?></label>
                 </th>
                 <td>
                     <input type="number" id="ec-newsletter-days" name="newsletter_days"
                         min="1" max="60" step="1" class="small-text"
                         value="<?php echo esc_attr((string) $newsletter_days); ?>">
+                    <?php esc_html_e('days before the event, at', 'eventcrew'); ?>
+                    <input type="time" name="newsletter_send_time"
+                        aria-label="<?php esc_attr_e('Time', 'eventcrew'); ?>"
+                        value="<?php echo esc_attr($newsletter_send_time); ?>">
                     <p class="description">
                         <?php esc_html_e('How many days before each event the next events announcement goes out. Events that fall in the same window go in one announcement.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
@@ -1579,20 +1626,18 @@ if (! defined('ABSPATH')) {
                 </td>
             </tr>
             <?php
-            // The bot's About and Description, per language. Saving sends
-            // each changed text to Telegram; an empty field clears it there.
+            // The bot's About and Description: written once, kept in every
+            // language (BotProfileSettings). Saving sends each changed
+            // language text to Telegram; an empty field clears it there.
             $eventcrew_profile_fields = [
-                ['telegram_about_en', __('About (English)', 'eventcrew'), 120, false],
-                ['telegram_about_fi', __('About (Finnish)', 'eventcrew'), 120, false],
-                ['telegram_description_en', __('Description (English)', 'eventcrew'), 512, true],
-                ['telegram_description_fi', __('Description (Finnish)', 'eventcrew'), 512, true],
+                ['about', __('About', 'eventcrew'), 120, false],
+                ['description', __('Description', 'eventcrew'), 512, true],
             ];
             ?>
             <?php foreach ($eventcrew_profile_fields as $eventcrew_pf) : ?>
                 <?php
                 [$eventcrew_pf_name, $eventcrew_pf_label, $eventcrew_pf_max, $eventcrew_pf_area] = $eventcrew_pf;
-                $eventcrew_pf_id = 'eventcrew-' . str_replace('_', '-', $eventcrew_pf_name);
-                $eventcrew_pf_text = $telegram['profile'][$eventcrew_pf_name] ?? '';
+                $eventcrew_pf_id = 'eventcrew-telegram-' . $eventcrew_pf_name;
                 ?>
                 <tr>
                     <th scope="row">
@@ -1601,24 +1646,16 @@ if (! defined('ABSPATH')) {
                         </label>
                     </th>
                     <td>
-                        <?php if ($eventcrew_pf_area) : ?>
-                            <textarea
-                                id="<?php echo esc_attr($eventcrew_pf_id); ?>"
-                                name="<?php echo esc_attr($eventcrew_pf_name); ?>"
-                                rows="4"
-                                maxlength="<?php echo esc_attr((string) $eventcrew_pf_max); ?>"
-                                class="large-text"><?php echo esc_textarea($eventcrew_pf_text); ?></textarea>
-                        <?php else : ?>
-                            <input
-                                type="text"
-                                id="<?php echo esc_attr($eventcrew_pf_id); ?>"
-                                name="<?php echo esc_attr($eventcrew_pf_name); ?>"
-                                maxlength="<?php echo esc_attr((string) $eventcrew_pf_max); ?>"
-                                value="<?php echo esc_attr($eventcrew_pf_text); ?>"
-                                class="large-text">
-                        <?php endif; ?>
+                        <?php
+                        \EventCrew\Support\TranslatedText::field(
+                            \EventCrew\Admin\BotProfileSettings::POST_NAME . '[' . $eventcrew_pf_name . ']',
+                            $eventcrew_pf_id,
+                            $telegram['profile'][$eventcrew_pf_name],
+                            $eventcrew_pf_max,
+                            $eventcrew_pf_area
+                        );
+                        ?>
                         <p class="description">
-                            <span class="ec-char-count" data-ec-for="<?php echo esc_attr($eventcrew_pf_id); ?>"></span>
                             <?php
                             printf(
                                 /* translators: %d: the most characters Telegram allows in this text */
@@ -1627,7 +1664,7 @@ if (! defined('ABSPATH')) {
                             );
                             ?>
                         </p>
-                        <?php if ('telegram_description_fi' === $eventcrew_pf_name) : ?>
+                        <?php if ('description' === $eventcrew_pf_name) : ?>
                             <p class="description">
                                 <?php esc_html_e('Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                             </p>
@@ -1686,6 +1723,7 @@ if (! defined('ABSPATH')) {
             });
         })();
         </script>
+        <?php \EventCrew\Support\TranslatedText::script(); ?>
 
         <?php if ($telegram['secret_in_url']) : ?>
             <div class="notice notice-warning inline" style="margin:1em 0">
@@ -1864,6 +1902,20 @@ if (! defined('ABSPATH')) {
                     <a class="button" href="<?php echo esc_url($assistant['test_url']); ?>"><?php esc_html_e('Test connection', 'eventcrew'); ?></a>
                     <p class="description">
                         <?php esc_html_e('Save first. The test sends one tiny request with the saved settings.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Translation', 'eventcrew'); ?></th>
+                <td>
+                    <input type="hidden" name="translate_auto_present" value="1">
+                    <label>
+                        <input type="checkbox" name="translate_auto" value="1"
+                            <?php checked($assistant['translate_auto']); ?>>
+                        <?php esc_html_e('Translate texts automatically with the language model', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each Finnish and English field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>
