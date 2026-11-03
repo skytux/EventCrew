@@ -362,6 +362,81 @@ final class NewsletterControllerTest extends TestCase
         }
     }
 
+    // ---- The answer without a new page ------------------------------------
+
+    /** The box for the script: the answer, the form again, back to the page it came from; no style or script. */
+    public function testTheAnswerBoxKeepsTheFormAfterAWrongAddress(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $page = 'https://example.test/fi/';
+
+        $html = $this->controller()->answerHtml(
+            NewsletterController::RESULT_INVALID,
+            '',
+            $page,
+            NewsletterController::FORM_ANCHOR
+        );
+
+        self::assertStringContainsString('That does not look like an email address.', $html);
+        self::assertStringContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $html);
+        self::assertStringContainsString('name="redirect_to" value="' . $page . '"', $html);
+        self::assertStringNotContainsString('<style', $html);
+        self::assertStringNotContainsString('<script', $html);
+    }
+
+    /** After a sign-up the answer box asks for the name, and Skip leads back to the page. */
+    public function testTheAnswerBoxAsksForTheName(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $token = NewsletterController::signNameToken(5);
+
+        $html = $this->controller()->answerHtml(
+            NewsletterController::RESULT_SENT,
+            $token,
+            'https://example.test/',
+            NewsletterController::FORM_ANCHOR
+        );
+
+        self::assertStringContainsString('eventcrew-newsletter-message', $html);
+        self::assertStringContainsString('name="token" value="' . $token . '"', $html);
+        self::assertStringContainsString('href="https://example.test/?eventcrew_newsletter=sent#', $html);
+        self::assertStringNotContainsString('name="' . NewsletterController::EMAIL_FIELD . '"', $html);
+    }
+
+    /** The bar's answer: the message and the second step inside the bar, with its close button. */
+    public function testTheAnswerBarHoldsTheMessageAndTheSecondStep(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+
+        $html = $this->controller()->answerHtml(
+            NewsletterController::RESULT_SENT,
+            NewsletterController::signNameToken(0),
+            'https://example.test/',
+            NewsletterController::BAR_ANCHOR
+        );
+
+        self::assertStringContainsString('eventcrew-nl-bar-message', $html);
+        self::assertStringContainsString('<label for="eventcrew-nl-bar-name"', $html);
+        self::assertStringContainsString('eventcrew-nl-bar-close', $html);
+        self::assertStringNotContainsString('id="' . NewsletterController::BAR_ANCHOR . '"', $html);
+        self::assertStringNotContainsString('<script', $html);
+    }
+
+    /** The page gets the sending script once, with the first form. */
+    public function testThePageGetsTheSendingScriptOnce(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $controller = $this->controller();
+
+        $page = $controller->renderShortcode() . self::bar($controller);
+
+        self::assertSame(1, substr_count($page, 'window.eventcrewNlAjax=1'));
+    }
+
     // ---- The manage page --------------------------------------------------
 
     /** Opening the link only shows the page, with the name and language filled in. */
