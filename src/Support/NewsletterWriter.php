@@ -19,10 +19,13 @@ namespace EventCrew\Support;
  * (practical()), so nothing is invented; a DJ name is never the venue. The
  * card shows these as short lines under the title.
  *
- * Each text is written in English first and then translated into Finnish with
- * a second request. The model gets the event (titles, date, time, the whole
- * description), its DJs from EventMesh (the DJ_FILTER filter), the site's own
- * words (WORDS_OPTION) and the texts it wrote for the last MEMORY_SIZE
+ * Each announcement text is written in Finnish first and then translated into
+ * English with a second request, because Finnish to English translates better
+ * (Lou, 2026-11-03). The post-event email's text (writeFollowup()) is still
+ * written in English first and translated into Finnish. The model gets the
+ * event (titles, date, time, the whole description), its DJs from EventMesh
+ * (the DJ_FILTER filter), the site's own words (WORDS_OPTION) and the Finnish
+ * texts it wrote for the last MEMORY_SIZE
  * announcements that were sent (MEMORY_OPTION), so it does not repeat them.
  *
  * The texts are written by Newsletter when it makes the plan for the preview,
@@ -43,7 +46,7 @@ final class NewsletterWriter
     /** The site's words and style for the model, as the organizers wrote them. */
     public const WORDS_OPTION = 'eventcrew_newsletter_words';
 
-    /** The English texts of the last MEMORY_SIZE announcements sent. */
+    /** The Finnish texts (the language the model writes in) of the last MEMORY_SIZE announcements sent. */
     public const MEMORY_OPTION = 'eventcrew_newsletter_written';
 
     /** EventMesh's list of an event's DJs: [['name' => …, 'description' => …], …]. */
@@ -89,20 +92,25 @@ final class NewsletterWriter
         . 'Do not use the word "vol' . 'unteer". '
         . 'Keep the text under 450 characters.';
 
+    /** The banned Finnish word, for the texts written in Finnish; spelled in two parts like the English one. */
+    private const RULE_FI = ' Do not use the word "vapaa' . 'ehtoinen".';
+
     /** The instruction for one event's text. */
     private const EVENT_PROMPT = 'You write the text for one event in the email newsletter of a dance event. '
-        . 'Write 2 to 3 sentences in English that invite people to come and dance at this event. '
+        . 'Write 2 to 3 sentences in Finnish that invite people to come and dance at this event. '
         . 'Be warm and concrete. '
         . 'Use the descriptive words of the DJ descriptions and the facts about the event. '
-        . self::RULES;
+        . self::RULES
+        . self::RULE_FI;
 
     /** The instruction for the opening text of the whole email. */
     private const OPENING_PROMPT = 'You write the opening text of the email newsletter of a dance event. '
         . 'The newsletter lists the coming events below the opening, each with its own text. '
-        . 'Write 2 to 3 sentences in English that welcome the readers '
+        . 'Write 2 to 3 sentences in Finnish that welcome the readers '
         . 'and invite them to come and dance at these events. '
         . 'Be warm and concrete. Do not repeat the details of every event. '
-        . self::RULES;
+        . self::RULES
+        . self::RULE_FI;
 
     /** The instruction for the post-event email's text about the next event. */
     private const FOLLOWUP_PROMPT = 'You write a short text about one coming event of a dance event. '
@@ -128,11 +136,18 @@ final class NewsletterWriter
         . 'The event title is not the venue unless the description says so. '
         . 'Never include door codes, entry codes or any other codes.';
 
-    /** The instruction for the Finnish translation. */
+    /** The instruction for the Finnish translation (the post-event email's text). */
     private const TRANSLATE_PROMPT = 'You translate a short newsletter text from English into Finnish. '
         . 'Write natural, warm Finnish, about as long as the English text and under 500 characters. '
         . 'Keep names, dates, times and emoji exactly as they are. '
         . 'Do not add anything and do not leave anything out.';
+
+    /** The instruction for the English translation (the announcement's texts). */
+    private const TRANSLATE_TO_ENGLISH_PROMPT = 'You translate a short newsletter text from Finnish into English. '
+        . 'Write natural, warm English, about as long as the Finnish text and under 500 characters. '
+        . 'Keep names, dates, times and emoji exactly as they are. '
+        . 'Do not add anything and do not leave anything out. '
+        . 'Do not use the word "vol' . 'unteer".';
 
     public function __construct(
         private readonly LlmClient $llm,
@@ -393,9 +408,10 @@ final class NewsletterWriter
     }
 
     /**
-     * After $plan was sent: keeps its English texts in the memory of the last
-     * MEMORY_SIZE announcements. The opening counts only when it was shown
-     * (the plan carried no organizers' text).
+     * After $plan was sent: keeps its Finnish texts, the language the model
+     * writes them in, in the memory of the last MEMORY_SIZE announcements.
+     * The opening counts only when it was shown (the plan carried no
+     * organizers' text).
      *
      * @param array<string, mixed> $plan
      */
@@ -412,7 +428,7 @@ final class NewsletterWriter
             $text = self::pair($written['events'][(int) ($event['id'] ?? 0)] ?? null);
 
             if (null !== $text) {
-                $texts[] = $text['en'];
+                $texts[] = $text['fi'];
             }
         }
 
@@ -423,7 +439,7 @@ final class NewsletterWriter
         }
 
         $memory = self::memory();
-        $memory[] = ['opening' => null === $opening ? '' : $opening['en'], 'events' => $texts];
+        $memory[] = ['opening' => null === $opening ? '' : $opening['fi'], 'events' => $texts];
 
         update_option(self::MEMORY_OPTION, array_slice($memory, -self::MEMORY_SIZE), false);
     }
@@ -504,13 +520,13 @@ final class NewsletterWriter
      */
     private function writeEvent(array $event): ?array
     {
-        $en = $this->ask(
-            self::system(self::EVENT_PROMPT, true, '{"text": "the English text"}'),
+        $fi = $this->ask(
+            self::system(self::EVENT_PROMPT, true, '{"text": "the Finnish text"}'),
             self::eventInput($event),
             'text'
         );
 
-        return null === $en ? null : $this->withFinnish($en);
+        return null === $fi ? null : $this->withEnglish($fi);
     }
 
     /**
@@ -532,20 +548,20 @@ final class NewsletterWriter
             $names = array_column(self::djs($id), 'name');
             $lines[] = '- ' . self::when($event) . ': ' . self::titles($event)
                 . ([] === $names ? '' : '. DJs (people who play the music, not places): ' . implode(', ', $names));
-            $text = trim((string) ($texts[$id]['en'] ?? ''));
+            $text = trim((string) ($texts[$id]['fi'] ?? ''));
 
             if ('' !== $text) {
                 $lines[] = '  Text about this event: ' . $text;
             }
         }
 
-        $en = $this->ask(
-            self::system(self::OPENING_PROMPT, true, '{"text": "the English text"}'),
+        $fi = $this->ask(
+            self::system(self::OPENING_PROMPT, true, '{"text": "the Finnish text"}'),
             implode("\n", $lines),
             'text'
         );
 
-        return null === $en ? null : $this->withFinnish($en);
+        return null === $fi ? null : $this->withEnglish($fi);
     }
 
     /**
@@ -591,6 +607,22 @@ final class NewsletterWriter
         $fi = $this->ask(self::system(self::TRANSLATE_PROMPT, false, '{"fi": "the Finnish text"}'), $en, 'fi');
 
         return null === $fi ? null : ['fi' => $fi, 'en' => $en];
+    }
+
+    /**
+     * $fi with its English translation, or null.
+     *
+     * @return array{fi: string, en: string}|null
+     */
+    private function withEnglish(string $fi): ?array
+    {
+        $en = $this->ask(
+            self::system(self::TRANSLATE_TO_ENGLISH_PROMPT, false, '{"en": "the English text"}'),
+            $fi,
+            'en'
+        );
+
+        return null === $en ? null : ['fi' => $fi, 'en' => $en];
     }
 
     /** One request; the text under $key of its answer, or null. */

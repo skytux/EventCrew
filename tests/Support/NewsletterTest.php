@@ -292,7 +292,10 @@ final class NewsletterTest extends TestCase
 
         $plan = $this->state()['plan'];
         self::assertSame(Newsletter::PLAN_SENDING, $plan['status']);
-        self::assertSame(['fi' => 'Moi', 'en' => 'Hi', 'rev' => 3], $plan['text']);
+        self::assertSame(
+            ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 3, 'source' => '', 'translated' => false],
+            $plan['text']
+        );
         self::assertSame([Newsletter::HOOK], $this->scheduled);
     }
 
@@ -335,9 +338,11 @@ final class NewsletterTest extends TestCase
     }
 
     /**
-     * Every announcement starts with a greeting of its own: the name when the
-     * subscriber gave one (escaped), a plain "Hei! · Hi!" without. The footer
-     * link opens that subscriber's manage page.
+     * Every announcement starts with a greeting of its own, in the
+     * subscriber's language: "Hei Anna!" for Finnish, "Hi Bo!" for English,
+     * both for a subscriber whose language is not known; the name escaped, a
+     * plain "Hei! · Hi!" without. The footer link opens that subscriber's
+     * manage page.
      */
     public function testEachSubscriberIsGreetedByName(): void
     {
@@ -353,10 +358,12 @@ final class NewsletterTest extends TestCase
 
         self::assertSame(3, $this->newsletter()->sendBatch());
 
-        self::assertStringContainsString('Hei Anna! · Hi Anna!', $this->mails[0]['body']);
+        self::assertStringContainsString('>Hei Anna!</p>', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Hi Anna!', $this->mails[0]['body']);
         self::assertStringContainsString('Hei! · Hi!', $this->mails[1]['body']);
         self::assertStringNotContainsString('Anna', $this->mails[1]['body'], 'one greeting per subscriber');
-        self::assertStringContainsString('Hei &lt;i&gt;Bo&lt;/i&gt;!', $this->mails[2]['body']);
+        self::assertStringContainsString('>Hi &lt;i&gt;Bo&lt;/i&gt;!</p>', $this->mails[2]['body']);
+        self::assertStringNotContainsString('Hei &lt;i&gt;Bo', $this->mails[2]['body']);
         self::assertStringNotContainsString('<i>Bo</i>', $this->mails[2]['body']);
         self::assertLessThan(
             strpos($this->mails[0]['body'], 'Summer Social'),
@@ -367,7 +374,8 @@ final class NewsletterTest extends TestCase
         preg_match('/do=manage&(?:amp;)?token=([A-Za-z0-9_.\-]+)/', $this->mails[0]['body'], $token);
         self::assertNotEmpty($token, 'the footer links to the manage page');
         self::assertSame(4, SignedLink::verify(Newsletter::PURPOSE_MANAGE, $token[1]));
-        self::assertStringContainsString('Change your details or leave the announcement', $this->mails[0]['body']);
+        self::assertStringContainsString('Muuta tietojasi tai peru tiedotteen tilaus', $this->mails[0]['body']);
+        self::assertStringContainsString('Change your details or leave the announcement', $this->mails[1]['body']);
         // The one-click header still unsubscribes.
         self::assertStringContainsString('do=unsubscribe', implode("\n", $this->mails[0]['headers']));
     }
@@ -389,7 +397,6 @@ final class NewsletterTest extends TestCase
     {
         $this->options[Newsletter::ENABLED_OPTION] = '1';
         $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')]]);
-        $this->wpdb->nextVars[] = 12; // countConfirmed
         $this->wpdb->nextResults[] = [
             ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
         ];
@@ -575,6 +582,308 @@ final class NewsletterTest extends TestCase
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.html', $mail['html']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.txt', $mail['text']);
+    }
+
+    /**
+     * The sample announcement of the language tests: a card with a picture,
+     * a price, a ticket and a music page and door times, a sold-out card, a
+     * later event, and the organizers' $text, composed in $lang.
+     *
+     * @param array<string, mixed>|null $text
+     * @param array<string, mixed>|null $opening The language model's opening.
+     * @return array{subject: string, html: string, text: string}
+     */
+    private function composeSample(string $lang, ?array $text, ?array $opening = null): array
+    {
+        $this->event(1, '2026-07-27', 'Summer Dance', [
+            '_eventmesh_image_url' => 'https://cdn.test/1.jpg',
+            '_eventmesh_price' => '27.50 EUR',
+            '_eventmesh_url' => 'https://shop.test/p/1',
+            '_eventmesh_embed_source_url' => 'https://music.test/dj',
+        ]);
+        $this->event(2, '2026-07-28', 'Full House', ['_eventmesh_url' => 'https://shop.test/p/2']);
+        $this->event(3, '2026-08-10', 'Autumn Night', ['_eventmesh_price' => '22 EUR']);
+
+        return $this->newsletter()->compose(
+            [
+                self::planEvent(1, '2026-07-27', 'Summer Dance'),
+                ['sold_out' => true] + self::planEvent(2, '2026-07-28', 'Full House'),
+            ],
+            $text,
+            [self::planEvent(3, '2026-08-10', 'Autumn Night')],
+            [
+                'events' => [],
+                'opening' => $opening,
+                'practical' => [
+                    1 => [
+                        'venue' => 'Old Hall',
+                        'address' => 'Main St 1',
+                        'doors_open' => '18:30',
+                        'doors_close' => '',
+                    ],
+                ],
+            ],
+            $lang
+        );
+    }
+
+    /**
+     * A subscriber whose language is Finnish gets the announcement in Finnish
+     * only: the subject, the heading, the organizers' text with no FI label,
+     * the buttons, the door times and "Later", in the HTML and the text.
+     */
+    public function testAFinnishSubscriberGetsTheAnnouncementInFinnishOnly(): void
+    {
+        $written = ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'source' => 'fi', 'translated' => true];
+        $mail = $this->composeSample('fi', $written);
+        $html = $mail['html'];
+        $text = $mail['text'];
+
+        self::assertSame('Tulevat tapahtumat – Test Site', $mail['subject']);
+        self::assertStringContainsString('>Tulevat tapahtumat</h1>', $html);
+        self::assertStringContainsString('>Tervetuloa!</p>', $html);
+        self::assertStringContainsString('Osta lippu · 27,50 €', $html);
+        self::assertStringContainsString('▶<br>Kuuntele DJ:tä</a>', $html);
+        self::assertStringContainsString('Loppuunmyyty', $html);
+        self::assertStringContainsString('>Myöhemmin</h2>', $html);
+        self::assertStringContainsString('>Ovet aukeavat 18:30</p>', $html);
+        self::assertStringContainsString('Old Hall<br>Main St 1', $html);
+
+        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\n\nTervetuloa!\n\n", $text);
+        self::assertStringContainsString("Main St 1\n\nOvet aukeavat 18:30\n", $text);
+        self::assertStringContainsString('Osta lippu · 27,50 €: https://shop.test/p/1', $text);
+        self::assertStringContainsString('Kuuntele DJ:tä: https://music.test/dj', $text);
+
+        foreach ([$html, $text] as $out) {
+            $english = ['Coming events', 'Welcome!', 'Buy a ticket', 'Listen to the DJ'];
+            $english = [...$english, 'Sold out', 'Later', 'Doors open'];
+            foreach ($english as $en) {
+                self::assertStringNotContainsString($en, $out);
+            }
+
+            self::assertStringNotContainsString('>FI</span>', $out);
+            self::assertStringNotContainsString('FI: ', $out);
+            self::assertStringNotContainsString('Automatically translated', $out);
+            self::assertStringNotContainsString('Käännetty automaattisesti', $out);
+        }
+    }
+
+    /**
+     * A subscriber whose language is English gets the announcement in English
+     * only. The organizers wrote their text in Finnish, so its English was
+     * translated, and the email ends with the small "Automatically
+     * translated" note, in the HTML and the text.
+     */
+    public function testAnEnglishSubscriberGetsTheAnnouncementInEnglishOnly(): void
+    {
+        $written = ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'source' => 'fi', 'translated' => true];
+        $mail = $this->composeSample('en', $written);
+        $html = $mail['html'];
+        $text = $mail['text'];
+        $note = NewsletterLayout::translatedNote();
+
+        self::assertSame('Coming events – Test Site', $mail['subject']);
+        self::assertStringContainsString('>Coming events</h1>', $html);
+        self::assertStringContainsString('>Welcome!</p>', $html);
+        self::assertStringContainsString('Buy a ticket · 27,50 €', $html);
+        self::assertStringContainsString('▶<br>Listen to the DJ</a>', $html);
+        self::assertStringContainsString('Sold out', $html);
+        self::assertStringContainsString('>Later</h2>', $html);
+        self::assertStringContainsString('>Doors open 18:30</p>', $html);
+
+        self::assertStringStartsWith("COMING EVENTS\n\nWelcome!\n\n", $text);
+        self::assertStringContainsString('Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
+        self::assertStringContainsString('Listen to the DJ: https://music.test/dj', $text);
+
+        self::assertStringEndsWith($note['html'], $html);
+        self::assertStringEndsWith("\n\nAutomatically translated", $text);
+        self::assertStringContainsString('font-size:12px', $note['html']);
+        self::assertStringContainsString('>Automatically translated</p>', $note['html']);
+
+        foreach ([$html, $text] as $out) {
+            $finnish = ['Tulevat tapahtumat', 'Tervetuloa!', 'Osta lippu', 'Kuuntele'];
+            $finnish = [...$finnish, 'Loppuunmyyty', 'Myöhemmin', 'Ovet aukeavat'];
+            foreach ($finnish as $fi) {
+                self::assertStringNotContainsString($fi, $out);
+            }
+
+            self::assertStringNotContainsString('>EN</span>', $out);
+            self::assertStringNotContainsString('EN: ', $out);
+        }
+    }
+
+    /**
+     * A subscriber whose language is not known gets the two-language email
+     * exactly as before: the same as compose() without a language, which the
+     * fixture test holds byte for byte. It never has the translated note.
+     */
+    public function testASubscriberWithNoLanguageGetsBothLanguagesAsBefore(): void
+    {
+        $text = ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'source' => 'fi', 'translated' => true];
+        $both = $this->composeSample('', $text);
+        $events = [self::planEvent(1, '2026-07-27', 'Summer Dance')];
+
+        self::assertSame(
+            $this->newsletter()->compose($events, $text),
+            $this->newsletter()->compose($events, $text, [], null, '')
+        );
+        self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $both['subject']);
+        self::assertStringContainsString('FI</span>&nbsp; Tervetuloa!', $both['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Welcome!', $both['html']);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $both['html']);
+        self::assertStringContainsString('Myöhemmin · Later', $both['html']);
+        self::assertStringContainsString("FI: Ovet aukeavat 18:30\nEN: Doors open 18:30", $both['text']);
+        self::assertStringNotContainsString('Automatically translated', $both['html'] . $both['text']);
+    }
+
+    /**
+     * The "Automatically translated" note is on an English-only email when
+     * its English text was translated by the language model: an organizers'
+     * text written in another language, the language model's opening (written
+     * in Finnish), or a text kept from before the source was stored whose
+     * languages differ. An organizers' text written in English, or not
+     * translated, has no note, and neither has a Finnish email.
+     */
+    public function testTheTranslatedNoteIsOnlyOnMachineTranslatedEnglish(): void
+    {
+        $note = 'Automatically translated';
+        $opening = ['fi' => 'Tervetuloa tanssimaan.', 'en' => 'Welcome to dance.'];
+
+        $cases = [
+            'written in Finnish' => [['fi' => 'Moi', 'en' => 'Hi', 'source' => 'fi', 'translated' => true], null, true],
+            'written in English' => [
+                ['fi' => 'Moi', 'en' => 'Hi', 'source' => 'en', 'translated' => true],
+                null,
+                false,
+            ],
+            'not translated' => [['fi' => 'Hi', 'en' => 'Hi', 'source' => '', 'translated' => false], null, false],
+            'the opening' => [null, $opening, true],
+            'old plan, translated' => [['fi' => 'Moi', 'en' => 'Hi', 'rev' => 3], null, true],
+            'old plan, the same' => [['fi' => 'Hi', 'en' => 'Hi', 'rev' => 3], null, false],
+            'no text at all' => [null, null, false],
+        ];
+
+        foreach ($cases as $case => [$text, $written, $expected]) {
+            $mail = $this->composeSample('en', $text, $written);
+            self::assertSame($expected, str_contains($mail['html'], $note), $case . ' (html)');
+            self::assertSame($expected, str_contains($mail['text'], $note), $case . ' (text)');
+
+            foreach (['fi', ''] as $lang) {
+                $other = $this->composeSample($lang, $text, $written);
+                self::assertStringNotContainsString($note, $other['html'] . $other['text'], $case . ' in ' . $lang);
+            }
+        }
+
+        $withOpening = $this->composeSample('en', null, $opening);
+        self::assertStringContainsString('>Welcome to dance.</p>', $withOpening['html']);
+        self::assertStringNotContainsString('Tervetuloa tanssimaan.', $withOpening['html']);
+    }
+
+    /**
+     * One batch with a Finnish, an English and an unknown-language
+     * subscriber: each gets the subject, the body and the footer in their own
+     * language, and only the English one has the translated note.
+     */
+    public function testEachSubscriberGetsTheAnnouncementInTheirLanguage(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->withPlan([
+            'status' => Newsletter::PLAN_SENDING,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+            'text' => ['fi' => 'Moi', 'en' => 'Hi there', 'rev' => 3, 'source' => 'fi', 'translated' => true],
+        ]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'email' => 'fi@example.test', 'name' => 'Anna', 'language' => 'fi'],
+            ['id' => 6, 'email' => 'en@example.test', 'name' => 'Bo', 'language' => 'en'],
+            ['id' => 8, 'email' => 'both@example.test', 'name' => 'Cy', 'language' => ''],
+        ];
+
+        self::assertSame(3, $this->newsletter()->sendBatch());
+
+        [$fi, $en, $both] = $this->mails;
+        self::assertSame('Tulevat tapahtumat – Test Site', $fi['subject']);
+        self::assertSame('Coming events – Test Site', $en['subject']);
+        self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $both['subject']);
+
+        self::assertStringContainsString('>Moi</p>', $fi['body']);
+        self::assertStringNotContainsString('Hi there', $fi['body']);
+        self::assertStringContainsString('Muuta tietojasi tai peru tiedotteen tilaus', $fi['body']);
+        self::assertStringNotContainsString('Change your details', $fi['body']);
+        self::assertStringNotContainsString('Crew members get this', $fi['body']);
+
+        self::assertStringContainsString('>Hi there</p>', $en['body']);
+        self::assertStringNotContainsString('>Moi', $en['body']);
+        self::assertStringContainsString('Change your details or leave the announcement', $en['body']);
+        self::assertStringNotContainsString('Muuta tietojasi', $en['body']);
+        self::assertStringContainsString('Automatically translated', $en['body']);
+        self::assertLessThan(
+            strpos($en['body'], 'Change your details'),
+            strpos($en['body'], 'Automatically translated'),
+            'the note is above the footer'
+        );
+
+        self::assertStringContainsString('Hei Cy! · Hi Cy!', $both['body']);
+        self::assertStringContainsString('FI</span>&nbsp; Moi', $both['body']);
+        self::assertStringContainsString('EN</span>&nbsp; Hi there', $both['body']);
+        self::assertStringContainsString('Muuta tietojasi tai peru tiedotteen tilaus / ', $both['body']);
+
+        foreach ([$fi, $both] as $mail) {
+            self::assertStringNotContainsString('Automatically translated', $mail['body']);
+        }
+    }
+
+    /**
+     * The organizers get one preview per version that has a subscriber: here
+     * Finnish, English and both languages, each with its greeting and a line
+     * that says who gets it. With subscribers of one language only, there is
+     * one preview, of that version.
+     */
+    public function testThePreviewShowsEachVersionThatHasSubscribers(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')]]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['language' => 'fi', 'n' => 2],
+            ['language' => 'en', 'n' => 1],
+            ['language' => '', 'n' => 3],
+        ];
+
+        $method = new \ReflectionMethod(Newsletter::class, 'sendPreview');
+        $method->setAccessible(true);
+
+        self::assertSame(3, $method->invoke($this->newsletter(), $this->state()['plan']));
+        self::assertCount(3, $this->mails);
+        [$fi, $en, $both] = $this->mails;
+
+        self::assertStringEndsWith('(FI)', $fi['subject']);
+        self::assertStringEndsWith('(EN)', $en['subject']);
+        self::assertStringEndsWith('(FI + EN)', $both['subject']);
+
+        self::assertStringContainsString('>Hei Olli!</p>', $fi['body']);
+        self::assertStringContainsString('This is the Finnish version. Subscribers who get it: 2.', $fi['body']);
+        self::assertStringContainsString('Tulevat tapahtumat – Test Site', $fi['body']);
+        self::assertStringNotContainsString('Coming events', $fi['body']);
+
+        self::assertStringContainsString('>Hi Olli!</p>', $en['body']);
+        self::assertStringContainsString('This is the English version. Subscribers who get it: 1.', $en['body']);
+        self::assertStringNotContainsString('Tulevat tapahtumat', $en['body']);
+
+        self::assertStringContainsString('Hei Olli! · Hi Olli!', $both['body']);
+        self::assertStringContainsString('This is the two-language version. Subscribers who get it: 3.', $both['body']);
+        self::assertStringContainsString('goes out on 21.7.2026 to 6 subscribers', $both['body']);
+
+        $this->mails = [];
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
+        ];
+        $this->wpdb->nextResults[] = [['language' => 'en', 'n' => 4]];
+
+        self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
+        self::assertStringEndsWith('(EN)', $this->mails[0]['subject']);
+        self::assertStringContainsString('>Hi Olli!</p>', $this->mails[0]['body']);
     }
 
     /**

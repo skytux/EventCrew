@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.119.0
+Stable tag: 1.120.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.120.0 =
+The next events announcement comes in each subscriber's chosen language: Finnish only, English only, or both when no language is chosen. The language model writes the announcement texts in Finnish first and translates them into English; an English email with translated text ends with a small "Automatically translated" note. Organizers get one preview per language group.
 
 = 1.119.0 =
 The DJ line under the event name in the emails and on the Telegram event cards shows only the names, without "DJ" or "DJs" in front.
@@ -1075,6 +1078,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.120.0 =
+Announcements now go out in each subscriber's chosen language. No database schema change.
 
 = 1.119.0 =
 No settings change.

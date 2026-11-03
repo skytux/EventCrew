@@ -439,6 +439,34 @@ final class NewsletterSubscriberRepository
         return array_values(array_map('strval', is_array($emails) ? $emails : []));
     }
 
+    /**
+     * How many confirmed subscribers get the announcement in each language:
+     * 'fi' and 'en', and '' for those whose language is not known (they get
+     * both languages).
+     *
+     * @return array{fi: int, en: int, '': int}
+     */
+    public function countConfirmedByLanguage(): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT language, COUNT(*) AS n FROM {$this->table()} WHERE status = %s GROUP BY language",
+                self::STATUS_CONFIRMED
+            ),
+            ARRAY_A
+        );
+        $counts = ['fi' => 0, 'en' => 0, '' => 0];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $language = (string) ($row['language'] ?? '');
+            $counts[in_array($language, ['fi', 'en'], true) ? $language : ''] += (int) ($row['n'] ?? 0);
+        }
+
+        return $counts;
+    }
+
     public function countConfirmed(): int
     {
         global $wpdb;

@@ -6746,8 +6746,23 @@ msgstr "Käytämme sitä vain tervehtiessämme sinua tiedotteessa. Voit muuttaa 
 msgid "Here you can change the name we greet you with and your language, or leave the announcement."
 msgstr "Täällä voit muuttaa nimen, jolla sinua tervehditään, ja kielesi, tai perua tiedotteen tilauksen."
 
-msgid "For now the announcement comes in both languages."
-msgstr "Toistaiseksi tiedote tulee molemmilla kielillä."
+msgid "The announcement comes in the language you choose."
+msgstr "Tiedote tulee valitsemallasi kielellä."
+
+msgid "Automatically translated"
+msgstr "Käännetty automaattisesti"
+
+#. translators: %d: number of subscribers who chose Finnish
+msgid "This is the Finnish version. Subscribers who get it: %d."
+msgstr "Tämä on suomenkielinen versio. Tilaajia, jotka saavat sen: %d."
+
+#. translators: %d: number of subscribers who chose English
+msgid "This is the English version. Subscribers who get it: %d."
+msgstr "Tämä on englanninkielinen versio. Tilaajia, jotka saavat sen: %d."
+
+#. translators: %d: number of subscribers who chose no language
+msgid "This is the two-language version. Subscribers who get it: %d."
+msgstr "Tämä on kaksikielinen versio. Tilaajia, jotka saavat sen: %d."
 
 msgid "Leave the announcement"
 msgstr "Peru tiedotteen tilaus"
