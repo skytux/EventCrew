@@ -29,9 +29,16 @@ final class FollowupWpdb extends \FakeWpdb
     /** @var list<list<array<string, mixed>>> counts() rows, buyers then guests. */
     public array $countRows = [];
 
+    /** @var list<array<string, mixed>> The night's task rows (TaskRepository::forDate()). */
+    public array $tasks = [];
+
     public function get_results(string $sql, string $output = 'OBJECT'): mixed
     {
         $this->queries[] = $sql;
+
+        if (str_contains($sql, 'eventcrew_tasks') && [] !== $this->tasks) {
+            return $this->tasks;
+        }
 
         if (str_contains($sql, 'eventcrew_checkins')) {
             return $this->checkins;

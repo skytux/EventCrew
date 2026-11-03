@@ -44,7 +44,7 @@ namespace EventCrew\Support;
  *
  * "The title" is the event's clean name with the DJ line under it when
  * EventMesh has them (EventName), else the title as written. A "Later"
- * picture's alt text keeps the title as written.
+ * picture's alt text is the clean name too.
  *
  * The plain text has no pictures, so each card there starts with the date,
  * the title and the DJ line, then the venue and the address, an empty line,
@@ -92,14 +92,25 @@ final class NewsletterLayout
      *        with the same keys.
      * @param array{fi?: string, en?: string}|null $text The organizers' text.
      * @param string $lang 'fi' or 'en' for a one-language email; '' for both languages.
+     * @param bool $band True for the heading in the confirmation card's look
+     *        (NewsletterConfirmMail::headingBand()), as the thank-you email
+     *        shows it; two-language only.
      */
-    public static function html(array $cards, array $later, ?array $text, string $accent, string $lang = ''): string
-    {
+    public static function html(
+        array $cards,
+        array $later,
+        ?array $text,
+        string $accent,
+        string $lang = '',
+        bool $band = false
+    ): string {
         $lang = self::lang($lang);
         $words = self::words($lang);
         $font = EmailBody::FONT;
 
-        if ('' === $lang) {
+        if ('' === $lang && $band) {
+            $html = NewsletterConfirmMail::headingBand($words['fi']['heading'], $words['en']['heading']);
+        } elseif ('' === $lang) {
             $html = sprintf(
                 '<h1 style="margin:0;font-family:%s;font-size:26px;line-height:1.25;color:%s">%s</h1>'
                     . '<p style="margin:2px 0 24px;font-family:%s;font-size:16px;line-height:1.4;color:%s">%s</p>',
@@ -529,7 +540,7 @@ final class NewsletterLayout
                 . 'style="display:block;width:%dpx;height:auto;border:0;border-radius:6px">',
             esc_url($image),
             self::THUMB_WIDTH,
-            esc_attr(self::title($event)),
+            esc_attr(self::name($event)),
             self::THUMB_WIDTH
         );
 
@@ -588,14 +599,10 @@ final class NewsletterLayout
         return '' === $html ? '' : sprintf('<div style="margin:%s">%s</div>', $margin, $html);
     }
 
-    /** The small grey "FI" or "EN" label in front of a text in that language. */
+    /** The small "FI" or "EN" tag in front of a text in that language (EmailBody::langTag()). */
     private static function labelHtml(string $label): string
     {
-        return sprintf(
-            '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:%s">%s</span>&nbsp; ',
-            self::LABEL_COLOR,
-            $label
-        );
+        return EmailBody::langTag($label);
     }
 
     /**

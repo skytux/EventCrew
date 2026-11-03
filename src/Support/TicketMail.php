@@ -475,12 +475,14 @@ final class TicketMail
         $fi = Language::run(Language::FINNISH, $words);
         $en = Language::run(Language::ENGLISH, $words);
         $subject = $fi['subject'] === $en['subject'] ? $en['subject'] : $fi['subject'] . ' / ' . $en['subject'];
+        // Each language's text starts with its FI / EN tag, when the two differ.
+        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
 
         return [
             'subject' => $subject . ' – ' . $short,
-            'html' => EmailBody::toHtml($fi['body'])
+            'html' => EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
                 . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-                . EmailBody::toHtml($en['body']),
+                . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1]),
             'text' => $fi['body'] . "\n\n" . $en['body'],
         ];
     }
@@ -547,9 +549,11 @@ final class TicketMail
             )
             . '</div>';
 
-        $html = EmailBody::toHtml($fi['body'])
+        // Each language's text starts with its FI / EN tag, when the two differ.
+        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
+        $html = EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
             . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-            . EmailBody::toHtml($en['body'])
+            . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1])
             . $ticket;
 
         $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n"

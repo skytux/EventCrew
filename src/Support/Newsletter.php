@@ -404,12 +404,18 @@ final class Newsletter
      * @param array<int, array<string, mixed>> $later Events through withCard().
      * @param array{fi?: string, en?: string}|null $text
      * @param string $lang 'fi' or 'en' for one language; '' (the default, which FollowupMail uses) for both.
+     * @param bool $band True for the heading as a dark band (FollowupMail); see NewsletterLayout::html().
      * @return array{html: string, text: string}
      */
-    public static function content(array $cards, array $later, ?array $text, string $lang = ''): array
-    {
+    public static function content(
+        array $cards,
+        array $later,
+        ?array $text,
+        string $lang = '',
+        bool $band = false
+    ): array {
         return [
-            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang),
+            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang, $band),
             'text' => NewsletterLayout::text($cards, $later, $text, $lang),
         ];
     }

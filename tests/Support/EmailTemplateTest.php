@@ -152,8 +152,32 @@ final class EmailTemplateTest extends TestCase
 
         self::assertStringContainsString('src="https://site.test/wp-content/uploads/logo.png"', $html);
         self::assertStringNotContainsString('cid:', $html);
-        // 400x100 fits the 260x72 masthead by width, so it lands at 260.
-        self::assertStringContainsString('width="260"', $html);
+        // 400x100 fits the 536x140 masthead as it is: never drawn larger.
+        self::assertStringContainsString('width="400" height="100"', $html);
+    }
+
+    /**
+     * The banner at the top fills the masthead: a wide banner is drawn the
+     * full 536px content width, a tall one up to 140px high, with width and
+     * height attributes for Outlook and max-width:100% for a phone.
+     */
+    public function testTheBannerIsBigAndKeepsItsProportions(): void
+    {
+        Functions\when('get_theme_mod')->justReturn(9);
+        Functions\when('wp_get_attachment_image_src')->justReturn(
+            ['https://site.test/wp-content/uploads/banner.png', 1600, 400]
+        );
+
+        $html = EmailTemplate::logoHtml();
+
+        self::assertStringContainsString('width="536" height="134"', $html);
+        self::assertStringContainsString('width:536px;max-width:100%;height:auto', $html);
+
+        Functions\when('wp_get_attachment_image_src')->justReturn(
+            ['https://site.test/wp-content/uploads/tall.png', 600, 600]
+        );
+
+        self::assertStringContainsString('width="140" height="140"', EmailTemplate::logoHtml());
     }
 
     public function testAnExplicitLogoUrlWins(): void

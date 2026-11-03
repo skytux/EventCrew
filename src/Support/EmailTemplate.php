@@ -35,6 +35,12 @@ final class EmailTemplate
     /** The slot the message drops into; a wrapper without it is unusable. */
     private const CONTENT_TAG = '{{content}}';
 
+    /** The widest the banner at the top is drawn: the 600px card less its 32px padding each side. */
+    private const MASTHEAD_WIDTH = 536;
+
+    /** The tallest the banner at the top is drawn. */
+    private const MASTHEAD_HEIGHT = 140;
+
     /**
      * The masthead links its image rather than embedding it as an inline (CID)
      * attachment. Embedding was tried and reverted in 1.10.2: attaching happens
@@ -413,27 +419,37 @@ final class EmailTemplate
      * than CSS alone - Outlook sizes images from the attribute and ignores much
      * of the rest. A tall logo is bounded by height, a wide banner by width, so
      * a square icon and a letterbox banner both land at a sensible size.
+     *
+     * The banner may fill the masthead's whole width (MASTHEAD_WIDTH, the
+     * 600px card less its 32px padding each side) and stand up to
+     * MASTHEAD_HEIGHT tall; a picture is never drawn larger than it is. When
+     * the size is known, a height attribute goes with the width, so Outlook
+     * keeps the proportions; max-width:100% and height:auto shrink it on a
+     * phone.
      */
     private static function image(string $url, int $width, int $height): string
     {
-        $maxWidth = 260;
-        $maxHeight = 72;
+        $maxWidth = self::MASTHEAD_WIDTH;
+        $maxHeight = self::MASTHEAD_HEIGHT;
         $rendered = $maxWidth;
+        $renderedHeight = 0;
 
         if ($width > 0 && $height > 0) {
             $scale = min($maxWidth / $width, $maxHeight / $height, 1.0);
             $rendered = (int) round($width * $scale);
+            $renderedHeight = (int) round($height * $scale);
         }
 
         // margin:0 auto, not the td's align="center": that attribute sets
         // text-align, which centres inline content and does nothing for a
         // display:block image - the logo would sit against the left padding.
         return sprintf(
-            '<img src="%s" alt="%s" width="%d" style="display:block;margin:0 auto;border:0;outline:none;'
+            '<img src="%s" alt="%s" width="%d"%s style="display:block;margin:0 auto;border:0;outline:none;'
                 . 'width:%dpx;max-width:100%%;height:auto">',
             esc_url($url),
             esc_attr(self::siteName()),
             $rendered,
+            $renderedHeight > 0 ? sprintf(' height="%d"', $renderedHeight) : '',
             $rendered
         );
     }

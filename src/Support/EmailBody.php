@@ -34,14 +34,23 @@ final class EmailBody
     /** "[text](#anchor)": a link to a heading in the same message. */
     private const ANCHOR_LINK = '/\[([^\]\n]+)\]\(#([a-z0-9-]+)\)/';
 
+    /** The colour of the FI / EN language tag on a light background: a muted gold. */
+    public const TAG_COLOR = '#9a7440';
+
     /**
      * @param array<int, array{label: string, url: string}> $actions Buttons to
      *        show under the text, most important first - the first is drawn
      *        filled, the rest outlined.
+     * @param string $tag 'FI' or 'EN': the language tag (langTag()) at the
+     *        start of the first paragraph; '' for none.
      */
-    public static function toHtml(string $text, array $actions = [], string $accent = '#4a6cf7'): string
-    {
-        $html = self::blocks($text);
+    public static function toHtml(
+        string $text,
+        array $actions = [],
+        string $accent = '#4a6cf7',
+        string $tag = ''
+    ): string {
+        $html = self::blocks($text, $tag);
 
         foreach (self::buttons($actions, $accent) as $button) {
             $html .= $button;
@@ -151,11 +160,12 @@ final class EmailBody
      * Paragraphs, and lists for runs of "- " lines (the open-task roll-up and
      * the recent-task recap both write those).
      */
-    private static function blocks(string $text): string
+    private static function blocks(string $text, string $tag = ''): string
     {
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $blocks = preg_split('/\n{2,}/', trim($text)) ?: [];
         $html = '';
+        $prefix = '' === $tag ? '' : self::langTag($tag);
 
         foreach ($blocks as $block) {
             $block = trim($block, "\n");
@@ -170,10 +180,37 @@ final class EmailBody
                 continue;
             }
 
-            $html .= self::isList($block) ? self::list($block) : self::paragraph($block);
+            if (self::isList($block)) {
+                $html .= self::list($block);
+
+                continue;
+            }
+
+            // The language tag goes in front of the first paragraph only.
+            $html .= self::paragraph($block, $prefix);
+            $prefix = '';
         }
 
         return $html;
+    }
+
+    /**
+     * The small "FI" or "EN" tag at the start of a text in that language, so
+     * a reader of a two-language email finds their part at a glance: bold,
+     * letter-spaced, in a thin rounded frame, in $color (a muted gold by
+     * default; a lighter one on a dark card). The space after it is written
+     * out, as Outlook drops the margin of an inline element.
+     */
+    public static function langTag(string $label, string $color = self::TAG_COLOR): string
+    {
+        return sprintf(
+            '<span style="display:inline-block;padding:0 6px;border:1px solid %1$s;'
+                . 'border-radius:4px;font-family:%2$s;font-size:11px;font-weight:700;line-height:17px;'
+                . 'letter-spacing:.1em;color:%1$s;vertical-align:1px">%3$s</span>&nbsp; ',
+            esc_attr($color),
+            self::FONT,
+            esc_html($label)
+        );
     }
 
     private static function isHeading(string $block): bool
@@ -230,12 +267,13 @@ final class EmailBody
         );
     }
 
-    private static function paragraph(string $block): string
+    private static function paragraph(string $block, string $prefix = ''): string
     {
         return sprintf(
-            '<p style="margin:0 0 16px;font-family:%s;font-size:16px;line-height:1.6;color:%s">%s</p>',
+            '<p style="margin:0 0 16px;font-family:%s;font-size:16px;line-height:1.6;color:%s">%s%s</p>',
             self::FONT,
             self::TEXT_COLOR,
+            $prefix,
             str_replace("\n", '<br>', self::inline($block))
         );
     }

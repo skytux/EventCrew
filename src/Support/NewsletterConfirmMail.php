@@ -136,16 +136,19 @@ final class NewsletterConfirmMail
             esc_html($label),
             mb_strlen($label) <= 22 ? ';white-space:nowrap' : ''
         );
-        $paragraph = static fn (string $text, string $color, string $margin): string => sprintf(
-            '<p style="margin:%s;font-family:%s;font-size:15px;line-height:1.6;color:%s;text-align:left">%s</p>',
+        $paragraph = static fn (string $text, string $color, string $margin, string $tag): string => sprintf(
+            '<p style="margin:%s;font-family:%s;font-size:15px;line-height:1.6;color:%s;text-align:left">%s%s</p>',
             $margin,
             $font,
             $color,
+            '' === $tag ? '' : EmailBody::langTag($tag, self::CARD_EDGE),
             esc_html($text)
         );
         // Both texts say "press the button below", so both stand above the button.
-        $texts = $paragraph($fi['body'], self::TEXT_COLOR, '0')
-            . ($fi['body'] === $en['body'] ? '' : $paragraph($en['body'], self::MUTED_COLOR, '14px 0 0'));
+        // Two different texts each start with their FI / EN tag; one text needs none.
+        $two = $fi['body'] !== $en['body'];
+        $texts = $paragraph($fi['body'], self::TEXT_COLOR, '0', $two ? 'FI' : '')
+            . ($two ? $paragraph($en['body'], self::MUTED_COLOR, '14px 0 0', 'EN') : '');
 
         return sprintf(
             '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
@@ -162,6 +165,40 @@ final class NewsletterConfirmMail
             $promise,
             $texts,
             $button
+        );
+    }
+
+    /**
+     * A section heading in this card's look, for the coming events in the
+     * thank-you email: a dark band with a gold edge, the gold sparkle, the
+     * Finnish heading big and centred, and the English heading on a new line
+     * under it, smaller and muted (left out when it is the same).
+     */
+    public static function headingBand(string $fi, string $en): string
+    {
+        $font = EmailBody::FONT;
+        $english = $fi === $en ? '' : sprintf(
+            '<p style="margin:6px 0 0;font-family:%s;font-size:17px;line-height:1.3;color:%s;text-align:center">'
+                . '%s</p>',
+            $font,
+            self::MUTED_COLOR,
+            esc_html($en)
+        );
+
+        return sprintf(
+            '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:0 0 18px;border-collapse:separate;background:%1$s;border:1px solid %2$s;'
+                . 'border-radius:16px"><tr><td align="center" style="padding:22px 18px 20px;text-align:center">'
+                . '<p style="margin:0 0 6px;font-family:%3$s;font-size:22px;line-height:1;color:%4$s;'
+                . 'text-align:center">✦</p>'
+                . '<h1 style="margin:0;font-family:%3$s;font-size:28px;line-height:1.2;font-weight:700;color:%4$s;'
+                . 'text-align:center">%5$s</h1>%6$s</td></tr></table>',
+            self::CARD_BACKGROUND,
+            self::CARD_EDGE,
+            $font,
+            self::HEADING_COLOR,
+            esc_html($fi),
+            $english
         );
     }
 
