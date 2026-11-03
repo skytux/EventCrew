@@ -90,6 +90,60 @@ final class NewsletterController
     public const FORM_ANCHOR = 'eventcrew-newsletter';
     public const BAR_ANCHOR = 'eventcrew-nl-bar';
 
+    /** Posted by the page's script: answer with JSON instead of a redirect. */
+    public const AJAX_FIELD = 'eventcrew_ajax';
+
+    /**
+     * Sends the forms without a new page. The script posts the form to the
+     * same address with AJAX_FIELD and the page's lang, and puts the answer's
+     * html in place of the box's content (or the bar's, for a form whose
+     * anchor is the bar). A new Cloudflare check in that html is started with
+     * turnstile.render(). The answer's text gets the focus (without scrolling)
+     * so a screen reader reads it, and the box scrolls into view only when
+     * its top is off screen. The box (or bar) then gets the event
+     * eventcrew-newsletter-answer, detail.result the answer.
+     *
+     * "Skip" in the second step removes that form and keeps the answer above it.
+     * Without fetch the forms post as before. When the request fails, the form
+     * posts as before; when the answer cannot be placed, the page goes to the
+     * address the plain form would have gone to.
+     */
+    private const AJAX_JS = '(function(){if(window.eventcrewNlAjax){return;}window.eventcrewNlAjax=1;'
+        . 'if(!window.fetch||!window.FormData||!window.DOMParser){return;}'
+        . 'var A=["eventcrew_newsletter_join","eventcrew_newsletter_name"],'
+        . 'still=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);'
+        . 'function widgets(el){if(!window.turnstile){return;}'
+        . 'el.querySelectorAll(".cf-turnstile").forEach(function(c){if(!c.firstChild){'
+        . 'try{turnstile.render(c);}catch(e){}}});}'
+        . 'function settle(to,result){widgets(to);'
+        . 'var m=to.querySelector(".eventcrew-newsletter-message,.eventcrew-nl-bar-message");'
+        . 'if(m){m.setAttribute("tabindex","-1");m.focus({preventScroll:true});}'
+        . 'if(to.id!=="eventcrew-nl-bar"){var r=to.getBoundingClientRect();'
+        . 'if(r.top<0||r.top>window.innerHeight){to.scrollIntoView({behavior:still?"auto":"smooth",block:"start"});}}'
+        . 'to.dispatchEvent(new CustomEvent("eventcrew-newsletter-answer",{bubbles:true,detail:{result:result}}));}'
+        . 'function place(where,d){var doc=new DOMParser().parseFromString(String(d.html||""),"text/html"),to,from;'
+        . 'if(where==="eventcrew-nl-bar"){to=document.getElementById("eventcrew-nl-bar");from=doc.body;}'
+        . 'else{to=document.querySelector(".eventcrew-newsletter");from=doc.querySelector(".eventcrew-newsletter");}'
+        . 'if(!to||!from){return false;}to.innerHTML=from.innerHTML;settle(to,d.result);return true;}'
+        . 'document.addEventListener("submit",function(e){var f=e.target;'
+        . 'if(e.defaultPrevented||!f.closest||!f.closest(".eventcrew-newsletter,#eventcrew-nl-bar")){return;}'
+        . 'var a=f.querySelector("input[name=action]");if(!a||A.indexOf(a.value)<0){return;}'
+        . 'e.preventDefault();if(f.getAttribute("aria-busy")){return;}f.setAttribute("aria-busy","true");'
+        . 'var bt=f.querySelector("button[type=submit]");if(bt){bt.disabled=true;}'
+        . 'var fd=new FormData(f);fd.append("eventcrew_ajax","1");'
+        . 'fd.append("lang",document.documentElement.lang||"");'
+        . 'var an=f.querySelector("input[name=anchor]"),where=an?an.value:"eventcrew-newsletter";'
+        . 'fetch(f.action,{method:"POST",body:fd,credentials:"same-origin"})'
+        . '.then(function(r){if(!r.ok){throw new Error("http");}return r.json();})'
+        . '.then(function(j){if(!j||!j.success||!j.data){throw new Error("json");}'
+        . 'if(!place(where,j.data)&&j.data.url){location.href=j.data.url;}})'
+        . '.catch(function(){f.removeAttribute("aria-busy");if(bt){bt.disabled=false;}'
+        . 'HTMLFormElement.prototype.submit.call(f);});});'
+        . 'document.addEventListener("click",function(e){'
+        . 'var s=e.target.closest&&e.target.closest(".eventcrew-nl-skip"),f=s&&s.closest("form");'
+        . 'if(!f||!f.closest(".eventcrew-newsletter,#eventcrew-nl-bar")){return;}e.preventDefault();'
+        . 'var to=f.closest(".eventcrew-newsletter,#eventcrew-nl-bar");f.remove();settle(to,"sent");});})();';
+
     /** Days the bar stays away after the visitor closes it. */
     public const CLOSE_DAYS = 30;
 
@@ -182,8 +236,10 @@ final class NewsletterController
         . 'else{if(b.hidden){b.classList.add("is-out");b.hidden=false;void b.offsetWidth;}'
         . 'b.classList.remove("is-out");}'
         . 'document.body.style.paddingBottom=hide?"":b.offsetHeight+"px";}'
-        . 'b.querySelector(".eventcrew-nl-bar-close").addEventListener("click",function(){off=true;'
+        . 'b.addEventListener("click",function(e){if(!e.target.closest(".eventcrew-nl-bar-close")){return;}off=true;'
         . 'try{localStorage.setItem(K,String(Date.now()));}catch(e){}show();});'
+        . 'document.addEventListener("eventcrew-newsletter-answer",function(e){'
+        . 'if(e.target!==b&&!e.target.querySelector("input[type=email]")){off=true;show();}});'
         . 'if(forms.length&&"IntersectionObserver" in window){var io=new IntersectionObserver(function(es){'
         . 'es.forEach(function(e){var i=inView.indexOf(e.target);'
         . 'if(e.isIntersecting&&i<0){inView.push(e.target);}if(!e.isIntersecting&&i>=0){inView.splice(i,1);}});'
@@ -195,9 +251,11 @@ final class NewsletterController
         . 'if(vv){vv.addEventListener("resize",queue);vv.addEventListener("scroll",queue);}'
         . 'b.addEventListener("focusin",function(){queue();setTimeout(queue,350);});'
         . 'b.addEventListener("focusout",function(e){if(!b.contains(e.relatedTarget)){b.style.bottom="";show();}});'
-        . 'var bf=b.querySelector("form"),ff=document.querySelector(".eventcrew-newsletter form");'
-        . 'if(bf&&ff&&!bf.querySelector(".cf-turnstile")&&ff.querySelector(".cf-turnstile")){'
-        . 'bf.addEventListener("submit",function(e){e.preventDefault();'
+        . 'var bf=b.querySelector("form");'
+        . 'if(bf&&!bf.querySelector(".cf-turnstile")'
+        . '&&document.querySelector(".eventcrew-newsletter form .cf-turnstile")){'
+        . 'bf.addEventListener("submit",function(e){var ff=document.querySelector(".eventcrew-newsletter form");'
+        . 'if(!ff||!ff.querySelector("input[type=email]")){return;}e.preventDefault();'
         . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
         . 'if(b.contains(document.activeElement)){document.activeElement.blur();}'
         . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var n=0;'
@@ -214,6 +272,14 @@ final class NewsletterController
 
     /** Set when the full form printed its email field (and so its own check). */
     private bool $formAsksEmail = false;
+
+    /**
+     * The answer answerHtml() is rendering, which takes the place of the
+     * page's query arguments and address; null while a page renders.
+     *
+     * @var array{result: string, token: string, page: string}|null
+     */
+    private ?array $answer = null;
 
     /** The second step's token from the last join(): see nameToken(). */
     private string $nameToken = '';
@@ -300,7 +366,7 @@ final class NewsletterController
 
         // After a finished sign-up only the thank-you stays: no form, no footnote.
         // A wrong address or a failed bot check still shows the form to try again.
-        if (self::signupFinished()) {
+        if ($this->signupFinished()) {
             $this->formShown = true;
 
             return $html . '</div>';
@@ -361,7 +427,21 @@ final class NewsletterController
             . ' data-close-days="' . esc_attr((string) self::CLOSE_DAYS) . '"'
             . ('' !== $message ? ' data-message="1"' : '') . '>'
             . $this->formCss()
-            . '<style>' . self::BAR_CSS . '</style>';
+            . '<style>' . self::BAR_CSS . '</style>'
+            . $this->barContent($message, $anchor)
+            . '</div>'
+            . '<script>' . self::BAR_JS . '</script>';
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+        echo $html;
+    }
+
+    /** What is inside the bar: the answer, then the form (or the second step), then the close button. */
+    private function barContent(string $message, string $anchor): string
+    {
+        $close = '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
+            . esc_attr__('Close', 'eventcrew') . '">×</button>';
+        $html = '';
 
         if ('' !== $message) {
             $html .= '<p class="eventcrew-nl-bar-message" role="status">' . esc_html($message) . '</p>'
@@ -372,16 +452,7 @@ final class NewsletterController
         $nameToken = $this->formShown ? '' : $this->pendingNameToken();
 
         if ('' !== $nameToken) {
-            $html .= $this->nameForm($nameToken, self::BAR_ANCHOR, true)
-                . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
-                . esc_attr__('Close', 'eventcrew') . '">×</button>'
-                . '</div>'
-                . '<script>' . self::BAR_JS . '</script>';
-
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
-            echo $html;
-
-            return;
+            return $html . $this->nameForm($nameToken, self::BAR_ANCHOR, true) . $close;
         }
 
         // The "i" leads to the full form (with its note) when the page has one.
@@ -391,7 +462,7 @@ final class NewsletterController
                 . '"><span aria-hidden="true">i</span></a>'
             : '';
 
-        $html .= $this->formStart($anchor)
+        return $html . $this->formStart($anchor)
             . $info
             . '<label for="eventcrew-nl-bar-email" class="eventcrew-nl-bar-label">'
             . esc_html__('Get the coming events by email', 'eventcrew') . '</label>'
@@ -405,13 +476,7 @@ final class NewsletterController
             // form. (While the full form asks for the name, the bar has its own.)
             . ($this->formAsksEmail ? '' : $this->captcha(true))
             . '</form>'
-            . '<button type="button" class="eventcrew-nl-bar-close" aria-label="'
-            . esc_attr__('Close', 'eventcrew') . '">×</button>'
-            . '</div>'
-            . '<script>' . self::BAR_JS . '</script>';
-
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
-        echo $html;
+            . $close;
     }
 
     /** The link under the answer to a sign-up: back to the top of the page. */
@@ -449,7 +514,7 @@ final class NewsletterController
             . ' interactive-widget=resizes-content" />' . "\n";
     }
 
-    /** FORM_CSS the first time a form is printed on the page, then ''. */
+    /** FORM_CSS and AJAX_JS the first time a form is printed on the page, then ''. */
     private function formCss(): string
     {
         if ($this->formCssAdded) {
@@ -458,7 +523,7 @@ final class NewsletterController
 
         $this->formCssAdded = true;
 
-        return '<style>' . self::FORM_CSS . '</style>';
+        return '<style>' . self::FORM_CSS . '</style><script>' . self::AJAX_JS . '</script>';
     }
 
     /** Whether the bar is printed on this request. */
@@ -480,22 +545,30 @@ final class NewsletterController
         return true;
     }
 
-    /** True when this page is the answer to a sign-up that went through. */
-    private static function signupFinished(): bool
+    /**
+     * The answer shown: the one answerHtml() is building, else the page's
+     * ?eventcrew_newsletter= value, else ''.
+     */
+    private function shownResult(): string
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks what to show.
-        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
+        if (null !== $this->answer) {
+            return $this->answer['result'];
+        }
 
-        return in_array($result, [self::RESULT_SENT, self::RESULT_NAMED, self::RESULT_JOINED], true);
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks what to show.
+        return isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
+    }
+
+    /** True when this page is the answer to a sign-up that went through. */
+    private function signupFinished(): bool
+    {
+        return in_array($this->shownResult(), [self::RESULT_SENT, self::RESULT_NAMED, self::RESULT_JOINED], true);
     }
 
     /** The message for the ?eventcrew_newsletter= answer, or ''. */
     private function resultMessage(): string
     {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks which message to show.
-        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
-
-        return match ($result) {
+        return match ($this->shownResult()) {
             self::RESULT_SENT => __('Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             self::RESULT_INVALID => __('That does not look like an email address. Please check it.', 'eventcrew'),
             self::RESULT_CAPTCHA => __('The check that you are not a bot failed. Please try again.', 'eventcrew'),
@@ -516,14 +589,17 @@ final class NewsletterController
      */
     private function pendingNameToken(): string
     {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed token is the check.
-        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
-        $token = isset($_GET[self::NAME_TOKEN_ARG])
-            ? (string) preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($_GET[self::NAME_TOKEN_ARG]))
-            : '';
-        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        if (null !== $this->answer) {
+            $token = $this->answer['token'];
+        } else {
+            // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed token is the check.
+            $token = isset($_GET[self::NAME_TOKEN_ARG])
+                ? (string) preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($_GET[self::NAME_TOKEN_ARG]))
+                : '';
+            // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        }
 
-        if (self::RESULT_SENT !== $result || '' === $token) {
+        if (self::RESULT_SENT !== $this->shownResult() || '' === $token) {
             return '';
         }
 
@@ -536,7 +612,7 @@ final class NewsletterController
      */
     private function nameForm(string $token, string $anchor, bool $inBar): string
     {
-        $skip = add_query_arg([self::RESULT_ARG => self::RESULT_SENT], self::currentUrl()) . '#' . $anchor;
+        $skip = add_query_arg([self::RESULT_ARG => self::RESULT_SENT], $this->pageUrl()) . '#' . $anchor;
         $question = esc_html__('What should we call you?', 'eventcrew');
         $id = $inBar ? 'eventcrew-nl-bar-name' : 'eventcrew-newsletter-name';
         $input = '<input type="text" id="' . $id . '" name="' . self::NAME_FIELD . '"'
@@ -548,7 +624,7 @@ final class NewsletterController
 
         $html = '<form method="post" action="' . esc_url(admin_url('admin-ajax.php')) . '">'
             . '<input type="hidden" name="action" value="' . esc_attr(self::NAME_ACTION) . '">'
-            . '<input type="hidden" name="redirect_to" value="' . esc_attr(self::currentUrl()) . '">'
+            . '<input type="hidden" name="redirect_to" value="' . esc_attr($this->pageUrl()) . '">'
             . '<input type="hidden" name="anchor" value="' . esc_attr($anchor) . '">'
             . '<input type="hidden" name="token" value="' . esc_attr($token) . '">';
 
@@ -622,8 +698,13 @@ final class NewsletterController
 
         $result = $this->saveName($token, $name);
         $back = wp_validate_redirect($requested, home_url('/'));
+        $url = add_query_arg(self::RESULT_ARG, $result, $back) . '#' . $anchor;
 
-        wp_safe_redirect(add_query_arg(self::RESULT_ARG, $result, $back) . '#' . $anchor);
+        if (self::wantsJson()) {
+            $this->sendAnswer($result, '', $back, $anchor, $url);
+        }
+
+        wp_safe_redirect($url);
         exit;
     }
 
@@ -658,7 +739,7 @@ final class NewsletterController
     {
         return '<form method="post" action="' . esc_url(admin_url('admin-ajax.php')) . '">'
             . '<input type="hidden" name="action" value="' . esc_attr(self::JOIN_ACTION) . '">'
-            . '<input type="hidden" name="redirect_to" value="' . esc_attr(self::currentUrl()) . '">'
+            . '<input type="hidden" name="redirect_to" value="' . esc_attr($this->pageUrl()) . '">'
             . '<input type="hidden" name="anchor" value="' . esc_attr($anchor) . '">';
     }
 
@@ -703,6 +784,12 @@ final class NewsletterController
      * form sends the visitor back to. get_permalink() would be wrong in a
      * site footer on a list of posts.
      */
+    private function pageUrl(): string
+    {
+        return null !== $this->answer ? $this->answer['page'] : self::currentUrl();
+    }
+
+    /** The address of the page being shown, without an earlier answer on it. */
     private static function currentUrl(): string
     {
         $host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
@@ -740,8 +827,63 @@ final class NewsletterController
             $args[self::NAME_TOKEN_ARG] = $this->nameToken;
         }
 
-        wp_safe_redirect(add_query_arg($args, $back) . '#' . $anchor);
+        $url = add_query_arg($args, $back) . '#' . $anchor;
+
+        if (self::wantsJson()) {
+            $this->sendAnswer($result, $this->nameToken, $back, $anchor, $url);
+        }
+
+        wp_safe_redirect($url);
         exit;
+    }
+
+    /** True when the page's script sent the form and wants the answer as JSON instead of a new page. */
+    private static function wantsJson(): bool
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- only picks the answer's format.
+        return isset($_POST[self::AJAX_FIELD]) && '1' === wp_unslash($_POST[self::AJAX_FIELD]);
+    }
+
+    /**
+     * The JSON answer for the page's script: the result, the new content of
+     * the box or bar, and the address the plain form would have gone to.
+     * Rendered in the page's language (the script sends the page's lang).
+     */
+    private function sendAnswer(string $result, string $token, string $page, string $anchor, string $url): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- only picks the language.
+        $lang = isset($_POST['lang']) ? substr(sanitize_key(wp_unslash($_POST['lang'])), 0, 2) : '';
+        $html = Language::run(
+            Language::normalize($lang),
+            fn (): string => $this->answerHtml($result, $token, $page, $anchor)
+        );
+
+        wp_send_json_success(['result' => $result, 'html' => $html, 'url' => $url]);
+    }
+
+    /**
+     * The box (FORM_ANCHOR) or the bar's content (BAR_ANCHOR) as the page at
+     * $page would show it with this answer, without the style and script tags
+     * the page already has.
+     */
+    public function answerHtml(string $result, string $token, string $page, string $anchor): string
+    {
+        $this->answer = ['result' => $result, 'token' => $token, 'page' => $page];
+        $this->formCssAdded = true;
+        $this->captchaScriptAdded = true;
+
+        try {
+            if (self::BAR_ANCHOR === $anchor) {
+                $this->formShown = false;
+                $this->formAsksEmail = false;
+
+                return $this->barContent($this->resultMessage(), self::BAR_ANCHOR);
+            }
+
+            return $this->renderShortcode();
+        } finally {
+            $this->answer = null;
+        }
     }
 
     /**
