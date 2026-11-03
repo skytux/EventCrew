@@ -184,7 +184,7 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertSame(self::SIGNED_IN, $this->lastCallTo('editMessageText')['text']);
         self::assertSame(
             [[[
-                'text' => 'Back to the crew app',
+                'text' => '✅ Back to the crew app',
                 'url' => 'https://example.test/wp-admin/admin-ajax.php?action=eventcrew_web_tg_return&login=' . $code,
             ]]],
             $this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']
