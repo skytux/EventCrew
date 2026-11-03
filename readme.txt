@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.97.0
+Stable tag: 1.97.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.97.1 =
+Next events announcement form: the words "Your email address" are now inside the email field instead of above it (screen readers still read them).
 
 = 1.97.0 =
 Sign in with Telegram on the Crew app (off by default): the sign-in screen asks how you want to sign in, with an Email button and Telegram's own login button. Telegram's OpenID Connect popup is checked on the server (RS256 against Telegram's published keys, issuer, bot ID, age, one-time nonce). Only people already linked to the bot with a confirmed email sign in; others are pointed to the bot's Start. Settings → Telegram bot has the switch, the address to add in @BotFather and the Client ID. The privacy policy mentions it while it is on.
@@ -931,6 +934,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.97.1 =
+No database change.
 
 = 1.97.0 =
 No database change.

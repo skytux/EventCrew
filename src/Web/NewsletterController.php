@@ -203,10 +203,11 @@ final class NewsletterController
         }
 
         $html .= $this->formStart(self::FORM_ANCHOR)
-            . '<p><label for="eventcrew-newsletter-email">'
-            . esc_html__('Your email address', 'eventcrew') . '</label><br>'
+            . '<p><label for="eventcrew-newsletter-email" class="screen-reader-text">'
+            . esc_html__('Your email address', 'eventcrew') . '</label>'
             . '<input type="email" id="eventcrew-newsletter-email" name="' . self::EMAIL_FIELD . '" required'
             . ' autocomplete="email"'
+            . ' placeholder="' . esc_attr__('Your email address', 'eventcrew') . '"'
             . ' class="wp-element-input"></p>'
             . self::honeypot()
             . $this->captcha(false)
