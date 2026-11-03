@@ -2735,7 +2735,10 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         Object.keys(data).forEach(function (key) { body.append(key, data[key]); });
 
         return fetch(ajax, { method: 'POST', body: body, credentials: 'same-origin', cache: 'no-store' })
-            .then(function (response) { return response.json(); });
+            .then(function (response) {
+                if (!response.ok) { throw new Error('HTTP ' + response.status); }
+                return response.json().catch(function () { throw new Error('reply is not JSON'); });
+            });
     }
 
     function fetchNonce() {
@@ -2775,7 +2778,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
         if (result.error || !result.id_token) {
             // Closing the popup is not an error worth a message.
-            if (result.error !== 'popup_closed') { toast(failedText); }
+            // The reason in brackets tells Telegram's refusals apart from
+            // the site's, so a report from a phone says which side failed.
+            if (result.error !== 'popup_closed') {
+                toast(failedText + ' (Telegram: ' + String(result.error || 'no token') + ')');
+            }
             return;
         }
 
@@ -2800,9 +2807,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
             posting = false;
             fetchNonce(); // the nonce was used up; a second try needs a new one
-        }).catch(function () {
+        }).catch(function (err) {
             posting = false;
-            toast(failedText);
+            toast(failedText + ' (site: ' + String((err && err.message) || 'no reply') + ')');
             fetchNonce();
         });
     }
