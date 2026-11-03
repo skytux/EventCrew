@@ -516,6 +516,13 @@ final class PrivacyPolicy
             );
         }
 
+        if (Newsletter::enabled() && NewsletterWriter::enabled() && AssistantSettings::isConfigured()) {
+            $processors[] = __(
+                'The server of the language model, which writes the texts of the next events announcement — the events’ descriptions and their DJs’ descriptions, both public information, are sent there.',
+                'eventcrew'
+            );
+        }
+
         if (self::turnstileEnabled()) {
             $processors[] = __(
                 'Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record.',

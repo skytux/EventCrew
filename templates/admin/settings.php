@@ -37,6 +37,9 @@
  * @var bool $newsletter_crew Whether crew members with a verified email are added to the newsletter.
  * @var int $newsletter_bar_image The sign-up bar's background image (attachment id; 0 = none).
  * @var string $newsletter_bar_image_url That image's medium size URL for the preview, or ''.
+ * @var bool $newsletter_write Whether the language model writes the newsletter's texts.
+ * @var string $newsletter_words The site's words and style for those texts.
+ * @var bool $llm_configured Whether the language model's server and model are set.
  * @var string $welcome_nonce_action Nonce action for the welcome test send.
  * @var int $door_link_crew Minutes before their own task the sales-desk crew can get the link.
  * @var int $door_scan_open Minutes before the event's start that ticket scans are taken.
@@ -1501,6 +1504,40 @@ if (! defined('ABSPATH')) {
                             <?php checked($newsletter_crew); ?>>
                         <?php esc_html_e('On', 'eventcrew'); ?>
                     </label>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Texts by the language model', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="newsletter_write" value="1"
+                            <?php checked($newsletter_write); ?>>
+                        <?php esc_html_e('Let the language model write the event texts and, when you wrote none, the opening text', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('On by default. When it is on, each event in the announcement gets 2–3 sentences in Finnish and English, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                    <?php if (! $llm_configured) : ?>
+                        <p class="description">
+                            <?php esc_html_e('The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        </p>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="ec-newsletter-words">
+                        <?php esc_html_e('Words and style for written texts', 'eventcrew'); ?>
+                    </label>
+                </th>
+                <td>
+                    <textarea id="ec-newsletter-words" name="newsletter_words" rows="5" class="large-text"
+                        maxlength="<?php echo (int) \EventCrew\Support\NewsletterWriter::MAX_WORDS; ?>"><?php
+                        echo esc_textarea($newsletter_words);
+                        ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e('Words and phrases this site uses, in English and in Finnish, and how it speaks to its readers. The language model prefers them when it writes the texts. Leave it empty to let the model choose its own words.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
                 </td>
             </tr>
             <tr>

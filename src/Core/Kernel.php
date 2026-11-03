@@ -51,6 +51,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PageCacheFlush;
@@ -394,13 +395,22 @@ final class Kernel
         );
 
         $this->container->singleton(
+            NewsletterWriter::class,
+            fn (Container $container) => new NewsletterWriter(
+                $container->get(LlmClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
             Newsletter::class,
             fn (Container $container) => new Newsletter(
                 $container->get(NewsletterSubscriberRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(NewsletterText::class),
                 $container->get(Mailer::class),
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(NewsletterWriter::class)
             )
         );
 

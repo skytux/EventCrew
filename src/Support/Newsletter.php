@@ -39,6 +39,9 @@ use EventCrew\Repositories\PersonRepository;
  *    sending starts on the next run. The crew app's Admin tab has the same
  *    Stop button. A stopped newsletter is not sent, and its events are not
  *    put into a later one. A text change re-sends a preview that has gone.
+ *    When the language model writes the texts (NewsletterWriter), they are
+ *    written into the plan before the preview, so the preview and the
+ *    newsletter carry the same texts.
  * 4. At the first run at or after the send time, run() starts the sending.
  *    A WP-Cron event (HOOK) sends BATCH emails per run and schedules itself
  *    again until every confirmed subscriber has had it. Then the organizers'
@@ -55,9 +58,11 @@ use EventCrew\Repositories\PersonRepository;
  * is a current one, otherwise the title as written.
  *
  * Everything the newsletter remembers is in one option (STATE_OPTION):
- * the ledger (event id => sent, stopped or missed, with the event's date;
- * entries go once the date has passed), the current plan, the last
- * newsletter sent, and the next plan id.
+ * the ledger (event id => sent, stopped or missed, with the event's date
+ * and, for a sent event, the text the language model wrote for it; entries
+ * go once the date has passed), the current plan, the last newsletter sent,
+ * and the next plan id. The post-event email (FollowupMail) shows those
+ * written texts too (writtenTexts()).
  *
  * run() also deletes newsletter sign-ups that were never confirmed, PENDING_DAYS
  * after they were made, whether or not the newsletter is switched on.
@@ -126,7 +131,8 @@ final class Newsletter
         private readonly PersonRepository $people,
         private readonly NewsletterText $text,
         private readonly Mailer $mailer,
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly ?NewsletterWriter $writer = null
     ) {
     }
 
@@ -302,22 +308,25 @@ final class Newsletter
      * $events, the organizers' $text above them, and the $later events as
      * short lines under them (NewsletterLayout). The picture, price, ticket
      * link and description of each event are read from EventMesh now, so a
-     * change made since the plan is in the email.
+     * change made since the plan is in the email. The texts the language model
+     * wrote ($written, NewsletterWriter) replace the descriptions, and its
+     * opening text stands in for a missing organizers' text.
      *
      * @param array<int, array<string, mixed>> $events Plan events.
      * @param array{fi: string, en: string}|null $text
      * @param array<int, array<string, mixed>> $later Other coming events, in the plan events' shape.
+     * @param array<string, mixed>|null $written The plan's 'written'.
      * @return array{subject: string, html: string, text: string}
      */
-    public function compose(array $events, ?array $text, array $later = []): array
+    public function compose(array $events, ?array $text, array $later = [], ?array $written = null): array
     {
         return [
             'subject' => self::both(static fn (): string => __('Coming events', 'eventcrew'))
                 . ' – ' . (string) get_bloginfo('name'),
         ] + self::content(
-            array_map([self::class, 'withCard'], array_values($events)),
+            NewsletterWriter::apply(array_map([self::class, 'withCard'], array_values($events)), $written),
             array_map([self::class, 'withCard'], array_values($later)),
-            $text
+            $text ?? NewsletterWriter::opening($written)
         );
     }
 
@@ -421,6 +430,27 @@ final class Newsletter
                 NewsletterSchedule::sendTime()
             ));
 
+            if ($now < $sendAt) {
+                // Texts the language model has not written yet (an earlier
+                // run ran out of time, or the organizers removed their text):
+                // written now. When the preview has already gone, the
+                // organizers get the new one if one of them could be written.
+                $written = $this->written($plan, null === $this->text->get());
+
+                if ($written !== $plan) {
+                    $changed = NewsletterWriter::shown($written) !== NewsletterWriter::shown($plan);
+                    $plan = $written;
+                    $state['plan'] = $plan;
+
+                    if ($changed && (bool) ($plan['previewed'] ?? true)) {
+                        $this->save($state);
+                        $this->sendPreview($plan);
+
+                        return;
+                    }
+                }
+            }
+
             if (
                 ! (bool) ($plan['previewed'] ?? true)
                 && ($now >= (string) ($plan['preview_at'] ?? '') || $now >= $sendAt)
@@ -445,6 +475,11 @@ final class Newsletter
         }
 
         $state = $this->plan($state, $today, $now);
+
+        if (null !== $state['plan']) {
+            $state['plan'] = $this->written($state['plan'], null === $this->text->get());
+        }
+
         $this->save($state);
 
         if (null !== $state['plan'] && $state['plan']['previewed']) {
@@ -555,6 +590,8 @@ final class Newsletter
 
         $text = $this->text->get();
         $plan['events'] = $events;
+        // Only what the preview did not have yet, such as an event added since.
+        $plan = $this->written($plan, null === $text);
         $plan['later'] = $this->laterEvents($events, $today);
         $plan['status'] = self::PLAN_SENDING;
         $plan['text'] = null === $text ? null : ['fi' => $text['fi'], 'en' => $text['en'], 'rev' => $text['rev']];
@@ -579,7 +616,7 @@ final class Newsletter
         }
 
         $rows = $this->subscribers->confirmedAfter((int) $plan['cursor'], self::BATCH);
-        $mail = $this->compose($plan['events'], $plan['text'], $plan['later'] ?? []);
+        $mail = $this->compose($plan['events'], $plan['text'], $plan['later'] ?? [], $plan['written'] ?? null);
         $footer = self::footer();
         $crewNote = self::crewNote();
 
@@ -611,8 +648,11 @@ final class Newsletter
             return count($rows);
         }
 
+        $shown = NewsletterWriter::shown($plan)['events'];
+
         foreach ($plan['events'] as $event) {
-            $state['ledger'][$event['id']] = ['s' => self::LEDGER_SENT, 'd' => $event['date']];
+            $state['ledger'][$event['id']] = ['s' => self::LEDGER_SENT, 'd' => $event['date']]
+                + (isset($shown[(int) $event['id']]) ? ['w' => $shown[(int) $event['id']]] : []);
         }
 
         $state['last'] = [
@@ -626,6 +666,12 @@ final class Newsletter
 
         if (null !== $plan['text']) {
             $this->text->clearIfRevision((int) $plan['text']['rev']);
+        }
+
+        try {
+            $this->writer?->remember($plan);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Newsletter texts: the sent texts could not be kept (' . get_class($e) . ').');
         }
 
         $this->logger->info(sprintf(
@@ -649,7 +695,8 @@ final class Newsletter
         $mail = $this->compose(
             $plan['events'],
             $this->text->get(),
-            $this->laterEvents($plan['events'], (string) current_time('Y-m-d'))
+            $this->laterEvents($plan['events'], (string) current_time('Y-m-d')),
+            $plan['written'] ?? null
         );
         $count = $this->subscribers->countConfirmed();
         $stopUrl = self::stopUrl($plan['id']);
@@ -693,6 +740,33 @@ final class Newsletter
     }
 
     /**
+     * $plan with the language model's missing texts written (NewsletterWriter),
+     * the opening only when $wantOpening (the organizers wrote none). Any
+     * failure leaves $plan as it was.
+     *
+     * @param array<string, mixed> $plan
+     * @return array<string, mixed>
+     */
+    private function written(array $plan, bool $wantOpening): array
+    {
+        if (
+            null === $this->writer
+            || ! NewsletterWriter::enabled()
+            || ! NewsletterWriter::missing($plan, $wantOpening)
+        ) {
+            return $plan;
+        }
+
+        try {
+            return $this->writer->fill($plan, $wantOpening);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Newsletter texts: writing the texts failed (' . get_class($e) . ').');
+
+            return $plan;
+        }
+    }
+
+    /**
      * A plan event with EventSource::card()'s fields added (picture, price,
      * ticket link, music page, description).
      *
@@ -702,6 +776,34 @@ final class Newsletter
     public static function withCard(array $event): array
     {
         return array_merge(EventSource::card((int) ($event['id'] ?? 0)), $event);
+    }
+
+    /**
+     * The texts the language model wrote for coming events, in the shape of a
+     * plan's 'written' (NewsletterWriter::apply()): the texts of the events a
+     * sent announcement carried (kept in the ledger), and those of the
+     * current plan. The post-event email (FollowupMail) shows them, so both
+     * emails show the same texts.
+     *
+     * @return array{events: array<int, array{fi: string, en: string}>}
+     */
+    public static function writtenTexts(): array
+    {
+        $stored = get_option(self::STATE_OPTION, []);
+        $stored = is_array($stored) ? $stored : [];
+        $texts = [];
+
+        foreach (is_array($stored['ledger'] ?? null) ? $stored['ledger'] : [] as $id => $entry) {
+            if (is_array($entry) && is_array($entry['w'] ?? null)) {
+                $texts[(int) $id] = $entry['w'];
+            }
+        }
+
+        if (is_array($stored['plan'] ?? null)) {
+            $texts = NewsletterWriter::shown($stored['plan'])['events'] + $texts;
+        }
+
+        return ['events' => $texts];
     }
 
     /**

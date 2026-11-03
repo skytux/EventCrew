@@ -5854,6 +5854,27 @@ msgstr "Tulevien tapahtumien tiedote on pois päältä. Ylläpitäjä voi kytke�
 msgid "The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other language of the announcement."
 msgstr "Kielimallin palvelin, kun järjestäjä kirjoittaa tekstin tulevien tapahtumien tiedotteeseen — teksti lähetetään sinne käännettäväksi tiedotteen toiselle kielelle."
 
+msgid "The server of the language model, which writes the texts of the next events announcement — the events’ descriptions and their DJs’ descriptions, both public information, are sent there."
+msgstr "Kielimallin palvelin, joka kirjoittaa tulevien tapahtumien tiedotteen tekstit — tapahtumien kuvaukset ja niiden DJ:iden kuvaukset, molemmat julkista tietoa, lähetetään sinne."
+
+msgid "Texts by the language model"
+msgstr "Kielimallin tekstit"
+
+msgid "Let the language model write the event texts and, when you wrote none, the opening text"
+msgstr "Anna kielimallin kirjoittaa tapahtumien tekstit ja, jos et kirjoittanut omaa, avausteksti"
+
+msgid "On by default. When it is on, each event in the announcement gets 2–3 sentences in Finnish and English, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description."
+msgstr "Oletuksena päällä. Kun se on päällä, jokainen tiedotteen tapahtuma saa koko kuvauksen sijaan 2–3 virkettä suomeksi ja englanniksi, kirjoitettuina tapahtuman kuvauksesta ja sen DJ:iden kuvauksista. Tekstit kirjoitetaan esikatselun yhteydessä, joten esikatselu näyttää sen, minkä tilaajat saavat. Jos tekstiä ei voi kirjoittaa, tapahtuma näyttää koko kuvauksensa."
+
+msgid "The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below."
+msgstr "Kielimallia ei ole otettu käyttöön. Anna sen API-osoite ja malli alempana kohdassa ”Tavalliset viestit (kielimalli)”."
+
+msgid "Words and style for written texts"
+msgstr "Sanat ja tyyli kirjoitettuihin teksteihin"
+
+msgid "Words and phrases this site uses, in English and in Finnish, and how it speaks to its readers. The language model prefers them when it writes the texts. Leave it empty to let the model choose its own words."
+msgstr "Sanat ja ilmaukset, joita tämä sivusto käyttää englanniksi ja suomeksi, ja tapa, jolla se puhuu lukijoilleen. Kielimalli suosii niitä kirjoittaessaan tekstejä. Jätä tyhjäksi, jos malli saa valita sanansa itse."
+
 msgid "The text could not be translated, so both languages show it as you wrote it."
 msgstr "Tekstiä ei voitu kääntää, joten molemmissa kielissä näkyy teksti sellaisena kuin kirjoitit sen."
 

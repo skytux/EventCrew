@@ -15,7 +15,8 @@ namespace EventCrew\Support;
  *    one, each with a small FI / EN label.
  * 3. One card per newly announced event: the picture, the date and time, the
  *    title, the whole description in Finnish and then in English (labelled
- *    FI / EN, with its line breaks), a "Buy a ticket" button with the price
+ *    FI / EN, with its line breaks) or, in its place, the text the language
+ *    model wrote for the card (NewsletterWriter), a "Buy a ticket" button with the price
  *    that opens the ticket shop, and a "Listen to the DJ" button, Finnish on
  *    the first line and English on the second, when the event has the DJ's
  *    music page (an email cannot play music itself, so it opens the page). A
@@ -150,11 +151,7 @@ final class NewsletterLayout
     private static function cardText(array $card, array $words): string
     {
         $lines = [self::when($card), self::title($card)];
-        $about = self::bilingualText(
-            (string) ($card['excerpt_fi'] ?? ''),
-            (string) ($card['excerpt_en'] ?? ''),
-            (string) ($card['excerpt'] ?? '')
-        );
+        $about = self::bilingualText(...self::about($card));
 
         if ('' !== $about) {
             $lines[] = $about;
@@ -248,12 +245,8 @@ final class NewsletterLayout
             );
         }
 
-        $body .= self::bilingual(
-            (string) ($card['excerpt_fi'] ?? ''),
-            (string) ($card['excerpt_en'] ?? ''),
-            (string) ($card['excerpt'] ?? ''),
-            '0 0 16px'
-        );
+        [$aboutFi, $aboutEn, $aboutPlain] = self::about($card);
+        $body .= self::bilingual($aboutFi, $aboutEn, $aboutPlain, '0 0 16px');
 
         if ($soldOut) {
             $body .= sprintf(
@@ -408,6 +401,30 @@ final class NewsletterLayout
         }
 
         return implode($multiline ? "\n\n" : "\n", $lines);
+    }
+
+    /**
+     * A card's text as [Finnish, English, unknown language]: the language
+     * model's text when the card has one in both languages
+     * (NewsletterWriter), else the description.
+     *
+     * @param array<string, mixed> $card
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private static function about(array $card): array
+    {
+        $fi = trim((string) ($card['written_fi'] ?? ''));
+        $en = trim((string) ($card['written_en'] ?? ''));
+
+        if ('' !== $fi && '' !== $en) {
+            return [$fi, $en, ''];
+        }
+
+        return [
+            (string) ($card['excerpt_fi'] ?? ''),
+            (string) ($card['excerpt_en'] ?? ''),
+            (string) ($card['excerpt'] ?? ''),
+        ];
     }
 
     /** "14.11.2026 · 19:00", or the date alone when the time is not known. */
