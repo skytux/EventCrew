@@ -22,6 +22,31 @@ final class TelegramClientTest extends TelegramTestCase
         self::assertIsArray($result);
     }
 
+    public function testSendPhotoSendsThePictureAddressWithAnHtmlCaption(): void
+    {
+        $this->telegramResults['sendPhoto'] = ['message_id' => 8];
+        $markup = ['inline_keyboard' => [[['text' => 'Go', 'url' => 'https://example.test/']]]];
+
+        $result = $this->client()->sendPhoto(42, 'https://images.example.test/a.jpg', '<b>Hi</b>', $markup);
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        $body = $this->lastCallTo('sendPhoto');
+        self::assertSame(42, $body['chat_id']);
+        self::assertSame('https://images.example.test/a.jpg', $body['photo']);
+        self::assertSame('<b>Hi</b>', $body['caption']);
+        self::assertSame('HTML', $body['parse_mode']);
+        self::assertSame($markup, $body['reply_markup']);
+        self::assertSame(8, $result['message_id']);
+    }
+
+    public function testSendPhotoReturnsNullWhenTelegramRefusesThePicture(): void
+    {
+        $this->telegramErrors['sendPhoto'] = 'Bad Request: wrong file identifier/HTTP URL specified';
+
+        self::assertNull($this->client()->sendPhoto(42, 'https://images.example.test/a.jpg', 'Hi'));
+        self::assertArrayNotHasKey('reply_markup', $this->lastCallTo('sendPhoto'));
+    }
+
     public function testOmitsReplyMarkupWhenNoneIsGiven(): void
     {
         $this->client()->sendMessage(42, 'hello');

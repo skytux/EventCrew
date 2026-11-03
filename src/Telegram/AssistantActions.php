@@ -116,6 +116,12 @@ final class AssistantActions
                 false
             );
             $list[] = self::entry(
+                '/events',
+                'show the next coming events as picture cards (picture, date, price, description, ticket button);'
+                    . ' the bot then offers to post them in the crew group with Confirm and Cancel. Use it when'
+                    . ' the person asks which events come next'
+            );
+            $list[] = self::entry(
                 '/newsletter clear',
                 "remove the organizers' own text from the next newsletter",
                 true
@@ -187,6 +193,7 @@ final class AssistantActions
                     : self::refuse(self::ERROR_INVALID);
 
             case '/people':
+            case '/events':
                 if (! $audience['organizer']) {
                     return self::refuse(self::ERROR_NOT_PERMITTED);
                 }

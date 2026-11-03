@@ -46,7 +46,8 @@ final class UpdateRouter
         private readonly ?HelpService $help = null,
         private readonly ?AssistantService $assistant = null,
         private readonly ?NewsletterCommand $newsletter = null,
-        private readonly ?SayCommand $say = null
+        private readonly ?SayCommand $say = null,
+        private readonly ?EventsCommand $events = null
     ) {
     }
 
@@ -116,6 +117,8 @@ final class UpdateRouter
                 $this->guestList->onSelect($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
                 $this->say->onConfirm($callbackQuery);
+            } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
+                $this->events->onConfirm($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
@@ -275,6 +278,14 @@ final class UpdateRouter
         // first with Confirm and Cancel.
         if (null !== $this->say && $this->isCommand($text, 'say')) {
             $this->say->onCommand($message, $isPrivate);
+
+            return;
+        }
+
+        // /events (organizers, private chat): the coming events as picture
+        // cards, shown first with Confirm and Cancel, then posted in the group.
+        if (null !== $this->events && $this->isCommand($text, 'events')) {
+            $this->events->onCommand($fromId, $chatId, $isPrivate);
 
             return;
         }

@@ -169,6 +169,30 @@ final class TelegramClient
     }
 
     /**
+     * A photo message: Telegram fetches the picture from $photoUrl itself. The
+     * caption is Telegram HTML. Null when Telegram refuses it, for example
+     * because it cannot fetch or read the picture.
+     *
+     * @param array<string, mixed>|null $replyMarkup
+     * @return array<string, mixed>|null
+     */
+    public function sendPhoto(int|string $chatId, string $photoUrl, string $caption, ?array $replyMarkup = null): ?array
+    {
+        $params = [
+            'chat_id' => $chatId,
+            'photo' => $photoUrl,
+            'caption' => $caption,
+            'parse_mode' => 'HTML',
+        ];
+
+        if (null !== $replyMarkup) {
+            $params['reply_markup'] = $replyMarkup;
+        }
+
+        return $this->call('sendPhoto', $params);
+    }
+
+    /**
      * @param array<string, mixed>|null $replyMarkup
      * @return array<string, mixed>|null
      */
