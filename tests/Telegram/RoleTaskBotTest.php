@@ -129,6 +129,39 @@ final class RoleTaskBotTest extends TelegramTestCase
         self::assertSame(['rt:s:9'], $this->buttonData());
     }
 
+    public function testTheListShowsOneDayWithEveryDayAsAButton(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');
+        $this->wpdb->nextResults[] = [
+            $this->djTask(),
+            array_merge($this->djTask(), ['id' => 10, 'task_date' => '2026-08-01']),
+        ];
+        $this->wpdb->nextRows[] = null;   // isOn for task 9 only: task 10 is on another day
+
+        $this->roleTaskBot()->start(555, 555);
+
+        self::assertSame(['rt:s:9', 'x', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $this->buttonData());
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame('▸ Sat 25 Jul', $keyboard[2][0]['text']);
+    }
+
+    public function testTappingADayRedrawsTheListOnThatDay(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');
+        $this->wpdb->nextResults[] = [
+            $this->djTask(),
+            array_merge($this->djTask(), ['id' => 10, 'task_date' => '2026-08-01']),
+        ];
+        $this->wpdb->nextRows[] = null;   // isOn for task 10
+
+        $this->roleTaskBot()->onSelect($this->tap('rt:d:2026-08-01'));
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(3, $edit['message_id']);
+        $data = array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data');
+        self::assertSame(['rt:s:10', 'x', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $data);
+    }
+
     public function testTheListIsEmptyForSomeoneWithoutTheRole(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(7);

@@ -669,20 +669,44 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('t:1', array_column($this->buttons($rendered['keyboard']), 'callback_data'));
     }
 
-    public function testTheOtherDaysAreOfferedAsButtons(): void
+    public function testEveryDayIsAButtonAndTheShownDayIsMarked(): void
     {
         $this->queueThreeDays();
 
         $data = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data', 'text');
 
+        self::assertSame('bd:2026-08-01', $data['▸ Sat 1 Aug'] ?? null);
         self::assertSame('bd:2026-08-08', $data['Sat 8 Aug'] ?? null);
         self::assertSame('bd:2026-08-15', $data['Sat 15 Aug'] ?? null);
-        // No button for the day already shown, and no way "back" from it.
-        self::assertNotContains('bd:2026-08-01', $data);
+        self::assertArrayHasKey('🗓 Dates', $data);
         self::assertNotContains('bd:', $data);
     }
 
-    public function testAPickedDayShowsOnlyThatDayWithAWayBack(): void
+    public function testTheDayButtonsStayInTheSamePlacesWhenAnotherDayIsShown(): void
+    {
+        $this->queueThreeDays();
+        $first = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data');
+        $this->queueThreeDays();
+        $later = array_column($this->buttons($this->board()->render('2026-08-15')['keyboard']), 'callback_data');
+
+        $days = static fn (array $data): array => array_values(
+            array_filter($data, static fn (string $d): bool => str_starts_with($d, 'bd:'))
+        );
+        self::assertSame(['bd:2026-08-01', 'bd:2026-08-08', 'bd:2026-08-15'], $days($first));
+        self::assertSame($days($first), $days($later));
+    }
+
+    public function testASingleDayHasNoDayButtons(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party A', '2026-08-01')];
+        $this->wpdb->nextResults[] = [];
+
+        $labels = array_column($this->buttons($this->board()->render()['keyboard']), 'text');
+
+        self::assertNotContains('🗓 Dates', $labels);
+    }
+
+    public function testAPickedDayShowsOnlyThatDayAndIsMarked(): void
     {
         $this->queueThreeDays();
 
@@ -694,8 +718,9 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertArrayNotHasKey('📅 Party C', $data);
         // Its task button carries the day, so a join redraws the same day.
         self::assertContains('t:2:2026-08-08', $data);
-        self::assertSame('bd:', $data['⬅ Back to the next event'] ?? null);
-        self::assertSame('bd:2026-08-15', $data['Sat 15 Aug'] ?? null);
+        self::assertSame('bd:2026-08-01', $data['Sat 1 Aug'] ?? null);
+        self::assertSame('bd:2026-08-08', $data['▸ Sat 8 Aug'] ?? null);
+        self::assertArrayNotHasKey('⬅ Back to the next event', $data);
     }
 
     public function testADayWithNoOpenTasksFallsBackToTheNextEvent(): void
@@ -705,7 +730,7 @@ final class BoardServiceTest extends TelegramTestCase
         $labels = array_column($this->buttons($this->board()->render('2026-09-30')['keyboard']), 'text');
 
         self::assertContains('📅 Party A', $labels);
-        self::assertNotContains('⬅ Back to the next event', $labels);
+        self::assertContains('▸ Sat 1 Aug', $labels);
     }
 
     public function testTappingADayEditsTheTappedMessageToThatDay(): void

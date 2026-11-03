@@ -34,7 +34,7 @@ use EventCrew\Support\RoleGuide;
  * emoji, which no heading carries.
  *
  * Only one event day is shown at a time: the next one, unless another day was
- * picked from the row of day buttons under it (BoardService::PICK_PREFIX). On
+ * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX). On
  * a picked day the task buttons carry that day (t:<id>:<Y-m-d>), so the redraw
  * after a join or leave stays on it; on the next day they stay plain t:<id>.
  */
@@ -65,9 +65,6 @@ final class BoardRenderer
      */
     public const DIVIDER = '───────────';
 
-    /** How many other days the day buttons offer, and how many per row. */
-    private const PICKER_DATES = 6;
-    private const PICKER_PER_ROW = 3;
 
     public function __construct(
         private readonly TaskRepository $tasks
@@ -126,7 +123,7 @@ final class BoardRenderer
             }
         }
 
-        foreach ($this->dayRows($dates, $next, $shown) as $row) {
+        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX, self::SPACER_DATA) as $row) {
             $keyboard[] = $row;
         }
 
@@ -174,50 +171,6 @@ final class BoardRenderer
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
-    }
-
-    /**
-     * The rows under the shown day: a way back to the next event when another
-     * day is shown, then buttons for the other upcoming days.
-     *
-     * @param array<int, string> $dates Every day with open tasks, ascending.
-     * @return array<int, array<int, array<string, string>>>
-     */
-    private function dayRows(array $dates, string $next, string $shown): array
-    {
-        $rows = [];
-
-        if ($shown !== $next) {
-            $rows[] = [[
-                'text' => __('⬅ Back to the next event', 'eventcrew'),
-                'callback_data' => BoardService::PICK_PREFIX,
-            ]];
-        }
-
-        $others = array_slice(
-            array_values(array_filter($dates, static fn (string $d): bool => $d !== $next && $d !== $shown)),
-            0,
-            self::PICKER_DATES
-        );
-
-        if ([] === $others) {
-            return $rows;
-        }
-
-        $rows[] = [$this->spacerButton(__('🗓 Other dates', 'eventcrew'))];
-        $buttons = array_map(
-            static fn (string $d): array => [
-                'text' => Dates::dayLabel($d),
-                'callback_data' => BoardService::PICK_PREFIX . $d,
-            ],
-            $others
-        );
-
-        foreach (array_chunk($buttons, self::PICKER_PER_ROW) as $row) {
-            $rows[] = $row;
-        }
-
-        return $rows;
     }
 
     /**
