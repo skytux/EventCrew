@@ -703,7 +703,7 @@ final class FollowupMail
 
         foreach ($this->people->organizers() as $person) {
             $words = Language::forPerson($person, static fn (): array => [
-                'subject' => sprintf(
+                'subject' => Newsletter::PREVIEW_PREFIX . sprintf(
                     /* translators: %s: the date the post-event email goes out, like 15.11.2026 */
                     __('Post-event email preview: it goes out on %s', 'eventcrew'),
                     TicketMail::shortDate($sendAt->format('Y-m-d'))

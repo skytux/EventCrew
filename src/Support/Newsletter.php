@@ -64,6 +64,9 @@ use EventCrew\Repositories\PersonRepository;
  */
 final class Newsletter
 {
+    /** Put in front of every preview email's subject (Owner, 2026-11-03). */
+    public const PREVIEW_PREFIX = '[Preview] ';
+
     public const ENABLED_OPTION = 'eventcrew_newsletter_enabled';
 
     public const DAYS_OPTION = 'eventcrew_newsletter_days';
@@ -654,7 +657,7 @@ final class Newsletter
 
         foreach ($this->people->organizers() as $person) {
             $words = Language::forPerson($person, static fn (): array => [
-                'subject' => sprintf(
+                'subject' => self::PREVIEW_PREFIX . sprintf(
                     /* translators: %s: the date the newsletter will be sent, like 14.11.2026 */
                     __('Next events announcement preview: it goes out on %s', 'eventcrew'),
                     TicketMail::shortDate($plan['send_on'])
