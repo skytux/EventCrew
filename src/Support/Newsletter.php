@@ -824,7 +824,12 @@ final class Newsletter
                     ),
                     'intro' => sprintf(
                         /* translators: 1: the send date, like 14.11.2026, 2: number of subscribers */
-                        __('This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                        _n(
+                            'This announcement goes out on %1$s to %2$d subscriber. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                            'This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                            $count,
+                            'eventcrew'
+                        ),
                         TicketMail::shortDate($plan['send_on']),
                         $count
                     ),

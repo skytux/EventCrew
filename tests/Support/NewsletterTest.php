@@ -886,6 +886,22 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('>Hi Olli!</p>', $this->mails[0]['body']);
     }
 
+    /** With one subscriber the preview says "1 subscriber", not "1 subscribers". */
+    public function testThePreviewCountsOneSubscriberInTheSingular(): void
+    {
+        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')]]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
+        ];
+        $this->wpdb->nextResults[] = [['language' => '', 'n' => 1]];
+
+        $method = new \ReflectionMethod(Newsletter::class, 'sendPreview');
+        $method->setAccessible(true);
+        $method->invoke($this->newsletter(), $this->state()['plan']);
+
+        self::assertStringContainsString('goes out on 21.7.2026 to 1 subscriber.', $this->mails[0]['body']);
+    }
+
     /**
      * With EventMesh's clean names, a card with a picture has the date, the
      * name, the Finnish name when it is different and the DJ line in the
