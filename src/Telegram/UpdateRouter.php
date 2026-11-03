@@ -50,7 +50,8 @@ final class UpdateRouter
         private readonly ?NewsletterCommand $newsletter = null,
         private readonly ?SayCommand $say = null,
         private readonly ?EventsCommand $events = null,
-        private readonly ?WebLoginBot $webLogin = null
+        private readonly ?WebLoginBot $webLogin = null,
+        private readonly ?BotLog $botLog = null
     ) {
     }
 
@@ -82,10 +83,33 @@ final class UpdateRouter
     }
 
     /**
+     * Routes one update and records it in the command log (BotLog): every
+     * typed command and button tap, and with $source "helper" every action the
+     * language-model helper runs, since those come through here too. A
+     * handler that throws marks its row as an error.
+     *
+     * @param array<string, mixed> $update
+     * @param string|null $chosen The sender's language, null if not chosen yet.
+     * @param string $source BotLog::SOURCE_HELPER for the helper's actions, else ''.
+     */
+    private function route(array $update, ?string $chosen, string $source = ''): void
+    {
+        $logged = null !== $this->botLog ? $this->botLog->record($update, $source) : 0;
+
+        try {
+            $this->routeUpdate($update, $chosen);
+        } catch (\Throwable $e) {
+            $this->botLog?->failed($logged);
+
+            throw $e;
+        }
+    }
+
+    /**
      * @param array<string, mixed> $update
      * @param string|null $chosen The sender's language, null if not chosen yet.
      */
-    private function route(array $update, ?string $chosen): void
+    private function routeUpdate(array $update, ?string $chosen): void
     {
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
@@ -354,7 +378,7 @@ final class UpdateRouter
     private function runner(?string $chosen): callable
     {
         return function (array $update) use ($chosen): void {
-            $this->route($update, $chosen);
+            $this->route($update, $chosen, BotLog::SOURCE_HELPER);
         };
     }
 

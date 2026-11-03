@@ -6,7 +6,9 @@ namespace EventCrew\Support;
 
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\BotLogRepository;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\CommandMenu;
 
 /**
@@ -148,6 +150,10 @@ final class Scheduler
         // repository is newed inline like the other stateless helpers, so this
         // adds no constructor to the heartbeat.
         (new AuthTokenRepository())->purgeExpired();
+
+        // Delete the bot's command log rows older than BotLog::KEEP_DAYS, as
+        // the privacy notice says.
+        (new BotLogRepository())->deleteBefore(BotLog::cutoff());
 
         // Enforce the published retention period. Not inside the send window:
         // it notifies nobody, so there is no unsociable hour to protect anyone

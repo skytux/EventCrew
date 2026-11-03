@@ -292,6 +292,7 @@ final class OrganizerGuide
                 '- 🔹 ' . __('Roster: attendance and the door list for any date, and the Holvi ticket buyers.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 '- 🔹 ' . __('Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 '- 🔹 ' . __('Email template: how every email looks.', 'eventcrew'),
+                '- 🔹 ' . __('Bot log: which bot commands and buttons each person used on a day. Message text is not stored.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 '- 🔹 ' . __('Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ]),
             self::wpAdminLine(),
