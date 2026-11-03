@@ -6813,3 +6813,12 @@ msgstr "Tämä osoite saa jo sivuston %1$s tulevien tapahtumien tiedotteen, jote
 
 msgid "Write to us"
 msgstr "Kirjoita meille"
+
+msgid "Event cards"
+msgstr "Tapahtumakortit"
+
+msgid "Show the group board as event cards"
+msgstr "Näytä ryhmän taulu tapahtumakortteina"
+
+msgid "Off by default. When on, the board is one message per day, for the next 6 days that have tasks. A day with an EventMesh event that has a picture is a photo message: the event’s picture, name, date, price and description, with that day’s task buttons under it. Other days are text messages. There are no date buttons."
+msgstr "Oletuksena pois päältä. Kun se on päällä, taulu on yksi viesti päivää kohden seuraavalle 6 päivälle, joilla on tehtäviä. Päivä, jolla on EventMesh-tapahtuma ja sille kuva, on kuvaviesti: tapahtuman kuva, nimi, päivä, hinta ja kuvaus, ja sen alla päivän tehtäväpainikkeet. Muut päivät ovat tekstiviestejä. Päivämääräpainikkeita ei ole."

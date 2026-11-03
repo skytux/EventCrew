@@ -339,6 +339,7 @@ final class SettingsPage
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
+            'board_cards' => BoardService::cardsOn(),
             'profile' => [
                 'about' => BotProfileSettings::value('about'),
                 'description' => BotProfileSettings::value('description'),
@@ -527,6 +528,8 @@ final class SettingsPage
         update_option(TelegramClient::TOKEN_OPTION, $token);
 
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
+        // The group board's card format; the board changes at its next refresh.
+        update_option(BoardService::CARDS_OPTION, isset($_POST['telegram_board_cards']));
         update_option(TelegramLogin::ENABLED_OPTION, isset($_POST['telegram_web_login']));
 
         // Both of these change the URL Telegram must post to, so the webhook has

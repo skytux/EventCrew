@@ -89,6 +89,16 @@ final class BoardService
      */
     public const PICK_PREFIX = 'bd:';
 
+    /**
+     * The card format switch, off by default (Settings → Telegram bot). On, the
+     * board is one message per day (BoardRenderer::cards()): a photo message
+     * for a day with an EventMesh event, a text message for any other day, and
+     * no row of day buttons. BOARD_OPTION then also holds 'days': per day, the
+     * message id, its kind ('card' or 'text'), the picture, and hashes of the
+     * text and the keyboard, so a refresh edits only what changed.
+     */
+    public const CARDS_OPTION = 'eventcrew_telegram_board_cards';
+
     /** Composes the board text + keyboard; the pure "what it looks like" half. */
     private readonly BoardRenderer $renderer;
 
@@ -256,6 +266,16 @@ final class BoardService
             return false;
         }
 
+        // The card format shows every day at once, so the day asked for does
+        // not matter there.
+        if (self::cardsOn()) {
+            return $this->refreshCards($chatId, $board);
+        }
+
+        if ([] !== $this->days($board)) {
+            $board = $this->dropCards($chatId, $board);
+        }
+
         $rendered = $this->render($date);
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
         $messageId = (int) ($board['message_id'] ?? 0);
@@ -299,10 +319,19 @@ final class BoardService
             return;
         }
 
+        // The card format keeps a hash per day and edits only changed days.
+        if (self::cardsOn()) {
+            $this->refresh();
+
+            return;
+        }
+
         $rendered = $this->render();
         $hash = md5($rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard']));
 
-        if ($hash === (string) get_option(self::BOARD_HASH_OPTION, '')) {
+        // Messages left from the card format mean it was just switched off:
+        // the text board has to replace them even when its own text is the same.
+        if ($hash === (string) get_option(self::BOARD_HASH_OPTION, '') && [] === $this->days($this->board())) {
             return;
         }
 
@@ -355,6 +384,12 @@ final class BoardService
         // new message id once Telegram confirms it.
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
 
+        if (self::cardsOn()) {
+            $this->repostCards($chatId, $previous);
+
+            return;
+        }
+
         $rendered = $this->render();
         $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
 
@@ -364,7 +399,280 @@ final class BoardService
             $this->telegram->deleteMessage($previousChat, $previousId);
         }
 
+        // Messages left from the card format, when it was switched off since.
+        if (0 !== $previousChat) {
+            foreach ($this->days($previous) as $old) {
+                $this->telegram->deleteMessage($previousChat, $old['message_id']);
+            }
+        }
+
         $this->storeBoard($chatId, $result);
+    }
+
+    /** Whether the board is shown in card format (Settings → Telegram bot). */
+    public static function cardsOn(): bool
+    {
+        return (bool) get_option(self::CARDS_OPTION, false);
+    }
+
+    /**
+     * The card format's refresh: each day's message is edited in place when it
+     * changed, posted when the day is new, and deleted when the day is gone.
+     * A day that changes between a text message and a photo message is posted
+     * again and the old message deleted, because Telegram cannot edit one
+     * into the other. A text board from before the switch is deleted.
+     *
+     * A day whose post or edit fails keeps its old state, so the next refresh
+     * tries it again. Returns whether every day is up to date.
+     *
+     * @param array<string, mixed> $board
+     */
+    private function refreshCards(int $chatId, array $board): bool
+    {
+        $messages = $this->renderCards();
+        $old = $this->days($board);
+        $days = [];
+        $ok = true;
+
+        $textId = (int) ($board['message_id'] ?? 0);
+
+        if ($textId > 0) {
+            $this->telegram->deleteMessage($chatId, $textId);
+        }
+
+        foreach ($messages as $day => $message) {
+            $day = (string) $day;
+            $previous = $old[$day] ?? null;
+            unset($old[$day]);
+
+            if (null !== $previous && $previous['kind'] === $message['kind']) {
+                $state = $this->editDay($chatId, $previous, $message);
+                $ok = $ok && null !== $state;
+                $days[$day] = $state ?? $previous;
+
+                continue;
+            }
+
+            $state = $this->postDay($chatId, $message);
+
+            if (null === $state) {
+                $ok = false;
+
+                if (null !== $previous) {
+                    $days[$day] = $previous;
+                }
+
+                continue;
+            }
+
+            if (null !== $previous) {
+                $this->telegram->deleteMessage($chatId, $previous['message_id']);
+            }
+
+            $days[$day] = $state;
+        }
+
+        // Days no longer on the board: past, or their last task removed.
+        foreach ($old as $gone) {
+            $this->telegram->deleteMessage($chatId, $gone['message_id']);
+        }
+
+        update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0, 'days' => $days]);
+
+        return $ok;
+    }
+
+    /**
+     * The card format's repost: every day posted fresh into $chatId, then the
+     * previous board's messages deleted, so the board is at the foot of the
+     * group and nothing old is left above it.
+     *
+     * @param array<string, mixed> $previous The board before the repost.
+     */
+    private function repostCards(int $chatId, array $previous): void
+    {
+        $days = [];
+
+        foreach ($this->renderCards() as $day => $message) {
+            $state = $this->postDay($chatId, $message);
+
+            if (null !== $state) {
+                $days[(string) $day] = $state;
+            }
+        }
+
+        $previousChat = (int) ($previous['chat_id'] ?? 0);
+        $previousId = (int) ($previous['message_id'] ?? 0);
+
+        if (0 !== $previousChat) {
+            if ($previousId > 0) {
+                $this->telegram->deleteMessage($previousChat, $previousId);
+            }
+
+            foreach ($this->days($previous) as $old) {
+                $this->telegram->deleteMessage($previousChat, $old['message_id']);
+            }
+        }
+
+        update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0, 'days' => $days]);
+    }
+
+    /**
+     * Deletes the card format's messages after it was switched off, so the
+     * text board that follows is the only board in the group.
+     *
+     * @param array<string, mixed> $board
+     * @return array<string, mixed> The board without its days.
+     */
+    private function dropCards(int $chatId, array $board): array
+    {
+        foreach ($this->days($board) as $old) {
+            $this->telegram->deleteMessage($chatId, $old['message_id']);
+        }
+
+        unset($board['days']);
+        update_option(self::BOARD_OPTION, $board);
+
+        return $board;
+    }
+
+    /**
+     * Posts one day's message. Returns its state for 'days', or null when
+     * Telegram did not take it.
+     *
+     * @param array{
+     *     kind: string,
+     *     text: string,
+     *     photo: string,
+     *     keyboard: array<int, array<int, array<string, mixed>>>
+     * } $message
+     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}|null
+     */
+    private function postDay(int $chatId, array $message): ?array
+    {
+        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
+
+        $result = 'card' === $message['kind']
+            ? $this->telegram->sendPhoto($chatId, $message['photo'], $message['text'], $markup)
+            : $this->telegram->sendMessage($chatId, $message['text'], $markup);
+
+        if (null === $result || ! isset($result['message_id'])) {
+            return null;
+        }
+
+        return $this->dayState((int) $result['message_id'], $message);
+    }
+
+    /**
+     * Edits one day's message in place, with the smallest edit that does it:
+     * a text message gets editMessageText; a photo message gets
+     * editMessageMedia for a new picture, editMessageCaption for a new
+     * caption, and editMessageReplyMarkup when only the buttons changed.
+     * Nothing is sent when nothing changed.
+     *
+     * @param array{message_id: int, kind: string, photo: string, text: string, keyboard: string} $previous
+     * @param array{
+     *     kind: string,
+     *     text: string,
+     *     photo: string,
+     *     keyboard: array<int, array<int, array<string, mixed>>>
+     * } $message
+     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}|null
+     *         The new state, or null when the edit failed.
+     */
+    private function editDay(int $chatId, array $previous, array $message): ?array
+    {
+        $messageId = $previous['message_id'];
+        $state = $this->dayState($messageId, $message);
+        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
+        $newText = $state['text'] !== $previous['text'];
+        $newKeyboard = $state['keyboard'] !== $previous['keyboard'];
+
+        if ('card' !== $message['kind']) {
+            if (! $newText && ! $newKeyboard) {
+                return $state;
+            }
+
+            $result = $this->telegram->editMessageText($chatId, $messageId, $message['text'], $markup);
+        } elseif ($state['photo'] !== $previous['photo']) {
+            $result = $this->telegram->editMessageMedia(
+                $chatId,
+                $messageId,
+                $message['photo'],
+                $message['text'],
+                $markup
+            );
+        } elseif ($newText) {
+            $result = $this->telegram->editMessageCaption($chatId, $messageId, $message['text'], $markup);
+        } elseif ($newKeyboard) {
+            $result = $this->telegram->editMessageReplyMarkup($chatId, $messageId, $markup);
+        } else {
+            return $state;
+        }
+
+        return null === $result ? null : $state;
+    }
+
+    /**
+     * @param array{
+     *     kind: string,
+     *     text: string,
+     *     photo: string,
+     *     keyboard: array<int, array<int, array<string, mixed>>>
+     * } $message
+     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}
+     */
+    private function dayState(int $messageId, array $message): array
+    {
+        return [
+            'message_id' => $messageId,
+            'kind' => $message['kind'],
+            'photo' => $message['photo'],
+            'text' => md5($message['text']),
+            'keyboard' => md5((string) wp_json_encode($message['keyboard'])),
+        ];
+    }
+
+    /**
+     * The card format's messages per day, in English like render().
+     *
+     * @return array<string, array{
+     *     kind: string,
+     *     text: string,
+     *     photo: string,
+     *     keyboard: array<int, array<int, array<string, mixed>>>
+     * }>
+     */
+    private function renderCards(): array
+    {
+        return Language::run(Language::ENGLISH, fn (): array => $this->renderer->cards());
+    }
+
+    /**
+     * The card format's stored messages, keyed by day; empty for a text board.
+     *
+     * @param array<string, mixed> $board
+     * @return array<string, array{message_id: int, kind: string, photo: string, text: string, keyboard: string}>
+     */
+    private function days(array $board): array
+    {
+        $days = [];
+
+        foreach ((array) ($board['days'] ?? []) as $day => $state) {
+            if (! is_array($state) || (int) ($state['message_id'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $days[(string) $day] = [
+                'message_id' => (int) $state['message_id'],
+                'kind' => (string) ($state['kind'] ?? ''),
+                'photo' => (string) ($state['photo'] ?? ''),
+                'text' => (string) ($state['text'] ?? ''),
+                'keyboard' => (string) ($state['keyboard'] ?? ''),
+            ];
+        }
+
+        return $days;
     }
 
     /**

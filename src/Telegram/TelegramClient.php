@@ -216,6 +216,85 @@ final class TelegramClient
     }
 
     /**
+     * A new caption (Telegram HTML) and buttons for a photo message.
+     *
+     * @param array<string, mixed>|null $replyMarkup
+     * @return array<string, mixed>|null
+     */
+    public function editMessageCaption(
+        int|string $chatId,
+        int $messageId,
+        string $caption,
+        ?array $replyMarkup = null
+    ): ?array {
+        $params = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'caption' => $caption,
+            'parse_mode' => 'HTML',
+        ];
+
+        if (null !== $replyMarkup) {
+            $params['reply_markup'] = $replyMarkup;
+        }
+
+        return $this->call('editMessageCaption', $params);
+    }
+
+    /**
+     * A new picture for a photo message, with its caption (Telegram HTML) and
+     * buttons. Telegram fetches the picture from $photoUrl itself.
+     *
+     * @param array<string, mixed>|null $replyMarkup
+     * @return array<string, mixed>|null
+     */
+    public function editMessageMedia(
+        int|string $chatId,
+        int $messageId,
+        string $photoUrl,
+        string $caption,
+        ?array $replyMarkup = null
+    ): ?array {
+        $params = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'media' => [
+                'type' => 'photo',
+                'media' => $photoUrl,
+                'caption' => $caption,
+                'parse_mode' => 'HTML',
+            ],
+        ];
+
+        if (null !== $replyMarkup) {
+            $params['reply_markup'] = $replyMarkup;
+        }
+
+        return $this->call('editMessageMedia', $params);
+    }
+
+    /**
+     * New buttons for a message, leaving its text or caption as it is. With
+     * null the buttons are removed.
+     *
+     * @param array<string, mixed>|null $replyMarkup
+     * @return array<string, mixed>|null
+     */
+    public function editMessageReplyMarkup(int|string $chatId, int $messageId, ?array $replyMarkup): ?array
+    {
+        $params = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+        ];
+
+        if (null !== $replyMarkup) {
+            $params['reply_markup'] = $replyMarkup;
+        }
+
+        return $this->call('editMessageReplyMarkup', $params);
+    }
+
+    /**
      * Removes a message the bot posted. Used when the board is re-posted, so the
      * old board is cleared rather than left behind. A message too old to delete
      * (Telegram limits bots to 48h) or already gone comes back as an error the

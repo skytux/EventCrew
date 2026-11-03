@@ -101,13 +101,17 @@ final class EventCard
      * The card of one event, or null when the post is missing or is not an
      * event. Built whatever the event's state, so a probe can show any event.
      *
+     * $footer is plain text put at the end of the caption (the group board's
+     * two lines on how to sign up); the descriptions are made shorter so the
+     * whole caption still fits.
+     *
      * @return array{
      *     photo: string,
      *     caption: string,
      *     buttons: array<int, array<int, array{text: string, url: string}>>
      * }|null
      */
-    public static function forEvent(int $postId): ?array
+    public static function forEvent(int $postId, string $footer = ''): ?array
     {
         $event = EventSource::describe($postId);
 
@@ -131,7 +135,7 @@ final class EventCard
 
         return [
             'photo' => self::isLink((string) $details['image']) ? (string) $details['image'] : '',
-            'caption' => self::caption($details),
+            'caption' => self::caption($details, $footer),
             'buttons' => self::buttons($details),
         ];
     }
@@ -177,11 +181,13 @@ final class EventCard
 
     /**
      * The caption, from the event's details: date, time, title, title_fi, dj,
-     * sold_out and EventSource::card()'s price and descriptions.
+     * sold_out and EventSource::card()'s price and descriptions. $footer is
+     * plain text added at the end, after a blank line; the descriptions get
+     * shorter to leave room for it.
      *
      * @param array<string, mixed> $event
      */
-    public static function caption(array $event): string
+    public static function caption(array $event, string $footer = ''): string
     {
         $words = self::words();
         $title = self::cut(self::plain((string) ($event['title'] ?? '')), self::TITLE_MAX);
@@ -212,9 +218,10 @@ final class EventCard
         }
 
         $caption = implode("\n", $head);
-        $about = self::about($event, self::CAPTION_LIMIT - self::length($caption) - 2);
+        $tail = '' === $footer ? '' : "\n\n" . self::escape($footer);
+        $about = self::about($event, self::CAPTION_LIMIT - self::length($caption . $tail) - 2);
 
-        return '' === $about ? $caption : $caption . "\n\n" . $about;
+        return ('' === $about ? $caption : $caption . "\n\n" . $about) . $tail;
     }
 
     /**

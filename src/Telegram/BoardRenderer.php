@@ -38,6 +38,9 @@ use EventCrew\Support\RoleGuide;
  * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX). On
  * a picked day the task buttons carry that day (t:<id>:<Y-m-d>), so the redraw
  * after a join or leave stays on it; on the next day they stay plain t:<id>.
+ *
+ * With the card format on (BoardService::CARDS_OPTION), cards() gives one
+ * message per day instead, and there is no row of day buttons.
  */
 final class BoardRenderer
 {
@@ -86,44 +89,192 @@ final class BoardRenderer
      */
     public function render(string $date = ''): array
     {
+        $tasks = $this->boardTasks();
+
+        if ([] === $tasks) {
+            return $this->emptyBoard();
+        }
+
+        $dates = $this->dates($tasks);
+        $shown = in_array($date, $dates, true) ? $date : $dates[0];
+
+        return $this->day($tasks, $dates, $shown, true, null, []);
+    }
+
+    /**
+     * The board in card format: one message per day, for the first
+     * DayPicker::DATES days, with no row of day buttons.
+     *
+     * A day with an EventMesh event that has a picture is a card: the event's
+     * picture, its card caption (EventCard) with the board's two lines on how
+     * to sign up at the end, and that day's task buttons, then the card's own
+     * link buttons. The event's heading rows are left out, because the
+     * caption already gives its name and date. Any other day is the same text
+     * message the board shows for that day, without the day buttons.
+     *
+     * With no open tasks the list has one text message under the key ''.
+     *
+     * @return array<string, array{
+     *     kind: string,
+     *     text: string,
+     *     photo: string,
+     *     keyboard: array<int, array<int, array<string, mixed>>>
+     * }> Keyed by day (Y-m-d), in date order. kind is 'card' or 'text'; for
+     *    a card, text is the caption.
+     */
+    public function cards(): array
+    {
+        $tasks = $this->boardTasks();
+
+        if ([] === $tasks) {
+            return ['' => ['kind' => 'text', 'photo' => ''] + $this->emptyBoard()];
+        }
+
+        $dates = $this->dates($tasks);
+        $footer = implode("\n", $this->introLines());
+        $messages = [];
+
+        foreach (array_slice($dates, 0, DayPicker::DATES) as $date) {
+            $card = $this->cardFor($tasks, $date, $footer);
+
+            if (null === $card) {
+                $messages[$date] = ['kind' => 'text', 'photo' => '']
+                    + $this->day($tasks, $dates, $date, false, null, []);
+
+                continue;
+            }
+
+            $day = $this->day($tasks, $dates, $date, false, $card['event'], $card['buttons']);
+            $messages[$date] = [
+                'kind' => 'card',
+                'text' => $card['caption'],
+                'photo' => $card['photo'],
+                'keyboard' => $day['keyboard'],
+            ];
+        }
+
+        return $messages;
+    }
+
+    /**
+     * The card of the first event on $date that is an EventMesh event with a
+     * picture, or null when there is none.
+     *
+     * @param array<int, Task> $tasks
+     * @return array{
+     *     event: int,
+     *     photo: string,
+     *     caption: string,
+     *     buttons: array<int, array<int, array<string, string>>>
+     * }|null
+     */
+    private function cardFor(array $tasks, string $date, string $footer): ?array
+    {
+        $seen = [];
+
+        foreach ($tasks as $task) {
+            if ($task->taskDate !== $date || null === $task->eventPostId || isset($seen[$task->eventPostId])) {
+                continue;
+            }
+
+            $seen[$task->eventPostId] = true;
+            $card = EventCard::forEvent($task->eventPostId, $footer);
+
+            if (null !== $card && '' !== $card['photo']) {
+                return ['event' => $task->eventPostId] + $card;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The tasks the group board may show.
+     *
+     * @return array<int, Task>
+     */
+    private function boardTasks(): array
+    {
         // The board is one message the whole group reads, so a restricted task
         // (Organize, DJ, ...) cannot be on it at all; the people holding its
         // role take it on the crew page or in a private chat with the bot.
         // A role switched off "Show on the guest board" is left off too. The
         // web page shows the same tasks when signed out (BoardVisibility).
-        $tasks = array_values(array_filter(
+        return array_values(array_filter(
             $this->tasks->upcoming(),
             static fn (Task $task): bool => BoardVisibility::onGuestBoard($task)
         ));
+    }
 
-        if ([] === $tasks) {
-            return [
-                'text' => __('No open tasks right now. Check back soon!', 'eventcrew'),
-                'keyboard' => [],
-            ];
-        }
-
+    /**
+     * @param array<int, Task> $tasks
+     * @return array<int, string> Every day of $tasks, Y-m-d, ascending.
+     */
+    private function dates(array $tasks): array
+    {
         $dates = array_values(array_unique(array_map(static fn (Task $t): string => $t->taskDate, $tasks)));
         sort($dates);
-        $next = $dates[0];
-        $shown = in_array($date, $dates, true) ? $date : $next;
+
+        return $dates;
+    }
+
+    /**
+     * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
+     */
+    private function emptyBoard(): array
+    {
+        return [
+            'text' => __('No open tasks right now. Check back soon!', 'eventcrew'),
+            'keyboard' => [],
+        ];
+    }
+
+    /** @return array<int, string> The two lines at the top of the board. */
+    private function introLines(): array
+    {
+        return [
+            __('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew'),
+            __('Send /me in a DM to get your summary.', 'eventcrew'),
+        ];
+    }
+
+    /**
+     * One day of the board: the text and the keyboard.
+     *
+     * @param array<int, Task>   $tasks       Every task the board may show.
+     * @param array<int, string> $dates       Every day of $tasks, ascending.
+     * @param string             $shown       The day to show, Y-m-d.
+     * @param bool             $picker      Whether the row of day buttons goes in.
+     * @param int|null           $cardEvent   The event shown as a card: its heading rows are left out.
+     * @param array<int, array<int, array<string, string>>> $cardButtons The card's link buttons.
+     * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
+     */
+    private function day(
+        array $tasks,
+        array $dates,
+        string $shown,
+        bool $picker,
+        ?int $cardEvent,
+        array $cardButtons
+    ): array {
         $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
-        $daySuffix = $shown === $next ? '' : ':' . $shown;
+        $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
 
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
         $groups = $this->groupByEvent($tasks);
 
-        $lines = [__('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew')];
-        $lines[] = __('Send /me in a DM to get your summary.', 'eventcrew');
+        $lines = $this->introLines();
         $keyboard = [];
 
         // Headings go in for one event as readily as for several. A board that
         // changes shape when a second event opens is a board people have to
         // re-learn, and the event's own name is worth having even when it is
         // the only one - the date alone never said which night it was.
-        foreach ($groups as $group) {
-            $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
-            $keyboard[] = [$this->spacerButton($group['date'])];
+        foreach ($groups as $key => $group) {
+            if (null === $cardEvent || 'e:' . $cardEvent !== $key) {
+                $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
+                $keyboard[] = [$this->spacerButton($group['date'])];
+            }
 
             foreach ($group['tasks'] as $task) {
                 $taken = $occupancy[$task->id] ?? 0;
@@ -131,16 +282,18 @@ final class BoardRenderer
             }
         }
 
-        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX, self::SPACER_DATA) as $row) {
-            $keyboard[] = $row;
+        if ($picker) {
+            foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX, self::SPACER_DATA) as $row) {
+                $keyboard[] = $row;
+            }
         }
 
         // The links at the foot are not part of any event - they lead out of
         // the board rather than into a slot - so a rule separates them from the
         // last task above. Built first and only added if there is at least one,
         // or an un-configured bot would end the board on a divider with nothing
-        // under it.
-        $deepLinks = [];
+        // under it. A card's own links (ticket, DJ, Crew app) come first.
+        $deepLinks = $cardButtons;
 
         foreach (
             [
