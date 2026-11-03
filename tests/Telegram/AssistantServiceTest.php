@@ -306,14 +306,60 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame('message 105', $entries[99]['x']);
     }
 
-    public function testNothingFromTheGroupIsKept(): void
+    public function testInTheGroupTheNextMessageCarriesWhatThisPersonWroteBefore(): void
     {
-        $this->reply(true, true, 'Saturday.');
+        $this->reply(true, true, 'Saturday at 20:00.');
+        $this->reply(true, true, 'Until 02:00.');
 
         $this->ask(self::groupMessage('@crewbot when is the next night?'));
+        $this->ask(self::groupMessage('@crewbot and until when?'));
+
+        self::assertStringContainsString('(nothing yet)', $this->systemPrompt(0));
+
+        $second = $this->systemPrompt(1);
+        self::assertStringContainsString('what this person wrote to you in this group', $second);
+        self::assertStringContainsString('Person: @crewbot when is the next night?', $second);
+        self::assertStringContainsString('Bot: Saturday at 20:00.', $second);
+        self::assertStringNotContainsString('Person: @crewbot and until when?', $second);
+    }
+
+    public function testTheGroupRecordIsApartFromThePrivateChat(): void
+    {
+        $this->reply(true, true, 'Noted.');
+        $this->reply(true, true, 'Saturday.');
+        $this->reply(true, true, 'Hello again.');
+
+        $this->ask(self::privateMessage('a private worry'));
+        $this->ask(self::groupMessage('@crewbot when is the next night?'));
+        $this->ask(self::privateMessage('hi'));
+
+        self::assertStringNotContainsString('a private worry', $this->systemPrompt(1));
+        self::assertStringContainsString('(nothing yet)', $this->systemPrompt(1));
+        self::assertStringContainsString('a private worry', $this->systemPrompt(2));
+        self::assertStringNotContainsString('when is the next night', $this->systemPrompt(2));
+    }
+
+    public function testInTheGroupEachPersonHasTheirOwnRecord(): void
+    {
+        $this->reply(true, true, 'Saturday.');
+        $this->reply(true, true, 'Yes.');
+
+        $this->ask(self::groupMessage('@crewbot when is the next night?'));
+        $other = self::groupMessage('@crewbot is there parking?');
+        $other['from'] = ['id' => 777, 'first_name' => 'Kim'];
+        $this->ask($other);
+
+        self::assertStringNotContainsString('when is the next night', $this->systemPrompt(1));
+        self::assertStringContainsString('(nothing yet)', $this->systemPrompt(1));
+    }
+
+    public function testInTheGroupAMessageNotForTheBotIsNotKept(): void
+    {
+        $this->reply(false, true, 'Have fun!');
+
+        $this->ask(self::groupMessage('see you all tonight'));
 
         self::assertSame([], $this->transientsStartingWith(\EventCrew\Telegram\ConversationLog::PREFIX));
-        self::assertStringNotContainsString('CONVERSATION', $this->systemPrompt(0));
     }
 
     public function testHelpSaysPlainWordsWorkAndTheChatIsRemembered(): void

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.87.0
+Stable tag: 1.88.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.88.0 =
+In the group, the bot now remembers for 24 hours what each person wrote to it and its answers, so follow-up questions work there too. Each person has a separate record per group, apart from their private chat; group messages not written to the bot are not kept. The privacy notice, the organizer guide and the README say so.
 
 = 1.87.0 =
 The bot sends a private chat to the organizers (email plus a short Telegram message) when the person gives feedback, is unhappy or very happy, or asks for a human; at most once per person per hour, only for people with a confirmed email, with an off switch in Settings > Telegram bot. The privacy notice, the organizer guide and the README describe it.
@@ -893,6 +896,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.88.0 =
+No database change.
 
 = 1.87.0 =
 No database change.

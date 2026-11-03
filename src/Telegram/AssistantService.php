@@ -34,7 +34,8 @@ use EventCrew\Support\OrganizerGuide;
  * The message text goes to the configured server and is never logged. In a
  * private chat the messages and the helper's answers are kept for 24 hours
  * (ConversationLog) and sent along, so the model can follow the
- * conversation; nothing from a group is kept.
+ * conversation. In a group, the messages written to the bot and its
+ * answers are kept the same way, in a separate record per person and group.
  *
  * In a private chat the model may also set "forward" (feedback, unhappy,
  * very happy, wants a human): ChatForwarder then emails that chat to the
@@ -305,12 +306,12 @@ final class AssistantService
 
         $audience = $this->help->audience($fromId);
         $knowledge = $this->knowledge->build();
-        $history = '';
+        // Read before this message is added: the message itself goes as the
+        // user turn. A group has its own record per person (0 = private).
+        $logChat = $isPrivate ? 0 : $chatId;
+        $history = ConversationLog::forPrompt($fromId, null, $logChat);
 
         if ($isPrivate) {
-            // Read before this message is added: the message itself goes as
-            // the user turn.
-            $history = ConversationLog::forPrompt($fromId);
             ConversationLog::add($fromId, ConversationLog::PERSON, $text);
         }
 
@@ -395,12 +396,22 @@ final class AssistantService
      */
     private function answerGroup(array $message, array $parsed): void
     {
-        if (! $parsed['aimed'] || ! $parsed['known'] || '' === $parsed['reply']) {
+        if (! $parsed['aimed']) {
+            return;
+        }
+
+        // Only messages written to the bot are kept, in this person's
+        // record for this group.
+        $chatId = (int) $message['chat']['id'];
+        $fromId = (int) $message['from']['id'];
+        ConversationLog::add($fromId, ConversationLog::PERSON, trim((string) $message['text']), null, $chatId);
+
+        if (! $parsed['known'] || '' === $parsed['reply']) {
             return;
         }
 
         $params = [
-            'chat_id' => (int) $message['chat']['id'],
+            'chat_id' => $chatId,
             'text' => $this->clip($parsed['reply']),
         ];
 
@@ -412,6 +423,7 @@ final class AssistantService
         }
 
         $this->telegram->call('sendMessage', $params);
+        ConversationLog::add($fromId, ConversationLog::BOT, $params['text'], null, $chatId);
     }
 
     /**
@@ -624,11 +636,16 @@ final class AssistantService
             }
         }
 
+        $lines[] = '';
+
         if ($isPrivate) {
-            $lines[] = '';
             $lines[] = 'CONVERSATION (this private chat, last 24 hours):';
-            $lines[] = '' !== $history ? $history : '(nothing yet)';
+        } else {
+            $lines[] = 'CONVERSATION (what this person wrote to you in this group, and your answers, last 24'
+                . ' hours; other people\'s messages are not here):';
         }
+
+        $lines[] = '' !== $history ? $history : '(nothing yet)';
 
         return implode("\n", $lines);
     }

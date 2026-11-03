@@ -822,7 +822,7 @@ msgstr ""
 msgid "Bought on Holvi, not on the list"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:497 src/Telegram/MenuButtons.php:92 templates/admin/people.php:120 templates/admin/tasks.php:269
+#: src/Telegram/AssistantService.php:509 src/Telegram/MenuButtons.php:92 templates/admin/people.php:120 templates/admin/tasks.php:269
 #: templates/public/signup-board.php:214 templates/public/signup.php:732 templates/public/signup.php:1386
 msgid "Cancel"
 msgstr ""
@@ -844,7 +844,7 @@ msgstr ""
 msgid "Cancelled less than %d hours before"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:191 src/Telegram/AssistantService.php:192
+#: src/Telegram/AssistantService.php:192 src/Telegram/AssistantService.php:193
 msgid "Cancelled."
 msgstr ""
 
@@ -976,7 +976,7 @@ msgstr ""
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:496
+#: src/Telegram/AssistantService.php:508
 msgid "Confirm"
 msgstr ""
 
@@ -1582,7 +1582,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:733
+#: src/Telegram/AssistantService.php:750
 msgid "First sign up with /start."
 msgstr ""
 
@@ -1945,7 +1945,7 @@ msgstr ""
 msgid "How your score works:"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:732
+#: src/Telegram/AssistantService.php:749
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -1965,7 +1965,7 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:731
+#: src/Telegram/AssistantService.php:748
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
@@ -1974,7 +1974,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:734
+#: src/Telegram/AssistantService.php:751
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -1999,7 +1999,7 @@ msgid "IMAP: the host name, for example imap.example.org. JMAP: the host name, o
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:135
-msgid "If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot)."
+msgid "If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours, and in the group what each person wrote to it, separately, also for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot)."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:638
@@ -3261,7 +3261,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:735
+#: src/Telegram/AssistantService.php:752
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
@@ -3961,7 +3961,7 @@ msgstr ""
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:209
+#: src/Telegram/AssistantService.php:210
 msgid "That can no longer be done. /help lists what you can do."
 msgstr ""
 
@@ -4017,7 +4017,7 @@ msgstr ""
 msgid "That event is no longer available."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:97
+#: src/Telegram/AssistantService.php:98
 msgid "That is all I can answer this hour. Commands still work: /help"
 msgstr ""
 
@@ -4457,7 +4457,7 @@ msgid "The selected tab and the outline of the field you type in. Pick a colour 
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:472
-msgid "The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, your roles, whether you are an organizer and, in a private chat, the conversation of the last 24 hours are sent there to work out the answer. The bot keeps a private chat for 24 hours so it can follow the conversation; each message is deleted 24 hours after it was written. Messages in the group are not kept. The bot never changes anything for you without asking you to confirm. When you give feedback in a private chat, say you are unhappy or very happy, or ask for a human, the bot emails the last 24 hours of that chat, with your name and email address, to the organizers, and tells you that it did."
+msgid "The server of the language model that helps the bot answer, if you write the bot a message that is not a command — the text of that message, your roles, whether you are an organizer and the conversation of the last 24 hours (in the group, only your own messages to the bot and its answers) are sent there to work out the answer. The bot keeps a private chat for 24 hours so it can follow the conversation; each message is deleted 24 hours after it was written. In the group, the bot keeps your messages to it and its answers to you for 24 hours in the same way, apart from your private chat; other messages in the group are not kept. The bot never changes anything for you without asking you to confirm. When you give feedback in a private chat, say you are unhappy or very happy, or ask for a human, the bot emails the last 24 hours of that chat, with your name and email address, to the organizers, and tells you that it did."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:613
@@ -4657,7 +4657,7 @@ msgstr ""
 msgid "This phone cannot read QR codes here. Find the name on the list instead."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:180
+#: src/Telegram/AssistantService.php:181
 msgid "This question has expired. Please write again."
 msgstr ""
 

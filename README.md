@@ -145,7 +145,9 @@ the model:
   note from Settings.
 - **Memory:** the bot keeps a private chat for 24 hours (the plain messages and
   its own answers, not commands), so follow-ups like "and on Sunday?" work. Each
-  message is dropped 24 hours after it was written. Nothing from a group is kept.
+  message is dropped 24 hours after it was written. In the group it keeps, per
+  person, only the messages written to the bot and its answers, for 24 hours, in
+  a record separate from the private chat; other group messages are not kept.
 - **Forwarding:** when someone in a private chat gives feedback, is unhappy or
   very happy, or asks for a human, every organizer gets the last 24 hours of that
   chat by email (with the person's name and confirmed email) and a short
