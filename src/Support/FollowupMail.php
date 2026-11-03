@@ -363,7 +363,16 @@ final class FollowupMail
         foreach ([true, false] as $came) {
             $mail = $this->compose($date, $came, self::sampleName(), self::KIND_SAMPLE, 0);
 
-            if ($this->mailer->toTicketHolder($to, $mail['subject'], $mail['html'], $mail['text'], self::footer())) {
+            $one = $this->mailer->toTicketHolder(
+                $to,
+                $mail['subject'],
+                $mail['html'],
+                $mail['text'],
+                self::footer(),
+                false
+            );
+
+            if ($one) {
                 $sent++;
             }
         }
@@ -719,7 +728,8 @@ final class FollowupMail
                 $mail['subject'],
                 $mail['html'],
                 $mail['text'],
-                self::footer()
+                self::footer(),
+                false
             );
             $tried++;
             $failed += $sent ? 0 : 1;

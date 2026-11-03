@@ -92,18 +92,23 @@ final class Mailer
      * A mail plugin can throw from inside wp_mail. That is caught, logged
      * without the address, and answered as not sent, so a batch of tickets
      * goes on with the next one.
+     *
+     * $lightOnly keeps the email in light colours, so a QR code stays black
+     * on white. The post-event email (FollowupMail) has no QR code and
+     * passes false, so it follows the mail app's own colours, dark mode
+     * too, like the announcement (Lou, 2026-11-03).
      */
     public function toTicketHolder(
         string $to,
         string $subject,
         string $content,
         string $text,
-        string $footer
+        string $footer,
+        bool $lightOnly = true
     ): bool {
         $board = $this->boardUrl();
         $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $board ? '' : ': ' . $board);
-        // Light only: the QR code in a ticket must stay black on white.
-        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board), true);
+        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board), $lightOnly);
 
         $parts = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
