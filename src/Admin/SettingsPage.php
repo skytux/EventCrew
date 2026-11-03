@@ -99,6 +99,12 @@ final class SettingsPage
     {
         $reputation = new ReputationSettings();
 
+        // The Media Library picker for the sign-up bar's image. Its scripts
+        // print in the admin footer, so asking for them here is early enough.
+        if (function_exists('wp_enqueue_media')) {
+            wp_enqueue_media();
+        }
+
         $this->view->render(
             'settings',
             [
@@ -146,6 +152,10 @@ final class SettingsPage
                 'welcome_enabled' => WelcomeSender::enabled(),
                 'newsletter_enabled' => Newsletter::enabled(),
                 'newsletter_days' => Newsletter::days(),
+                'newsletter_bar_image' => Newsletter::barImageId(),
+                'newsletter_bar_image_url' => Newsletter::barImageId() > 0
+                    ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'medium')
+                    : '',
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
@@ -576,6 +586,12 @@ final class SettingsPage
             isset($_POST['newsletter_days'])
                 ? Newsletter::clampDays((int) $_POST['newsletter_days'])
                 : Newsletter::DEFAULT_DAYS
+        );
+        // Only an image from the Media Library is kept; anything else means none.
+        $barImage = isset($_POST['newsletter_bar_image']) ? max(0, (int) $_POST['newsletter_bar_image']) : 0;
+        update_option(
+            Newsletter::BAR_IMAGE_OPTION,
+            $barImage > 0 && wp_attachment_is_image($barImage) ? $barImage : 0
         );
 
         update_option(

@@ -36,6 +36,9 @@ final class NewsletterController
 {
     public const SHORTCODE = 'eventcrew_newsletter';
 
+    /** The block with the same form as the shortcode. */
+    public const BLOCK = 'eventcrew/newsletter';
+
     public const JOIN_ACTION = 'eventcrew_newsletter_join';
 
     /** The field people do not see; a bot that fills it in is ignored. */
@@ -60,16 +63,21 @@ final class NewsletterController
 
     private const BAR_CSS = '.eventcrew-nl-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;'
         . 'background:var(--wp--preset--color--contrast,#111);color:var(--wp--preset--color--base,#fff);'
-        . 'padding:10px 48px 10px 16px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:15px}'
+        . 'padding:4px 40px 4px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3}'
+        . '.eventcrew-nl-bar.has-image{background-color:#111;background-size:cover;background-position:center;'
+        . 'color:#fff}'
         . '.eventcrew-nl-bar[hidden]{display:none}'
-        . '.eventcrew-nl-bar form{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;'
+        . '.eventcrew-nl-bar form{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;'
         . 'margin:0}'
-        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;padding:8px 10px}'
-        . '.eventcrew-nl-bar .wp-element-button{padding:8px 16px}'
-        . '.eventcrew-nl-bar .cf-turnstile{flex-basis:100%;display:flex;justify-content:center}'
-        . '.eventcrew-nl-bar-message{margin:0 0 6px;text-align:center}'
-        . '.eventcrew-nl-bar-close{position:absolute;top:6px;right:8px;background:none;border:0;color:inherit;'
-        . 'font-size:24px;line-height:1;cursor:pointer;padding:4px 8px}';
+        . '.eventcrew-nl-bar-label{white-space:nowrap}'
+        . '.eventcrew-nl-bar input[type=email]{flex:1 1 200px;max-width:320px;min-width:0;padding:4px 8px;'
+        . 'font-size:14px}'
+        . '.eventcrew-nl-bar .wp-element-button{padding:4px 14px;font-size:14px;white-space:nowrap}'
+        . '.eventcrew-nl-bar .cf-turnstile{position:absolute;bottom:100%;left:50%;transform:translateX(-50%)}'
+        . '.eventcrew-nl-bar-message{margin:0 0 4px;text-align:center}'
+        . '.eventcrew-nl-bar-close{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:none;'
+        . 'border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px}'
+        . '@media (max-width:600px){.eventcrew-nl-bar-label{display:none}}';
 
     /**
      * Shows the bar unless it was closed in the last CLOSE_DAYS days (an
@@ -112,6 +120,33 @@ final class NewsletterController
         add_action('wp_ajax_nopriv_' . self::JOIN_ACTION, [$this, 'handleJoin']);
         add_action('rest_api_init', [$this, 'registerRoutes']);
         add_action('wp_footer', [$this, 'renderBar']);
+        add_action('init', [$this, 'registerBlock']);
+    }
+
+    /**
+     * The same form as a block, for places where a shortcode is not expanded:
+     * a shortcode inside a synced pattern in a block theme's footer shows as
+     * raw text, a block renders.
+     */
+    public function registerBlock(): void
+    {
+        if (! function_exists('register_block_type')) {
+            return;
+        }
+
+        wp_register_script(
+            'eventcrew-newsletter-editor',
+            plugins_url('blocks/newsletter/editor.js', EVENTCREW_PLUGIN_FILE),
+            ['wp-blocks', 'wp-element', 'wp-server-side-render'],
+            EVENTCREW_VERSION,
+            true
+        );
+
+        register_block_type(self::BLOCK, [
+            'api_version' => 2,
+            'editor_script' => 'eventcrew-newsletter-editor',
+            'render_callback' => fn (): string => $this->renderShortcode(),
+        ]);
     }
 
     public function registerRoutes(): void
@@ -176,7 +211,16 @@ final class NewsletterController
         $message = $this->formShown ? '' : $this->resultMessage();
         $anchor = $this->formShown ? self::FORM_ANCHOR : self::BAR_ANCHOR;
 
-        $html = '<div class="eventcrew-nl-bar" id="' . esc_attr(self::BAR_ANCHOR) . '" hidden'
+        $imageUrl = Newsletter::barImageId() > 0
+            ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'large')
+            : '';
+        // A dark layer over the image keeps the white text readable.
+        $look = '' !== $imageUrl
+            ? ' class="eventcrew-nl-bar has-image" style="background-image:'
+                . 'linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url(' . esc_url($imageUrl) . ')"'
+            : ' class="eventcrew-nl-bar"';
+
+        $html = '<div' . $look . ' id="' . esc_attr(self::BAR_ANCHOR) . '" hidden'
             . ' data-close-days="' . esc_attr((string) self::CLOSE_DAYS) . '"'
             . ('' !== $message ? ' data-message="1"' : '') . '>'
             . '<style>' . self::BAR_CSS . '</style>';
