@@ -926,7 +926,11 @@ final class NewsletterControllerTest extends TestCase
         // The bar's script sends its own form with the full form's token, answer in the bar.
         self::assertStringContainsString('ff.querySelector("[name=cf-turnstile-response]")', $bar);
         self::assertStringContainsString('a.value="eventcrew-nl-bar"', $bar);
-        self::assertStringContainsString('bf.requestSubmit()', $bar);
+        // Sent one tick later: a form ignores requestSubmit() during its own submit event.
+        self::assertStringContainsString(
+            'setTimeout(function(){bf.setAttribute("data-go","1");bf.requestSubmit();},0)',
+            $bar
+        );
         // With no token yet, the bar starts its own check in the bar instead of scrolling.
         self::assertStringContainsString('turnstile.render(own,', $bar);
         self::assertStringContainsString('appearance:"interaction-only"', $bar);

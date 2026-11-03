@@ -288,7 +288,9 @@ final class NewsletterController
         . 'if(!h){h=document.createElement("input");h.type="hidden";h.name="cf-turnstile-response";bf.appendChild(h);}'
         . 'h.value=v;var a=bf.querySelector("input[name=anchor]");if(a){a.value="eventcrew-nl-bar";}'
         . 'if(!mine&&fc&&window.turnstile){try{turnstile.reset(fc);}catch(x){}}'
-        . 'if(bt){bt.disabled=false;}bf.setAttribute("data-go","1");bf.requestSubmit();}'
+        // A form ignores requestSubmit() while its own submit event is still running (the token from the
+        // footer arrives inside it), so the second submit starts one tick later.
+        . 'if(bt){bt.disabled=false;}setTimeout(function(){bf.setAttribute("data-go","1");bf.requestSubmit();},0);}'
         . 'function there(){if(bt){bt.disabled=false;}'
         . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
         . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var m=0;'
