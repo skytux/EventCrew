@@ -3972,10 +3972,6 @@ msgstr ""
 msgid "See open tasks"
 msgstr ""
 
-#: src/Support/FollowupMail.php:958
-msgid "See the coming events"
-msgstr ""
-
 #: src/Telegram/ProfileService.php:103
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
