@@ -205,4 +205,22 @@ final class SchedulerTest extends TestCase
 
         self::assertTrue($this->scheduler()->runIfDue());
     }
+
+    /**
+     * Deactivating the plugin clears the hourly event that runs the buyer
+     * purge, along with the other scheduled events.
+     */
+    public function testUnscheduleClearsTheHourlyEvent(): void
+    {
+        $cleared = [];
+        Functions\when('wp_clear_scheduled_hook')->alias(static function (string $hook) use (&$cleared): int {
+            $cleared[] = $hook;
+
+            return 1;
+        });
+
+        Scheduler::unschedule();
+
+        self::assertContains(Scheduler::HOOK, $cleared);
+    }
 }

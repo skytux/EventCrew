@@ -42,7 +42,7 @@ msgid_plural "%1$d tasks created, %2$d without times - those roles have no offse
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/RosterPage.php:493 src/Web/CrewAdminRoster.php:569
+#: src/Admin/RosterPage.php:493 src/Web/CrewAdminRoster.php:570
 #. translators: 1: number of names added, 2: number of names skipped
 msgid "%1$d ticket buyers added, %2$d skipped (already on the list)."
 msgstr ""
@@ -199,7 +199,7 @@ msgid_plural "%d people in all"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/RosterPage.php:296 src/Admin/RosterPage.php:342 src/Web/CrewAdminRoster.php:561
+#: src/Admin/RosterPage.php:296 src/Admin/RosterPage.php:342 src/Web/CrewAdminRoster.php:562
 #. translators: %d: number of people updated
 msgid "%d person updated."
 msgid_plural "%d people updated."
@@ -224,7 +224,7 @@ msgid_plural "%d tasks created."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/RosterPage.php:520 src/Web/CrewAdminRoster.php:582
+#: src/Admin/RosterPage.php:520 src/Web/CrewAdminRoster.php:583
 #. translators: %d: number of ticket buyers deleted
 msgid "%d ticket buyer deleted."
 msgid_plural "%d ticket buyers deleted."
@@ -301,7 +301,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1339
+#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:394 src/Support/DoorDesk.php:1342
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:273
 #: src/Web/CrewAdminTasks.php:382
 msgid "(deleted person)"
@@ -383,7 +383,7 @@ msgstr ""
 msgid "A call to all members when tasks still need people."
 msgstr ""
 
-#: src/Admin/RosterPage.php:407 src/Web/CrewAdminRoster.php:527
+#: src/Admin/RosterPage.php:407 src/Web/CrewAdminRoster.php:528
 msgid "A guest needs a name."
 msgstr ""
 
@@ -487,7 +487,7 @@ msgstr ""
 msgid "A test ticket email was sent to %s."
 msgstr ""
 
-#: src/Web/CrewAdminRoster.php:533
+#: src/Web/CrewAdminRoster.php:534
 msgid "A test ticket email was sent to your own address."
 msgstr ""
 
@@ -737,7 +737,7 @@ msgstr ""
 msgid "Anonymised"
 msgstr ""
 
-#: src/MailImport/MailImporter.php:109 src/Web/CrewAdminRoster.php:551
+#: src/MailImport/MailImporter.php:109 src/Web/CrewAdminRoster.php:552
 msgid "Another check of the mailbox is running. Try again in a minute."
 msgstr ""
 
@@ -961,7 +961,7 @@ msgstr ""
 msgid "Both post-event emails were sent to %s as a test."
 msgstr ""
 
-#: src/Web/CrewAdminRoster.php:536
+#: src/Web/CrewAdminRoster.php:537
 msgid "Both post-event emails were sent to your own address as a test."
 msgstr ""
 
@@ -1297,7 +1297,7 @@ msgstr ""
 msgid "Credit granted."
 msgstr ""
 
-#: src/Admin/RosterPage.php:196 src/Web/CrewAdminRoster.php:526
+#: src/Admin/RosterPage.php:196 src/Web/CrewAdminRoster.php:527
 msgid "Credit handed back."
 msgstr ""
 
@@ -1305,7 +1305,7 @@ msgstr ""
 msgid "Credit log"
 msgstr ""
 
-#: src/Admin/RosterPage.php:171 src/Web/CrewAdminRoster.php:525
+#: src/Admin/RosterPage.php:171 src/Web/CrewAdminRoster.php:526
 msgid "Credit redeemed — they’re on the door list."
 msgstr ""
 
@@ -1444,7 +1444,7 @@ msgstr ""
 msgid "Delete a task"
 msgstr ""
 
-#: templates/admin/roster.php:342 templates/public/signup.php:1343
+#: templates/admin/roster.php:348 templates/public/signup.php:1343
 msgid "Delete all imported ticket buyers for this date? Guests and the crew are not affected."
 msgstr ""
 
@@ -1500,7 +1500,7 @@ msgstr ""
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr ""
 
-#: src/Support/FollowupMail.php:905 src/Web/FollowupController.php:240 templates/admin/roster.php:311 templates/public/signup.php:1315
+#: src/Support/FollowupMail.php:905 src/Web/FollowupController.php:240 templates/admin/roster.php:317 templates/public/signup.php:1315
 msgid "Do not send the post-event email"
 msgstr ""
 
@@ -1617,7 +1617,7 @@ msgstr ""
 msgid "Email the ticket: /door add Name name@example.com"
 msgstr ""
 
-#: templates/admin/roster.php:285 templates/public/signup.php:1291
+#: templates/admin/roster.php:291 templates/public/signup.php:1291
 msgid "Email their tickets now to the buyers who have not got one?"
 msgstr ""
 
@@ -1883,7 +1883,7 @@ msgstr ""
 msgid "Free entry"
 msgstr ""
 
-#: src/Admin/RosterPage.php:229 src/Web/CrewAdminRoster.php:519
+#: src/Admin/RosterPage.php:229 src/Web/CrewAdminRoster.php:520
 msgid "Free entry closed for this date."
 msgstr ""
 
@@ -1895,11 +1895,11 @@ msgstr ""
 msgid "Free entry is closed for this date — no credits can be spent on it."
 msgstr ""
 
-#: src/Admin/RosterPage.php:135 src/Web/CrewAdminRoster.php:522
+#: src/Admin/RosterPage.php:135 src/Web/CrewAdminRoster.php:523
 msgid "Free entry is closed for this date."
 msgstr ""
 
-#: src/Admin/RosterPage.php:226 src/Web/CrewAdminRoster.php:520
+#: src/Admin/RosterPage.php:226 src/Web/CrewAdminRoster.php:521
 msgid "Free entry reopened for this date."
 msgstr ""
 
@@ -2034,7 +2034,7 @@ msgstr ""
 msgid "Guest added and checked in."
 msgstr ""
 
-#: src/Admin/RosterPage.php:425 src/Web/CrewAdminRoster.php:529
+#: src/Admin/RosterPage.php:425 src/Web/CrewAdminRoster.php:530
 msgid "Guest added."
 msgstr ""
 
@@ -2055,11 +2055,11 @@ msgid_plural "Guest list, +%d people"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/RosterPage.php:458 src/Web/CrewAdminRoster.php:531
+#: src/Admin/RosterPage.php:458 src/Web/CrewAdminRoster.php:532
 msgid "Guest removed."
 msgstr ""
 
-#: src/Admin/RosterPage.php:433 src/Web/CrewAdminRoster.php:530
+#: src/Admin/RosterPage.php:433 src/Web/CrewAdminRoster.php:531
 msgid "Guest saved."
 msgstr ""
 
@@ -2357,7 +2357,7 @@ msgstr ""
 msgid "If your ticket was missing from our door list and the door desk adds you with your email address, we email you your ticket in the same way."
 msgstr ""
 
-#: templates/admin/roster.php:324 templates/public/signup.php:1328
+#: templates/admin/roster.php:330 templates/public/signup.php:1328
 msgid "Import"
 msgstr ""
 
@@ -2487,7 +2487,7 @@ msgstr ""
 msgid "Last call (hours before)"
 msgstr ""
 
-#: src/Web/CrewAdminRoster.php:633 templates/admin/settings.php:2245
+#: src/Web/CrewAdminRoster.php:634 templates/admin/settings.php:2245
 #. translators: 1: date and time of the last check, 2: what it found or the error
 msgid "Last check %1$s: %2$s"
 msgstr ""
@@ -2599,7 +2599,7 @@ msgstr ""
 msgid "Mail sends via wp_mail (admin: %s). Deliverability depends on the host and SPF/DKIM."
 msgstr ""
 
-#: src/MailImport/MailImporter.php:117 src/Web/CrewAdminRoster.php:592
+#: src/MailImport/MailImporter.php:117 src/Web/CrewAdminRoster.php:593
 msgid "Mailbox checked: %s."
 msgstr ""
 
@@ -2611,11 +2611,11 @@ msgstr ""
 msgid "Manage your account or stop these emails"
 msgstr ""
 
-#: templates/admin/roster.php:432 templates/public/signup.php:1013
+#: templates/admin/roster.php:438 templates/public/signup.php:1013
 msgid "Mark all arrived"
 msgstr ""
 
-#: templates/admin/roster.php:435 templates/public/signup.php:1014
+#: templates/admin/roster.php:441 templates/public/signup.php:1014
 msgid "Mark all completed"
 msgstr ""
 
@@ -2809,7 +2809,7 @@ msgstr ""
 msgid "No bot token set. The bot is optional — add one in Settings to run the group board."
 msgstr ""
 
-#: src/Admin/RosterPage.php:293 src/Web/CrewAdminRoster.php:517
+#: src/Admin/RosterPage.php:293 src/Web/CrewAdminRoster.php:518
 msgid "No changes to save."
 msgstr ""
 
@@ -2855,7 +2855,8 @@ msgstr ""
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
-#: src/Support/DoorDesk.php:562 src/Support/DoorDesk.php:1192
+#: src/Support/DoorDesk.php:562 src/Support/DoorDesk.php:1192 src/Support/DoorDesk.php:1203 src/Web/CrewAdminRoster.php:172
+#: templates/admin/roster.php:272
 msgid "No name"
 msgstr ""
 
@@ -2915,7 +2916,7 @@ msgstr ""
 msgid "No tasks have been created yet, so there is nothing to take a roster for."
 msgstr ""
 
-#: templates/admin/roster.php:351 templates/public/signup.php:969 templates/public/signup.php:1559
+#: templates/admin/roster.php:357 templates/public/signup.php:969 templates/public/signup.php:1559
 msgid "No tasks on that date."
 msgstr ""
 
@@ -2963,7 +2964,7 @@ msgstr ""
 msgid "Nobody on this list."
 msgstr ""
 
-#: templates/admin/roster.php:392 templates/public/signup.php:975 templates/public/signup.php:1571
+#: templates/admin/roster.php:398 templates/public/signup.php:975 templates/public/signup.php:1571
 msgid "Nobody signed up."
 msgstr ""
 
@@ -3458,7 +3459,7 @@ msgstr ""
 msgid "Past:"
 msgstr ""
 
-#: templates/admin/roster.php:321 templates/public/signup.php:1325
+#: templates/admin/roster.php:327 templates/public/signup.php:1325
 msgid "Paste names, one per line"
 msgstr ""
 
@@ -3493,7 +3494,7 @@ msgid "Permission changes"
 msgstr ""
 
 #: templates/admin/bot-log.php:62 templates/admin/bot-log.php:82 templates/admin/people.php:290 templates/admin/roster.php:129
-#: templates/admin/roster.php:397 templates/public/signup.php:1033
+#: templates/admin/roster.php:403 templates/public/signup.php:1033
 msgid "Person"
 msgstr ""
 
@@ -3669,7 +3670,7 @@ msgstr ""
 msgid "Read the mailbox from this site"
 msgstr ""
 
-#: src/MailImport/MailImporter.php:95 src/Web/CrewAdminRoster.php:547
+#: src/MailImport/MailImporter.php:95 src/Web/CrewAdminRoster.php:548
 msgid "Reading the mailbox is switched off, or the server, user name or password is missing."
 msgstr ""
 
@@ -3800,7 +3801,7 @@ msgstr ""
 msgid "Resend link"
 msgstr ""
 
-#: templates/admin/roster.php:346 templates/public/signup.php:1348
+#: templates/admin/roster.php:352 templates/public/signup.php:1348
 msgid "Reset import"
 msgstr ""
 
@@ -3962,7 +3963,7 @@ msgstr ""
 msgid "Saved. The text is translated; both versions are shown below."
 msgstr ""
 
-#: templates/admin/roster.php:361
+#: templates/admin/roster.php:367
 msgid "Saves every status picker below at once."
 msgstr ""
 
@@ -4038,7 +4039,7 @@ msgstr ""
 msgid "Send a test email"
 msgstr ""
 
-#: templates/admin/roster.php:280 templates/admin/roster.php:301 templates/public/signup.php:1288 templates/public/signup.php:1306
+#: templates/admin/roster.php:286 templates/admin/roster.php:307 templates/public/signup.php:1288 templates/public/signup.php:1306
 msgid "Send a test to me"
 msgstr ""
 
@@ -4086,7 +4087,7 @@ msgstr ""
 msgid "Send the preview"
 msgstr ""
 
-#: templates/admin/roster.php:252 templates/admin/roster.php:290 templates/public/signup.php:1228 templates/public/signup.php:1296
+#: templates/admin/roster.php:252 templates/admin/roster.php:296 templates/public/signup.php:1228 templates/public/signup.php:1296
 msgid "Send the rest now"
 msgstr ""
 
@@ -4403,7 +4404,7 @@ msgid "Spend a free-entry credit on"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:51 src/Support/PrivacyExporter.php:147 src/Support/WelcomeSender.php:439 templates/admin/people.php:202
-#: templates/admin/roster.php:131 templates/admin/roster.php:398 templates/public/signup.php:834
+#: templates/admin/roster.php:131 templates/admin/roster.php:404 templates/public/signup.php:834
 msgid "Standing"
 msgstr ""
 
@@ -4428,7 +4429,7 @@ msgstr ""
 msgid "Starts"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:271 templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:399
+#: src/Support/PrivacyExporter.php:271 templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:405
 #: templates/admin/settings.php:2357 templates/public/signup.php:822 templates/public/signup.php:996
 msgid "Status"
 msgstr ""
@@ -4441,7 +4442,7 @@ msgstr ""
 msgid "Stop this announcement"
 msgstr ""
 
-#: templates/admin/roster.php:307 templates/public/signup.php:1310
+#: templates/admin/roster.php:313 templates/public/signup.php:1310
 msgid "Stop this night’s post-event email? It will not be sent."
 msgstr ""
 
@@ -4709,7 +4710,7 @@ msgstr ""
 msgid "Thanks for the notice."
 msgstr ""
 
-#: src/Admin/RosterPage.php:319 src/Web/CrewAdminRoster.php:518
+#: src/Admin/RosterPage.php:319 src/Web/CrewAdminRoster.php:519
 msgid "That bulk update could not be applied."
 msgstr ""
 
@@ -4721,7 +4722,7 @@ msgstr ""
 msgid "That can no longer be done. /help lists what you can do."
 msgstr ""
 
-#: src/Admin/RosterPage.php:219 src/Web/CrewAdminRoster.php:516
+#: src/Admin/RosterPage.php:219 src/Web/CrewAdminRoster.php:517
 msgid "That change could not be applied."
 msgstr ""
 
@@ -4729,7 +4730,7 @@ msgstr ""
 msgid "That credit could not be granted."
 msgstr ""
 
-#: src/Admin/RosterPage.php:126 src/Web/CrewAdminRoster.php:521
+#: src/Admin/RosterPage.php:126 src/Web/CrewAdminRoster.php:522
 msgid "That credit could not be redeemed."
 msgstr ""
 
@@ -4761,7 +4762,7 @@ msgstr ""
 msgid "That email address does not look right."
 msgstr ""
 
-#: src/Admin/RosterPage.php:417 src/Support/DoorDesk.php:367 src/Telegram/GuestListService.php:284 src/Web/CrewAdminRoster.php:528
+#: src/Admin/RosterPage.php:417 src/Support/DoorDesk.php:367 src/Telegram/GuestListService.php:284 src/Web/CrewAdminRoster.php:529
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
 
@@ -4781,7 +4782,7 @@ msgstr ""
 msgid "That is all I can answer this hour. Commands still work: /help"
 msgstr ""
 
-#: src/Admin/RosterPage.php:482 src/Web/CrewAdminRoster.php:532
+#: src/Admin/RosterPage.php:482 src/Web/CrewAdminRoster.php:533
 msgid "That list could not be imported."
 msgstr ""
 
@@ -5137,7 +5138,7 @@ msgstr ""
 msgid "The list was sent from %s."
 msgstr ""
 
-#: src/MailImport/MailImporter.php:119 src/Web/CrewAdminRoster.php:594
+#: src/MailImport/MailImporter.php:119 src/Web/CrewAdminRoster.php:595
 msgid "The mailbox check failed: %s"
 msgstr ""
 
@@ -5170,7 +5171,7 @@ msgstr ""
 msgid "The name and email address were erased from the tickets bought with this address. The tickets stay on the door lists with no name."
 msgstr ""
 
-#: templates/admin/roster.php:327 templates/public/signup.php:1331
+#: templates/admin/roster.php:333 templates/public/signup.php:1331
 msgid "The names go to the date shown above. A name already on the list is skipped."
 msgstr ""
 
@@ -5474,7 +5475,7 @@ msgstr ""
 msgid "There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web."
 msgstr ""
 
-#: src/Admin/RosterPage.php:159 src/Web/CrewAdminRoster.php:524
+#: src/Admin/RosterPage.php:159 src/Web/CrewAdminRoster.php:525
 msgid "They already have free entry for this date."
 msgstr ""
 
@@ -5499,7 +5500,7 @@ msgstr ""
 msgid "They got an email with the ticket for each task they were added to."
 msgstr ""
 
-#: src/Admin/RosterPage.php:144 src/Web/CrewAdminRoster.php:523
+#: src/Admin/RosterPage.php:144 src/Web/CrewAdminRoster.php:524
 msgid "They have no credit left to redeem."
 msgstr ""
 
@@ -5902,7 +5903,7 @@ msgstr ""
 msgid "Upcoming:"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:172 templates/admin/roster.php:360 templates/admin/roster.php:443
+#: src/Web/CrewAdminController.php:172 templates/admin/roster.php:366 templates/admin/roster.php:449
 msgid "Update attendance"
 msgstr ""
 
@@ -6392,7 +6393,7 @@ msgstr ""
 msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk."
 msgstr ""
 
-#: templates/admin/roster.php:332 templates/public/signup.php:1336
+#: templates/admin/roster.php:338 templates/public/signup.php:1336
 #. translators: %s: the import email address
 msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list; a guest with an email address on the line gets a ticket by email."
 msgstr ""

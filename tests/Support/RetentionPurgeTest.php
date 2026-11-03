@@ -264,4 +264,148 @@ final class RetentionPurgeTest extends TestCase
         $sql = $this->wpdb->lastQuery();
         self::assertStringContainsString("email NOT IN ('fan@example.test')", $sql);
     }
+
+    /**
+     * An in-memory SQLite copy of the ticket buyer columns and the check-ins
+     * table, so the purge's own SQL can be run against real rows.
+     *
+     * Today is pinned to 2026-07-20, so the cutoff is 2026-05-21.
+     */
+    private function buyerDatabase(): \PDO
+    {
+        if (! extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite is not loaded.');
+        }
+
+        $db = new \PDO('sqlite::memory:');
+        $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $db->exec(
+            "CREATE TABLE wp_eventcrew_ticket_buyers (
+                id INTEGER PRIMARY KEY, event_date TEXT NOT NULL, name TEXT NOT NULL,
+                email TEXT, source TEXT NOT NULL DEFAULT 'paste', batch TEXT NOT NULL DEFAULT '',
+                ticket_code TEXT, ticket_mail_status TEXT NOT NULL DEFAULT '',
+                ticket_mailed_at TEXT, followup_mail_status TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT ''
+            )"
+        );
+        $db->exec(
+            'CREATE TABLE wp_eventcrew_checkins (id INTEGER PRIMARY KEY, event_date TEXT, kind TEXT, ref_id INTEGER)'
+        );
+
+        $rows = [
+            // 61 days ago: an imported Holvi ticket, mailed and checked in.
+            [1, '2026-05-20', 'Ada Lovelace', 'ada@example.test', 'email', 'AB12', 'sent'],
+            // Exactly 60 days ago: kept.
+            [2, '2026-05-21', 'Bea Virtanen', 'bea@example.test', 'email', 'CD34', 'sent'],
+            // Last month: kept.
+            [3, '2026-07-01', 'Cy Korhonen', 'cy@example.test', 'email', 'EF56', ''],
+            // Long ago: a buyer added by hand at the desk, with no ticket code yet.
+            [4, '2026-01-10', 'Dan Niemi', 'dan@example.test', 'desk', null, 'failed'],
+            // Long ago: a pasted name only.
+            [5, '2026-01-10', 'Eve Laine', null, 'paste', null, ''],
+            // Long ago: a door sale with no name, nothing personal to blank.
+            [6, '2026-01-10', '', null, 'door', null, ''],
+        ];
+        $insert = $db->prepare(
+            'INSERT INTO wp_eventcrew_ticket_buyers'
+            . ' (id, event_date, name, email, source, ticket_code, ticket_mail_status)'
+            . ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+
+        foreach ($rows as $row) {
+            $insert->execute($row);
+        }
+
+        $db->exec(
+            "INSERT INTO wp_eventcrew_checkins VALUES (1, '2026-05-20', 'buyer', 1), (2, '2026-01-10', 'buyer', 6)"
+        );
+
+        return $db;
+    }
+
+    /**
+     * Runs purgeBuyers() and then its UPDATE against $db. Returns how many
+     * rows the UPDATE changed there.
+     */
+    private function purgeBuyersInto(\PDO $db): int
+    {
+        $this->wpdb->queries = [];
+        $this->purge()->purgeBuyers();
+
+        $updates = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_starts_with($sql, 'UPDATE ')
+        ));
+        self::assertCount(1, $updates);
+
+        return (int) $db->exec($updates[0]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function buyerRows(\PDO $db): array
+    {
+        $rows = $db->query('SELECT * FROM wp_eventcrew_ticket_buyers ORDER BY id')->fetchAll(\PDO::FETCH_ASSOC);
+
+        return array_column($rows, null, 'id');
+    }
+
+    /**
+     * Q057: a row whose event is more than 60 days ago loses its name, email
+     * and ticket code; a row of 60 days or less is untouched. The rows, their
+     * date, source, email status and check-ins all stay, so the counts of
+     * tickets sold and used for each night do not change.
+     */
+    public function testBuyerRowsOlderThanSixtyDaysAreBlankedAndTheCountsStay(): void
+    {
+        $this->withOptions([]);
+        $db = $this->buyerDatabase();
+
+        self::assertSame(3, $this->purgeBuyersInto($db));
+
+        $rows = $this->buyerRows($db);
+        self::assertCount(6, $rows);
+
+        foreach ([1, 4, 5] as $id) {
+            self::assertSame('', $rows[$id]['name'], "row {$id} name");
+            self::assertNull($rows[$id]['email'], "row {$id} email");
+            self::assertNull($rows[$id]['ticket_code'], "row {$id} ticket code");
+        }
+
+        // Kept on the blanked rows: date, source, the sent flag.
+        self::assertSame('2026-05-20', $rows[1]['event_date']);
+        self::assertSame('email', $rows[1]['source']);
+        self::assertSame('sent', $rows[1]['ticket_mail_status']);
+        self::assertSame('desk', $rows[4]['source']);
+        self::assertSame('failed', $rows[4]['ticket_mail_status']);
+
+        // 60 days or less: untouched.
+        self::assertSame('Bea Virtanen', $rows[2]['name']);
+        self::assertSame('bea@example.test', $rows[2]['email']);
+        self::assertSame('CD34', $rows[2]['ticket_code']);
+        self::assertSame('Cy Korhonen', $rows[3]['name']);
+        self::assertSame('EF56', $rows[3]['ticket_code']);
+
+        // The check-ins are not touched, so "N of M came in" stays right.
+        self::assertSame(2, (int) $db->query('SELECT COUNT(*) FROM wp_eventcrew_checkins')->fetchColumn());
+        $sold = $db->query("SELECT COUNT(*) FROM wp_eventcrew_ticket_buyers WHERE event_date = '2026-01-10'");
+        self::assertSame(3, (int) $sold->fetchColumn());
+    }
+
+    /**
+     * The job runs every hour: a second run finds nothing left to blank and
+     * changes nothing.
+     */
+    public function testRunningTheBuyerPurgeTwiceChangesNothingTheSecondTime(): void
+    {
+        $this->withOptions([]);
+        $db = $this->buyerDatabase();
+
+        self::assertSame(3, $this->purgeBuyersInto($db));
+        $after = $this->buyerRows($db);
+
+        self::assertSame(0, $this->purgeBuyersInto($db));
+        self::assertSame($after, $this->buyerRows($db));
+    }
 }
