@@ -2684,8 +2684,22 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         setTimeout(function () { box.classList.remove('show'); }, 6000);
     }
 
+    // Telegram's script styles its button its own way (pill, system font).
+    // Copy the Email button's look onto it, whatever the theme makes that;
+    // the colours stay Telegram's. Inline styles win over the script's CSS.
+    function matchLook() {
+        var tg = choice.querySelector('.tg-auth-button');
+        if (!tg || !emailButton || !window.getComputedStyle) { return; }
+        var look = window.getComputedStyle(emailButton);
+        ['fontFamily', 'fontWeight', 'fontSize', 'letterSpacing', 'textTransform', 'borderRadius',
+            'paddingLeft', 'paddingRight', 'height', 'lineHeight'].forEach(function (key) {
+            tg.style[key] = look[key];
+        });
+    }
+
     function showChoice() {
         choice.hidden = false;
+        matchLook();
         if (form) { form.hidden = true; }
         if (sent) { sent.hidden = true; }
         if (back) { back.hidden = true; }
