@@ -433,6 +433,7 @@ final class NewsletterControllerTest extends TestCase
 
         self::assertStringContainsString('data-message="1"', $html);
         self::assertStringContainsString('<p class="eventcrew-nl-bar-message"', $html);
+        self::assertStringContainsString('<a href="#top">Back to top ↑</a>', $html);
     }
 
     /** With a full form on the page, the answer shows there once, and the bar sends its answer to that form. */
@@ -447,6 +448,8 @@ final class NewsletterControllerTest extends TestCase
         $html = self::bar($controller);
 
         self::assertStringContainsString('eventcrew-newsletter-message', $form);
+        // A link back to the top of the page follows the answer.
+        self::assertStringContainsString('<p class="eventcrew-nl-top"><a href="#top">Back to top ↑</a></p>', $form);
         self::assertStringNotContainsString('<p class="eventcrew-nl-bar-message"', $html);
         self::assertStringNotContainsString(' data-message="1"', $html);
         self::assertStringContainsString('name="anchor" value="' . NewsletterController::FORM_ANCHOR . '"', $html);
