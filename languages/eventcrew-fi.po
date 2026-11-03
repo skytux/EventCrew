@@ -6775,3 +6775,9 @@ msgstr "Jos tilaat tulevien tapahtumien tiedotteemme, tallennamme sähköpostios
 
 msgid "You are added to the next events announcement only if you press its button in that message. We then take the first word of the name on your ticket as the name to greet you with. Not joining has no effect on your ticket."
 msgstr "Sinut lisätään tulevien tapahtumien tiedotteen tilaajaksi vain, jos painat sen painiketta tuossa viestissä. Otamme silloin lippusi nimen ensimmäisen sanan nimeksi, jolla tervehdimme sinua. Liittymättä jättäminen ei vaikuta lippuusi."
+
+msgid "Press the button to join the next events announcement."
+msgstr "Liity tulevien tapahtumien tiedotteeseen painamalla painiketta."
+
+msgid "Join"
+msgstr "Liity"
