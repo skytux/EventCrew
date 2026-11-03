@@ -10,6 +10,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Repositories\TakeoverRepository;
 
 /**
  * The one place a person stops being personal data, in the two ways that can
@@ -36,7 +37,8 @@ final class PersonEraser
         private readonly RedemptionRepository $redemptions,
         private readonly CreditGrantRepository $grants,
         private readonly AuthTokenRepository $tokens,
-        private readonly NotificationsRepository $notifications
+        private readonly NotificationsRepository $notifications,
+        private readonly TakeoverRepository $takeovers = new TakeoverRepository()
     ) {
     }
 
@@ -57,6 +59,7 @@ final class PersonEraser
 
         $this->tokens->deleteForPerson($personId);
         $this->notifications->deleteForPerson($personId);
+        $this->takeovers->deleteForPerson($personId);
         $this->assignments->deleteForPerson($personId);
         $this->redemptions->deleteForPerson($personId);
         $this->grants->deleteForPerson($personId);
@@ -88,6 +91,10 @@ final class PersonEraser
 
         $this->tokens->deleteForPerson($personId);
         $this->notifications->deleteForPerson($personId);
+        // Takeover requests record who asked whom for which task, and a
+        // pending one would go on sending messages about a person with no
+        // name. They are not attendance numbers, so they go.
+        $this->takeovers->deleteForPerson($personId);
 
         $this->people->update($personId, [
             'email' => 'anonymised-' . $personId . '@removed.invalid',

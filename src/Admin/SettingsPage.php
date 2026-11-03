@@ -35,6 +35,7 @@ use EventCrew\Support\SendWindow;
 use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketFormats;
 use EventCrew\Support\TranslatedText;
@@ -122,6 +123,7 @@ final class SettingsPage
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
                 'notice_hours' => max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48)),
                 'signout_lock_minutes' => SignupService::signoutLockMinutes(),
+                'takeover_rows' => $this->takeoverRows(),
                 'reputation_threshold' => (float) get_option(
                     StandingCalculator::THRESHOLD_OPTION,
                     Reputation::DEFAULT_THRESHOLD
@@ -401,6 +403,67 @@ final class SettingsPage
     }
 
     /**
+     * The takeover request settings as rows for the Settings form: the field
+     * name, the option it saves to, the current value, the smallest allowed
+     * value, and the label and help text.
+     *
+     * @return array<int, array{name: string, option: string, value: int, min: int, label: string, help: string}>
+     */
+    private function takeoverRows(): array
+    {
+        return [
+            [
+                'name' => 'takeover_near_hours',
+                'option' => TakeoverDeadline::NEAR_HOURS_OPTION,
+                'value' => TakeoverDeadline::nearHours(),
+                'min' => 0,
+                'label' => __('Short notice (hours before the start)', 'eventcrew'),
+                'help' => __('A request made less than this many hours before the task starts uses the short-notice answer time. Default 48.', 'eventcrew'),
+            ],
+            [
+                'name' => 'takeover_near_answer_hours',
+                'option' => TakeoverDeadline::NEAR_ANSWER_OPTION,
+                'value' => TakeoverDeadline::nearAnswerHours(),
+                'min' => 1,
+                'label' => __('Answer time at short notice (hours)', 'eventcrew'),
+                'help' => __('How long the holder has to answer a short-notice request. Default 24.', 'eventcrew'),
+            ],
+            [
+                'name' => 'takeover_week_days',
+                'option' => TakeoverDeadline::WEEK_DAYS_OPTION,
+                'value' => TakeoverDeadline::weekDays(),
+                'min' => 0,
+                'label' => __('Medium notice (days before the start)', 'eventcrew'),
+                'help' => __('A request made less than this many days before the task starts, but not at short notice, uses the medium-notice answer time. Default 7.', 'eventcrew'),
+            ],
+            [
+                'name' => 'takeover_week_answer_hours',
+                'option' => TakeoverDeadline::WEEK_ANSWER_OPTION,
+                'value' => TakeoverDeadline::weekAnswerHours(),
+                'min' => 1,
+                'label' => __('Answer time at medium notice (hours)', 'eventcrew'),
+                'help' => __('How long the holder has to answer a medium-notice request. Default 48.', 'eventcrew'),
+            ],
+            [
+                'name' => 'takeover_far_answer_hours',
+                'option' => TakeoverDeadline::FAR_ANSWER_OPTION,
+                'value' => TakeoverDeadline::farAnswerHours(),
+                'min' => 1,
+                'label' => __('Answer time further ahead (hours)', 'eventcrew'),
+                'help' => __('How long the holder has to answer a request made further ahead. Default 72.', 'eventcrew'),
+            ],
+            [
+                'name' => 'takeover_cutoff_hours',
+                'option' => TakeoverDeadline::CUTOFF_HOURS_OPTION,
+                'value' => TakeoverDeadline::cutoffHours(),
+                'min' => 0,
+                'label' => __('Last answer (hours before the start)', 'eventcrew'),
+                'help' => __('The answer deadline is never later than this many hours before the task starts. When that time has passed, nobody can ask any more. Default 1.', 'eventcrew'),
+            ],
+        ];
+    }
+
+    /**
      * The per-outcome reputation weights as ordered rows the Settings form
      * renders - each with the status slug it posts under, its human label and
      * the current percentage.
@@ -488,6 +551,12 @@ final class SettingsPage
             ? max(0, (int) $_POST['signout_lock_minutes'])
             : SignupService::SIGNOUT_LOCK_DEFAULT;
         update_option(SignupService::SIGNOUT_LOCK_OPTION, $lockMinutes);
+
+        foreach ($this->takeoverRows() as $row) {
+            if (isset($_POST[$row['name']]) && is_numeric($_POST[$row['name']])) {
+                update_option($row['option'], max($row['min'], (int) $_POST[$row['name']]));
+            }
+        }
 
         // A threshold outside (0,1] would make the join gate never or always
         // fire; fall back to the default rather than store nonsense.

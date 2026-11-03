@@ -6407,3 +6407,137 @@ msgstr "Jos lippusi puuttui ovilistalta ja myyntipiste lisää sinut sähköpost
 
 msgid "If you are removed from the guest list after your ticket was emailed, we email you that your ticket is cancelled."
 msgstr "Jos sinut poistetaan vieraslistalta lipun lähettämisen jälkeen, kerromme sähköpostilla, että lippusi on peruttu."
+
+#, php-format
+msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
+msgstr "%1$s suostui, mutta tehtävää ei voitu siirtää sinulle: %2$s, %3$s, %4$s. Mikään ei muuttunut."
+
+#, php-format
+msgid "%1$s did not answer in time, so they keep their task: %2$s at %3$s, %4$s."
+msgstr "%1$s ei vastannut ajoissa, joten tehtävä pysyy hänellä: %2$s, %3$s, %4$s."
+
+#, php-format
+msgid "%1$s keeps their task: %2$s at %3$s, %4$s. Your request to take it over was declined."
+msgstr "%1$s pitää tehtävänsä: %2$s, %3$s, %4$s. Pyyntösi ottaa se hoitaaksesi hylättiin."
+
+#, php-format
+msgid "%s asks to take over your task"
+msgstr "%s pyytää saada ottaa tehtäväsi"
+
+msgid "A request made less than this many days before the task starts, but not at short notice, uses the medium-notice answer time. Default 7."
+msgstr "Pyyntö, joka tehdään alle näin monta päivää ennen tehtävän alkua (mutta ei lyhyellä varoitusajalla), käyttää keskipitkän varoitusajan vastausaikaa. Oletus 7."
+
+msgid "A request made less than this many hours before the task starts uses the short-notice answer time. Default 48."
+msgstr "Pyyntö, joka tehdään alle näin monta tuntia ennen tehtävän alkua, käyttää lyhyen varoitusajan vastausaikaa. Oletus 48."
+
+msgid "About your takeover request"
+msgstr "Tehtävän siirtopyyntösi"
+
+msgid "Answer the request"
+msgstr "Vastaa pyyntöön"
+
+msgid "Answer time at medium notice (hours)"
+msgstr "Vastausaika keskipitkällä varoitusajalla (tuntia)"
+
+msgid "Answer time at short notice (hours)"
+msgstr "Vastausaika lyhyellä varoitusajalla (tuntia)"
+
+msgid "Answer time further ahead (hours)"
+msgstr "Vastausaika pidemmällä varoitusajalla (tuntia)"
+
+msgid "How long the holder has to answer a medium-notice request. Default 48."
+msgstr "Kauanko tehtävän haltijalla on aikaa vastata keskipitkän varoitusajan pyyntöön. Oletus 48."
+
+msgid "How long the holder has to answer a request made further ahead. Default 72."
+msgstr "Kauanko tehtävän haltijalla on aikaa vastata pidemmällä varoitusajalla tehtyyn pyyntöön. Oletus 72."
+
+msgid "How long the holder has to answer a short-notice request. Default 24."
+msgstr "Kauanko tehtävän haltijalla on aikaa vastata lyhyen varoitusajan pyyntöön. Oletus 24."
+
+#, php-format
+msgid "It is too late to ask: a takeover must be answered at least %d hour before the task starts."
+msgid_plural "It is too late to ask: a takeover must be answered at least %d hours before the task starts."
+msgstr[0] "On liian myöhäistä pyytää: siirtopyyntöön on vastattava viimeistään %d tunti ennen tehtävän alkua."
+msgstr[1] "On liian myöhäistä pyytää: siirtopyyntöön on vastattava viimeistään %d tuntia ennen tehtävän alkua."
+
+msgid "It is too late to ask: the task has already started."
+msgstr "On liian myöhäistä pyytää: tehtävä on jo alkanut."
+
+msgid "Last answer (hours before the start)"
+msgstr "Viimeinen vastaus (tuntia ennen alkua)"
+
+msgid "Medium notice (days before the start)"
+msgstr "Keskipitkä varoitusaika (päivää ennen alkua)"
+
+msgid "Request sent."
+msgstr "Pyyntö lähetetty."
+
+msgid "Short notice (hours before the start)"
+msgstr "Lyhyt varoitusaika (tuntia ennen alkua)"
+
+msgid "Someone else has already asked to take over this task. Wait until that request is answered."
+msgstr "Joku muu on jo pyytänyt saada ottaa tämän tehtävän. Odota, kunnes siihen pyyntöön on vastattu."
+
+msgid "Takeover request"
+msgstr "Siirtopyyntö"
+
+msgid "Takeover requests"
+msgstr "Siirtopyynnöt"
+
+msgid "The answer deadline is never later than this many hours before the task starts. When that time has passed, nobody can ask any more. Default 1."
+msgstr "Vastauksen takaraja on aina viimeistään näin monta tuntia ennen tehtävän alkua. Kun se aika on mennyt, kukaan ei voi enää pyytää. Oletus 1."
+
+msgid "The task could not be moved, so you keep it."
+msgstr "Tehtävää ei voitu siirtää, joten pidät sen."
+
+msgid "The time to answer has passed, so you keep your task."
+msgstr "Vastausaika on päättynyt, joten pidät tehtäväsi."
+
+msgid "This request is already closed."
+msgstr "Tämä pyyntö on jo suljettu."
+
+msgid "This request is closed: the task changed or was cancelled."
+msgstr "Tämä pyyntö on suljettu: tehtävä muuttui tai peruttiin."
+
+msgid "When someone asks to take over another person’s task, the holder decides. If the holder does not answer by the deadline, they keep the task. These numbers set the deadline."
+msgstr "Kun joku pyytää saada ottaa toisen tehtävän, tehtävän haltija päättää. Jos haltija ei vastaa määräaikaan mennessä, hän pitää tehtävän. Nämä luvut asettavat määräajan."
+
+#, php-format
+msgid "You already asked to take over this task. %1$s has until %2$s to answer."
+msgstr "Pyysit jo saada ottaa tämän tehtävän. Henkilöllä %1$s on aikaa vastata %2$s asti."
+
+msgid "You already kept this task."
+msgstr "Päätit jo pitää tämän tehtävän."
+
+msgid "You already let them take this task."
+msgstr "Annoit jo tämän tehtävän hänelle."
+
+#, php-format
+msgid "You keep your task: %1$s at %2$s, %3$s. %4$s has been told."
+msgstr "Pidät tehtäväsi: %1$s, %2$s, %3$s. Henkilölle %4$s on kerrottu."
+
+#, php-format
+msgid "Your request to take over the task of %1$s is closed, because the task changed or was cancelled: %2$s at %3$s, %4$s."
+msgstr "Pyyntösi ottaa henkilön %1$s tehtävä on suljettu, koska tehtävä muuttui tai peruttiin: %2$s, %3$s, %4$s."
+
+#, php-format
+msgid "Your task moved to %s"
+msgstr "Tehtäväsi siirtyi henkilölle %s"
+
+#, php-format
+msgid "✅ Done: %1$s now has your task: %2$s at %3$s, %4$s."
+msgstr "✅ Valmis: tehtäväsi on nyt henkilöllä %1$s: %2$s, %3$s, %4$s."
+
+msgid "✅ Let them take it"
+msgstr "✅ Anna hänen ottaa se"
+
+msgid "❌ Keep my task"
+msgstr "❌ Pidän tehtäväni"
+
+#, php-format
+msgid "📨 Request sent. %1$s decides whether you take over their task: %2$s at %3$s, %4$s.\n\nThey have until %5$s to answer. If they do not answer by then, they keep the task."
+msgstr "📨 Pyyntö lähetetty. %1$s päättää, saatko ottaa hänen tehtävänsä: %2$s, %3$s, %4$s.\n\nHänellä on aikaa vastata %5$s asti. Jos hän ei vastaa siihen mennessä, hän pitää tehtävän."
+
+#, php-format
+msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
+msgstr "🔁 %1$s pyytää saada ottaa tehtäväsi: %2$s, %3$s, %4$s.\n\nSinä päätät: annat tehtävän hänelle tai pidät sen. Vastaa viimeistään %5$s. Jos et vastaa siihen mennessä, pidät tehtävän."

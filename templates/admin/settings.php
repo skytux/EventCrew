@@ -11,6 +11,7 @@
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var int $signout_lock_minutes Minutes before a task's start from which crew can no longer sign out (0 = off).
+ * @var array<int, array{name: string, option: string, value: int, min: int, label: string, help: string}> $takeover_rows Takeover request settings.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
  * @var int $tasks_per_credit Completed tasks a member works to earn one free-entry credit.
@@ -487,6 +488,29 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+        </table>
+
+        <h2><?php esc_html_e('Takeover requests', 'eventcrew'); ?></h2>
+        <p><?php esc_html_e('When someone asks to take over another person’s task, the holder decides. If the holder does not answer by the deadline, they keep the task. These numbers set the deadline.', 'eventcrew'); ?></p>
+        <table class="form-table" role="presentation">
+            <?php foreach ($takeover_rows as $takeover_row) : ?>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-<?php echo esc_attr($takeover_row['name']); ?>"><?php echo esc_html($takeover_row['label']); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-<?php echo esc_attr($takeover_row['name']); ?>"
+                        name="<?php echo esc_attr($takeover_row['name']); ?>"
+                        value="<?php echo esc_attr((string) $takeover_row['value']); ?>"
+                        min="<?php echo esc_attr((string) $takeover_row['min']); ?>"
+                        step="1"
+                        style="width:6em">
+                    <p class="description"><?php echo esc_html($takeover_row['help']); ?></p>
+                </td>
+            </tr>
+            <?php endforeach; ?>
         </table>
 
         <h2><?php esc_html_e('Board reminders', 'eventcrew'); ?></h2>

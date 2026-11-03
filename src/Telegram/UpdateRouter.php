@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TelegramLogin;
 
 /**
@@ -97,6 +98,8 @@ final class UpdateRouter
                 $this->onMenuTap($callbackQuery);
             } elseif (str_starts_with($data, 'rep:')) {
                 $this->replacement->onSelect($callbackQuery);
+            } elseif (str_starts_with($data, TakeoverService::CALLBACK_PREFIX)) {
+                $this->replacement->onAnswer($callbackQuery);
             } elseif (str_starts_with($data, 'rm:')) {
                 $this->roster->onMark($callbackQuery);
             } elseif (str_starts_with($data, RosterService::SELECT_PREFIX)) {

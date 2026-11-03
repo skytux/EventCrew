@@ -46,7 +46,8 @@ final class Scheduler
         private readonly WelcomeSender $welcome,
         private readonly CommandMenu $commandMenu,
         private readonly ?Newsletter $newsletter = null,
-        private readonly ?FollowupMail $followup = null
+        private readonly ?FollowupMail $followup = null,
+        private readonly ?TakeoverService $takeovers = null
     ) {
     }
 
@@ -97,6 +98,10 @@ final class Scheduler
          * gains nothing from going at 04:00 and loses a good deal.
          */
         $this->reminders->run(self::BATCH);
+
+        // Takeover requests have a deadline too: the cover is told the
+        // holder keeps the task as soon as the time to answer runs out.
+        $this->takeovers?->expireDue(self::BATCH);
 
         if (SendWindow::isOpen()) {
             $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);

@@ -22,6 +22,7 @@ use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -67,6 +68,7 @@ use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
@@ -118,6 +120,7 @@ use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
+use EventCrew\Web\TakeoverController;
 use Throwable;
 
 final class Kernel
@@ -212,6 +215,11 @@ final class Kernel
         // counted links and Stop page are opened by logged-out people.
         $this->container->get(FollowupMail::class)->boot();
         $this->container->get(FollowupController::class)->boot();
+
+        // Takeover requests: closed when the holder's place goes away, and
+        // answered from an email link that logged-out people open.
+        $this->container->get(TakeoverService::class)->boot();
+        $this->container->get(TakeoverController::class)->boot();
 
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
@@ -623,7 +631,8 @@ final class Kernel
                 $container->get(WelcomeSender::class),
                 $container->get(CommandMenu::class),
                 $container->get(Newsletter::class),
-                $container->get(FollowupMail::class)
+                $container->get(FollowupMail::class),
+                $container->get(TakeoverService::class)
             )
         );
 
@@ -887,7 +896,8 @@ final class Kernel
                 $container->get(RedemptionRepository::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(AuthTokenRepository::class),
-                $container->get(NotificationsRepository::class)
+                $container->get(NotificationsRepository::class),
+                $container->get(TakeoverRepository::class)
             )
         );
 
@@ -1032,10 +1042,30 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(TakeoverService::class)
+            )
+        );
+
+        $this->container->singleton(TakeoverRepository::class, fn () => new TakeoverRepository());
+
+        $this->container->singleton(
+            TakeoverService::class,
+            fn (Container $container) => new TakeoverService(
+                $container->get(TakeoverRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(ClaimNotifier::class),
                 $container->get(BoardService::class),
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class)
             )
+        );
+
+        $this->container->singleton(
+            TakeoverController::class,
+            fn (Container $container) => new TakeoverController($container->get(TakeoverService::class))
         );
 
         $this->container->singleton(

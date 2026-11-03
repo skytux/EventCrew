@@ -8,23 +8,18 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
-use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
-use EventCrew\Support\Language;
-use EventCrew\Support\Mailer;
-use EventCrew\Support\MarkedBy;
-use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\TakeoverService;
 
 /**
- * "I'll cover for someone" - the person stepping in drives it, and it completes
- * itself with no organizer in the loop.
+ * "I'll cover for someone" - the person stepping in drives it, with no
+ * organizer in the loop.
  *
  * The cover taps 🔁 Take over a task under /me, names the person they are covering, and the bot
- * lists that person's upcoming tasks. Picking one swaps the two in a single
- * step: the original is marked `replaced` (which frees the slot and earns them
- * the reputation credit for arranging cover), and the cover is signed up in
- * their place. Both are told, and the group is told.
+ * lists that person's upcoming tasks. Picking one sends the holder a takeover
+ * request (Support\TakeoverService): nothing moves until the holder agrees.
+ * The holder's answer comes back here as a tko: button tap.
  */
 final class ReplacementService
 {
@@ -36,9 +31,8 @@ final class ReplacementService
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
-        private readonly BoardService $board,
         private readonly TelegramClient $telegram,
-        private readonly Mailer $mailer
+        private readonly TakeoverService $takeovers
     ) {
     }
 
@@ -146,7 +140,7 @@ final class ReplacementService
     }
 
     /**
-     * A task was picked (callback rep:<assignmentId>): swap the two.
+     * A task was picked (callback rep:<assignmentId>): ask the holder.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -196,7 +190,61 @@ final class ReplacementService
             return;
         }
 
-        $this->swap($callbackId, $original->id, $original->personId, $task->id, $cover, $original->countsCredit);
+        $result = $this->takeovers->request($original, $task, $cover);
+
+        if (! $result['ok']) {
+            $this->telegram->answerCallbackQuery($callbackId, $result['text'], true);
+
+            return;
+        }
+
+        // The full text names the deadline and is too long for a popup, so it
+        // goes in the chat, where the cover can read it again later.
+        $this->telegram->answerCallbackQuery($callbackId, __('Request sent.', 'eventcrew'));
+        $this->telegram->sendMessage($cover->telegramChatId ?? $coverTelegramId, $result['text']);
+    }
+
+    /**
+     * The holder tapped ✅ Let them take it or ❌ Keep my task on a takeover
+     * request (callback tko:y:<id> / tko:n:<id>). The outcome replaces the
+     * buttons, so the request cannot be answered twice from the same message.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onAnswer(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $data = (string) ($callbackQuery['data'] ?? '');
+        $holder = $this->people->findByTelegramUserId((int) ($callbackQuery['from']['id'] ?? 0));
+
+        if (1 !== preg_match('/^' . preg_quote(TakeoverService::CALLBACK_PREFIX, '/') . '([yn]):(\d+)$/', $data, $matches)) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        $outcome = null === $holder
+            ? __('This link is no longer valid.', 'eventcrew')
+            : $this->takeovers->answer((int) $matches[2], 'y' === $matches[1], $holder->id, true);
+
+        $this->telegram->answerCallbackQuery($callbackId);
+
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (0 !== $chatId && 0 !== $messageId) {
+            $original = (string) ($message['text'] ?? '');
+            $this->telegram->editMessageText(
+                $chatId,
+                $messageId,
+                '' === $original ? $outcome : $original . "\n\n" . $outcome
+            );
+
+            return;
+        }
+
+        $this->telegram->sendMessage((int) ($callbackQuery['from']['id'] ?? 0), $outcome);
     }
 
     private function refusalFor(Person $cover, int $originalPersonId, int $taskId): ?string
@@ -216,108 +264,6 @@ final class ReplacementService
         // for the same reason it was refused on the board - which is no longer
         // a reason. Taking the same task twice is still stopped, above.
         return null;
-    }
-
-    private function swap(
-        string $callbackId,
-        int $originalAssignmentId,
-        int $originalPersonId,
-        int $taskId,
-        Person $cover,
-        bool $countsCredit = true
-    ): void {
-        // Free the original's slot as `replaced` (their credit for arranging
-        // cover), then sign the cover up. If the freed slot is lost to a race
-        // before the cover can take it, put the original back and say so.
-        $this->assignments->setStatus($originalAssignmentId, AssignmentStatus::REPLACED, $cover->id, MarkedBy::PERSON);
-        // The cover steps into the same slot, so it keeps the slot's answer to
-        // "Count toward free-entry credit?".
-        $outcome = $this->assignments->join($taskId, $cover->id, $countsCredit);
-
-        if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
-            $this->assignments->setStatus(
-                $originalAssignmentId,
-                AssignmentStatus::SIGNED_UP,
-                $cover->id,
-                MarkedBy::PERSON
-            );
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('That slot filled up before I could swap it.', 'eventcrew'),
-                true
-            );
-
-            return;
-        }
-
-        $task = $this->tasks->find($taskId);
-        $original = $this->people->find($originalPersonId);
-        $originalName = null === $original ? __('someone', 'eventcrew') : $original->name();
-        $role = null === $task ? '' : $task->roleLabel();
-        $event = null === $task ? '' : $task->eventName();
-
-        $this->telegram->answerCallbackQuery(
-            $callbackId,
-            sprintf(
-                /* translators: 1: person being covered, 2: role */
-                __('Done — you’re covering %1$s’s %2$s.', 'eventcrew'),
-                $originalName,
-                $role
-            ),
-            true
-        );
-
-        if (null !== $original) {
-            Language::forPerson($original, function () use ($original, $cover, $task, $event): void {
-                $this->tellOriginal($original, $cover, null === $task ? '' : $task->roleLabel(), $event);
-            });
-        }
-
-        // The group reads one message, so it is always in English, whatever
-        // language the cover or the person covered chose.
-        $this->board->announce(Language::run(Language::ENGLISH, static fn (): string => sprintf(
-            /* translators: 1: cover's name, 2: person being covered, 3: role, 4: event */
-            __('%1$s is covering for %2$s: %3$s at %4$s.', 'eventcrew'),
-            $cover->name(),
-            null === $original ? __('someone', 'eventcrew') : $original->name(),
-            null === $task ? '' : $task->roleLabel(),
-            $event
-        )));
-        $this->board->refresh();
-    }
-
-    /**
-     * Tells the person being covered, by DM and email as they allow, in the
-     * language the caller has switched to for them.
-     */
-    private function tellOriginal(Person $original, Person $cover, string $role, string $event): void
-    {
-        $line = sprintf(
-            /* translators: 1: cover's name, 2: role, 3: event */
-            __('%1$s is now covering your %2$s at %3$s. Thanks for arranging it!', 'eventcrew'),
-            $cover->name(),
-            $role,
-            $event
-        );
-        $prefs = new NotificationPreferences();
-
-        if ($prefs->dmAllowed($original, NotificationPreferences::COVER)) {
-            $this->telegram->sendMessage($original->telegramChatId, $line);
-        }
-
-        if ($prefs->emailAllowed($original, NotificationPreferences::COVER)) {
-            $this->mailer->toPerson(
-                $original->id,
-                $original->email,
-                __('Your task is covered', 'eventcrew'),
-                sprintf(
-                    /* translators: 1: name, 2: the cover line */
-                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                    $original->name(),
-                    $line
-                )
-            );
-        }
     }
 
     /**

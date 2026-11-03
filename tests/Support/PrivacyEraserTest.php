@@ -83,6 +83,8 @@ final class PrivacyEraserTest extends TestCase
             [
                 'wp_eventcrew_auth_tokens',
                 'wp_eventcrew_notifications',
+                'wp_eventcrew_takeovers',
+                'wp_eventcrew_takeovers',
                 'wp_eventcrew_assignments',
                 'wp_eventcrew_redemptions',
                 'wp_eventcrew_credit_grants',
@@ -90,6 +92,17 @@ final class PrivacyEraserTest extends TestCase
             ],
             $deletedTables
         );
+
+        // Takeover requests go both where the person held the task and where
+        // they asked to take one over.
+        $takeoverWheres = array_column(
+            array_filter(
+                $this->wpdb->deletes,
+                static fn (array $d): bool => 'wp_eventcrew_takeovers' === $d['table']
+            ),
+            'where'
+        );
+        self::assertSame([['holder_id' => 7], ['cover_id' => 7]], $takeoverWheres);
     }
 
     /**

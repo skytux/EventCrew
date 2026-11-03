@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.103.3
+Stable tag: 1.104.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.104.0 =
+Taking over someone's task is now a request the holder must accept. The holder gets a deadline to answer: 24 hours when the request comes less than 48 hours before the task, 48 hours when less than 7 days before, 72 hours otherwise, never later than 1 hour before the task starts. Both people are told the deadline and the process. Organizers can still reassign directly. All times are settings under Takeover requests. Database version 27 (new takeovers table).
 
 = 1.103.3 =
 Preview emails (next events announcement and post-event email) now start their subject with [Preview].
@@ -1027,6 +1030,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.104.0 =
+The database updates itself to version 27 on the first page load.
 
 = 1.103.3 =
 No changes needed.
