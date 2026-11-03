@@ -27,6 +27,8 @@ use EventCrew\Tests\TestCase;
  */
 final class FollowupMailTest extends TestCase
 {
+    use FakeEventNames;
+
     private const NIGHT = '2026-11-14';
 
     /** @var array<string, mixed> */
@@ -766,7 +768,7 @@ final class FollowupMailTest extends TestCase
                 ]),
                 array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT))
             );
-            $expected = Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null);
+            $expected = Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null, '', true);
 
             self::assertCount(4, $events);
             self::assertStringContainsString('Tulevat tapahtumat', $expected['html'], 'the newsletter heading');
@@ -820,9 +822,10 @@ final class FollowupMailTest extends TestCase
      * The practical information the language model found for the next events
      * announcement goes on these cards too, in the HTML and the plain text:
      * one kept from a sent announcement and one from the current plan. An
-     * event with none has no such lines. No card shows a written text or a
-     * description, the announcement's opening is not shown, and with the
-     * switch off no card has practical information.
+     * event with none has no such lines. The card shows the text the
+     * announcement wrote for its event; a Later line shows none, no card
+     * shows the description, the announcement's opening is not shown, and
+     * with the switch off no card has practical information.
      */
     public function testThePracticalInformationIsAsInTheAnnouncement(): void
     {
@@ -862,13 +865,17 @@ final class FollowupMailTest extends TestCase
         self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30</p>', $mail['html']);
         self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30</p>', $mail['html']);
         self::assertStringContainsString(
-            "Ecstatic Dance 1\nOld Hall\n\nFI: Ovet aukeavat 18:30\nEN: Doors open 18:30\n",
+            "Ecstatic Dance 1\nFI: Tule tanssimaan.\nEN: Come and dance.\nOld Hall\n\n"
+                . "FI: Ovet aukeavat 18:30\nEN: Doors open 18:30\n",
             $mail['text']
         );
         self::assertSame(1, substr_count($mail['html'], 'Ovet '), 'only the card has such lines');
         self::assertStringNotContainsString('Example Hall', $mail['html'] . $mail['text'], 'a Later line has none');
 
-        foreach (['Come and dance.', 'Stay late.', 'Welcome.', 'A warm evening of free movement.'] as $hidden) {
+        self::assertStringContainsString('FI</span>&nbsp; Tule tanssimaan.</p>', $mail['html'], "the card's text");
+        self::assertStringContainsString('EN</span>&nbsp; Come and dance.</p>', $mail['html']);
+
+        foreach (['Stay late.', 'Welcome.', 'A warm evening of free movement.'] as $hidden) {
             self::assertStringNotContainsString($hidden, $mail['html'] . $mail['text']);
         }
 
@@ -887,6 +894,132 @@ final class FollowupMailTest extends TestCase
 
         self::assertStringNotContainsString('Old Hall', $mail['html'] . $mail['text']);
         self::assertStringNotContainsString('Example Hall', $mail['html'] . $mail['text']);
+    }
+
+    /**
+     * Each language's text starts with its FI or EN tag: the greeting and
+     * text, and the invitation to join the announcement. The plain text and
+     * the join button have none.
+     */
+    public function testEachLanguagesTextStartsWithItsTag(): void
+    {
+        $this->sampleEvents();
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertMatchesRegularExpression(
+            '~<span [^>]*color:#9a7440[^>]*>FI</span>&nbsp; Hei Anna,</p>~',
+            $mail['html']
+        );
+        self::assertMatchesRegularExpression('~<span [^>]*>EN</span>&nbsp; Hi Anna,</p>~', $mail['html']);
+        self::assertMatchesRegularExpression('~>FI</span>&nbsp; Haluatko kuulla~', $mail['html'], 'the invitation');
+        self::assertMatchesRegularExpression('~>EN</span>&nbsp; Would you like~', $mail['html']);
+        self::assertStringContainsString('Tilaa tiedote · Join the announcement', $mail['html'], 'the button as is');
+        self::assertSame(4, substr_count($mail['html'], '</span>&nbsp; '), 'two texts and two invitations');
+        self::assertStringNotContainsString('<span', $mail['text']);
+    }
+
+    /**
+     * The coming events part opens with a heading in the confirmation card's
+     * look: a dark band, the sparkle, the Finnish heading big and centred,
+     * and the English heading on a line of its own under it. The
+     * announcement keeps its plain heading.
+     */
+    public function testTheEventsPartOpensWithTheEpicHeading(): void
+    {
+        $this->sampleEvents();
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertMatchesRegularExpression(
+            '~<table [^>]*background:#1d1422;border:1px solid #e9c58f;[^>]*><tr><td align="center"[^>]*>'
+                . '<p [^>]*>✦</p><h1 [^>]*font-size:28px;[^>]*color:#ffe2bf;text-align:center">Tulevat tapahtumat</h1>'
+                . '<p [^>]*font-size:17px;[^>]*color:#d9c3a8;text-align:center">Coming events</p></td></tr></table>~u',
+            $mail['html']
+        );
+        self::assertStringNotContainsString('font-size:26px', $mail['html'], 'not the plain heading');
+
+        $plain = Newsletter::content([], [], null);
+        self::assertStringContainsString('font-size:26px', $plain['html']);
+        self::assertStringNotContainsString('✦', $plain['html']);
+    }
+
+    /**
+     * The opening names the event by its clean name in each language
+     * (EventMesh), not the title as written.
+     */
+    public function testTheOpeningNamesTheEventByItsCleanName(): void
+    {
+        $this->nightTask();
+        $this->fakeEventNames([50 => ['fi' => 'Ekstaattinen tanssi', 'en' => 'Ecstatic Dance']], [50 => ['Kai']]);
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('olit mukana Ekstaattinen tanssi -illassa', $mail['html']);
+        self::assertStringContainsString('Thank you for coming to Ecstatic Dance on', $mail['html']);
+        self::assertStringContainsString('Thank you for coming to Ecstatic Dance on', $mail['text']);
+        self::assertStringNotContainsString('ECSTATIC DANCE 14.11', $mail['html'] . $mail['text']);
+    }
+
+    /** Without a clean name the opening keeps the title as written. */
+    public function testTheOpeningKeepsTheTitleWithoutACleanName(): void
+    {
+        $this->nightTask();
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString(
+            'Thank you for coming to ECSTATIC DANCE 14.11.2026 / DJ Kai on',
+            $mail['html']
+        );
+    }
+
+    /**
+     * Without a text of this email's own, the card shows the text the
+     * announcement wrote for its event ahead of time; this email's own text
+     * wins when there is one. Nothing is asked of the model while the email
+     * is put together.
+     */
+    public function testTheCardShowsTheAnnouncementsTextWhenItHasNoneOfItsOwn(): void
+    {
+        $this->cardNight();
+        $this->model(['{"text": "never asked"}']);
+        $this->options[Newsletter::STATE_OPTION] = [
+            'ledger' => [1 => ['s' => Newsletter::LEDGER_SENT, 'd' => '2026-11-21',
+                'w' => ['fi' => 'Kain soundi kantaa.', 'en' => "Kai's sound carries you."]]],
+        ];
+
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('FI</span>&nbsp; Kain soundi kantaa.</p>', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Kai&#039;s sound carries you.</p>', $mail['html']);
+        self::assertStringContainsString("FI: Kain soundi kantaa.\nEN: Kai's sound carries you.", $mail['text']);
+        self::assertSame([], $this->requests);
+
+        $this->options[FollowupMail::STATE_OPTION]['written'][self::NIGHT] = [
+            'id' => 1,
+            'text' => ['fi' => 'Pyöri.', 'en' => 'Spin.'],
+            'practical' => [],
+        ];
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('EN</span>&nbsp; Spin.</p>', $mail['html'], 'its own text wins');
+        self::assertStringNotContainsString('carries you', $mail['html']);
+    }
+
+    /**
+     * With no text written anywhere and no model to ask, the emails still go
+     * out at the send time, the card without a text.
+     */
+    public function testTheEmailsGoOutWithoutAnyText(): void
+    {
+        $this->cardNight();
+        Functions\when('wp_doing_cron')->justReturn(false);
+        $followup = $this->followup();
+
+        $followup->run($this->at('2026-11-13 12:00'));
+        $followup->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame([], $this->requests);
+        self::assertCount(3, $this->mails, 'the preview and both emails');
+        self::assertStringContainsString('Ecstatic Dance 1', $this->mails[1]['body']);
     }
 
     /** No coming events: no events part at all, as the newsletter sends nothing then. */
@@ -1198,6 +1331,16 @@ final class FollowupMailTest extends TestCase
     }
 
     // ---- Helpers ----------------------------------------------------------
+
+    /** A task on the night for event post 50, whose title is written as "ECSTATIC DANCE 14.11.2026 / DJ Kai". */
+    private function nightTask(): void
+    {
+        $this->sampleEvents();
+        $this->db->tasks = [['id' => 1, 'task_date' => self::NIGHT, 'role_slug' => 'door', 'event_post_id' => 50]];
+        Functions\when('get_the_title')->alias(
+            static fn (int $id): string => 50 === $id ? 'ECSTATIC DANCE 14.11.2026 / DJ Kai' : ''
+        );
+    }
 
     /** The sample events, the first with a description that names its venue and doors, and two ticket holders. */
     private function cardNight(): void

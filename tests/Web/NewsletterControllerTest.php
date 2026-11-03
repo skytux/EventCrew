@@ -151,8 +151,17 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString("\nText", $text);
         self::assertStringContainsString('<img src="https://site.test/bar.jpg"', $html);
         self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, 'Teksti'), 'Finnish text above the button');
-        self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, '>Text<'), 'English text above it too');
-        self::assertLessThan(strpos($html, '>Text<'), strpos($html, 'Teksti'), 'Finnish first');
+        self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, '&nbsp; Text<'), 'English text above it too');
+        self::assertLessThan(strpos($html, '&nbsp; Text<'), strpos($html, 'Teksti'), 'Finnish first');
+        // Each text starts with its language tag, gold on the dark card.
+        self::assertMatchesRegularExpression('~<span [^>]*color:#e9c58f[^>]*>FI</span>&nbsp; Teksti</p>~', $html);
+        self::assertMatchesRegularExpression('~<span [^>]*color:#e9c58f[^>]*>EN</span>&nbsp; Text</p>~', $html);
+
+        // One text, the same in both languages, has no tag.
+        $html = NewsletterConfirmMail::html($fi, ['body' => 'Teksti'] + $en, 'https://site.test/c');
+
+        self::assertStringNotContainsString('>FI</span>', $html);
+        self::assertSame(1, substr_count($html, 'Teksti'));
     }
 
     /** A filled honeypot looks like success to the bot and does nothing. */

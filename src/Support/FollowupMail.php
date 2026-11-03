@@ -34,9 +34,10 @@ use EventCrew\Web\NewsletterController;
  * style of the event's DJ, in English and in Finnish) and the event's
  * practical information. Both are written once per night in a background
  * run before the preview (writeNight()) and kept in the state option, so the
- * preview and every recipient get the same; without them the card has no
- * text, and its practical information is what the announcement found
- * (Newsletter::writtenTexts()), when there is some. A newly written text
+ * preview and every recipient get the same; without them the card shows the
+ * text and the practical information the announcement wrote for the event
+ * ahead of time (Newsletter::writtenTexts()), when there are some, else no
+ * text. Nothing is written while an email is put together. A newly written text
  * sends no second preview: the preview goes out once per night.
  * Then, while the announcement is switched on, an invitation to join it.
  * Its button (?eventcrew_join=<token>) carries a signed link to this one
@@ -621,11 +622,10 @@ final class FollowupMail
     public function compose(string $date, bool $came, string $name, string $kind, int $rowId): array
     {
         $shortDate = TicketMail::shortDate($date);
-        $event = $this->eventName($date);
         $variant = $came ? FollowupText::CAME : FollowupText::MISSED;
         $main = fn (string $lang): string => FollowupText::fill(
             $this->text->text($variant, $lang)['text'],
-            $event,
+            $this->eventName($date, $lang),
             $shortDate
         );
         $fiText = $main(Language::FINNISH);
@@ -641,9 +641,11 @@ final class FollowupMail
             : self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId);
         $accent = EmailTemplate::accent();
 
-        $html = EmailBody::toHtml($fi['body'])
+        // Each language's text starts with its FI / EN tag, when the two differ.
+        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
+        $html = EmailBody::toHtml($fi['body'], [], $accent, $tags[0])
             . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-            . EmailBody::toHtml($en['body']);
+            . EmailBody::toHtml($en['body'], [], $accent, $tags[1]);
         $text = $fi['body'] . "\n\n" . $en['body'];
 
         $events = array_map(
@@ -660,7 +662,9 @@ final class FollowupMail
             $coming = Newsletter::content(
                 $this->withWritten($date, array_slice($events, 0, self::EVENTS)),
                 array_slice($events, self::EVENTS),
-                null
+                null,
+                '',
+                true
             );
             $html .= '<div style="margin:28px 0 0">' . $coming['html'] . '</div>';
             $text .= "\n\n" . $coming['text'];
@@ -674,7 +678,10 @@ final class FollowupMail
                 'url' => self::joinUrl($kind, $rowId, $campaign),
             ]];
             $html .= '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
-                . EmailBody::toHtml($fi['invite'] . "\n\n" . $en['invite'])
+                . ($fi['invite'] === $en['invite']
+                    ? EmailBody::toHtml($fi['invite'] . "\n\n" . $en['invite'])
+                    : EmailBody::toHtml($fi['invite'], [], $accent, 'FI')
+                        . EmailBody::toHtml($en['invite'], [], $accent, 'EN'))
                 . EmailBody::centred(EmailBody::toHtml('', $join, $accent));
             $text .= "\n\n————————\n\n" . $fi['invite'] . "\n\n" . $en['invite']
                 . "\n\n" . EmailBody::toText('', $join);
@@ -988,32 +995,38 @@ final class FollowupMail
     /**
      * $cards (the first coming event) with what was written for $date's
      * email (writeNight()) when it is for that event: its text, Finnish and
-     * English, and its practical information. Without practical information
-     * of its own, a card takes what the next events announcement found
-     * (Newsletter::writtenTexts()). A card never shows the description.
+     * English, and its practical information. Without a text or practical
+     * information of its own, a card takes what the next events announcement
+     * wrote and found for the event (Newsletter::writtenTexts()). A card
+     * never shows the description.
      *
      * @param array<int, array<string, mixed>> $cards
      * @return array<int, array<string, mixed>>
      */
     private function withWritten(string $date, array $cards): array
     {
-        $cards = NewsletterWriter::apply($cards, ['practical' => Newsletter::writtenTexts()['practical']]);
-        $written = $this->state()['written'][$date] ?? null;
-
-        if (! is_array($written) || ! NewsletterWriter::enabled()) {
+        if (! NewsletterWriter::enabled()) {
             return $cards;
         }
 
-        foreach ($cards as $index => $card) {
-            if ((int) ($card['id'] ?? 0) !== (int) ($written['id'] ?? 0)) {
-                continue;
-            }
+        $announced = Newsletter::writtenTexts();
+        $cards = NewsletterWriter::apply($cards, ['practical' => $announced['practical']]);
+        $written = $this->state()['written'][$date] ?? null;
 
-            $text = NewsletterWriter::followupText($written['text'] ?? null);
+        foreach ($cards as $index => $card) {
+            $own = is_array($written) && (int) ($card['id'] ?? 0) === (int) ($written['id'] ?? 0);
+            // This email's own text, else the one the announcement wrote for
+            // the event ahead of time; neither is written here.
+            $text = $own ? NewsletterWriter::followupText($written['text'] ?? null) : null;
+            $text ??= NewsletterWriter::followupText($announced['events'][(int) ($card['id'] ?? 0)] ?? null);
 
             if (null !== $text) {
                 $cards[$index]['text_fi'] = $text['fi'];
                 $cards[$index]['text_en'] = $text['en'];
+            }
+
+            if (! $own) {
+                continue;
             }
 
             $info = NewsletterWriter::practicalOf($written['practical'] ?? null);
@@ -1072,16 +1085,20 @@ final class FollowupMail
     }
 
     /**
-     * The name of the event on $date: its first task's event, or the site's
+     * The name of the event on $date in $lang: its first task's event, by
+     * its clean name (EventName) or else its title as written, or the site's
      * name when the night has no tasks.
      */
-    private function eventName(string $date): string
+    private function eventName(string $date, string $lang): string
     {
         foreach ($this->tasks->forDate($date) as $task) {
             $name = trim($task->eventName());
 
             if ('' !== $name) {
-                return $name;
+                // The clean name in $lang (EventName), else the title as written.
+                $clean = trim(EventName::ofTask($task, $lang)['name']);
+
+                return '' === $clean ? $name : $clean;
             }
         }
 

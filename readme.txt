@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.126.2
+Stable tag: 1.127.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.127.0 =
+Emails: the banner at the top is bigger (up to 536x140). Two-language texts start with FI / EN tags. The thank-you email names the event by its clean name, shows the DJ text the announcement wrote when it has none of its own, and opens its coming events with a dark centred heading with the English on its own line.
 
 = 1.126.2 =
 The mailbox password for reading the import mailbox is now stored encrypted (sodium secretbox, key from the site salts). A password saved before is encrypted on its next read. If it can no longer be decrypted, an admin notice asks for it again.
@@ -1120,6 +1123,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.127.0 =
+No settings change.
 
 = 1.126.2 =
 No settings change.

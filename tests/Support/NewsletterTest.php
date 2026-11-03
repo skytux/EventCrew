@@ -920,7 +920,8 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('>27.7.2026 · 21:00<', $html);
         self::assertStringNotContainsString('<h2 style="margin:0 0', $html, 'no title under the picture');
         self::assertStringContainsString('Open Floor<br>Aino Testinen &amp; Bo Kokeilu', $html);
-        self::assertStringContainsString('alt="OPEN FLOOR 10.8.2026 / Aino Testinen &amp; Bo Kokeilu"', $html);
+        self::assertStringContainsString('alt="Open Floor"', $html, 'the Later picture by its clean name');
+        self::assertStringNotContainsString('alt="OPEN FLOOR', $html);
         self::assertStringNotContainsString('>ECSTATIC DANCE', $html);
         self::assertStringNotContainsString('EKSTAATTINEN', $html);
 
