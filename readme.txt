@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.120.0
+Stable tag: 1.120.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.120.1 =
+After a sign-up to the next events announcement went through, the full form shows only the thank-you: the email field, the Subscribe button and the footnote are gone. A wrong address or a failed bot check still shows the form to try again.
 
 = 1.120.0 =
 The next events announcement comes in each subscriber's chosen language: Finnish only, English only, or both when no language is chosen. The language model writes the announcement texts in Finnish first and translates them into English; an English email with translated text ends with a small "Automatically translated" note. Organizers get one preview per language group.
@@ -1078,6 +1081,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.120.1 =
+No settings change.
 
 = 1.120.0 =
 Announcements now go out in each subscriber's chosen language. No database schema change.

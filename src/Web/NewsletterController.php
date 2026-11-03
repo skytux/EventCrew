@@ -298,6 +298,14 @@ final class NewsletterController
             return $html . $this->nameForm($nameToken, self::FORM_ANCHOR, false) . '</div>';
         }
 
+        // After a finished sign-up only the thank-you stays: no form, no footnote.
+        // A wrong address or a failed bot check still shows the form to try again.
+        if (self::signupFinished()) {
+            $this->formShown = true;
+
+            return $html . '</div>';
+        }
+
         $this->formAsksEmail = true;
         $html .= $this->formStart(self::FORM_ANCHOR)
             . '<p><label for="eventcrew-newsletter-email" class="screen-reader-text">'
@@ -470,6 +478,15 @@ final class NewsletterController
         }
 
         return true;
+    }
+
+    /** True when this page is the answer to a sign-up that went through. */
+    private static function signupFinished(): bool
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks what to show.
+        $result = isset($_GET[self::RESULT_ARG]) ? sanitize_key(wp_unslash($_GET[self::RESULT_ARG])) : '';
+
+        return in_array($result, [self::RESULT_SENT, self::RESULT_NAMED, self::RESULT_JOINED], true);
     }
 
     /** The message for the ?eventcrew_newsletter= answer, or ''. */
