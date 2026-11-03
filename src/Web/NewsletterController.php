@@ -163,6 +163,8 @@ final class NewsletterController
         . 'background:var(--wp--preset--color--contrast,#111);color:var(--wp--preset--color--base,#fff);'
         . 'padding:8px 52px 8px 12px;box-shadow:0 -2px 12px rgba(0,0,0,.25);font-size:14px;line-height:1.3;'
         . 'transition:opacity .25s ease,transform .25s ease}'
+        . '.eventcrew-nl-bar-check{flex-basis:100%;display:flex;justify-content:center}'
+        . '.eventcrew-nl-bar-check:empty{display:none}'
         . '.eventcrew-nl-bar.has-image{background-color:#111;background-size:cover;background-position:center;'
         . 'color:#fff}'
         . '.eventcrew-nl-bar.is-out{opacity:0;transform:translateY(10px);pointer-events:none}'
@@ -227,12 +229,14 @@ final class NewsletterController
      * its own. Subscribe in the bar takes the full form's check token, starts
      * that check again for later, and sends the bar's own form with the bar as
      * the place for the answer: the page does not scroll, and the answer and
-     * the second step show in the bar. When the full form has no token within
-     * 4 seconds (Cloudflare wants a click there), or the page cannot send
-     * without a reload, the bar does as before: it copies the address into
-     * the full form, scrolls to it, and submits it as soon as its check has a
-     * token (or after 2 minutes, so the server answers a check that never
-     * finished).
+     * the second step show in the bar. When the full form has no token yet,
+     * the bar starts a check of its own in the bar (it shows only when
+     * Cloudflare wants a click, and then where the visitor already is) and
+     * sends with whichever token comes first, or after 2 minutes, so the
+     * server answers a check that never finished. Only when the page cannot
+     * send without a reload does the bar do as before: it copies the address
+     * into the full form, scrolls to it, and submits it when its check has a
+     * token.
      */
     private const BAR_JS = '(function(){var b=document.getElementById("eventcrew-nl-bar");if(!b){return;}'
         . 'var K="eventcrew_nl_bar_closed",d=+b.getAttribute("data-close-days")||30,closed=false;'
@@ -274,22 +278,32 @@ final class NewsletterController
         . 'var ff=document.querySelector(".eventcrew-newsletter form");'
         . 'if(!ff||!ff.querySelector("input[type=email]")){return;}e.preventDefault();'
         . 'if(b.contains(document.activeElement)){document.activeElement.blur();}'
-        . 'var bt=bf.querySelector("button[type=submit]"),n=0,'
-        . 'ajax=!!(window.eventcrewNlAjax&&window.fetch&&window.FormData&&window.DOMParser&&bf.requestSubmit);'
+        . 'var bt=bf.querySelector("button[type=submit]"),n=0,done=false,own=null,'
+        . 'ajax=!!(window.eventcrewNlAjax&&window.fetch&&window.FormData&&window.DOMParser&&bf.requestSubmit),'
+        . 'fc=ff.querySelector(".cf-turnstile");'
         . 'if(bt){bt.disabled=true;}'
         . 'function token(){var t=ff.querySelector("[name=cf-turnstile-response]");return t?t.value:"";}'
-        . 'function here(){var h=bf.querySelector("[name=cf-turnstile-response]");'
+        . 'function here(v,mine){if(done){return;}done=true;'
+        . 'var h=bf.querySelector("input[name=cf-turnstile-response]");'
         . 'if(!h){h=document.createElement("input");h.type="hidden";h.name="cf-turnstile-response";bf.appendChild(h);}'
-        . 'h.value=token();var a=bf.querySelector("input[name=anchor]");if(a){a.value="eventcrew-nl-bar";}'
-        . 'var c=ff.querySelector(".cf-turnstile");if(c&&window.turnstile){try{turnstile.reset(c);}catch(x){}}'
+        . 'h.value=v;var a=bf.querySelector("input[name=anchor]");if(a){a.value="eventcrew-nl-bar";}'
+        . 'if(!mine&&fc&&window.turnstile){try{turnstile.reset(fc);}catch(x){}}'
         . 'if(bt){bt.disabled=false;}bf.setAttribute("data-go","1");bf.requestSubmit();}'
         . 'function there(){if(bt){bt.disabled=false;}'
         . 'ff.querySelector("input[type=email]").value=bf.querySelector("input[type=email]").value;'
         . 'ff.scrollIntoView({behavior:still?"auto":"smooth",block:"center"});var m=0;'
         . '(function send(){if(token()||m++>600){if(ff.requestSubmit){ff.requestSubmit();}else{ff.submit();}}'
         . 'else{setTimeout(send,200);}})();}'
-        . 'if(!ajax){there();return;}'
-        . '(function wait(){if(token()){here();}else if(n++>20){there();}else{setTimeout(wait,200);}})();});}'
+        . 'if(!ajax||!fc){there();return;}'
+        . 'if(token()){here(token(),false);return;}'
+        // No token yet: the bar starts its own check (shown in the bar only if Cloudflare wants a click),
+        // and takes whichever token comes first; after 2 minutes it sends, and the server answers.
+        . 'if(window.turnstile&&fc.getAttribute("data-sitekey")){own=document.createElement("div");'
+        . 'own.className="eventcrew-nl-bar-check";bf.appendChild(own);'
+        . 'try{turnstile.render(own,{sitekey:fc.getAttribute("data-sitekey"),appearance:"interaction-only",'
+        . 'response_field:false,callback:function(v){here(v,true);}});}catch(x){}}'
+        . '(function wait(){if(done){return;}if(token()){here(token(),false);}'
+        . 'else if(n++>600){here("",true);}else{setTimeout(wait,200);}})();});}'
         . 'window.addEventListener("resize",show);show();})();';
 
     /** Set when the full form was rendered on this page. */

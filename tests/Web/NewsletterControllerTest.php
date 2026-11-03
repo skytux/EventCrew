@@ -921,8 +921,11 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('ff.querySelector("[name=cf-turnstile-response]")', $bar);
         self::assertStringContainsString('a.value="eventcrew-nl-bar"', $bar);
         self::assertStringContainsString('bf.requestSubmit()', $bar);
-        // When the full form has no token in 4 seconds, it scrolls there and submits that form.
-        self::assertStringContainsString('n++>20){there();}', $bar);
+        // With no token yet, the bar starts its own check in the bar instead of scrolling.
+        self::assertStringContainsString('turnstile.render(own,', $bar);
+        self::assertStringContainsString('appearance:"interaction-only"', $bar);
+        // Only without sending in place does it scroll to the full form and submit that.
+        self::assertStringContainsString('if(!ajax||!fc){there();return;}', $bar);
         self::assertStringContainsString('ff.requestSubmit()', $bar);
     }
 

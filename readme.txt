@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.125.0
+Stable tag: 1.125.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.125.1 =
+Sticky bar: when the full form has no Cloudflare token yet, the bar starts its own check in the bar instead of scrolling down to the full form (1.125.0 still scrolled in that case).
 
 = 1.125.0 =
 Subscribe in the sticky bar no longer scrolls the page down to the full form: it uses that form's Cloudflare check in the background and shows the answer and the name step in the bar. Only when Cloudflare wants a click does it scroll to the full form as before.
@@ -1099,6 +1102,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.125.1 =
+No settings change.
 
 = 1.125.0 =
 No settings change.
