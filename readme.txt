@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.99.0
+Stable tag: 1.99.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.99.1 =
+Crew app sign-in: the Email / Telegram choice shows straight away; the email form (and its Cloudflare check) shows only after pressing Email, or when Telegram's script or the one-time code cannot load.
 
 = 1.99.0 =
 Crew members are on the next events announcement by default: everyone with a verified email address is added once at the update (no email sent), and new crew are added when they verify their address. Anyone with a subscriber row in any state, including one who unsubscribed, is never added again. Setting "Add crew members to the newsletter" (on by default). The announcement footer says crew members can stop it with the link and that other crew messages are not affected; the privacy notice says the same.
@@ -970,6 +973,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.99.1 =
+No database change.
 
 = 1.99.0 =
 No database change (new options eventcrew_newsletter_crew and eventcrew_newsletter_crew_backfill_done).
