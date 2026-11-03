@@ -1485,6 +1485,10 @@ final class SettingsPage
             update_option(BoardService::USERNAME_OPTION, (string) $me['username']);
         }
 
+        if (is_array($me) && isset($me['first_name'])) {
+            update_option(BoardService::NAME_OPTION, (string) $me['first_name']);
+        }
+
         // So /board shows in the command menu and reaches the bot reliably even
         // under group privacy mode. Each person's menu lists only the commands
         // they may use; CommandMenu sends all of them.

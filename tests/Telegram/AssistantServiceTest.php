@@ -14,6 +14,7 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Telegram\AssistantService;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\HelpService;
 
 /**
@@ -121,7 +122,7 @@ final class AssistantServiceTest extends TelegramTestCase
         );
     }
 
-    private function person(bool $organizer = false): void
+    private function person(bool $organizer = false, string $roles = ''): void
     {
         $this->wpdb->nextRows[] = [
             'id' => 7,
@@ -130,6 +131,7 @@ final class AssistantServiceTest extends TelegramTestCase
             'email_verified_at' => '2026-07-01 00:00:00',
             'is_organizer' => $organizer ? 1 : 0,
             'telegram_user_id' => 555,
+            'role_slugs' => $roles,
         ];
     }
 
@@ -314,6 +316,62 @@ final class AssistantServiceTest extends TelegramTestCase
         $this->help()->onHelp(555, 555, true);
 
         self::assertStringNotContainsString('I remember our private chat', $this->sentTexts()[0]);
+    }
+
+    public function testThePromptNamesThePersonsRoles(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'dj', 'label' => 'DJ', 'restricted' => true],
+            ['slug' => 'host', 'label' => 'Host', 'restricted' => true],
+        ];
+        $this->person(false, 'dj,host');
+        $this->reply(true, true, 'Hi Sam.');
+
+        $this->ask(self::privateMessage('hello'));
+
+        self::assertStringContainsString('Welcome crew: no. Roles: DJ, Host.', $this->systemPrompt(0));
+    }
+
+    public function testTheBotKnowsItsName(): void
+    {
+        $this->options[BoardService::NAME_OPTION] = 'Flow Keeper';
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->reply(true, true, 'Hi, I am Flow Keeper.');
+
+        $this->ask(self::privateMessage('who are you?'));
+
+        self::assertStringContainsString('Your name is Flow Keeper (@crewbot).', $this->systemPrompt(0));
+    }
+
+    public function testWithoutAKnownNameThePromptNamesNone(): void
+    {
+        $this->reply(true, true, 'Hi.');
+
+        $this->ask(self::privateMessage('who are you?'));
+
+        self::assertStringNotContainsString('Your name is', $this->systemPrompt(0));
+    }
+
+    public function testAPersonWithoutRolesIsSaidToHaveNone(): void
+    {
+        $this->person();
+        $this->reply(true, true, 'Hi Sam.');
+
+        $this->ask(self::privateMessage('hello'));
+
+        self::assertStringContainsString('Roles: none.', $this->systemPrompt(0));
+    }
+
+    public function testThePromptSaysToLeaveOutWhatIsForOtherRolesWithoutMentioningIt(): void
+    {
+        $this->reply(true, true, 'Hi.');
+
+        $this->ask(self::privateMessage('hello'));
+
+        $prompt = $this->systemPrompt(0);
+        self::assertStringContainsString('Leave out completely every task, command and', $prompt);
+        self::assertStringContainsString('do not say that it exists', $prompt);
     }
 
     /** @return array<string, mixed> */

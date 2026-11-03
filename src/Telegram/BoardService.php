@@ -35,6 +35,9 @@ final class BoardService
     /** Cached from getMe, for the "set me up" deep-link button. */
     public const USERNAME_OPTION = 'eventcrew_telegram_bot_username';
 
+    /** The bot's display name, cached from getMe, so the helper knows what it is called. */
+    public const NAME_OPTION = 'eventcrew_telegram_bot_name';
+
     /**
      * The public t.me link to the group, set by the organizer. A chat id cannot
      * be turned into a joinable link, so a link has to come from somewhere: this

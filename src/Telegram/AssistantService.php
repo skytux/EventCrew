@@ -496,7 +496,8 @@ final class AssistantService
 
         $lines = [
             'You are the Telegram bot of EventCrew, the crew of a recurring event. People earn free entry'
-                . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.',
+                . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.'
+                . $this->ownName(),
             'Answer the person\'s message with ONE JSON object and nothing else:',
             '{"aimed": true or false, "known": true or false, "lang": "<two-letter code of the language'
                 . ' the message is written in>", "reply": "<your answer>", "action": "<one action line>" or null}',
@@ -520,6 +521,11 @@ final class AssistantService
                 . ' for a task on Saturday"), and that /help lists the commands. Do not answer a greeting'
                 . ' with only a list of commands.',
             '- Dates in actions are written like 1.8. or 2026-08-01.',
+            '- Answer only with what fits this person: their roles, and whether they are an organizer or'
+                . ' welcome crew (see "The person" below). Leave out completely every task, command and'
+                . ' detail meant only for roles, organizers or welcome crew the person is not: do not'
+                . ' explain it and do not say that it exists. If they ask about it, say only that an'
+                . ' organizer can help.',
         ];
 
         if ($isPrivate) {
@@ -540,11 +546,13 @@ final class AssistantService
         }
 
         $lines[] = '';
+        $roles = $audience['roles'] ?? [];
         $lines[] = sprintf(
-            'The person: signed up with a confirmed email: %s. Organizer: %s. Welcome crew: %s.',
+            'The person: signed up with a confirmed email: %s. Organizer: %s. Welcome crew: %s. Roles: %s.',
             $yes($audience['verified']),
             $yes($audience['organizer']),
-            $yes($audience['welcomeCrew'])
+            $yes($audience['welcomeCrew']),
+            [] !== $roles ? implode(', ', $roles) : 'none'
         );
 
         if ($isPrivate) {
@@ -568,6 +576,26 @@ final class AssistantService
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * " Your name is Flow Keeper (@flowkeeper_bot)." from what Telegram told
+     * the webhook install (getMe), or "" when nothing is known yet.
+     */
+    private function ownName(): string
+    {
+        $name = trim((string) get_option(BoardService::NAME_OPTION, ''));
+        $username = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
+
+        if ('' === $name && '' === $username) {
+            return '';
+        }
+
+        if ('' === $name) {
+            return ' Your name is @' . $username . '.';
+        }
+
+        return ' Your name is ' . $name . ('' !== $username ? ' (@' . $username . ')' : '') . '.';
     }
 
     /**
