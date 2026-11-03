@@ -133,6 +133,59 @@ final class Mailer
     }
 
     /**
+     * One newsletter to one subscriber: $content is the ready HTML of both
+     * languages and $text the same as plain text. The footer is $footer
+     * linked to $footerUrl (the subscriber's own unsubscribe link), and
+     * $headers are added to the mail's headers (List-Unsubscribe).
+     *
+     * @param array<int, string> $headers
+     */
+    public function toSubscriber(
+        string $to,
+        string $subject,
+        string $content,
+        string $text,
+        string $footer,
+        string $footerUrl,
+        array $headers = []
+    ): bool {
+        $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
+        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $footerUrl));
+
+        $parts = static function ($phpmailer) use ($text): void {
+            $phpmailer->AltBody = $text;
+        };
+
+        add_action('phpmailer_init', $parts);
+
+        try {
+            $sent = (bool) wp_mail(
+                $to,
+                $subject,
+                $html,
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+            );
+        } catch (\Throwable $error) {
+            $this->logger->error(sprintf(
+                'Email "%s" to a newsletter subscriber failed: %s: %s',
+                $subject,
+                get_class($error),
+                (string) preg_replace('/\S+@\S+/', '[address]', $error->getMessage())
+            ));
+
+            return false;
+        } finally {
+            remove_action('phpmailer_init', $parts);
+        }
+
+        if (! $sent) {
+            $this->logger->warning(sprintf('Email "%s" to a newsletter subscriber could not be sent.', $subject));
+        }
+
+        return $sent;
+    }
+
+    /**
      * A sample of the real thing, for the Settings button that proves the
      * template and the site's mail setup work before anyone relies on them.
      */

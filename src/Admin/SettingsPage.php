@@ -20,6 +20,7 @@ use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Newsletter;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
@@ -143,6 +144,8 @@ final class SettingsPage
                 'door_max_people' => DoorQuota::max(),
                 'door_allow_over_max' => DoorQuota::allowsOver(),
                 'welcome_enabled' => WelcomeSender::enabled(),
+                'newsletter_enabled' => Newsletter::enabled(),
+                'newsletter_days' => Newsletter::days(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
                 'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
@@ -567,6 +570,13 @@ final class SettingsPage
         );
         update_option(DoorQuota::OVER_OPTION, isset($_POST['door_allow_over_max']) ? '1' : '0');
         update_option(WelcomeSender::ENABLED_OPTION, isset($_POST['welcome_enabled']) ? '1' : '0');
+        update_option(Newsletter::ENABLED_OPTION, isset($_POST['newsletter_enabled']) ? '1' : '0');
+        update_option(
+            Newsletter::DAYS_OPTION,
+            isset($_POST['newsletter_days'])
+                ? Newsletter::clampDays((int) $_POST['newsletter_days'])
+                : Newsletter::DEFAULT_DAYS
+        );
 
         update_option(
             Turnstile::SITE_KEY_OPTION,

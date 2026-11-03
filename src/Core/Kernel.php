@@ -17,6 +17,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -42,6 +43,8 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterText;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PageCacheFlush;
@@ -69,6 +72,7 @@ use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
+use EventCrew\Telegram\NewsletterCommand;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
@@ -93,11 +97,13 @@ use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Web\CrewAdminController;
+use EventCrew\Web\CrewAdminNewsletter;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\CrewAppPage;
 use EventCrew\Web\DoorController;
+use EventCrew\Web\NewsletterController;
 use EventCrew\Web\PrivacyController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SessionPerson;
@@ -176,6 +182,12 @@ final class Kernel
         // The ticket emails after an import: a single cron event that sends
         // one batch and schedules the next while rows remain.
         $this->container->get(TicketMail::class)->boot();
+
+        // The newsletter: its sending batches run as a cron event of their
+        // own, and its sign-up shortcode, form handler and link endpoint
+        // must exist for logged-out visitors, so they boot on every path.
+        $this->container->get(Newsletter::class)->boot();
+        $this->container->get(NewsletterController::class)->boot();
 
         // The public signup page: its shortcode, block and admin-ajax handlers
         // must exist for logged-out visitors, so it boots on the front path too.
@@ -328,6 +340,57 @@ final class Kernel
         $this->container->singleton(
             TicketBuyerRepository::class,
             fn () => new TicketBuyerRepository()
+        );
+
+        $this->container->singleton(
+            NewsletterSubscriberRepository::class,
+            fn () => new NewsletterSubscriberRepository()
+        );
+
+        $this->container->singleton(
+            NewsletterText::class,
+            fn (Container $container) => new NewsletterText(
+                $container->get(LlmClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            Newsletter::class,
+            fn (Container $container) => new Newsletter(
+                $container->get(NewsletterSubscriberRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NewsletterText::class),
+                $container->get(Mailer::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            NewsletterController::class,
+            fn (Container $container) => new NewsletterController(
+                $container->get(NewsletterSubscriberRepository::class),
+                $container->get(Mailer::class),
+                $container->get(Newsletter::class),
+                $container->get(Turnstile::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminNewsletter::class,
+            fn (Container $container) => new CrewAdminNewsletter(
+                $container->get(Newsletter::class),
+                $container->get(NewsletterText::class)
+            )
+        );
+
+        $this->container->singleton(
+            NewsletterCommand::class,
+            fn (Container $container) => new NewsletterCommand(
+                $container->get(PersonRepository::class),
+                $container->get(NewsletterText::class),
+                $container->get(TelegramClient::class)
+            )
         );
 
         $this->container->singleton(
@@ -484,7 +547,8 @@ final class Kernel
                 $container->get(RoleNotifier::class),
                 $container->get(RetentionPurge::class),
                 $container->get(WelcomeSender::class),
-                $container->get(CommandMenu::class)
+                $container->get(CommandMenu::class),
+                $container->get(Newsletter::class)
             )
         );
 
@@ -550,7 +614,8 @@ final class Kernel
                 $container->get(RoleTaskService::class),
                 $container->get(CrewAdminRoster::class),
                 $container->get(CrewAdminPeople::class),
-                $container->get(CrewAdminTasks::class)
+                $container->get(CrewAdminTasks::class),
+                $container->get(CrewAdminNewsletter::class)
             )
         );
 
@@ -734,7 +799,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(PersonEraser::class),
                 $container->get(TicketBuyerRepository::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                $container->get(NewsletterSubscriberRepository::class)
             )
         );
 
@@ -960,7 +1026,8 @@ final class Kernel
                 $container->get(LanguageService::class),
                 $container->get(RoleTaskBot::class),
                 $container->get(HelpService::class),
-                $container->get(AssistantService::class)
+                $container->get(AssistantService::class),
+                $container->get(NewsletterCommand::class)
             )
         );
 

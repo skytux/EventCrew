@@ -5730,3 +5730,184 @@ msgstr "Lähetä yksityiskeskustelu järjestäjille, kun henkilö antaa palautet
 
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr "Jokainen järjestäjä saa keskustelun viimeiset 24 tuntia sähköpostilla ja lyhyen Telegram-viestin. Enintään kerran tunnissa henkilöä kohden, ja vain vahvistetun sähköpostin omaaville."
+
+#, php-format
+msgid "%d subscriber."
+msgid_plural "%d subscribers."
+msgstr[0] "%d tilaaja."
+msgstr[1] "%d tilaajaa."
+
+msgid "/newsletter See you on the dance floor!"
+msgstr "/newsletter Nähdään tanssilattialla!"
+
+msgid "Coming events"
+msgstr "Tulevat tapahtumat"
+
+msgid "Confirm your newsletter subscription"
+msgstr "Vahvista uutiskirjeen tilaus"
+
+msgid "Days before the event"
+msgstr "Päivää ennen tapahtumaa"
+
+msgid "How many days before each event the newsletter goes out. Events that fall in the same window go in one newsletter."
+msgstr "Kuinka monta päivää ennen kutakin tapahtumaa uutiskirje lähtee. Samaan jaksoon osuvat tapahtumat tulevat samaan uutiskirjeeseen."
+
+msgid "If you join our newsletter, we store your email address, whether you have confirmed it or left the newsletter, the date you signed up and the date you confirmed. We do not store your name for the newsletter."
+msgstr "Jos liityt uutiskirjeeseemme, tallennamme sähköpostiosoitteesi, tiedon siitä, oletko vahvistanut sen tai eronnut uutiskirjeestä, liittymispäivän ja vahvistuspäivän. Nimeäsi emme tallenna uutiskirjettä varten."
+
+msgid "If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time with the link in every newsletter. When you leave, we keep your address marked as left, and send you no more newsletters."
+msgstr "Jos liityt uutiskirjeeseen, säilytämme sähköpostiosoitettasi uutiskirjettä varten, kunnes eroat siitä. Voit erota milloin tahansa jokaisessa uutiskirjeessä olevalla linkillä. Kun eroat, säilytämme osoitteesi merkittynä eronneeksi emmekä lähetä sinulle enää uutiskirjeitä."
+
+#, php-format
+msgid "If you sign up for the newsletter but do not confirm your address, the sign-up is deleted after %d days."
+msgstr "Jos tilaat uutiskirjeen mutta et vahvista osoitettasi, tilaus poistetaan %d päivän kuluttua."
+
+msgid "In English:"
+msgstr "Englanniksi:"
+
+msgid "In Finnish:"
+msgstr "Suomeksi:"
+
+msgid "Join the newsletter"
+msgstr "Tilaa uutiskirje"
+
+#, php-format
+msgid "Last newsletter: %1$s, %2$d emails."
+msgstr "Edellinen uutiskirje: %1$s, %2$d sähköpostia."
+
+msgid "Leave this field empty"
+msgstr "Jätä tämä kenttä tyhjäksi"
+
+msgid "Newsletter"
+msgstr "Uutiskirje"
+
+#, php-format
+msgid "Newsletter preview: it goes out on %s"
+msgstr "Uutiskirjeen esikatselu: se lähtee %s"
+
+#, php-format
+msgid "Next newsletter: %s, about these events:"
+msgstr "Seuraava uutiskirje: %s, näistä tapahtumista:"
+
+msgid "Off by default. When it is on, the coming events go by email to everyone who joined the newsletter and confirmed their address. People join with the [eventcrew_newsletter] shortcode. The day before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button."
+msgstr "Oletuksena pois päältä. Kun se on päällä, tulevat tapahtumat lähtevät sähköpostilla kaikille, jotka ovat tilanneet uutiskirjeen ja vahvistaneet osoitteensa. Uutiskirjeen voi tilata lyhytkoodilla [eventcrew_newsletter]. Lähetystä edeltävänä päivänä jokainen järjestäjä saa esikatselusähköpostin, jossa on Pysäytä-painike; Crew-sovelluksen Admin-välilehdellä on sama painike."
+
+msgid "Only organizers can use /newsletter."
+msgstr "Vain järjestäjät voivat käyttää komentoa /newsletter."
+
+msgid "Press the button to stop this newsletter. It will not be sent."
+msgstr "Pysäytä tämä uutiskirje painamalla painiketta. Sitä ei silloin lähetetä."
+
+msgid "Remove the text"
+msgstr "Poista teksti"
+
+msgid "Saved, but the text could not be translated, so both languages show it as you wrote it."
+msgstr "Tallennettu, mutta tekstiä ei voitu kääntää, joten molemmissa kielissä näkyy teksti sellaisena kuin kirjoitit sen."
+
+msgid "Saved. The next newsletter carries this text:"
+msgstr "Tallennettu. Seuraavassa uutiskirjeessä on tämä teksti:"
+
+msgid "Saved. The text is translated; both versions are shown below."
+msgstr "Tallennettu. Teksti on käännetty; molemmat versiot näkyvät alla."
+
+msgid "Send the newsletter"
+msgstr "Lähetä uutiskirje"
+
+#, php-format
+msgid "Someone, probably you, asked for the %s newsletter at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days."
+msgstr "Joku, luultavasti sinä, tilasi sivuston %s uutiskirjeen tähän sähköpostiosoitteeseen. Aloita tilaus painamalla alla olevaa painiketta. Jos se et ollut sinä, voit jättää tämän viestin huomiotta: osoite poistetaan 7 päivän kuluttua."
+
+msgid "Stop this newsletter"
+msgstr "Pysäytä tämä uutiskirje"
+
+msgid "Subject"
+msgstr "Aihe"
+
+msgid "Text for the next newsletter"
+msgstr "Teksti seuraavaan uutiskirjeeseen"
+
+msgid "Thank you. Check your inbox: the newsletter starts only after you press the link in the email we sent."
+msgstr "Kiitos. Katso sähköpostisi: uutiskirje alkaa vasta, kun painat lähettämämme viestin linkkiä."
+
+msgid "That does not look like an email address. Please check it."
+msgstr "Tämä ei näytä sähköpostiosoitteelta. Tarkista se."
+
+msgid "The check that you are not a bot failed. Please try again."
+msgstr "Tarkistus, ettet ole botti, epäonnistui. Yritä uudelleen."
+
+#, php-format
+msgid "The newsletter goes out by itself %d day before each event."
+msgid_plural "The newsletter goes out by itself %d days before each event."
+msgstr[0] "Uutiskirje lähtee itsestään %d päivä ennen kutakin tapahtumaa."
+msgstr[1] "Uutiskirje lähtee itsestään %d päivää ennen kutakin tapahtumaa."
+
+#, php-format
+msgid "The newsletter is being sent now: %d emails so far."
+msgstr "Uutiskirjettä lähetetään nyt: tähän mennessä %d sähköpostia."
+
+msgid "The newsletter is stopped. It will not be sent."
+msgstr "Uutiskirje on pysäytetty. Sitä ei lähetetä."
+
+msgid "The newsletter is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
+msgstr "Uutiskirje on pois päältä. Ylläpitäjä voi kytkeä sen päälle wp-adminissa kohdassa EventCrew > Settings > Email."
+
+msgid "The server of the language model, for organizers who write a text for the newsletter — the text is sent there to be translated into the other language of the newsletter."
+msgstr "Kielimallin palvelin, kun järjestäjä kirjoittaa tekstin uutiskirjeeseen — teksti lähetetään sinne käännettäväksi uutiskirjeen toiselle kielelle."
+
+msgid "The text could not be translated, so both languages show it as you wrote it."
+msgstr "Tekstiä ei voitu kääntää, joten molemmissa kielissä näkyy teksti sellaisena kuin kirjoitit sen."
+
+msgid "The text for the next newsletter is removed."
+msgstr "Seuraavan uutiskirjeen teksti on poistettu."
+
+msgid "The text for the next newsletter:"
+msgstr "Seuraavan uutiskirjeen teksti:"
+
+msgid "There is no text for the next newsletter."
+msgstr "Seuraavalle uutiskirjeelle ei ole tekstiä."
+
+#, php-format
+msgid "This newsletter goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
+msgstr "Tämä uutiskirje lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
+
+msgid "This newsletter was already stopped or sent."
+msgstr "Tämä uutiskirje on jo pysäytetty tai lähetetty."
+
+msgid "This text is not translated: both languages show it as it was written."
+msgstr "Tätä tekstiä ei ole käännetty: molemmissa kielissä näkyy teksti sellaisena kuin se kirjoitettiin."
+
+msgid "To add one, send /newsletter followed by the text, for example:"
+msgstr "Lisää teksti lähettämällä /newsletter ja sen perään teksti, esimerkiksi:"
+
+msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
+msgstr "Muuta tekstiä lähettämällä /newsletter ja sen perään uusi teksti. Poista teksti lähettämällä /newsletter clear."
+
+msgid "Too late: the newsletter is already being sent."
+msgstr "Liian myöhään: uutiskirjettä lähetetään jo."
+
+msgid "Use /newsletter in a private chat with me."
+msgstr "Käytä komentoa /newsletter yksityiskeskustelussa kanssani."
+
+msgid "We send you an email to confirm. You can leave the newsletter at any time with the link in every newsletter."
+msgstr "Lähetämme sinulle vahvistusviestin sähköpostilla. Voit erota uutiskirjeestä milloin tahansa jokaisessa uutiskirjeessä olevalla linkillä."
+
+msgid "Write it in Finnish or in English. It is translated into the other language when you save, and removed after the newsletter is sent."
+msgstr "Kirjoita se suomeksi tai englanniksi. Se käännetään toiselle kielelle, kun tallennat, ja poistetaan, kun uutiskirje on lähetetty."
+
+msgid "You are now subscribed to the newsletter. Thank you!"
+msgstr "Olet nyt uutiskirjeen tilaaja. Kiitos!"
+
+msgid "You get this email because you joined the newsletter. Leave the newsletter"
+msgstr "Saat tämän viestin, koska tilasit uutiskirjeen. Eroa uutiskirjeestä"
+
+msgid "You have left the newsletter. You will not get it any more."
+msgstr "Olet eronnut uutiskirjeestä. Et saa sitä enää."
+
+msgid "Your email address"
+msgstr "Sähköpostiosoitteesi"
+
+msgid "sold out"
+msgstr "loppuunmyyty"
+
+msgid "📰 The newsletter, if an administrator has switched it on, emails the coming events to everyone who joined it. The day before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next newsletter, send /newsletter followed by the text in a private chat with the bot, or use the Admin tab. Write it in Finnish or in English: it is translated into the other language."
+msgstr "📰 Uutiskirje, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Lähtöä edeltävänä päivänä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan uutiskirjeeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa tai käytä Admin-välilehteä. Kirjoita se suomeksi tai englanniksi: se käännetään toiselle kielelle."

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 
@@ -43,7 +44,8 @@ final class RetentionPurge
         private readonly PersonRepository $people,
         private readonly PersonEraser $eraser,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
-        private readonly GuestRepository $guests = new GuestRepository()
+        private readonly GuestRepository $guests = new GuestRepository(),
+        private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository()
     ) {
     }
 
@@ -131,14 +133,14 @@ final class RetentionPurge
 
     /**
      * Buyer email addresses that must not be deleted: the people who joined
-     * the newsletter. There is no newsletter yet, so this returns none and
-     * every expired address is deleted. The newsletter release fills this in.
+     * the newsletter and confirmed their address. A sign-up that is not
+     * confirmed, or a person who left the newsletter, keeps nothing.
      *
      * @return array<int, string>
      */
     public function buyerEmailsToKeep(): array
     {
-        return [];
+        return $this->subscribers->confirmedEmails();
     }
 
     /**

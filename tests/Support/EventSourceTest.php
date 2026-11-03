@@ -94,4 +94,37 @@ final class EventSourceTest extends TestCase
         self::assertNotNull($event);
         self::assertSame('2026-08-01 19:30:00', $event['starts_at']);
     }
+
+    /**
+     * EventMesh's Finnish title is used only while it was made from the
+     * current title and text (the stored hash matches), and never for an
+     * event that is already in Finnish.
+     */
+    public function testTheTranslatedTitleIsUsedOnlyWhileItIsCurrent(): void
+    {
+        $post = (object) [
+            'ID' => 12,
+            'post_type' => 'eventmesh_event',
+            'post_title' => 'Summer Dance',
+            'post_content' => 'Body',
+        ];
+        $meta = [
+            '_eventmesh_original_lang' => 'en',
+            '_eventmesh_tr_fi_hash' => md5("Summer Dance\0Body"),
+            '_eventmesh_tr_fi_title' => 'Kesätanssit',
+        ];
+
+        Functions\when('get_post')->justReturn($post);
+        Functions\when('get_post_meta')->alias(
+            static function (int $id, string $key) use (&$meta): string {
+                return $meta[$key] ?? '';
+            }
+        );
+
+        self::assertSame('Kesätanssit', EventSource::translatedTitle(12, 'fi'));
+        self::assertSame('', EventSource::translatedTitle(12, 'en'));
+
+        $meta['_eventmesh_tr_fi_hash'] = md5("Old Title\0Body");
+        self::assertSame('', EventSource::translatedTitle(12, 'fi'));
+    }
 }

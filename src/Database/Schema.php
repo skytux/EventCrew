@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '23';
+    public const DB_VERSION = '24';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -31,6 +31,7 @@ final class Schema
     public const GUESTS = 'eventcrew_guests';
     public const CHECKINS = 'eventcrew_checkins';
     public const TICKET_BUYERS = 'eventcrew_ticket_buyers';
+    public const NEWSLETTER_SUBSCRIBERS = 'eventcrew_newsletter_subscribers';
 
     /**
      * @return array<int, string>
@@ -48,6 +49,7 @@ final class Schema
             self::GUESTS,
             self::CHECKINS,
             self::TICKET_BUYERS,
+            self::NEWSLETTER_SUBSCRIBERS,
         ];
     }
 
@@ -288,6 +290,7 @@ final class Schema
         $guests = self::table(self::GUESTS);
         $checkins = self::table(self::CHECKINS);
         $ticketBuyers = self::table(self::TICKET_BUYERS);
+        $newsletterSubscribers = self::table(self::NEWSLETTER_SUBSCRIBERS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -559,6 +562,23 @@ final class Schema
                 PRIMARY KEY  (id),
                 KEY event_date (event_date),
                 KEY ticket_code (ticket_code)
+            ) ENGINE=InnoDB {$charsetCollate};",
+            // The newsletter's subscribers: an email address and nothing that
+            // names a person. status is 'pending' (signed up, not confirmed
+            // yet), 'confirmed' (clicked the link in the confirmation email;
+            // only these get the newsletter) or 'unsubscribed'. The address is
+            // stored in lower case and is unique, so a second sign-up reuses
+            // the row. A pending row older than Newsletter::PENDING_DAYS is
+            // deleted.
+            "CREATE TABLE {$newsletterSubscribers} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                email varchar(191) NOT NULL,
+                status varchar(20) NOT NULL DEFAULT 'pending',
+                created_at datetime NOT NULL,
+                confirmed_at datetime DEFAULT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY email (email),
+                KEY status (status)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

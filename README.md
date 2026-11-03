@@ -124,6 +124,7 @@ to the DM with a breadcrumb left behind.
 | `/roletasks` | people with a restricted role | The tasks for their roles (never on the group board): sign up or cancel; organizers can also add someone, crew member or not, to any upcoming task |
 | `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
 | `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
+| `/newsletter` | organizers, private chat | Set the text for the next newsletter (`/newsletter <text>`), show it (`/newsletter`), or remove it (`/newsletter clear`) |
 
 ### Plain messages (optional language model)
 
@@ -252,6 +253,41 @@ type has an independent DM and email toggle, set from the **Notifications** tab 
 the web profile or the `/notifications` keyboard menu (the two share one store).
 Signup/cancellation confirmations and task reminders are always sent; disabling
 the account is the hard "no email at all" switch.
+
+## Newsletter
+
+An email of the coming events (from EventMesh: date, start time, title, link,
+and "sold out" where it is) for anyone who joined, crew or not. It is **off by
+default**; switch it on under **Settings → Email → Newsletter**.
+
+- **Joining.** The `[eventcrew_newsletter]` shortcode shows an email field. It
+  has a hidden honeypot field, and a Turnstile check when Turnstile is set up.
+  Joining is double opt-in: the person gets a confirmation email with a signed
+  link, and is subscribed only after following it. A sign-up that is not
+  confirmed within 7 days is deleted. The table stores the email address, the
+  status (pending, confirmed, left), the sign-up time and the confirm time; no
+  name.
+- **Timing.** The newsletter goes out by itself a set number of days before
+  each event (**Days before the event**, default 7). Events that fall in the
+  same window go into one newsletter, and each event is in at most one
+  newsletter. The day before sending, every organizer gets a preview email with
+  the exact content and a signed **Stop this newsletter** link; the crew app's
+  Admin tab has the same button. A stopped newsletter is not sent. Sending runs
+  in WP-Cron batches of 20.
+- **Organizer text.** An organizer can add a text to the next newsletter, with
+  `/newsletter <text>` in a private chat with the bot or in the crew app's
+  Admin tab. The text is written once, in Finnish or English, and translated
+  into the other language through the language model when it is saved. Without
+  a model, or when the translation fails, both languages show the text as it
+  was written and the organizer is told. The text is removed after the
+  newsletter is sent.
+- **Language.** Every newsletter carries Finnish first, then English. Event
+  titles use EventMesh's Finnish translation in the Finnish part when there is
+  one.
+- **Leaving.** Every newsletter has a one-click leave link and the
+  `List-Unsubscribe` / `List-Unsubscribe-Post` headers. A ticket buyer who
+  confirmed the newsletter keeps their email address past the 60-day buyer
+  purge.
 
 ## Requirements
 

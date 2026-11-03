@@ -577,6 +577,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 'people' => _x('People', 'Admin tab screen', 'eventcrew'),
                 'telegram' => __('Telegram', 'eventcrew'),
             ];
+
+            if (isset($eventcrew_admin['newsletter'])) {
+                $eventcrew_subtabs['newsletter'] = __('Newsletter', 'eventcrew');
+            }
             ?>
             <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
                 <?php foreach ($eventcrew_subtabs as $eventcrew_sub_key => $eventcrew_sub_label) : ?>
@@ -1661,6 +1665,116 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <?php endif; ?>
             </section>
             </div>
+
+            <?php if (isset($eventcrew_admin['newsletter'])) : ?>
+                <?php $eventcrew_news = $eventcrew_admin['newsletter']; ?>
+            <div class="eventcrew-subpanel" id="eventcrew-admin-newsletter" data-eventcrew-subpanel="newsletter">
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Newsletter', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <?php if (! $eventcrew_news['enabled']) : ?>
+                        <p class="eventcrew-muted"><?php esc_html_e('The newsletter is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <?php else : ?>
+                        <p><?php echo esc_html(sprintf(
+                            /* translators: %d: number of days */
+                            _n(
+                                'The newsletter goes out by itself %d day before each event.',
+                                'The newsletter goes out by itself %d days before each event.',
+                                $eventcrew_news['days'],
+                                'eventcrew'
+                            ),
+                            $eventcrew_news['days']
+                        )); ?></p>
+                    <?php endif; ?>
+                    <p><?php echo esc_html(sprintf(
+                        /* translators: %d: number of confirmed subscribers */
+                        _n('%d subscriber.', '%d subscribers.', $eventcrew_news['subscribers'], 'eventcrew'),
+                        $eventcrew_news['subscribers']
+                    )); ?></p>
+                    <?php if (null !== $eventcrew_news['plan']) : ?>
+                        <?php if ($eventcrew_news['plan']['sending']) : ?>
+                            <p><?php echo esc_html(sprintf(
+                                /* translators: %d: number of emails sent so far */
+                                __('The newsletter is being sent now: %d emails so far.', 'eventcrew'),
+                                $eventcrew_news['plan']['sent']
+                            )); ?></p>
+                        <?php else : ?>
+                            <p><?php echo esc_html(sprintf(
+                                /* translators: %s: the send date, like 14.11.2026 */
+                                __('Next newsletter: %s, about these events:', 'eventcrew'),
+                                $eventcrew_news['plan']['send_on']
+                            )); ?></p>
+                        <?php endif; ?>
+                        <ul>
+                            <?php foreach ($eventcrew_news['plan']['events'] as $eventcrew_news_event) : ?>
+                                <li><?php echo esc_html($eventcrew_news_event); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if (! $eventcrew_news['plan']['sending']) : ?>
+                            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                <input type="hidden" name="action"
+                                    value="<?php echo esc_attr($eventcrew_admin['newsletter_stop_action']); ?>">
+                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                <input type="hidden" name="redirect_to"
+                                    value="<?php echo esc_attr($eventcrew_here); ?>">
+                                <input type="hidden" name="plan_id"
+                                    value="<?php echo esc_attr((string) $eventcrew_news['plan']['id']); ?>">
+                                <button type="submit" class="wp-element-button">
+                                    <?php esc_html_e('Stop this newsletter', 'eventcrew'); ?>
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if (null !== $eventcrew_news['last']) : ?>
+                        <p class="eventcrew-muted"><?php echo esc_html(sprintf(
+                            /* translators: 1: date, like 14.11.2026, 2: number of emails sent */
+                            __('Last newsletter: %1$s, %2$d emails.', 'eventcrew'),
+                            $eventcrew_news['last']['at'],
+                            $eventcrew_news['last']['sent']
+                        )); ?></p>
+                    <?php endif; ?>
+
+                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action"
+                            value="<?php echo esc_attr($eventcrew_admin['newsletter_text_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                        <p>
+                            <label for="eventcrew-admin-newsletter-text">
+                                <?php esc_html_e('Text for the next newsletter', 'eventcrew'); ?>
+                            </label>
+                            <textarea name="newsletter_text" id="eventcrew-admin-newsletter-text" rows="5"
+                                maxlength="<?php
+                                echo (int) \EventCrew\Support\NewsletterText::MAX_LENGTH;
+                                ?>"></textarea>
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save, and removed after the newsletter is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
+                        </p>
+                        <button type="submit" name="op" value="save" class="wp-element-button">
+                            <?php esc_html_e('Save', 'eventcrew'); ?>
+                        </button>
+                        <?php if (null !== $eventcrew_news['text']) : ?>
+                            <button type="submit" name="op" value="clear" class="wp-element-button">
+                                <?php esc_html_e('Remove the text', 'eventcrew'); ?>
+                            </button>
+                        <?php endif; ?>
+                    </form>
+                    <?php if (null !== $eventcrew_news['text']) : ?>
+                        <p><strong><?php esc_html_e('In Finnish:', 'eventcrew'); ?></strong></p>
+                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_news['text']['fi']); ?></p>
+                        <p><strong><?php esc_html_e('In English:', 'eventcrew'); ?></strong></p>
+                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_news['text']['en']); ?></p>
+                        <?php if (! $eventcrew_news['text']['translated']) : ?>
+                            <p class="eventcrew-muted">
+                                <?php esc_html_e('This text is not translated: both languages show it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                            </p>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            </section>
+            </div>
+            <?php endif; ?>
         </section>
         <?php endif; ?>
         <?php
