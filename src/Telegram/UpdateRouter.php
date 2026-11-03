@@ -45,7 +45,8 @@ final class UpdateRouter
         private readonly ?RoleTaskBot $roleTasks = null,
         private readonly ?HelpService $help = null,
         private readonly ?AssistantService $assistant = null,
-        private readonly ?NewsletterCommand $newsletter = null
+        private readonly ?NewsletterCommand $newsletter = null,
+        private readonly ?SayCommand $say = null
     ) {
     }
 
@@ -113,6 +114,8 @@ final class UpdateRouter
                 $this->doorList->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gl:')) {
                 $this->guestList->onSelect($callbackQuery);
+            } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
+                $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
@@ -264,6 +267,14 @@ final class UpdateRouter
 
         if (null !== $this->newsletter && $this->isCommand($text, 'newsletter')) {
             $this->newsletter->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'newsletter'));
+
+            return;
+        }
+
+        // /say (organizers, private chat): a message for the group, shown
+        // first with Confirm and Cancel.
+        if (null !== $this->say && $this->isCommand($text, 'say')) {
+            $this->say->onCommand($message, $isPrivate);
 
             return;
         }

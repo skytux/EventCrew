@@ -490,6 +490,8 @@ final class AssistantService
                 'from' => $message['from'],
                 'chat' => $message['chat'],
                 'text' => $checked['payload'],
+                // A message for the group keeps the formatting the person wrote it with.
+                'entities' => SayCommand::carryEntities($checked['payload'], $message),
             ]]);
 
             return;
