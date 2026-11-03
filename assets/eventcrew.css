@@ -824,8 +824,9 @@
 }
 
 /*
- * The sign-in choice: the Email button and Telegram's own button side by side,
- * one height. Telegram's button keeps the look its script gives it.
+ * The sign-in choice: the Email button and Telegram's button side by side,
+ * centred. The script below gives Telegram's button the Email button's look;
+ * only its colours stay Telegram's.
  */
 .eventcrew-signup .eventcrew-signin-choice[hidden],
 .eventcrew-signup .eventcrew-signin[hidden],
@@ -836,6 +837,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.75em;
 }
 .eventcrew-signup .eventcrew-signin-choice-row .wp-element-button {
