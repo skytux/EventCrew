@@ -91,11 +91,17 @@ final class BoardService
 
     /**
      * The card format switch, off by default (Settings → Telegram bot). On, the
-     * board is one message per day (BoardRenderer::cards()): a photo message
-     * for a day with an EventMesh event, a text message for any other day, and
-     * no row of day buttons. BOARD_OPTION then also holds 'days': per day, the
-     * message id, its kind ('card' or 'text'), the picture, and hashes of the
-     * text and the keyboard, so a refresh edits only what changed.
+     * board is two messages: first a photo message for the next event
+     * (BoardRenderer::nextCard(): its picture, name, date, price and a short
+     * text about its DJ or host, and the card's link buttons), then the text
+     * board (BoardRenderer::crewBoard(): the next three events with who is
+     * signed up and the task buttons, no day buttons). With no next event
+     * with a picture there is only the text board. BOARD_OPTION then also
+     * holds 'card': the photo message's id, its event, its picture, and hashes
+     * of its caption and keyboard, so a refresh edits only what changed.
+     *
+     * 1.126.x showed one message per day and kept them under 'days'; any left
+     * there are deleted by the next refresh or repost.
      */
     public const CARDS_OPTION = 'eventcrew_telegram_board_cards';
 
@@ -266,29 +272,74 @@ final class BoardService
             return false;
         }
 
-        // The card format shows every day at once, so the day asked for does
-        // not matter there.
-        if (self::cardsOn()) {
-            return $this->refreshCards($chatId, $board);
-        }
-
+        // Messages left from 1.126.x's one message per day.
         if ([] !== $this->days($board)) {
-            $board = $this->dropCards($chatId, $board);
+            $board = $this->dropDays($chatId, $board);
         }
 
-        $rendered = $this->render($date);
-        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+        $ok = true;
         $messageId = (int) ($board['message_id'] ?? 0);
 
+        if (self::cardsOn()) {
+            $card = $this->refreshCard($chatId, $board);
+            $ok = $card['ok'];
+
+            // A card posted under an existing text board would sit below it:
+            // the text board is posted again under the card, and the old one
+            // deleted, so the order stays photo, then text.
+            if ($card['posted'] && $messageId > 0) {
+                $rendered = $this->textBoard();
+                $result = $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
+
+                if (null !== $result) {
+                    $this->telegram->deleteMessage($chatId, $messageId);
+                }
+
+                $this->storeBoard($chatId, $result);
+
+                return $ok && null !== $result;
+            }
+        } elseif (null !== $this->cardState($board)) {
+            $this->dropCard($chatId, $board);
+        }
+
+        $rendered = $this->textBoard($date);
+        $markup = $this->markup($rendered);
+
         if ($messageId > 0) {
-            return null !== $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+            return null !== $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup) && $ok;
         }
 
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
 
         $this->storeBoard($chatId, $result);
 
-        return null !== $result;
+        return null !== $result && $ok;
+    }
+
+    /**
+     * The text board: with the card format on, the next three events with who
+     * is signed up and no day buttons (the day asked for does not matter);
+     * otherwise the one day $date ('' = the next event) with day buttons.
+     *
+     * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
+     */
+    private function textBoard(string $date = ''): array
+    {
+        if (self::cardsOn()) {
+            return Language::run(Language::ENGLISH, fn (): array => $this->renderer->crewBoard());
+        }
+
+        return $this->render($date);
+    }
+
+    /**
+     * @param array{keyboard: array<int, array<int, array<string, mixed>>>} $rendered
+     * @return array<string, mixed>|null
+     */
+    private function markup(array $rendered): ?array
+    {
+        return [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
     }
 
     /** Whether a board chat has been captured yet - the Settings button asks. */
@@ -313,25 +364,25 @@ final class BoardService
             return;
         }
 
-        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+        $board = $this->board();
+        $chatId = (int) ($board['chat_id'] ?? 0);
 
         if (0 === $chatId) {
             return;
         }
 
-        // The card format keeps a hash per day and edits only changed days.
-        if (self::cardsOn()) {
-            $this->refresh();
+        $rendered = $this->textBoard();
+        $card = self::cardsOn() ? $this->renderCard() : null;
+        $hash = md5(
+            $rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard'])
+                . '|' . (string) wp_json_encode($card)
+        );
 
-            return;
-        }
+        // Messages left from 1.126.x's days, or a card left after the format
+        // was switched off, have to go even when the text board is the same.
+        $leftovers = [] !== $this->days($board) || (! self::cardsOn() && null !== $this->cardState($board));
 
-        $rendered = $this->render();
-        $hash = md5($rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard']));
-
-        // Messages left from the card format mean it was just switched off:
-        // the text board has to replace them even when its own text is the same.
-        if ($hash === (string) get_option(self::BOARD_HASH_OPTION, '') && [] === $this->days($this->board())) {
+        if ($hash === (string) get_option(self::BOARD_HASH_OPTION, '') && ! $leftovers) {
             return;
         }
 
@@ -378,29 +429,37 @@ final class BoardService
         $previous = $this->board();
         $previousChat = (int) ($previous['chat_id'] ?? 0);
         $previousId = (int) ($previous['message_id'] ?? 0);
+        $previousCard = $this->cardState($previous);
 
         // Remember the chat immediately (with no message yet), so the board's
         // home survives even if the post below fails; storeBoard fills in the
         // new message id once Telegram confirms it.
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
 
+        // The card first, so it sits above the text board.
         if (self::cardsOn()) {
-            $this->repostCards($chatId, $previous);
+            $card = $this->renderCard();
+            $state = null === $card ? null : $this->postCard($chatId, $card);
 
-            return;
+            if (null !== $state) {
+                update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0, 'card' => $state]);
+            }
         }
 
-        $rendered = $this->render();
-        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+        $rendered = $this->textBoard();
 
-        $result = $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
+        $result = $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
 
-        if ($previousId > 0 && 0 !== $previousChat) {
-            $this->telegram->deleteMessage($previousChat, $previousId);
-        }
-
-        // Messages left from the card format, when it was switched off since.
         if (0 !== $previousChat) {
+            if ($previousId > 0) {
+                $this->telegram->deleteMessage($previousChat, $previousId);
+            }
+
+            if (null !== $previousCard) {
+                $this->telegram->deleteMessage($previousChat, $previousCard['message_id']);
+            }
+
+            // Messages left from 1.126.x's one message per day.
             foreach ($this->days($previous) as $old) {
                 $this->telegram->deleteMessage($previousChat, $old['message_id']);
             }
@@ -416,115 +475,96 @@ final class BoardService
     }
 
     /**
-     * The card format's refresh: each day's message is edited in place when it
-     * changed, posted when the day is new, and deleted when the day is gone.
-     * A day that changes between a text message and a photo message is posted
-     * again and the old message deleted, because Telegram cannot edit one
-     * into the other. A text board from before the switch is deleted.
+     * The card format's photo message: edited in place with the smallest edit
+     * that does it (editMessageMedia for a new picture or another event,
+     * editMessageCaption for a new caption, editMessageReplyMarkup when only
+     * the buttons changed, nothing when nothing changed), deleted when there
+     * is no next event with a picture, posted when it is missing. A card whose
+     * post or edit fails keeps its old state, so the next refresh tries again.
      *
-     * A day whose post or edit fails keeps its old state, so the next refresh
-     * tries it again. Returns whether every day is up to date.
+     * 'posted' says a new photo message went up, below any text board.
+     *
+     * @param array<string, mixed> $board
+     * @return array{ok: bool, posted: bool}
+     */
+    private function refreshCard(int $chatId, array $board): array
+    {
+        $card = $this->renderCard();
+        $previous = $this->cardState($board);
+
+        if (null === $card) {
+            if (null !== $previous) {
+                $this->dropCard($chatId, $board);
+            }
+
+            return ['ok' => true, 'posted' => false];
+        }
+
+        if (null === $previous) {
+            $state = $this->postCard($chatId, $card);
+
+            if (null === $state) {
+                return ['ok' => false, 'posted' => false];
+            }
+
+            $this->storeCard($state);
+
+            return ['ok' => true, 'posted' => true];
+        }
+
+        $state = $this->cardStateOf($previous['message_id'], $card);
+        $markup = $this->cardMarkup($card);
+
+        if ($state['photo'] !== $previous['photo'] || $state['event'] !== $previous['event']) {
+            $result = $this->telegram->editMessageMedia(
+                $chatId,
+                $previous['message_id'],
+                $card['photo'],
+                $card['caption'],
+                $markup
+            );
+        } elseif ($state['text'] !== $previous['text']) {
+            $result = $this->telegram->editMessageCaption($chatId, $previous['message_id'], $card['caption'], $markup);
+        } elseif ($state['keyboard'] !== $previous['keyboard']) {
+            $result = $this->telegram->editMessageReplyMarkup($chatId, $previous['message_id'], $markup);
+        } else {
+            return ['ok' => true, 'posted' => false];
+        }
+
+        if (null === $result) {
+            return ['ok' => false, 'posted' => false];
+        }
+
+        $this->storeCard($state);
+
+        return ['ok' => true, 'posted' => false];
+    }
+
+    /**
+     * Deletes the stored photo message and forgets it.
      *
      * @param array<string, mixed> $board
      */
-    private function refreshCards(int $chatId, array $board): bool
+    private function dropCard(int $chatId, array $board): void
     {
-        $messages = $this->renderCards();
-        $old = $this->days($board);
-        $days = [];
-        $ok = true;
+        $previous = $this->cardState($board);
 
-        $textId = (int) ($board['message_id'] ?? 0);
-
-        if ($textId > 0) {
-            $this->telegram->deleteMessage($chatId, $textId);
+        if (null !== $previous) {
+            $this->telegram->deleteMessage($chatId, $previous['message_id']);
         }
 
-        foreach ($messages as $day => $message) {
-            $day = (string) $day;
-            $previous = $old[$day] ?? null;
-            unset($old[$day]);
-
-            if (null !== $previous && $previous['kind'] === $message['kind']) {
-                $state = $this->editDay($chatId, $previous, $message);
-                $ok = $ok && null !== $state;
-                $days[$day] = $state ?? $previous;
-
-                continue;
-            }
-
-            $state = $this->postDay($chatId, $message);
-
-            if (null === $state) {
-                $ok = false;
-
-                if (null !== $previous) {
-                    $days[$day] = $previous;
-                }
-
-                continue;
-            }
-
-            if (null !== $previous) {
-                $this->telegram->deleteMessage($chatId, $previous['message_id']);
-            }
-
-            $days[$day] = $state;
-        }
-
-        // Days no longer on the board: past, or their last task removed.
-        foreach ($old as $gone) {
-            $this->telegram->deleteMessage($chatId, $gone['message_id']);
-        }
-
-        update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0, 'days' => $days]);
-
-        return $ok;
+        $stored = $this->board();
+        unset($stored['card']);
+        update_option(self::BOARD_OPTION, $stored);
     }
 
     /**
-     * The card format's repost: every day posted fresh into $chatId, then the
-     * previous board's messages deleted, so the board is at the foot of the
-     * group and nothing old is left above it.
-     *
-     * @param array<string, mixed> $previous The board before the repost.
-     */
-    private function repostCards(int $chatId, array $previous): void
-    {
-        $days = [];
-
-        foreach ($this->renderCards() as $day => $message) {
-            $state = $this->postDay($chatId, $message);
-
-            if (null !== $state) {
-                $days[(string) $day] = $state;
-            }
-        }
-
-        $previousChat = (int) ($previous['chat_id'] ?? 0);
-        $previousId = (int) ($previous['message_id'] ?? 0);
-
-        if (0 !== $previousChat) {
-            if ($previousId > 0) {
-                $this->telegram->deleteMessage($previousChat, $previousId);
-            }
-
-            foreach ($this->days($previous) as $old) {
-                $this->telegram->deleteMessage($previousChat, $old['message_id']);
-            }
-        }
-
-        update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0, 'days' => $days]);
-    }
-
-    /**
-     * Deletes the card format's messages after it was switched off, so the
-     * text board that follows is the only board in the group.
+     * Deletes the messages left from 1.126.x's one message per day.
      *
      * @param array<string, mixed> $board
      * @return array<string, mixed> The board without its days.
      */
-    private function dropCards(int $chatId, array $board): array
+    private function dropDays(int $chatId, array $board): array
     {
         foreach ($this->days($board) as $old) {
             $this->telegram->deleteMessage($chatId, $old['message_id']);
@@ -537,119 +577,127 @@ final class BoardService
     }
 
     /**
-     * Posts one day's message. Returns its state for 'days', or null when
+     * Posts the photo message. Returns its state for 'card', or null when
      * Telegram did not take it.
      *
      * @param array{
-     *     kind: string,
-     *     text: string,
+     *     event: int,
      *     photo: string,
-     *     keyboard: array<int, array<int, array<string, mixed>>>
-     * } $message
-     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}|null
+     *     caption: string,
+     *     buttons: array<int, array<int, array<string, string>>>
+     * } $card
+     * @return array{message_id: int, event: int, photo: string, text: string, keyboard: string}|null
      */
-    private function postDay(int $chatId, array $message): ?array
+    private function postCard(int $chatId, array $card): ?array
     {
-        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
-
-        $result = 'card' === $message['kind']
-            ? $this->telegram->sendPhoto($chatId, $message['photo'], $message['text'], $markup)
-            : $this->telegram->sendMessage($chatId, $message['text'], $markup);
+        $result = $this->telegram->sendPhoto($chatId, $card['photo'], $card['caption'], $this->cardMarkup($card));
 
         if (null === $result || ! isset($result['message_id'])) {
             return null;
         }
 
-        return $this->dayState((int) $result['message_id'], $message);
+        return $this->cardStateOf((int) $result['message_id'], $card);
     }
 
     /**
-     * Edits one day's message in place, with the smallest edit that does it:
-     * a text message gets editMessageText; a photo message gets
-     * editMessageMedia for a new picture, editMessageCaption for a new
-     * caption, and editMessageReplyMarkup when only the buttons changed.
-     * Nothing is sent when nothing changed.
-     *
-     * @param array{message_id: int, kind: string, photo: string, text: string, keyboard: string} $previous
      * @param array{
-     *     kind: string,
-     *     text: string,
+     *     event: int,
      *     photo: string,
-     *     keyboard: array<int, array<int, array<string, mixed>>>
-     * } $message
-     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}|null
-     *         The new state, or null when the edit failed.
+     *     caption: string,
+     *     buttons: array<int, array<int, array<string, string>>>
+     * } $card
+     * @return array<string, mixed>|null
      */
-    private function editDay(int $chatId, array $previous, array $message): ?array
+    private function cardMarkup(array $card): ?array
     {
-        $messageId = $previous['message_id'];
-        $state = $this->dayState($messageId, $message);
-        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
-        $newText = $state['text'] !== $previous['text'];
-        $newKeyboard = $state['keyboard'] !== $previous['keyboard'];
-
-        if ('card' !== $message['kind']) {
-            if (! $newText && ! $newKeyboard) {
-                return $state;
-            }
-
-            $result = $this->telegram->editMessageText($chatId, $messageId, $message['text'], $markup);
-        } elseif ($state['photo'] !== $previous['photo']) {
-            $result = $this->telegram->editMessageMedia(
-                $chatId,
-                $messageId,
-                $message['photo'],
-                $message['text'],
-                $markup
-            );
-        } elseif ($newText) {
-            $result = $this->telegram->editMessageCaption($chatId, $messageId, $message['text'], $markup);
-        } elseif ($newKeyboard) {
-            $result = $this->telegram->editMessageReplyMarkup($chatId, $messageId, $markup);
-        } else {
-            return $state;
-        }
-
-        return null === $result ? null : $state;
+        return [] === $card['buttons'] ? null : ['inline_keyboard' => $card['buttons']];
     }
 
     /**
      * @param array{
-     *     kind: string,
-     *     text: string,
+     *     event: int,
      *     photo: string,
-     *     keyboard: array<int, array<int, array<string, mixed>>>
-     * } $message
-     * @return array{message_id: int, kind: string, photo: string, text: string, keyboard: string}
+     *     caption: string,
+     *     buttons: array<int, array<int, array<string, string>>>
+     * } $card
+     * @return array{message_id: int, event: int, photo: string, text: string, keyboard: string}
      */
-    private function dayState(int $messageId, array $message): array
+    private function cardStateOf(int $messageId, array $card): array
     {
         return [
             'message_id' => $messageId,
-            'kind' => $message['kind'],
-            'photo' => $message['photo'],
-            'text' => md5($message['text']),
-            'keyboard' => md5((string) wp_json_encode($message['keyboard'])),
+            'event' => $card['event'],
+            'photo' => $card['photo'],
+            'text' => md5($card['caption']),
+            'keyboard' => md5((string) wp_json_encode($card['buttons'])),
         ];
     }
 
     /**
-     * The card format's messages per day, in English like render().
-     *
-     * @return array<string, array{
-     *     kind: string,
-     *     text: string,
-     *     photo: string,
-     *     keyboard: array<int, array<int, array<string, mixed>>>
-     * }>
+     * @param array{message_id: int, event: int, photo: string, text: string, keyboard: string} $state
      */
-    private function renderCards(): array
+    private function storeCard(array $state): void
     {
-        return Language::run(Language::ENGLISH, fn (): array => $this->renderer->cards());
+        $stored = $this->board();
+        $stored['card'] = $state;
+        update_option(self::BOARD_OPTION, $stored);
     }
 
     /**
-     * The card format's stored messages, keyed by day; empty for a text board.
+     * The stored photo message, or null when there is none.
+     *
+     * @param array<string, mixed> $board
+     * @return array{message_id: int, event: int, photo: string, text: string, keyboard: string}|null
+     */
+    private function cardState(array $board): ?array
+    {
+        $card = $board['card'] ?? null;
+
+        if (! is_array($card) || (int) ($card['message_id'] ?? 0) <= 0) {
+            return null;
+        }
+
+        return [
+            'message_id' => (int) $card['message_id'],
+            'event' => (int) ($card['event'] ?? 0),
+            'photo' => (string) ($card['photo'] ?? ''),
+            'text' => (string) ($card['text'] ?? ''),
+            'keyboard' => (string) ($card['keyboard'] ?? ''),
+        ];
+    }
+
+    /**
+     * The next event's photo message, in English like render(), or null when
+     * the next event has no picture or there is none. When its DJ text is not
+     * written yet, a background run is asked for (BoardDjText::schedule());
+     * the model is never asked here.
+     *
+     * @return array{
+     *     event: int,
+     *     photo: string,
+     *     caption: string,
+     *     buttons: array<int, array<int, array<string, string>>>
+     * }|null
+     */
+    private function renderCard(): ?array
+    {
+        $card = Language::run(Language::ENGLISH, fn (): ?array => $this->renderer->nextCard());
+
+        if (null !== $card && '' === BoardDjText::stored($card['event'])) {
+            BoardDjText::schedule($card['event']);
+        }
+
+        return $card;
+    }
+
+    /** The post id of the event the photo message shows, or null. */
+    public function nextCardEvent(): ?int
+    {
+        return $this->renderer->nextCardEvent();
+    }
+
+    /**
+     * The messages left from 1.126.x's one message per day, keyed by day.
      *
      * @param array<string, mixed> $board
      * @return array<string, array{message_id: int, kind: string, photo: string, text: string, keyboard: string}>
@@ -681,8 +729,9 @@ final class BoardService
      * to the group. Its buttons work like the group's, and a tap on them
      * redraws that copy too (see onJoinLeave).
      *
-     * With the card format on, the copy is one message per day, the same
-     * messages as the group's; none of them is stored in BOARD_OPTION.
+     * With the card format on, the copy is the same two messages as the
+     * group's: the photo message, then the text board. Neither is stored in
+     * BOARD_OPTION.
      */
     public function sendPrivate(int $chatId): void
     {
@@ -691,17 +740,16 @@ final class BoardService
         }
 
         if (self::cardsOn()) {
-            foreach ($this->renderCards() as $message) {
-                $this->postDay($chatId, $message);
-            }
+            $card = $this->renderCard();
 
-            return;
+            if (null !== $card) {
+                $this->postCard($chatId, $card);
+            }
         }
 
-        $rendered = $this->render();
-        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+        $rendered = $this->textBoard();
 
-        $this->telegram->sendMessage($chatId, $rendered['text'], $markup);
+        $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
     }
 
     /**
@@ -722,53 +770,9 @@ final class BoardService
             return;
         }
 
-        if (self::cardsOn()) {
-            $this->refreshPrivateDay($chatId, $messageId, $message, $date);
+        $rendered = $this->textBoard($date);
 
-            return;
-        }
-
-        $rendered = $this->render($date);
-        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
-
-        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
-    }
-
-    /**
-     * The card format's private redraw: only the one day's message that was
-     * tapped. $date is the day the task button carries; '' is the first day
-     * on the board. A photo message gets its caption and buttons edited, a
-     * text message its text and buttons. A day no longer on the board, or a
-     * day that changed between photo and text, leaves the message as it is.
-     *
-     * @param array<string, mixed> $tapped The message the button was tapped on.
-     */
-    private function refreshPrivateDay(int $chatId, int $messageId, array $tapped, string $date): void
-    {
-        $messages = $this->renderCards();
-        $day = '' === $date ? (string) array_key_first($messages) : $date;
-
-        if ('' === $day || ! isset($messages[$day])) {
-            return;
-        }
-
-        $message = $messages[$day];
-        $markup = [] === $message['keyboard'] ? null : ['inline_keyboard' => $message['keyboard']];
-
-        $isPhoto = isset($tapped['photo']);
-
-        // Telegram cannot turn a text message into a photo message or back.
-        if ($isPhoto !== ('card' === $message['kind'])) {
-            return;
-        }
-
-        if ($isPhoto) {
-            $this->telegram->editMessageCaption($chatId, $messageId, $message['text'], $markup);
-
-            return;
-        }
-
-        $this->telegram->editMessageText($chatId, $messageId, $message['text'], $markup);
+        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $this->markup($rendered));
     }
 
     /**
@@ -791,10 +795,9 @@ final class BoardService
             return;
         }
 
-        $rendered = $this->render($date);
-        $markup = [] === $rendered['keyboard'] ? null : ['inline_keyboard' => $rendered['keyboard']];
+        $rendered = $this->textBoard($date);
 
-        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $markup);
+        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $this->markup($rendered));
     }
 
     /**
@@ -816,17 +819,25 @@ final class BoardService
 
     /**
      * Records the freshly-posted board's id, so the next refresh edits it in
-     * place and the next repost knows which message to delete.
+     * place and the next repost knows which message to delete. The stored
+     * photo message ('card') is kept.
      *
      * @param array<string, mixed>|null $result The sendMessage response.
      */
     private function storeBoard(int $chatId, ?array $result): void
     {
         if (null !== $result && isset($result['message_id'])) {
-            update_option(self::BOARD_OPTION, [
+            $board = [
                 'chat_id' => $chatId,
                 'message_id' => (int) $result['message_id'],
-            ]);
+            ];
+            $card = $this->cardState($this->board());
+
+            if (null !== $card) {
+                $board['card'] = $card;
+            }
+
+            update_option(self::BOARD_OPTION, $board);
         }
     }
 

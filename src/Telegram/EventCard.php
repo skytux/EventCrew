@@ -101,9 +101,9 @@ final class EventCard
      * The card of one event, or null when the post is missing or is not an
      * event. Built whatever the event's state, so a probe can show any event.
      *
-     * $footer is plain text put at the end of the caption (the group board's
-     * two lines on how to sign up); the descriptions are made shorter so the
-     * whole caption still fits.
+     * $about, when given, is plain text shown in place of the descriptions
+     * (the group board's short text about the DJ or host); '' shows no text
+     * under the name, date and price lines at all.
      *
      * @return array{
      *     photo: string,
@@ -111,7 +111,7 @@ final class EventCard
      *     buttons: array<int, array<int, array{text: string, url: string}>>
      * }|null
      */
-    public static function forEvent(int $postId, string $footer = ''): ?array
+    public static function forEvent(int $postId, ?string $about = null): ?array
     {
         $event = EventSource::describe($postId);
 
@@ -135,7 +135,7 @@ final class EventCard
 
         return [
             'photo' => self::isLink((string) $details['image']) ? (string) $details['image'] : '',
-            'caption' => self::caption($details, $footer),
+            'caption' => self::caption($details, $about),
             'buttons' => self::buttons($details),
         ];
     }
@@ -181,13 +181,12 @@ final class EventCard
 
     /**
      * The caption, from the event's details: date, time, title, title_fi, dj,
-     * sold_out and EventSource::card()'s price and descriptions. $footer is
-     * plain text added at the end, after a blank line; the descriptions get
-     * shorter to leave room for it.
+     * sold_out and EventSource::card()'s price and descriptions. $about, when
+     * not null, is plain text shown instead of the descriptions, cut to fit.
      *
      * @param array<string, mixed> $event
      */
-    public static function caption(array $event, string $footer = ''): string
+    public static function caption(array $event, ?string $about = null): string
     {
         $words = self::words();
         $title = self::cut(self::plain((string) ($event['title'] ?? '')), self::TITLE_MAX);
@@ -218,10 +217,16 @@ final class EventCard
         }
 
         $caption = implode("\n", $head);
-        $tail = '' === $footer ? '' : "\n\n" . self::escape($footer);
-        $about = self::about($event, self::CAPTION_LIMIT - self::length($caption . $tail) - 2);
+        $room = self::CAPTION_LIMIT - self::length($caption) - 2;
 
-        return ('' === $about ? $caption : $caption . "\n\n" . $about) . $tail;
+        if (null === $about) {
+            $about = self::about($event, $room);
+        } else {
+            $about = self::compact(self::plain($about));
+            $about = '' === $about || $room < 1 ? '' : self::escape(self::cut($about, $room));
+        }
+
+        return '' === $about ? $caption : $caption . "\n\n" . $about;
     }
 
     /**

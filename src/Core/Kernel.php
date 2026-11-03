@@ -78,6 +78,7 @@ use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
@@ -221,6 +222,10 @@ final class Kernel
         // counted links and Stop page are opened by logged-out people.
         $this->container->get(FollowupMail::class)->boot();
         $this->container->get(FollowupController::class)->boot();
+
+        // The short DJ or host text under the group board's picture: written
+        // by the language model in a single WP-Cron run the board asks for.
+        $this->container->get(BoardDjText::class)->boot();
 
         // Takeover requests: closed when the holder's place goes away, and
         // answered from an email link that logged-out people open.
@@ -441,6 +446,15 @@ final class Kernel
             fn (Container $container) => new FollowupText(
                 $container->get(LlmClient::class),
                 $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            BoardDjText::class,
+            fn (Container $container) => new BoardDjText(
+                $container->get(LlmClient::class),
+                $container->get(Logger::class),
+                $container->get(BoardService::class)
             )
         );
 

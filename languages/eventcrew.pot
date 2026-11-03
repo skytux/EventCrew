@@ -670,12 +670,12 @@ msgstr ""
 msgid "After that it is anonymised automatically, without anyone having to remember to do it: your email address, name, notes and any Telegram link are erased for good. What remains is an attendance record with nobody attached to it, which is no longer information about you."
 msgstr ""
 
-#: src/Support/FollowupMail.php:889
+#: src/Support/FollowupMail.php:896
 #. translators: 1: event date, 14.11.2026, 2: send date, 3: time, 12:00, 4: number of addresses
 msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
 msgstr ""
 
-#: src/Support/FollowupMail.php:703
+#: src/Support/FollowupMail.php:710
 msgid "Alex"
 msgstr ""
 
@@ -850,7 +850,7 @@ msgstr ""
 msgid "Automatically create tasks when a new event is synced from EventMesh"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:766
+#: src/Support/NewsletterLayout.php:773
 msgid "Automatically translated"
 msgstr ""
 
@@ -973,7 +973,7 @@ msgstr ""
 msgid "Button"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:817 src/Telegram/EventCard.php:387
+#: src/Support/NewsletterLayout.php:824 src/Telegram/EventCard.php:392
 msgid "Buy a ticket"
 msgstr ""
 
@@ -1111,7 +1111,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:355 src/Support/NewsletterLayout.php:815
+#: src/Support/Newsletter.php:355 src/Support/NewsletterLayout.php:822
 msgid "Coming events"
 msgstr ""
 
@@ -1355,7 +1355,7 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Support/Newsletter.php:442
+#: src/Support/Newsletter.php:448
 msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
 msgstr ""
 
@@ -1500,11 +1500,11 @@ msgstr ""
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr ""
 
-#: src/Support/FollowupMail.php:898 src/Web/FollowupController.php:240 templates/admin/roster.php:311 templates/public/signup.php:1315
+#: src/Support/FollowupMail.php:905 src/Web/FollowupController.php:240 templates/admin/roster.php:311 templates/public/signup.php:1315
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Support/Newsletter.php:843 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
+#: src/Support/Newsletter.php:849 src/Web/CrewAdminController.php:186 src/Web/NewsletterController.php:1303
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -1533,11 +1533,11 @@ msgstr ""
 msgid "Door tickets"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:824
+#: src/Support/NewsletterLayout.php:831
 msgid "Doors close %s"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:822
+#: src/Support/NewsletterLayout.php:829
 msgid "Doors open %s"
 msgstr ""
 
@@ -1565,7 +1565,7 @@ msgstr ""
 msgid "Edit task"
 msgstr ""
 
-#: src/Support/EmailTemplate.php:77 templates/admin/settings.php:1380
+#: src/Support/EmailTemplate.php:83 templates/admin/settings.php:1380
 msgid "Edit the email template"
 msgstr ""
 
@@ -1601,7 +1601,7 @@ msgstr ""
 msgid "Email me a sign-in link"
 msgstr ""
 
-#: src/Admin/Admin.php:308 src/Admin/Admin.php:309 src/Support/EmailTemplate.php:73 src/Support/EmailTemplate.php:76
+#: src/Admin/Admin.php:308 src/Admin/Admin.php:309 src/Support/EmailTemplate.php:79 src/Support/EmailTemplate.php:82
 msgid "Email template"
 msgstr ""
 
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "Email template: how every email looks."
 msgstr ""
 
-#: src/Support/EmailTemplate.php:75
+#: src/Support/EmailTemplate.php:81
 msgid "Email templates"
 msgstr ""
 
@@ -1691,7 +1691,7 @@ msgid "Event start"
 msgstr ""
 
 #: src/Admin/Admin.php:257 src/Admin/Admin.php:258 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
-#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:218 src/Telegram/ManageController.php:131
+#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224 src/Telegram/ManageController.php:131
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
 msgstr ""
@@ -1717,7 +1717,7 @@ msgstr ""
 msgid "EventCrew door"
 msgstr ""
 
-#: src/Support/EmailTemplate.php:141
+#: src/Support/EmailTemplate.php:147
 msgid "EventCrew email template"
 msgstr ""
 
@@ -1850,7 +1850,7 @@ msgstr ""
 msgid "First sign up with /start."
 msgstr ""
 
-#: src/Telegram/BoardService.php:918
+#: src/Telegram/BoardService.php:929
 msgid "First tap the “New here? Sign up” button below to confirm your email."
 msgstr ""
 
@@ -2084,7 +2084,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: src/Support/TicketMail.php:644
+#: src/Support/TicketMail.php:648
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
 msgstr ""
@@ -2136,11 +2136,11 @@ msgstr ""
 msgid "Hi %1$s,\n\nYou've cancelled %2$s at %3$s, and your ticket is now disabled.\n\n%4$s\n\n%5$s"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:168
+#: src/Support/NewsletterLayout.php:179
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1059 src/Support/TicketMail.php:463 src/Support/TicketMail.php:640
+#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:463 src/Support/TicketMail.php:644
 #: src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2150,11 +2150,11 @@ msgstr ""
 msgid "Hi there,\n\nThis is what your crew's notifications look like. If the logo, the button and the footer below all look right, everything is set up.\n\nThe wording of each real message comes from EventCrew itself — this template only wraps it."
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:166
+#: src/Support/NewsletterLayout.php:177
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1057 src/Support/TicketMail.php:461 src/Support/TicketMail.php:638
+#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:461 src/Support/TicketMail.php:642
 msgid "Hi,"
 msgstr ""
 
@@ -2437,7 +2437,7 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1069
+#: src/Support/FollowupMail.php:1082
 msgid "Join the announcement"
 msgstr ""
 
@@ -2509,7 +2509,7 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:816
+#: src/Support/NewsletterLayout.php:823
 msgid "Later"
 msgstr ""
 
@@ -2570,7 +2570,7 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:819 src/Telegram/EventCard.php:388
+#: src/Support/NewsletterLayout.php:826 src/Telegram/EventCard.php:393
 msgid "Listen to the DJ"
 msgstr ""
 
@@ -2770,7 +2770,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/Newsletter.php:816
+#: src/Support/Newsletter.php:822
 #. translators: %s: the date the newsletter will be sent, like 14.11.2026
 msgid "Next events announcement preview: it goes out on %s"
 msgstr ""
@@ -2859,7 +2859,7 @@ msgstr ""
 msgid "No name"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:227 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:303 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -3061,7 +3061,7 @@ msgid "Off by default. When it is on, the coming events go by email to everyone 
 msgstr ""
 
 #: templates/admin/settings.php:1740
-msgid "Off by default. When on, the board is one message per day, for the next 6 days that have tasks. A day with an EventMesh event that has a picture is a photo message: the event’s picture, name, date, price and description, with that day’s task buttons under it. Other days are text messages. There are no date buttons."
+msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons."
 msgstr ""
 
 #: templates/admin/settings.php:1188
@@ -3256,7 +3256,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:236
+#: src/Telegram/BoardRenderer.php:312
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
@@ -3288,7 +3288,7 @@ msgstr ""
 msgid "Open the signup page"
 msgstr ""
 
-#: src/Support/TicketMail.php:666
+#: src/Support/TicketMail.php:670
 msgid "Open the ticket in your browser"
 msgstr ""
 
@@ -3550,30 +3550,30 @@ msgstr ""
 msgid "Post-event email"
 msgstr ""
 
-#: src/Support/FollowupMail.php:884
+#: src/Support/FollowupMail.php:891
 #. translators: %s: the date the post-event email goes out, like 15.11.2026
 msgid "Post-event email preview: it goes out on %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:343
+#: src/Support/FollowupMail.php:344
 #. translators: 1: emails sent, 2: emails that failed, 3: emails with a link opened
 msgid "Post-event email: %1$d sent · %2$d failed · %3$d clicked"
 msgstr ""
 
-#: src/Support/FollowupMail.php:356
+#: src/Support/FollowupMail.php:357
 #. translators: 1: the date it goes out, like 15.11.2026, 2: the time, like 12:00
 msgid "Post-event email: goes out on %1$s at %2$s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:353
+#: src/Support/FollowupMail.php:354
 msgid "Post-event email: not sent for this event (switched on after it)"
 msgstr ""
 
-#: src/Support/FollowupMail.php:351
+#: src/Support/FollowupMail.php:352
 msgid "Post-event email: stopped"
 msgstr ""
 
-#: src/Support/FollowupMail.php:352
+#: src/Support/FollowupMail.php:353
 msgid "Post-event email: switched off"
 msgstr ""
 
@@ -4022,7 +4022,7 @@ msgstr ""
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:237
+#: src/Telegram/BoardRenderer.php:313
 msgid "Send /me in a DM to get your summary."
 msgstr ""
 
@@ -4357,7 +4357,7 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:820 src/Telegram/EventCard.php:389
+#: src/Support/NewsletterLayout.php:827 src/Telegram/EventCard.php:394
 msgid "Sold out"
 msgstr ""
 
@@ -4454,7 +4454,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:897 src/Support/Newsletter.php:842
+#: src/Support/FollowupMail.php:904 src/Support/Newsletter.php:848
 msgid "Subject"
 msgstr ""
 
@@ -4660,11 +4660,11 @@ msgstr ""
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
 msgstr ""
 
-#: src/Support/FollowupMail.php:899
+#: src/Support/FollowupMail.php:906
 msgid "Text: a one-time text an organizer set for this email. After this send, the text in Settings is used again."
 msgstr ""
 
-#: src/Support/FollowupMail.php:900
+#: src/Support/FollowupMail.php:907
 msgid "Text: the one in Settings. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
 msgstr ""
 
@@ -4672,7 +4672,7 @@ msgstr ""
 msgid "Texts by the language model"
 msgstr ""
 
-#: src/Support/TicketMail.php:633
+#: src/Support/TicketMail.php:637
 msgid "Thank you for buying a ticket!"
 msgstr ""
 
@@ -4681,15 +4681,15 @@ msgstr ""
 msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
 msgstr ""
 
-#: src/Support/TicketMail.php:632
+#: src/Support/TicketMail.php:636
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
-#: src/Support/FollowupMail.php:1067
+#: src/Support/FollowupMail.php:1080
 msgid "Thank you for dancing with us"
 msgstr ""
 
-#: src/Support/TicketMail.php:629
+#: src/Support/TicketMail.php:633
 msgid "Thank you for taking a task!"
 msgstr ""
 
@@ -4825,7 +4825,7 @@ msgstr ""
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
-#: src/Telegram/BoardService.php:973 src/Web/SignupController.php:1083
+#: src/Telegram/BoardService.php:984 src/Web/SignupController.php:1083
 msgid "That slot just filled up."
 msgstr ""
 
@@ -4837,7 +4837,7 @@ msgstr ""
 msgid "That task is full."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:80 src/Telegram/BoardService.php:974 src/Telegram/ReplacementService.php:167
+#: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:80 src/Telegram/BoardService.php:985 src/Telegram/ReplacementService.php:167
 #: src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:1089
 msgid "That task is no longer available."
 msgstr ""
@@ -5524,7 +5524,7 @@ msgstr ""
 msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
 msgstr ""
 
-#: src/Support/Newsletter.php:821
+#: src/Support/Newsletter.php:827
 #. translators: 1: the send date, like 14.11.2026, 2: number of subscribers
 msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
 msgstr ""
@@ -5566,17 +5566,17 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Support/Newsletter.php:833
+#: src/Support/Newsletter.php:839
 #. translators: %d: number of subscribers who chose English
 msgid "This is the English version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:828
+#: src/Support/Newsletter.php:834
 #. translators: %d: number of subscribers who chose Finnish
 msgid "This is the Finnish version. Subscribers who get it: %d."
 msgstr ""
 
-#: src/Support/Newsletter.php:838
+#: src/Support/Newsletter.php:844
 #. translators: %d: number of subscribers who chose no language
 msgid "This is the two-language version. Subscribers who get it: %d."
 msgstr ""
@@ -5696,7 +5696,7 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:667
+#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:671
 msgid "Ticket code"
 msgstr ""
 
@@ -5760,7 +5760,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:818 src/Support/WelcomeSender.php:431 templates/public/signup.php:433
+#: src/Support/NewsletterLayout.php:825 src/Support/WelcomeSender.php:431 templates/public/signup.php:433
 msgid "Tickets"
 msgstr ""
 
@@ -5806,11 +5806,11 @@ msgstr ""
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
 msgstr ""
 
-#: src/Support/FollowupMail.php:895
+#: src/Support/FollowupMail.php:902
 msgid "To those who came"
 msgstr ""
 
-#: src/Support/FollowupMail.php:896
+#: src/Support/FollowupMail.php:903
 msgid "To those who did not come"
 msgstr ""
 
@@ -5974,7 +5974,7 @@ msgstr ""
 msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
 msgstr ""
 
-#: src/Support/FollowupMail.php:1062
+#: src/Support/FollowupMail.php:1075
 msgid "Warmly,"
 msgstr ""
 
@@ -6015,7 +6015,7 @@ msgstr[1] ""
 msgid "We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
 msgstr ""
 
-#: src/Support/FollowupMail.php:1068
+#: src/Support/FollowupMail.php:1081
 msgid "We missed you this time"
 msgstr ""
 
@@ -6303,7 +6303,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1070
+#: src/Support/FollowupMail.php:1083
 msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
 msgstr ""
 
@@ -6409,7 +6409,7 @@ msgstr ""
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr ""
 
-#: src/Support/TicketMail.php:653
+#: src/Support/TicketMail.php:657
 #. translators: %d: how many people the guest may bring
 msgid "You can bring %d person with you."
 msgid_plural "You can bring %d people with you."
@@ -6450,15 +6450,15 @@ msgstr ""
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
 
-#: src/Support/FollowupMail.php:693 src/Support/TicketMail.php:431
+#: src/Support/FollowupMail.php:700 src/Support/TicketMail.php:431
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
-#: src/Support/TicketMail.php:573 src/Support/TicketMail.php:577
+#: src/Support/TicketMail.php:577 src/Support/TicketMail.php:581
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:425
+#: src/Support/Newsletter.php:431
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
@@ -6501,7 +6501,7 @@ msgstr ""
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
-#: src/Support/TicketMail.php:628
+#: src/Support/TicketMail.php:632
 msgid "You spent a free-entry credit on this night."
 msgstr ""
 
@@ -6521,7 +6521,7 @@ msgstr ""
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:997 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1091
+#: src/Telegram/BoardService.php:1008 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1091
 msgid "You weren’t signed up for that one."
 msgstr ""
 
@@ -6633,7 +6633,7 @@ msgstr ""
 msgid "Your past tasks:"
 msgstr ""
 
-#: src/Telegram/BoardService.php:969 src/Telegram/RoleTaskBot.php:390
+#: src/Telegram/BoardService.php:980 src/Telegram/RoleTaskBot.php:390
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
@@ -6681,7 +6681,7 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/TicketMail.php:665
+#: src/Support/TicketMail.php:669
 msgid "Your ticket"
 msgstr ""
 
@@ -6705,11 +6705,11 @@ msgstr ""
 msgid "You’re already signed up for that one."
 msgstr ""
 
-#: src/Telegram/BoardService.php:972 src/Telegram/RoleTaskBot.php:393
+#: src/Telegram/BoardService.php:983 src/Telegram/RoleTaskBot.php:393
 msgid "You’re already signed up for that."
 msgstr ""
 
-#: src/Telegram/BoardService.php:971 src/Telegram/RoleTaskBot.php:392
+#: src/Telegram/BoardService.php:982 src/Telegram/RoleTaskBot.php:392
 msgid "You’re in! See you there."
 msgstr ""
 
@@ -6717,11 +6717,11 @@ msgstr ""
 msgid "You’re not signed up for anything yet — take a look at the board."
 msgstr ""
 
-#: src/Telegram/BoardService.php:995 src/Telegram/RoleTaskBot.php:412
+#: src/Telegram/BoardService.php:1006 src/Telegram/RoleTaskBot.php:412
 msgid "You’re out. Thanks for the notice."
 msgstr ""
 
-#: src/Telegram/BoardService.php:994 src/Telegram/RoleTaskBot.php:411
+#: src/Telegram/BoardService.php:1005 src/Telegram/RoleTaskBot.php:411
 msgid "You’re out. This close to the event it counts as a late cancellation."
 msgstr ""
 
@@ -6828,7 +6828,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:416
+#: src/Telegram/BoardRenderer.php:490
 msgid "full"
 msgstr ""
 
@@ -6951,6 +6951,10 @@ msgstr ""
 
 #: src/Telegram/RosterService.php:486 templates/public/signup.php:985
 msgid "signed up %s"
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php:241
+msgid "someone"
 msgstr ""
 
 #: src/Admin/PeoplePage.php:134 src/Web/CrewAdminPeople.php:282
@@ -7121,11 +7125,11 @@ msgstr ""
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:300
+#: src/Telegram/BoardRenderer.php:378
 msgid "👋 New here? Sign up →"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:301
+#: src/Telegram/BoardRenderer.php:379
 msgid "👤 See my info →"
 msgstr ""
 
