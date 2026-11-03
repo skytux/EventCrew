@@ -11,8 +11,10 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\OrganizerGuide;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\HelpService;
@@ -66,6 +68,9 @@ final class AssistantServiceTest extends TelegramTestCase
         Functions\when('get_posts')->justReturn([]);
         Functions\when('get_the_title')->justReturn('');
         Functions\when('add_action')->justReturn(true);
+        Functions\when('admin_url')->alias(
+            static fn (string $path = ''): string => 'https://example.test/wp-admin/' . $path
+        );
         Functions\when('rest_url')->alias(
             static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path
         );
@@ -331,6 +336,59 @@ final class AssistantServiceTest extends TelegramTestCase
         $this->ask(self::privateMessage('hello'));
 
         self::assertStringContainsString('Welcome crew: no. Roles: DJ, Host.', $this->systemPrompt(0));
+    }
+
+    public function testAnOrganizerInAPrivateChatGetsTheOrganizerGuideAndTheInfrastructureNote(): void
+    {
+        $this->options[HelpPage::INFRASTRUCTURE_OPTION] = 'The site runs on a free host.';
+        $this->person(true);
+        $this->reply(true, true, 'Here is how.');
+
+        $this->ask(self::privateMessage('how do I add a task?'));
+
+        $prompt = $this->systemPrompt(0);
+        self::assertStringContainsString('ORGANIZER GUIDE', $prompt);
+        self::assertStringContainsString((string) strtok(OrganizerGuide::short(), "\n"), $prompt);
+        self::assertStringContainsString(
+            "INFRASTRUCTURE NOTE (written by the organizers):\nThe site runs on a free host.",
+            $prompt
+        );
+        self::assertStringNotContainsString('](#', $prompt);
+    }
+
+    public function testAnOrganizerWithoutAnInfrastructureNoteGetsOnlyTheGuide(): void
+    {
+        $this->person(true);
+        $this->reply(true, true, 'Here is how.');
+
+        $this->ask(self::privateMessage('how do I add a task?'));
+
+        self::assertStringContainsString('ORGANIZER GUIDE', $this->systemPrompt(0));
+        self::assertStringNotContainsString('INFRASTRUCTURE NOTE', $this->systemPrompt(0));
+    }
+
+    public function testSomeoneWhoIsNotAnOrganizerGetsNoOrganizerGuide(): void
+    {
+        $this->options[HelpPage::INFRASTRUCTURE_OPTION] = 'The site runs on a free host.';
+        $this->person(false);
+        $this->reply(true, true, 'Hi.');
+
+        $this->ask(self::privateMessage('how do I add a task?'));
+
+        self::assertStringNotContainsString('ORGANIZER GUIDE', $this->systemPrompt(0));
+        self::assertStringNotContainsString('free host', $this->systemPrompt(0));
+    }
+
+    public function testAnOrganizerInTheGroupGetsNoOrganizerGuide(): void
+    {
+        $this->options[HelpPage::INFRASTRUCTURE_OPTION] = 'The site runs on a free host.';
+        $this->person(true);
+        $this->reply(true, true, 'Hi.');
+
+        $this->ask(self::groupMessage('@crewbot how do I add a task?'));
+
+        self::assertStringNotContainsString('ORGANIZER GUIDE', $this->systemPrompt(0));
+        self::assertStringNotContainsString('free host', $this->systemPrompt(0));
     }
 
     public function testTheBotKnowsItsName(): void

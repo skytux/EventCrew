@@ -6,9 +6,11 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\HelpPage;
 use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\OrganizerGuide;
 
 /**
  * Plain messages to the bot, read by a language model.
@@ -569,6 +571,21 @@ final class AssistantService
         $lines[] = 'FACTS:';
         $lines[] = $facts;
 
+        if ($isPrivate && $audience['organizer']) {
+            $lines[] = '';
+            $lines[] = 'ORGANIZER GUIDE (how EventCrew works; this person is an organizer, so use it to answer'
+                . ' how-to questions about running the crew and the plugin):';
+            $lines[] = $this->organizerGuide();
+
+            $note = HelpPage::infrastructure();
+
+            if ('' !== $note) {
+                $lines[] = '';
+                $lines[] = 'INFRASTRUCTURE NOTE (written by the organizers):';
+                $lines[] = $note;
+            }
+        }
+
         if ($isPrivate) {
             $lines[] = '';
             $lines[] = 'CONVERSATION (this private chat, last 24 hours):';
@@ -576,6 +593,17 @@ final class AssistantService
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The organizer guide without its contents list, and with each Markdown
+     * link reduced to its text: the links point at headings of the email.
+     */
+    private function organizerGuide(): string
+    {
+        $text = OrganizerGuide::short() . "\n\n" . OrganizerGuide::details();
+
+        return (string) preg_replace('/\[([^\]]*)\]\([^)]*\)/', '$1', $text);
     }
 
     /**
