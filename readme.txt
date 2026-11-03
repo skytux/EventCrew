@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.103.0
+Stable tag: 1.103.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.103.1 =
+* The post-event email shows the coming events the same way the Next events announcement does (same code): the next three as cards, later events as short lines.
 
 = 1.103.0 =
 * Crew get a separate "Your ticket" email with a scannable code (EC-C for a task, EC-F for a free-entry credit); the door scan accepts them.
@@ -1018,6 +1021,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.103.1 =
+No database change.
 
 = 1.103.0 =
 Database update 26: adds ticket_mailed_at to sign-ups and credits.

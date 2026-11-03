@@ -20,9 +20,10 @@ use EventCrew\Web\NewsletterController;
  *   them soon.
  *
  * Both are in Finnish and in English, Finnish first, like the ticket email.
- * Under the text are the next three coming events as cards with their
- * pictures (NewsletterLayout), and, while the next events announcement is
- * switched on, an invitation to join it. Nobody is subscribed by this email;
+ * Under the text are the coming events the way the next events announcement
+ * shows them (Newsletter::content()): its heading, the next three as cards
+ * with their pictures and the rest as short lines under "Later". Then, while
+ * the announcement is switched on, an invitation to join it. Nobody is subscribed by this email;
  * joining goes through the announcement's own double opt-in.
  *
  * Several rows of one night with the same address (one person who bought two
@@ -101,11 +102,8 @@ final class FollowupMail
     /** How many days after its send time a night is still sent. */
     public const LATE_DAYS = 2;
 
-    /** How many coming events the email shows. */
+    /** How many coming events the email shows as cards; the rest are short lines. */
     public const EVENTS = 3;
-
-    /** The longest event description shown, in characters per language. */
-    public const EXCERPT_CHARS = 600;
 
     /** The link kind of a preview's or a test's links: not counted. */
     private const KIND_SAMPLE = 't';
@@ -492,7 +490,6 @@ final class FollowupMail
             ? ''
             : self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId);
         $accent = EmailTemplate::accent();
-        $font = EmailBody::FONT;
 
         $siteButton = [['label' => $pair('site'), 'url' => $link(home_url('/'))]];
 
@@ -502,7 +499,7 @@ final class FollowupMail
             . EmailBody::centred(EmailBody::toHtml('', $siteButton, $accent));
         $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n" . EmailBody::toText('', $siteButton);
 
-        $cards = array_map(
+        $events = array_map(
             static fn (array $card): array => array_merge($card, [
                 'url' => $link((string) ($card['url'] ?? '')),
                 'ticket_url' => $link((string) ($card['ticket_url'] ?? '')),
@@ -511,13 +508,15 @@ final class FollowupMail
             $this->comingEvents($date)
         );
 
-        if ([] !== $cards) {
-            $html .= sprintf(
-                '<h2 style="margin:28px 0 16px;font-family:%s;font-size:20px;line-height:1.3;color:#1f2328">%s</h2>',
-                $font,
-                esc_html($pair('coming'))
-            ) . NewsletterLayout::cardsHtml($cards, $accent);
-            $text .= "\n\n" . mb_strtoupper($pair('coming')) . "\n\n" . NewsletterLayout::cardsText($cards);
+        // No coming events, no events part: the newsletter is not sent then.
+        if ([] !== $events) {
+            $coming = Newsletter::content(
+                array_slice($events, 0, self::EVENTS),
+                array_slice($events, self::EVENTS),
+                null
+            );
+            $html .= '<div style="margin:28px 0 0">' . $coming['html'] . '</div>';
+            $text .= "\n\n" . $coming['text'];
         }
 
         if (Newsletter::enabled()) {
@@ -762,8 +761,8 @@ final class FollowupMail
     }
 
     /**
-     * The next EVENTS coming events after $date, with their cards; each
-     * description cut to EXCERPT_CHARS.
+     * Every coming event after $date, as the newsletter reads it
+     * (Newsletter::comingEvents() and withCard()).
      *
      * @return array<int, array<string, mixed>>
      */
@@ -771,41 +770,18 @@ final class FollowupMail
     {
         if (! isset($this->events[$date])) {
             $this->events[$date] = array_map(
-                static function (array $event): array {
-                    $card = Newsletter::withCard($event);
-
-                    foreach (['excerpt_fi', 'excerpt_en', 'excerpt'] as $key) {
-                        $card[$key] = self::shorten((string) ($card[$key] ?? ''));
-                    }
-
-                    return $card;
-                },
-                array_slice(Newsletter::comingEvents($date), 0, self::EVENTS)
+                [Newsletter::class, 'withCard'],
+                Newsletter::comingEvents($date)
             );
         }
 
         return $this->events[$date];
     }
 
-    /** $text cut to EXCERPT_CHARS at a word, with "…" when it was cut. */
-    private static function shorten(string $text): string
-    {
-        $text = trim($text);
-
-        if (mb_strlen($text) <= self::EXCERPT_CHARS) {
-            return $text;
-        }
-
-        $cut = mb_substr($text, 0, self::EXCERPT_CHARS);
-        $space = mb_strrpos($cut, ' ');
-
-        return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), " \n,.;:–-") . '…';
-    }
-
     /**
      * One language's words, composed in the current language.
      *
-     * @return array{body: string, subject: string, site: string, coming: string, join: string, invite: string}
+     * @return array{body: string, subject: string, site: string, join: string, invite: string}
      */
     private static function words(bool $came, string $name, string $event, string $date): array
     {
@@ -845,7 +821,6 @@ final class FollowupMail
                 ? __('Thank you for dancing with us', 'eventcrew')
                 : __('We missed you this time', 'eventcrew'),
             'site' => __('See the coming events', 'eventcrew'),
-            'coming' => __('Coming events', 'eventcrew'),
             'join' => __('Join the announcement', 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. You confirm it from an email, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];

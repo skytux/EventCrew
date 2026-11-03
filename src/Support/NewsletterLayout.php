@@ -141,40 +141,6 @@ final class NewsletterLayout
     }
 
     /**
-     * The event cards alone, with no heading and no "Later" list, for an
-     * email that shows the coming events under its own text (the post-event
-     * email, FollowupMail).
-     *
-     * @param array<int, array<string, mixed>> $cards The same keys as html()'s.
-     */
-    public static function cardsHtml(array $cards, string $accent): string
-    {
-        $words = self::words();
-        $html = '';
-
-        foreach ($cards as $card) {
-            $html .= self::cardHtml($card, $words, $accent);
-        }
-
-        return $html;
-    }
-
-    /**
-     * cardsHtml() as plain text.
-     *
-     * @param array<int, array<string, mixed>> $cards
-     */
-    public static function cardsText(array $cards): string
-    {
-        $words = self::words();
-
-        return implode("\n\n", array_map(
-            static fn (array $card): string => self::cardText($card, $words),
-            $cards
-        ));
-    }
-
-    /**
      * One card as plain text: the date, the title, the description, then the
      * ticket and music links.
      *
