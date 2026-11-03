@@ -363,4 +363,20 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('Kesätanssit', $parts[1]);
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
     }
+
+    /** The first line, above the Finnish part, says in English that English follows. */
+    public function testTheMailStartsWithTheEnglishBelowLine(): void
+    {
+        $mail = $this->newsletter()->compose([self::planEvent(1, '2026-07-27', 'Summer Dance')], null);
+
+        self::assertStringStartsWith("English version below ↓\n\n", $mail['text']);
+        self::assertStringStartsWith(
+            '<p style="margin:0 0 16px;color:#6b6b76;font-size:14px">English version below ↓</p>',
+            $mail['html']
+        );
+        self::assertLessThan(
+            strpos($mail['html'], 'Tulevat tapahtumat'),
+            strpos($mail['html'], 'English version below')
+        );
+    }
 }

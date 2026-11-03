@@ -477,7 +477,7 @@ final class PrivacyPolicy
 
         if (Newsletter::enabled() && AssistantSettings::isConfigured()) {
             $processors[] = __(
-                'The server of the language model, for organizers who write a text for the newsletter — the text is sent there to be translated into the other language of the newsletter.',
+                'The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other language of the announcement.',
                 'eventcrew'
             );
         }
@@ -626,7 +626,7 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'If you join our newsletter, we store your email address, whether you have confirmed it or left the newsletter, the date you signed up and the date you confirmed. We do not store your name for the newsletter.',
+                'If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We do not store your name for the announcement.',
                 'eventcrew'
             ),
         ];
@@ -651,11 +651,11 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
-                'Your email address is used to send you one short message after the event: a thank-you if you came, or a sorry-we-missed-you if you did not. The same message invites you to join our newsletter. The legal basis is our legitimate interest in keeping in touch with the people who bought a ticket.',
+                'Your email address is used to send you one short message after the event: a thank-you if you came, or a sorry-we-missed-you if you did not. The same message invites you to join our next events announcement. The legal basis is our legitimate interest in keeping in touch with the people who bought a ticket.',
                 'eventcrew'
             ),
             __(
-                'You are added to the newsletter only if you confirm that you want it. Not joining has no effect on your ticket.',
+                'You are added to the next events announcement only if you confirm that you want it. Not joining has no effect on your ticket.',
                 'eventcrew'
             ),
         ];
@@ -691,7 +691,7 @@ final class PrivacyPolicy
             sprintf(
                 /* translators: %d: number of days */
                 __(
-                    'We delete your email address, your name and your ticket code %d days after the event, unless you have joined our newsletter. This happens automatically.',
+                    'We delete your email address, your name and your ticket code %d days after the event, unless you have joined our next events announcement. This happens automatically.',
                     'eventcrew'
                 ),
                 self::BUYER_EMAIL_DAYS
@@ -705,13 +705,13 @@ final class PrivacyPolicy
                 self::BUYER_EMAIL_DAYS
             ),
             __(
-                'If you join the newsletter, we keep your email address for the newsletter until you leave it. You can leave it at any time with the link in every newsletter. When you leave, we keep your address marked as left, and send you no more newsletters.',
+                'If you join the next events announcement, we keep your email address for the announcement until you leave it. You can leave it at any time with the link in every announcement. When you leave, we keep your address marked as left, and send you no more announcements.',
                 'eventcrew'
             ),
             sprintf(
                 /* translators: %d: number of days */
                 __(
-                    'If you sign up for the newsletter but do not confirm your address, the sign-up is deleted after %d days.',
+                    'If you sign up for the next events announcement but do not confirm your address, the sign-up is deleted after %d days.',
                     'eventcrew'
                 ),
                 Newsletter::PENDING_DAYS

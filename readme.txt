@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.90.0
+Stable tag: 1.91.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.91.0 =
+The newsletter is now called the next events announcement (Finnish: tulevien tapahtumien tiedote) everywhere it shows; the /newsletter command and the [eventcrew_newsletter] shortcode keep their names. Each announcement email starts with the line 'English version below ↓'. A sign-up bar is fixed to the bottom of public pages while the announcement is on: one line with the email field, Subscribe and a close button. Closing it hides it for 30 days in that browser; it hides while a full sign-up form (for example in the site footer) is on screen, and it is not shown on the crew app and sign-in page.
 
 = 1.90.0 =
 The bot helper sets the organizers' text for the next newsletter from plain words: an organizer tells the bot in a private chat what to add, the bot shows the exact text with a Confirm button, and Confirm saves it as /newsletter does (translated into Finnish and English). /newsletter clear and /newsletter (show) work the same way. Line breaks in the text are kept.
@@ -902,6 +905,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.91.0 =
+No database change.
 
 = 1.90.0 =
 No database change.

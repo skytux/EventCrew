@@ -178,8 +178,8 @@ final class CrewAdminController
             self::TEMPLATE_ACTION => __('Create an event\'s tasks', 'eventcrew'),
             self::OPEN_TASK_ACTION => __('Send open-task email now', 'eventcrew'),
             self::ROLE_ACTION => __('Edit a role', 'eventcrew'),
-            self::NEWSLETTER_TEXT_ACTION => __('Text for the next newsletter', 'eventcrew'),
-            self::NEWSLETTER_STOP_ACTION => __('Stop this newsletter', 'eventcrew'),
+            self::NEWSLETTER_TEXT_ACTION => __('Text for the next announcement', 'eventcrew'),
+            self::NEWSLETTER_STOP_ACTION => __('Stop this announcement', 'eventcrew'),
         ];
     }
 
