@@ -552,8 +552,9 @@ final class Schema
             // (PrivacyPolicy::BUYER_EMAIL_DAYS); the row and its check-in stay.
             //
             // ticket_code is the code from the ticket file (for Holvi, the
-            // order code). Several tickets of one order share it, so it is
-            // not unique. NULL for names imported without a file.
+            // Tilauskoodi column, which is different for every ticket). Not a
+            // unique key: a ticket file of another format may repeat a code.
+            // NULL for names imported without a file.
             //
             // ticket_mail_status is '' (not sent), 'sent' or 'failed' (what
             // wp_mail answered), and ticket_mailed_at is when it was tried.

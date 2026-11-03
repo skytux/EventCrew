@@ -53,6 +53,29 @@ final class TicketListTest extends TestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $out['upcoming'][0]['url']);
     }
 
+    public function testATicketCheckedInAtTheDoorCarriesTheCheckInTime(): void
+    {
+        $this->wpdb->nextResults[] = [ // assignments->forPerson
+            ['id' => 2, 'task_id' => 6, 'person_id' => 9, 'status' => 'completed'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 6, 'task_date' => '2026-07-18', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Party'];
+        $this->wpdb->nextResults[] = [ // redemptions->forPerson
+            ['id' => 10, 'person_id' => 9, 'redeemed_for' => '2026-08-05', 'redeemed_at' => '2026-07-10 10:00:00'],
+        ];
+        // checkins->personTimes: in on 18 July, marked as credit (works and holds a credit).
+        $this->wpdb->nextResults[] = [
+            ['event_date' => '2026-07-18', 'kind' => 'credit', 'checked_in_at' => '2026-07-18 21:05:00'],
+        ];
+
+        $out = $this->list()->forPerson(9);
+
+        self::assertSame('2026-07-18 21:05:00', $out['past'][0]['used']);
+        self::assertNull($out['upcoming'][0]['used']);
+        self::assertArrayNotHasKey('kinds', $out['past'][0]);
+        self::assertStringContainsString("ref_id = 9 AND kind IN ('crew', 'credit')", (string) end($this->wpdb->queries));
+        self::assertSame('Already used · 21:05', TicketList::usedText('2026-07-18 21:05:00'));
+    }
+
     public function testWithoutTasksListsOnlyFreeEntryTickets(): void
     {
         // No assignment query is made: the only result queued is the

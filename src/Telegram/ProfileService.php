@@ -228,11 +228,17 @@ final class ProfileService
     }
 
     /**
-     * @param array{label: string, when: string, url: string} $ticket
+     * One ticket, with "🟠 Already used · 21:05" once the door marked it in
+     * (Telegram text has no colours; the orange circle stands for the
+     * ticket page's orange band).
+     *
+     * @param array{label: string, when: string, url: string, used: ?string} $ticket
      */
     private function ticketLine(array $ticket): string
     {
-        return sprintf('• %s — %s', $ticket['label'], $ticket['when']);
+        $line = sprintf('• %s — %s', $ticket['label'], $ticket['when']);
+
+        return null === $ticket['used'] ? $line : $line . ' — 🟠 ' . TicketList::usedText($ticket['used']);
     }
 
     /**

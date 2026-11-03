@@ -105,13 +105,29 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString('drawTickets(row.first || row.name);', $html);
     }
 
-    public function testATicketAlreadyUsedIsSaidInRed(): void
+    public function testATicketAlreadyUsedIsSaidInOrangeWithTheTime(): void
     {
         $html = $this->page();
 
-        self::assertStringContainsString('"used":"%s: this ticket was already used tonight."', $html);
+        // wp_json_encode writes the middle dot as ·.
+        self::assertStringContainsString('"used":"%1$s: already used ' . trim((string) json_encode('·'), '"') . ' %2$s"', $html);
+        self::assertStringNotContainsString('this ticket was already used tonight', $html);
         self::assertStringContainsString(
-            "scanMessage(scanRow.in ? text.used.replace('%s', scanRow.name) : '', true);",
+            '.ec-msg.is-used{background:#ff8c1a;border:2px solid #ff8c1a;color:#1d1d1f;font-weight:700}',
+            $html
+        );
+        self::assertStringContainsString(
+            "line.classList.toggle('is-used', !!message && !isError && !!isUsed);",
+            $html
+        );
+        self::assertStringContainsString(
+            "return text.used.replace('%1\$s', row.name).replace('%2\$s', row.at || '');",
+            $html
+        );
+        // Not red: the scanned card and the code's ticket list both say it in orange.
+        self::assertStringContainsString("scanMessage(scanRow.in ? usedText(scanRow) : '', false, false, true);", $html);
+        self::assertStringContainsString(
+            'scanMessage(1 === rows.length ? usedText(rows[0]) : text.allUsed, false, false, true);',
             $html
         );
         self::assertStringNotContainsString('ec-scan-already', $html);

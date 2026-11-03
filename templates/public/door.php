@@ -93,8 +93,8 @@ $eventcrew_text = [
     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     'noCamera' => __('The camera could not be opened. Allow the camera for this page, or find the name on the list instead.', 'eventcrew'),
     'noDecoder' => __('This phone cannot read QR codes here. Find the name on the list instead.', 'eventcrew'),
-    /* translators: %s: the ticket holder's name */
-    'used' => __('%s: this ticket was already used tonight.', 'eventcrew'),
+    /* translators: 1: the ticket holder's name, 2: the time the ticket was checked in tonight, like 21:05 */
+    'used' => __('%1$s: already used · %2$s', 'eventcrew'),
     /* translators: %s: the name of the person just marked arrived */
     'arrived' => __('Welcome %s', 'eventcrew'),
     'allUsed' => __('Every ticket with this code was already used tonight.', 'eventcrew'),
@@ -178,6 +178,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 .ec-n.is-near{color:var(--warn);font-weight:700}
 .ec-n.is-max{color:var(--err);font-weight:700}
 .ec-msg.is-welcome{background:var(--in-bg);border:2px solid var(--in);color:var(--in);font-size:26px;line-height:1.2;font-weight:700;text-align:center}
+/* A ticket already used: the ticket page's orange, with dark text (7:1) in light and dark mode alike. */
+.ec-msg.is-used{background:#ff8c1a;border:2px solid #ff8c1a;color:#1d1d1f;font-weight:700}
 .ec-scan-plus{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
 #ec-scan-count{min-width:5em;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 #ec-scan-mark{min-height:64px;font-size:20px}
@@ -1188,13 +1190,20 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     }
 
     // isError colours the message red, so a failed scan stands out;
-    // isWelcome makes it big on green, for a person just marked arrived.
-    function scanMessage(message, isError, isWelcome) {
+    // isWelcome makes it big on green, for a person just marked arrived;
+    // isUsed makes it orange, for a ticket already used tonight.
+    function scanMessage(message, isError, isWelcome, isUsed) {
         var line = el('ec-scan-msg');
 
         line.textContent = message || '';
         line.classList.toggle('is-error', !!message && !!isError);
         line.classList.toggle('is-welcome', !!message && !isError && !!isWelcome);
+        line.classList.toggle('is-used', !!message && !isError && !!isUsed);
+    }
+
+    // "Ann: already used · 21:05", with the time the ticket was marked in.
+    function usedText(row) {
+        return text.used.replace('%1$s', row.name).replace('%2$s', row.at || '');
     }
 
     // The name on one line: from 32px down to 18px until it fits, then
@@ -1375,9 +1384,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             return;
         }
 
-        // A ticket already used tonight is said in red; the card still opens,
-        // so the desk can change the guests counted for them.
-        scanMessage(scanRow.in ? text.used.replace('%s', scanRow.name) : '', true);
+        // A ticket already used tonight is said in orange with the time it
+        // was used; the card still opens, so the desk can change the guests
+        // counted for them.
+        scanMessage(scanRow.in ? usedText(scanRow) : '', false, false, true);
         el('ec-scan-camera').hidden = true;
         el('ec-scan-result').hidden = false;
         el('ec-scan-name').textContent = scanRow.name;
@@ -1445,7 +1455,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         if (welcome) {
             scanMessage(text.arrived.replace('%s', welcome), false, true);
         } else if (!next) {
-            scanMessage(1 === rows.length ? text.used.replace('%s', rows[0].name) : text.allUsed, true);
+            scanMessage(1 === rows.length ? usedText(rows[0]) : text.allUsed, false, false, true);
         } else {
             scanMessage('');
         }

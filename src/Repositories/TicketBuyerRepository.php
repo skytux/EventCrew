@@ -109,8 +109,9 @@ final class TicketBuyerRepository
      * Adds the tickets read from a ticket file to $date, one row per ticket,
      * and returns how many were added.
      *
-     * Two tickets with the same name and ticket code are both kept: a Holvi
-     * order of two tickets is two rows. Importing an updated file again adds
+     * Two tickets with the same name and ticket code are both kept (a Holvi
+     * order of two tickets is two rows, each with its own code; a file of
+     * another format may repeat a code). Importing an updated file again adds
      * only what is new: a ticket is skipped while $date already holds as
      * many imported tickets with the same ticket code, name and email as the
      * file has so far. A ticket with neither a name nor a code is skipped.
@@ -304,9 +305,10 @@ final class TicketBuyerRepository
     }
 
     /**
-     * The tickets on $eventDate that carry this ticket code (the shop's order
-     * code), oldest first. An order of several tickets has one row per
-     * ticket, so this can answer several. An empty code finds nothing.
+     * The tickets on $eventDate that carry this ticket code, oldest first.
+     * A Holvi code belongs to one ticket; a ticket file of another format
+     * may repeat a code, so this can answer several. An empty code finds
+     * nothing.
      *
      * @return array<int, TicketBuyer>
      */

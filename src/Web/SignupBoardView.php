@@ -7,6 +7,7 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
@@ -96,7 +97,7 @@ final class SignupBoardView
      * first. Each carries an add-to-calendar link and the task id, so the
      * profile can surface "what am I next on" with a one-tap calendar hold.
      *
-     * @return array<int, array{task_id: int, label: string, when: string, calendar_url: string, ticket_url: string}>
+     * @return array<int, array{task_id: int, label: string, when: string, calendar_url: string, ticket_url: string, used: ?string}>
      */
     private function upcomingFor(int $personId): array
     {
@@ -119,6 +120,7 @@ final class SignupBoardView
 
             $rows[] = [
                 'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
+                'date' => $task->taskDate,
                 'task_id' => $task->id,
                 'label' => $task->roleLabel() . ' · ' . $task->eventName(),
                 'when' => '' === $time ? $day : $day . ' · ' . $time,
@@ -129,9 +131,13 @@ final class SignupBoardView
 
         usort($rows, static fn (array $a, array $b): int => strcmp($a['sort'], $b['sort']));
 
+        // When the door marked each task's ticket in: one read for them all.
+        $times = [] === $rows ? [] : (new CheckinRepository())->personTimes($personId);
+
         return array_map(
-            static function (array $row): array {
-                unset($row['sort']);
+            static function (array $row) use ($times): array {
+                $row['used'] = CheckinRepository::inAtFrom($times, $row['date'], CheckinRepository::TASK_TICKET_KINDS);
+                unset($row['sort'], $row['date']);
 
                 return $row;
             },

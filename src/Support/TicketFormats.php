@@ -33,8 +33,10 @@ final class TicketFormats
     public const COLUMNS = ['name', 'email', 'code'];
 
     /**
-     * Holvi's ticket export (.xlsx, Finnish headers). One row per ticket; the
-     * order code is the ticket code, and several tickets of one order share it.
+     * Holvi's ticket export (.xlsx, Finnish headers). One row per ticket.
+     * Despite its name, Tilauskoodi is different on every row, also for two
+     * tickets of one order (those share Tilaus and Kuitin numero instead), so
+     * it is the ticket's own code.
      *
      * @return Format
      */

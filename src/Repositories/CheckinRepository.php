@@ -20,6 +20,12 @@ final class CheckinRepository
     public const KIND_GUEST = 'guest';
     public const KIND_BUYER = 'buyer';
 
+    /** The kinds a task's ticket is marked in as, for inAt(), in order. */
+    public const TASK_TICKET_KINDS = [self::KIND_CREW, self::KIND_CREDIT];
+
+    /** The kinds a free-entry ticket is marked in as, for inAt(), in order. */
+    public const CREDIT_TICKET_KINDS = [self::KIND_CREDIT, self::KIND_CREW];
+
     /** Most plus-ones one row may carry - the same typo guard the guest list uses. */
     public const MAX_PLUS_ONES = GuestRepository::MAX_PLUS_ONES;
 
@@ -37,9 +43,10 @@ final class CheckinRepository
     }
 
     /**
-     * Every check-in on $date, keyed "kind:ref_id", each holding its plus-ones.
+     * Every check-in on $date, keyed "kind:ref_id", each holding its
+     * plus-ones and when it was marked in (site time, '' when not known).
      *
-     * @return array<string, int>
+     * @return array<string, array{plus: int, at: string}>
      */
     public function forDate(string $date): array
     {
@@ -47,7 +54,7 @@ final class CheckinRepository
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT kind, ref_id, plus_ones FROM {$this->table()} WHERE event_date = %s",
+                "SELECT kind, ref_id, plus_ones, checked_in_at FROM {$this->table()} WHERE event_date = %s",
                 $date
             ),
             ARRAY_A
@@ -56,10 +63,83 @@ final class CheckinRepository
         $checkins = [];
 
         foreach (is_array($rows) ? $rows : [] as $row) {
-            $checkins[(string) $row['kind'] . ':' . (int) $row['ref_id']] = (int) $row['plus_ones'];
+            $checkins[(string) $row['kind'] . ':' . (int) $row['ref_id']] = [
+                'plus' => (int) $row['plus_ones'],
+                'at' => (string) ($row['checked_in_at'] ?? ''),
+            ];
         }
 
         return $checkins;
+    }
+
+    /**
+     * Every night this person was marked in as crew or as a free-entry
+     * credit, in one read: event date => kind => checked_in_at (site time).
+     * For a list of their tickets (inAtFrom()).
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function personTimes(int $personId): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT event_date, kind, checked_in_at FROM {$this->table()}
+                WHERE ref_id = %d AND kind IN (%s, %s)",
+                $personId,
+                self::KIND_CREW,
+                self::KIND_CREDIT
+            ),
+            ARRAY_A
+        );
+
+        $times = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $times[(string) $row['event_date']][(string) $row['kind']] = (string) $row['checked_in_at'];
+        }
+
+        return $times;
+    }
+
+    /**
+     * inAt() answered from personTimes(): when the person was marked in on
+     * $date under the first of $kinds that has a time, or null.
+     *
+     * @param array<string, array<string, string>> $times
+     * @param array<int, string> $kinds
+     */
+    public static function inAtFrom(array $times, string $date, array $kinds): ?string
+    {
+        foreach ($kinds as $kind) {
+            if (isset($times[$date][$kind])) {
+                return $times[$date][$kind];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * When this entry was marked in on $date (site time), or null when it is
+     * not in. $kinds are tried in order and the first that has a row answers:
+     * the door marks a person who works and also holds a credit as crew, one
+     * who only holds a credit as credit.
+     *
+     * @param array<int, string> $kinds
+     */
+    public function inAt(string $date, array $kinds, int $refId): ?string
+    {
+        foreach ($kinds as $kind) {
+            $times = $this->checkedInAt($date, $kind, [$refId]);
+
+            if ([] !== $times) {
+                return reset($times);
+            }
+        }
+
+        return null;
     }
 
     /**
