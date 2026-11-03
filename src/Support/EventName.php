@@ -9,8 +9,8 @@ use EventCrew\Models\Task;
 /**
  * An event's name as EventCrew shows it: the clean name EventMesh saved
  * ("Ecstatic Dance", without the date and the DJs that the shop's title
- * carries) and, on a line of its own under it, the DJ line ("DJ
- * Ihmeidentekijä", "DJs Milla Linna & Ty Alexander", "DJs A, B & C").
+ * carries) and, on a line of its own under it, the DJ line: the DJs'
+ * names alone ("Ihmeidentekijä", "Milla Linna & Ty Alexander", "A, B & C").
  *
  * EventMesh (1.7.0 and later) gives both through two filters. When it has
  * not written a clean name yet, is older or is absent, the filters answer
@@ -44,8 +44,9 @@ final class EventName
     }
 
     /**
-     * "DJ A", "DJs A & B" or "DJs A, B & C"; '' when the event has no DJs
-     * or no clean name (the title as written already names its DJs).
+     * The DJs' names alone, with no "DJ" before them: "A", "A & B" or
+     * "A, B & C"; '' when the event has no DJs or no clean name (the title
+     * as written already names its DJs).
      */
     public static function djLine(int $postId): string
     {
@@ -56,25 +57,17 @@ final class EventName
         }
 
         if (1 === count($names)) {
-            return sprintf(
-                /* translators: %s: the name of the event's one DJ. The same in every language. */
-                __('DJ %s', 'eventcrew'),
-                $names[0]
-            );
+            return $names[0];
         }
 
         $last = array_pop($names);
 
-        return sprintf(
-            /* translators: %s: the DJs' names, like "Milla Linna & Ty Alexander". The same in every language. */
-            __('DJs %s', 'eventcrew'),
-            implode(', ', $names) . ' & ' . $last
-        );
+        return implode(', ', $names) . ' & ' . $last;
     }
 
     /**
      * The name and the DJ line on one line, for a place that cannot break a
-     * line (a Telegram button, a select option): "Ecstatic Dance · DJ
+     * line (a Telegram button, a select option): "Ecstatic Dance ·
      * Ihmeidentekijä". The name alone when the two together are longer than
      * $max characters ($max 0: no limit).
      */

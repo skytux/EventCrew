@@ -161,7 +161,7 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->fakeEventNames(
             [100 => ['en' => 'Ecstatic Dance'], 200 => ['en' => 'Open Floor']],
-            [100 => ['Ihmeidentekijä'], 200 => ['Milla Linna', 'Ty Alexander']]
+            [100 => ['Ihmeidentekijä'], 200 => ['Milla Linna', 'Ty Alexander', 'Kuu']]
         );
         $this->wpdb->nextResults[] = [
             $this->taskRow(1, 100, 'ECSTATIC DANCE 1.8.2026 / Ihmeidentekijä'),
@@ -175,8 +175,8 @@ final class BoardServiceTest extends TelegramTestCase
             $this->board()->render()['keyboard']
         );
 
-        self::assertContains('📅 Ecstatic Dance · DJ Ihmeidentekijä', $labels);
-        // "Open Floor · DJs Milla Linna & Ty Alexander" is 43 characters.
+        self::assertContains('📅 Ecstatic Dance · Ihmeidentekijä', $labels);
+        // "Open Floor · Milla Linna, Ty Alexander & Kuu" is 44 characters.
         self::assertContains('📅 Open Floor', $labels);
         self::assertContains('📅 Picnic', $labels);
     }
