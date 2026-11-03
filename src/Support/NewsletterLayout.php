@@ -14,12 +14,14 @@ namespace EventCrew\Support;
  * 2. The organizers' text, if any: the Finnish paragraph, then the English
  *    one, each with a small FI / EN label.
  * 3. One card per newly announced event: the picture, the date and time, the
- *    title, the short description in Finnish and then in English (labelled
- *    FI / EN), a "Buy a ticket" button with the price that opens the ticket
- *    shop, a "Listen to the DJ" button when the event has the DJ's music page
- *    (an email cannot play music itself, so it opens the page), and a small
- *    link to the event's own page. A sold-out event shows "Sold out" instead
- *    of the ticket button.
+ *    title, the whole description in Finnish and then in English (labelled
+ *    FI / EN, with its line breaks), a "Buy a ticket" button with the price
+ *    that opens the ticket shop, and a "Listen to the DJ" button, Finnish on
+ *    the first line and English on the second, when the event has the DJ's
+ *    music page (an email cannot play music itself, so it opens the page). A
+ *    sold-out event shows "Sold out" instead of the ticket button. The
+ *    picture opens the ticket shop, or the event's own page when there is no
+ *    ticket to buy.
  * 4. "Later": every other coming event as one line, with the date, the
  *    title and a link to its tickets.
  *
@@ -140,10 +142,6 @@ final class NewsletterLayout
 
             if ('' !== (string) ($card['listen'] ?? '')) {
                 $lines[] = self::pair($words, 'listen') . ': ' . $card['listen'];
-            }
-
-            if ('' !== (string) ($card['url'] ?? '')) {
-                $lines[] = self::pair($words, 'event_page') . ': ' . $card['url'];
             }
 
             $parts[] = implode("\n", $lines);
@@ -279,18 +277,9 @@ final class NewsletterLayout
                 esc_url($listen),
                 $font,
                 esc_attr($accent),
-                esc_html(self::pair($words, 'listen'))
-            );
-        }
-
-        if ('' !== $page) {
-            $body .= sprintf(
-                '<p style="margin:0;font-family:%s;font-size:13px;line-height:1.5">'
-                    . '<a href="%s" style="color:%s;text-decoration:underline">%s</a></p>',
-                $font,
-                esc_url($page),
-                self::MUTED_COLOR,
-                esc_html(self::pair($words, 'event_page'))
+                $words['fi']['listen'] === $words['en']['listen']
+                    ? esc_html($words['en']['listen'])
+                    : esc_html($words['fi']['listen']) . '<br>' . esc_html($words['en']['listen'])
             );
         }
 
@@ -351,8 +340,9 @@ final class NewsletterLayout
     }
 
     /**
-     * The Finnish and the English paragraph, each with its label, or $plain
-     * alone with no label when the language is not known.
+     * The Finnish and the English text, each with its label, or $plain alone
+     * with no label when the language is not known. A blank line in a text
+     * starts a new paragraph, and the label goes on its first paragraph only.
      */
     private static function bilingual(string $fi, string $en, string $plain, string $margin): string
     {
@@ -363,33 +353,44 @@ final class NewsletterLayout
                 continue;
             }
 
-            $html .= sprintf(
-                '<p style="margin:0 0 10px;font-family:%s;font-size:15px;line-height:1.6;color:%s">%s%s</p>',
-                EmailBody::FONT,
-                self::TEXT_COLOR,
-                '' === $label ? '' : sprintf(
-                    '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:%s">%s</span>&nbsp; ',
-                    self::LABEL_COLOR,
-                    $label
-                ),
-                str_replace("\n", '<br>', EmailBody::inline($text))
-            );
+            $paragraphs = preg_split('/\n[^\S\n]*\n\s*/', $text) ?: [$text];
+
+            foreach ($paragraphs as $i => $paragraph) {
+                $html .= sprintf(
+                    '<p style="margin:0 0 10px;font-family:%s;font-size:15px;line-height:1.6;color:%s">%s%s</p>',
+                    EmailBody::FONT,
+                    self::TEXT_COLOR,
+                    '' === $label || 0 !== $i ? '' : sprintf(
+                        '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:%s">%s</span>&nbsp; ',
+                        self::LABEL_COLOR,
+                        $label
+                    ),
+                    str_replace("\n", '<br>', EmailBody::inline($paragraph))
+                );
+            }
         }
 
         return '' === $html ? '' : sprintf('<div style="margin:%s">%s</div>', $margin, $html);
     }
 
+    /**
+     * "FI: …" then "EN: …", the label on the first line of each. When a text
+     * has more than one line, a blank line goes between the languages so
+     * the English does not run on from the last Finnish line.
+     */
     private static function bilingualText(string $fi, string $en, string $plain): string
     {
         $lines = [];
+        $multiline = false;
 
         foreach (['FI: ' => trim($fi), 'EN: ' => trim($en), '' => trim($plain)] as $label => $text) {
             if ('' !== $text) {
                 $lines[] = $label . $text;
+                $multiline = $multiline || str_contains($text, "\n");
             }
         }
 
-        return implode("\n", $lines);
+        return implode($multiline ? "\n\n" : "\n", $lines);
     }
 
     /** "14.11.2026 · 19:00", or the date alone when the time is not known. */
@@ -440,7 +441,6 @@ final class NewsletterLayout
             'buy' => __('Buy a ticket', 'eventcrew'),
             'tickets' => __('Tickets', 'eventcrew'),
             'listen' => __('Listen to the DJ', 'eventcrew'),
-            'event_page' => __('Event page', 'eventcrew'),
             'sold_out' => __('Sold out', 'eventcrew'),
         ];
 

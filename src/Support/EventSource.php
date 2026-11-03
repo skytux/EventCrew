@@ -145,11 +145,16 @@ final class EventSource
      * - ticket_url: the shop page that sells the ticket, '' when there is none;
      * - listen: the DJ's music page that EventMesh's player plays (SoundCloud,
      *   Mixcloud), '' when there is none;
-     * - excerpt_fi, excerpt_en: the short description in Finnish and in
-     *   English: the event's own excerpt in its own language, EventMesh's
-     *   current translation in the other; '' where there is none;
-     * - excerpt: the excerpt when its language is unknown, so it is shown
-     *   once without a language label; '' otherwise.
+     * - excerpt_fi, excerpt_en: the whole description in Finnish and in
+     *   English: the event's own text in its own language (its excerpt only
+     *   when the text is empty), EventMesh's current translation of the text
+     *   in the other (its translated excerpt only when that is empty); ''
+     *   where there is none;
+     * - excerpt: the description when its language is unknown, so it is
+     *   shown once without a language label; '' otherwise.
+     *
+     * The descriptions are plain text that keeps the line breaks: one "\n"
+     * per line, and one blank line between paragraphs.
      *
      * Every field is '' when the post is missing or is not an event.
      *
@@ -190,49 +195,54 @@ final class EventSource
         $card['ticket_url'] = self::resolve($postId, 'url');
         $card['listen'] = self::resolve($postId, 'embed_source_url');
 
-        $excerpt = self::plain((string) ($post->post_excerpt ?? ''));
+        // The whole text, not post_excerpt: EventMesh stores the excerpt cut
+        // to 55 words, so it stops mid-sentence.
+        $description = self::lines((string) ($post->post_content ?? ''));
 
-        if ('' === $excerpt) {
-            $excerpt = self::shorten(self::plain((string) ($post->post_content ?? '')), 360);
+        if ('' === $description) {
+            $description = self::lines((string) ($post->post_excerpt ?? ''));
         }
 
         $original = (string) get_post_meta($postId, self::SCRAPED_PREFIX . 'original_lang', true);
 
         if (Language::FINNISH === $original || Language::ENGLISH === $original) {
             $other = Language::FINNISH === $original ? Language::ENGLISH : Language::FINNISH;
-            $card['excerpt_' . $original] = $excerpt;
-            $card['excerpt_' . $other] = self::plain(self::translated($postId, $other, 'excerpt'));
+            $translation = self::lines(self::translated($postId, $other, 'content'));
+
+            if ('' === $translation) {
+                $translation = self::lines(self::translated($postId, $other, 'excerpt'));
+            }
+
+            $card['excerpt_' . $original] = $description;
+            $card['excerpt_' . $other] = $translation;
         } else {
-            $card['excerpt'] = $excerpt;
+            $card['excerpt'] = $description;
         }
 
         return $card;
     }
 
-    /** Text with tags removed, entities decoded and runs of spaces squeezed. */
-    private static function plain(string $text): string
+    /**
+     * $text as plain text that keeps its lines: a <br> and the end of a
+     * paragraph, div, list item or heading become a line break, other tags
+     * are removed and entities decoded. Runs of spaces and tabs inside a line
+     * become one space, each line is trimmed, and more than one blank line in
+     * a row becomes one.
+     */
+    private static function lines(string $text): string
     {
+        $text = (string) preg_replace('~<br\s*/?>|</(?:p|div|li|h[1-6])\s*>~i', "\n", $text);
         $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $text = (string) preg_replace('/[^\S\n]+/u', ' ', $text);
+        $text = implode("\n", array_map('trim', explode("\n", $text)));
 
-        return trim((string) preg_replace('/\s+/u', ' ', $text));
-    }
-
-    /** $text cut at a word boundary to at most $max characters, with "…" when cut. */
-    private static function shorten(string $text, int $max): string
-    {
-        if (mb_strlen($text) <= $max) {
-            return $text;
-        }
-
-        $cut = mb_substr($text, 0, $max);
-        $space = mb_strrpos($cut, ' ');
-
-        return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), " ,.;:-") . '…';
+        return trim((string) preg_replace('/\n{3,}/', "\n\n", $text));
     }
 
     /**
-     * One field ('title', 'excerpt') of EventMesh's translation into $lang,
-     * under translatedTitle()'s rule.
+     * One field ('title', 'excerpt', 'content') of EventMesh's translation
+     * into $lang, under translatedTitle()'s rule.
      */
     private static function translated(int $postId, string $lang, string $field): string
     {
