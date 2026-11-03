@@ -131,7 +131,96 @@ final class NewsletterSubscriberRepositoryTest extends TestCase
             ['status' => 'confirmed', 'confirmed_at' => '2026-07-20 12:00:00', 'name' => 'Anna'],
             $this->wpdb->updates[0]['data']
         );
-        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame(['subscribed'], $this->changeKinds());
+    }
+
+    /** The join and leave events recorded for the Newsletter page, oldest first. @return list<string> */
+    private function changeKinds(): array
+    {
+        $kinds = [];
+
+        foreach ($this->wpdb->inserts as $insert) {
+            if ('wp_eventcrew_newsletter_changes' === $insert['table']) {
+                self::assertSame(['created_at', 'kind'], array_keys($insert['data']), 'no address or name');
+                $kinds[] = (string) $insert['data']['kind'];
+            }
+        }
+
+        return $kinds;
+    }
+
+    /** A sign-up that is not confirmed yet is not a join. */
+    public function testAPendingSignUpRecordsNoJoin(): void
+    {
+        (new NewsletterSubscriberRepository())->addPending('fan@example.test');
+
+        self::assertSame([], $this->changeKinds());
+    }
+
+    /** Confirming records a join; an old link on a row that left records nothing. */
+    public function testConfirmingRecordsOneJoin(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
+        $repository->confirm(5);
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $repository->confirm(5);
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED);
+        $repository->confirm(5);
+
+        self::assertSame(['subscribed'], $this->changeKinds());
+        self::assertSame('2026-07-20 12:00:00', $this->wpdb->inserts[0]['data']['created_at']);
+    }
+
+    /** A leave is recorded for a confirmed subscriber only. */
+    public function testOnlyAConfirmedSubscriberLeavingIsRecorded(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        $this->wpdb->nextRows[] = ['name' => null] + self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
+        $repository->unsubscribe(5);
+        self::assertSame([], $this->changeKinds());
+
+        $this->wpdb->nextRows[] = ['name' => 'Anna'] + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $repository->unsubscribe(5);
+        self::assertSame(['unsubscribed'], $this->changeKinds());
+    }
+
+    /** The ticket button and the crew sign-up each record a join for a new address. */
+    public function testTicketAndCrewSignUpsRecordAJoin(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        self::assertSame(1, $repository->addFromTicket('bo@example.test', 'Bo'));
+        $repository->addCrewMember('cy@example.test', 'Cy', 'fi');
+
+        self::assertSame(['subscribed', 'subscribed'], $this->changeKinds());
+    }
+
+    /** A ticket holder who is already subscribed does not join twice. */
+    public function testAConfirmedTicketHolderRecordsNoJoin(): void
+    {
+        $this->wpdb->nextRows[] = ['name' => 'Bo'] + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        (new NewsletterSubscriberRepository())->addFromTicket('fan@example.test', 'Bo');
+
+        self::assertSame([], $this->changeKinds());
+    }
+
+    /** The counts per state, with a state that has no rows as 0. */
+    public function testCountByStatusCountsEachState(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['status' => 'confirmed', 'n' => '7'],
+            ['status' => 'unsubscribed', 'n' => '2'],
+        ];
+
+        self::assertSame(
+            ['confirmed' => 7, 'pending' => 0, 'unsubscribed' => 2],
+            (new NewsletterSubscriberRepository())->countByStatus()
+        );
+        self::assertStringContainsString('GROUP BY status', $this->wpdb->lastQuery());
     }
 
     /** A name the person typed in is never replaced by the one on a ticket. */

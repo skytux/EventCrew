@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Admin;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\PeoplePage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
@@ -24,7 +25,9 @@ final class AdminTest extends TestCase
         $container = new Container();
         $container->singleton(SettingsPage::class, static fn (): object => $settings);
 
-        foreach ([PeoplePage::class, RosterPage::class, TasksPage::class, MailImporter::class] as $id) {
+        $pages = [PeoplePage::class, RosterPage::class, TasksPage::class, MailImporter::class, NewsletterPage::class];
+
+        foreach ($pages as $id) {
             $container->singleton($id, static fn (): object => self::anyPage());
         }
 

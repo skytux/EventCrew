@@ -160,12 +160,7 @@ final class Mailer
         $text .= $this->signatureText() . "\n\n—\n"
             . ('' === $footerNote ? '' : $footerNote . "\n")
             . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
-        $html = $this->template->render(
-            $subject,
-            $content,
-            ('' === $footerNote ? '' : EmailBody::footerHtml($footerNote, ''))
-                . EmailBody::footerHtml($footer, $footerUrl)
-        );
+        $html = $this->subscriberHtml($subject, $content, $footer, $footerUrl, $footerNote);
 
         $parts = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
@@ -198,6 +193,26 @@ final class Mailer
         }
 
         return $sent;
+    }
+
+    /**
+     * The HTML of one newsletter email exactly as toSubscriber() sends it.
+     * The newsletter also keeps a copy made with this for the Newsletter page
+     * in wp-admin.
+     */
+    public function subscriberHtml(
+        string $subject,
+        string $content,
+        string $footer,
+        string $footerUrl,
+        string $footerNote = ''
+    ): string {
+        return $this->template->render(
+            $subject,
+            $content,
+            ('' === $footerNote ? '' : EmailBody::footerHtml($footerNote, ''))
+                . EmailBody::footerHtml($footer, $footerUrl)
+        );
     }
 
     /**

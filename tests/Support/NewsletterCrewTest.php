@@ -65,10 +65,15 @@ final class NewsletterCrewTest extends TestCase
     /** @return array<int, string> */
     private function addedEmails(): array
     {
-        return array_map(
-            static fn (array $insert): string => (string) $insert['data']['email'],
-            $this->wpdb->inserts
+        $subscribers = array_filter(
+            $this->wpdb->inserts,
+            static fn (array $insert): bool => 'wp_eventcrew_newsletter_subscribers' === $insert['table']
         );
+
+        return array_values(array_map(
+            static fn (array $insert): string => (string) $insert['data']['email'],
+            $subscribers
+        ));
     }
 
     public function testTheSettingIsOnByDefault(): void

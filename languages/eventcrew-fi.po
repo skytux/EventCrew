@@ -6856,3 +6856,95 @@ msgstr "Lippuviestit lähtevät klo %s. Jos haluat estää ne, paina Läsnäolo-
 
 msgid "Every send waits 10 minutes before anything goes out, whether an import or \"Send the rest now\" started it. Until then, Roster and the Admin tab show the time, how many get an email, and a \"Cancel sending\" button. Cancelling sends nothing; those tickets stay not sent. \"Send a test to me\" is not delayed."
 msgstr "Jokainen lähetys odottaa 10 minuuttia ennen kuin mitään lähtee, aloitti sen tuonti tai \"Lähetä loput nyt\". Siihen asti Roster ja Admin-välilehti näyttävät kellonajan, montako saa viestin, ja \"Peru lähetys\" -painikkeen. Peruminen ei lähetä mitään; liput jäävät lähettämättä. \"Lähetä testi minulle\" ei odota."
+
+msgid "Newsletter"
+msgstr "Uutiskirje"
+
+msgid "Subscribed"
+msgstr "Tilannut"
+
+msgid "Waiting for confirmation"
+msgstr "Odottaa vahvistusta"
+
+msgid "Unsubscribed"
+msgstr "Perunut"
+
+msgid "Joins, leaves and sent newsletters"
+msgstr "Liittyneet, eronneet ja lähetetyt tiedotteet"
+
+#. translators: %s: a date, like 3.11.2026
+#, php-format
+msgid "The history starts on %s, the day this version was installed. There is no older data."
+msgstr "Historia alkaa %s, päivänä jolloin tämä versio asennettiin. Vanhempaa tietoa ei ole."
+
+msgid "Nothing recorded yet: no one has joined or left and no newsletter has been sent since then."
+msgstr "Mitään ei ole vielä kirjattu: kukaan ei ole liittynyt tai eronnut eikä tiedotetta ole lähetetty sen jälkeen."
+
+msgid "One bar per"
+msgstr "Yksi palkki per"
+
+msgid "day"
+msgstr "päivä"
+
+msgid "week"
+msgstr "viikko"
+
+msgid "Newsletter sent (the number is its row below; point at it for the subject)"
+msgstr "Tiedote lähetetty (numero on sen rivi alla; osoita sitä nähdäksesi aiheen)"
+
+msgid "Sent newsletters"
+msgstr "Lähetetyt tiedotteet"
+
+msgid "No newsletter has been sent since the history started."
+msgstr "Tiedotetta ei ole lähetetty sen jälkeen, kun historia alkoi."
+
+msgid "Sent"
+msgstr "Lähetetty"
+
+msgid "Version"
+msgstr "Versio"
+
+msgid "Sent to"
+msgstr "Vastaanottajia"
+
+msgid "Failed"
+msgstr "Epäonnistui"
+
+msgid "View the email"
+msgstr "Näytä sähköposti"
+
+msgid "This email copy does not exist."
+msgstr "Tätä sähköpostin kopiota ei ole."
+
+msgid "Both languages"
+msgstr "Molemmat kielet"
+
+msgid "Joins and leaves over time, with the sent newsletters marked"
+msgstr "Liittyneet ja eronneet ajan mukaan, lähetetyt tiedotteet merkittyinä"
+
+#. translators: 1: the first day of the week, like 3.11., 2: number of addresses
+#, php-format
+msgid "Week of %1$s: %2$d subscribed"
+msgstr "Viikko %1$s alkaen: %2$d tilasi"
+
+#. translators: 1: a day, like 3.11., 2: number of addresses
+#, php-format
+msgid "%1$s: %2$d subscribed"
+msgstr "%1$s: %2$d tilasi"
+
+#. translators: 1: the first day of the week, like 3.11., 2: number of addresses
+#, php-format
+msgid "Week of %1$s: %2$d unsubscribed"
+msgstr "Viikko %1$s alkaen: %2$d perui"
+
+#. translators: 1: a day, like 3.11., 2: number of addresses
+#, php-format
+msgid "%1$s: %2$d unsubscribed"
+msgstr "%1$s: %2$d perui"
+
+#. translators: 1: newsletter number, 2: date, like 3.11.2026, 3: subject(s), 4: number of emails
+#, php-format
+msgid "Newsletter %1$d, %2$s: %3$s. Sent to %4$d address."
+msgid_plural "Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses."
+msgstr[0] "Tiedote %1$d, %2$s: %3$s. Lähetetty %4$d osoitteeseen."
+msgstr[1] "Tiedote %1$d, %2$s: %3$s. Lähetetty %4$d osoitteeseen."

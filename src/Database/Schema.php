@@ -17,9 +17,16 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '29';
+    public const DB_VERSION = '30';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
+
+    /**
+     * The day (Y-m-d, site time) the newsletter history began to be recorded
+     * (schema 30). Written once by the migration that adds the two history
+     * tables; the newsletter page says the history starts on that day.
+     */
+    public const NEWSLETTER_HISTORY_SINCE_OPTION = 'eventcrew_newsletter_history_since';
 
     public const PEOPLE = 'eventcrew_people';
     public const TASKS = 'eventcrew_tasks';
@@ -34,6 +41,8 @@ final class Schema
     public const NEWSLETTER_SUBSCRIBERS = 'eventcrew_newsletter_subscribers';
     public const TAKEOVERS = 'eventcrew_takeovers';
     public const BOT_LOG = 'eventcrew_bot_log';
+    public const NEWSLETTER_CHANGES = 'eventcrew_newsletter_changes';
+    public const NEWSLETTER_SENDS = 'eventcrew_newsletter_sends';
 
     /**
      * @return array<int, string>
@@ -54,6 +63,8 @@ final class Schema
             self::NEWSLETTER_SUBSCRIBERS,
             self::TAKEOVERS,
             self::BOT_LOG,
+            self::NEWSLETTER_CHANGES,
+            self::NEWSLETTER_SENDS,
         ];
     }
 
@@ -95,6 +106,10 @@ final class Schema
         self::moveCanLeadToRole();
 
         self::dropRetiredColumns();
+
+        // Schema 30: the newsletter history starts on the day its tables
+        // appear. add_option() leaves an existing value alone.
+        add_option(self::NEWSLETTER_HISTORY_SINCE_OPTION, (string) current_time('Y-m-d'), '', false);
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -297,6 +312,8 @@ final class Schema
         $newsletterSubscribers = self::table(self::NEWSLETTER_SUBSCRIBERS);
         $takeovers = self::table(self::TAKEOVERS);
         $botLog = self::table(self::BOT_LOG);
+        $newsletterChanges = self::table(self::NEWSLETTER_CHANGES);
+        $newsletterSends = self::table(self::NEWSLETTER_SENDS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -662,6 +679,42 @@ final class Schema
                 PRIMARY KEY  (id),
                 KEY created_at (created_at),
                 KEY person_id (person_id)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The newsletter's history of joins and leaves (schema 30,
+            // NewsletterHistoryRepository): one row each time an address
+            // becomes a confirmed subscriber ('subscribed') or a confirmed
+            // subscriber leaves ('unsubscribed'). No address, name or
+            // subscriber id: only the time and the kind, so the rows are
+            // counts and nothing else. created_at is site time, like the
+            // subscribers table.
+            "CREATE TABLE {$newsletterChanges} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                created_at datetime NOT NULL,
+                kind varchar(12) NOT NULL DEFAULT '',
+                PRIMARY KEY  (id),
+                KEY created_at (created_at)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // One row per version of a sent newsletter (schema 30): 'fi',
+            // 'en' or '' for both languages. html is a copy of that version
+            // as the subscribers got it, made when its first email went,
+            // with the greeting that has no name and with no link of any
+            // subscriber, so it holds no personal data. sent and failed are
+            // how many emails of this version went and failed; sent_at is
+            // site time.
+            "CREATE TABLE {$newsletterSends} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                plan_id bigint(20) unsigned NOT NULL DEFAULT 0,
+                lang varchar(2) NOT NULL DEFAULT '',
+                sent_at datetime NOT NULL,
+                subject varchar(255) NOT NULL DEFAULT '',
+                sent int(10) unsigned NOT NULL DEFAULT 0,
+                failed int(10) unsigned NOT NULL DEFAULT 0,
+                html longtext NOT NULL,
+                PRIMARY KEY  (id),
+                KEY sent_at (sent_at),
+                KEY plan_id (plan_id)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

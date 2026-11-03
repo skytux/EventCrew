@@ -8,6 +8,7 @@ use EventCrew\Admin\Admin;
 use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
+use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
@@ -20,6 +21,7 @@ use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -390,8 +392,15 @@ final class Kernel
         );
 
         $this->container->singleton(
+            NewsletterHistoryRepository::class,
+            fn () => new NewsletterHistoryRepository()
+        );
+
+        $this->container->singleton(
             NewsletterSubscriberRepository::class,
-            fn () => new NewsletterSubscriberRepository()
+            fn (Container $container) => new NewsletterSubscriberRepository(
+                $container->get(NewsletterHistoryRepository::class)
+            )
         );
 
         $this->container->singleton(
@@ -418,7 +427,8 @@ final class Kernel
                 $container->get(NewsletterText::class),
                 $container->get(Mailer::class),
                 $container->get(Logger::class),
-                $container->get(NewsletterWriter::class)
+                $container->get(NewsletterWriter::class),
+                $container->get(NewsletterHistoryRepository::class)
             )
         );
 
@@ -1456,6 +1466,15 @@ final class Kernel
         $this->container->singleton(
             BotLogPage::class,
             fn (Container $container) => new BotLogPage($container->get(View::class))
+        );
+
+        $this->container->singleton(
+            NewsletterPage::class,
+            fn (Container $container) => new NewsletterPage(
+                $container->get(View::class),
+                $container->get(NewsletterSubscriberRepository::class),
+                $container->get(NewsletterHistoryRepository::class)
+            )
         );
 
         $this->container->singleton(
