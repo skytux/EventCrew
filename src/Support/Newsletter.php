@@ -579,7 +579,7 @@ final class Newsletter
                     $count
                 ),
                 'subject_line' => __('Subject', 'eventcrew'),
-                'stop' => __('Stop this announcement', 'eventcrew'),
+                'stop' => __('Do not send this announcement', 'eventcrew'),
             ]);
 
             $intro = $words['intro'] . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
