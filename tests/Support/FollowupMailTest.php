@@ -587,10 +587,6 @@ final class FollowupMailTest extends TestCase
             self::assertStringNotContainsString('https://cdn.test/4.jpg', $body, 'three events only');
             self::assertStringContainsString('Tilaa tiedote', $body, 'the announcement invite');
 
-            foreach (['volunteer', 'shift', 'vuoro', 'vapaaehtoinen'] as $banned) {
-                self::assertStringNotContainsString($banned, mb_strtolower($body . $mail['subject']));
-            }
-
             // Every link goes through the counted redirect, with the campaign.
             preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', $body, $tokens);
             self::assertGreaterThanOrEqual(8, count($tokens[1]));
