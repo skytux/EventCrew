@@ -969,7 +969,7 @@ msgstr ""
 msgid "Button"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:475 src/Telegram/EventCard.php:362
+#: src/Support/NewsletterLayout.php:545 src/Telegram/EventCard.php:362
 msgid "Buy a ticket"
 msgstr ""
 
@@ -1107,7 +1107,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/Newsletter.php:324 src/Support/NewsletterLayout.php:473
+#: src/Support/Newsletter.php:324 src/Support/NewsletterLayout.php:543
 msgid "Coming events"
 msgstr ""
 
@@ -1496,7 +1496,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Support/Newsletter.php:719 src/Web/CrewAdminController.php:185 src/Web/NewsletterController.php:712
+#: src/Support/Newsletter.php:723 src/Web/CrewAdminController.php:185 src/Web/NewsletterController.php:712
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -1523,6 +1523,14 @@ msgstr ""
 
 #: src/Support/DoorDesk.php:212
 msgid "Door tickets"
+msgstr ""
+
+#: src/Support/NewsletterLayout.php:552
+msgid "Doors close %s"
+msgstr ""
+
+#: src/Support/NewsletterLayout.php:550
+msgid "Doors open %s"
 msgstr ""
 
 #: templates/admin/settings.php:1911
@@ -2465,7 +2473,7 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:474
+#: src/Support/NewsletterLayout.php:544
 msgid "Later"
 msgstr ""
 
@@ -2522,7 +2530,7 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:477 src/Telegram/EventCard.php:363
+#: src/Support/NewsletterLayout.php:547 src/Telegram/EventCard.php:363
 msgid "Listen to the DJ"
 msgstr ""
 
@@ -2722,7 +2730,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/Newsletter.php:709
+#: src/Support/Newsletter.php:713
 #. translators: %s: the date the newsletter will be sent, like 14.11.2026
 msgid "Next events announcement preview: it goes out on %s"
 msgstr ""
@@ -4288,7 +4296,7 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:478 src/Telegram/EventCard.php:364
+#: src/Support/NewsletterLayout.php:548 src/Telegram/EventCard.php:364
 msgid "Sold out"
 msgstr ""
 
@@ -4385,7 +4393,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:774 src/Support/Newsletter.php:718
+#: src/Support/FollowupMail.php:774 src/Support/Newsletter.php:722
 msgid "Subject"
 msgstr ""
 
@@ -5438,7 +5446,7 @@ msgstr ""
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
-#: src/Support/Newsletter.php:714
+#: src/Support/Newsletter.php:718
 #. translators: 1: the send date, like 14.11.2026, 2: number of subscribers
 msgid "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
 msgstr ""
@@ -5659,7 +5667,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:476 src/Support/WelcomeSender.php:431 templates/public/signup.php:427
+#: src/Support/NewsletterLayout.php:546 src/Support/WelcomeSender.php:431 templates/public/signup.php:427
 msgid "Tickets"
 msgstr ""
 

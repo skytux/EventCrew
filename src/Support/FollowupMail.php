@@ -28,8 +28,8 @@ use EventCrew\Web\NewsletterController;
  * Under the text are the coming events the way the next events announcement
  * shows them (Newsletter::content()): its heading, the next three as cards
  * with their pictures and the rest as short lines under "Later". A card shows
- * the text the language model wrote for that event in the announcement
- * (Newsletter::writtenTexts()) in place of the description, when there is one.
+ * the practical information the language model found for that event for the
+ * announcement (Newsletter::writtenTexts()), when there is some.
  * Then, while the announcement is switched on, an invitation to join it.
  * Nobody is subscribed by this email;
  * joining goes through the announcement's own double opt-in.
@@ -538,8 +538,8 @@ final class FollowupMail
 
         // No coming events, no events part: the newsletter is not sent then.
         if ([] !== $events) {
-            // An event's text written by the language model for the next
-            // events announcement replaces its description here too.
+            // The practical information the language model found for the
+            // next events announcement goes on these cards too.
             $coming = Newsletter::content(
                 NewsletterWriter::apply(array_slice($events, 0, self::EVENTS), Newsletter::writtenTexts()),
                 array_slice($events, self::EVENTS),

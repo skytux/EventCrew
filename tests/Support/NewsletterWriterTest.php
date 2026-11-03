@@ -203,6 +203,14 @@ final class NewsletterWriterTest extends TestCase
         return (string) json_encode([$key => $text]);
     }
 
+    /** A practical information answer; the times are left empty unless given. */
+    private static function practicalAnswer(string $venue, string $open = '', string $close = ''): string
+    {
+        return (string) json_encode(
+            ['venue' => $venue, 'address' => '', 'doors_open' => $open, 'doors_close' => $close]
+        );
+    }
+
     /** @param array<string, mixed> $request */
     private static function system(array $request): string
     {
@@ -220,8 +228,9 @@ final class NewsletterWriterTest extends TestCase
      * the event, its DJs from EventMesh (only well-formed ones, each
      * description cut to 1200 characters), the site's words and the last four
      * sent texts - then its Finnish translation, then the opening with the
-     * events and DJ names. The preview shows the written texts, not the
-     * description.
+     * events and DJ names, then the practical information with the DJ names
+     * once more. The preview shows the opening and the practical information,
+     * and neither the event's written text nor the description.
      */
     public function testThePlanWritesTheTextsFromEveryInput(): void
     {
@@ -245,14 +254,15 @@ final class NewsletterWriterTest extends TestCase
             self::answer('fi', 'Tule tanssimaan DJ Auroran lämpimiin grooveihin.'),
             self::answer('text', 'Summer is here, and so is the dance floor.'),
             self::answer('fi', 'Kesä on täällä, ja niin on tanssilattiakin.'),
+            self::practicalAnswer('the Old Hall'),
         ];
         $this->queueOrganizer();
 
         $this->newsletter()->run();
 
-        self::assertCount(4, $this->requests);
+        self::assertCount(5, $this->requests);
 
-        [$event, $translation, $opening, $openingFi] = $this->requests;
+        [$event, $translation, $opening, $openingFi, $practical] = $this->requests;
         $system = self::system($event);
         self::assertStringContainsString('2 to 3 sentences in English', $system);
         self::assertStringContainsString('Do not use the word "vol' . 'unteer"', $system);
@@ -290,6 +300,15 @@ final class NewsletterWriterTest extends TestCase
         );
         self::assertSame('Summer is here, and so is the dance floor.', self::user($openingFi));
 
+        self::assertStringContainsString('Copy the venue and the address exactly', self::system($practical));
+        self::assertStringContainsString('Never include door codes', self::system($practical));
+        self::assertStringContainsString('"doors_open": "HH:MM"', self::system($practical));
+        self::assertStringContainsString(self::DESCRIPTION, self::user($practical));
+        self::assertStringContainsString(
+            'DJ names (people, never the venue): DJ Aurora, DJ Kuu',
+            self::user($practical)
+        );
+
         $plan = $this->plan();
         self::assertSame(
             [
@@ -298,14 +317,19 @@ final class NewsletterWriterTest extends TestCase
             ],
             $plan['written']['events'][1]
         );
+        self::assertSame(
+            ['venue' => 'the Old Hall', 'address' => '', 'doors_open' => '', 'doors_close' => ''],
+            $plan['written']['practical'][1]
+        );
 
         self::assertCount(1, $this->mails);
         $body = $this->mails[0]['body'];
         self::assertStringContainsString('FI</span>&nbsp; Kesä on täällä, ja niin on tanssilattiakin.', $body);
         self::assertStringContainsString('EN</span>&nbsp; Summer is here, and so is the dance floor.', $body);
-        self::assertStringContainsString('FI</span>&nbsp; Tule tanssimaan DJ Auroran lämpimiin grooveihin.', $body);
-        self::assertStringContainsString('Come and dance to the warm grooves of DJ Aurora.', $body);
-        self::assertStringNotContainsString('old hall', $body);
+        self::assertStringContainsString('>the Old Hall</p>', $body);
+        self::assertStringNotContainsString('Tule tanssimaan DJ Auroran', $body);
+        self::assertStringNotContainsString('Come and dance to the warm grooves of DJ Aurora.', $body);
+        self::assertStringNotContainsString('social dancing', $body);
     }
 
     /**
@@ -321,8 +345,9 @@ final class NewsletterWriterTest extends TestCase
 
         $this->newsletter()->run();
 
-        self::assertCount(2, $this->requests);
+        self::assertCount(3, $this->requests);
         self::assertStringNotContainsString('DJs:', self::user($this->requests[0]));
+        self::assertStringNotContainsString('DJ names', self::user($this->requests[2]));
         self::assertStringNotContainsString('Texts written for earlier newsletters', self::system($this->requests[0]));
         self::assertStringNotContainsString("The site's words", self::system($this->requests[0]));
     }
@@ -340,8 +365,9 @@ final class NewsletterWriterTest extends TestCase
 
         $this->newsletter()->run();
 
-        self::assertCount(2, $this->requests);
+        self::assertCount(3, $this->requests);
         self::assertStringNotContainsString('opening text', self::system($this->requests[0]));
+        self::assertStringNotContainsString('opening text', self::system($this->requests[2]));
         self::assertNull($this->plan()['written']['opening']);
         self::assertStringContainsString('EN</span>&nbsp; Hi all', $this->mails[0]['body']);
     }
@@ -355,7 +381,11 @@ final class NewsletterWriterTest extends TestCase
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->withPlan([
             'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
-            'written' => ['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']], 'opening' => null],
+            'written' => [
+                'events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']],
+                'opening' => null,
+                'practical' => [1 => []],
+            ],
         ]);
         $this->answers = [self::answer('text', 'Welcome, dancers.'), self::answer('fi', 'Tervetuloa, tanssijat.')];
         $this->queueOrganizer();
@@ -373,8 +403,8 @@ final class NewsletterWriterTest extends TestCase
     }
 
     /**
-     * Every way a text can fail leaves the card with its full description,
-     * and the failed text is not asked for again.
+     * Every way a text can fail leaves the card without a text (and never
+     * with the description), and the failed text is not asked for again.
      *
      * @return array<string, array{0: list<string|int>}>
      */
@@ -395,7 +425,7 @@ final class NewsletterWriterTest extends TestCase
      * @dataProvider failures
      * @param list<string|int> $answers
      */
-    public function testEveryFailureFallsBackToTheDescription(array $answers): void
+    public function testEveryFailureLeavesNoText(array $answers): void
     {
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1];
@@ -405,7 +435,7 @@ final class NewsletterWriterTest extends TestCase
         $this->newsletter()->run();
 
         self::assertSame([], $this->plan()['written']['events'][1]);
-        self::assertStringContainsString(self::DESCRIPTION, $this->mails[0]['body']);
+        self::assertStringNotContainsString(self::DESCRIPTION, $this->mails[0]['body']);
         self::assertStringNotContainsString('Come and dance', $this->mails[0]['body']);
 
         // The next run asks for nothing more and sends no new preview.
@@ -417,7 +447,8 @@ final class NewsletterWriterTest extends TestCase
 
     /**
      * No model set up, or a run on a visitor's request (the cron fallback):
-     * nothing is asked, nothing is stored, and the card shows the description.
+     * nothing is asked, nothing is stored, and the card shows neither a text
+     * nor the description.
      */
     public function testNoModelOrNoBackgroundRunWritesNothing(): void
     {
@@ -436,7 +467,8 @@ final class NewsletterWriterTest extends TestCase
 
             self::assertSame([], $this->requests, $case);
             self::assertArrayNotHasKey('written', $this->plan(), $case);
-            self::assertStringContainsString(self::DESCRIPTION, $this->mails[0]['body'], $case);
+            self::assertStringContainsString('Summer Social', $this->mails[0]['body'], $case);
+            self::assertStringNotContainsString(self::DESCRIPTION, $this->mails[0]['body'], $case);
         }
     }
 
@@ -453,7 +485,8 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertSame([], $this->plan()['written']['events'][1]);
         self::assertSame([], $this->plan()['written']['opening']);
-        self::assertStringContainsString(self::DESCRIPTION, $this->mails[0]['body']);
+        self::assertSame([], $this->plan()['written']['practical'][1]);
+        self::assertStringNotContainsString(self::DESCRIPTION, $this->mails[0]['body']);
     }
 
     /**
@@ -464,7 +497,11 @@ final class NewsletterWriterTest extends TestCase
     {
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->event(2, '2026-07-28', 'Late Night');
-        $written = ['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']], 'opening' => []];
+        $written = [
+            'events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']],
+            'opening' => [],
+            'practical' => [1 => []],
+        ];
         $this->withPlan([
             'send_on' => '2026-07-20',
             'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
@@ -485,12 +522,17 @@ final class NewsletterWriterTest extends TestCase
             ],
             'written' => $written,
         ]);
-        $this->answers = [self::answer('text', 'Stay late and dance.'), self::answer('fi', 'Jää tanssimaan.')];
+        $this->answers = [
+            self::answer('text', 'Stay late and dance.'),
+            self::answer('fi', 'Jää tanssimaan.'),
+            self::practicalAnswer(''),
+        ];
 
         $this->newsletter()->run();
 
-        self::assertCount(2, $this->requests);
+        self::assertCount(3, $this->requests);
         self::assertStringContainsString('Event: Late Night', self::user($this->requests[0]));
+        self::assertStringContainsString('Event: Late Night', self::user($this->requests[2]));
         self::assertSame(['fi' => 'Tule.', 'en' => 'Come.'], $this->plan()['written']['events'][1]);
         self::assertSame(
             ['fi' => 'Jää tanssimaan.', 'en' => 'Stay late and dance.'],
@@ -524,7 +566,7 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertSame([], $this->requests);
         self::assertStringContainsString('EN</span>&nbsp; Welcome.', $this->mails[0]['body']);
-        self::assertStringContainsString('EN</span>&nbsp; Come.', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Come.', $this->mails[0]['body']);
         self::assertSame(
             [
                 ['opening' => 'Two.', 'events' => ['2']],
@@ -581,8 +623,12 @@ final class NewsletterWriterTest extends TestCase
         ];
         $newsletter = $this->newsletter();
 
+        $written['practical'] = [
+            1 => ['venue' => 'Old Hall', 'address' => '', 'doors_open' => '', 'doors_close' => ''],
+        ];
+
         self::assertSame($newsletter->compose($events, null), $newsletter->compose($events, null, [], $written));
-        self::assertStringContainsString(self::DESCRIPTION, $newsletter->compose($events, null, [], $written)['html']);
+        self::assertStringNotContainsString('Old Hall', $newsletter->compose($events, null, [], $written)['html']);
 
         $this->wpdb->nextResults[] = [['id' => 4, 'email' => 'a@example.test']];
         $this->withPlan(['status' => Newsletter::PLAN_SENDING, 'events' => $events, 'written' => $written]);
@@ -619,12 +665,16 @@ final class NewsletterWriterTest extends TestCase
             'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
         ];
         $this->withPlan($plan);
-        $this->answers = [self::answer('text', 'Come and dance.'), self::answer('fi', 'Tule tanssimaan.')];
+        $this->answers = [
+            self::answer('text', 'Come and dance.'),
+            self::answer('fi', 'Tule tanssimaan.'),
+            self::practicalAnswer('old hall'),
+        ];
         $this->queueOrganizer();
 
         $this->newsletter()->run();
 
-        self::assertCount(2, $this->requests);
+        self::assertCount(3, $this->requests);
         self::assertSame([], $this->mails);
         self::assertFalse($this->plan()['previewed']);
         self::assertSame(
@@ -633,14 +683,19 @@ final class NewsletterWriterTest extends TestCase
         );
 
         $this->withPlan(['preview_at' => '2026-07-20 11:00:00'] + $plan);
-        $this->answers = [self::answer('text', 'Come and dance.'), self::answer('fi', 'Tule tanssimaan.')];
+        $this->answers = [
+            self::answer('text', 'Come and dance.'),
+            self::answer('fi', 'Tule tanssimaan.'),
+            self::practicalAnswer('old hall'),
+        ];
 
         $this->newsletter()->run();
 
         self::assertCount(1, $this->mails);
         self::assertTrue($this->plan()['previewed']);
-        self::assertStringContainsString('EN</span>&nbsp; Come and dance.', $this->mails[0]['body']);
-        self::assertStringNotContainsString('old hall', $this->mails[0]['body']);
+        self::assertStringContainsString('>old hall</p>', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Come and dance.', $this->mails[0]['body']);
+        self::assertStringNotContainsString('social dancing', $this->mails[0]['body']);
     }
 
     /**
@@ -656,52 +711,229 @@ final class NewsletterWriterTest extends TestCase
                 self::planEvent(1, '2026-07-27', 'Summer Social'),
                 self::planEvent(2, '2026-07-28', 'Late Night'),
             ],
-            'written' => ['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.'], 2 => []], 'opening' => []],
+            'written' => [
+                'events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.'], 2 => []],
+                'opening' => [],
+                'practical' => [
+                    1 => ['venue' => 'Old Hall', 'address' => '', 'doors_open' => '18:30', 'doors_close' => ''],
+                    2 => [],
+                ],
+            ],
         ]);
         $this->wpdb->nextResults[] = [['id' => 4, 'email' => 'a@example.test']];
 
         $this->newsletter()->sendBatch();
 
+        $hall = ['venue' => 'Old Hall', 'address' => '', 'doors_open' => '18:30', 'doors_close' => ''];
         $ledger = $this->options[Newsletter::STATE_OPTION]['ledger'];
         self::assertSame(
-            ['s' => Newsletter::LEDGER_SENT, 'd' => '2026-07-27', 'w' => ['fi' => 'Tule.', 'en' => 'Come.']],
+            [
+                's' => Newsletter::LEDGER_SENT,
+                'd' => '2026-07-27',
+                'w' => ['fi' => 'Tule.', 'en' => 'Come.'],
+                'p' => $hall,
+            ],
             $ledger[1]
         );
         self::assertSame(['s' => Newsletter::LEDGER_SENT, 'd' => '2026-07-28'], $ledger[2]);
-        self::assertSame(['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']]], Newsletter::writtenTexts());
+        self::assertSame(
+            ['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']], 'practical' => [1 => $hall]],
+            Newsletter::writtenTexts()
+        );
 
+        $club = ['venue' => '', 'address' => 'Main Street 1', 'doors_open' => '', 'doors_close' => '22:00'];
         $this->options[Newsletter::STATE_OPTION]['plan'] = [
             'events' => [self::planEvent(3, '2026-08-03', 'Next Week')],
-            'written' => ['events' => [3 => ['fi' => 'Tanssi.', 'en' => 'Dance.']], 'opening' => null],
+            'written' => [
+                'events' => [3 => ['fi' => 'Tanssi.', 'en' => 'Dance.']],
+                'opening' => null,
+                'practical' => [3 => $club],
+            ],
         ];
 
         self::assertSame(
-            ['events' => [3 => ['fi' => 'Tanssi.', 'en' => 'Dance.'], 1 => ['fi' => 'Tule.', 'en' => 'Come.']]],
+            [
+                'events' => [3 => ['fi' => 'Tanssi.', 'en' => 'Dance.'], 1 => ['fi' => 'Tule.', 'en' => 'Come.']],
+                'practical' => [3 => $club, 1 => $hall],
+            ],
             Newsletter::writtenTexts()
         );
     }
 
-    /** The layout puts a written text in place of the description, in the HTML and the plain text. */
-    public function testTheLayoutShowsTheWrittenText(): void
+    /**
+     * The layout shows neither a written text nor the description. The date,
+     * the titles and the practical information are centred; the practical
+     * information has one line each, the door times in both languages, and a
+     * line that is not known is left out.
+     */
+    public function testTheLayoutShowsThePracticalInformationAndNoText(): void
     {
         $card = [
+            'title_fi' => 'Kesätanssit',
             'excerpt_fi' => 'Pitkä kuvaus.',
             'excerpt_en' => 'A long description.',
             'written_fi' => 'Tule tanssimaan.',
             'written_en' => 'Come and dance.',
+            'practical' => [
+                'venue' => 'Example Hall Helsinki',
+                'address' => 'Sörnäisten rantatie 33C, 00500 Helsinki',
+                'doors_open' => '18:30',
+                'doors_close' => '',
+            ],
         ] + self::planEvent(1, '2026-07-27', 'Summer Social');
 
         $html = NewsletterLayout::html([$card], [], null, '#7a3cff');
         $text = NewsletterLayout::text([$card], [], null);
 
-        self::assertStringContainsString('FI</span>&nbsp; Tule tanssimaan.', $html);
-        self::assertStringContainsString('EN</span>&nbsp; Come and dance.', $html);
-        self::assertStringContainsString("FI: Tule tanssimaan.\nEN: Come and dance.", $text);
+        self::assertMatchesRegularExpression(
+            '~<p style="[^"]*text-align:center">Example Hall Helsinki<br>'
+            . 'Sörnäisten rantatie 33C, 00500 Helsinki<br>Ovet aukeavat 18:30 · Doors open 18:30</p>~u',
+            $html
+        );
+        self::assertMatchesRegularExpression('~<h2 style="[^"]*text-align:center">Summer Social</h2>~', $html);
+        self::assertMatchesRegularExpression('~<p style="[^"]*text-align:center">Kesätanssit</p>~u', $html);
+        self::assertMatchesRegularExpression('~<p style="[^"]*text-align:center">27\.7\.2026 · 21:00</p>~u', $html);
+        self::assertStringContainsString('<td align="center" style="padding:18px 20px 20px;text-align:center">', $html);
+        self::assertStringContainsString(
+            "Summer Social\nExample Hall Helsinki\nSörnäisten rantatie 33C, 00500 Helsinki\n"
+            . 'Ovet aukeavat 18:30 · Doors open 18:30',
+            $text
+        );
 
         foreach ([$html, $text] as $out) {
+            self::assertStringNotContainsString('Doors close', $out);
             self::assertStringNotContainsString('description', $out);
             self::assertStringNotContainsString('kuvaus', $out);
+            self::assertStringNotContainsString('Come and dance.', $out);
+            self::assertStringNotContainsString('Tule tanssimaan.', $out);
         }
+
+        unset($card['practical']);
+        self::assertStringNotContainsString('Ovet', NewsletterLayout::html([$card], [], null, '#7a3cff'));
+    }
+
+    /**
+     * A later event with a picture gets an 80 pixel picture on the left,
+     * linked like its tickets link; one without a picture keeps the line of
+     * text only. The plain text has no pictures.
+     */
+    public function testTheLaterEventsHaveASmallLinkedPicture(): void
+    {
+        $cards = [];
+
+        foreach ([1, 2, 3] as $id) {
+            $cards[] = self::planEvent($id, '2026-07-2' . $id, 'Card ' . $id);
+        }
+
+        $pictured = ['image' => 'https://cdn.test/later.jpg'] + self::planEvent(4, '2026-08-03', 'Pictured');
+        $plain = self::planEvent(5, '2026-08-10', 'Plain');
+
+        $html = NewsletterLayout::html($cards, [$pictured, $plain], null, '#7a3cff');
+        $text = NewsletterLayout::text($cards, [$pictured, $plain], null);
+
+        self::assertMatchesRegularExpression(
+            '~<td width="80" valign="middle" style="width:80px;[^"]*"><a href="https://site\.test/event-4/">'
+            . '<img src="https://cdn\.test/later\.jpg" width="80" alt="Pictured" '
+            . 'style="display:block;width:80px;height:auto;border:0;border-radius:6px"></a></td>~',
+            $html
+        );
+        self::assertSame(1, substr_count($html, '<img '), 'only the later event with a picture has one');
+        self::assertSame(2, substr_count($html, 'width="80"'), 'its cell and its picture');
+        self::assertStringNotContainsString('later.jpg', $text);
+    }
+
+    /**
+     * The model's practical information is kept only when it is in the
+     * event's description: a venue or address that is not there, a DJ name
+     * given as the venue, a door code, and a time the description does not
+     * have are dropped. An answer that is not JSON is no answer.
+     */
+    public function testThePracticalInformationIsCheckedAgainstTheDescription(): void
+    {
+        $description = "Ecstatic Dance with Esimerkki\n"
+            . "Example Hall Helsinki, Sörnäisten rantatie 33C, 00500 Helsinki\n"
+            . "18:30-19:00 Doors open\n19:00 Doors close, opening circle\n"
+            . 'Door code 7302. Bring water.';
+        $answer = static fn (array $info): string => (string) json_encode($info);
+
+        self::assertSame(
+            [
+                'venue' => 'Example Hall Helsinki',
+                'address' => 'Sörnäisten rantatie 33C, 00500 Helsinki',
+                'doors_open' => '18:30',
+                'doors_close' => '19:00',
+            ],
+            NewsletterWriter::practical(
+                "```json\n" . $answer([
+                    'venue' => 'Example Hall Helsinki',
+                    'address' => 'Sörnäisten  rantatie 33C, 00500 Helsinki',
+                    'doors_open' => '18.30',
+                    'doors_close' => '19:00',
+                ]) . "\n```",
+                [$description],
+                ['Esimerkki']
+            )
+        );
+
+        $dropped = NewsletterWriter::practical(
+            $answer([
+                'venue' => 'Esimerkki',
+                'address' => 'Mannerheimintie 1, Helsinki',
+                'doors_open' => '20:00',
+                'doors_close' => '7302',
+            ]),
+            [$description],
+            ['Esimerkki']
+        );
+        self::assertSame(['venue' => '', 'address' => '', 'doors_open' => '', 'doors_close' => ''], $dropped);
+
+        $code = NewsletterWriter::practical(
+            $answer(['venue' => 'Door code 7302', 'address' => 'code 7302', 'doors_open' => '', 'doors_close' => '']),
+            [$description],
+            []
+        );
+        self::assertSame('', $code['venue']);
+        self::assertSame('', $code['address']);
+
+        self::assertSame(
+            ['venue' => '', 'address' => '', 'doors_open' => '', 'doors_close' => ''],
+            NewsletterWriter::practical(
+                $answer(['venue' => 'Example Hall Helsinki', 'doors_open' => '18:30']),
+                [''],
+                []
+            ),
+            'no description, nothing kept'
+        );
+        self::assertNull(NewsletterWriter::practical('The venue is Example Hall Helsinki.', [$description], []));
+    }
+
+    /**
+     * The preview has gone with the texts, and only the practical
+     * information is still missing: the next run writes it and stores it,
+     * and sends no new preview to the organizers.
+     */
+    public function testOnlyNewPracticalInformationSendsNoNewPreview(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1];
+        $this->withPlan([
+            'send_at' => '2026-07-21 12:00:00',
+            'preview_at' => '2026-07-20 11:00:00',
+            'previewed' => true,
+            'text' => ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1],
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+            'written' => ['events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']], 'opening' => null],
+        ]);
+        $this->answers = [self::practicalAnswer('old hall')];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertCount(1, $this->requests);
+        self::assertStringContainsString('Copy the venue', self::system($this->requests[0]));
+        self::assertSame('old hall', $this->plan()['written']['practical'][1]['venue']);
+        self::assertSame([], $this->mails);
+        self::assertTrue($this->plan()['previewed']);
     }
 
     public function testParseReadsTheAnswerRobustly(): void

@@ -59,10 +59,10 @@ use EventCrew\Repositories\PersonRepository;
  *
  * Everything the newsletter remembers is in one option (STATE_OPTION):
  * the ledger (event id => sent, stopped or missed, with the event's date
- * and, for a sent event, the text the language model wrote for it; entries
- * go once the date has passed), the current plan, the last newsletter sent,
- * and the next plan id. The post-event email (FollowupMail) shows those
- * written texts too (writtenTexts()).
+ * and, for a sent event, the text and the practical information the language
+ * model wrote for it; entries go once the date has passed), the current plan,
+ * the last newsletter sent, and the next plan id. The post-event email
+ * (FollowupMail) uses those too (writtenTexts()).
  *
  * run() also deletes newsletter sign-ups that were never confirmed, PENDING_DAYS
  * after they were made, whether or not the newsletter is switched on.
@@ -306,11 +306,11 @@ final class Newsletter
     /**
      * The newsletter's subject and both bodies: one card per event in
      * $events, the organizers' $text above them, and the $later events as
-     * short lines under them (NewsletterLayout). The picture, price, ticket
-     * link and description of each event are read from EventMesh now, so a
-     * change made since the plan is in the email. The texts the language model
-     * wrote ($written, NewsletterWriter) replace the descriptions, and its
-     * opening text stands in for a missing organizers' text.
+     * short lines under them (NewsletterLayout). The picture, price and ticket
+     * link of each event are read from EventMesh now, so a change made since
+     * the plan is in the email. From what the language model wrote ($written,
+     * NewsletterWriter), the cards show each event's practical information,
+     * and its opening text stands in for a missing organizers' text.
      *
      * @param array<int, array<string, mixed>> $events Plan events.
      * @param array{fi: string, en: string}|null $text
@@ -435,6 +435,8 @@ final class Newsletter
                 // run ran out of time, or the organizers removed their text):
                 // written now. When the preview has already gone, the
                 // organizers get the new one if one of them could be written.
+                // Practical information written now is saved without a new
+                // preview (it is not in NewsletterWriter::shown()).
                 $written = $this->written($plan, null === $this->text->get());
 
                 if ($written !== $plan) {
@@ -649,10 +651,12 @@ final class Newsletter
         }
 
         $shown = NewsletterWriter::shown($plan)['events'];
+        $practical = self::practical($plan);
 
         foreach ($plan['events'] as $event) {
             $state['ledger'][$event['id']] = ['s' => self::LEDGER_SENT, 'd' => $event['date']]
-                + (isset($shown[(int) $event['id']]) ? ['w' => $shown[(int) $event['id']]] : []);
+                + (isset($shown[(int) $event['id']]) ? ['w' => $shown[(int) $event['id']]] : [])
+                + (isset($practical[(int) $event['id']]) ? ['p' => $practical[(int) $event['id']]] : []);
         }
 
         $state['last'] = [
@@ -779,31 +783,65 @@ final class Newsletter
     }
 
     /**
-     * The texts the language model wrote for coming events, in the shape of a
-     * plan's 'written' (NewsletterWriter::apply()): the texts of the events a
-     * sent announcement carried (kept in the ledger), and those of the
-     * current plan. The post-event email (FollowupMail) shows them, so both
-     * emails show the same texts.
+     * The texts and practical information the language model wrote for
+     * coming events, in the shape of a plan's 'written'
+     * (NewsletterWriter::apply()): those of the events a sent announcement
+     * carried (kept in the ledger), and those of the current plan. The
+     * post-event email (FollowupMail) shows them, so both emails show the
+     * same cards.
      *
-     * @return array{events: array<int, array{fi: string, en: string}>}
+     * @return array{
+     *     events: array<int, array{fi: string, en: string}>,
+     *     practical: array<int, array<string, string>>
+     * }
      */
     public static function writtenTexts(): array
     {
         $stored = get_option(self::STATE_OPTION, []);
         $stored = is_array($stored) ? $stored : [];
         $texts = [];
+        $practical = [];
 
         foreach (is_array($stored['ledger'] ?? null) ? $stored['ledger'] : [] as $id => $entry) {
             if (is_array($entry) && is_array($entry['w'] ?? null)) {
                 $texts[(int) $id] = $entry['w'];
             }
+
+            $info = is_array($entry) ? NewsletterWriter::practicalOf($entry['p'] ?? null) : null;
+
+            if (null !== $info) {
+                $practical[(int) $id] = $info;
+            }
         }
 
         if (is_array($stored['plan'] ?? null)) {
             $texts = NewsletterWriter::shown($stored['plan'])['events'] + $texts;
+            $practical = self::practical($stored['plan']) + $practical;
         }
 
-        return ['events' => $texts];
+        return ['events' => $texts, 'practical' => $practical];
+    }
+
+    /**
+     * The practical information in $plan that knows something, by event id.
+     *
+     * @param array<string, mixed> $plan
+     * @return array<int, array<string, string>>
+     */
+    private static function practical(array $plan): array
+    {
+        $stored = $plan['written']['practical'] ?? null;
+        $practical = [];
+
+        foreach (is_array($stored) ? $stored : [] as $id => $info) {
+            $info = NewsletterWriter::practicalOf($info);
+
+            if (null !== $info) {
+                $practical[(int) $id] = $info;
+            }
+        }
+
+        return $practical;
     }
 
     /**

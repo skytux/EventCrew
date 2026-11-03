@@ -7,10 +7,17 @@ namespace EventCrew\Support;
 /**
  * The texts the language model writes for the next events announcement.
  *
- * When the switch (ENABLED_OPTION) is on and the model is set up, each event
- * card gets 2–3 sentences written by the model in place of the event's full
- * description, and, when the organizers wrote no opening text, the email gets
- * a 2–3 sentence opening written by the model too.
+ * When the switch (ENABLED_OPTION) is on and the model is set up, the model
+ * writes 2–3 sentences for each event and, when the organizers wrote no
+ * opening text, a 2–3 sentence opening for the email. The cards do not show
+ * the event texts (Owner, 2026-11-03); the opening is written from them, so the
+ * place is taken from the event's own text and not from a DJ name.
+ *
+ * The model also picks each event's practical information out of its
+ * description: the venue, the street address and the times the doors open and
+ * close. A value is kept only when it is written in the description as it is
+ * (practical()), so nothing is invented; a DJ name is never the venue. The
+ * card shows these as short lines under the title.
  *
  * Each text is written in English first and then translated into Finnish with
  * a second request. The model gets the event (titles, date, time, the whole
@@ -25,8 +32,8 @@ namespace EventCrew\Support;
  * visitor's request (the cron fallback) writes nothing.
  *
  * Any failure (the model is not set up, an error, an answer that cannot be
- * used) leaves that text out, and the card shows the full description as
- * before. A text that failed is not asked for again in the same plan.
+ * used) leaves that text or that practical information out. Nothing that
+ * failed is asked for again in the same plan.
  */
 final class NewsletterWriter
 {
@@ -60,6 +67,12 @@ final class NewsletterWriter
     /** Seconds one run may spend writing; what is left waits for the next run. */
     public const BUDGET = 120;
 
+    /** The longest venue or address accepted, in characters. */
+    public const MAX_PLACE = 120;
+
+    /** The keys of an event's practical information, in the order the card shows them. */
+    public const PRACTICAL_KEYS = ['venue', 'address', 'doors_open', 'doors_close'];
+
     /** Tokens for one answer. */
     private const MAX_TOKENS = 600;
 
@@ -87,6 +100,20 @@ final class NewsletterWriter
         . 'and invite them to come and dance at these events. '
         . 'Be warm and concrete. Do not repeat the details of every event. '
         . self::RULES;
+
+    /** The instruction for an event's practical information. */
+    private const PRACTICAL_PROMPT = 'You read the description of one event of a dance event '
+        . 'and pick out its practical information for the email newsletter: '
+        . 'the name of the venue (the place where the event is held), its street address, '
+        . 'the time the doors open and the time the doors close. '
+        . 'Copy the venue and the address exactly as they are written in the description. '
+        . 'Write each time as HH:MM, as it is written in the description. '
+        . 'When the doors open during a time range, such as "18:30-19:00 Doors open", '
+        . 'the doors open at the start of the range. '
+        . 'Use "" for anything the description does not say. Do not guess. '
+        . 'A DJ name is a person, never a place: the venue is never one of the DJ names. '
+        . 'The event title is not the venue unless the description says so. '
+        . 'Never include door codes, entry codes or any other codes.';
 
     /** The instruction for the Finnish translation. */
     private const TRANSLATE_PROMPT = 'You translate a short newsletter text from English into Finnish. '
@@ -146,9 +173,10 @@ final class NewsletterWriter
 
     /**
      * $plan with the texts that are still missing written into
-     * $plan['written']: one per event that has none yet, and the opening when
-     * $wantOpening and it was not asked for yet. Unchanged when the switch is
-     * off, the model is not set up, or this is not a background run.
+     * $plan['written']: one per event that has none yet, the opening when
+     * $wantOpening and it was not asked for yet, and then the practical
+     * information of each event that has none yet. Unchanged when the switch
+     * is off, the model is not set up, or this is not a background run.
      *
      * @param array<string, mixed> $plan
      * @return array<string, mixed>
@@ -184,6 +212,20 @@ final class NewsletterWriter
             ) ?? [];
         }
 
+        foreach ($events as $event) {
+            $id = (int) ($event['id'] ?? 0);
+
+            if ($id <= 0 || array_key_exists($id, $written['practical'])) {
+                continue;
+            }
+
+            if (! $inTime()) {
+                break;
+            }
+
+            $written['practical'][$id] = $this->safely(fn (): ?array => $this->writePractical($event)) ?? [];
+        }
+
         $plan['written'] = $written;
 
         return $plan;
@@ -204,7 +246,9 @@ final class NewsletterWriter
         }
 
         foreach ($events as $event) {
-            if (! array_key_exists((int) ($event['id'] ?? 0), $written['events'])) {
+            $id = (int) ($event['id'] ?? 0);
+
+            if (! array_key_exists($id, $written['events']) || ! array_key_exists($id, $written['practical'])) {
                 return true;
             }
         }
@@ -214,7 +258,9 @@ final class NewsletterWriter
 
     /**
      * The written texts of $plan that can be shown: event id => text, and the
-     * opening (null when there is none).
+     * opening (null when there is none). The practical information is not
+     * part of it, so when only that is written, the organizers get no new
+     * preview (Newsletter::runLocked()).
      *
      * @param array<string, mixed> $plan
      * @return array{events: array<int, array{fi: string, en: string}>, opening: array{fi: string, en: string}|null}
@@ -236,9 +282,10 @@ final class NewsletterWriter
     }
 
     /**
-     * $cards with each written text as written_fi and written_en, which the
-     * layout shows in place of the description. Unchanged when the switch is
-     * off.
+     * $cards with each written text as written_fi and written_en (the layout
+     * does not show them), and each event's practical information as
+     * 'practical' (venue, address, doors_open, doors_close; '' when not
+     * known), which the layout shows. Unchanged when the switch is off.
      *
      * @param array<int, array<string, mixed>> $cards
      * @param array<string, mixed>|null $written A plan's 'written'.
@@ -251,13 +298,21 @@ final class NewsletterWriter
         }
 
         $texts = is_array($written['events'] ?? null) ? $written['events'] : [];
+        $practical = is_array($written['practical'] ?? null) ? $written['practical'] : [];
 
         foreach ($cards as $index => $card) {
-            $text = self::pair($texts[(int) ($card['id'] ?? 0)] ?? null);
+            $id = (int) ($card['id'] ?? 0);
+            $text = self::pair($texts[$id] ?? null);
 
             if (null !== $text) {
                 $cards[$index]['written_fi'] = $text['fi'];
                 $cards[$index]['written_en'] = $text['en'];
+            }
+
+            $info = self::practicalOf($practical[$id] ?? null);
+
+            if (null !== $info) {
+                $cards[$index]['practical'] = $info;
             }
         }
 
@@ -317,21 +372,9 @@ final class NewsletterWriter
      */
     public static function parse(string $content, string $key): ?string
     {
-        $content = trim($content);
+        $decoded = self::decode($content);
 
-        // Some models wrap JSON in a Markdown code fence.
-        if (1 === preg_match('/^```(?:json)?\s*(.*?)\s*```$/s', $content, $matches)) {
-            $content = $matches[1];
-        }
-
-        $decoded = json_decode($content, true);
-
-        // Or put a sentence before or after it.
-        if (! is_array($decoded) && 1 === preg_match('/\{.*\}/s', $content, $matches)) {
-            $decoded = json_decode($matches[0], true);
-        }
-
-        if (! is_array($decoded) || ! is_string($decoded[$key] ?? null)) {
+        if (null === $decoded || ! is_string($decoded[$key] ?? null)) {
             return null;
         }
 
@@ -343,6 +386,52 @@ final class NewsletterWriter
         }
 
         return $text;
+    }
+
+    /**
+     * Reads the practical information from a JSON answer
+     * ({"venue": …, "address": …, "doors_open": …, "doors_close": …}). A
+     * value is kept only when one of $descriptions has it as it is written
+     * (case and spacing aside), so the model cannot invent one. The venue and
+     * the address must not be a DJ name in $djNames or have a code or a link
+     * in them; a time must look like 18:30 or 18.30. Anything else becomes ''.
+     * Null when the answer is not JSON.
+     *
+     * @param list<string> $descriptions
+     * @param list<string> $djNames
+     * @return array{venue: string, address: string, doors_open: string, doors_close: string}|null
+     */
+    public static function practical(string $content, array $descriptions, array $djNames): ?array
+    {
+        $decoded = self::decode($content);
+
+        if (null === $decoded) {
+            return null;
+        }
+
+        $haystack = self::normal(implode("\n", $descriptions));
+        $djs = array_map([self::class, 'normal'], $djNames);
+        $info = [];
+
+        foreach (self::PRACTICAL_KEYS as $key) {
+            $value = is_string($decoded[$key] ?? null) ? trim($decoded[$key]) : '';
+            $normal = self::normal($value);
+
+            if ('' === $normal || '' === $haystack) {
+                $info[$key] = '';
+            } elseif ('venue' === $key || 'address' === $key) {
+                $length = function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
+                $kept = $length <= self::MAX_PLACE
+                    && str_contains($haystack, $normal)
+                    && ! in_array($normal, $djs, true)
+                    && 1 !== preg_match('~https?://|www\.|code|koodi~iu', $value);
+                $info[$key] = $kept ? (string) preg_replace('/\s+/u', ' ', $value) : '';
+            } else {
+                $info[$key] = self::time($value, $haystack);
+            }
+        }
+
+        return $info;
     }
 
     /**
@@ -398,6 +487,39 @@ final class NewsletterWriter
     }
 
     /**
+     * The event's practical information, or null when the answer could not
+     * be used. The input is the same as for the event's text, with the DJ
+     * names once more, so the model does not take one for the venue.
+     *
+     * @param array<string, mixed> $event A plan event.
+     * @return array{venue: string, address: string, doors_open: string, doors_close: string}|null
+     */
+    private function writePractical(array $event): ?array
+    {
+        $id = (int) ($event['id'] ?? 0);
+        $names = array_column(self::djs($id), 'name');
+        $input = self::eventInput($event)
+            . ([] === $names ? '' : "\n\nDJ names (people, never the venue): " . implode(', ', $names));
+        $content = $this->answer(
+            self::PRACTICAL_PROMPT . "\n\nAnswer with JSON only, with no other text: "
+                . '{"venue": "", "address": "", "doors_open": "HH:MM", "doors_close": "HH:MM"}',
+            $input
+        );
+
+        if (null === $content) {
+            return null;
+        }
+
+        $info = self::practical($content, array_values(self::descriptions($id)), $names);
+
+        if (null === $info) {
+            $this->logger->warning('Newsletter texts: the language model answer could not be used.');
+        }
+
+        return $info;
+    }
+
+    /**
      * $en with its Finnish translation, or null.
      *
      * @return array{fi: string, en: string}|null
@@ -412,6 +534,24 @@ final class NewsletterWriter
     /** One request; the text under $key of its answer, or null. */
     private function ask(string $system, string $input, string $key): ?string
     {
+        $content = $this->answer($system, $input);
+
+        if (null === $content) {
+            return null;
+        }
+
+        $text = self::parse($content, $key);
+
+        if (null === $text) {
+            $this->logger->warning('Newsletter texts: the language model answer could not be used.');
+        }
+
+        return $text;
+    }
+
+    /** One request; its answer as it came, or null when the request failed. */
+    private function answer(string $system, string $input): ?string
+    {
         $answer = $this->llm->chat(
             [
                 ['role' => 'system', 'content' => $system],
@@ -421,17 +561,7 @@ final class NewsletterWriter
             LlmClient::TIMEOUT
         );
 
-        if (! $answer['ok']) {
-            return null;
-        }
-
-        $text = self::parse($answer['content'], $key);
-
-        if (null === $text) {
-            $this->logger->warning('Newsletter texts: the language model answer could not be used.');
-        }
-
-        return $text;
+        return $answer['ok'] ? (string) $answer['content'] : null;
     }
 
     /**
@@ -484,15 +614,9 @@ final class NewsletterWriter
     private static function eventInput(array $event): string
     {
         $id = (int) ($event['id'] ?? 0);
-        $card = EventSource::card($id);
         $lines = ['Event: ' . self::titles($event), 'Date: ' . self::when($event)];
-        $descriptions = [
-            'Description (Finnish)' => (string) ($card['excerpt_fi'] ?? ''),
-            'Description (English)' => (string) ($card['excerpt_en'] ?? ''),
-            'Description' => (string) ($card['excerpt'] ?? ''),
-        ];
 
-        foreach ($descriptions as $label => $text) {
+        foreach (self::descriptions($id) as $label => $text) {
             $text = trim($text);
 
             if ('' !== $text) {
@@ -513,6 +637,22 @@ final class NewsletterWriter
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The event's descriptions from EventMesh, by their label for the model.
+     *
+     * @return array<string, string>
+     */
+    private static function descriptions(int $postId): array
+    {
+        $card = EventSource::card($postId);
+
+        return [
+            'Description (Finnish)' => (string) ($card['excerpt_fi'] ?? ''),
+            'Description (English)' => (string) ($card['excerpt_en'] ?? ''),
+            'Description' => (string) ($card['excerpt'] ?? ''),
+        ];
     }
 
     /**
@@ -570,10 +710,15 @@ final class NewsletterWriter
 
     /**
      * The plan's 'written' in a known shape: event id => text ([] = failed),
-     * and the opening (null = not asked yet, [] = failed).
+     * the opening (null = not asked yet, [] = failed), and event id => its
+     * practical information ([] = failed).
      *
      * @param array<string, mixed> $plan
-     * @return array{events: array<int, array<string, string>>, opening: array<string, string>|null}
+     * @return array{
+     *     events: array<int, array<string, string>>,
+     *     opening: array<string, string>|null,
+     *     practical: array<int, array<string, string>>
+     * }
      */
     private static function written(array $plan): array
     {
@@ -582,7 +727,29 @@ final class NewsletterWriter
         return [
             'events' => is_array($written['events'] ?? null) ? $written['events'] : [],
             'opening' => is_array($written['opening'] ?? null) ? $written['opening'] : null,
+            'practical' => is_array($written['practical'] ?? null) ? $written['practical'] : [],
         ];
+    }
+
+    /**
+     * A stored practical information with every key a string, or null when
+     * it failed or knows nothing.
+     *
+     * @return array{venue: string, address: string, doors_open: string, doors_close: string}|null
+     */
+    public static function practicalOf(mixed $info): ?array
+    {
+        if (! is_array($info)) {
+            return null;
+        }
+
+        $clean = [];
+
+        foreach (self::PRACTICAL_KEYS as $key) {
+            $clean[$key] = is_string($info[$key] ?? null) ? trim($info[$key]) : '';
+        }
+
+        return '' === implode('', $clean) ? null : $clean;
     }
 
     /**
@@ -600,6 +767,50 @@ final class NewsletterWriter
         $en = trim((string) ($text['en'] ?? ''));
 
         return '' === $fi || '' === $en ? null : ['fi' => $fi, 'en' => $en];
+    }
+
+    /** A JSON answer as an array, or null; a code fence or a sentence around it is allowed. */
+    private static function decode(string $content): ?array
+    {
+        $content = trim($content);
+
+        // Some models wrap JSON in a Markdown code fence.
+        if (1 === preg_match('/^```(?:json)?\s*(.*?)\s*```$/s', $content, $matches)) {
+            $content = $matches[1];
+        }
+
+        $decoded = json_decode($content, true);
+
+        // Or put a sentence before or after it.
+        if (! is_array($decoded) && 1 === preg_match('/\{.*\}/s', $content, $matches)) {
+            $decoded = json_decode($matches[0], true);
+        }
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * $time as "18:30" when it is a time of day that $haystack has (written
+     * 18:30, 18.30 or with a leading zero, not part of a longer number),
+     * else ''.
+     */
+    private static function time(string $time, string $haystack): string
+    {
+        if (1 !== preg_match('/^(\d{1,2})[:.](\d{2})$/', $time, $m) || (int) $m[1] > 23 || (int) $m[2] > 59) {
+            return '';
+        }
+
+        $pattern = '/(?<![\d.:])0?' . (int) $m[1] . '[:.]' . $m[2] . '(?!\d|[.:]\d)/';
+
+        return 1 === preg_match($pattern, $haystack) ? (int) $m[1] . ':' . $m[2] : '';
+    }
+
+    /** $text in lower case with every run of white space as one space, for comparing. */
+    private static function normal(string $text): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', $text));
+
+        return function_exists('mb_strtolower') ? mb_strtolower($text) : strtolower($text);
     }
 
     /**
