@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.128.1
+Stable tag: 1.128.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.128.2 =
+Board: a separator line after each date on the card board (text and buttons), as Owner asked.
 
 = 1.128.1 =
 Ticket buyer rows whose name was blanked 60 days after the event show "No name" on the door desk, the crew page Admin tab and the wp-admin Roster. README describes the 60-day blanking. Tests for the purge.
@@ -1129,6 +1132,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.128.2 =
+No settings change.
 
 = 1.128.1 =
 No settings change.
