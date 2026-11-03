@@ -244,6 +244,16 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <p class="eventcrew-signin-back" data-eventcrew-tg-back hidden>
                     <a href="#"><?php esc_html_e('Back', 'eventcrew'); ?></a>
                 </p>
+                <script>
+                // Show the choice before the first paint, so the email form and
+                // its human check do not flash first. Without JavaScript the
+                // email form stays; the script at the end falls back to it too.
+                (function () {
+                    var c = document.querySelector('[data-eventcrew-tg-login]');
+                    var f = document.querySelector('form[data-eventcrew-signin]');
+                    if (c && f && window.fetch) { c.hidden = false; f.hidden = true; }
+                })();
+                </script>
             <?php endif; ?>
             </div>
         </section>
@@ -2653,9 +2663,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  * popup. The popup hands back an ID token, which is posted to the server; the
  * server checks it and starts the session, and the page reloads signed in.
  *
- * The choice is revealed only once Telegram's script has loaded and this
- * browser has its one-time nonce, so the button always works when it shows.
- * If either fails, the email form simply stays.
+ * The choice shows straight away (a small script under the form swaps it in
+ * before the first paint); the email form shows when Email is pressed. The
+ * Telegram button starts working once Telegram's script has loaded and this
+ * browser has its one-time nonce. If either fails, the page falls back to the
+ * email form.
  */
 (function () {
     var choice = document.querySelector('[data-eventcrew-tg-login]');
@@ -2818,6 +2830,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         }
         return nativeOpen.apply(window, args);
     };
+
+    revealed = true;
+    showChoice();
 
     var script = document.createElement('script');
     script.src = choice.getAttribute('data-script');
