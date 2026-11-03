@@ -467,6 +467,40 @@ final class NewsletterTest extends TestCase
         self::assertSame([2], array_column($this->state()['plan']['later'], 'id'));
     }
 
+    /**
+     * compose()'s HTML and text for one fixed input are byte for byte the
+     * ones saved in fixtures/, which were made before the events part was
+     * shared with the post-event email (FollowupMail).
+     */
+    public function testComposeOutputIsUnchangedForAFixedInput(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Dance', [
+            '_eventmesh_image_url' => 'https://cdn.test/1.jpg',
+            '_eventmesh_price' => '27.50 EUR',
+            '_eventmesh_url' => 'https://shop.test/p/1',
+            '_eventmesh_embed_source_url' => 'https://music.test/dj',
+            '_eventmesh_original_lang' => 'en',
+            '_eventmesh_tr_fi_hash' => md5('Summer Dance' . "\0"),
+            '_eventmesh_tr_fi_excerpt' => 'Tanssimme koko yön.',
+        ]);
+        $this->events[1]['post']->post_excerpt = 'We dance all night.';
+        $this->event(2, '2026-07-28', 'Full House', ['_eventmesh_url' => 'https://shop.test/p/2']);
+        $this->event(3, '2026-08-10', 'Autumn Night', ['_eventmesh_price' => '22 EUR']);
+
+        $mail = $this->newsletter()->compose(
+            [
+                ['title_fi' => 'Kesätanssit'] + self::planEvent(1, '2026-07-27', 'Summer Dance'),
+                ['sold_out' => true] + self::planEvent(2, '2026-07-28', 'Full House'),
+            ],
+            ['fi' => 'Tervetuloa!', 'en' => 'Welcome!'],
+            [self::planEvent(3, '2026-08-10', 'Autumn Night')]
+        );
+
+        self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
+        self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.html', $mail['html']);
+        self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.txt', $mail['text']);
+    }
+
     public function testThePriceIsWrittenTheFinnishWay(): void
     {
         self::assertSame('22 €', NewsletterLayout::price('22.00 EUR'));

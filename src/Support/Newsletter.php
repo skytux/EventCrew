@@ -308,12 +308,30 @@ final class Newsletter
      */
     public function compose(array $events, ?array $text, array $later = []): array
     {
-        $cards = array_map([self::class, 'withCard'], array_values($events));
-        $later = array_map([self::class, 'withCard'], array_values($later));
-
         return [
             'subject' => self::both(static fn (): string => __('Coming events', 'eventcrew'))
                 . ' – ' . (string) get_bloginfo('name'),
+        ] + self::content(
+            array_map([self::class, 'withCard'], array_values($events)),
+            array_map([self::class, 'withCard'], array_values($later)),
+            $text
+        );
+    }
+
+    /**
+     * The newsletter's body, HTML and plain text: the heading, the
+     * organizers' $text, one card per event in $cards and the $later events
+     * as short lines (NewsletterLayout). The post-event email (FollowupMail)
+     * shows the coming events with this too.
+     *
+     * @param array<int, array<string, mixed>> $cards Events through withCard().
+     * @param array<int, array<string, mixed>> $later Events through withCard().
+     * @param array{fi?: string, en?: string}|null $text
+     * @return array{html: string, text: string}
+     */
+    public static function content(array $cards, array $later, ?array $text): array
+    {
+        return [
             'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent()),
             'text' => NewsletterLayout::text($cards, $later, $text),
         ];

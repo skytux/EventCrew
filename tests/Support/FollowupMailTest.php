@@ -605,6 +605,53 @@ final class FollowupMailTest extends TestCase
         }
     }
 
+    /**
+     * The coming events part of both versions is the newsletter's content
+     * (Newsletter::content()) for the same events, byte for byte, with only
+     * the links counted: the first three as cards, the rest under "Later".
+     */
+    public function testTheEventsPartIsTheNewslettersForTheSameEvents(): void
+    {
+        $this->sampleEvents();
+
+        foreach ([true, false] as $came) {
+            $mail = $this->followup()->compose(self::NIGHT, $came, 'Anna', 'b', 7);
+
+            $campaign = FollowupMail::campaign(self::NIGHT, $came);
+            $link = static fn (string $url): string => '' === $url
+                ? ''
+                : FollowupMail::trackedUrl(FollowupMail::withUtm($url, $campaign), 'b', 7);
+            $events = array_map(
+                static fn (array $event): array => array_merge($event, [
+                    'url' => $link((string) $event['url']),
+                    'ticket_url' => $link((string) $event['ticket_url']),
+                    'listen' => $link((string) $event['listen']),
+                ]),
+                array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT))
+            );
+            $expected = Newsletter::content(array_slice($events, 0, 3), array_slice($events, 3), null);
+
+            self::assertCount(4, $events);
+            self::assertStringContainsString('Tulevat tapahtumat', $expected['html'], 'the newsletter heading');
+            self::assertStringContainsString('Myöhemmin · Later', $expected['html'], 'the fourth under Later');
+            self::assertStringContainsString($expected['html'], $mail['html']);
+            self::assertStringContainsString($expected['text'], $mail['text']);
+            self::assertStringContainsString(str_repeat('A warm evening of free movement. ', 39), $mail['html']);
+        }
+    }
+
+    /** No coming events: no events part at all, as the newsletter sends nothing then. */
+    public function testNoComingEventsLeavesTheEventsPartOut(): void
+    {
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+
+        self::assertStringContainsString('Thank you for coming', $mail['html']);
+        self::assertStringNotContainsString('<h1', $mail['html']);
+        self::assertStringNotContainsString('Tulevat tapahtumat', $mail['html']);
+        self::assertStringNotContainsString('TULEVAT TAPAHTUMAT', $mail['text']);
+        self::assertStringNotContainsString('Later', $mail['html'] . $mail['text']);
+    }
+
     public function testNoAnnouncementInviteWhileTheAnnouncementIsOff(): void
     {
         $this->options[Newsletter::ENABLED_OPTION] = '0';
