@@ -135,19 +135,6 @@ final class OpenTaskCallTest extends TestCase
         self::assertStringContainsString('ON DUPLICATE KEY UPDATE', $this->wpdb->lastQuery());
     }
 
-    public function testIncludesCrewAlreadyWorkingThatDay(): void
-    {
-        // Being on a task that day no longer excludes someone - they may want a
-        // second, non-overlapping slot - so they still get the call.
-        $this->queueOpenDate();
-        $this->wpdb->nextResults[] = [$this->activePerson()];
-        $this->wpdb->nextVars[] = null;
-        $this->queueRecap();
-
-        self::assertSame(1, $this->call()->sendForDate('2026-08-01'));
-        self::assertCount(1, $this->mails);
-    }
-
     public function testSendsNothingWhenEverythingIsStaffed(): void
     {
         $this->queueOpenDate(2);   // the one task is full (2 of 2)

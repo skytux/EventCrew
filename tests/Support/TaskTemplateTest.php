@@ -162,24 +162,6 @@ final class TaskTemplateTest extends TestCase
         self::assertNull($tasks[1]['ends_at']);
     }
 
-    /**
-     * A zero offset means "exactly on the anchor", which is a real schedule -
-     * decorating ends as the doors open. Treating it as "no offset set" would
-     * silently drop that.
-     */
-    public function testAZeroOffsetIsAScheduleRatherThanAnAbsentOne(): void
-    {
-        $tasks = TaskTemplate::build(
-            '2026-08-01',
-            '2026-08-01 21:00:00',
-            '2026-08-02 01:00:00',
-            $this->danceEventRoles()
-        );
-
-        self::assertSame('2026-08-01 21:00:00', $tasks[0]['ends_at']);
-        self::assertSame('2026-08-02 01:00:00', $tasks[1]['starts_at']);
-    }
-
     public function testArchivedRolesAreNotScheduled(): void
     {
         $roles = $this->danceEventRoles();

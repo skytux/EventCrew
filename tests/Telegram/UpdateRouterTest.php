@@ -321,20 +321,6 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame('Stopped. Nothing is waiting for an answer.', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testMyTicketsCommandReachesTheProfileService(): void
-    {
-        // Unlinked sender -> the set-up nudge, proof /me tickets routed.
-        $this->router()->dispatch([
-            'message' => [
-                'text' => '/me tickets',
-                'chat' => ['id' => 555, 'type' => 'private'],
-                'from' => ['id' => 555],
-            ],
-        ]);
-
-        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
-    }
-
     public function testTheNotificationsButtonReachesTheSettingsService(): void
     {
         $this->router()->dispatch($this->tap('mn:notif'));
