@@ -104,18 +104,6 @@ final class Newsletter
     /** MySQL lock name shared by run() and sendBatch(). */
     private const LOCK = 'eventcrew_newsletter';
 
-    /** Between the Finnish and the English part of the plain-text email. */
-    private const DIVIDER_TEXT = '————————';
-
-    /**
-     * The first line of every announcement, above the Finnish part. Always in
-     * English, never translated: it is for the reader who does not read Finnish.
-     */
-    public const ENGLISH_BELOW = 'English version below ↓';
-
-    /** Between the Finnish and the English part of the HTML email. */
-    private const DIVIDER_HTML = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">';
-
     public function __construct(
         private readonly NewsletterSubscriberRepository $subscribers,
         private readonly PersonRepository $people,
@@ -287,30 +275,27 @@ final class Newsletter
     }
 
     /**
-     * The newsletter's subject and both bodies for $events and $text.
+     * The newsletter's subject and both bodies: one card per event in
+     * $events, the organizers' $text above them, and the $later events as
+     * short lines under them (NewsletterLayout). The picture, price, ticket
+     * link and description of each event are read from EventMesh now, so a
+     * change made since the plan is in the email.
      *
      * @param array<int, array<string, mixed>> $events Plan events.
      * @param array{fi: string, en: string}|null $text
+     * @param array<int, array<string, mixed>> $later Other coming events, in the plan events' shape.
      * @return array{subject: string, html: string, text: string}
      */
-    public function compose(array $events, ?array $text): array
+    public function compose(array $events, ?array $text, array $later = []): array
     {
-        $fi = Language::run(
-            Language::FINNISH,
-            fn (): string => $this->block($events, (string) ($text['fi'] ?? ''), true)
-        );
-        $en = Language::run(
-            Language::ENGLISH,
-            fn (): string => $this->block($events, (string) ($text['en'] ?? ''), false)
-        );
+        $cards = array_map([self::class, 'withCard'], array_values($events));
+        $later = array_map([self::class, 'withCard'], array_values($later));
 
         return [
             'subject' => self::both(static fn (): string => __('Coming events', 'eventcrew'))
                 . ' – ' . (string) get_bloginfo('name'),
-            'html' => '<p style="margin:0 0 16px;color:#6b6b76;font-size:14px">'
-                . esc_html(self::ENGLISH_BELOW) . '</p>'
-                . EmailBody::toHtml($fi) . self::DIVIDER_HTML . EmailBody::toHtml($en),
-            'text' => self::ENGLISH_BELOW . "\n\n" . $fi . "\n\n" . self::DIVIDER_TEXT . "\n\n" . $en,
+            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent()),
+            'text' => NewsletterLayout::text($cards, $later, $text),
         ];
     }
 
@@ -482,6 +467,7 @@ final class Newsletter
 
         $text = $this->text->get();
         $plan['events'] = $events;
+        $plan['later'] = $this->laterEvents($events, $today);
         $plan['status'] = self::PLAN_SENDING;
         $plan['text'] = null === $text ? null : ['fi' => $text['fi'], 'en' => $text['en'], 'rev' => $text['rev']];
         $state['plan'] = $plan;
@@ -505,7 +491,7 @@ final class Newsletter
         }
 
         $rows = $this->subscribers->confirmedAfter((int) $plan['cursor'], self::BATCH);
-        $mail = $this->compose($plan['events'], $plan['text']);
+        $mail = $this->compose($plan['events'], $plan['text'], $plan['later'] ?? []);
         $footer = self::footer();
 
         foreach ($rows as $row) {
@@ -563,13 +549,18 @@ final class Newsletter
 
     /**
      * Mails every organizer the preview of $plan, in their own language, with
-     * the exact newsletter below and the Stop button. Returns how many went.
+     * the exact newsletter below (as HTML, the way subscribers get it) and the
+     * Stop button. Returns how many went.
      *
      * @param array<string, mixed> $plan
      */
     private function sendPreview(array $plan): int
     {
-        $mail = $this->compose($plan['events'], $this->text->get());
+        $mail = $this->compose(
+            $plan['events'],
+            $this->text->get(),
+            $this->laterEvents($plan['events'], (string) current_time('Y-m-d'))
+        );
         $count = $this->subscribers->countConfirmed();
         $stopUrl = self::stopUrl($plan['id']);
         $sentTo = 0;
@@ -591,11 +582,19 @@ final class Newsletter
                 'stop' => __('Stop this announcement', 'eventcrew'),
             ]);
 
-            $body = $words['intro'] . "\n\n" . self::DIVIDER_TEXT . "\n\n"
-                . $words['subject_line'] . ': ' . $mail['subject'] . "\n\n"
-                . $mail['text'] . "\n\n" . self::DIVIDER_TEXT;
+            $intro = $words['intro'] . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
 
-            if ($this->previewTo($person, $words['subject'], $body, $words['stop'], $stopUrl)) {
+            $sent = $this->mailer->toPersonWithContent(
+                $person->id,
+                $person->email,
+                $words['subject'],
+                $intro,
+                $mail['html'],
+                $mail['text'],
+                [['label' => $words['stop'], 'url' => $stopUrl]]
+            );
+
+            if ($sent) {
                 $sentTo++;
             }
         }
@@ -603,40 +602,34 @@ final class Newsletter
         return $sentTo;
     }
 
-    private function previewTo(Person $person, string $subject, string $body, string $stopLabel, string $stopUrl): bool
+    /**
+     * A plan event with EventSource::card()'s fields added (picture, price,
+     * ticket link, music page, description).
+     *
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private static function withCard(array $event): array
     {
-        return $this->mailer->toPerson(
-            $person->id,
-            $person->email,
-            $subject,
-            $body,
-            [['label' => $stopLabel, 'url' => $stopUrl]]
-        );
+        return array_merge(EventSource::card((int) ($event['id'] ?? 0)), $event);
     }
 
     /**
-     * One language's part of the newsletter, as EmailBody text: the heading,
-     * one line per event, then the organizers' text.
+     * The coming events that are not in $planEvents, earliest first: the
+     * "Later" list. An event that an earlier announcement carried is listed
+     * again here.
      *
-     * @param array<int, array<string, mixed>> $events
+     * @param array<int, array<string, mixed>> $planEvents
+     * @return array<int, array<string, mixed>>
      */
-    private function block(array $events, string $custom, bool $finnish): string
+    private function laterEvents(array $planEvents, string $today): array
     {
-        $lines = [];
+        $planned = array_map('intval', array_column($planEvents, 'id'));
 
-        foreach ($events as $event) {
-            $title = $finnish && '' !== (string) ($event['title_fi'] ?? '') ? $event['title_fi'] : $event['title'];
-            $line = '- ' . TicketMail::shortDate($event['date'])
-                . ('' === $event['time'] ? '' : ' ' . $event['time'])
-                . ' · ' . $title
-                . ($event['sold_out'] ? ' (' . __('sold out', 'eventcrew') . ')' : '')
-                . ('' === $event['url'] ? '' : ' · ' . $event['url']);
-            $lines[] = $line;
-        }
-
-        $block = '## ' . __('Coming events', 'eventcrew') . "\n\n" . implode("\n", $lines);
-
-        return '' === trim($custom) ? $block : $block . "\n\n" . trim($custom);
+        return array_values(array_filter(
+            $this->comingEvents($today),
+            static fn (array $event): bool => ! in_array($event['id'], $planned, true)
+        ));
     }
 
     /**
@@ -655,10 +648,32 @@ final class Newsletter
      */
     private function eligibleEvents(array $ledger, string $today): array
     {
+        return array_values(array_filter(
+            $this->comingEvents($today),
+            static fn (array $event): bool => ! isset($ledger[$event['id']])
+        ));
+    }
+
+    /**
+     * Every coming event that is not hidden, earliest first, in the plan
+     * events' shape.
+     *
+     * @return array<int, array{
+     *     id: int,
+     *     date: string,
+     *     time: string,
+     *     title: string,
+     *     title_fi: string,
+     *     url: string,
+     *     sold_out: bool
+     * }>
+     */
+    private function comingEvents(string $today): array
+    {
         $events = [];
 
         foreach (EventSource::upcoming(self::EVENT_SCAN) as $event) {
-            if ('' === $event['date'] || $event['date'] <= $today || isset($ledger[$event['id']])) {
+            if ('' === $event['date'] || $event['date'] <= $today) {
                 continue;
             }
 

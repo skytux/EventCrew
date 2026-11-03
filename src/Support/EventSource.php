@@ -133,6 +133,109 @@ final class EventSource
      */
     public static function translatedTitle(int $postId, string $lang): string
     {
+        return self::translated($postId, $lang, 'title');
+    }
+
+    /**
+     * What the announcement card shows of an event, beyond its title and date:
+     *
+     * - image: the event's picture (EventMesh's image address; on Holvi's own
+     *   image server for a Holvi event), '' when there is none;
+     * - price: as the shop wrote it ("22.00 EUR"), '' when there is none;
+     * - ticket_url: the shop page that sells the ticket, '' when there is none;
+     * - listen: the DJ's music page that EventMesh's player plays (SoundCloud,
+     *   Mixcloud), '' when there is none;
+     * - excerpt_fi, excerpt_en: the short description in Finnish and in
+     *   English: the event's own excerpt in its own language, EventMesh's
+     *   current translation in the other; '' where there is none;
+     * - excerpt: the excerpt when its language is unknown, so it is shown
+     *   once without a language label; '' otherwise.
+     *
+     * Every field is '' when the post is missing or is not an event.
+     *
+     * @return array{
+     *     image: string,
+     *     price: string,
+     *     ticket_url: string,
+     *     listen: string,
+     *     excerpt_fi: string,
+     *     excerpt_en: string,
+     *     excerpt: string
+     * }
+     */
+    public static function card(int $postId): array
+    {
+        $card = [
+            'image' => '',
+            'price' => '',
+            'ticket_url' => '',
+            'listen' => '',
+            'excerpt_fi' => '',
+            'excerpt_en' => '',
+            'excerpt' => '',
+        ];
+
+        if ($postId <= 0 || ! self::isAvailable()) {
+            return $card;
+        }
+
+        $post = get_post($postId);
+
+        if (null === $post || self::POST_TYPE !== $post->post_type) {
+            return $card;
+        }
+
+        $card['image'] = self::resolve($postId, 'image_url');
+        $card['price'] = self::resolve($postId, 'price');
+        $card['ticket_url'] = self::resolve($postId, 'url');
+        $card['listen'] = self::resolve($postId, 'embed_source_url');
+
+        $excerpt = self::plain((string) ($post->post_excerpt ?? ''));
+
+        if ('' === $excerpt) {
+            $excerpt = self::shorten(self::plain((string) ($post->post_content ?? '')), 360);
+        }
+
+        $original = (string) get_post_meta($postId, self::SCRAPED_PREFIX . 'original_lang', true);
+
+        if (Language::FINNISH === $original || Language::ENGLISH === $original) {
+            $other = Language::FINNISH === $original ? Language::ENGLISH : Language::FINNISH;
+            $card['excerpt_' . $original] = $excerpt;
+            $card['excerpt_' . $other] = self::plain(self::translated($postId, $other, 'excerpt'));
+        } else {
+            $card['excerpt'] = $excerpt;
+        }
+
+        return $card;
+    }
+
+    /** Text with tags removed, entities decoded and runs of spaces squeezed. */
+    private static function plain(string $text): string
+    {
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace('/\s+/u', ' ', $text));
+    }
+
+    /** $text cut at a word boundary to at most $max characters, with "…" when cut. */
+    private static function shorten(string $text, int $max): string
+    {
+        if (mb_strlen($text) <= $max) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, $max);
+        $space = mb_strrpos($cut, ' ');
+
+        return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), " ,.;:-") . '…';
+    }
+
+    /**
+     * One field ('title', 'excerpt') of EventMesh's translation into $lang,
+     * under translatedTitle()'s rule.
+     */
+    private static function translated(int $postId, string $lang, string $field): string
+    {
         if ($postId <= 0 || '' === $lang || ! self::isAvailable()) {
             return '';
         }
@@ -156,7 +259,7 @@ final class EventSource
             return '';
         }
 
-        return trim((string) get_post_meta($postId, $prefix . 'title', true));
+        return trim((string) get_post_meta($postId, $prefix . $field, true));
     }
 
     /**
