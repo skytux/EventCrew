@@ -68,7 +68,8 @@ final class AssistantService
         private readonly HelpService $help,
         private readonly Logger $logger,
         private readonly bool $defer = true,
-        private readonly ?ChatForwarder $forwarder = null
+        private readonly ?ChatForwarder $forwarder = null,
+        private readonly ?BotLog $botLog = null
     ) {
     }
 
@@ -227,6 +228,7 @@ final class AssistantService
                 'message' => $message,
                 'data' => $checked['payload'],
             ]]);
+            $this->markRun($fromId, $checked['action'], true);
 
             return;
         }
@@ -239,6 +241,7 @@ final class AssistantService
             'chat' => $chat,
             'text' => $checked['payload'],
         ]]);
+        $this->markRun($fromId, $checked['action'], true);
     }
 
     /**
@@ -457,6 +460,7 @@ final class AssistantService
         );
 
         if (! $checked['ok']) {
+            $this->botLog?->refusedAction((string) $parsed['action'], $fromId, true);
             $this->tell(
                 $chatId,
                 $fromId,
@@ -481,6 +485,7 @@ final class AssistantService
                     'message' => ['chat' => $message['chat']],
                     'data' => $checked['payload'],
                 ]]);
+                $this->markRun($fromId, $checked['action'], false);
 
                 return;
             }
@@ -493,6 +498,7 @@ final class AssistantService
                 // A message for the group keeps the formatting the person wrote it with.
                 'entities' => SayCommand::carryEntities($checked['payload'], $message),
             ]]);
+            $this->markRun($fromId, $checked['action'], false);
 
             return;
         }
@@ -512,6 +518,21 @@ final class AssistantService
         ]);
 
         $this->tell($chatId, $fromId, $text, ['inline_keyboard' => [$buttons]]);
+    }
+
+    /**
+     * Puts a short line in the private conversation record saying which
+     * command the helper ran, like "[showed /roster 14.11.]" or "[ran /door]":
+     * the command and the date only, never its arguments or what it sent. So
+     * the model's next turn knows what the person was shown.
+     */
+    private function markRun(int $userId, string $action, bool $changed): void
+    {
+        ConversationLog::add(
+            $userId,
+            ConversationLog::BOT,
+            BotLog::marker($action, $changed, (string) current_time('Y-m-d'))
+        );
     }
 
     /**
@@ -576,7 +597,9 @@ final class AssistantService
         if ($isPrivate) {
             $lines[] = '- This is a private chat with one person: "aimed" is true.';
             $lines[] = '- You remember this private chat for 24 hours: CONVERSATION below has what was said,'
-                . ' oldest first (commands and what they showed are not in it). Use it to understand what'
+                . ' oldest first. What commands showed is not in it: a Bot line like "[showed /roster 14.11.]"'
+                . ' or "[ran /door]" only says that the bot ran that command for the person (and for which'
+                . ' date) and sent its answer. Use it to understand what'
                 . ' the person refers to, like "that one" or "and on Sunday?". When the FACTS and the'
                 . ' conversation disagree, the FACTS are right: they are newer.';
             $lines[] = '- In a greeting, also say that you remember this chat for 24 hours, so the person can'

@@ -10,7 +10,9 @@ namespace EventCrew\Telegram;
  * ("that one", "the second", "and on Sunday?").
  *
  * Only the plain messages the helper read and the helper's own answers are
- * kept; commands and what they show are not. In a group, only the messages
+ * kept; commands and what they show are not. When the helper runs a command
+ * for the person, a short bot line like "[showed /roster 14.11.]" (the
+ * command and its date only) marks it (BotLog::marker()). In a group, only the messages
  * written to the bot are kept. The record is one transient per Telegram user
  * for the private chat, and a separate one per user and group ($chatId of
  * the group), so what was said in private never reaches a group answer. Each

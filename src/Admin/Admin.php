@@ -312,6 +312,15 @@ final class Admin
 
         add_submenu_page(
             self::MENU_SLUG,
+            __('Bot log', 'eventcrew'),
+            __('Bot log', 'eventcrew'),
+            self::CAPABILITY,
+            BotLogPage::PAGE_SLUG,
+            [$this->container->get(BotLogPage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
             __('Diagnostics', 'eventcrew'),
             __('Diagnostics', 'eventcrew'),
             self::CAPABILITY,

@@ -752,6 +752,34 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame(555, $this->ran[0]['message']['from']['id']);
     }
 
+    public function testARunActionLeavesAMarkerInTheConversation(): void
+    {
+        $this->person(true);
+        $this->reply(true, true, 'Here is the roster.', '/roster 14.11.');
+
+        $this->ask(self::privateMessage('who is on the roster on the 14th?'));
+
+        self::assertCount(1, $this->ran);
+        $texts = array_column(\EventCrew\Telegram\ConversationLog::entries(555), 'x');
+        self::assertContains('[showed /roster 14.11.]', $texts);
+        self::assertStringContainsString(
+            '[showed /roster 14.11.]',
+            \EventCrew\Telegram\ConversationLog::forPrompt(555)
+        );
+    }
+
+    public function testAConfirmedChangeLeavesARanMarkerWithoutItsArguments(): void
+    {
+        $data = $this->proposeGuest();
+        $this->person(true);
+
+        $this->confirm($data);
+
+        $texts = array_column(\EventCrew\Telegram\ConversationLog::entries(555), 'x');
+        self::assertContains('[ran /door]', $texts);
+        self::assertNotContains('[ran /door add Anna]', $texts);
+    }
+
     public function testAMenuActionRunsAsATap(): void
     {
         $this->person();

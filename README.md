@@ -55,6 +55,9 @@ only ones who ever need a wp-admin login.
   Tools → Personal Data screens.
 - **Diagnostics** (wp-admin) — a read-only health page: schema, bot, cron, signup
   page, icons and mail at a glance.
+- **Bot log** (wp-admin) — which bot commands and buttons each person used on a
+  day (typed, tapped or run by the helper), without any message text; rows are
+  deleted after 60 days.
 
 ## Holvi ticket buyers
 

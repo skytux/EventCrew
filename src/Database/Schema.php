@@ -17,7 +17,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '27';
+    public const DB_VERSION = '28';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -33,6 +33,7 @@ final class Schema
     public const TICKET_BUYERS = 'eventcrew_ticket_buyers';
     public const NEWSLETTER_SUBSCRIBERS = 'eventcrew_newsletter_subscribers';
     public const TAKEOVERS = 'eventcrew_takeovers';
+    public const BOT_LOG = 'eventcrew_bot_log';
 
     /**
      * @return array<int, string>
@@ -52,6 +53,7 @@ final class Schema
             self::TICKET_BUYERS,
             self::NEWSLETTER_SUBSCRIBERS,
             self::TAKEOVERS,
+            self::BOT_LOG,
         ];
     }
 
@@ -294,6 +296,7 @@ final class Schema
         $ticketBuyers = self::table(self::TICKET_BUYERS);
         $newsletterSubscribers = self::table(self::NEWSLETTER_SUBSCRIBERS);
         $takeovers = self::table(self::TAKEOVERS);
+        $botLog = self::table(self::BOT_LOG);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -630,6 +633,30 @@ final class Schema
                 KEY task_status (task_id,status),
                 KEY status_deadline (status,deadline_at),
                 KEY assignment_id (assignment_id)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The bot's command log (schema 28, Telegram\BotLog): one row per
+            // typed command, button tap or action the language-model helper
+            // ran. Never the message text, its arguments or the full callback
+            // data: command is the command's name, button_kind only the
+            // callback data's prefix, date_arg a date the arguments named.
+            // person_id is NULL when the Telegram user is not linked to a
+            // person; telegram_user_id groups those rows. created_at is UTC.
+            // Rows older than BotLog::KEEP_DAYS are deleted by the heartbeat.
+            "CREATE TABLE {$botLog} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                created_at datetime NOT NULL,
+                person_id bigint(20) unsigned DEFAULT NULL,
+                telegram_user_id bigint(20) unsigned DEFAULT NULL,
+                chat_kind varchar(10) NOT NULL DEFAULT '',
+                command varchar(20) NOT NULL DEFAULT '',
+                source varchar(10) NOT NULL DEFAULT '',
+                button_kind varchar(20) DEFAULT NULL,
+                date_arg date DEFAULT NULL,
+                outcome varchar(10) NOT NULL DEFAULT 'ok',
+                PRIMARY KEY  (id),
+                KEY created_at (created_at),
+                KEY person_id (person_id)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

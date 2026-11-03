@@ -6541,3 +6541,83 @@ msgstr "📨 Pyyntö lähetetty. %1$s päättää, saatko ottaa hänen tehtävä
 #, php-format
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr "🔁 %1$s pyytää saada ottaa tehtäväsi: %2$s, %3$s, %4$s.\n\nSinä päätät: annat tehtävän hänelle tai pidät sen. Vastaa viimeistään %5$s. Jos et vastaa siihen mennessä, pidät tehtävän."
+
+msgid "Bot log"
+msgstr "Bottiloki"
+
+msgid "Bot log: which bot commands and buttons each person used on a day. Message text is not stored."
+msgstr "Bottiloki: mitä botin komentoja ja painikkeita kukin käytti päivän aikana. Viestien tekstiä ei tallenneta."
+
+#, php-format
+msgid "When you use the bot, we keep a short log of which command or button you used: when, your crew record (or, if your Telegram account is not linked, its numeric identifier), whether it was a private or a group chat, the name of the command, a date if the command named one, and whether it worked. The log never contains what you wrote. The organizers use it to see how the bot is used and to find faults. Each entry is deleted after %d days."
+msgstr "Kun käytät bottia, pidämme lyhyttä lokia siitä, mitä komentoa tai painiketta käytit: milloin, crew-tietosi (tai, jos Telegram-tiliäsi ei ole yhdistetty, sen numerotunniste), oliko keskustelu yksityinen vai ryhmä, komennon nimi, päivämäärä, jos komento mainitsi sellaisen, ja onnistuiko se. Loki ei koskaan sisällä sitä, mitä kirjoitit. Järjestäjät käyttävät sitä nähdäkseen, miten bottia käytetään, ja löytääkseen vikoja. Jokainen merkintä poistetaan %d päivän kuluttua."
+
+#, php-format
+msgid "Which commands and buttons the Telegram bot handled. Message text is not stored. Rows are deleted after %d days."
+msgstr "Mitkä komennot ja painikkeet Telegram-botti käsitteli. Viestien tekstiä ei tallenneta. Rivit poistetaan %d päivän kuluttua."
+
+msgid "Day"
+msgstr "Päivä"
+
+msgid "Commands per person"
+msgstr "Komennot henkilöittäin"
+
+msgid "No commands on this day."
+msgstr "Ei komentoja tänä päivänä."
+
+msgid "Commands"
+msgstr "Komennot"
+
+msgid "Chat"
+msgstr "Keskustelu"
+
+msgid "Command"
+msgstr "Komento"
+
+msgid "Source"
+msgstr "Lähde"
+
+msgid "Button"
+msgstr "Painike"
+
+msgid "Newer"
+msgstr "Uudemmat"
+
+msgid "Older"
+msgstr "Vanhemmat"
+
+#, php-format
+msgid "Page %1$d of %2$d (%3$d rows)"
+msgstr "Sivu %1$d/%2$d (%3$d riviä)"
+
+msgid "private"
+msgstr "yksityinen"
+
+msgid "group"
+msgstr "ryhmä"
+
+msgid "typed"
+msgstr "kirjoitettu"
+
+msgid "button"
+msgstr "painike"
+
+msgid "helper"
+msgstr "avustaja"
+
+msgid "ok"
+msgstr "ok"
+
+msgid "refused"
+msgstr "torjuttu"
+
+msgid "error"
+msgstr "virhe"
+
+#, php-format
+msgid "person #%d"
+msgstr "henkilö #%d"
+
+#, php-format
+msgid "unlinked user #%d"
+msgstr "yhdistämätön käyttäjä #%d"

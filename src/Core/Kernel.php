@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
 use EventCrew\Admin\RosterPage;
@@ -76,6 +77,7 @@ use EventCrew\Support\TicketQr;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardRefreshListener;
+use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
@@ -1160,8 +1162,14 @@ final class Kernel
                 $container->get(NewsletterCommand::class),
                 $container->get(SayCommand::class),
                 $container->get(EventsCommand::class),
-                $container->get(WebLoginBot::class)
+                $container->get(WebLoginBot::class),
+                $container->get(BotLog::class)
             )
+        );
+
+        $this->container->singleton(
+            BotLog::class,
+            fn () => new BotLog()
         );
 
         $this->container->singleton(
@@ -1183,7 +1191,8 @@ final class Kernel
                 $container->get(HelpService::class),
                 $container->get(Logger::class),
                 true,
-                $container->get(ChatForwarder::class)
+                $container->get(ChatForwarder::class),
+                $container->get(BotLog::class)
             )
         );
 
@@ -1386,6 +1395,11 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(HealthReport::class)
             )
+        );
+
+        $this->container->singleton(
+            BotLogPage::class,
+            fn (Container $container) => new BotLogPage($container->get(View::class))
         );
 
         $this->container->singleton(

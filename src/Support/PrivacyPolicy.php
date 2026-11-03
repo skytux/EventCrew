@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -406,6 +407,14 @@ final class PrivacyPolicy
             $paragraphs[] = __(
                 'If you link a Telegram account, we store its numeric account and chat identifiers so the bot can recognise you and message you. We do not store your Telegram username or phone number.',
                 'eventcrew'
+            );
+            $paragraphs[] = sprintf(
+                /* translators: %d: number of days */
+                __(
+                    'When you use the bot, we keep a short log of which command or button you used: when, your crew record (or, if your Telegram account is not linked, its numeric identifier), whether it was a private or a group chat, the name of the command, a date if the command named one, and whether it worked. The log never contains what you wrote. The organizers use it to see how the bot is used and to find faults. Each entry is deleted after %d days.',
+                    'eventcrew'
+                ),
+                BotLog::KEEP_DAYS
             );
         }
 

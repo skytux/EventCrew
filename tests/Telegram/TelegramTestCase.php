@@ -190,7 +190,8 @@ abstract class TelegramTestCase extends TestCase
         ?LanguageService $language = null,
         ?\EventCrew\Telegram\AssistantService $assistant = null,
         ?\EventCrew\Telegram\EventsCommand $events = null,
-        ?\EventCrew\Telegram\WebLoginBot $webLogin = null
+        ?\EventCrew\Telegram\WebLoginBot $webLogin = null,
+        ?\EventCrew\Telegram\BotLog $botLog = null
     ): UpdateRouter
     {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
@@ -256,7 +257,8 @@ abstract class TelegramTestCase extends TestCase
             null,
             null,
             $events,
-            $webLogin
+            $webLogin,
+            $botLog
         );
     }
 
