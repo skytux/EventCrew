@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.121.0
+Stable tag: 1.122.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.122.0 =
+Fix: the next events announcement form and the bar now really send the sign-up without loading the page again. In 1.121.0 the script sent it to a wrong address and fell back to loading the page.
 
 = 1.121.0 =
 The next events announcement form and the bar send the sign-up without loading the page again: the answer, the name question and a new bot check appear in place, in the language of the page. After a sign-up in the full form, the bar hides. Without JavaScript the form works as before.
@@ -1084,6 +1087,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.122.0 =
+No settings change.
 
 = 1.121.0 =
 No settings change.
