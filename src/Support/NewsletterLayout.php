@@ -23,7 +23,9 @@ namespace EventCrew\Support;
  *    music itself, so it opens the page). A sold-out event shows "Sold out"
  *    instead of the ticket button. The picture opens the ticket shop, or the
  *    event's own page when there is no ticket to buy. The card shows no
- *    description and no text written for the event (Lou, 2026-11-03).
+ *    description and no text written for the event (Lou, 2026-11-03),
+ *    except a card given text_fi and text_en (the post-event email's first
+ *    event): that text goes under the title, Finnish then English.
  * 4. "Later": every other coming event as one line, with the date, the
  *    title and a link to its tickets, and the event's picture small on its
  *    left, linked like the line, when it has one.
@@ -147,15 +149,20 @@ final class NewsletterLayout
     }
 
     /**
-     * One card as plain text: the date, the title, the practical
-     * information, then the ticket and music links.
+     * One card as plain text: the date, the title, the card's own text when
+     * it has one, the practical information, then the ticket and music links.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
      */
     private static function cardText(array $card, array $words): string
     {
-        $lines = array_merge([self::when($card), self::title($card)], self::practicalLines($card, $words));
+        $text = self::bilingualText((string) ($card['text_fi'] ?? ''), (string) ($card['text_en'] ?? ''), '');
+        $lines = array_merge(
+            [self::when($card), self::title($card)],
+            '' === $text ? [] : [$text],
+            self::practicalLines($card, $words)
+        );
 
         $ticket = (string) ($card['ticket_url'] ?? '');
 
@@ -246,6 +253,15 @@ final class NewsletterLayout
                 esc_html($titleFi)
             );
         }
+
+        // A text written for this card alone (the post-event email's first
+        // event); the newsletter's cards have none.
+        $body .= self::bilingual(
+            (string) ($card['text_fi'] ?? ''),
+            (string) ($card['text_en'] ?? ''),
+            '',
+            '0 0 14px'
+        );
 
         $practical = self::practicalLines($card, $words);
 

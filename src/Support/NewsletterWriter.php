@@ -70,6 +70,9 @@ final class NewsletterWriter
     /** The longest venue or address accepted, in characters. */
     public const MAX_PLACE = 120;
 
+    /** The longest English text accepted for the post-event email, in characters ("about 300"). */
+    public const MAX_FOLLOWUP_TEXT = 360;
+
     /** The keys of an event's practical information, in the order the card shows them. */
     public const PRACTICAL_KEYS = ['venue', 'address', 'doors_open', 'doors_close'];
 
@@ -100,6 +103,16 @@ final class NewsletterWriter
         . 'and invite them to come and dance at these events. '
         . 'Be warm and concrete. Do not repeat the details of every event. '
         . self::RULES;
+
+    /** The instruction for the post-event email's text about the next event. */
+    private const FOLLOWUP_PROMPT = 'You write a short text about one coming event of a dance event. '
+        . 'It goes on the card of that event in the thank-you email sent the day after a night. '
+        . 'Write 2 short sentences in English that make people want to come and dance at this event. '
+        . 'Write in the style of the DJ descriptions: use their descriptive words and their mood. '
+        . 'Add what is useful from the event description, such as what the night is like '
+        . 'or what to bring. Be warm. '
+        . self::RULES
+        . ' For this email, keep the text under 300 characters.';
 
     /** The instruction for an event's practical information. */
     private const PRACTICAL_PROMPT = 'You read the description of one event of a dance event '
@@ -229,6 +242,55 @@ final class NewsletterWriter
         $plan['written'] = $written;
 
         return $plan;
+    }
+
+    /**
+     * The post-event email's text about $event (the first coming event) in
+     * both languages, and its practical information: ['text' => {fi, en} or
+     * [] when it failed, 'practical' => the four values or [] when that
+     * failed]. Null when nothing may be written now: the switch is off, the
+     * model is not set up, or this is not a background run. The text is 2
+     * short sentences in the style of the event's DJs, with what is useful
+     * from the description, under about 300 characters.
+     *
+     * @param array<string, mixed> $event A card of the event (Newsletter::withCard()).
+     * @return array{text: array<string, string>, practical: array<string, string>}|null
+     */
+    public function writeFollowup(array $event): ?array
+    {
+        if (! self::enabled() || ! AssistantSettings::isConfigured() || ! self::inBackground()) {
+            return null;
+        }
+
+        $text = $this->safely(function () use ($event): ?array {
+            $en = $this->ask(
+                self::system(self::FOLLOWUP_PROMPT, false, '{"text": "the English text"}'),
+                self::eventInput($event),
+                'text'
+            );
+            $length = null === $en ? 0 : (function_exists('mb_strlen') ? mb_strlen($en) : strlen($en));
+
+            if (null !== $en && $length > self::MAX_FOLLOWUP_TEXT) {
+                $this->logger->warning('Post-event email text: the language model answer was too long.');
+                $en = null;
+            }
+
+            return null === $en ? null : $this->withFinnish($en);
+        });
+
+        return [
+            'text' => $text ?? [],
+            'practical' => $this->safely(fn (): ?array => $this->writePractical($event)) ?? [],
+        ];
+    }
+
+    /**
+     * The post-event email's stored text ({fi, en}), or null when there is
+     * none or the switch is off.
+     */
+    public static function followupText(mixed $text): ?array
+    {
+        return self::enabled() ? self::pair($text) : null;
     }
 
     /**

@@ -430,7 +430,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
                 $container->get(Logger::class),
-                $container->get(FollowupText::class)
+                $container->get(FollowupText::class),
+                $container->get(NewsletterWriter::class)
             )
         );
 
