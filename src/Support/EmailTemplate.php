@@ -181,8 +181,13 @@ final class EmailTemplate
 
     /**
      * The full HTML document for one email.
+     *
+     * $lightOnly asks mail apps not to draw the email in dark colours (the
+     * ticket email: its QR code must stay black on white to scan). It is a
+     * request: an app that recolours anyway still can, which is why the QR
+     * cells carry their colours as background images too (TicketQr).
      */
-    public function render(string $subject, string $content, string $footer): string
+    public function render(string $subject, string $content, string $footer, bool $lightOnly = false): string
     {
         $body = str_replace(
             [
@@ -219,7 +224,11 @@ final class EmailTemplate
             . '<head>' . "\n"
             . '<meta charset="utf-8">' . "\n"
             . '<meta name="viewport" content="width=device-width,initial-scale=1">' . "\n"
-            . '<meta name="color-scheme" content="light">' . "\n"
+            . ($lightOnly
+                ? '<meta name="color-scheme" content="light only">' . "\n"
+                    . '<meta name="supported-color-schemes" content="light only">' . "\n"
+                    . '<style>:root{color-scheme:light only}</style>' . "\n"
+                : '<meta name="color-scheme" content="light">' . "\n")
             . '<title>' . esc_html($subject) . '</title>' . "\n"
             . '</head>' . "\n"
             . '<body style="margin:0;padding:0;background:#f4f5f7;">' . "\n"

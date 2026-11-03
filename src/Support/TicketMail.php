@@ -26,7 +26,9 @@ use EventCrew\Telegram\TicketController;
  * the HTML as data, the host answers image fetchers such as Gmail's image
  * proxy with a script challenge instead of the image, and an inline (cid:)
  * attachment breaks a mail plugin that reads every attachment from a file
- * (FluentSMTP's API providers). The email has no clock: the live clock is on
+ * (FluentSMTP's API providers). Only the site's icon in the middle of the
+ * code is an ordinary linked image; when it does not load, its square stays
+ * white and the code still scans. The email has no clock: the live clock is on
  * the ticket page the link opens, for a desk that checks tickets by eye.
  *
  * Sending is a WP-Cron event, scheduled by every import that adds rows. Each
@@ -267,7 +269,8 @@ final class TicketMail
             $holder = trim($holder . ' +' . $row->plusOnes);
         }
 
-        $qrHtml = $this->qr->table(self::qrData($row));
+        // The site's icon (or logo) in the middle, as on the web ticket.
+        $qrHtml = $this->qr->table(self::qrData($row), 6, EmailTemplate::qrMarkUrl());
         // The same ticket note as the web ticket (door code, address), as typed.
         $note = trim((string) get_option(TicketController::NOTE_OPTION, ''));
 
