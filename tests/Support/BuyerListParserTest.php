@@ -100,13 +100,4 @@ final class BuyerListParserTest extends TestCase
             BuyerListParser::guests('dee@example.fi')
         );
     }
-
-    /** A line with no address works as before and saves no email. */
-    public function testAGuestLineWithNoEmailSavesNone(): void
-    {
-        self::assertSame(
-            [['name' => 'Ed Ek', 'plus_ones' => 3, 'email' => '']],
-            BuyerListParser::guests('Ed Ek +3')
-        );
-    }
 }

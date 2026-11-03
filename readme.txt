@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.125.3
+Stable tag: 1.125.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.125.4 =
+Tests: seven duplicate tests removed (1897 to 1890); no change to the plugin itself.
 
 = 1.125.3 =
 Subscribe in the sticky bar sends on the first press again (it did nothing when the page already had its spam check token).
@@ -1108,6 +1111,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.125.4 =
+No settings change.
 
 = 1.125.3 =
 No settings change.

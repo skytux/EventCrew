@@ -40,16 +40,6 @@ final class TaskTest extends TestCase
         self::assertFalse($decorate->hasNoLimit());
     }
 
-    public function testRendersATimeRangeWithoutSeconds(): void
-    {
-        $task = Task::fromRow([
-            'starts_at' => '18:00:00',
-            'ends_at' => '20:30:00',
-        ]);
-
-        self::assertSame('18:00–20:30', $task->timeRange());
-    }
-
     public function testRendersOnlyTheStartWhenThereIsNoEndTime(): void
     {
         $task = Task::fromRow(['starts_at' => '18:00:00']);

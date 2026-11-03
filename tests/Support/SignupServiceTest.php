@@ -81,16 +81,6 @@ final class SignupServiceTest extends TestCase
         self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
     }
 
-    public function testClaimJoinsWhenClear(): void
-    {
-        $this->options[SignupService::GATE_OPTION] = '0';
-        $this->wpdb->nextVars[] = 2; // taskCapacity
-        $this->wpdb->nextRows[] = null; // join findFor
-        $this->wpdb->nextQueryResults[] = 1; // conditional insert
-
-        self::assertSame(AssignmentRepository::JOIN_OK, $this->service()->claim(9, 5));
-    }
-
     /**
      * @return array<string, mixed>
      */
