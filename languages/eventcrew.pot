@@ -2162,7 +2162,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: src/Support/TicketMail.php:906
+#: src/Support/TicketMail.php:940
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
 msgstr ""
@@ -2222,7 +2222,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:715 src/Support/TicketMail.php:902
+#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:719 src/Support/TicketMail.php:936
 #: src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2236,7 +2236,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:713 src/Support/TicketMail.php:900
+#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:717 src/Support/TicketMail.php:934
 msgid "Hi,"
 msgstr ""
 
@@ -3406,7 +3406,7 @@ msgstr ""
 msgid "Open the signup page"
 msgstr ""
 
-#: src/Support/TicketMail.php:928
+#: src/Support/TicketMail.php:962
 msgid "Open the ticket in your browser"
 msgstr ""
 
@@ -4604,6 +4604,10 @@ msgstr ""
 msgid "Switched off"
 msgstr ""
 
+#: src/Support/TicketMail.php:730
+msgid "TICKET CANCELLED"
+msgstr ""
+
 #: templates/public/door.php:61
 msgid "Take a task instead"
 msgstr ""
@@ -4811,7 +4815,7 @@ msgstr ""
 msgid "Texts by the language model"
 msgstr ""
 
-#: src/Support/TicketMail.php:895
+#: src/Support/TicketMail.php:929
 msgid "Thank you for buying a ticket!"
 msgstr ""
 
@@ -4820,7 +4824,7 @@ msgstr ""
 msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
 msgstr ""
 
-#: src/Support/TicketMail.php:894
+#: src/Support/TicketMail.php:928
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
@@ -4828,7 +4832,7 @@ msgstr ""
 msgid "Thank you for dancing with us"
 msgstr ""
 
-#: src/Support/TicketMail.php:891
+#: src/Support/TicketMail.php:925
 msgid "Thank you for taking a task!"
 msgstr ""
 
@@ -5833,7 +5837,7 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:929
+#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:963
 msgid "Ticket code"
 msgstr ""
 
@@ -6583,7 +6587,7 @@ msgstr ""
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr ""
 
-#: src/Support/TicketMail.php:915
+#: src/Support/TicketMail.php:949
 #. translators: %d: how many people the guest may bring
 msgid "You can bring %d person with you."
 msgid_plural "You can bring %d people with you."
@@ -6628,7 +6632,7 @@ msgstr ""
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
-#: src/Support/TicketMail.php:835 src/Support/TicketMail.php:839
+#: src/Support/TicketMail.php:869 src/Support/TicketMail.php:873
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
@@ -6675,7 +6679,7 @@ msgstr ""
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
-#: src/Support/TicketMail.php:890
+#: src/Support/TicketMail.php:924
 msgid "You spent a free-entry credit on this night."
 msgstr ""
 
@@ -6855,15 +6859,15 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/TicketMail.php:927
+#: src/Support/TicketMail.php:729 src/Support/TicketMail.php:961
 msgid "Your ticket"
 msgstr ""
 
-#: src/Support/TicketMail.php:724
+#: src/Support/TicketMail.php:728
 msgid "Your ticket is cancelled"
 msgstr ""
 
-#: src/Support/TicketMail.php:720
+#: src/Support/TicketMail.php:724
 msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
 msgstr ""
 

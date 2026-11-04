@@ -698,13 +698,17 @@ final class TicketMail
 
     /**
      * The cancel email for one ticket: subject, HTML content and plain text.
+     * The HTML is drawn like the ticket email: the same texts-then-card
+     * order, the same card and dark header, and a red band across the card
+     * that says the ticket is cancelled. The card has the holder's name and
+     * no QR code, since the cancelled code no longer gets anyone in.
      *
      * @return array{subject: string, html: string, text: string}
      */
     public function composeCancelled(string $name, string $date): array
     {
         $short = self::shortDate($date);
-        $event = $this->eventName($date);
+        [$event, $image] = $this->event($date);
         $words = static function () use ($name, $event, $short): array {
             $first = DoorDesk::firstName($name);
 
@@ -722,21 +726,51 @@ final class TicketMail
                         $short
                     ),
                 'subject' => __('Your ticket is cancelled', 'eventcrew'),
+                'kicker' => __('Your ticket', 'eventcrew'),
+                'band' => __('TICKET CANCELLED', 'eventcrew'),
             ];
         };
         $fi = Language::run(Language::FINNISH, $words);
         $en = Language::run(Language::ENGLISH, $words);
-        $subject = $fi['subject'] === $en['subject'] ? $en['subject'] : $fi['subject'] . ' / ' . $en['subject'];
+        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
         // Each language's text starts with its FI / EN tag, when the two differ.
         $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
+        $holder = trim($name);
+
+        $card = $this->ticketCard(
+            $this->ticketHead($both('kicker'), $event, $short, $image),
+            '' === $holder ? '' : sprintf(
+                '<p style="margin:0;%1$sfont-size:30px;font-weight:700;line-height:1.15;color:#1d1d1f">%2$s</p>',
+                self::PAGE_FONT,
+                esc_html($holder)
+            ),
+            $this->cancelledBand($both('band'))
+        );
 
         return [
-            'subject' => $subject . ' – ' . $short,
+            'subject' => $both('subject') . ' – ' . $short,
             'html' => EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
                 . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-                . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1]),
-            'text' => $fi['body'] . "\n\n" . $en['body'],
+                . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1])
+                . $card,
+            'text' => $fi['body'] . "\n\n" . $en['body'] . "\n\n" . $both('band'),
         ];
+    }
+
+    /**
+     * The red band of a cancelled ticket, as the ticket page draws its
+     * DISABLED band: full width, white capitals on red, under the header.
+     */
+    private function cancelledBand(string $text): string
+    {
+        return sprintf(
+            '<td align="center" bgcolor="#b32d2e" style="padding:9px 12px;text-align:center;background-color:#b32d2e;'
+                . 'background-image:linear-gradient(#b32d2e,#b32d2e)">'
+                . '<p style="margin:0;%1$sfont-size:15px;font-weight:700;line-height:1.4;letter-spacing:.15em;'
+                . 'color:#ffffff">%2$s</p></td>',
+            self::PAGE_FONT,
+            esc_html($text)
+        );
     }
 
     /**
@@ -933,10 +967,12 @@ final class TicketMail
     /**
      * The ticket as the ticket page draws it (Telegram\TicketController): a
      * white card with rounded corners on the page's grey, the dark header on
-     * top and $body centred under it. Tables and inline styles only, so mail
-     * apps that drop a style block or flex layout draw it the same.
+     * top and $body centred under it. $band, when given, is a cell drawn
+     * between the two (the cancel email's red band). Tables and inline
+     * styles only, so mail apps that drop a style block or flex layout draw
+     * it the same.
      */
-    private function ticketCard(string $head, string $body): string
+    private function ticketCard(string $head, string $body, string $band = ''): string
     {
         return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8e6e3"'
             . ' style="margin:24px 0 8px;background-color:#e8e6e3;border-radius:12px">'
@@ -945,6 +981,7 @@ final class TicketMail
             . ' style="width:100%;max-width:416px;margin:0 auto;background-color:#ffffff;border-radius:16px;'
             . 'box-shadow:0 2px 12px rgba(0,0,0,.18)">'
             . '<tr>' . $head . '</tr>'
+            . ('' === $band ? '' : '<tr>' . $band . '</tr>')
             . '<tr><td align="center" style="padding:19px 16px;text-align:center;border-radius:0 0 16px 16px">'
             . $body
             . '</td></tr></table></td></tr></table>';
@@ -984,15 +1021,6 @@ final class TicketMail
             esc_html($event),
             esc_html($date)
         );
-    }
-
-    /**
-     * The name of the event on $date: its first task's event, or the site's
-     * name when the night has no tasks.
-     */
-    private function eventName(string $date): string
-    {
-        return $this->event($date)[0];
     }
 
     /**
