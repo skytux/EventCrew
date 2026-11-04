@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.136.3
+Stable tag: 1.136.4
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.136.4 =
+Bot: in its answers, a sold-out event says "tickets sold out" and gives no price.
 
 = 1.136.3 =
 Takeovers: the message in the Telegram group is now in Finnish, then English on the next line.
@@ -1174,6 +1177,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.136.4 =
+No settings change.
 
 = 1.136.3 =
 No settings change.

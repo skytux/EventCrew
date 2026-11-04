@@ -56,6 +56,26 @@ final class AssistantKnowledgeTest extends TestCase
         );
     }
 
+    /**
+     * A sold-out event says so in place of the price, whether an organizer
+     * marked it sold out or the shop sync did.
+     */
+    public function testASoldOutEventSaysSoldOutInPlaceOfThePrice(): void
+    {
+        $this->meta['_eventmesh_price'] = '22.00 EUR';
+
+        foreach (['_eventmesh_manual_sold_out', '_eventmesh_sold_out'] as $key) {
+            $this->meta[$key] = '1';
+
+            self::assertSame(
+                '- 2026-08-01: Summer Dance, starts 21:00, tickets sold out, https://example.test/event/summer-dance/',
+                $this->eventsText()
+            );
+
+            unset($this->meta[$key]);
+        }
+    }
+
     /** An event without a price says nothing about one. */
     public function testAnEventWithoutAPriceHasNoTicketWords(): void
     {
