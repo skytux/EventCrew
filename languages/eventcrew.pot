@@ -74,22 +74,22 @@ msgstr ""
 msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
 msgstr ""
 
-#: src/Support/TakeoverService.php:474
+#: src/Support/TakeoverService.php:486
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr ""
 
-#: src/Support/TakeoverService.php:469
+#: src/Support/TakeoverService.php:481
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s did not answer in time, so they keep their task: %2$s at %3$s, %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:318
+#: src/Support/TakeoverService.php:445
 #. translators: 1: cover's name, 2: person being covered, 3: role, 4: event
 msgid "%1$s is covering for %2$s: %3$s at %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:464
+#: src/Support/TakeoverService.php:476
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s keeps their task: %2$s at %3$s, %4$s. Your request to take it over was declined."
 msgstr ""
@@ -276,7 +276,7 @@ msgstr ""
 msgid "%s ago"
 msgstr ""
 
-#: src/Support/TakeoverService.php:364
+#: src/Support/TakeoverService.php:356
 #. translators: %s: cover's name
 msgid "%s asks to take over your task"
 msgstr ""
@@ -574,7 +574,7 @@ msgstr ""
 msgid "About this task"
 msgstr ""
 
-#: src/Support/TakeoverService.php:421
+#: src/Support/TakeoverService.php:413
 msgid "About your takeover request"
 msgstr ""
 
@@ -804,7 +804,7 @@ msgstr ""
 msgid "Answer plain messages with the language model"
 msgstr ""
 
-#: src/Support/TakeoverService.php:373
+#: src/Support/TakeoverService.php:365
 msgid "Answer the request"
 msgstr ""
 
@@ -2175,7 +2175,7 @@ msgstr ""
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:93 src/Support/TakeoverService.php:369 src/Support/TakeoverService.php:396 src/Support/TakeoverService.php:424
+#: src/Support/SlotFreedNotice.php:93 src/Support/TakeoverService.php:361 src/Support/TakeoverService.php:388 src/Support/TakeoverService.php:416
 #: src/Telegram/PermissionService.php:328
 #. translators: 1: name, 2: the opening line
 #. translators: 1: name, 2: the cover line
@@ -2492,14 +2492,14 @@ msgstr ""
 msgid "It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there."
 msgstr ""
 
-#: src/Support/TakeoverService.php:514
+#: src/Support/TakeoverService.php:526
 #. translators: %d: hours before the task starts
 msgid "It is too late to ask: a takeover must be answered at least %d hour before the task starts."
 msgid_plural "It is too late to ask: a takeover must be answered at least %d hours before the task starts."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TakeoverService.php:509
+#: src/Support/TakeoverService.php:521
 msgid "It is too late to ask: the task has already started."
 msgstr ""
 
@@ -4495,7 +4495,7 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
-#: src/Support/TakeoverService.php:501
+#: src/Support/TakeoverService.php:513
 msgid "Someone else has already asked to take over this task. Wait until that request is answered."
 msgstr ""
 
@@ -6498,7 +6498,7 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: src/Support/TakeoverService.php:493
+#: src/Support/TakeoverService.php:505
 #. translators: 1: holder's name, 2: answer deadline
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
@@ -6811,7 +6811,7 @@ msgstr ""
 msgid "Your recent tasks:"
 msgstr ""
 
-#: src/Support/TakeoverService.php:479
+#: src/Support/TakeoverService.php:491
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "Your request to take over the task of %1$s is closed, because the task changed or was cancelled: %2$s at %3$s, %4$s."
 msgstr ""
@@ -6838,7 +6838,7 @@ msgstr ""
 msgid "Your standing: %1$s · %2$d free-entry credits."
 msgstr ""
 
-#: src/Support/TakeoverService.php:391
+#: src/Support/TakeoverService.php:383
 #. translators: %s: cover's name
 msgid "Your task moved to %s"
 msgstr ""
@@ -7222,12 +7222,12 @@ msgstr ""
 msgid "✅ Added %1$s to %2$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:449
+#: src/Support/TakeoverService.php:461
 #. translators: 1: cover's name, 2: role, 3: event, 4: date/time
 msgid "✅ Done: %1$s now has your task: %2$s at %3$s, %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:354 src/Web/TakeoverController.php:129
+#: src/Support/TakeoverService.php:346 src/Web/TakeoverController.php:129
 msgid "✅ Let them take it"
 msgstr ""
 
@@ -7263,7 +7263,7 @@ msgstr ""
 msgid "❌ Cancelled"
 msgstr ""
 
-#: src/Support/TakeoverService.php:355 src/Web/TakeoverController.php:130
+#: src/Support/TakeoverService.php:347 src/Web/TakeoverController.php:130
 msgid "❌ Keep my task"
 msgstr ""
 
@@ -7345,7 +7345,7 @@ msgstr ""
 msgid "📸 /events, in a private chat with the bot, shows you the next %d coming events as cards: the picture, the date, the price, a short description, and buttons to buy a ticket and to listen to the DJ. Tap Confirm and the bot posts the same cards in the group; tap Cancel and nothing is sent. You can also ask the bot in your own words which events come next."
 msgstr ""
 
-#: src/Support/TakeoverService.php:436
+#: src/Support/TakeoverService.php:428
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr ""
 
