@@ -32,8 +32,9 @@ use EventCrew\Repositories\PersonRepository;
  *    sooner) and every coming event in the $days days after the send day.
  *    One event is in one newsletter at most, so events that fall in the same
  *    window share one newsletter.
- * 3. Every organizer gets a preview email with the exact content and a "Stop
- *    this newsletter" link, at the first run at or after the preview time.
+ * 3. Every organizer gets a preview email, at the first run at or after the
+ *    preview time: the email a subscriber will get, as it will look at the
+ *    send time, with a "Do Not Send This" button at the bottom.
  *    When the preview time is not before the send time, the preview goes
  *    when the plan is made instead. If the send time comes before the
  *    preview has gone (a run was skipped), the preview goes first and the
@@ -836,90 +837,75 @@ final class Newsletter
     }
 
     /**
-     * Mails every organizer the preview of $plan, in their own language, with
-     * the exact newsletter below (as HTML, the way subscribers get it) and the
-     * Stop button. Returns how many went.
+     * Mails every organizer the preview of $plan: the email a subscriber
+     * will get, made the same way as in sendBatchLocked(), with only these
+     * differences (Owner, 2026-11-04): PREVIEW_PREFIX in front of the subject,
+     * a red "Do Not Send This" button (the stop link) at the very bottom, and
+     * under it one line with the send date and time and how many subscribers
+     * get this version. The button and the line are in the organizer's own
+     * language. The greeting has the organizer's first name, and the footer
+     * link is COPY_LINK ("#") in place of a subscriber's own link. Returns
+     * how many went.
+     *
+     * The email is made as it will be on the send day: the send time is
+     * "now" for everything that depends on the date (previewContent(), and
+     * the year in the email template).
      *
      * Subscribers get the announcement in their own language (Owner,
      * 2026-11-03), so each organizer gets one preview per version that has at
      * least one subscriber: Finnish only, English only, and both languages
-     * for those whose language is not known. Each preview says which
-     * subscribers get that version. With no subscribers at all, the one
-     * preview is the two-language version.
+     * for those whose language is not known. With no subscribers at all, the
+     * one preview is the two-language version.
      *
      * @param array<string, mixed> $plan
      */
     private function sendPreview(array $plan): int
     {
-        $text = $this->text->get();
-        $later = $this->laterEvents($plan['events'], (string) current_time('Y-m-d'));
+        $sendAt = self::sendAtOf($plan);
+        $now = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $sendAt);
+        $now = false === $now ? null : $now;
         $organizers = $this->people->organizers();
         $byLanguage = $this->subscribers->countConfirmedByLanguage();
-        $count = array_sum($byLanguage);
         $variants = array_keys(array_filter($byLanguage, static fn (int $n): bool => $n > 0));
         $variants = [] === $variants ? [''] : array_map('strval', $variants);
-        // Only when some subscriber chose a language; until then the one preview is as before.
-        $sayVersion = [''] !== $variants;
         $stopUrl = self::stopUrl($plan['id']);
+        $mails = [];
         $sentTo = 0;
 
         foreach ($organizers as $person) {
             foreach ($variants as $lang) {
-                $mail = $this->compose($plan['events'], $text, $later, $plan['written'] ?? null, $lang);
+                $mails[$lang] ??= $this->previewContent($plan, $sendAt, $lang);
+                $mail = $mails[$lang];
                 $n = $byLanguage[$lang] ?? 0;
                 $words = Language::forPerson($person, static fn (): array => [
-                    'subject' => self::PREVIEW_PREFIX . sprintf(
-                        /* translators: %s: the date the newsletter will be sent, like 14.11.2026 */
-                        __('Next events announcement preview: it goes out on %s', 'eventcrew'),
-                        TicketMail::shortDate($plan['send_on'])
-                    ),
-                    'intro' => sprintf(
-                        /* translators: 1: the send date, like 14.11.2026, 2: number of subscribers */
+                    'stop' => __('Do Not Send This', 'eventcrew'),
+                    'line' => sprintf(
+                        /* translators: 1: date, like 14.11.2026, 2: time, like 10:00, 3: number of subscribers */
                         _n(
-                            'This announcement goes out on %1$s to %2$d subscriber. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                            'This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab.', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                            $count,
+                            'Goes out on %1$s at %2$s to %3$d subscriber.',
+                            'Goes out on %1$s at %2$s to %3$d subscribers.',
+                            $n,
                             'eventcrew'
                         ),
-                        TicketMail::shortDate($plan['send_on']),
-                        $count
+                        TicketMail::shortDate(substr($sendAt, 0, 10)),
+                        substr($sendAt, 11, 5),
+                        $n
                     ),
-                    'version' => match ($lang) {
-                        'fi' => sprintf(
-                            /* translators: %d: number of subscribers who chose Finnish */
-                            __('This is the Finnish version. Subscribers who get it: %d.', 'eventcrew'),
-                            $n
-                        ),
-                        'en' => sprintf(
-                            /* translators: %d: number of subscribers who chose English */
-                            __('This is the English version. Subscribers who get it: %d.', 'eventcrew'),
-                            $n
-                        ),
-                        default => sprintf(
-                            /* translators: %d: number of subscribers who chose no language */
-                            __('This is the two-language version. Subscribers who get it: %d.', 'eventcrew'),
-                            $n
-                        ),
-                    },
-                    'subject_line' => __('Subject', 'eventcrew'),
-                    'stop' => __('Do not send this announcement', 'eventcrew'),
                 ]);
-
-                $intro = $words['intro']
-                    . ($sayVersion ? "\n\n" . $words['version'] : '')
-                    . "\n\n" . $words['subject_line'] . ': ' . $mail['subject'];
-                // The organizer sees the greeting a subscriber gets, with their own name.
+                // The greeting a subscriber gets, with the organizer's own name.
                 $greeting = self::greeting(DoorDesk::firstName($person->name()), $lang);
-                $suffix = $sayVersion ? ' (' . ('' === $lang ? 'FI + EN' : strtoupper($lang)) . ')' : '';
 
-                $sent = $this->mailer->toPersonWithContent(
-                    $person->id,
+                $sent = $this->mailer->toOrganizerAsSubscriber(
                     $person->email,
-                    $words['subject'] . $suffix,
-                    $intro,
+                    self::PREVIEW_PREFIX . $mail['subject'],
                     $greeting['html'] . $mail['html'],
                     $greeting['text'] . "\n\n" . $mail['text'],
-                    [['label' => $words['stop'], 'url' => $stopUrl]]
+                    $mail['footer'],
+                    self::COPY_LINK,
+                    $mail['crew_note'],
+                    ['label' => $words['stop'], 'url' => $stopUrl],
+                    $words['line'],
+                    $now
                 );
 
                 if ($sent) {
@@ -929,6 +915,49 @@ final class Newsletter
         }
 
         return $sentTo;
+    }
+
+    /**
+     * The newsletter of $plan in version $lang as it will be sent at
+     * $sendAt ("Y-m-d H:i:s", site time), in sendBatchLocked()'s shape: the
+     * send day is "today". As startSending() does on that day, the events
+     * dated on or before the send day and the hidden ones are left out, and
+     * the "Later" list is the events after the send day. The organizers'
+     * text is the one there is now.
+     *
+     * @param array<string, mixed> $plan
+     * @return array{subject: string, html: string, text: string, footer: string, crew_note: string}
+     */
+    private function previewContent(array $plan, string $sendAt, string $lang): array
+    {
+        $today = substr($sendAt, 0, 10);
+        $events = array_values(array_filter(
+            $plan['events'],
+            static fn (array $event): bool => $event['date'] > $today
+                && ! in_array(EventSource::closedReason($event['id']), self::HIDDEN_REASONS, true)
+        ));
+
+        return $this->compose(
+            $events,
+            $this->text->get(),
+            $this->laterEvents($events, $today),
+            $plan['written'] ?? null,
+            $lang
+        ) + ['footer' => self::footer($lang), 'crew_note' => self::crewNote($lang)];
+    }
+
+    /**
+     * The plan's send time, "Y-m-d H:i:s". A plan from before the send time
+     * was a setting goes at the send time on its send day.
+     *
+     * @param array<string, mixed> $plan
+     */
+    private static function sendAtOf(array $plan): string
+    {
+        return (string) ($plan['send_at'] ?? NewsletterSchedule::at(
+            (string) $plan['send_on'],
+            NewsletterSchedule::sendTime()
+        ));
     }
 
     /**

@@ -5795,10 +5795,6 @@ msgid "Next events announcement"
 msgstr "Tulevien tapahtumien tiedote"
 
 #, php-format
-msgid "Next events announcement preview: it goes out on %s"
-msgstr "Tulevien tapahtumien tiedotteen esikatselu: se lähtee %s"
-
-#, php-format
 msgid "Next announcement: %s, about these events:"
 msgstr "Seuraava tiedote: %s, näistä tapahtumista:"
 
@@ -5899,12 +5895,6 @@ msgstr "Seuraavan tiedotteen teksti:"
 
 msgid "There is no text for the next announcement."
 msgstr "Seuraavalle tiedotteelle ei ole tekstiä."
-
-#, php-format
-msgid "This announcement goes out on %1$s to %2$d subscriber. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
-msgid_plural "This announcement goes out on %1$s to %2$d subscribers. If it should not go out, stop it with the button at the end, or in the Admin tab of the crew app. To change the text, send /newsletter to the bot in a private chat, or use the Admin tab."
-msgstr[0] "Tämä tiedote lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
-msgstr[1] "Tämä tiedote lähtee %1$s %2$d tilaajalle. Jos sen ei pidä lähteä, pysäytä se lopussa olevalla painikkeella tai Crew-sovelluksen Admin-välilehdellä. Muuta tekstiä lähettämällä botille /newsletter yksityiskeskustelussa tai käytä Admin-välilehteä."
 
 msgid "This announcement was already stopped or sent."
 msgstr "Tämä tiedote on jo pysäytetty tai lähetetty."
@@ -6757,18 +6747,6 @@ msgstr "Tiedote tulee valitsemallasi kielellä."
 msgid "Automatically translated"
 msgstr "Käännetty automaattisesti"
 
-#. translators: %d: number of subscribers who chose Finnish
-msgid "This is the Finnish version. Subscribers who get it: %d."
-msgstr "Tämä on suomenkielinen versio. Tilaajia, jotka saavat sen: %d."
-
-#. translators: %d: number of subscribers who chose English
-msgid "This is the English version. Subscribers who get it: %d."
-msgstr "Tämä on englanninkielinen versio. Tilaajia, jotka saavat sen: %d."
-
-#. translators: %d: number of subscribers who chose no language
-msgid "This is the two-language version. Subscribers who get it: %d."
-msgstr "Tämä on kaksikielinen versio. Tilaajia, jotka saavat sen: %d."
-
 msgid "Leave the announcement"
 msgstr "Peru tiedotteen tilaus"
 
@@ -6948,3 +6926,13 @@ msgid "Newsletter %1$d, %2$s: %3$s. Sent to %4$d address."
 msgid_plural "Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses."
 msgstr[0] "Tiedote %1$d, %2$s: %3$s. Lähetetty %4$d osoitteeseen."
 msgstr[1] "Tiedote %1$d, %2$s: %3$s. Lähetetty %4$d osoitteeseen."
+
+msgid "Do Not Send This"
+msgstr "Älä lähetä tätä"
+
+#. translators: 1: date, like 14.11.2026, 2: time, like 10:00, 3: number of subscribers
+#, php-format
+msgid "Goes out on %1$s at %2$s to %3$d subscriber."
+msgid_plural "Goes out on %1$s at %2$s to %3$d subscribers."
+msgstr[0] "Lähtee %1$s klo %2$s %3$d tilaajalle."
+msgstr[1] "Lähtee %1$s klo %2$s %3$d tilaajalle."

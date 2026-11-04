@@ -897,9 +897,10 @@ final class NewsletterTest extends TestCase
 
     /**
      * The organizers get one preview per version that has a subscriber: here
-     * Finnish, English and both languages, each with its greeting and a line
-     * that says who gets it. With subscribers of one language only, there is
-     * one preview, of that version.
+     * Finnish, English and both languages, each with its greeting, the
+     * subscriber's subject with "[Preview] " in front, and under the stop
+     * button the send time and how many get that version. With subscribers
+     * of one language only, there is one preview, of that version.
      */
     public function testThePreviewShowsEachVersionThatHasSubscribers(): void
     {
@@ -921,22 +922,26 @@ final class NewsletterTest extends TestCase
         self::assertCount(3, $this->mails);
         [$fi, $en, $both] = $this->mails;
 
-        self::assertStringEndsWith('(FI)', $fi['subject']);
-        self::assertStringEndsWith('(EN)', $en['subject']);
-        self::assertStringEndsWith('(FI + EN)', $both['subject']);
+        self::assertSame('[Preview] Tulevat tapahtumat – Test Site', $fi['subject']);
+        self::assertSame('[Preview] Coming events – Test Site', $en['subject']);
+        self::assertSame('[Preview] Tulevat tapahtumat / Coming events – Test Site', $both['subject']);
 
         self::assertStringContainsString('>Hei Olli!</p>', $fi['body']);
-        self::assertStringContainsString('This is the Finnish version. Subscribers who get it: 2.', $fi['body']);
-        self::assertStringContainsString('Tulevat tapahtumat – Test Site', $fi['body']);
+        self::assertStringContainsString('Goes out on 21.7.2026 at 09:00 to 2 subscribers.', $fi['body']);
         self::assertStringNotContainsString('Coming events', $fi['body']);
 
         self::assertStringContainsString('>Hi Olli!</p>', $en['body']);
-        self::assertStringContainsString('This is the English version. Subscribers who get it: 1.', $en['body']);
+        self::assertStringContainsString('Goes out on 21.7.2026 at 09:00 to 1 subscriber.', $en['body']);
         self::assertStringNotContainsString('Tulevat tapahtumat', $en['body']);
 
         self::assertStringContainsString('Hei Olli! · Hi Olli!', $both['body']);
-        self::assertStringContainsString('This is the two-language version. Subscribers who get it: 3.', $both['body']);
-        self::assertStringContainsString('goes out on 21.7.2026 to 6 subscribers', $both['body']);
+        self::assertStringContainsString('Goes out on 21.7.2026 at 09:00 to 3 subscribers.', $both['body']);
+
+        foreach ($this->mails as $mail) {
+            self::assertStringContainsString('Do Not Send This', $mail['body']);
+            self::assertStringNotContainsString('This announcement goes out', $mail['body']);
+            self::assertStringNotContainsString('version', $mail['body']);
+        }
 
         $this->mails = [];
         $this->wpdb->nextResults[] = [
@@ -945,24 +950,100 @@ final class NewsletterTest extends TestCase
         $this->wpdb->nextResults[] = [['language' => 'en', 'n' => 4]];
 
         self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
-        self::assertStringEndsWith('(EN)', $this->mails[0]['subject']);
+        self::assertSame('[Preview] Coming events – Test Site', $this->mails[0]['subject']);
         self::assertStringContainsString('>Hi Olli!</p>', $this->mails[0]['body']);
     }
 
-    /** With one subscriber the preview says "1 subscriber", not "1 subscribers". */
-    public function testThePreviewCountsOneSubscriberInTheSingular(): void
+    /**
+     * The preview is, byte for byte, the email a subscriber of that version
+     * gets when the newsletter goes, with three differences only: "[Preview] "
+     * in front of the subject, "#" in place of the subscriber's own link, and
+     * the red "Do Not Send This" button (the stop link) with the send time and
+     * the number of subscribers under it, after the whole email.
+     */
+    public function testThePreviewIsTheSubscribersEmailWithTheStopButtonAtTheBottom(): void
     {
-        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27', 'Summer Social')]]);
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->event(2, '2026-08-30', 'Far Away');
+        $this->withPlan([
+            'send_on' => '2026-07-20',
+            'send_at' => '2026-07-20 12:00:00',
+            'preview_at' => '2026-07-19 09:00:00',
+            'previewed' => true,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+        ]);
         $this->wpdb->nextResults[] = [
             ['id' => 9, 'email' => 'org@example.test', 'display_name' => 'Olli Organizer', 'is_organizer' => 1],
         ];
-        $this->wpdb->nextResults[] = [['language' => '', 'n' => 1]];
+        $this->wpdb->nextResults[] = [['language' => 'fi', 'n' => 2]];
 
         $method = new \ReflectionMethod(Newsletter::class, 'sendPreview');
         $method->setAccessible(true);
-        $method->invoke($this->newsletter(), $this->state()['plan']);
+        self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
+        $preview = $this->mails[0];
 
-        self::assertStringContainsString('goes out on 21.7.2026 to 1 subscriber.', $this->mails[0]['body']);
+        // The send time has come (TestCase's now is 2026-07-20 12:00): the newsletter goes.
+        $this->newsletter()->run();
+        self::assertSame(Newsletter::PLAN_SENDING, $this->state()['plan']['status']);
+        $this->wpdb->nextResults[] = [['id' => 4, 'email' => 'a@example.test', 'name' => 'Olli', 'language' => 'fi']];
+        self::assertSame(1, $this->newsletter()->sendBatch());
+        $real = $this->mails[1];
+
+        self::assertSame('[Preview] ' . $real['subject'], $preview['subject']);
+        self::assertStringContainsString('Far Away', $real['body'], 'the Later list is in both');
+
+        $buttonAt = strpos($preview['body'], 'Do Not Send This');
+        self::assertNotFalse($buttonAt);
+        $afterAt = (int) strrpos(substr($preview['body'], 0, $buttonAt), '<table role="presentation" width="100%"');
+        $withoutButton = substr($preview['body'], 0, $afterAt) . "</body>\n</html>";
+        $realWithCopyLink = (string) preg_replace('~href="[^"]*do=manage[^"]*"~', 'href="http://#"', $real['body']);
+
+        self::assertSame(
+            $realWithCopyLink,
+            str_replace('<title>[Preview] ', '<title>', $withoutButton)
+        );
+
+        $after = substr($preview['body'], $afterAt);
+        self::assertStringContainsString('background:#c62828', $after);
+        self::assertStringContainsString('do=stop', $after);
+        self::assertStringContainsString('Goes out on 20.7.2026 at 12:00 to 2 subscribers.', $after);
+        self::assertGreaterThan($buttonAt, strpos($preview['body'], 'Goes out on'));
+        self::assertStringNotContainsString('List-Unsubscribe', implode("\n", (array) $preview['headers']));
+        self::assertStringNotContainsString('a@example.test', $preview['body']);
+    }
+
+    /**
+     * The preview shows the newsletter as it will be on the send day, not as
+     * it would be today: a planned event dated before the send day is left
+     * out, as the sending leaves it out, and the Later list starts after the
+     * send day, so an event between today and the send day is not in it.
+     */
+    public function testThePreviewIsMadeAsOnTheSendDay(): void
+    {
+        $this->event(1, '2026-07-25', 'Gone Before');
+        $this->event(2, '2026-08-12', 'Main Night');
+        $this->event(3, '2026-07-30', 'Between Night');
+        $this->event(4, '2026-08-20', 'Much Later');
+        $this->withPlan([
+            'send_on' => '2026-08-10',
+            'send_at' => '2026-08-10 10:00:00',
+            'events' => [
+                self::planEvent(1, '2026-07-25', 'Gone Before'),
+                self::planEvent(2, '2026-08-12', 'Main Night'),
+            ],
+        ]);
+        $this->queueOrganizer();
+
+        $method = new \ReflectionMethod(Newsletter::class, 'sendPreview');
+        $method->setAccessible(true);
+        self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
+        $body = $this->mails[0]['body'];
+
+        self::assertStringContainsString('Main Night', $body);
+        self::assertStringContainsString('Much Later', $body);
+        self::assertStringNotContainsString('Gone Before', $body);
+        self::assertStringNotContainsString('Between Night', $body);
+        self::assertStringContainsString('Goes out on 10.8.2026 at 10:00 to 0 subscribers.', $body);
     }
 
     /**

@@ -21,6 +21,9 @@ use EventCrew\Repositories\AuthTokenRepository;
  */
 final class Mailer
 {
+    /** The red of the newsletter preview's "Do Not Send This" button. */
+    public const STOP_COLOR = '#c62828';
+
     public function __construct(
         private readonly Logger $logger,
         private readonly EmailTemplate $template
@@ -157,9 +160,7 @@ final class Mailer
         array $headers = [],
         string $footerNote = ''
     ): bool {
-        $text .= $this->signatureText() . "\n\n—\n"
-            . ('' === $footerNote ? '' : $footerNote . "\n")
-            . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
+        $text = $this->subscriberText($text, $footer, $footerUrl, $footerNote);
         $html = $this->subscriberHtml($subject, $content, $footer, $footerUrl, $footerNote);
 
         $parts = static function ($phpmailer) use ($text): void {
@@ -198,21 +199,102 @@ final class Mailer
     /**
      * The HTML of one newsletter email exactly as toSubscriber() sends it.
      * The newsletter also keeps a copy made with this for the Newsletter page
-     * in wp-admin.
+     * in wp-admin. $now and $after are EmailTemplate::render()'s: the moment
+     * the email is for (null: now) and HTML under the whole email.
      */
     public function subscriberHtml(
         string $subject,
         string $content,
         string $footer,
         string $footerUrl,
-        string $footerNote = ''
+        string $footerNote = '',
+        ?\DateTimeInterface $now = null,
+        string $after = ''
     ): string {
         return $this->template->render(
             $subject,
             $content,
             ('' === $footerNote ? '' : EmailBody::footerHtml($footerNote, ''))
-                . EmailBody::footerHtml($footer, $footerUrl)
+                . EmailBody::footerHtml($footer, $footerUrl),
+            false,
+            $now,
+            $after
         );
+    }
+
+    /**
+     * The newsletter preview to one organizer: the email a subscriber gets
+     * (subscriberHtml(), the same plain text as toSubscriber()), with $stop
+     * as a red button at the very bottom and $line, one plain line, under
+     * it. $now is the moment the email is shown as (the send time). No
+     * List-Unsubscribe headers: the organizer is not a subscriber.
+     *
+     * @param array{label: string, url: string} $stop
+     */
+    public function toOrganizerAsSubscriber(
+        string $to,
+        string $subject,
+        string $content,
+        string $text,
+        string $footer,
+        string $footerUrl,
+        string $footerNote,
+        array $stop,
+        string $line,
+        ?\DateTimeInterface $now = null
+    ): bool {
+        if (Person::isPlaceholderEmail($to)) {
+            return false;
+        }
+
+        $after = sprintf(
+            '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="background:#f4f5f7;margin:0;padding:0 12px 32px"><tr><td align="center">%s'
+                . '<p style="margin:0;font-family:%s;font-size:14px;line-height:1.5;color:%s">%s</p>'
+                . '</td></tr></table>',
+            EmailBody::centred(EmailBody::toHtml('', [$stop], self::STOP_COLOR)),
+            EmailBody::FONT,
+            '#1f2328',
+            esc_html($line)
+        );
+        $html = $this->subscriberHtml($subject, $content, $footer, $footerUrl, $footerNote, $now, $after);
+        $text = $this->subscriberText($text, $footer, $footerUrl, $footerNote)
+            . "\n\n————————\n\n" . ltrim(EmailBody::toText('', [$stop])) . "\n" . $line;
+
+        $altBody = static function ($phpmailer) use ($text): void {
+            $phpmailer->AltBody = $text;
+        };
+
+        add_action('phpmailer_init', $altBody);
+
+        try {
+            $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+        } catch (\Throwable $error) {
+            $this->logger->error(sprintf(
+                'Email "%s" to an organizer failed: %s: %s',
+                $subject,
+                get_class($error),
+                (string) preg_replace('/\S+@\S+/', '[address]', $error->getMessage())
+            ));
+
+            return false;
+        } finally {
+            remove_action('phpmailer_init', $altBody);
+        }
+
+        if (! $sent) {
+            $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
+        }
+
+        return $sent;
+    }
+
+    /** The plain-text part of one newsletter email, as toSubscriber() sends it. */
+    private function subscriberText(string $text, string $footer, string $footerUrl, string $footerNote): string
+    {
+        return $text . $this->signatureText() . "\n\n—\n"
+            . ('' === $footerNote ? '' : $footerNote . "\n")
+            . $footer . ('' === $footerUrl ? '' : ': ' . $footerUrl);
     }
 
     /**
