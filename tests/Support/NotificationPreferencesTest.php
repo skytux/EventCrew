@@ -61,4 +61,32 @@ final class NotificationPreferencesTest extends TestCase
         // ...and a locked commitment still reaches them.
         self::assertTrue($this->prefs()->dmAllowed($person, NotificationPreferences::SIGNUP));
     }
+
+    public function testTheSwitchesAreTheFiveThatStillDoSomething(): void
+    {
+        self::assertSame(
+            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
+            array_keys(NotificationPreferences::labels())
+        );
+    }
+
+    /**
+     * The removed "Cover arranged" switch may still be stored for a person.
+     * It is left out of the map both UIs save, so the next save drops it.
+     */
+    public function testAStoredCoverPreferenceIsLeftOutOfTheSavedMap(): void
+    {
+        $person = $this->person([
+            'telegram_chat_id' => 1,
+            'notify_prefs' => json_encode([
+                'cover' => ['dm' => false, 'email' => false],
+                'credit' => ['dm' => false, 'email' => true],
+            ]),
+        ]);
+
+        $map = $this->prefs()->asMap($person);
+
+        self::assertArrayNotHasKey('cover', $map);
+        self::assertSame(['dm' => false, 'email' => true], $map['credit']);
+    }
 }

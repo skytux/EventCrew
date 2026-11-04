@@ -1296,10 +1296,6 @@ msgstr ""
 msgid "Counted from the last task they were on, credit they were given, or credit they spent — or from the day they joined if none of those ever happened. This is what the notice publishes."
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:61
-msgid "Cover arranged"
-msgstr ""
-
 #: templates/admin/settings.php:1638
 msgid "Create a bot with @BotFather in Telegram, paste the token it gives you here, and save. Then install the webhook below and add the bot to your group."
 msgstr ""
@@ -1877,11 +1873,11 @@ msgid "Everyone who gets in free that night — working the event, or spending a
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:459
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:455
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
 msgstr ""
 
 #: templates/public/door.php:273
@@ -1978,7 +1974,7 @@ msgstr ""
 msgid "Free-entry credit"
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:58
+#: src/Support/NotificationPreferences.php:56
 msgid "Free-entry credit granted"
 msgstr ""
 
@@ -1990,7 +1986,7 @@ msgstr ""
 msgid "Free-entry ticket"
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:59
+#: src/Support/NotificationPreferences.php:57
 msgid "Free-entry ticket ready"
 msgstr ""
 
@@ -3414,7 +3410,7 @@ msgstr ""
 msgid "Open the ticket in your browser"
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:62 templates/admin/people.php:167
+#: src/Support/NotificationPreferences.php:59 templates/admin/people.php:167
 msgid "Open-task alerts"
 msgstr ""
 
@@ -3610,7 +3606,7 @@ msgstr ""
 msgid "People: members, their history and credits, the credit log, organizers, and the Role conditions tab."
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:60
+#: src/Support/NotificationPreferences.php:58
 msgid "Permission changes"
 msgstr ""
 
@@ -4541,7 +4537,7 @@ msgstr ""
 msgid "Standing"
 msgstr ""
 
-#: src/Support/NotificationPreferences.php:57
+#: src/Support/NotificationPreferences.php:55
 msgid "Standing (no-show / late cancel)"
 msgstr ""
 
