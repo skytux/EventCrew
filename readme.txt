@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.136.0
+Stable tag: 1.136.1
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.136.1 =
+Translations: removed 138 unused strings from the Finnish catalog. A new test checks that every Finnish entry is still used.
 
 = 1.136.0 =
 When an organizer deletes a task, everyone signed up for it gets one email in Finnish and English saying the task is cancelled and its ticket no longer works. Nothing is sent when the task has already started or is over.
@@ -1165,6 +1168,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.136.1 =
+No settings change.
 
 = 1.136.0 =
 No settings change.
