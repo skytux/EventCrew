@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.136.4
+Stable tag: 1.136.5
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.136.5 =
+Settings: when Sign in with Telegram is on but the bot username is empty, the settings page says the button stays hidden until the username is filled in by installing the webhook.
 
 = 1.136.4 =
 Bot: in its answers, a sold-out event says "tickets sold out" and gives no price.
@@ -1177,6 +1180,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.136.5 =
+No settings change.
 
 = 1.136.4 =
 No settings change.

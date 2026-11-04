@@ -5593,6 +5593,10 @@ msgstr "Muuttuneet Tietoja- ja Kuvaus-tekstit lähetettiin Telegramiin."
 msgid "Allow sign-in with Telegram on the Crew app"
 msgstr "Salli kirjautuminen Telegramilla Crew-sovellukseen"
 
+#: templates/admin/settings-telegram-login.php:34
+msgid "The button stays hidden until the bot username is filled in. Installing the webhook fills it in."
+msgstr "Painike pysyy piilossa, kunnes botin käyttäjänimi on täytetty. Webhookin asennus täyttää sen."
+
 #: templates/public/signup.php:229
 msgid "Back"
 msgstr "Takaisin"
