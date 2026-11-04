@@ -106,6 +106,26 @@ final class GuestRepository
         );
     }
 
+    /**
+     * Gives a guest a new email address ('' clears it) and a new ticket: the
+     * ticketRev goes up, so the code and link in the old ticket email no
+     * longer work, and the mail status is cleared, so the next ticket-email
+     * batch sends the new ticket to the new address.
+     */
+    public function changeEmail(int $id, string $email): void
+    {
+        global $wpdb;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET email = NULLIF(%s, ''), ticket_rev = ticket_rev + 1,"
+                    . " ticket_mail_status = '', ticket_mailed_at = NULL WHERE id = %d",
+                $email,
+                $id
+            )
+        );
+    }
+
     public function delete(int $id): void
     {
         global $wpdb;

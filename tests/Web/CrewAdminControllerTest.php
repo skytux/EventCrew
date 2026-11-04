@@ -1258,6 +1258,94 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([], $this->wpdb->inserts);
     }
 
+    /**
+     * A changed address makes a new ticket: the rev goes up, the mail status
+     * is cleared, and the 10-minute send is started for the new address.
+     */
+    public function testChangingAGuestsEmailMakesANewTicket(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Anna', 'email' => 'old@example.com'];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '5',
+            'guest_name' => 'Anna',
+            'guest_email' => 'new@example.com',
+        ]);
+
+        self::assertSame('admin_guest_email_changed', $result['notice']);
+        self::assertCount(1, $this->changeEmailQueries());
+        self::assertStringContainsString("NULLIF('new@example.com', '')", $this->changeEmailQueries()[0]);
+        self::assertArrayHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    /** The same address in other capitals is no change: the ticket stays. */
+    public function testTheSameGuestEmailKeepsTheTicket(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Anna', 'email' => 'anna@example.com'];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '5',
+            'guest_name' => 'Anna',
+            'guest_email' => 'Anna@Example.com',
+        ]);
+
+        self::assertSame('admin_guest_saved', $result['notice']);
+        self::assertSame([], $this->changeEmailQueries());
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    /** An emptied address takes the ticket away and sends nothing. */
+    public function testEmptyingAGuestsEmailTakesTheTicketAway(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Anna', 'email' => 'anna@example.com'];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '5',
+            'guest_name' => 'Anna',
+            'guest_email' => '',
+        ]);
+
+        self::assertSame('admin_guest_email_cleared', $result['notice']);
+        self::assertCount(1, $this->changeEmailQueries());
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testAnInvalidNewGuestEmailChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => self::NIGHT, 'name' => 'Anna', 'email' => 'anna@example.com'];
+
+        $result = $this->post(CrewAdminController::GUEST_ACTION, [
+            'roster_date' => self::NIGHT,
+            'op' => 'save',
+            'guest_id' => '5',
+            'guest_name' => 'Anna',
+            'guest_email' => 'anna@',
+        ]);
+
+        self::assertSame('admin_guest_bad_email', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->changeEmailQueries());
+    }
+
+    /** @return array<int, string> */
+    private function changeEmailQueries(): array
+    {
+        return array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'ticket_rev = ticket_rev + 1')
+        ));
+    }
+
     public function testAnOrganizerRemovesAGuest(): void
     {
         $this->signIn($this->organizerRow(1));

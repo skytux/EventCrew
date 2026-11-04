@@ -8,7 +8,9 @@ namespace EventCrew\Models;
  * One name on a night's guest list: someone let in free who is not a crew
  * member, with the number of people they bring along. A guest from a mailed
  * guest list may carry an email address, which is emailed their ticket once;
- * mailStatus is '' (not sent), 'sent' or 'failed'.
+ * mailStatus is '' (not sent), 'sent' or 'failed'. ticketRev goes up by one
+ * each time an organizer changes the address; it is signed into the
+ * ticket's code, so the old code stops working (TicketMail::guestCode()).
  */
 final class Guest
 {
@@ -21,7 +23,8 @@ final class Guest
         public readonly ?int $addedBy = null,
         public readonly string $email = '',
         public readonly string $mailStatus = '',
-        public readonly string $mailedAt = ''
+        public readonly string $mailedAt = '',
+        public readonly int $ticketRev = 0
     ) {
     }
 
@@ -41,7 +44,8 @@ final class Guest
             null === $addedBy || '' === $addedBy ? null : (int) $addedBy,
             (string) ($row['email'] ?? ''),
             (string) ($row['ticket_mail_status'] ?? ''),
-            (string) ($row['ticket_mailed_at'] ?? '')
+            (string) ($row['ticket_mailed_at'] ?? ''),
+            (int) ($row['ticket_rev'] ?? 0)
         );
     }
 

@@ -21,6 +21,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Web\BuyerImportController;
+use EventCrew\Web\CrewAdminRoster;
 
 /**
  * Attendance: who turned up for a given day's tasks, and marking how it went.
@@ -399,7 +400,8 @@ final class RosterPage
         $name = isset($_POST['guest_name']) ? sanitize_text_field(wp_unslash($_POST['guest_name'])) : '';
         $plusOnes = isset($_POST['guest_plus_ones']) ? (int) $_POST['guest_plus_ones'] : 0;
         $note = isset($_POST['guest_note']) ? sanitize_text_field(wp_unslash($_POST['guest_note'])) : '';
-        $email = isset($_POST['guest_email']) ? trim(sanitize_text_field(wp_unslash($_POST['guest_email']))) : '';
+        // Null when the form had no email field: the address stays.
+        $email = isset($_POST['guest_email']) ? trim(sanitize_text_field(wp_unslash($_POST['guest_email']))) : null;
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ('' === $name || ! $this->isValidDate($date)) {
@@ -411,8 +413,8 @@ final class RosterPage
             );
         }
 
-        // The email field is only on the add row, and optional.
-        if (0 === $guestId && '' !== $email && ! is_email($email)) {
+        // The email field is optional.
+        if (null !== $email && '' !== $email && ! is_email($email)) {
             Admin::redirectTo(
                 self::PAGE_SLUG,
                 __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
@@ -422,16 +424,28 @@ final class RosterPage
         }
 
         if (0 === $guestId) {
-            $this->guests->add($date, $name, $plusOnes, $note, null, $email);
+            $this->guests->add($date, $name, $plusOnes, $note, null, (string) $email);
             $message = __('Guest added.', 'eventcrew');
 
             // The ticket goes with the next run of the ticket email's batch.
-            if ('' !== $email) {
+            if (null !== $email && '' !== $email) {
                 TicketMail::schedule();
             }
         } else {
+            $guest = $this->guests->find($guestId);
+
+            if (null === $guest) {
+                Admin::redirectTo(
+                    self::PAGE_SLUG,
+                    CrewAdminRoster::noticeText('admin_change_failed'),
+                    'error',
+                    $this->dateArg($date)
+                );
+            }
+
             $this->guests->update($guestId, $name, $plusOnes, $note);
-            $message = __('Guest saved.', 'eventcrew');
+            $code = null === $email ? 'admin_guest_saved' : CrewAdminRoster::changeGuestEmail($this->guests, $guest, $email);
+            $message = CrewAdminRoster::noticeText($code);
         }
 
         Admin::redirectTo(self::PAGE_SLUG, $message, 'success', $this->dateArg($date));

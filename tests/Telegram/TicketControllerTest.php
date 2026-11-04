@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Tests\TestCase;
 
@@ -174,6 +175,23 @@ final class TicketControllerTest extends TestCase
         $this->wpdb->nextRows[] = ['id' => 12, 'event_date' => '2026-08-01', 'name' => 'Cy Cole', 'email' => null];
 
         self::assertNull($this->controller()->ticketFor(SignedLink::sign('guest_ticket', 12)));
+    }
+
+    /**
+     * After an organizer changed the guest's email address, the link in the
+     * old ticket email opens nothing; the new link opens the ticket.
+     */
+    public function testAGuestTicketLinkFromBeforeAnEmailChangeIsNotFound(): void
+    {
+        $row = ['id' => 12, 'event_date' => '2026-08-01', 'name' => 'Cy Cole', 'email' => 'new@example.test', 'ticket_rev' => 1];
+
+        $this->wpdb->nextRows[] = $row;
+        self::assertNull($this->controller()->ticketFor(TicketMail::guestToken(12)));
+
+        $this->wpdb->nextRows[] = $row;
+        $ticket = $this->controller()->ticketFor(TicketMail::guestToken(12, 1));
+        self::assertNotNull($ticket);
+        self::assertSame('Cy Cole', $ticket['name']);
     }
 
     public function testRenderPageShowsTheLiveClock(): void

@@ -1209,6 +1209,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                         <label for="<?php echo esc_attr($eventcrew_guest_field); ?>-note"><?php esc_html_e('Note', 'eventcrew'); ?></label>
                                         <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-note" type="text" name="guest_note" maxlength="191" value="<?php echo esc_attr($eventcrew_guest['note']); ?>">
                                     </p>
+                                    <p>
+                                        <label for="<?php echo esc_attr($eventcrew_guest_field); ?>-email"><?php esc_html_e('Email (a new address gets a new ticket; the old ticket stops working)', 'eventcrew'); ?></label>
+                                        <input id="<?php echo esc_attr($eventcrew_guest_field); ?>-email" type="email" name="guest_email" maxlength="191" autocomplete="off" value="<?php echo esc_attr($eventcrew_guest['email']); ?>">
+                                    </p>
                                     <div class="eventcrew-admin-actions">
                                         <button type="submit" name="op" value="save" class="eventcrew-textlink"><?php esc_html_e('Save', 'eventcrew'); ?></button>
                                         <button type="submit" name="op" value="remove" formnovalidate class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Remove', 'eventcrew'); ?></button>

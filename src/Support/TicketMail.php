@@ -467,10 +467,41 @@ final class TicketMail
         return SignedLink::sign('buyer_ticket|' . $buyer->ticketCode, $buyer->id);
     }
 
-    /** The token of a guest's ticket page, and of the QR code on their ticket. */
-    public static function guestToken(int $guestId): string
+    /**
+     * The token of a guest's ticket page. $rev is the guest's ticketRev:
+     * after an organizer changes the guest's email address the token carries
+     * the new rev, and the desk and the ticket page refuse older ones. Rev 0
+     * is the token every guest got before ticketRev existed.
+     */
+    public static function guestToken(int $guestId, int $rev = 0): string
     {
-        return SignedLink::sign('guest_ticket', $guestId);
+        return $rev > 0
+            ? SignedLink::signPayload('guest_ticket_rev', $guestId . '|' . $rev)
+            : SignedLink::sign('guest_ticket', $guestId);
+    }
+
+    /**
+     * The guest id and ticketRev a guestToken() carries, or null when it is
+     * not one or its signature does not verify. Nothing is read from the
+     * database: the caller compares the rev with the guest's.
+     *
+     * @return array{id: int, rev: int}|null
+     */
+    public static function guestTokenParts(string $token): ?array
+    {
+        $id = SignedLink::verify('guest_ticket', $token);
+
+        if (null !== $id) {
+            return ['id' => $id, 'rev' => 0];
+        }
+
+        $payload = SignedLink::verifyPayload('guest_ticket_rev', $token);
+
+        if (null === $payload || 1 !== preg_match('/^([1-9]\d{0,18})\|([1-9]\d{0,4})$/', $payload, $match)) {
+            return null;
+        }
+
+        return ['id' => (int) $match[1], 'rev' => (int) $match[2]];
     }
 
     public static function buyerUrl(TicketBuyer $buyer): string
@@ -478,9 +509,9 @@ final class TicketMail
         return add_query_arg(['token' => self::buyerToken($buyer)], rest_url(self::PAGE_ROUTE));
     }
 
-    public static function guestUrl(int $guestId): string
+    public static function guestUrl(int $guestId, int $rev = 0): string
     {
-        return add_query_arg(['token' => self::guestToken($guestId)], rest_url(self::PAGE_ROUTE));
+        return add_query_arg(['token' => self::guestToken($guestId, $rev)], rest_url(self::PAGE_ROUTE));
     }
 
     /**
@@ -495,22 +526,51 @@ final class TicketMail
             return $row->isCredit() ? self::creditCode($row->id) : self::crewCode($row->id);
         }
 
-        return $row instanceof Guest ? self::guestCode($row->id) : $row->ticketCode;
-    }
-
-    /** "EC-G12-0123456789abcdef": a guest's id and a short signature of it. */
-    public static function guestCode(int $guestId): string
-    {
-        return self::shortCode('G', 'guest_ticket', $guestId);
+        return $row instanceof Guest ? self::guestCode($row->id, $row->ticketRev) : $row->ticketCode;
     }
 
     /**
-     * The guest id in a code made by guestCode(), or null when $text is not
-     * such a code or its signature does not verify.
+     * "EC-G12-0123456789abcdef": a guest's id and a short signature of it.
+     * $rev is the guest's ticketRev: after an organizer changes the guest's
+     * email address the code is "EC-G12r1-...", signed with the rev, and the
+     * desk refuses the older code.
+     */
+    public static function guestCode(int $guestId, int $rev = 0): string
+    {
+        if ($rev <= 0) {
+            return self::shortCode('G', 'guest_ticket', $guestId);
+        }
+
+        return 'EC-G' . $guestId . 'r' . $rev . '-' . SignedLink::shortSignature('guest_ticket|' . $rev, $guestId);
+    }
+
+    /**
+     * The guest id in a guestCode() of any rev, or null when $text is not
+     * one or its signature does not verify.
      */
     public static function guestIdFromCode(string $text): ?int
     {
-        return self::idFromShortCode('G', 'guest_ticket', $text);
+        return self::guestCodeParts($text)['id'] ?? null;
+    }
+
+    /**
+     * The guest id and ticketRev in a guestCode(), or null when $text is not
+     * one or its signature does not verify. Nothing is read from the
+     * database: the caller compares the rev with the guest's.
+     *
+     * @return array{id: int, rev: int}|null
+     */
+    public static function guestCodeParts(string $text): ?array
+    {
+        if (1 !== preg_match('/^EC-G([1-9]\d{0,18})(?:r([1-9]\d{0,4}))?-([0-9a-f]{16})$/', trim($text), $match)) {
+            return null;
+        }
+
+        $id = (int) $match[1];
+        $rev = '' === $match[2] ? 0 : (int) $match[2];
+        $signature = SignedLink::shortSignature($rev > 0 ? 'guest_ticket|' . $rev : 'guest_ticket', $id);
+
+        return hash_equals($signature, $match[3]) ? ['id' => $id, 'rev' => $rev] : null;
     }
 
     /**
@@ -791,7 +851,7 @@ final class TicketMail
         if ($row instanceof CrewTicket) {
             $url = self::crewUrl($row);
         } else {
-            $url = $row instanceof Guest ? self::guestUrl($row->id) : self::buyerUrl($row);
+            $url = $row instanceof Guest ? self::guestUrl($row->id, $row->ticketRev) : self::buyerUrl($row);
         }
 
         // Only a ticket buyer's code is written out: it is the code the buyer

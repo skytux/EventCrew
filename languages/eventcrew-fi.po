@@ -6380,3 +6380,15 @@ msgstr ""
 
 msgid "TICKET CANCELLED"
 msgstr "LIPPU PERUTTU"
+
+msgid "Guest saved. The old ticket no longer works; a new ticket goes to the new address in about 10 minutes."
+msgstr "Vieras tallennettu. Vanha lippu ei enää käy; uusi lippu lähtee uuteen osoitteeseen noin 10 minuutin päästä."
+
+msgid "Guest saved. The email address is removed and the old ticket no longer works."
+msgstr "Vieras tallennettu. Sähköpostiosoite on poistettu, eikä vanha lippu enää käy."
+
+msgid "Email (a new address gets a new ticket; the old ticket stops working)"
+msgstr "Sähköposti (uusi osoite saa uuden lipun; vanha lippu lakkaa toimimasta)"
+
+msgid "A new email address gets a new ticket; the old ticket stops working."
+msgstr "Uusi sähköpostiosoite saa uuden lipun; vanha lippu lakkaa toimimasta."

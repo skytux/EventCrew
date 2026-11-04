@@ -164,6 +164,7 @@ final class CrewAdminRoster
                 'name' => $guest->name,
                 'plus_ones' => $guest->plusOnes,
                 'note' => $guest->note,
+                'email' => $guest->email,
             ],
             array_values($this->guests->forDate($date))
         );
@@ -325,6 +326,9 @@ final class CrewAdminRoster
     /**
      * Adds a guest to $date ($guestId 0) or saves an existing guest. The added
      * guest records the organizer as the one who added them, as /door add does.
+     * A changed $email on an existing guest makes a new ticket: the old code
+     * stops working and the new ticket goes to the new address with the next
+     * ticket-email batch. Null $email leaves the address as it is.
      */
     public function saveGuest(
         Person $organizer,
@@ -333,7 +337,7 @@ final class CrewAdminRoster
         string $name,
         int $plusOnes,
         string $note,
-        string $email = ''
+        ?string $email = null
     ): string {
         if (! self::isValidDate($date) || $guestId < 0) {
             return 'admin_change_failed';
@@ -345,29 +349,56 @@ final class CrewAdminRoster
 
         $plusOnes = max(0, min(GuestRepository::MAX_PLUS_ONES, $plusOnes));
 
+        // The optional email field: the ticket goes with the next run of the
+        // ticket email's batch.
+        if (null !== $email && '' !== $email && ! is_email($email)) {
+            return 'admin_guest_bad_email';
+        }
+
         if (0 === $guestId) {
-            // The optional email field: the ticket goes with the next run of
-            // the ticket email's batch.
-            if ('' !== $email && ! is_email($email)) {
-                return 'admin_guest_bad_email';
-            }
+            $this->guests->add($date, $name, $plusOnes, $note, $organizer->id, (string) $email);
 
-            $this->guests->add($date, $name, $plusOnes, $note, $organizer->id, $email);
-
-            if ('' !== $email) {
+            if (null !== $email && '' !== $email) {
                 TicketMail::schedule();
             }
 
             return 'admin_guest_added';
         }
 
-        if (null === $this->guests->find($guestId)) {
+        $guest = $this->guests->find($guestId);
+
+        if (null === $guest) {
             return 'admin_change_failed';
         }
 
         $this->guests->update($guestId, $name, $plusOnes, $note);
 
-        return 'admin_guest_saved';
+        return null === $email ? 'admin_guest_saved' : self::changeGuestEmail($this->guests, $guest, $email);
+    }
+
+    /**
+     * Saves a guest's edited email address. A different address (not just
+     * other capitals) gives the guest a new ticket code, so the old ticket
+     * scans as no longer valid, and sends the new ticket to the new address
+     * with the ticket email's 10-minute batch. An emptied address only takes
+     * the ticket away. Returns the message code to show; RosterPage uses it
+     * too.
+     */
+    public static function changeGuestEmail(GuestRepository $guests, Guest $guest, string $email): string
+    {
+        if (0 === strcasecmp($email, $guest->email)) {
+            return 'admin_guest_saved';
+        }
+
+        $guests->changeEmail($guest->id, $email);
+
+        if ('' === $email) {
+            return 'admin_guest_email_cleared';
+        }
+
+        TicketMail::schedule();
+
+        return 'admin_guest_email_changed';
     }
 
     /** "Remove" on a guest. */
@@ -537,6 +568,14 @@ final class CrewAdminRoster
             'admin_guest_bad_email' => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
             'admin_guest_added' => __('Guest added.', 'eventcrew'),
             'admin_guest_saved' => __('Guest saved.', 'eventcrew'),
+            'admin_guest_email_changed' => __(
+                'Guest saved. The old ticket no longer works; a new ticket goes to the new address in about 10 minutes.',
+                'eventcrew'
+            ),
+            'admin_guest_email_cleared' => __(
+                'Guest saved. The email address is removed and the old ticket no longer works.',
+                'eventcrew'
+            ),
             'admin_guest_removed' => __('Guest removed.', 'eventcrew'),
             'admin_buyers_failed' => __('That list could not be imported.', 'eventcrew'),
             'admin_tickets_test_sent' => __('A test ticket email was sent to your own address.', 'eventcrew'),

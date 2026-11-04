@@ -19,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '31';
+    public const DB_VERSION = '32';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -640,6 +640,12 @@ final class Schema
             // or 'failed', and ticket_mailed_at is when it was tried.
             // RetentionPurge blanks the email 60 days after the event.
             //
+            // ticket_rev (schema 32) counts how often an organizer changed
+            // the guest's email address. It is part of what the guest's
+            // ticket code and ticket link sign (TicketMail::guestCode()), so
+            // each change makes a new code and the old one stops working. 0
+            // signs as before schema 32, so tickets sent earlier keep working.
+            //
             // followup_mail_status is the post-event email (FollowupMail): ''
             // (not sent), 'sent', 'failed' or 'stopped' (an organizer stopped
             // that night's email); followup_mailed_at is when it was tried,
@@ -655,6 +661,7 @@ final class Schema
                 email varchar(191) DEFAULT NULL,
                 ticket_mail_status varchar(10) NOT NULL DEFAULT '',
                 ticket_mailed_at datetime DEFAULT NULL,
+                ticket_rev smallint(5) unsigned NOT NULL DEFAULT 0,
                 followup_mail_status varchar(10) NOT NULL DEFAULT '',
                 followup_mailed_at datetime DEFAULT NULL,
                 followup_clicked_at datetime DEFAULT NULL,

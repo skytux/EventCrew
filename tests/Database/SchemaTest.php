@@ -351,6 +351,15 @@ final class SchemaTest extends TestCase
         return $method->invoke(null, $stored);
     }
 
+    /** A guest's ticketRev: bumped when an organizer changes the address. */
+    public function testGuestsHaveATicketRev(): void
+    {
+        $guests = $this->statementFor(Schema::GUESTS);
+
+        self::assertStringContainsString('ticket_rev smallint(5) unsigned NOT NULL DEFAULT 0,', $guests);
+        self::assertGreaterThanOrEqual(32, (int) Schema::DB_VERSION);
+    }
+
     private function moveCanLeadToRole(): void
     {
         $method = new ReflectionMethod(Schema::class, 'moveCanLeadToRole');
