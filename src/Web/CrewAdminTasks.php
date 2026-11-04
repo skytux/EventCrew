@@ -168,7 +168,7 @@ final class CrewAdminTasks
     /**
      * "Delete": the wp-admin delete. The task is hidden everywhere and
      * everyone signed up for it is taken off; their tickets show DISABLED.
-     * Nobody is sent a message, as on wp-admin.
+     * Each of them gets an email (TaskCancelledNotice), as on wp-admin.
      */
     public function delete(int $taskId): string
     {

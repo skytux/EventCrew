@@ -29,13 +29,30 @@ final class TaskRepositoryTest extends TestCase
 
         // Nothing is removed: the tickets on it must keep working, as DISABLED.
         self::assertSame([], $this->wpdb->deletes);
-        self::assertCount(2, $this->wpdb->queries);
-        self::assertStringContainsString("SET status = 'cancelled'", $this->wpdb->queries[0]);
-        self::assertStringContainsString('WHERE task_id = 5 AND status IN', $this->wpdb->queries[0]);
+        self::assertCount(3, $this->wpdb->queries);
+        self::assertStringContainsString("SET status = 'cancelled'", $this->wpdb->queries[1]);
+        self::assertStringContainsString('WHERE task_id = 5 AND status IN', $this->wpdb->queries[1]);
         self::assertStringContainsString(
             "SET deleted_at = '2026-08-01 12:00:00' WHERE id = 5 AND deleted_at IS NULL",
-            $this->wpdb->queries[1]
+            $this->wpdb->queries[2]
         );
+    }
+
+    public function testDeletingATaskAnnouncesWhoseSignUpItCancelled(): void
+    {
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, ...$args];
+        });
+        $this->wpdb->nextCols[] = ['7', '8'];
+
+        (new TaskRepository())->delete(5);
+
+        // The people are read before their sign-ups are cancelled, from the
+        // sign-ups that still hold a place.
+        self::assertStringContainsString('SELECT person_id', $this->wpdb->queries[0]);
+        self::assertStringContainsString('WHERE task_id = 5 AND status IN', $this->wpdb->queries[0]);
+        self::assertSame([['eventcrew/task_deleted', 5, [7, 8]]], $fired);
     }
 
     public function testADeletedTaskIsLeftOutOfTheNight(): void

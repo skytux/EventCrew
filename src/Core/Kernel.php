@@ -74,6 +74,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverService;
+use EventCrew\Support\TaskCancelledNotice;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
@@ -194,6 +195,7 @@ final class Kernel
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
         $this->container->get(SlotFreedNotice::class)->boot();
+        $this->container->get(TaskCancelledNotice::class)->boot();
 
         // The import-by-email endpoint: the mail poller posts to it with nobody
         // logged in, so it boots on the front path with the bot's endpoints.
@@ -1363,6 +1365,15 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            TaskCancelledNotice::class,
+            fn (Container $container) => new TaskCancelledNotice(
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class)
             )
         );
 

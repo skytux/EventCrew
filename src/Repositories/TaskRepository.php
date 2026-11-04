@@ -78,6 +78,9 @@ final class TaskRepository
      * everywhere (deleted_at) and the sign-ups still holding a place on it are
      * cancelled, so their tickets keep working and show DISABLED. Finished
      * history (completed, no-show, ...) stays as it was.
+     *
+     * Fires eventcrew/task_deleted with the task id and the ids of the people
+     * whose sign-up it cancelled, so TaskCancelledNotice can email them.
      */
     public function delete(int $id): void
     {
@@ -86,6 +89,14 @@ final class TaskRepository
         $now = current_time('mysql');
         $statuses = AssignmentStatus::occupying();
         $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        $personIds = array_map('intval', (array) $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT person_id FROM {$this->assignmentsTable()}
+                WHERE task_id = %d AND status IN ({$statusPlaceholders})",
+                ...array_merge([$id], $statuses)
+            )
+        ));
 
         $wpdb->query(
             $wpdb->prepare(
@@ -102,6 +113,8 @@ final class TaskRepository
                 $id
             )
         );
+
+        do_action('eventcrew/task_deleted', $id, $personIds);
     }
 
     /**

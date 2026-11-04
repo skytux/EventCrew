@@ -171,7 +171,7 @@ msgstr ""
 msgid "%1$s: this ticket is for %2$s, not tonight."
 msgstr ""
 
-#: src/Admin/TasksListTable.php:188 src/Web/CrewAdminTasks.php:359
+#: src/Admin/TasksListTable.php:189 src/Web/CrewAdminTasks.php:359
 msgid "%d / no limit"
 msgstr ""
 
@@ -1495,7 +1495,7 @@ msgstr ""
 msgid "Defaults come from the role in Settings. Set to 0 to take a task off the board without deleting it."
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:134 src/Admin/TasksListTable.php:139 templates/public/signup.php:1611
+#: src/Admin/PeopleListTable.php:134 src/Admin/TasksListTable.php:140 templates/public/signup.php:1611
 msgid "Delete"
 msgstr ""
 
@@ -1515,8 +1515,8 @@ msgstr ""
 msgid "Delete this person and their whole task history?"
 msgstr ""
 
-#: src/Admin/TasksListTable.php:134 templates/public/signup.php:1606
-msgid "Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED."
+#: templates/public/signup.php:1606
+msgid "Delete this task? Everyone signed up for it is taken off and emailed, and their tickets show DISABLED."
 msgstr ""
 
 #: templates/public/signup.php:580
@@ -2208,6 +2208,10 @@ msgstr ""
 
 #: src/Support/OpenTaskCall.php:344
 msgid "Hi %1$s,\n\nSome tasks still need people:\n\n%2$s\n\nSign up on the board.\n\n%3$s"
+msgstr ""
+
+#: src/Support/TaskCancelledNotice.php:91
+msgid "Hi %1$s,\n\nThe organizers have cancelled the task %2$s at %3$s, %4$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing."
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:85
@@ -4128,7 +4132,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97
+#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:97
 msgid "See open tasks"
 msgstr ""
 
@@ -4634,6 +4638,11 @@ msgstr ""
 
 #: src/Admin/TasksPage.php:190 src/Web/CrewAdminTasks.php:273
 msgid "Task added."
+msgstr ""
+
+#: src/Support/TaskCancelledNotice.php:84
+#. translators: 1: role, 2: event
+msgid "Task cancelled: %1$s for %2$s"
 msgstr ""
 
 #: templates/admin/tasks.php:184 templates/public/signup.php:1465

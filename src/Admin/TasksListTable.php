@@ -132,7 +132,8 @@ final class TasksListTable extends WP_List_Table
                 esc_url($deleteUrl),
                 esc_attr(wp_json_encode(
                     __(
-                        'Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED.',
+                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                        'Delete this task? Everyone signed up for it is taken off and emailed, and their tickets show DISABLED.',
                         'eventcrew'
                     )
                 )),
