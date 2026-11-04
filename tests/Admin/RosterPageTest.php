@@ -164,4 +164,44 @@ final class RosterPageTest extends TestCase
 
         self::assertNotNull(TicketMail::pending());
     }
+
+    // --- A guest's email address ---------------------------------------------
+
+    /**
+     * Saving a guest row with a new address in wp-admin makes a new ticket:
+     * the rev goes up and the 10-minute send is started.
+     */
+    public function testANewGuestEmailMakesANewTicket(): void
+    {
+        $this->aSendIsWaiting();
+        $this->options = [];
+        $scheduled = [];
+        Functions\when('update_option')->alias(static function (string $name) use (&$scheduled): bool {
+            $scheduled[] = $name;
+
+            return true;
+        });
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
+        $_POST = [
+            'guest_id' => '5',
+            'roster_date' => '2026-07-20',
+            'guest_name' => 'Anna',
+            'guest_email' => 'new@example.com',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 5, 'event_date' => '2026-07-20', 'name' => 'Anna', 'email' => 'old@example.com'];
+
+        $page = $this->page();
+        (function (): void {
+            $this->guests = new \EventCrew\Repositories\GuestRepository();
+        })->call($page);
+        $this->submit(static fn () => $page->saveGuest());
+
+        $changes = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'ticket_rev = ticket_rev + 1')
+        ));
+        self::assertCount(1, $changes);
+        self::assertStringContainsString("NULLIF('new@example.com', '')", $changes[0]);
+        self::assertContains(TicketMail::PENDING_OPTION, $scheduled);
+    }
 }

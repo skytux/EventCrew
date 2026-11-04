@@ -39,4 +39,20 @@ final class GuestRepositoryTest extends TestCase
         self::assertSame(0, $this->wpdb->updates[0]['data']['plus_ones']);
         self::assertSame(['id' => 4], $this->wpdb->updates[0]['where']);
     }
+
+    /**
+     * A changed address makes a new ticket: the rev goes up and the mail
+     * status is cleared, so the batch sends the new ticket.
+     */
+    public function testChangeEmailMakesANewTicketToSend(): void
+    {
+        (new GuestRepository())->changeEmail(4, 'new@example.test');
+
+        $sql = $this->wpdb->lastQuery();
+        self::assertStringContainsString("email = NULLIF('new@example.test', '')", $sql);
+        self::assertStringContainsString('ticket_rev = ticket_rev + 1', $sql);
+        self::assertStringContainsString("ticket_mail_status = ''", $sql);
+        self::assertStringContainsString('ticket_mailed_at = NULL', $sql);
+        self::assertStringContainsString('WHERE id = 4', $sql);
+    }
 }

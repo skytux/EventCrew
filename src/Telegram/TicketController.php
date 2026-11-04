@@ -16,6 +16,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketList;
+use EventCrew\Support\TicketMail;
 use EventCrew\Web\SignupBoardView;
 use WP_REST_Request;
 
@@ -158,10 +159,12 @@ final class TicketController
      */
     private function guestTicket(string $token): ?array
     {
-        $id = SignedLink::verify('guest_ticket', $token);
-        $guest = null === $id ? null : $this->guests->find($id);
+        // The token carries the guest's ticketRev. A link from before an
+        // organizer changed the guest's address has an older rev: no ticket.
+        $parts = TicketMail::guestTokenParts($token);
+        $guest = null === $parts ? null : $this->guests->find($parts['id']);
 
-        if (null === $guest || '' === $guest->email) {
+        if (null === $guest || '' === $guest->email || $parts['rev'] !== $guest->ticketRev) {
             return null;
         }
 

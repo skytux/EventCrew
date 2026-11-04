@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.137.1
+Stable tag: 1.138.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.138.0 =
+Organizers can change a guest's email address in the roster. The guest gets a new ticket code and link; the old ones stop working. Database schema 32.
 
 = 1.137.1 =
 Tickets: a spent free-entry credit now gets only the one ticket email with the QR code, the same as bought and guest tickets, instead of a second plain email as well.
@@ -1205,6 +1208,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.138.0 =
+No settings change.
 
 = 1.137.1 =
 No settings change.

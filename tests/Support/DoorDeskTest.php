@@ -1083,6 +1083,45 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('', $scan['key']);
     }
 
+    /**
+     * After an organizer changed a guest's email address (ticketRev 2), the
+     * old code and the old link scan as no longer valid and the new code
+     * scans as tonight's ticket.
+     */
+    public function testAGuestTicketFromBeforeAnEmailChangeNoLongerScans(): void
+    {
+        $row = ['id' => 12, 'event_date' => self::NIGHT, 'name' => 'Cy Cole', 'email' => 'new@example.test', 'ticket_rev' => 2];
+        $old = [
+            TicketMail::guestCode(12),
+            TicketMail::guestCode(12, 1),
+            TicketMail::guestToken(12),
+            TicketMail::guestToken(12, 1),
+        ];
+
+        foreach ($old as $text) {
+            $this->wpdb->nextRows[] = $row;
+            $scan = $this->desk()->scan(self::NIGHT, $text);
+            self::assertSame(DoorDesk::SCAN_DISABLED, $scan['code'], $text);
+            self::assertSame('Cy Cole', $scan['name']);
+        }
+
+        foreach ([TicketMail::guestCode(12, 2), TicketMail::guestToken(12, 2)] as $text) {
+            $this->wpdb->nextRows[] = $row;
+            self::assertSame(DoorDesk::SCAN_OK, $this->desk()->scan(self::NIGHT, $text)['code'], $text);
+        }
+    }
+
+    /** A rev cannot be made up: the signature covers it. */
+    public function testAGuestCodeWithAMadeUpRevIsNotOurs(): void
+    {
+        $code = TicketMail::guestCode(12, 1);
+        $forged = str_replace('EC-G12r1-', 'EC-G12r2-', $code);
+
+        self::assertSame(DoorDesk::SCAN_NOT_OURS, $this->desk()->scan(self::NIGHT, $forged)['code']);
+        self::assertSame(DoorDesk::SCAN_NOT_OURS, $this->desk()->scan(self::NIGHT, 'EC-G12r0-' . substr($code, -16))['code']);
+        self::assertSame([], $this->wpdb->queries, 'a forged code reads nothing');
+    }
+
     public function testATicketForAnotherNightSaysWhichNight(): void
     {
         $other = ['task_date' => '2026-12-12'] + $this->taskRow(5, 'decorate');

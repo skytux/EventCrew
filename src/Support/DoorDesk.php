@@ -384,11 +384,12 @@ final class DoorDesk
      */
     public function scan(string $date, string $text): array
     {
-        // A guest's emailed ticket holds a short signed code (TicketMail).
-        $guestId = TicketMail::guestIdFromCode($text);
+        // A guest's emailed ticket holds a short signed code (TicketMail)
+        // with the guest's ticketRev in it.
+        $parts = TicketMail::guestCodeParts($text);
 
-        if (null !== $guestId) {
-            return $this->scanGuest($date, $guestId);
+        if (null !== $parts) {
+            return $this->scanGuest($date, $parts['id'], $parts['rev']);
         }
 
         // A crew member's emailed ticket: a sign-up or a spent credit. Either
@@ -427,10 +428,10 @@ final class DoorDesk
                 return $this->scanRedemption($date, $redemptionId);
             }
 
-            $guestId = SignedLink::verify('guest_ticket', $token);
+            $parts = TicketMail::guestTokenParts($token);
 
-            if (null !== $guestId) {
-                return $this->scanGuest($date, $guestId);
+            if (null !== $parts) {
+                return $this->scanGuest($date, $parts['id'], $parts['rev']);
             }
         }
 
@@ -440,15 +441,17 @@ final class DoorDesk
     /**
      * A guest's emailed ticket (TicketMail): the guest's row on the guest
      * list. A guest who was removed from the list, or whose email address was
-     * deleted, no longer has a ticket.
+     * deleted, no longer has a ticket. Nor does a code from before an
+     * organizer changed the guest's address: $rev, the ticketRev it was
+     * signed with, is older than the guest's.
      *
      * @return array{code: string, key: string, name: string, date: string, at: string}
      */
-    private function scanGuest(string $date, int $guestId): array
+    private function scanGuest(string $date, int $guestId, int $rev): array
     {
         $guest = $this->guests->find($guestId);
 
-        if (null === $guest || '' === $guest->email) {
+        if (null === $guest || '' === $guest->email || $rev !== $guest->ticketRev) {
             return self::scanAnswer(self::SCAN_DISABLED, '', null === $guest ? '' : $guest->name);
         }
 

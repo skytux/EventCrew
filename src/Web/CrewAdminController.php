@@ -472,7 +472,10 @@ final class CrewAdminController
                     sanitize_text_field((string) ($post['guest_name'] ?? '')),
                     (int) ($post['guest_plus_ones'] ?? 0),
                     sanitize_text_field((string) ($post['guest_note'] ?? '')),
-                    trim(sanitize_text_field((string) ($post['guest_email'] ?? '')))
+                    // Null when the form had no email field: the address stays.
+                    isset($post['guest_email'])
+                        ? trim(sanitize_text_field((string) $post['guest_email']))
+                        : null
                 ),
                 'remove' => $this->rosterScreen->removeGuest((int) ($post['guest_id'] ?? 0)),
                 'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'guests'),
