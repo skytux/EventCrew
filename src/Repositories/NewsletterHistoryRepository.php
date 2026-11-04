@@ -82,6 +82,22 @@ final class NewsletterHistoryRepository
     }
 
     /**
+     * The day (Y-m-d) of the oldest recorded join, or null when there is
+     * none. Older than the history's start day when schema 31 added the
+     * joins from before it.
+     */
+    public function firstJoinDay(): ?string
+    {
+        global $wpdb;
+
+        $first = $wpdb->get_var(
+            $wpdb->prepare("SELECT MIN(created_at) FROM {$this->changes()} WHERE kind = %s", self::SUBSCRIBED)
+        );
+
+        return is_string($first) && '' !== $first ? substr($first, 0, 10) : null;
+    }
+
+    /**
      * Stores one version of a newsletter as it starts to go out and returns
      * the row's id, 0 when nothing was written. $html is the email as the
      * subscribers get it, without anything of one subscriber in it.

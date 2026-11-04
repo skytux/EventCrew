@@ -51,6 +51,21 @@ final class NewsletterHistoryRepositoryTest extends TestCase
         );
     }
 
+    public function testTheFirstJoinDayIsTheOldestJoin(): void
+    {
+        $history = new NewsletterHistoryRepository();
+
+        $this->wpdb->nextVars[] = '2024-12-24 18:30:00';
+        self::assertSame('2024-12-24', $history->firstJoinDay());
+        self::assertStringContainsString(
+            "SELECT MIN(created_at) FROM wp_eventcrew_newsletter_changes WHERE kind = 'subscribed'",
+            $this->wpdb->lastQuery()
+        );
+
+        $this->wpdb->nextVars[] = null;
+        self::assertNull($history->firstJoinDay());
+    }
+
     /** A sent version is stored with its copy, and its counts are set later. */
     public function testASentVersionKeepsItsCopyAndCounts(): void
     {

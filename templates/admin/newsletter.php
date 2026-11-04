@@ -8,6 +8,7 @@
  *
  * @var array{confirmed: int, pending: int, unsubscribed: int} $counts
  * @var string $since
+ * @var string|null $joins_since
  * @var string $today
  * @var string $range
  * @var string $from
@@ -69,11 +70,20 @@ if (NewsletterPage::RANGE_CUSTOM === $range) {
     <?php // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction. ?>
     <p class="description">
         <?php
-        printf(
-            /* translators: %s: a date, like 3.11.2026 */
-            esc_html__('The history starts on %s, the day this version was installed. There is no older data.', 'eventcrew'),
-            esc_html(NewsletterPage::longDay($since))
-        );
+        if (null !== $joins_since && $joins_since < $since) {
+            printf(
+                /* translators: 1: date of the oldest known join, like 3.11.2024, 2: the day the history began */
+                esc_html__('Joins are known from %1$s, leaves and sent newsletters only from %2$s.', 'eventcrew'),
+                esc_html(NewsletterPage::longDay($joins_since)),
+                esc_html(NewsletterPage::longDay($since))
+            );
+        } else {
+            printf(
+                /* translators: %s: a date, like 3.11.2026 */
+                esc_html__('The history starts on %s, the day this version was installed. There is no older data.', 'eventcrew'),
+                esc_html(NewsletterPage::longDay($since))
+            );
+        }
         ?>
     </p>
 

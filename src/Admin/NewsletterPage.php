@@ -17,7 +17,8 @@ use EventCrew\Repositories\NewsletterSubscriberRepository;
  * counts: no address or name is shown.
  *
  * The history (joins, leaves, sent newsletters) is recorded from schema 30 on;
- * the page says from which day.
+ * schema 31 added the older joins from the subscribers' confirmed_at. The page
+ * says from which day each is known.
  */
 final class NewsletterPage
 {
@@ -85,6 +86,7 @@ final class NewsletterPage
      * @return array{
      *     counts: array{confirmed: int, pending: int, unsubscribed: int},
      *     since: string,
+     *     joins_since: ?string,
      *     today: string,
      *     range: string,
      *     from: string,
@@ -133,6 +135,7 @@ final class NewsletterPage
         return [
             'counts' => $this->subscribers->countByStatus(),
             'since' => $since,
+            'joins_since' => $this->history->firstJoinDay(),
             'today' => $today,
             'range' => $range,
             'from' => $from,
