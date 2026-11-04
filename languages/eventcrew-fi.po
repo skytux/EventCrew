@@ -6398,3 +6398,6 @@ msgstr "Vierasta ei voitu lisätä. Yritä uudelleen."
 
 msgid "With an email, the guest gets their ticket by email in about 10 minutes, the same as a guest added on the guest list."
 msgstr "Kun sähköposti on annettu, vieras saa lipun sähköpostiin noin 10 minuutissa, kuten vieraslistalle lisätty vieras."
+
+msgid "Cancel the waiting ticket emails? None of them will be sent, also those for guests added elsewhere."
+msgstr "Perutaanko odottavat lippuviestit? Yhtäkään ei lähetetä, ei myöskään muualla lisättyjen vieraiden viestejä."

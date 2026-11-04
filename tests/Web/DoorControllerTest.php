@@ -23,6 +23,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 use EventCrew\Web\DoorController;
@@ -233,6 +234,32 @@ final class DoorControllerTest extends SalesDeskTestCase
 
         self::assertSame(403, $status);
         self::assertNull($this->countChange());
+    }
+
+    public function testCancelSendingWithTheTokenStopsTheWaitingSend(): void
+    {
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->justReturn(1);
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+
+        $status = $this->post(DoorController::CANCEL_SEND_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
+
+        self::assertSame(200, $status);
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testCancelSendingWithABadTokenIsRefused(): void
+    {
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+
+        $status = $this->post(DoorController::CANCEL_SEND_ACTION, ['csrf' => 'not-the-token']);
+
+        self::assertSame(403, $status);
+        self::assertArrayHasKey(TicketMail::PENDING_OPTION, $this->options);
     }
 
     public function testAddingAHolviBuyerWithABadTokenIsRefused(): void

@@ -45,7 +45,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         Functions\when('sanitize_email')->returnArg(1);
     }
 
-    private function desk(?ClaimNotifier $notifier = null): DoorDesk
+    private function desk(?ClaimNotifier $notifier = null, ?TicketMail $ticketMail = null): DoorDesk
     {
         return new DoorDesk(
             new TaskRepository(),
@@ -68,7 +68,70 @@ final class DoorDeskTest extends SalesDeskTestCase
             ),
             $this->salesDeskGate(),
             new CreditGrantRepository(),
-            $notifier
+            $notifier,
+            $ticketMail
+        );
+    }
+
+    private function ticketMail(): TicketMail
+    {
+        return new TicketMail(
+            new TicketBuyerRepository(),
+            new GuestRepository(),
+            new TaskRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+        );
+    }
+
+    /** Stubs what TicketMail::cancel() calls, deleting from $this->options. */
+    private function allowCancel(): void
+    {
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_clear_scheduled_hook')->justReturn(1);
+    }
+
+    public function testTheStateSaysWhenAWaitingTicketSendGoesOut(): void
+    {
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+        $this->queueState([]);
+        $this->wpdb->nextResults[] = [];                            // buyers->unsentFrom
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];   // guests->unsentFrom
+
+        $sending = $this->desk(null, $this->ticketMail())->state(self::NIGHT)['sending'];
+
+        self::assertStringContainsString('Ticket emails go out at', $sending);
+        self::assertStringContainsString('1 guest', $sending);
+    }
+
+    public function testTheStateSaysNothingWhenNoSendWaits(): void
+    {
+        $this->queueState([]);
+
+        self::assertSame('', $this->desk(null, $this->ticketMail())->state(self::NIGHT)['sending']);
+    }
+
+    public function testCancelSendingAtTheDeskStopsTheWaitingSend(): void
+    {
+        $this->allowCancel();
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 300, 'rest' => []];
+
+        $message = $this->desk(null, $this->ticketMail())->cancelTicketSend();
+
+        self::assertSame('Sending cancelled. No ticket email was sent.', $message);
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testCancelSendingWithNothingWaitingSaysSo(): void
+    {
+        $this->allowCancel();
+
+        self::assertSame(
+            'No send was waiting. It may have gone out already.',
+            $this->desk()->cancelTicketSend()
         );
     }
 

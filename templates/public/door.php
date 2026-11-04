@@ -74,6 +74,7 @@ $eventcrew_text = [
     'extra' => __('extra', 'eventcrew'),
     'empty' => __('Nobody on this list.', 'eventcrew'),
     'failed' => __('That did not go through. Check the connection and try again.', 'eventcrew'),
+    'cancelSendAsk' => __('Cancel the waiting ticket emails? None of them will be sent, also those for guests added elsewhere.', 'eventcrew'),
     'fewer' => __('One guest fewer', 'eventcrew'),
     'more' => __('One guest more', 'eventcrew'),
     'ownTitle' => __('Open on other device', 'eventcrew'),
@@ -148,6 +149,8 @@ li.ec-loading{justify-content:center;border-bottom:0;padding:16px 0}
 .ec-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ec-msg{margin:8px 0;padding:8px 12px;border-radius:10px;background:var(--card)}
 .ec-msg:empty{display:none}
+.ec-msg[hidden]{display:none}
+.ec-link{min-height:0;padding:0;border:0;background:none;color:var(--err);font:inherit;text-decoration:underline;cursor:pointer}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
 .ec-anon-label{color:var(--muted);margin-right:auto}
@@ -227,6 +230,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 <main>
     <p class="ec-msg" id="ec-msg" role="status"></p>
     <p class="ec-msg ec-quota" id="ec-quota" role="alert"></p>
+    <?php /* The waiting ticket send (state.sending), shown only while it waits. */ ?>
+    <p class="ec-msg ec-sending" id="ec-sending" hidden><span id="ec-sending-text"></span>
+        <button type="button" class="ec-link" id="ec-sending-cancel"><?php esc_html_e('Cancel sending', 'eventcrew'); ?></button></p>
     <div id="ec-sections"></div>
 </main>
 <dialog id="ec-add" aria-labelledby="ec-add-title">
@@ -547,6 +553,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         // The date, then who this device is logged in as.
         el('ec-day').textContent = config.who ? state.day + ' · ' + config.who : state.day;
         drawCount();
+        // "Ticket emails go out at 21:40 to 1 guest." with "Cancel sending".
+        el('ec-sending-text').textContent = state.sending || '';
+        el('ec-sending').hidden = !state.sending;
         el('ec-anon-count').textContent = state.anonymous;
         el('ec-anon-less').disabled = state.anonymous <= 0;
         holder.textContent = '';
@@ -1097,6 +1106,17 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     el('ec-anon-more').addEventListener('click', function () { countAnonymous('1', el('ec-anon-more')); });
     el('ec-anon-less').addEventListener('click', function () { countAnonymous('-1', el('ec-anon-less')); });
+
+    el('ec-sending-cancel').addEventListener('click', function () {
+        // One batch for the whole site, so ask first.
+        if (!window.confirm(text.cancelSendAsk)) {
+            return;
+        }
+        post('cancelSend', {}).then(function (data) {
+            apply(data);
+            say(data ? data.message : text.failed);
+        }, failed);
+    });
 
     el('ec-guest-less').addEventListener('click', function () { setGuestPlus(guestPlus - 1); });
     el('ec-guest-more').addEventListener('click', function () { setGuestPlus(guestPlus + 1); });
