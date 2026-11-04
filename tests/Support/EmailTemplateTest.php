@@ -281,4 +281,77 @@ final class EmailTemplateTest extends TestCase
         self::assertStringContainsString('style="margin:8px auto 12px"', $html);
         self::assertStringContainsString('style="margin:0 auto 12px"', $html);
     }
+
+    /** {{year}} is the year of the moment the email is for; without one, this year. */
+    public function testTheYearIsTheYearOfTheGivenMoment(): void
+    {
+        $this->options[EmailTemplate::POST_OPTION] = 5;
+        $post = new \WP_Post();
+        $post->post_status = 'publish';
+        $post->post_content = '{{content}} (c) {{year}}';
+        Functions\when('get_post_type')->justReturn(EmailTemplate::POST_TYPE);
+        Functions\when('get_post')->justReturn($post);
+        $template = new EmailTemplate(new Logger());
+
+        self::assertStringContainsString(
+            'Hello (c) 2031',
+            $template->render('S', 'Hello', '', false, new \DateTimeImmutable('2031-01-01 10:00:00'))
+        );
+        self::assertStringContainsString('Hello (c) ' . gmdate('Y'), $template->render('S', 'Hello', ''));
+    }
+
+    /**
+     * The newsletter preview is the subscriber's email with the red stop
+     * button and one line under the whole email, in the HTML and in the
+     * plain text, and no List-Unsubscribe header.
+     */
+    public function testTheNewsletterPreviewIsTheSubscribersEmailWithTheStopButtonUnderIt(): void
+    {
+        $altBody = '';
+        Functions\when('add_action')->alias(static function (string $hook, callable $callback) use (&$altBody): bool {
+            if ('phpmailer_init' === $hook) {
+                $mailer = new \stdClass();
+                $callback($mailer);
+                $altBody = (string) $mailer->AltBody;
+            }
+
+            return true;
+        });
+        $mailer = $this->mailer();
+        $stop = ['label' => 'Do Not Send This', 'url' => 'https://site.test/stop'];
+
+        self::assertTrue($mailer->toOrganizerAsSubscriber(
+            'org@example.test',
+            '[Preview] Coming events',
+            '<p>The events</p>',
+            'The events',
+            'Leave the announcement',
+            '#',
+            'Crew note',
+            $stop,
+            'Goes out on 21.7.2026 at 09:00 to 3 subscribers.'
+        ));
+
+        $html = $this->mails[0]['body'];
+        $subscriber = $mailer->subscriberHtml(
+            '[Preview] Coming events',
+            '<p>The events</p>',
+            'Leave the announcement',
+            '#',
+            'Crew note'
+        );
+        $button = strpos($html, 'Do Not Send This');
+
+        self::assertNotFalse($button);
+        self::assertStringStartsWith(substr($subscriber, 0, (int) strpos($subscriber, '</body>')), $html);
+        self::assertGreaterThan(strpos($html, 'Leave the announcement'), $button);
+        self::assertStringContainsString('background:' . Mailer::STOP_COLOR, $html);
+        self::assertGreaterThan($button, strpos($html, 'Goes out on 21.7.2026 at 09:00 to 3 subscribers.'));
+        self::assertSame(['Content-Type: text/html; charset=UTF-8'], $this->mails[0]['headers']);
+        self::assertStringStartsWith("The events\n\n—\nCrew note\nLeave the announcement: #", $altBody);
+        self::assertStringEndsWith(
+            "Do Not Send This: https://site.test/stop\nGoes out on 21.7.2026 at 09:00 to 3 subscribers.",
+            $altBody
+        );
+    }
 }

@@ -349,9 +349,12 @@ events announcement**.
   each event at a set time (**Send the newsletter**: days, default 7, and a time,
   default the hour the send window opens). Events that fall in the same window
   go into one announcement, and each event is in at most one announcement.
-  Before sending, every organizer gets a preview email with the announcement
-  exactly as subscribers get it (HTML) and a signed **Stop this announcement**
-  link; the crew app's Admin tab has the same button. **Send the preview** is
+  Before sending, every organizer gets a preview email: the email a subscriber
+  will get, as it will look at the send time, with "[Preview]" in front of the
+  subject, the organizer's own name in the greeting, "#" as the footer link,
+  and at the bottom a red signed **Do Not Send This** button with the send
+  date, time and number of subscribers under it; the crew app's Admin tab has
+  a stop button too. **Send the preview** is
   either a number of hours after the previous event ends (the default, 0 hours)
   or a number of days before the event at a set time; the first uses the second
   when there is no previous event or it has no end time. The sending is planned

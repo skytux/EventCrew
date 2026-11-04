@@ -192,9 +192,22 @@ final class EmailTemplate
      * ticket email: its QR code must stay black on white to scan). It is a
      * request: an app that recolours anyway still can, which is why the QR
      * cells carry their colours as background images too (TicketQr).
+     *
+     * $now is the moment the email is for: {{year}} is its year. Null is the
+     * current time. The newsletter preview passes the newsletter's send time,
+     * so it looks as it will on that day.
+     *
+     * $after is HTML put after the whole template, at the very bottom of the
+     * email (the newsletter preview's "Do Not Send This" button).
      */
-    public function render(string $subject, string $content, string $footer, bool $lightOnly = false): string
-    {
+    public function render(
+        string $subject,
+        string $content,
+        string $footer,
+        bool $lightOnly = false,
+        ?\DateTimeInterface $now = null,
+        string $after = ''
+    ): string {
         $body = str_replace(
             [
                 '{{footer}}',
@@ -214,7 +227,7 @@ final class EmailTemplate
                 esc_html(self::siteName()),
                 esc_url(home_url('/')),
                 esc_html($subject),
-                esc_html((string) gmdate('Y')),
+                esc_html(null === $now ? (string) gmdate('Y') : $now->format('Y')),
             ],
             $this->wrapper()
         );
@@ -239,6 +252,7 @@ final class EmailTemplate
             . '</head>' . "\n"
             . '<body style="margin:0;padding:0;background:#f4f5f7;">' . "\n"
             . $body . "\n"
+            . ('' === $after ? '' : $after . "\n")
             . '</body>' . "\n"
             . '</html>';
     }
