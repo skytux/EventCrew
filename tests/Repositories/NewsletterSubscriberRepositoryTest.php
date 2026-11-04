@@ -303,6 +303,35 @@ final class NewsletterSubscriberRepositoryTest extends TestCase
         );
     }
 
+    /**
+     * The privacy eraser deleting a confirmed subscriber records a leave, as
+     * an unsubscribe does; a pending row, an unsubscribed row, or a delete
+     * that removed nothing records none.
+     */
+    public function testErasingAConfirmedSubscriberRecordsALeave(): void
+    {
+        $repository = new NewsletterSubscriberRepository();
+
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $this->wpdb->nextQueryResults[] = 1;
+        self::assertSame(1, $repository->deleteByEmail('fan@example.test'));
+        self::assertSame(['unsubscribed'], $this->changeKinds());
+
+        $this->wpdb->nextRows[] = self::row(6, NewsletterSubscriberRepository::STATUS_PENDING);
+        $this->wpdb->nextQueryResults[] = 1;
+        $repository->deleteByEmail('fan@example.test');
+
+        $this->wpdb->nextRows[] = self::row(7, NewsletterSubscriberRepository::STATUS_UNSUBSCRIBED);
+        $this->wpdb->nextQueryResults[] = 1;
+        $repository->deleteByEmail('fan@example.test');
+
+        $this->wpdb->nextRows[] = self::row(8, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+        $this->wpdb->nextQueryResults[] = 0;
+        self::assertSame(0, $repository->deleteByEmail('fan@example.test'));
+
+        self::assertSame(['unsubscribed'], $this->changeKinds());
+    }
+
     public function testThePurgeDeletesOnlyOldPendingRows(): void
     {
         $this->wpdb->nextQueryResults[] = 2;

@@ -404,7 +404,9 @@ final class NewsletterSubscriberRepository
 
     /**
      * Deletes the row for this address, whatever its status. Returns how many
-     * rows went (0 or 1). Used by the personal-data eraser.
+     * rows went (0 or 1). Used by the personal-data eraser. A confirmed
+     * subscriber deleted this way has left, so it is recorded as a leave,
+     * the same as an unsubscribe.
      */
     public function deleteByEmail(string $email): int
     {
@@ -416,11 +418,17 @@ final class NewsletterSubscriberRepository
             return 0;
         }
 
+        $row = $this->findByEmail($email);
         $deleted = $wpdb->query(
             $wpdb->prepare("DELETE FROM {$this->table()} WHERE email = %s", $email)
         );
+        $deleted = is_int($deleted) ? $deleted : 0;
 
-        return is_int($deleted) ? $deleted : 0;
+        if ($deleted > 0 && null !== $row && self::STATUS_CONFIRMED === $row['status']) {
+            $this->history->recordChange(NewsletterHistoryRepository::UNSUBSCRIBED);
+        }
+
+        return $deleted;
     }
 
     /**
