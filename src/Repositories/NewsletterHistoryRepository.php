@@ -46,20 +46,21 @@ final class NewsletterHistoryRepository
     }
 
     /**
-     * How many joined and left on each day from $fromDay (Y-m-d) on. Days
-     * with neither are left out.
+     * How many joined and left on each day from $fromDay to $toDay (Y-m-d,
+     * both included). Days with neither are left out.
      *
      * @return array<string, array{subscribed: int, unsubscribed: int}> Y-m-d => counts, oldest first
      */
-    public function changesPerDay(string $fromDay): array
+    public function changesPerDay(string $fromDay, string $toDay): array
     {
         global $wpdb;
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT DATE(created_at) AS day, kind, COUNT(*) AS n FROM {$this->changes()}"
-                    . ' WHERE created_at >= %s GROUP BY day, kind ORDER BY day ASC',
-                $fromDay . ' 00:00:00'
+                    . ' WHERE created_at >= %s AND created_at <= %s GROUP BY day, kind ORDER BY day ASC',
+                $fromDay . ' 00:00:00',
+                $toDay . ' 23:59:59'
             ),
             ARRAY_A
         );

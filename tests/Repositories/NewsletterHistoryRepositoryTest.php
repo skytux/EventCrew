@@ -43,9 +43,12 @@ final class NewsletterHistoryRepositoryTest extends TestCase
                 '2026-07-18' => ['subscribed' => 3, 'unsubscribed' => 1],
                 '2026-07-20' => ['subscribed' => 2, 'unsubscribed' => 0],
             ],
-            (new NewsletterHistoryRepository())->changesPerDay('2026-07-01')
+            (new NewsletterHistoryRepository())->changesPerDay('2026-07-01', '2026-07-20')
         );
-        self::assertStringContainsString("created_at >= '2026-07-01 00:00:00'", $this->wpdb->lastQuery());
+        self::assertStringContainsString(
+            "created_at >= '2026-07-01 00:00:00' AND created_at <= '2026-07-20 23:59:59'",
+            $this->wpdb->lastQuery()
+        );
     }
 
     /** A sent version is stored with its copy, and its counts are set later. */

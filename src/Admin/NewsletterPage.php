@@ -10,8 +10,9 @@ use EventCrew\Repositories\NewsletterSubscriberRepository;
 
 /**
  * The Newsletter page: how many addresses are subscribed, pending and
- * unsubscribed; a chart of joins and leaves per day or per week with each sent
- * newsletter marked on it; and the list of sent newsletters, each with a link
+ * unsubscribed; a chart of joins and leaves over a chosen time range, with a
+ * bar per day, week or month and each sent newsletter in the range marked on
+ * it; and the list of sent newsletters, each with a link
  * that opens the kept copy of the email in the browser. Read-only, and only
  * counts: no address or name is shown.
  *
@@ -29,8 +30,22 @@ final class NewsletterPage
 
     public const PER_WEEK = 'week';
 
-    /** Up to this many days the chart has a bar per day by default; above it, per week. */
+    public const PER_MONTH = 'month';
+
+    /** Up to this many days in the range the chart has a bar per day. */
     public const DAY_LIMIT = 62;
+
+    /** Up to this many days a bar per week (53 bars at most); above it, per month. */
+    public const WEEK_LIMIT = 371;
+
+    /** The time ranges to choose from, as months back from today; the first is the default. */
+    public const RANGES = ['1m' => 1, '6m' => 6, '1y' => 12, '3y' => 36];
+
+    /** A range given as from and to dates. */
+    public const RANGE_CUSTOM = 'custom';
+
+    /** A custom range is cut to this many years, so the chart stays a sensible size. */
+    private const MAX_YEARS = 10;
 
     private const WIDTH = 800;
     private const HEIGHT = 260;
@@ -53,19 +68,27 @@ final class NewsletterPage
     public function render(): void
     {
         // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only choice, changes nothing.
-        $per = isset($_GET['per']) ? sanitize_key(wp_unslash((string) $_GET['per'])) : '';
+        $get = static fn (string $key): string => isset($_GET[$key])
+            ? sanitize_text_field(wp_unslash((string) $_GET[$key]))
+            : '';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-        $this->view->render('newsletter', $this->data($per));
+        $this->view->render('newsletter', $this->data($get('range'), $get('from'), $get('to')));
     }
 
     /**
-     * Everything the page shows. $per is PER_DAY, PER_WEEK, or anything else
-     * for the default (per day up to DAY_LIMIT days of history, else per week).
+     * Everything the page shows. $range is a key of RANGES, or RANGE_CUSTOM
+     * with $from and $to (Y-m-d); anything else is the default range. The
+     * chart and its newsletter markers cover the range only; the list of
+     * sent newsletters is always complete.
      *
      * @return array{
      *     counts: array{confirmed: int, pending: int, unsubscribed: int},
      *     since: string,
+     *     today: string,
+     *     range: string,
+     *     from: string,
+     *     to: string,
      *     per: string,
      *     has_history: bool,
      *     chart: string,
@@ -73,18 +96,15 @@ final class NewsletterPage
      *         sent: int, failed: int, url: string}>
      * }
      */
-    public function data(string $per): array
+    public function data(string $range, string $from = '', string $to = ''): array
     {
         $today = (string) current_time('Y-m-d');
         $since = self::validDay((string) get_option(Schema::NEWSLETTER_HISTORY_SINCE_OPTION, '')) ?? $today;
         $since = min($since, $today);
-        $span = (int) (new \DateTimeImmutable($since))->diff(new \DateTimeImmutable($today))->days + 1;
+        [$range, $from, $to] = self::range($range, $from, $to, $today);
+        $per = self::perFor($from, $to);
 
-        if (self::PER_DAY !== $per && self::PER_WEEK !== $per) {
-            $per = $span > self::DAY_LIMIT ? self::PER_WEEK : self::PER_DAY;
-        }
-
-        $changes = $this->history->changesPerDay($since);
+        $changes = $this->history->changesPerDay($from, $to);
         $sentList = $this->history->sentList();
         $numbers = [];
         $sends = [];
@@ -103,16 +123,84 @@ final class NewsletterPage
             ];
         }
 
-        $hasHistory = [] !== $changes || [] !== $sends;
+        // The markers: only the newsletters sent within the range.
+        $inRange = array_values(array_filter(
+            $sends,
+            static fn (array $send): bool => substr($send['at'], 0, 10) >= $from && substr($send['at'], 0, 10) <= $to
+        ));
+        $hasHistory = [] !== $changes || [] !== $inRange;
 
         return [
             'counts' => $this->subscribers->countByStatus(),
             'since' => $since,
+            'today' => $today,
+            'range' => $range,
+            'from' => $from,
+            'to' => $to,
             'per' => $per,
             'has_history' => $hasHistory,
-            'chart' => $hasHistory ? self::chart(self::buckets($since, $today, $per, $changes), $sends, $per) : '',
+            'chart' => $hasHistory ? self::chart(self::buckets($from, $to, $per, $changes), $inRange, $per) : '',
             'sends' => $sends,
         ];
+    }
+
+    /**
+     * The range to show, as [range key, from, to] (Y-m-d, both days
+     * included). A preset ends today and starts the day after the same date
+     * that many months back. A custom range needs a valid from day; a missing
+     * or invalid to day is today, a day after today is today, from and to
+     * the wrong way round are swapped, and a range longer than MAX_YEARS is
+     * cut at its start. Anything else is the default preset.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    public static function range(string $range, string $from, string $to, string $today): array
+    {
+        $from = self::validDay($from);
+
+        if (self::RANGE_CUSTOM === $range && null !== $from) {
+            $to = min(self::validDay($to) ?? $today, $today);
+            $from = min($from, $today);
+
+            if ($from > $to) {
+                [$from, $to] = [$to, $from];
+            }
+
+            $earliest = (new \DateTimeImmutable(self::monthsBack($to, 12 * self::MAX_YEARS)))
+                ->modify('+1 day')
+                ->format('Y-m-d');
+
+            return [self::RANGE_CUSTOM, max($from, $earliest), $to];
+        }
+
+        if (! isset(self::RANGES[$range])) {
+            $range = (string) array_key_first(self::RANGES);
+        }
+
+        $start = (new \DateTimeImmutable(self::monthsBack($today, self::RANGES[$range])))->modify('+1 day');
+
+        return [$range, $start->format('Y-m-d'), $today];
+    }
+
+    /** A bar per day up to DAY_LIMIT days, per week up to WEEK_LIMIT days, else per month. */
+    public static function perFor(string $from, string $to): string
+    {
+        $days = (int) (new \DateTimeImmutable($from))->diff(new \DateTimeImmutable($to))->days + 1;
+
+        if ($days <= self::DAY_LIMIT) {
+            return self::PER_DAY;
+        }
+
+        return $days <= self::WEEK_LIMIT ? self::PER_WEEK : self::PER_MONTH;
+    }
+
+    /** The same day $months months before $day (Y-m-d), or that month's last day when it is shorter. */
+    private static function monthsBack(string $day, int $months): string
+    {
+        $date = new \DateTimeImmutable($day);
+        $first = $date->modify('first day of this month')->modify('-' . $months . ' months');
+
+        return $first->format('Y-m-') . sprintf('%02d', min((int) $date->format('j'), (int) $first->format('t')));
     }
 
     /**
@@ -177,22 +265,22 @@ final class NewsletterPage
     }
 
     /**
-     * One bucket per day or per week (weeks start on Monday) from $since to
-     * $today, with the joins and leaves in it.
+     * One bucket per day, week (weeks start on Monday) or month from $from to
+     * $to, with the joins and leaves in it. The first bucket starts on the
+     * first day of the week or month $from falls in.
      *
      * @param array<string, array{subscribed: int, unsubscribed: int}> $changes Y-m-d => counts
      * @return list<array{start: string, subscribed: int, unsubscribed: int}>
      */
-    public static function buckets(string $since, string $today, string $per, array $changes): array
+    public static function buckets(string $from, string $to, string $per, array $changes): array
     {
-        $step = self::PER_WEEK === $per ? '+7 days' : '+1 day';
-        $day = new \DateTimeImmutable($since);
-
-        if (self::PER_WEEK === $per) {
-            $day = $day->modify('-' . ((int) $day->format('N') - 1) . ' days');
-        }
-
-        $end = new \DateTimeImmutable($today);
+        $step = match ($per) {
+            self::PER_WEEK => '+7 days',
+            self::PER_MONTH => '+1 month',
+            default => '+1 day',
+        };
+        $day = new \DateTimeImmutable(self::bucketOf($from, $per));
+        $end = new \DateTimeImmutable($to);
         $buckets = [];
 
         while ($day <= $end) {
@@ -265,7 +353,7 @@ final class NewsletterPage
 
         foreach ($buckets as $i => $bucket) {
             $center = self::LEFT + $slot * ($i + 0.5);
-            $label = self::shortDay($bucket['start']);
+            $label = self::PER_MONTH === $per ? self::monthLabel($bucket['start']) : self::shortDay($bucket['start']);
             $bars = [
                 [$bucket['subscribed'], $center - $bar, self::COLOR_SUBSCRIBED, self::PER_WEEK === $per
                     /* translators: 1: the first day of the week, like 3.11., 2: number of addresses */
@@ -295,7 +383,10 @@ final class NewsletterPage
                 );
             }
 
-            if (0 === $i % $labelEvery || $i === $count - 1) {
+            // Every few bars and the last one, but not one so close to the last that the two overlap.
+            $nearLast = $count - 1 - $i < intdiv($labelEvery + 1, 2);
+
+            if ((0 === $i % $labelEvery && ! $nearLast) || $i === $count - 1) {
                 $out .= sprintf(
                     '<text x="%.1f" y="%d" font-size="11" text-anchor="middle" fill="#50575e">%s</text>',
                     $center,
@@ -368,13 +459,25 @@ final class NewsletterPage
     /** The first day of the bucket $day (Y-m-d) falls in. */
     private static function bucketOf(string $day, string $per): string
     {
-        if (self::PER_WEEK !== $per) {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $day);
+
+        if (false === $date) {
             return $day;
         }
 
+        return match ($per) {
+            self::PER_WEEK => $date->modify('-' . ((int) $date->format('N') - 1) . ' days')->format('Y-m-d'),
+            self::PER_MONTH => $date->format('Y-m-01'),
+            default => $day,
+        };
+    }
+
+    /** "11/2026" from 2026-11-01. */
+    private static function monthLabel(string $day): string
+    {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $day);
 
-        return false === $date ? $day : $date->modify('-' . ((int) $date->format('N') - 1) . ' days')->format('Y-m-d');
+        return false === $date ? $day : $date->format('n/Y');
     }
 
     /** A valid Y-m-d, or null. */
