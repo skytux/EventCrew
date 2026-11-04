@@ -266,18 +266,21 @@ final class AssistantKnowledge
             }
 
             $line = sprintf(
-                '- %s: %s, starts %s%s%s',
+                '- %s: %s, starts %s%s',
                 $event['date'],
                 $event['title'],
                 substr($event['starts_at'], 11, 5),
-                '' !== $event['ends_at'] ? ', ends ' . $event['ends_at'] : '',
-                'sold_out' === $closed ? ', sold out' : ''
+                '' !== $event['ends_at'] ? ', ends ' . $event['ends_at'] : ''
             );
 
             // The same price the event card shows ("🎟 22 €"); none, no words.
+            // A sold-out event gives no price, so the bot does not offer a
+            // ticket that cannot be bought.
             $price = NewsletterLayout::price(EventSource::card($event['id'])['price']);
 
-            if ('' !== $price) {
+            if ('sold_out' === $closed) {
+                $line .= ', tickets sold out';
+            } elseif ('' !== $price) {
                 $line .= ', ticket ' . $price;
             }
 
