@@ -429,16 +429,35 @@ final class DoorDeskTest extends SalesDeskTestCase
     {
         $this->wpdb->nextQueryResults[] = 1;
 
-        self::assertTrue($this->desk()->addGuest(self::NIGHT, 1, ' Ann ', 2));
+        self::assertSame(DoorDesk::GUEST_OK, $this->desk()->addGuest(self::NIGHT, 1, ' Ann ', 2));
         self::assertSame('Ann', $this->wpdb->inserts[0]['data']['name']);
         self::assertSame(2, $this->wpdb->inserts[0]['data']['plus_ones']);
+        self::assertArrayNotHasKey('email', $this->wpdb->inserts[0]['data']);
         self::assertStringContainsString("'guest', 1, 0,", $this->wpdb->lastQuery());
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options, 'no email, no ticket send');
     }
 
     public function testAGuestNeedsAName(): void
     {
-        self::assertFalse($this->desk()->addGuest(self::NIGHT, 1, '  ', 0));
+        self::assertSame(DoorDesk::GUEST_NO_NAME, $this->desk()->addGuest(self::NIGHT, 1, '  ', 0));
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** With an email, the guest added at the door is emailed the ticket by the 10-minute send. */
+    public function testAGuestAddedAtTheDoorWithAnEmailGetsTheTicketSent(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(DoorDesk::GUEST_OK, $this->desk()->addGuest(self::NIGHT, 1, 'Ann', 0, ' ann@example.test '));
+        self::assertSame('ann@example.test', $this->wpdb->inserts[0]['data']['email']);
+        self::assertArrayHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testAGuestWithAMistypedEmailIsNotAdded(): void
+    {
+        self::assertSame(DoorDesk::GUEST_BAD_EMAIL, $this->desk()->addGuest(self::NIGHT, 1, 'Ann', 0, 'ann@'));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringContainsString('not valid', $this->desk()->guestText(DoorDesk::GUEST_BAD_EMAIL));
     }
 
     public function testTheMemberSearchListsSomeoneAlreadyOnTonightsListAndSaysSo(): void

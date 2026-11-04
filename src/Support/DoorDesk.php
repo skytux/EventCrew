@@ -50,6 +50,12 @@ final class DoorDesk
     public const HOLVI_BAD_EMAIL = 'bad_email';
     public const HOLVI_FAILED = 'failed';
 
+    /** addGuest() answers. */
+    public const GUEST_OK = 'ok';
+    public const GUEST_NO_NAME = 'no_name';
+    public const GUEST_BAD_EMAIL = 'bad_email';
+    public const GUEST_FAILED = 'failed';
+
     /** scan() answers. */
     public const SCAN_OK = 'ok';
     public const SCAN_OTHER_NIGHT = 'other_night';
@@ -781,26 +787,52 @@ final class DoorDesk
 
     /**
      * Adds a guest at the door, already marked in with none of their extra
-     * people yet: the door crew counts those in as they come. Returns false
-     * for an empty name or a failed write.
+     * people yet: the door crew counts those in as they come. The email is
+     * optional, as on the other guest forms; with one, the guest is emailed
+     * their ticket by the ticket email's 10-minute batch. Answers a GUEST_*
+     * code.
      */
-    public function addGuest(string $date, int $doorPersonId, string $name, int $allowed): bool
+    public function addGuest(string $date, int $doorPersonId, string $name, int $allowed, string $email = ''): string
     {
         $name = trim($name);
+        $email = trim($email);
 
         if ('' === $name) {
-            return false;
+            return self::GUEST_NO_NAME;
         }
 
-        $id = $this->guests->add($date, $name, max(0, $allowed), '', $doorPersonId);
+        if ('' !== $email) {
+            if (! is_email($email)) {
+                return self::GUEST_BAD_EMAIL;
+            }
+
+            $email = sanitize_email($email);
+        }
+
+        $id = $this->guests->add($date, $name, max(0, $allowed), '', $doorPersonId, $email);
 
         if ($id <= 0) {
-            return false;
+            return self::GUEST_FAILED;
         }
 
         $this->checkins->mark($date, CheckinRepository::KIND_GUEST, $id, 0, $doorPersonId);
 
-        return true;
+        if ('' !== $email) {
+            TicketMail::schedule();
+        }
+
+        return self::GUEST_OK;
+    }
+
+    /** What the desk says for an addGuest() answer. */
+    public function guestText(string $code): string
+    {
+        return match ($code) {
+            self::GUEST_OK => __('Guest added and checked in.', 'eventcrew'),
+            self::GUEST_NO_NAME => __('Give the guest’s name.', 'eventcrew'),
+            self::GUEST_BAD_EMAIL => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
+            default => __('The guest could not be added. Try again.', 'eventcrew'),
+        };
     }
 
     /**

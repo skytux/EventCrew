@@ -244,12 +244,13 @@ final class DoorController
                 // No break: json() exits.
 
             case self::GUEST_ACTION:
-                $ok = $this->desk->addGuest($date, $doorPersonId, $name, $plus);
+                // Plain text, as for the Holvi buyer: a mistyped address is
+                // refused, not stored as "no email".
+                $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+                $code = $this->desk->addGuest($date, $doorPersonId, $name, $plus, $email);
                 $this->json([
-                    'ok' => $ok,
-                    'message' => $ok
-                        ? __('Guest added and checked in.', 'eventcrew')
-                        : __('Give the guest’s name.', 'eventcrew'),
+                    'ok' => DoorDesk::GUEST_OK === $code,
+                    'message' => $this->desk->guestText($code),
                     'state' => $this->desk->state($date),
                 ]);
                 // No break: json() exits.

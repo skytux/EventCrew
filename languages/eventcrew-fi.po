@@ -6392,3 +6392,9 @@ msgstr "Sähköposti (uusi osoite saa uuden lipun; vanha lippu lakkaa toimimasta
 
 msgid "A new email address gets a new ticket; the old ticket stops working."
 msgstr "Uusi sähköpostiosoite saa uuden lipun; vanha lippu lakkaa toimimasta."
+
+msgid "The guest could not be added. Try again."
+msgstr "Vierasta ei voitu lisätä. Yritä uudelleen."
+
+msgid "With an email, the guest gets their ticket by email in about 10 minutes, the same as a guest added on the guest list."
+msgstr "Kun sähköposti on annettu, vieras saa lipun sähköpostiin noin 10 minuutissa, kuten vieraslistalle lisätty vieras."

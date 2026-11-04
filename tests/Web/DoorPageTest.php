@@ -179,6 +179,19 @@ final class DoorPageTest extends TestCase
         );
     }
 
+    /** The Guest step has the optional email field, and it is sent with the guest. */
+    public function testTheGuestStepAsksForAnOptionalEmail(): void
+    {
+        $html = $this->page();
+
+        self::assertMatchesRegularExpression(
+            '~<div id="ec-step-guest" hidden>.*?Email \(optional\)\s*<input type="email" id="ec-guest-email"~s',
+            $html
+        );
+        self::assertStringContainsString('the guest gets their ticket by email in about 10 minutes', $html);
+        self::assertStringContainsString("email: el('ec-guest-email').value.trim()", $html);
+    }
+
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void
     {
         $html = $this->page();
