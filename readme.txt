@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.138.0
+Stable tag: 1.139.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.139.0 =
+Door desk: the Guest step has an optional email field. With an address, the guest gets the ticket email.
 
 = 1.138.0 =
 Organizers can change a guest's email address in the roster. The guest gets a new ticket code and link; the old ones stop working. Database schema 32.
@@ -1208,6 +1211,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.139.0 =
+No settings change.
 
 = 1.138.0 =
 No settings change.

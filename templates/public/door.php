@@ -276,6 +276,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             <span id="ec-guest-count">+0</span>
             <button type="button" id="ec-guest-more" aria-label="<?php esc_attr_e('One more', 'eventcrew'); ?>">+</button>
         </div>
+        <label><?php esc_html_e('Email (optional)', 'eventcrew'); ?>
+            <input type="email" id="ec-guest-email" autocomplete="off"></label>
+        <p class="ec-muted"><?php esc_html_e('With an email, the guest gets their ticket by email in about 10 minutes, the same as a guest added on the guest list.', 'eventcrew'); ?></p>
         <div class="ec-stack">
             <button type="button" class="ec-primary" id="ec-guest-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
         </div>
@@ -765,7 +768,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     }
 
     function openAdd() {
-        ['ec-ticket-name', 'ec-holvi-name', 'ec-holvi-email', 'ec-guest-name', 'ec-member', 'ec-new-name', 'ec-new-email'].forEach(function (id) {
+        ['ec-ticket-name', 'ec-holvi-name', 'ec-holvi-email', 'ec-guest-name', 'ec-guest-email', 'ec-member', 'ec-new-name', 'ec-new-email'].forEach(function (id) {
             el(id).value = '';
         });
         el('ec-members').textContent = '';
@@ -1105,7 +1108,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             return;
         }
 
-        post('guest', { name: name, plus: guestPlus }).then(done, failed);
+        post('guest', { name: name, plus: guestPlus, email: el('ec-guest-email').value.trim() }).then(done, failed);
     });
 
     el('ec-new-add').addEventListener('click', function () {
