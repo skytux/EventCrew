@@ -286,10 +286,6 @@ msgstr "Emme voineet varmistaa, että olet ihminen — yritä uudelleen."
 msgid "Count one person in without a name"
 msgstr "Laske yksi henkilö sisään ilman nimeä"
 
-#: src/Support/NotificationPreferences.php:61
-msgid "Cover arranged"
-msgstr "Tuuraus sovittu"
-
 #: src/Support/DoorDesk.php:673
 msgid "Credit"
 msgstr "Vapaalippu"
@@ -3094,8 +3090,8 @@ msgstr "Vapaaliput: jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtäv
 msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk."
 msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? Lähetä botille /door ja napauta 💳 Myyntipiste."
 
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
-msgstr "Kaikki muu on vapaaehtoista ja kytkettävissä pois milloin haluat — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, tuuraus- ja lupaviestit, kukin erikseen sähköpostille ja Telegramille. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi ja, jos käytät bottia, kohdassa 🔔 Ilmoitukset komennon /me alla. Minkään poiskytkemisestä ei seuraa mitään haittaa."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
+msgstr "Kaikki muu on valinnaista ja kytkettävissä pois milloin haluat — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, lupaviestit, kukin erikseen sähköpostille ja Telegramille. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi ja, jos käytät bottia, kohdassa 🔔 Ilmoitukset komennon /me alla. Minkään poiskytkemisestä ei seuraa mitään haittaa."
 
 msgid "Free-entry ticket"
 msgstr "Vapaalippu"
@@ -3772,8 +3768,8 @@ msgstr "Säilytämme tietoja crew’n pyörittämiseksi: jotta voit varata teht�
 msgid "Confirmations of what you signed up for, and reminders about it, always send. They are how we deliver what you asked for, and switching them off would mean signing up for something we then never told you about."
 msgstr "Vahvistukset siitä, mihin ilmoittauduit, ja muistutukset siitä lähetetään aina. Niillä toimitamme sen, mitä pyysit, ja niiden poistaminen tarkoittaisi, että ilmoittaudut johonkin, mistä emme sitten koskaan kertoisi sinulle."
 
-msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
-msgstr "Kaikki muu on valinnaista ja poistettavissa käytöstä milloin tahansa — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, sijais- ja lupaviestit, kukin erikseen. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi. Minkään niistä poistamisesta ei seuraa haittaa."
+msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
+msgstr "Kaikki muu on valinnaista ja poistettavissa käytöstä milloin tahansa — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, lupaviestit, kukin erikseen. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi. Minkään niistä poistamisesta ei seuraa haittaa."
 
 msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom."
 msgstr "Tapahtumiemme järjestäjät ja illan myyntipistettä hoitava crew näkevät nimesi, luotettavuutesi ja tehtävät, joissa olet mukana — eli läsnäololistan ja ovilistan. Muut crew’n jäsenet näkevät vain, että tehtävä on varattu, eivät koskaan kenen toimesta."

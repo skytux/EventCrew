@@ -25,7 +25,6 @@ final class NotificationPreferences
     public const CREDIT = 'credit';
     public const TICKET = 'ticket';
     public const PERMISSION = 'permission';
-    public const COVER = 'cover';
     public const OPEN_TASK = 'open_task';
 
     /**
@@ -41,7 +40,6 @@ final class NotificationPreferences
         self::CREDIT,
         self::TICKET,
         self::PERMISSION,
-        self::COVER,
         self::OPEN_TASK,
     ];
 
@@ -58,7 +56,6 @@ final class NotificationPreferences
             self::CREDIT => __('Free-entry credit granted', 'eventcrew'),
             self::TICKET => __('Free-entry ticket ready', 'eventcrew'),
             self::PERMISSION => __('Permission changes', 'eventcrew'),
-            self::COVER => __('Cover arranged', 'eventcrew'),
             self::OPEN_TASK => __('Open-task alerts', 'eventcrew'),
         ];
     }

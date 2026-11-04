@@ -453,11 +453,11 @@ final class PrivacyPolicy
             ),
             self::telegramEnabled()
                 ? __(
-                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off.',
+                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off.',
                     'eventcrew'
                 )
                 : __(
-                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, cover and permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off.',
+                    'Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off.',
                     'eventcrew'
                 ),
         ];
