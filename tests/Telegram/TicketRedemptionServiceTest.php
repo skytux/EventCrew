@@ -175,8 +175,11 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         return $subjects;
     }
 
-    /** Decision 1: spending a credit also sends the separate "Your ticket" email. */
-    public function testSpendingACreditAlsoSendsTheSeparateTicketEmail(): void
+    /**
+     * Spending a credit sends the one "Your ticket" email that buyers and
+     * guests get, and no second, plainer email with the ticket link.
+     */
+    public function testSpendingACreditSendsOnlyTheOneTicketEmail(): void
     {
         $subjects = $this->captureSubjects();
         $this->wpdb->nextCols[] = ['2026-08-01'];
@@ -190,8 +193,8 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
 
         $this->serviceWithTicketMail()->redeem(7, '2026-08-01');
 
-        self::assertCount(2, $subjects);
-        self::assertStringContainsString('Your ticket', $subjects[1]);
+        self::assertCount(1, $subjects);
+        self::assertStringContainsString('Your ticket – ', $subjects[0]);
         $marked = array_values(array_filter(
             $this->wpdb->updates,
             static fn (array $u): bool => 'wp_eventcrew_redemptions' === $u['table']
