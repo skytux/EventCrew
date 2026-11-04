@@ -31,9 +31,32 @@ only ones who ever need a wp-admin login.
 - **Public web signup** — an `[eventcrew_signup]` shortcode (and matching block)
   showing the same board, with email magic-link sign-in and claim/drop that obey
   exactly the same rules as the bot. Installable as a **mobile app** (PWA).
+- **Taking over a task** — a person asks to take over someone's task (🔁 under
+  `/me`). The holder answers in the bot or from a link in the email: let them
+  take it, or keep it. With no answer by the deadline, the holder keeps it.
+  Organizers can still move a task to someone directly.
 - **Roster & attendance** — mark who arrived / completed / no-showed, per person
   or a whole crew at once. This is also the **door list**: everyone in free
   tonight, workers plus credit-redeemers.
+- **The door** — the door list, a guest list and a sales desk with a QR
+  scanner, in wp-admin, on the crew page and under `/door` in the bot. Ticket
+  buyers, guests and crew get a ticket email with a QR code (see *Holvi ticket
+  buyers*).
+- **Sign in with Telegram** — optional: the crew page's Telegram button opens
+  the bot, and the bot sends a button that signs the person in. Off by default;
+  switch it on under **Settings → Telegram bot**.
+- **Event cards** — `/events` shows an organizer the coming events as picture
+  cards (with Buy a ticket, Listen to the DJ and Crew app buttons) and, after
+  Confirm, posts them in the crew group. The group board can also show the next
+  event as a card (**Settings → Telegram bot → Event cards**, off by default).
+- **Emails about the events** — a next events announcement and a post-event
+  thank-you email, both off by default (see the sections below).
+- **Finnish and English** — everything crew members see: bot messages, emails
+  and the crew page. Each person chooses a language (🌐 under `/me`, or the
+  crew page's Suomi | English switch). The group board is in English; the
+  event cards and the takeover message in the group are in both languages.
+- **Plain messages** — optional: with a language model server set, the bot
+  answers messages written in plain words (see below).
 - **Reputation, credits & role conditions** — a recency-weighted read of each
   person's history (never a stored score), earned free-entry credits, an optional
   gate for at-risk members, and per-role conditions that tell the organizers when
@@ -41,7 +64,8 @@ only ones who ever need a wp-admin login.
   Settings.
 - **Notifications on both channels** — every notice can reach a person by Telegram
   DM *and* email, each type toggleable per channel from a web tab or the
-  `/notifications` menu. Signup confirmations and reminders always send.
+  🔔 Notifications button under `/me`. Signup confirmations and reminders always
+  send.
 - **Scheduled sends** — 24h task reminders and a 48h open-task call on an hourly
   WP-Cron heartbeat, with an opt-in fallback for hosts where WP-Cron never fires.
 - **GDPR, answered** — name the controller (and a data protection officer, where
@@ -145,20 +169,14 @@ to the DM with a breadcrumb left behind.
 
 | Command | Who | What |
 | --- | --- | --- |
-| `/start` | anyone | Set yourself up (verify an email); also switches a stopped account back on |
-| `/stop` | anyone | Switch your account off — no more email |
-| `/me` | anyone | Your standing, credits and upcoming tasks |
-| `/myhistory` | anyone | Everything you've done |
-| `/mytickets` | anyone | Your door tickets, upcoming and past |
-| `/ticket` | anyone | Spend a free-entry credit for a ticket |
-| `/replace` | anyone | Cover someone else's task |
-| `/notifications` | anyone | Choose which notices reach you, and on which channel |
-| `/board` | group | Post or refresh the board of open tasks |
+| `/start` | anyone | Set yourself up (verify an email) |
+| `/help` | anyone | The commands you can use |
+| `/me` | anyone | Your tasks, credits and standing. Buttons: 🎟 spend a free-entry credit for a ticket, 🔁 take over someone's task, 🔑 a one-time web sign-in link, 🔔 which notices reach you and on which channel, 🌐 language. `/me history` lists your past tasks, `/me tickets` your tickets for coming nights |
+| `/board` | anyone | In the group: post or refresh the board of open tasks. In a private chat: the open tasks and the tasks of your restricted roles (DJ, VJ, ...), which are never on the group board; organizers also get ➕ to add someone, crew member or not, to any upcoming task |
 | `/roster` | organizers & the night's crew | The attendance roster; the crew on that night's tasks of a role marked **Opens the sales desk** can mark from it |
-| `/gift` | organizers | Give someone free-entry credit(s) |
-| `/roletasks` | people with a restricted role | The tasks for their roles (never on the group board): sign up or cancel; organizers can also add someone, crew member or not, to any upcoming task |
-| `/roles` | organizers | Give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...). `/allow` is the old name and still works |
-| `/eligible` | organizers | Who meets the conditions set on each role. `/leaders` is the old name and still works |
+| `/door` | organizers & the night's welcome crew | Buttons: 📋 door list, 👥 guest list, 💳 sales desk. Organizers also add, edit and remove guests (`/door add [date] Name +N ; note`) |
+| `/people` | organizers | Buttons: 🎁 give someone free-entry credit(s); 🏷 give or take away a **one-time at-risk pass** / **organizer** / each restricted role (DJ, VJ, Crew leader, ...); ✅ who meets the conditions set on each role |
+| `/events` | organizers, private chat | The coming events as picture cards, with Confirm and Cancel; Confirm posts them in the crew group |
 | `/newsletter` | organizers, private chat | Set the text for the next events announcement (`/newsletter <text>`), show it (`/newsletter`), or remove it (`/newsletter clear`) |
 | `/followup` | organizers, private chat | Set a one-time thank-you or sorry text for the next post-event email (`/followup came <text>`, `/followup missed <text>`), show both texts (`/followup`), or remove one-time texts (`/followup came clear`, `/followup clear`) |
 | `/say` | organizers, private chat | `/say <message>` shows the message as the group will see it, with Confirm and Cancel; Confirm posts it in the crew group. Bold, italics, links, quotes and line breaks are kept. Plain words work too ("post in the group: ...") |
@@ -258,15 +276,15 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
 - An optional **sign-up gate** holds an at-risk member back from claiming new
   tasks; an organizer can wave one person through once with a **one-time pass**.
 - **Credits** buy free entry, earned at one per N completed tasks (N configurable).
-  A member spends their own (`/ticket` or the web profile) and an organizer can
-  hand them out (`/gift`, the People page, or the door list) — every grant tells
+  A member spends their own (🎟 under `/me`, or the web profile) and an organizer
+  can hand them out (🎁 under `/people`, the People page, or the door list) — every grant tells
   the recipient, and there's an audit log on the People screen.
 - **Role conditions**: each role in **Settings → Roles** can have conditions —
   a number of completed tasks in named roles, or at least n different roles done
   x times each, or both. Meeting them does not let anyone sign up; it is a signal.
   The organizers get a Telegram message and an email the first time someone meets
   a role's conditions and the first time someone is given a role (once per person
-  per role). The **Role conditions** tab on the People page and `/eligible` list
+  per role). The **Role conditions** tab on the People page and ✅ under `/people` list
   who meets them. **Crew leader** is an ordinary restricted role set up this way.
 - **Opens the sales desk**: a per-role setting in **Settings → Roles**. The crew
   marked arrived on that night's task of such a role get the sales desk link, can
@@ -278,16 +296,16 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   needed only at cacao nights. Empty means every event. Tasks that already exist
   are not changed, and a task of the role can still be added to any night by
   hand on the wp-admin **Tasks** screen.
-- **Organizers can add anyone to any task** of a night — with `/roletasks`, on
+- **Organizers can add anyone to any task** of a night — with ➕ under `/board` in a private chat, on
   the crew page Admin tab, or at the sales desk — whether or not the person holds
   the role.
 - **Restricted roles** (Organize, plus any role with **Only people with this
   role** ticked in **Settings → Roles**, such as DJ, VJ or Ceremony leader) have
   no limit on sign-ups and never count as places that need filling. Their tasks
   are never on the Telegram group board: only people who hold the role see them,
-  on the crew page and with `/roletasks` in the bot, and the sales desk shows
+  on the crew page and with `/board` in a private chat with the bot, and the sales desk shows
   them only to role holders. One person can hold several roles. Organizers give
-  roles on the People edit page, in the crew page's Admin tab, or with `/roles`
+  roles on the People edit page, in the crew page's Admin tab, or with 🏷 under `/people`
   (Organize is the organizer permission itself). With **Add to every night**
   (on by default) every upcoming night gets one task of that role, including
   nights that already exist; switching it off deletes nothing.
@@ -296,7 +314,7 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   on the assignment (`counts_credit = 0`) and that task is left out of credits
   and standing.
 - An organizer can put someone on a restricted task (not Organize) from the
-  crew page's Admin tab or `/roletasks`, even a person who is not a crew member:
+  crew page's Admin tab or ➕ under `/board` in a private chat, even a person who is not a crew member:
   a name and an optional email. The person is created if the email is new (or
   there is none), given the role and signed up; with an email they get the
   normal sign-up email with their ticket. A person with no email gets a
@@ -308,9 +326,9 @@ Every person-facing notice — confirmations, reminders, standing hits, credit
 grants, ticket links, permission changes, cover arrangements, open-task and
 freed-slot calls — can go out by **Telegram DM and email**. Each *convenience*
 type has an independent DM and email toggle, set from the **Notifications** tab on
-the web profile or the `/notifications` keyboard menu (the two share one store).
-Signup/cancellation confirmations and task reminders are always sent; disabling
-the account is the hard "no email at all" switch.
+the web profile or the 🔔 Notifications button under `/me` (the two share one
+store). Signup/cancellation confirmations and task reminders are always sent.
+When an organizer deletes a coming task, everyone signed up for it gets an email.
 
 ## Next events announcement
 
@@ -508,10 +526,10 @@ Records about people are personal data, so two behaviours are deliberate:
 - **Uninstalling keeps everything by default.** Tables are dropped only when
   `eventcrew_delete_data_on_uninstall` is set, so removing the plugin does not
   destroy a season of attendance history; a reinstall picks up where it left off.
-- **Identity is a verified email, never a WordPress user.** Email is transactional
-  and switched off by disabling the account — `/stop` in the bot, or the one-click
-  link in every message. A signed self-service page offers account disable and a
-  full GDPR delete; deleting a person clears their assignments and redemptions too.
+- **Identity is a verified email, never a WordPress user.** Email is
+  transactional; each kind of notice can be switched off under Notifications.
+  A signed self-service page, linked from every email, offers a full GDPR
+  delete; deleting a person clears their assignments and redemptions too.
 
 ## Development
 
