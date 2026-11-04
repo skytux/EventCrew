@@ -127,15 +127,15 @@ msgstr ""
 msgid "%1$s · %2$d%%"
 msgstr ""
 
-#: templates/admin/newsletter.php:115
+#: templates/admin/newsletter.php:125
 msgid "%1$s – %2$s, one bar per day."
 msgstr ""
 
-#: templates/admin/newsletter.php:119
+#: templates/admin/newsletter.php:129
 msgid "%1$s – %2$s, one bar per month."
 msgstr ""
 
-#: templates/admin/newsletter.php:117
+#: templates/admin/newsletter.php:127
 msgid "%1$s – %2$s, one bar per week."
 msgstr ""
 
@@ -149,11 +149,11 @@ msgstr ""
 msgid "%1$s%2$s: %3$s (%4$d of %5$d places free)"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:362
+#: src/Admin/NewsletterPage.php:365
 msgid "%1$s: %2$d subscribed"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:367
+#: src/Admin/NewsletterPage.php:370
 msgid "%1$s: %2$d unsubscribed"
 msgstr ""
 
@@ -405,19 +405,19 @@ msgstr ""
 msgid "/say text – post a message in the group; you see it first"
 msgstr ""
 
-#: templates/admin/newsletter.php:37
+#: templates/admin/newsletter.php:38
 msgid "1 month"
 msgstr ""
 
-#: templates/admin/newsletter.php:39
+#: templates/admin/newsletter.php:40
 msgid "1 year"
 msgstr ""
 
-#: templates/admin/newsletter.php:40
+#: templates/admin/newsletter.php:41
 msgid "3 years"
 msgstr ""
 
-#: templates/admin/newsletter.php:38
+#: templates/admin/newsletter.php:39
 msgid "6 months"
 msgstr ""
 
@@ -999,7 +999,7 @@ msgstr ""
 msgid "Bot token"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:263
+#: src/Admin/NewsletterPage.php:266
 msgid "Both languages"
 msgstr ""
 
@@ -1426,7 +1426,7 @@ msgstr ""
 msgid "Crew working"
 msgstr ""
 
-#: templates/admin/newsletter.php:44
+#: templates/admin/newsletter.php:45
 msgid "Custom dates"
 msgstr ""
 
@@ -1633,7 +1633,7 @@ msgid "Edit the email template"
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:48 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:137 src/Support/PrivacyExporter.php:220
-#: src/Support/PrivacyExporter.php:246 src/Support/PrivacyExporter.php:270 templates/admin/newsletter.php:170 templates/admin/people.php:51
+#: src/Support/PrivacyExporter.php:246 src/Support/PrivacyExporter.php:270 templates/admin/newsletter.php:180 templates/admin/people.php:51
 #: templates/admin/roster.php:194 templates/admin/roster.php:206 templates/admin/roster.php:229 templates/admin/settings.php:94
 #: templates/admin/settings.php:679 templates/public/door.php:292 templates/public/signup.php:147 templates/public/signup.php:179
 #: templates/public/signup.php:502 templates/public/signup.php:525 templates/public/signup.php:786
@@ -1716,7 +1716,7 @@ msgstr ""
 msgid "Enforce it"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:262 src/Support/TranslatedText.php:354
+#: src/Admin/NewsletterPage.php:265 src/Support/TranslatedText.php:354
 msgid "English"
 msgstr ""
 
@@ -1892,7 +1892,7 @@ msgstr ""
 msgid "Extra sender addresses"
 msgstr ""
 
-#: templates/admin/newsletter.php:169
+#: templates/admin/newsletter.php:179
 msgid "Failed"
 msgstr ""
 
@@ -1909,7 +1909,7 @@ msgstr ""
 msgid "Find a name on the list"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:261 src/Support/TranslatedText.php:353
+#: src/Admin/NewsletterPage.php:264 src/Support/TranslatedText.php:353
 msgid "Finnish"
 msgstr ""
 
@@ -1994,7 +1994,7 @@ msgstr ""
 msgid "Free-entry ticket ready"
 msgstr ""
 
-#: templates/admin/newsletter.php:101
+#: templates/admin/newsletter.php:111
 msgid "From"
 msgstr ""
 
@@ -2523,11 +2523,16 @@ msgstr ""
 msgid "Join the announcement"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:333
+#: src/Admin/NewsletterPage.php:336
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr ""
 
-#: templates/admin/newsletter.php:67
+#: templates/admin/newsletter.php:76
+#. translators: 1: date of the oldest known join, like 3.11.2024, 2: the day the history began
+msgid "Joins are known from %1$s, leaves and sent newsletters only from %2$s."
+msgstr ""
+
+#: templates/admin/newsletter.php:68
 msgid "Joins, leaves and sent newsletters"
 msgstr ""
 
@@ -2842,18 +2847,18 @@ msgstr ""
 msgid "Newer"
 msgstr ""
 
-#: src/Admin/Admin.php:326 src/Admin/Admin.php:327 templates/admin/newsletter.php:48
+#: src/Admin/Admin.php:326 src/Admin/Admin.php:327 templates/admin/newsletter.php:49
 msgid "Newsletter"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:428
+#: src/Admin/NewsletterPage.php:431
 #. translators: 1: newsletter number, 2: date, like 3.11.2026, 3: subject(s), 4: number of emails
 msgid "Newsletter %1$d, %2$s: %3$s. Sent to %4$d address."
 msgid_plural "Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/newsletter.php:150
+#: templates/admin/newsletter.php:160
 msgid "Newsletter sent (the number is its row below; point at it for the subject)"
 msgstr ""
 
@@ -2960,7 +2965,7 @@ msgstr ""
 msgid "No name"
 msgstr ""
 
-#: templates/admin/newsletter.php:159
+#: templates/admin/newsletter.php:169
 msgid "No newsletter has been sent since the history started."
 msgstr ""
 
@@ -3129,7 +3134,7 @@ msgstr ""
 msgid "Nothing was changed."
 msgstr ""
 
-#: templates/admin/newsletter.php:132
+#: templates/admin/newsletter.php:142
 msgid "Nothing was recorded in this time range."
 msgstr ""
 
@@ -4225,7 +4230,7 @@ msgstr ""
 msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
 msgstr ""
 
-#: templates/admin/newsletter.php:165
+#: templates/admin/newsletter.php:175
 msgid "Sent"
 msgstr ""
 
@@ -4234,11 +4239,11 @@ msgstr ""
 msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
 msgstr ""
 
-#: templates/admin/newsletter.php:156
+#: templates/admin/newsletter.php:166
 msgid "Sent newsletters"
 msgstr ""
 
-#: templates/admin/newsletter.php:168
+#: templates/admin/newsletter.php:178
 msgid "Sent to"
 msgstr ""
 
@@ -4313,7 +4318,7 @@ msgstr ""
 msgid "Short notice (hours before the start)"
 msgstr ""
 
-#: templates/admin/bot-log.php:51 templates/admin/newsletter.php:94 templates/admin/newsletter.php:107 templates/admin/roster.php:87
+#: templates/admin/bot-log.php:51 templates/admin/newsletter.php:104 templates/admin/newsletter.php:117 templates/admin/roster.php:87
 #: templates/public/signup-admin-datebar.php:63 templates/public/signup.php:1565 templates/public/signup.php:1572 templates/public/signup.php:1690
 msgid "Show"
 msgstr ""
@@ -4579,7 +4584,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:904 templates/admin/newsletter.php:167
+#: src/Support/FollowupMail.php:904 templates/admin/newsletter.php:177
 msgid "Subject"
 msgstr ""
 
@@ -4587,7 +4592,7 @@ msgstr ""
 msgid "Subscribe"
 msgstr ""
 
-#: templates/admin/newsletter.php:53 templates/admin/newsletter.php:142
+#: templates/admin/newsletter.php:54 templates/admin/newsletter.php:152
 msgid "Subscribed"
 msgstr ""
 
@@ -5200,7 +5205,7 @@ msgstr ""
 msgid "The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent."
 msgstr ""
 
-#: templates/admin/newsletter.php:74
+#: templates/admin/newsletter.php:83
 #. translators: %s: a date, like 3.11.2026
 msgid "The history starts on %s, the day this version was installed. There is no older data."
 msgstr ""
@@ -5687,7 +5692,7 @@ msgstr ""
 msgid "This email already belongs to a member. Carry on with them."
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:242
+#: src/Admin/NewsletterPage.php:245
 msgid "This email copy does not exist."
 msgstr ""
 
@@ -5905,7 +5910,7 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: templates/admin/newsletter.php:87
+#: templates/admin/newsletter.php:97
 msgid "Time range"
 msgstr ""
 
@@ -5913,7 +5918,7 @@ msgstr ""
 msgid "Timing"
 msgstr ""
 
-#: templates/admin/newsletter.php:104
+#: templates/admin/newsletter.php:114
 msgid "To"
 msgstr ""
 
@@ -6022,7 +6027,7 @@ msgstr ""
 msgid "Unbanned. They can sign in and sign up again."
 msgstr ""
 
-#: templates/admin/newsletter.php:61 templates/admin/newsletter.php:146
+#: templates/admin/newsletter.php:62 templates/admin/newsletter.php:156
 msgid "Unsubscribed"
 msgstr ""
 
@@ -6102,11 +6107,11 @@ msgstr ""
 msgid "Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen."
 msgstr ""
 
-#: templates/admin/newsletter.php:166
+#: templates/admin/newsletter.php:176
 msgid "Version"
 msgstr ""
 
-#: templates/admin/newsletter.php:189
+#: templates/admin/newsletter.php:199
 msgid "View the email"
 msgstr ""
 
@@ -6122,7 +6127,7 @@ msgstr ""
 msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
 msgstr ""
 
-#: templates/admin/newsletter.php:57
+#: templates/admin/newsletter.php:58
 msgid "Waiting for confirmation"
 msgstr ""
 
@@ -6207,11 +6212,11 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:360
+#: src/Admin/NewsletterPage.php:363
 msgid "Week of %1$s: %2$d subscribed"
 msgstr ""
 
-#: src/Admin/NewsletterPage.php:365
+#: src/Admin/NewsletterPage.php:368
 msgid "Week of %1$s: %2$d unsubscribed"
 msgstr ""
 

@@ -265,6 +265,92 @@ final class SchemaTest extends TestCase
         self::assertGreaterThanOrEqual(30, (int) Schema::DB_VERSION);
     }
 
+    /**
+     * Schema 31: every confirmed_at older than the history gets a join. One
+     * that already has a join from that second up to ten seconds later is
+     * skipped (the plugin recorded it), each recorded join answers for one
+     * subscriber only, and a time that is not valid is left out.
+     */
+    public function testOnlyTheMissingJoinsAreBackfilled(): void
+    {
+        $confirmed = [
+            '2025-03-01 10:00:00',
+            '2026-11-04 09:00:00', // on the update day, before the update: no join recorded
+            '2026-11-04 15:00:00',
+            '2026-11-05 12:00:00',
+            '2026-11-05 12:00:00', // two in the same second, one join recorded
+            '2026-11-06 08:00:00',
+            '0000-00-00 00:00:00',
+            '2024-12-24 18:30:00',
+        ];
+        $recorded = [
+            '2026-11-04 15:00:01',
+            '2026-11-05 12:00:00',
+            '2026-11-06 08:00:11', // too late to be this subscriber's join
+        ];
+
+        $missing = Schema::joinsToBackfill($confirmed, $recorded);
+
+        self::assertSame(
+            [
+                '2024-12-24 18:30:00',
+                '2025-03-01 10:00:00',
+                '2026-11-04 09:00:00',
+                '2026-11-05 12:00:00',
+                '2026-11-06 08:00:00',
+            ],
+            $missing
+        );
+
+        // Run again with those added, nothing more is missing.
+        self::assertSame([], Schema::joinsToBackfill($confirmed, array_merge($recorded, $missing)));
+    }
+
+    public function testTheBackfillWritesOneJoinPerMissingConfirmation(): void
+    {
+        $this->wpdb->nextCols[] = ['2025-03-01 10:00:00', '2026-11-04 15:00:00'];
+        $this->wpdb->nextCols[] = ['2026-11-04 15:00:02'];
+
+        self::assertSame(1, $this->backfillNewsletterJoins('30'));
+        self::assertStringContainsString(
+            'SELECT confirmed_at FROM wp_eventcrew_newsletter_subscribers WHERE confirmed_at IS NOT NULL',
+            $this->wpdb->queries[0]
+        );
+        self::assertStringContainsString(
+            "FROM wp_eventcrew_newsletter_changes WHERE kind = 'subscribed'",
+            $this->wpdb->queries[1]
+        );
+        self::assertSame(
+            [[
+                'table' => 'wp_eventcrew_newsletter_changes',
+                'data' => ['created_at' => '2025-03-01 10:00:00', 'kind' => 'subscribed'],
+            ]],
+            $this->wpdb->inserts
+        );
+        self::assertGreaterThanOrEqual(31, (int) Schema::DB_VERSION);
+    }
+
+    /** Once the stored schema is 31 or later, the backfill does not even read. */
+    public function testTheBackfillRunsOnlyBeforeSchema31(): void
+    {
+        self::assertSame(0, $this->backfillNewsletterJoins('31'));
+        self::assertSame(0, $this->backfillNewsletterJoins('32'));
+        self::assertSame([], $this->wpdb->queries);
+
+        // A fresh install (nothing stored) reads, and finds nothing to add.
+        self::assertSame(0, $this->backfillNewsletterJoins(''));
+        self::assertCount(2, $this->wpdb->queries);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    private function backfillNewsletterJoins(string $stored): int
+    {
+        $method = new ReflectionMethod(Schema::class, 'backfillNewsletterJoins');
+        $method->setAccessible(true);
+
+        return $method->invoke(null, $stored);
+    }
+
     private function moveCanLeadToRole(): void
     {
         $method = new ReflectionMethod(Schema::class, 'moveCanLeadToRole');

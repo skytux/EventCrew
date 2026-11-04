@@ -6855,6 +6855,11 @@ msgstr "Liittyneet, eronneet ja lähetetyt tiedotteet"
 msgid "The history starts on %s, the day this version was installed. There is no older data."
 msgstr "Historia alkaa %s, päivänä jolloin tämä versio asennettiin. Vanhempaa tietoa ei ole."
 
+#. translators: 1: date of the oldest known join, like 3.11.2024, 2: the day the history began
+#, php-format
+msgid "Joins are known from %1$s, leaves and sent newsletters only from %2$s."
+msgstr "Liittyneet tiedetään %1$s alkaen, eronneet ja lähetetyt tiedotteet vasta %2$s alkaen."
+
 msgid "1 month"
 msgstr "1 kuukausi"
 

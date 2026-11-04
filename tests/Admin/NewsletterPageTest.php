@@ -335,6 +335,21 @@ final class NewsletterPageTest extends TestCase
         self::assertStringNotContainsString('<svg', $html);
     }
 
+    /** After the backfill the joins go back further than the leaves and newsletters, and the page says so. */
+    public function testThePageSaysTheJoinsGoBackFurther(): void
+    {
+        $this->queue([], []);
+        $this->wpdb->nextVars[] = '2024-12-24 18:30:00';
+
+        $html = $this->rendered();
+
+        self::assertStringContainsString(
+            'Joins are known from 24.12.2024, leaves and sent newsletters only from 15.7.2026.',
+            $html
+        );
+        self::assertStringNotContainsString('The history starts on', $html);
+    }
+
     public function testThePageWithHistory(): void
     {
         $this->queue(

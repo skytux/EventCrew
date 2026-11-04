@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Database;
 
+use EventCrew\Repositories\NewsletterHistoryRepository;
+
 /**
  * Owns every EventCrew table definition and the migration that applies them.
  *
@@ -17,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '30';
+    public const DB_VERSION = '31';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -111,7 +113,117 @@ final class Schema
         // appear. add_option() leaves an existing value alone.
         add_option(self::NEWSLETTER_HISTORY_SINCE_OPTION, (string) current_time('Y-m-d'), '', false);
 
+        // Schema 31: the joins from before the history began.
+        self::backfillNewsletterJoins((string) get_option(self::VERSION_OPTION, ''));
+
         update_option(self::VERSION_OPTION, self::DB_VERSION);
+    }
+
+    /**
+     * A join recorded by the plugin is written right after confirmed_at, in
+     * the same request, from a second current_time() call; it can be a second
+     * or two later. This is how far after a confirmed_at a recorded join
+     * still counts as that subscriber's join.
+     */
+    private const JOIN_MATCH_SECONDS = 10;
+
+    /**
+     * Schema 31: one join (a 'subscribed' row in the changes table) for every
+     * subscriber row with a confirmed_at - confirmed now or unsubscribed
+     * since - at its confirmed_at, unless that join is already recorded.
+     * Returns how many rows were added.
+     *
+     * Already recorded means: a 'subscribed' row from confirmed_at up to
+     * JOIN_MATCH_SECONDS later, each row used for one subscriber only. Before
+     * the history began (schema 30) there are no rows, so every older join is
+     * added. From then on the plugin recorded each join as it happened, so it
+     * is found and not added twice. The exception is a confirmation on the
+     * schema 30 update day before the update ran: it has no row, and gets one.
+     * A row this function added sits exactly at confirmed_at, so a second run
+     * finds every join and adds nothing; it is also skipped once the stored
+     * schema is 31 or later.
+     */
+    private static function backfillNewsletterJoins(string $storedVersion): int
+    {
+        global $wpdb;
+
+        if ('' !== $storedVersion && (int) $storedVersion >= 31) {
+            return 0;
+        }
+
+        $subscribers = self::table(self::NEWSLETTER_SUBSCRIBERS);
+        $changes = self::table(self::NEWSLETTER_CHANGES);
+
+        // Table names are constants joined to $wpdb->prefix.
+        $confirmed = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            "SELECT confirmed_at FROM {$subscribers} WHERE confirmed_at IS NOT NULL ORDER BY confirmed_at ASC"
+        );
+        $recorded = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->prepare(
+                "SELECT created_at FROM {$changes} WHERE kind = %s ORDER BY created_at ASC",
+                NewsletterHistoryRepository::SUBSCRIBED
+            )
+        );
+        $missing = self::joinsToBackfill(
+            array_map('strval', is_array($confirmed) ? $confirmed : []),
+            array_map('strval', is_array($recorded) ? $recorded : [])
+        );
+
+        foreach ($missing as $at) {
+            $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $changes,
+                ['created_at' => $at, 'kind' => NewsletterHistoryRepository::SUBSCRIBED],
+                ['%s', '%s']
+            );
+        }
+
+        return count($missing);
+    }
+
+    /**
+     * The confirmed_at times (Y-m-d H:i:s) that have no recorded join from
+     * that second up to JOIN_MATCH_SECONDS later. Each recorded join answers
+     * for one confirmed_at only; going through both lists oldest first and
+     * always taking the oldest join still in reach finds as many as can be
+     * found. Times that are not valid are left out.
+     *
+     * @param list<string> $confirmedAts
+     * @param list<string> $recordedJoins
+     * @return list<string>
+     */
+    public static function joinsToBackfill(array $confirmedAts, array $recordedJoins): array
+    {
+        $seconds = static function (string $at): ?int {
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $at, new \DateTimeZone('UTC'));
+
+            return false === $date || $date->format('Y-m-d H:i:s') !== $at ? null : $date->getTimestamp();
+        };
+        $recorded = array_values(array_filter(array_map($seconds, $recordedJoins), 'is_int'));
+        sort($recorded);
+        sort($confirmedAts);
+        $next = 0;
+        $missing = [];
+
+        foreach ($confirmedAts as $at) {
+            $time = $seconds($at);
+
+            if (null === $time) {
+                continue;
+            }
+
+            while (isset($recorded[$next]) && $recorded[$next] < $time) {
+                ++$next;
+            }
+
+            if (isset($recorded[$next]) && $recorded[$next] <= $time + self::JOIN_MATCH_SECONDS) {
+                ++$next;
+                continue;
+            }
+
+            $missing[] = $at;
+        }
+
+        return $missing;
     }
 
     /**
