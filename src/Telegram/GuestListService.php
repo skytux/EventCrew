@@ -134,7 +134,7 @@ final class GuestListService
         $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
 
         if (self::CANCEL_DATA === (string) ($callbackQuery['data'] ?? '')) {
-            $this->onCancel($callbackId, $telegramUserId);
+            $this->onCancel($callbackId, $telegramUserId, $message);
 
             return;
         }
@@ -165,9 +165,12 @@ final class GuestListService
     /**
      * Cancel under a guest added with an email address: cancels the waiting
      * ticket send, as Cancel on the Roster page does. Organizers only, the
-     * same people who can add a guest here.
+     * same people who can add a guest here. Afterwards the Cancel button is
+     * taken off the message it was under; the night buttons stay.
+     *
+     * @param array<string, mixed> $message the message the button was under
      */
-    private function onCancel(string $callbackId, int $telegramUserId): void
+    private function onCancel(string $callbackId, int $telegramUserId, array $message): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -188,6 +191,39 @@ final class GuestListService
                 : __('No send was waiting. It may have gone out already.', 'eventcrew'),
             true
         );
+        $this->removeCancelButton($message);
+    }
+
+    /**
+     * Edits the message's buttons to the same buttons without Cancel sending.
+     * No buttons left gives null, which removes the keyboard.
+     *
+     * @param array<string, mixed> $message
+     */
+    private function removeCancelButton(array $message): void
+    {
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $rows = [];
+
+        foreach ((array) ($message['reply_markup']['inline_keyboard'] ?? []) as $row) {
+            $kept = array_values(array_filter(
+                (array) $row,
+                static fn ($button): bool => self::CANCEL_DATA !== (string) ($button['callback_data'] ?? '')
+            ));
+
+            if ([] !== $kept) {
+                $rows[] = $kept;
+            }
+        }
+
+        $markup = [] === $rows ? null : ['inline_keyboard' => $rows];
+        $this->telegram->editMessageReplyMarkup($chatId, $messageId, $markup);
     }
 
     /**

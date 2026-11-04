@@ -245,7 +245,12 @@ final class GuestListServiceTest extends TelegramTestCase
         self::assertStringContainsString('1. Anna', $edited['text']);
     }
 
-    private function pressCancelSending(): void
+    /**
+     * Presses Cancel sending under a message whose buttons are $keyboard.
+     *
+     * @param array<int, array<int, array<string, string>>>|null $keyboard
+     */
+    private function pressCancelSending(?array $keyboard = null): void
     {
         Functions\when('delete_option')->alias(function (string $name): bool {
             unset($this->options[$name]);
@@ -258,8 +263,46 @@ final class GuestListServiceTest extends TelegramTestCase
         $this->updateRouter()->dispatch([
             'update_id' => 1,
             'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gl:cancel',
-                'message' => ['chat' => ['id' => 555], 'message_id' => 42]],
+                'message' => ['chat' => ['id' => 555], 'message_id' => 42]
+                    + (null === $keyboard ? [] : ['reply_markup' => ['inline_keyboard' => $keyboard]])],
         ]);
+    }
+
+    public function testAfterCancellingTheCancelButtonIsTakenOffAndTheNightButtonsStay(): void
+    {
+        $this->asker(true);
+        $night = ['text' => 'Sat 1.8.', 'callback_data' => 'gl:2026-08-01'];
+
+        $this->pressCancelSending([
+            [$night],
+            [['text' => 'Cancel sending', 'callback_data' => 'gl:cancel']],
+        ]);
+
+        $edit = $this->lastCallTo('editMessageReplyMarkup');
+        self::assertNotNull($edit);
+        self::assertSame(555, $edit['chat_id']);
+        self::assertSame(42, $edit['message_id']);
+        self::assertSame(['inline_keyboard' => [[$night]]], $edit['reply_markup']);
+    }
+
+    public function testWhenCancelWasTheOnlyButtonTheKeyboardIsRemoved(): void
+    {
+        $this->asker(true);
+
+        $this->pressCancelSending([[['text' => 'Cancel sending', 'callback_data' => 'gl:cancel']]]);
+
+        $edit = $this->lastCallTo('editMessageReplyMarkup');
+        self::assertNotNull($edit);
+        self::assertArrayNotHasKey('reply_markup', $edit);
+    }
+
+    public function testCrewPressingCancelLeavesTheButtonInPlace(): void
+    {
+        $this->asker(false);
+
+        $this->pressCancelSending([[['text' => 'Cancel sending', 'callback_data' => 'gl:cancel']]]);
+
+        self::assertNull($this->lastCallTo('editMessageReplyMarkup'));
     }
 
     public function testAnOrganizersCancelButtonStopsTheWaitingSend(): void
