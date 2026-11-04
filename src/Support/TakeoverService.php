@@ -312,15 +312,7 @@ final class TakeoverService
         $done = self::doneText($cover, $task);
         $this->tellHolderDone($holder, $cover, $task, $viaBot);
 
-        // The group reads one message, so it is always in English.
-        $this->board->announce(Language::run(Language::ENGLISH, static fn (): string => sprintf(
-            /* translators: 1: cover's name, 2: person being covered, 3: role, 4: event */
-            __('%1$s is covering for %2$s: %3$s at %4$s.', 'eventcrew'),
-            $cover->name(),
-            $holder->name(),
-            $task->roleLabel(),
-            $task->eventName()
-        )));
+        $this->board->announce(self::groupText($cover, $holder, $task));
         $this->board->refresh();
 
         return $done;
@@ -440,6 +432,26 @@ final class TakeoverService
             self::whenText($task),
             TakeoverDeadline::label($deadlineAt)
         );
+    }
+
+    /**
+     * The group's message about a takeover: everyone in the group reads the
+     * same message, so it is in Finnish, then in English on the next line.
+     */
+    private static function groupText(Person $cover, Person $holder, Task $task): string
+    {
+        $words = static fn (): string => sprintf(
+            /* translators: 1: cover's name, 2: person being covered, 3: role, 4: event */
+            __('%1$s is covering for %2$s: %3$s at %4$s.', 'eventcrew'),
+            $cover->name(),
+            $holder->name(),
+            $task->roleLabel(),
+            $task->eventName()
+        );
+        $fi = (string) Language::run(Language::FINNISH, $words);
+        $en = (string) Language::run(Language::ENGLISH, $words);
+
+        return $fi === $en ? $en : $fi . "\n" . $en;
     }
 
     private static function doneText(Person $cover, Task $task): string

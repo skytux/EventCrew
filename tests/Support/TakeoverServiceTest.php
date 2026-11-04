@@ -277,7 +277,12 @@ final class TakeoverServiceTest extends TelegramTestCase
 
         self::assertStringStartsWith('✅ Signed up:', $byChat[555][0]);
         self::assertStringStartsWith('✅ Done: Person 7 now has your task', $byChat[999][0]);
-        self::assertSame('Person 7 is covering for Person 9: Decorate at Ecstatic Dance.', $byChat[-100][0]);
+        // The group gets one message, in Finnish and then in English.
+        self::assertSame(
+            "Person 7 tuuraa henkilöä Person 9: Somistus, Ecstatic Dance.\n"
+            . 'Person 7 is covering for Person 9: Decorate at Ecstatic Dance.',
+            $byChat[-100][0]
+        );
         self::assertContains('Your task moved to Person 7', array_column($this->mails, 'subject'));
     }
 
