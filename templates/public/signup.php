@@ -1603,7 +1603,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <div class="eventcrew-admin-actions eventcrew-admin-attend">
                         <a class="eventcrew-textlink" href="<?php echo esc_url(add_query_arg(['tasks_task' => $eventcrew_task_item->id] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks'); ?>"><?php esc_html_e('Edit', 'eventcrew'); ?></a>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                            onsubmit="return confirm('<?php echo esc_js(__('Delete this task? Everyone signed up for it is taken off, and their tickets show DISABLED.', 'eventcrew')); ?>');">
+                            onsubmit="return confirm('<?php echo esc_js(__('Delete this task? Everyone signed up for it is taken off and emailed, and their tickets show DISABLED.', 'eventcrew')); ?>');">
                             <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['task_delete_action']); ?>">
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">

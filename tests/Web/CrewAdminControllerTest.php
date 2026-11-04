@@ -2398,12 +2398,16 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Task updated.', CrewAdminController::noticeText('admin_task_updated'));
     }
 
-    public function testDeletingATaskWithPeopleOnItTakesThemOffAndTellsNobody(): void
+    /**
+     * The emails to the people taken off are sent by TaskCancelledNotice, on
+     * the eventcrew/task_deleted action; the controller itself sends nothing.
+     */
+    public function testDeletingATaskWithPeopleOnItTakesThemOffAndAnnouncesIt(): void
     {
         $hooks = $this->recordHooks();
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
-        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 6, 8, 'signed_up')];   // never read
+        $this->wpdb->nextCols[] = ['8'];   // the people still holding a place
 
         $result = $this->post(CrewAdminController::TASK_DELETE_ACTION, ['task_id' => '6']);
 
@@ -2416,7 +2420,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id = 6', $writes[1]);
         self::assertSame([], $this->telegramCalls);
         self::assertSame([], $this->mails);
-        self::assertSame(['eventcrew/board_stale'], $hooks->getArrayCopy());
+        self::assertSame(['eventcrew/task_deleted', 'eventcrew/board_stale'], $hooks->getArrayCopy());
         self::assertSame('Task deleted.', CrewAdminController::noticeText($result['notice']));
     }
 
