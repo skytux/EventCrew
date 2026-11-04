@@ -149,19 +149,152 @@ final class NewsletterPageTest extends TestCase
         );
     }
 
-    /** A long history is shown per week unless per day is asked for. */
-    public function testALongHistoryDefaultsToWeeks(): void
+    /** A month is a bucket from its first day, and each day's numbers land in its month. */
+    public function testMonthsAddUpTheirDays(): void
     {
-        $this->options[Schema::NEWSLETTER_HISTORY_SINCE_OPTION] = '2026-01-01';
-        $this->queue([], []);
-        self::assertSame(NewsletterPage::PER_WEEK, $this->page()->data('')['per']);
+        $buckets = NewsletterPage::buckets(
+            '2026-05-21',
+            '2026-07-20',
+            NewsletterPage::PER_MONTH,
+            [
+                '2026-05-31' => ['subscribed' => 2, 'unsubscribed' => 0],
+                '2026-06-01' => ['subscribed' => 1, 'unsubscribed' => 1],
+                '2026-06-30' => ['subscribed' => 1, 'unsubscribed' => 0],
+            ]
+        );
 
-        $this->queue([], []);
-        self::assertSame(NewsletterPage::PER_DAY, $this->page()->data(NewsletterPage::PER_DAY)['per']);
+        self::assertSame(
+            [
+                ['start' => '2026-05-01', 'subscribed' => 2, 'unsubscribed' => 0],
+                ['start' => '2026-06-01', 'subscribed' => 2, 'unsubscribed' => 1],
+                ['start' => '2026-07-01', 'subscribed' => 0, 'unsubscribed' => 0],
+            ],
+            $buckets
+        );
+        self::assertStringContainsString(
+            '<title>6/2026: 2 subscribed</title>',
+            NewsletterPage::chart($buckets, [], NewsletterPage::PER_MONTH)
+        );
     }
 
-    /** The rendered page, with a GET of $per. */
-    private function rendered(string $per = ''): string
+    /** Three years of months: a label every five bars, and none right before the last one. */
+    public function testMonthLabelsDoNotCrowdTheLastOne(): void
+    {
+        $buckets = NewsletterPage::buckets('2023-11-05', '2026-11-04', NewsletterPage::PER_MONTH, []);
+        $svg = NewsletterPage::chart($buckets, [], NewsletterPage::PER_MONTH);
+
+        self::assertCount(37, $buckets);
+        self::assertStringContainsString('>11/2023</text>', $svg);
+        self::assertStringContainsString('>5/2026</text>', $svg);
+        self::assertStringContainsString('>11/2026</text>', $svg);
+        self::assertStringNotContainsString('>10/2026</text>', $svg);
+    }
+
+    /** Each preset ends today; one month is the default, and a short month is not overrun. */
+    public function testThePresetRanges(): void
+    {
+        $today = '2026-11-04';
+
+        self::assertSame(['1m', '2026-10-05', $today], NewsletterPage::range('', '', '', $today));
+        self::assertSame(['1m', '2026-10-05', $today], NewsletterPage::range('nonsense', '2020-01-01', '', $today));
+        self::assertSame(['6m', '2026-05-05', $today], NewsletterPage::range('6m', '', '', $today));
+        self::assertSame(['1y', '2025-11-05', $today], NewsletterPage::range('1y', '', '', $today));
+        self::assertSame(['3y', '2023-11-05', $today], NewsletterPage::range('3y', '', '', $today));
+        self::assertSame(['1m', '2026-03-01', '2026-03-31'], NewsletterPage::range('1m', '', '', '2026-03-31'));
+    }
+
+    /**
+     * A custom range needs a valid from day. The to day is today when missing
+     * or later than today, swapped dates are put right, and a range longer
+     * than ten years is cut at its start.
+     */
+    public function testACustomRangeIsKeptSensible(): void
+    {
+        $today = '2026-11-04';
+
+        self::assertSame(
+            ['custom', '2026-01-10', '2026-02-20'],
+            NewsletterPage::range('custom', '2026-01-10', '2026-02-20', $today)
+        );
+        self::assertSame(['custom', '2026-01-10', $today], NewsletterPage::range('custom', '2026-01-10', '', $today));
+        self::assertSame(
+            ['custom', '2026-01-10', $today],
+            NewsletterPage::range('custom', '2026-01-10', '2027-05-01', $today)
+        );
+        self::assertSame(
+            ['custom', '2026-01-10', '2026-02-20'],
+            NewsletterPage::range('custom', '2026-02-20', '2026-01-10', $today)
+        );
+        self::assertSame(
+            ['custom', '2016-11-05', $today],
+            NewsletterPage::range('custom', '2001-01-01', $today, $today)
+        );
+        self::assertSame(['1m', '2026-10-05', $today], NewsletterPage::range('custom', '2026-02-31', '', $today));
+        self::assertSame(['1m', '2026-10-05', $today], NewsletterPage::range('custom', '', '2026-01-01', $today));
+    }
+
+    /** The bar width follows the length of the range, so there are never too many bars. */
+    public function testTheBarsFollowTheRangeLength(): void
+    {
+        self::assertSame(NewsletterPage::PER_DAY, NewsletterPage::perFor('2026-01-01', '2026-03-03'));
+        self::assertSame(NewsletterPage::PER_WEEK, NewsletterPage::perFor('2026-01-01', '2026-03-04'));
+        self::assertSame(NewsletterPage::PER_WEEK, NewsletterPage::perFor('2025-11-05', '2026-11-04'));
+        self::assertSame(NewsletterPage::PER_MONTH, NewsletterPage::perFor('2023-11-05', '2026-11-04'));
+        self::assertSame(NewsletterPage::PER_DAY, NewsletterPage::perFor('2026-11-04', '2026-11-04'));
+
+        $this->queue([], []);
+        $data = $this->page()->data('6m');
+        self::assertSame(['6m', '2026-01-21', '2026-07-20', NewsletterPage::PER_WEEK], [
+            $data['range'], $data['from'], $data['to'], $data['per'],
+        ]);
+    }
+
+    /**
+     * The joins and leaves are read for the range only, and a newsletter sent
+     * before the range has no marker; the list below still has every one.
+     */
+    public function testTheChartFollowsTheRange(): void
+    {
+        $this->queue(
+            [['day' => '2026-07-02', 'kind' => 'subscribed', 'n' => '2']],
+            [
+                ['id' => '1', 'plan_id' => '6', 'lang' => '', 'sent_at' => '2026-06-30 18:00:00',
+                    'subject' => 'June', 'sent' => '5', 'failed' => '0'],
+                ['id' => '2', 'plan_id' => '7', 'lang' => '', 'sent_at' => '2026-07-03 18:00:00',
+                    'subject' => 'July', 'sent' => '6', 'failed' => '0'],
+            ]
+        );
+
+        $data = $this->page()->data('custom', '2026-07-01', '2026-07-10');
+
+        self::assertStringContainsString(
+            "created_at >= '2026-07-01 00:00:00' AND created_at <= '2026-07-10 23:59:59'",
+            $this->wpdb->queries[0]
+        );
+        self::assertSame(1, substr_count($data['chart'], 'stroke-dasharray'));
+        self::assertStringContainsString('Newsletter 2, 3.7.2026: July.', $data['chart']);
+        self::assertStringNotContainsString('June', $data['chart']);
+        self::assertSame([1, 2], array_column($data['sends'], 'number'));
+    }
+
+    /** A range with nothing in it has no chart, but the history before it is still listed. */
+    public function testAnEmptyRangeHasNoChart(): void
+    {
+        $this->queue(
+            [],
+            [['id' => '1', 'plan_id' => '6', 'lang' => '', 'sent_at' => '2026-01-30 18:00:00',
+                'subject' => 'January', 'sent' => '5', 'failed' => '0']]
+        );
+
+        $data = $this->page()->data('1m');
+
+        self::assertFalse($data['has_history']);
+        self::assertSame('', $data['chart']);
+        self::assertCount(1, $data['sends']);
+    }
+
+    /** The rendered page, with $get as the query string. */
+    private function rendered(array $get = []): string
     {
         Functions\when('esc_html_e')->alias(static function (string $text): void {
             echo esc_html(\EventCrew\Tests\FinnishCatalog::translate($text));
@@ -170,7 +303,7 @@ final class NewsletterPageTest extends TestCase
             echo (string) $a === (string) $b ? ' selected="selected"' : '';
         });
         Functions\when('wp_unslash')->returnArg(1);
-        $_GET = '' === $per ? [] : ['per' => $per];
+        $_GET = $get;
 
         ob_start();
 
@@ -184,7 +317,7 @@ final class NewsletterPageTest extends TestCase
         return $html;
     }
 
-    /** With no history the page says from which day it is kept, and that nothing is recorded yet. */
+    /** With no history the page says from which day it is kept, and that the range has nothing in it. */
     public function testThePageWithoutHistory(): void
     {
         $this->queue([], []);
@@ -196,7 +329,8 @@ final class NewsletterPageTest extends TestCase
             'The history starts on 15.7.2026, the day this version was installed. There is no older data.',
             $html
         );
-        self::assertStringContainsString('Nothing recorded yet', $html);
+        self::assertStringContainsString('Nothing was recorded in this time range.', $html);
+        self::assertMatchesRegularExpression('/value="1m"\s+selected="selected"/', $html);
         self::assertStringContainsString('No newsletter has been sent since the history started.', $html);
         self::assertStringNotContainsString('<svg', $html);
     }
@@ -209,13 +343,41 @@ final class NewsletterPageTest extends TestCase
                 'subject' => 'Coming events', 'sent' => '8', 'failed' => '0']]
         );
 
-        $html = $this->rendered(NewsletterPage::PER_WEEK);
+        $html = $this->rendered(['range' => '6m']);
 
         self::assertStringContainsString('<svg', $html);
-        self::assertMatchesRegularExpression('/value="week"\s+selected="selected"/', $html);
+        self::assertMatchesRegularExpression('/value="6m"\s+selected="selected"/', $html);
+        self::assertStringNotContainsString('<option value="custom"', $html, 'no custom choice until dates are used');
+        self::assertStringContainsString('21.1.2026 – 20.7.2026, one bar per week.', $html);
         self::assertMatchesRegularExpression('~<td>\s*17\.7\.2026 18:05\s*</td>~', $html);
         self::assertStringContainsString('Both languages', $html);
         self::assertStringContainsString('target="_blank"', $html);
+    }
+
+    /** Dates chosen in the second form are kept in both forms, and the list shows "Custom dates". */
+    public function testThePageWithCustomDates(): void
+    {
+        $this->queue([['day' => '2026-07-02', 'kind' => 'subscribed', 'n' => '1']], []);
+
+        $html = $this->rendered(['range' => 'custom', 'from' => '2026-07-01', 'to' => '2026-07-10']);
+
+        self::assertMatchesRegularExpression('/value="custom"\s+selected="selected">Custom dates</', $html);
+        self::assertMatchesRegularExpression('/name="from" required\s+value="2026-07-01" max="2026-07-20"/', $html);
+        self::assertSame(2, substr_count($html, 'value="2026-07-10"'), 'the to day in both forms');
+        self::assertStringContainsString('1.7.2026 – 10.7.2026, one bar per day.', $html);
+    }
+
+    /** With no join, leave or newsletter in the range the page says so, and the range can still be changed. */
+    public function testThePageWithAnEmptyRange(): void
+    {
+        $this->queue([], []);
+
+        $html = $this->rendered(['range' => '3y']);
+
+        self::assertStringContainsString('Nothing was recorded in this time range.', $html);
+        self::assertStringContainsString('name="range"', $html);
+        self::assertStringContainsString('one bar per month.', $html);
+        self::assertStringNotContainsString('<svg', $html);
     }
 
     /** Only someone who may manage EventCrew can open a copy, and only with its own nonce. */

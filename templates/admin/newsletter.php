@@ -8,6 +8,10 @@
  *
  * @var array{confirmed: int, pending: int, unsubscribed: int} $counts
  * @var string $since
+ * @var string $today
+ * @var string $range
+ * @var string $from
+ * @var string $to
  * @var string $per
  * @var bool $has_history
  * @var string $chart
@@ -26,6 +30,19 @@ use EventCrew\Admin\NewsletterPage;
 $eventcrew_swatch = static function (string $css): void {
     printf('<span style="display:inline-block;width:12px;height:12px;%s"></span>', esc_attr($css));
 };
+
+// The keys are NewsletterPage::RANGES. Dates are chosen in the second form;
+// while they are shown, the first one lists them as "Custom dates".
+$eventcrew_ranges = [
+    '1m' => __('1 month', 'eventcrew'),
+    '6m' => __('6 months', 'eventcrew'),
+    '1y' => __('1 year', 'eventcrew'),
+    '3y' => __('3 years', 'eventcrew'),
+];
+
+if (NewsletterPage::RANGE_CUSTOM === $range) {
+    $eventcrew_ranges[NewsletterPage::RANGE_CUSTOM] = __('Custom dates', 'eventcrew');
+}
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Newsletter', 'eventcrew'); ?></h1>
@@ -60,22 +77,60 @@ $eventcrew_swatch = static function (string $css): void {
         ?>
     </p>
 
-    <?php if (! $has_history) : ?>
-        <p><?php esc_html_e('Nothing recorded yet: no one has joined or left and no newsletter has been sent since then.', 'eventcrew'); ?></p>
-    <?php else : ?>
+    <div style="margin:1em 0;display:flex;gap:1.5em;flex-wrap:wrap;align-items:center">
         <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>"
-            style="margin:1em 0;display:flex;gap:.4em;align-items:center">
+            style="display:flex;gap:.4em;align-items:center">
             <input type="hidden" name="page" value="<?php echo esc_attr(NewsletterPage::PAGE_SLUG); ?>">
-            <label for="eventcrew-newsletter-per"><?php esc_html_e('One bar per', 'eventcrew'); ?></label>
-            <select id="eventcrew-newsletter-per" name="per">
-                <option value="<?php echo esc_attr(NewsletterPage::PER_DAY); ?>"
-                    <?php selected($per, NewsletterPage::PER_DAY); ?>><?php esc_html_e('day', 'eventcrew'); ?></option>
-                <option value="<?php echo esc_attr(NewsletterPage::PER_WEEK); ?>"
-                    <?php selected($per, NewsletterPage::PER_WEEK); ?>><?php esc_html_e('week', 'eventcrew'); ?></option>
+            <?php // Read only when "Custom dates" stays chosen. ?>
+            <input type="hidden" name="from" value="<?php echo esc_attr($from); ?>">
+            <input type="hidden" name="to" value="<?php echo esc_attr($to); ?>">
+            <label for="eventcrew-newsletter-range"><?php esc_html_e('Time range', 'eventcrew'); ?></label>
+            <select id="eventcrew-newsletter-range" name="range">
+                <?php foreach ($eventcrew_ranges as $eventcrew_key => $eventcrew_label) : ?>
+                    <option value="<?php echo esc_attr($eventcrew_key); ?>"
+                        <?php selected($range, $eventcrew_key); ?>><?php echo esc_html($eventcrew_label); ?></option>
+                <?php endforeach; ?>
             </select>
             <button type="submit" class="button"><?php esc_html_e('Show', 'eventcrew'); ?></button>
         </form>
 
+        <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>"
+            style="display:flex;gap:.4em;align-items:center">
+            <input type="hidden" name="page" value="<?php echo esc_attr(NewsletterPage::PAGE_SLUG); ?>">
+            <input type="hidden" name="range" value="<?php echo esc_attr(NewsletterPage::RANGE_CUSTOM); ?>">
+            <label for="eventcrew-newsletter-from"><?php esc_html_e('From', 'eventcrew'); ?></label>
+            <input type="date" id="eventcrew-newsletter-from" name="from" required
+                value="<?php echo esc_attr($from); ?>" max="<?php echo esc_attr($today); ?>">
+            <label for="eventcrew-newsletter-to"><?php esc_html_e('To', 'eventcrew'); ?></label>
+            <input type="date" id="eventcrew-newsletter-to" name="to"
+                value="<?php echo esc_attr($to); ?>" max="<?php echo esc_attr($today); ?>">
+            <button type="submit" class="button"><?php esc_html_e('Show', 'eventcrew'); ?></button>
+        </form>
+    </div>
+
+    <p>
+        <?php
+        $eventcrew_span = [
+            /* translators: 1: first day of the range, like 5.10.2026, 2: its last day */
+            NewsletterPage::PER_DAY => __('%1$s – %2$s, one bar per day.', 'eventcrew'),
+            /* translators: 1: first day of the range, like 5.10.2026, 2: its last day */
+            NewsletterPage::PER_WEEK => __('%1$s – %2$s, one bar per week.', 'eventcrew'),
+            /* translators: 1: first day of the range, like 5.10.2026, 2: its last day */
+            NewsletterPage::PER_MONTH => __('%1$s – %2$s, one bar per month.', 'eventcrew'),
+        ];
+        echo esc_html(
+            sprintf(
+                $eventcrew_span[$per] ?? $eventcrew_span[NewsletterPage::PER_DAY],
+                NewsletterPage::longDay($from),
+                NewsletterPage::longDay($to)
+            )
+        );
+        ?>
+    </p>
+
+    <?php if (! $has_history) : ?>
+        <p><?php esc_html_e('Nothing was recorded in this time range.', 'eventcrew'); ?></p>
+    <?php else : ?>
         <?php
         // Built in NewsletterPage::chart() from numbers and escaped text only.
         echo $chart; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- see above.

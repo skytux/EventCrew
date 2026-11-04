@@ -6855,17 +6855,47 @@ msgstr "Liittyneet, eronneet ja lähetetyt tiedotteet"
 msgid "The history starts on %s, the day this version was installed. There is no older data."
 msgstr "Historia alkaa %s, päivänä jolloin tämä versio asennettiin. Vanhempaa tietoa ei ole."
 
-msgid "Nothing recorded yet: no one has joined or left and no newsletter has been sent since then."
-msgstr "Mitään ei ole vielä kirjattu: kukaan ei ole liittynyt tai eronnut eikä tiedotetta ole lähetetty sen jälkeen."
+msgid "1 month"
+msgstr "1 kuukausi"
 
-msgid "One bar per"
-msgstr "Yksi palkki per"
+msgid "6 months"
+msgstr "6 kuukautta"
 
-msgid "day"
-msgstr "päivä"
+msgid "1 year"
+msgstr "1 vuosi"
 
-msgid "week"
-msgstr "viikko"
+msgid "3 years"
+msgstr "3 vuotta"
+
+msgid "Custom dates"
+msgstr "Omat päivät"
+
+msgid "Time range"
+msgstr "Aikaväli"
+
+msgid "From"
+msgstr "Mistä"
+
+msgid "To"
+msgstr "Mihin"
+
+#. translators: 1: first day of the range, like 5.10.2026, 2: its last day
+#, php-format
+msgid "%1$s – %2$s, one bar per day."
+msgstr "%1$s – %2$s, yksi palkki päivää kohden."
+
+#. translators: 1: first day of the range, like 5.10.2026, 2: its last day
+#, php-format
+msgid "%1$s – %2$s, one bar per week."
+msgstr "%1$s – %2$s, yksi palkki viikkoa kohden."
+
+#. translators: 1: first day of the range, like 5.10.2026, 2: its last day
+#, php-format
+msgid "%1$s – %2$s, one bar per month."
+msgstr "%1$s – %2$s, yksi palkki kuukautta kohden."
+
+msgid "Nothing was recorded in this time range."
+msgstr "Tällä aikavälillä ei kirjattu mitään."
 
 msgid "Newsletter sent (the number is its row below; point at it for the subject)"
 msgstr "Tiedote lähetetty (numero on sen rivi alla; osoita sitä nähdäksesi aiheen)"
