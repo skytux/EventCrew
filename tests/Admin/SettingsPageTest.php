@@ -372,9 +372,52 @@ final class SettingsPageTest extends TelegramTestCase
         $this->options[TelegramClient::TOKEN_OPTION] = $token;
         $this->options[TelegramLogin::ENABLED_OPTION] = true;
 
-        $view = SettingsPage::webLoginView();
-        self::assertSame(['enabled' => true], $view);
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crewbot';
 
+        $view = SettingsPage::webLoginView();
+        self::assertSame(['enabled' => true, 'needs_username' => false], $view);
+
+        $html = $this->renderSignInRow($view);
+
+        self::assertStringContainsString('name="telegram_web_login"', $html);
+        self::assertStringContainsString("checked='checked'", $html);
+        self::assertStringContainsString('the bot sends a button that signs the person in', $html);
+        self::assertStringNotContainsString('BotFather', $html);
+        self::assertStringNotContainsString('<code>', $html);
+        self::assertStringNotContainsString('AAsecret', $html);
+        self::assertStringNotContainsString($token, $html);
+        self::assertStringNotContainsString('stays hidden', $html);
+    }
+
+    /**
+     * The switch is on but the bot username is empty: the button stays
+     * hidden, and one line says so and how the username gets filled in.
+     */
+    public function testTheSignInRowSaysTheButtonIsHiddenWhileTheBotUsernameIsEmpty(): void
+    {
+        $this->options[TelegramLogin::ENABLED_OPTION] = true;
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = '';
+
+        $view = SettingsPage::webLoginView();
+        self::assertSame(['enabled' => true, 'needs_username' => true], $view);
+        self::assertStringContainsString(
+            'The button stays hidden until the bot username is filled in. Installing the webhook fills it in.',
+            $this->renderSignInRow($view)
+        );
+
+        // With the switch off there is no button to hide, so no line.
+        $this->options[TelegramLogin::ENABLED_OPTION] = false;
+
+        $view = SettingsPage::webLoginView();
+        self::assertSame(['enabled' => false, 'needs_username' => false], $view);
+        self::assertStringNotContainsString('stays hidden', $this->renderSignInRow($view));
+    }
+
+    /**
+     * @param array{enabled: bool, needs_username: bool} $view
+     */
+    private function renderSignInRow(array $view): string
+    {
         \Brain\Monkey\Functions\when('checked')->alias(static function (mixed $value): void {
             echo $value ? ' checked=\'checked\'' : '';
         });
@@ -393,12 +436,6 @@ final class SettingsPageTest extends TelegramTestCase
             $html = (string) ob_get_clean();
         }
 
-        self::assertStringContainsString('name="telegram_web_login"', $html);
-        self::assertStringContainsString("checked='checked'", $html);
-        self::assertStringContainsString('the bot sends a button that signs the person in', $html);
-        self::assertStringNotContainsString('BotFather', $html);
-        self::assertStringNotContainsString('<code>', $html);
-        self::assertStringNotContainsString('AAsecret', $html);
-        self::assertStringNotContainsString($token, $html);
+        return $html;
     }
 }

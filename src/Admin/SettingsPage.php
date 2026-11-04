@@ -350,14 +350,20 @@ final class SettingsPage
 
     /**
      * The "Sign in with Telegram" row: the on/off switch for signing in to
-     * the Crew app through the bot. Nothing else needs setting up.
+     * the Crew app through the bot. The switch alone is not enough: the
+     * button also needs the bot's username, which installing the webhook
+     * stores. needs_username is true when the switch is on and the username
+     * is still empty.
      *
-     * @return array{enabled: bool}
+     * @return array{enabled: bool, needs_username: bool}
      */
     public static function webLoginView(): array
     {
+        $enabled = (bool) get_option(TelegramLogin::ENABLED_OPTION, false);
+
         return [
-            'enabled' => (bool) get_option(TelegramLogin::ENABLED_OPTION, false),
+            'enabled' => $enabled,
+            'needs_username' => $enabled && '' === TelegramLogin::botUsername(),
         ];
     }
 
