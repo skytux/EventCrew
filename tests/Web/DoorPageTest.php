@@ -192,6 +192,21 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString("email: el('ec-guest-email').value.trim()", $html);
     }
 
+    /** The waiting ticket send shows above the lists, with "Cancel sending" after a confirm. */
+    public function testAWaitingTicketSendCanBeCancelledFromTheDesk(): void
+    {
+        $html = $this->page();
+
+        self::assertMatchesRegularExpression(
+            '~<p class="ec-msg ec-sending" id="ec-sending" hidden><span id="ec-sending-text"></span>\s*'
+            . '<button type="button" class="ec-link" id="ec-sending-cancel">Cancel sending</button>~',
+            $html
+        );
+        self::assertStringContainsString("el('ec-sending').hidden = !state.sending;", $html);
+        self::assertStringContainsString('if (!window.confirm(text.cancelSendAsk))', $html);
+        self::assertStringContainsString("post('cancelSend', {})", $html);
+    }
+
     public function testCheckInIsATickThatTurnsGreenOnceIn(): void
     {
         $html = $this->page();

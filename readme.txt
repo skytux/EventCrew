@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.139.0
+Stable tag: 1.140.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.0 =
+Door desk: while the ticket emails wait their 10 minutes, the desk shows when they go out and a Cancel sending button.
 
 = 1.139.0 =
 Door desk: the Guest step has an optional email field. With an address, the guest gets the ticket email.
@@ -1211,6 +1214,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.0 =
+No settings change.
 
 = 1.139.0 =
 No settings change.

@@ -87,7 +87,8 @@ final class DoorDesk
         private readonly TicketRedemptionService $tickets,
         private readonly SalesDeskGate $gate,
         private readonly CreditGrantRepository $grants,
-        private readonly ?ClaimNotifier $notifier = null
+        private readonly ?ClaimNotifier $notifier = null,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -242,6 +243,10 @@ final class DoorDesk
             'max' => DoorQuota::max(),
             'over_allowed' => DoorQuota::allowsOver(),
             'sections' => $sections,
+            // "Ticket emails go out at 21:40 to 1 guest." while the ticket
+            // email's 10-minute send waits, else ''. The page shows it with
+            // "Cancel sending".
+            'sending' => $this->sendingLine(),
         ];
 
         $state['version'] = substr(hash('sha256', (string) wp_json_encode($state)), 0, 16);
@@ -822,6 +827,26 @@ final class DoorDesk
         }
 
         return self::GUEST_OK;
+    }
+
+    /** The waiting ticket send as one line (TicketMail::pendingLine()), or ''. */
+    private function sendingLine(): string
+    {
+        $summary = $this->ticketMail?->pendingSummary();
+
+        return null === $summary ? '' : TicketMail::pendingLine($summary);
+    }
+
+    /**
+     * "Cancel sending" at the desk: the waiting ticket send is cancelled and
+     * none of it goes out, the same as the organizers' "Cancel sending".
+     * Answers what the desk says.
+     */
+    public function cancelTicketSend(): string
+    {
+        return TicketMail::cancel()
+            ? __('Sending cancelled. No ticket email was sent.', 'eventcrew')
+            : __('No send was waiting. It may have gone out already.', 'eventcrew');
     }
 
     /** What the desk says for an addGuest() answer. */

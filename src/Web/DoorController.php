@@ -46,6 +46,7 @@ final class DoorController
     public const HANDOFF_ACTION = 'eventcrew_door_handoff';
     public const SCAN_ACTION = 'eventcrew_door_scan';
     public const TICKET_CODE_ACTION = 'eventcrew_door_ticket_code';
+    public const CANCEL_SEND_ACTION = 'eventcrew_door_cancel_send';
 
     /** The actions that can add people, with DoorQuota::adding()'s name for each. */
     private const QUOTA_ACTIONS = [
@@ -92,6 +93,7 @@ final class DoorController
             self::HANDOFF_ACTION,
             self::SCAN_ACTION,
             self::TICKET_CODE_ACTION,
+            self::CANCEL_SEND_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -318,6 +320,15 @@ final class DoorController
                 ]);
                 // No break: json() exits.
 
+            case self::CANCEL_SEND_ACTION:
+                // "Cancel sending" on the waiting ticket send's line.
+                $this->json([
+                    'ok' => true,
+                    'message' => $this->desk->cancelTicketSend(),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
             case self::PEOPLE_ACTION:
                 $this->json(['people' => $this->handoff->people($cookie) ?? []]);
                 // No break: json() exits.
@@ -424,6 +435,7 @@ final class DoorController
                 'handoff' => self::HANDOFF_ACTION,
                 'scan' => self::SCAN_ACTION,
                 'ticketCode' => self::TICKET_CODE_ACTION,
+                'cancelSend' => self::CANCEL_SEND_ACTION,
             ],
             // The QR decoder for phones without BarcodeDetector, loaded only
             // when Scan is tapped.
