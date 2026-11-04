@@ -1954,7 +1954,7 @@ msgstr ""
 msgid "Free entry closed for this date."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:365 src/Web/SignupController.php:1096
+#: src/Telegram/TicketRedemptionService.php:371 src/Web/SignupController.php:1096
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -2193,7 +2193,7 @@ msgstr[1] ""
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:277
+#: src/Telegram/TicketRedemptionService.php:285
 #. translators: 1: name, 2: event date
 msgid "Hi %1$s,\n\nHere is your free-entry ticket for %2$s. Show it at the door."
 msgstr ""
@@ -4339,7 +4339,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:98 src/Support/ReminderCall.php:155 src/Telegram/TicketRedemptionService.php:281
+#: src/Support/ClaimNotifier.php:98 src/Support/ReminderCall.php:155 src/Telegram/TicketRedemptionService.php:289
 msgid "Show your ticket"
 msgstr ""
 
@@ -4916,7 +4916,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:367 src/Web/SignupController.php:1098
+#: src/Telegram/TicketRedemptionService.php:373 src/Web/SignupController.php:1098
 msgid "That event is no longer available."
 msgstr ""
 
@@ -6511,7 +6511,7 @@ msgstr ""
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:366 src/Web/SignupController.php:1097
+#: src/Telegram/TicketRedemptionService.php:372 src/Web/SignupController.php:1097
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -6658,7 +6658,7 @@ msgstr[1] ""
 msgid "You have left the announcement. You will not get it any more."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:364 src/Web/SignupController.php:1095
+#: src/Telegram/TicketRedemptionService.php:370 src/Web/SignupController.php:1095
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
@@ -6767,7 +6767,7 @@ msgstr ""
 msgid "Your first name (optional)"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:274
+#: src/Telegram/TicketRedemptionService.php:282
 msgid "Your free-entry ticket"
 msgstr ""
 
@@ -7290,11 +7290,11 @@ msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap �
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/ClaimNotifier.php:147 src/Telegram/TicketRedemptionService.php:263
+#: src/Support/ClaimNotifier.php:147 src/Telegram/TicketRedemptionService.php:264
 msgid "🎟 Show your ticket"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:260
+#: src/Telegram/TicketRedemptionService.php:261
 #. translators: %s: event date
 msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr ""

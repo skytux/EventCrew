@@ -234,9 +234,10 @@ final class TicketRedemptionService
     }
 
     /**
-     * Sends the just-claimed ticket link to the person's Telegram DM and email,
-     * so they have it even if they close the page, and then the "Your ticket"
-     * email with the QR code (TicketMail), the same one ticket buyers get. All
+     * Sends the just-claimed ticket link to the person's Telegram DM, so they
+     * have it even if they close the page, and the "Your ticket" email with
+     * the QR code (TicketMail), the same one ticket buyers and guests get.
+     * Only without TicketMail does a plain email carry the link instead. All
      * sends are best-effort: TicketRedemptionService already recorded the
      * redemption, and a missed confirmation must never undo a spent credit.
      */
@@ -264,6 +265,13 @@ final class TicketRedemptionService
             );
         }
 
+        // The one ticket email (it follows the same email choice itself).
+        if (null !== $this->ticketMail) {
+            $this->ticketMail->sendCreditTicket($person, $redemptionId, $date);
+
+            return;
+        }
+
         if (! $prefs->emailAllowed($person, NotificationPreferences::TICKET)) {
             return;
         }
@@ -280,8 +288,6 @@ final class TicketRedemptionService
             ),
             [['label' => __('Show your ticket', 'eventcrew'), 'url' => $url]]
         );
-
-        $this->ticketMail?->sendCreditTicket($person, $redemptionId, $date);
     }
 
     /**

@@ -626,6 +626,50 @@ final class TicketMailTest extends TestCase
         self::assertSame(31, SignedLink::verify('ticket', (string) $query['token']));
     }
 
+    /**
+     * A bought ticket, a guest-list ticket, a crew sign-up and a spent credit
+     * get the one email: the same subject, the same card in the same order,
+     * a QR code and the link. Only the thank-you line, a buyer's written-out
+     * code and a guest's plus-ones line differ.
+     */
+    public function testEveryKindOfTicketGetsTheSameEmail(): void
+    {
+        $mail = $this->ticketMail();
+        $rows = [
+            TicketBuyer::fromRow($this->buyerRow(1)),
+            Guest::fromRow($this->guestRow(9)),
+            new CrewTicket(CrewTicket::KIND_CREW, 31, '2026-11-14', 'Mia Crew', 'mia@example.test'),
+            new CrewTicket(CrewTicket::KIND_CREDIT, 12, '2026-11-14', 'Mia Crew', 'mia@example.test'),
+        ];
+
+        foreach ($rows as $row) {
+            $email = $mail->compose($row);
+            $qr = new TicketQr();
+            $data = TicketMail::qrData($row);
+
+            self::assertSame('Lippusi / Your ticket – 14.11.2026', $email['subject']);
+
+            $order = [
+                '>FI<',
+                '>EN<',
+                'bgcolor="#e8e6e3"',
+                'bgcolor="#2b2b30"',
+                'Lippusi / Your ticket',
+                'Test Site</p>',
+                '14.11.2026</p>',
+                $qr->table($data, $qr->fitCell($data, 224)),
+                'Avaa lippu selaimessa / Open the ticket in your browser',
+            ];
+            $last = -1;
+
+            foreach ($order as $text) {
+                $at = strpos($email['html'], $text, $last + 1);
+                self::assertNotFalse($at, get_class($row) . ': ' . substr($text, 0, 40));
+                $last = $at;
+            }
+        }
+    }
+
     /** A credit spent on a night gets the same email, with an EC-F code. */
     public function testACreditGetsTheTicketEmailWithACreditCode(): void
     {
