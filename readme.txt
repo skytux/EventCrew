@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.41
+Stable tag: 1.140.42
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.42 =
+Deleting a task sends each person on it one email: their ticket again with the tasks left, or "Your ticket is cancelled", both naming the deleted task; the "Task cancelled" email only when no ticket was emailed (Q263).
 
 = 1.140.41 =
 Ticket emails: the hosting cron takes the same lock as the page-load rescue, and tries again a minute later when the lock is held, so a late batch is never sent twice (Q264).
@@ -1337,6 +1340,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.42 =
+No settings change.
 
 = 1.140.41 =
 No settings change.

@@ -6340,6 +6340,11 @@ msgstr ""
 "\n"
 "Järjestäjät ovat peruneet tehtävän %2$s tapahtumassa %3$s, %4$s. Et ole enää ilmoittautunut siihen, eikä sen lippu enää toimi ovella. Tämä ei laske luotettavuuttasi."
 
+#. translators: %s: the task, e.g. "Bar, 21:00–23:00"
+#, php-format
+msgid "The organizers have cancelled the task %s. You are no longer signed up for it. This does not count against your standing."
+msgstr "Järjestäjät ovat peruneet tehtävän %s. Et ole enää ilmoittautunut siihen. Tämä ei laske luotettavuuttasi."
+
 msgid "TICKET CANCELLED"
 msgstr "LIPPU PERUTTU"
 

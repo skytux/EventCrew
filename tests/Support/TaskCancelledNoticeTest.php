@@ -82,15 +82,12 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertStringContainsString('Party', $mail['body']);
     }
 
-    /**
-     * Q228: the person's emailed ticket for the night follows the change.
-     * With no task left that night it is cancelled (the red-band email).
-     */
-    public function testTheEmailedTicketIsCancelledWhenNoTaskIsLeft(): void
+    private function noticeWithTickets(): TaskCancelledNotice
     {
         Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
-        $notice = new TaskCancelledNotice(
+
+        return new TaskCancelledNotice(
             new TaskRepository(),
             new PersonRepository(),
             $mailer,
@@ -104,18 +101,83 @@ final class TaskCancelledNoticeTest extends TestCase
                 new RedemptionRepository()
             )
         );
+    }
+
+    /**
+     * Q263: when the person's ticket for the night was emailed and no task is
+     * left that night, they get one email: the red-band cancel email, which
+     * names the deleted task. No separate "Task cancelled" email.
+     */
+    public function testOneCancelEmailNamingTheTaskWhenNoTaskIsLeft(): void
+    {
+        $notice = $this->noticeWithTickets();
         $gone = ['id' => 30, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
             'ticket_mailed_at' => '2026-07-19 10:00:00'];
-        $this->wpdb->nextRows[] = $this->task('2026-08-01');
+        $this->wpdb->nextRows[] = $this->task('2026-08-01', '2026-08-01 11:00:00');
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $this->wpdb->nextResults[] = [$gone]; // ticketEmailed
         $this->wpdb->nextResults[] = [$gone]; // the emailed ticket
         $this->wpdb->nextResults[] = [$gone]; // no task left
 
         $notice->notify(5, [7]);
 
-        self::assertSame(['anna@example.com', 'anna@example.com'], array_column($this->mails, 'to'));
+        self::assertSame(['anna@example.com'], array_column($this->mails, 'to'));
+        $mail = $this->mails[0];
+        self::assertStringContainsString('Your ticket is cancelled', $mail['subject']);
+        self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
+        self::assertStringContainsString('09:00', $mail['body']);
+        self::assertStringContainsString('TICKET CANCELLED', $mail['body']);
+    }
+
+    /**
+     * Q263: when the person still holds another task that night, they get one
+     * email: their ticket again with the task left, naming the deleted task.
+     */
+    public function testOneTicketEmailNamingTheTaskWhenATaskIsLeft(): void
+    {
+        $notice = $this->noticeWithTickets();
+        $gone = ['id' => 30, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $kept = ['id' => 31, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = $this->task('2026-08-01', '2026-08-01 11:00:00');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $this->wpdb->nextResults[] = [$gone, $kept]; // ticketEmailed
+        $this->wpdb->nextResults[] = [$gone, $kept]; // the emailed ticket
+        $this->wpdb->nextResults[] = [$gone, $kept]; // the tasks left
+        $this->wpdb->nextRows[] = [
+            'id' => 6, 'task_date' => '2026-08-01', 'role_slug' => 'bar', 'capacity' => 2,
+            'event_post_id' => null, 'event_label' => 'Party',
+            'starts_at' => '2026-08-01 21:00:00', 'ends_at' => '2026-08-01 23:00:00',
+        ];
+
+        $notice->notify(5, [7]);
+
+        self::assertSame(['anna@example.com'], array_column($this->mails, 'to'));
+        $mail = $this->mails[0];
+        self::assertStringContainsString('Your ticket', $mail['subject']);
+        self::assertStringNotContainsString('cancelled', $mail['subject']);
+        self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
+        self::assertStringContainsString('Your tasks on this night:', $mail['body']);
+        self::assertStringContainsString('21:00', $mail['body']);
+        self::assertStringNotContainsString('Thank you for taking a task!', $mail['body']);
+    }
+
+    /**
+     * Q263: when no ticket for the night was emailed, the one email is the
+     * "Task cancelled" email.
+     */
+    public function testWithoutAnEmailedTicketTheOneEmailIsTaskCancelled(): void
+    {
+        $notice = $this->noticeWithTickets();
+        $this->wpdb->nextRows[] = $this->task('2026-08-01');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $this->wpdb->nextResults[] = [['id' => 30, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
+            'ticket_mailed_at' => null]];
+
+        $notice->notify(5, [7]);
+
+        self::assertSame(['anna@example.com'], array_column($this->mails, 'to'));
         self::assertStringContainsString('Task cancelled', $this->mails[0]['subject']);
-        self::assertStringContainsString('Your ticket is cancelled', $this->mails[1]['subject']);
     }
 
     public function testNothingIsSentForATaskOnAPastDate(): void

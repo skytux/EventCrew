@@ -11,16 +11,15 @@ use EventCrew\Repositories\TaskRepository;
 
 /**
  * When an organizer deletes a whole task, every person who was signed up for
- * it gets an email saying the task is cancelled and its ticket no longer
- * works. The email is in Finnish and English, like the "Your ticket is
- * cancelled" email (TicketMail::composeCancelled).
+ * it gets exactly one email about it (Q263), in Finnish and English.
  *
  * Listens on the eventcrew/task_deleted action that TaskRepository::delete
  * fires with the people whose sign-up it cancelled. When the person's ticket
  * for the night was emailed, TicketMail::crewTasksChanged() sends it again
  * with the tasks left, or the "Your ticket is cancelled" email when none is
- * left. A task whose date is over, or whose end time has passed, sends
- * nothing: there is nobody left to tell.
+ * left; either one names the deleted task. When no ticket was emailed, the
+ * person gets the "Task cancelled" email instead. A task whose date is over,
+ * or whose end time has passed, sends nothing: there is nobody left to tell.
  *
  * It is about a commitment the person made, so like the sign-up and cancel
  * confirmations it is not behind a notification switch.
@@ -62,10 +61,16 @@ final class TaskCancelledNotice
                 continue;
             }
 
+            // One email per person (Q263). When their ticket for the night
+            // was emailed: the ticket again with the tasks left, or the
+            // red-band cancel email when no task is left, each naming the
+            // deleted task. Otherwise the "Task cancelled" email.
+            if (null !== $this->ticketMail && $this->ticketMail->ticketEmailed($person->id, $task->taskDate)) {
+                $this->ticketMail->crewTasksChanged($person, $task->taskDate, $task);
+                continue;
+            }
+
             $this->send($person, $task);
-            // Their emailed ticket for the night: sent again with the tasks
-            // left, or the red-band cancel email when no task is left.
-            $this->ticketMail?->crewTasksChanged($person, $task->taskDate);
         }
     }
 
