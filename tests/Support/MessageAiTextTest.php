@@ -48,6 +48,7 @@ final class MessageAiTextTest extends TestCase
         self::assertFalse(MessageAiText::offers('credit_granted'));
         // Listed but not wired yet.
         self::assertFalse(MessageAiText::offers('ticket'));
+        // Wired, but not given the AI option.
         self::assertFalse(MessageAiText::offers('followup_came'));
     }
 

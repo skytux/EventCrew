@@ -28,7 +28,6 @@
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
- * @var array<string, array{source: string, texts: array<string, string>, manual: array<string, bool>}> $followup_texts The post-event email's two texts (FollowupText::settings()), by variant.
  * @var array<string, mixed> $ticket_text The ticket email's text (TicketText::settings()).
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
@@ -1527,42 +1526,6 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
-            <?php
-            // The main text of each version (FollowupText): written once,
-            // kept in every language. The greeting, the sign-off, the events
-            // and the buttons are added around it.
-            $eventcrew_followup_fields = [
-                [\EventCrew\Support\FollowupText::CAME, __('Thank-you text (came)', 'eventcrew')],
-                [\EventCrew\Support\FollowupText::MISSED, __('Sorry text (missed)', 'eventcrew')],
-            ];
-            ?>
-            <?php foreach ($eventcrew_followup_fields as $eventcrew_ff) : ?>
-                <?php
-                [$eventcrew_ff_variant, $eventcrew_ff_label] = $eventcrew_ff;
-                $eventcrew_ff_id = 'eventcrew-followup-text-' . $eventcrew_ff_variant;
-                ?>
-                <tr>
-                    <th scope="row">
-                        <label for="<?php echo esc_attr($eventcrew_ff_id); ?>">
-                            <?php echo esc_html($eventcrew_ff_label); ?>
-                        </label>
-                    </th>
-                    <td>
-                        <?php
-                        \EventCrew\Support\TranslatedText::field(
-                            \EventCrew\Support\FollowupText::POST_NAME . '[' . $eventcrew_ff_variant . ']',
-                            $eventcrew_ff_id,
-                            $followup_texts[$eventcrew_ff_variant],
-                            \EventCrew\Support\FollowupText::MAX_LENGTH,
-                            true
-                        );
-                        ?>
-                        <p class="description">
-                            <?php esc_html_e('The text between “Hi Alex,” and the sign-off. {event} becomes the event’s name and {date} its date. Empty, or the same as the built-in text, means the built-in text. An organizer can replace it for the next email only, in the crew app’s Admin tab or with /followup in the bot.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
-                        </p>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
         </table>
 
         <h2><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h2>

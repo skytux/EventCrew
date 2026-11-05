@@ -22,8 +22,9 @@ use EventCrew\Web\NewsletterController;
  *
  * Both are in Finnish and in English, Finnish first, like the ticket email.
  * The main text of each comes from FollowupText: a one-time text an organizer
- * set for the next post-event email, else the text in Settings > Email, else
- * the built-in text. The one-time texts are removed once the next night's
+ * set for the next post-event email, else the text on the Messages page
+ * (followup_came, followup_missed), else the built-in text. The subject is
+ * the Messages page subject. The one-time texts are removed once the next night's
  * emails are all sent, or when that night (its preview sent) is stopped or
  * left too late to send.
  * Under the text are the coming events the way the next events announcement
@@ -166,6 +167,10 @@ final class FollowupMail
     public function boot(): void
     {
         add_action(self::HOOK, [$this, 'sendBatch']);
+        // One time only: the text from the old Settings fields moves to the
+        // Messages page. On init after the text domain (priority 10), so the
+        // added greeting and sign-off are in each language.
+        add_action('init', [FollowupText::class, 'moveSettingsText'], 20);
     }
 
     public static function enabled(): bool
@@ -623,15 +628,17 @@ final class FollowupMail
     {
         $shortDate = TicketMail::shortDate($date);
         $variant = $came ? FollowupText::CAME : FollowupText::MISSED;
-        $main = fn (string $lang): string => FollowupText::fill(
-            $this->text->text($variant, $lang)['text'],
-            $this->eventName($date, $lang),
-            $shortDate
-        );
-        $fiText = $main(Language::FINNISH);
-        $enText = $main(Language::ENGLISH);
-        $fi = Language::run(Language::FINNISH, static fn (): array => self::words($came, $name, $fiText));
-        $en = Language::run(Language::ENGLISH, static fn (): array => self::words($came, $name, $enText));
+        $words = function (string $lang) use ($variant, $date, $shortDate, $name): array {
+            $text = $this->text->text($variant, $lang);
+            $event = $this->eventName($date, $lang);
+
+            return Language::run(
+                $lang,
+                static fn (): array => self::words($variant, $name, $text, $event, $shortDate)
+            );
+        };
+        $fi = $words(Language::FINNISH);
+        $en = $words(Language::ENGLISH);
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
         $pair = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' · ' . $en[$key];
 
@@ -903,8 +910,8 @@ final class FollowupMail
                 'missed' => __('To those who did not come', 'eventcrew'),
                 'subject_line' => __('Subject', 'eventcrew'),
                 'stop' => __('Do not send the post-event email', 'eventcrew'),
-                'text_next' => __('Text: a one-time text an organizer set for this email. After this send, the text in Settings is used again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                'text_settings' => __('Text: the one in Settings. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'text_next' => __('Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'text_settings' => __('Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ]);
 
             $heading = static fn (string $label, string $subject, string $which): string => sprintf(
@@ -1058,27 +1065,37 @@ final class FollowupMail
     }
 
     /**
-     * One language's words, composed in the current language. $main is the
-     * email's main text in that language (FollowupText), already filled in.
+     * One language's words, composed in the current language. $text is the
+     * email's text in that language (FollowupText::text()). The Messages page
+     * text is the whole text; the one-time text and the built-in text get
+     * the greeting and the sign-off around them. The subject is the Messages
+     * page subject.
      *
+     * @param array{text: string, next: bool, template: bool} $text
      * @return array{body: string, subject: string, join: string, invite: string}
      */
-    private static function words(bool $came, string $name, string $main): array
+    private static function words(string $variant, string $name, array $text, string $event, string $date): array
     {
+        $id = FollowupText::TEMPLATES[$variant];
         $first = DoorDesk::firstName($name);
-        $hello = '' === $first
-            ? __('Hi,', 'eventcrew')
-            /* translators: %s: the ticket holder's first name */
-            : sprintf(__('Hi %s,', 'eventcrew'), $first);
+        $context = ['first_name' => $first, 'event' => $event, 'date' => $date];
 
-        $lines = [$hello, trim($main)];
-        $lines[] = __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
+        if ($text['template']) {
+            $body = trim((string) MessageTemplates::find($id)?->fill($text['text'], $context));
+        } else {
+            $hello = '' === $first
+                ? __('Hi,', 'eventcrew')
+                /* translators: %s: the ticket holder's first name */
+                : sprintf(__('Hi %s,', 'eventcrew'), $first);
+
+            $lines = [$hello, trim(FollowupText::fill($text['text'], $event, $date))];
+            $lines[] = __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
+            $body = implode("\n\n", $lines);
+        }
 
         return [
-            'body' => implode("\n\n", $lines),
-            'subject' => $came
-                ? __('Thank you for dancing with us', 'eventcrew')
-                : __('We missed you this time', 'eventcrew'),
+            'body' => $body,
+            'subject' => MessageTemplates::subject($id, $context),
             'join' => __('Join the announcement', 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];

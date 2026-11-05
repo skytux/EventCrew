@@ -10,14 +10,15 @@ use EventCrew\Support\FollowupText;
 use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NewsletterText;
-use EventCrew\Support\TranslatedText;
 use EventCrew\Tests\TestCase;
 
 /**
- * The main text of the post-event email: the built-in text, the text in
- * Settings, and the one-time text for the next email. Options live in an
- * array; the language model is a stub of wp_remote_post.
+ * The main text of the post-event email: the built-in text, the text on the
+ * Messages page, the one-time move of the old Settings text to the Messages
+ * page, and the one-time text for the next email. Options live in an array;
+ * the language model is a stub of wp_remote_post.
  */
 final class FollowupTextTest extends TestCase
 {
@@ -76,6 +77,7 @@ final class FollowupTextTest extends TestCase
     {
         $came = $this->text()->text(FollowupText::CAME, Language::ENGLISH);
         self::assertFalse($came['next']);
+        self::assertFalse($came['template']);
         self::assertSame(
             'Thank you for coming to {event} on {date}. It was lovely to share the evening and the dance floor'
                 . ' with you, and we hope some of that warmth went home with you.'
@@ -107,139 +109,123 @@ final class FollowupTextTest extends TestCase
         );
     }
 
-    public function testSettingsShowTheBuiltInTextUntilOneIsSaved(): void
+    // ---- The text on the Messages page ------------------------------------
+
+    /** A text saved on the Messages page is used, in each language; the other variant keeps the built-in text. */
+    public function testTheMessagesPageTextIsUsed(): void
     {
-        self::assertSame(FollowupText::defaultValue(FollowupText::CAME), FollowupText::settings(FollowupText::CAME));
-
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = TranslatedText::blank();
-        self::assertSame(
-            FollowupText::defaultValue(FollowupText::CAME),
-            FollowupText::settings(FollowupText::CAME),
-            'an empty stored value is the built-in text'
-        );
-    }
-
-    // ---- The text in Settings ---------------------------------------------
-
-    public function testTheTextInSettingsIsUsed(): void
-    {
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = [
-            'source' => 'Thanks for {event}!',
-            'texts' => ['fi' => 'Kiitos, {event}!', 'en' => 'Thanks for {event}!'],
-            'manual' => ['fi' => false, 'en' => false],
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = [
+            'body' => [
+                'source' => 'Thanks for {event}!',
+                'texts' => ['fi' => 'Kiitos, {event}!', 'en' => 'Thanks for {event}!'],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
         ];
 
         self::assertSame(
-            ['text' => 'Kiitos, {event}!', 'next' => false],
+            ['text' => 'Kiitos, {event}!', 'next' => false, 'template' => true],
             $this->text()->text(FollowupText::CAME, Language::FINNISH)
         );
         self::assertSame(
-            ['text' => 'Thanks for {event}!', 'next' => false],
+            ['text' => 'Thanks for {event}!', 'next' => false, 'template' => true],
             $this->text()->text(FollowupText::CAME, Language::ENGLISH)
         );
-        self::assertStringStartsWith(
-            'We missed you at',
-            $this->text()->text(FollowupText::MISSED, Language::ENGLISH)['text'],
-            'the other text is still the built-in one'
-        );
+        self::assertFalse($this->text()->text(FollowupText::MISSED, Language::ENGLISH)['template']);
     }
 
-    /** An empty language falls back to the source; no text at all to the built-in text. */
-    public function testAnEmptyLanguageFallsBackToTheSource(): void
-    {
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
-            'source' => 'Sorry we missed you.',
-            'texts' => ['fi' => '', 'en' => ''],
-            'manual' => ['fi' => false, 'en' => false],
-        ];
-
-        self::assertSame('Sorry we missed you.', $this->text()->text(FollowupText::MISSED, Language::FINNISH)['text']);
-
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
-            'source' => '   ',
-            'texts' => ['fi' => '', 'en' => ''],
-            'manual' => ['fi' => false, 'en' => false],
-        ];
-
-        self::assertStringStartsWith(
-            'Kaipasimme sinua',
-            $this->text()->text(FollowupText::MISSED, Language::FINNISH)['text']
-        );
-    }
-
-    /** The built-in text posted back unchanged is not stored, nor is an empty one. */
-    public function testSavingTheBuiltInTextOrNothingStoresNothing(): void
-    {
-        $default = FollowupText::defaultValue(FollowupText::CAME);
-        $error = $this->text()->saveSettings([
-            FollowupText::CAME => ['source' => $default['source'], 'texts' => $default['texts']],
-        ]);
-
-        self::assertSame('', $error);
-        self::assertArrayNotHasKey(FollowupText::SETTINGS_OPTIONS[FollowupText::CAME], $this->options);
-
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
-            'source' => 'Old',
-            'texts' => ['fi' => 'Vanha', 'en' => 'Old'],
-            'manual' => ['fi' => false, 'en' => false],
-        ];
-        $this->text()->saveSettings([
-            FollowupText::MISSED => ['source' => '', 'texts' => ['fi' => '', 'en' => '']],
-        ]);
-
-        self::assertArrayNotHasKey(FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED], $this->options);
-    }
-
-    /** A new text is translated and stored; a field not posted is left alone. */
-    public function testANewTextIsTranslatedAndStored(): void
-    {
-        $this->withModel();
-        $this->answer = '{"lang": "en", "fi": "Kiitos, että tulit {event}-iltaan."}';
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = ['source' => 'Kept'];
-
-        $error = $this->text()->saveSettings([
-            FollowupText::CAME => [
-                'source' => 'Thanks for coming to {event}.',
-                'texts' => FollowupText::defaultValue(FollowupText::CAME)['texts'],
-            ],
-        ]);
-
-        self::assertSame('', $error);
-        $stored = $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]];
-        self::assertSame('Thanks for coming to {event}.', $stored['source']);
-        self::assertSame('Kiitos, että tulit {event}-iltaan.', $stored['texts']['fi']);
-        self::assertSame('Thanks for coming to {event}.', $stored['texts']['en']);
-        self::assertSame(['source' => 'Kept'], $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]]);
-    }
+    // ---- The move of the old Settings text ---------------------------------
 
     /**
-     * With the translation switched off, the source is stored, an emptied
-     * language falls back to it, and the error says the translation is off.
+     * The text saved in the old Settings fields moves to the Messages page
+     * once, with the greeting and the sign-off around it in each language.
+     * The old option stays as a backup.
      */
-    public function testWithTranslationOffAnEmptiedLanguageUsesTheSource(): void
+    public function testTheOldSettingsTextMovesToTheMessagesPageOnce(): void
     {
-        $this->options[TranslatedText::AUTO_OPTION] = '0';
+        $old = [
+            'source' => 'Thanks for {event}!',
+            'texts' => ['fi' => 'Kiitos, {event}!', 'en' => 'Thanks for {event}!'],
+            'manual' => ['fi' => true, 'en' => false],
+        ];
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = $old;
 
-        $error = $this->text()->saveSettings([
-            FollowupText::CAME => ['source' => 'Thanks!', 'texts' => ['fi' => '', 'en' => '']],
-        ]);
+        FollowupText::moveSettingsText();
 
-        self::assertSame(TranslatedText::ERROR_OFF, $error);
-        self::assertSame(
-            ['text' => 'Thanks!', 'next' => false],
-            $this->text()->text(FollowupText::CAME, Language::FINNISH)
+        $body = $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came']['body'];
+        self::assertSame("Hei {first_name},\n\nKiitos, {event}!\n\nLämpimästi,\nTest Site", $body['texts']['fi']);
+        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site", $body['texts']['en']);
+        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site", $body['source']);
+        self::assertSame(['fi' => true, 'en' => false], $body['manual']);
+        self::assertSame($old, $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]], 'kept as a backup');
+        self::assertArrayNotHasKey(
+            MessageTemplates::OPTION_PREFIX . 'followup_missed',
+            $this->options,
+            'nothing was saved for the other one, so it keeps the built-in text'
         );
+
+        // The email now reads the moved text.
         self::assertSame(
-            ['text' => 'Thanks!', 'next' => false],
+            [
+                'text' => "Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site",
+                'next' => false,
+                'template' => true,
+            ],
             $this->text()->text(FollowupText::CAME, Language::ENGLISH)
         );
+
+        // It runs one time only: a later change on the Messages page is not overwritten.
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came']['body'] = ['source' => 'Edited on the page.'];
+        FollowupText::moveSettingsText();
+        self::assertSame(
+            ['source' => 'Edited on the page.'],
+            $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came']['body']
+        );
+    }
+
+    /** A kind that already has a Messages page text keeps it; settings and subject stay. */
+    public function testTheMoveKeepsATextAlreadyOnTheMessagesPage(): void
+    {
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = ['source' => 'Old settings text.'];
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = ['source' => 'Old sorry text.'];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = ['body' => ['source' => 'Page text.']];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_missed'] = [
+            'subject' => ['source' => 'Page subject'],
+            'settings' => ['x' => 1],
+        ];
+
+        FollowupText::moveSettingsText();
+
+        self::assertSame(
+            ['body' => ['source' => 'Page text.']],
+            $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came']
+        );
+        $missed = $this->options[MessageTemplates::OPTION_PREFIX . 'followup_missed'];
+        self::assertSame(['source' => 'Page subject'], $missed['subject']);
+        self::assertSame(['x' => 1], $missed['settings']);
+        self::assertSame("Hi {first_name},\n\nOld sorry text.\n\nWarmly,\nTest Site", $missed['body']['source']);
+        self::assertSame(1, $this->options[FollowupText::MOVED_OPTION]);
+    }
+
+    /** With nothing saved in the old fields, nothing is written but the done mark. */
+    public function testWithNothingInTheOldFieldsTheMoveWritesNothing(): void
+    {
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
+            'source' => '  ',
+            'texts' => ['fi' => '', 'en' => ''],
+        ];
+
+        FollowupText::moveSettingsText();
+
+        self::assertArrayNotHasKey(MessageTemplates::OPTION_PREFIX . 'followup_came', $this->options);
+        self::assertArrayNotHasKey(MessageTemplates::OPTION_PREFIX . 'followup_missed', $this->options);
+        self::assertSame(1, $this->options[FollowupText::MOVED_OPTION]);
     }
 
     // ---- The one-time text ------------------------------------------------
 
     public function testTheOneTimeTextComesFirst(): void
     {
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = ['source' => 'Settings text'];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = ['body' => ['source' => 'Page text']];
         $this->options[FollowupText::NEXT_OPTIONS[FollowupText::CAME]] = [
             'fi' => 'Kertateksti',
             'en' => 'One-time text',
@@ -253,8 +239,14 @@ final class FollowupTextTest extends TestCase
         $text = $this->text();
         self::assertTrue($text->hasNext(FollowupText::CAME));
         self::assertFalse($text->hasNext(FollowupText::MISSED));
-        self::assertSame(['text' => 'Kertateksti', 'next' => true], $text->text(FollowupText::CAME, Language::FINNISH));
-        self::assertSame(['text' => 'One-time text', 'next' => true], $text->text(FollowupText::CAME, Language::ENGLISH));
+        self::assertSame(
+            ['text' => 'Kertateksti', 'next' => true, 'template' => false],
+            $text->text(FollowupText::CAME, Language::FINNISH)
+        );
+        self::assertSame(
+            ['text' => 'One-time text', 'next' => true, 'template' => false],
+            $text->text(FollowupText::CAME, Language::ENGLISH)
+        );
         self::assertSame([FollowupText::CAME => 3, FollowupText::MISSED => 0], $text->revisions());
     }
 
@@ -281,11 +273,11 @@ final class FollowupTextTest extends TestCase
 
         self::assertTrue($result['translated']);
         self::assertSame(
-            ['text' => 'Thanks, see you soon!', 'next' => true],
+            ['text' => 'Thanks, see you soon!', 'next' => true, 'template' => false],
             $this->text()->text(FollowupText::CAME, Language::ENGLISH)
         );
         self::assertSame(
-            ['text' => 'Kiitos, nähdään pian!', 'next' => true],
+            ['text' => 'Kiitos, nähdään pian!', 'next' => true, 'template' => false],
             $this->text()->text(FollowupText::CAME, Language::FINNISH)
         );
     }
