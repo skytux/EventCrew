@@ -101,6 +101,7 @@ use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotTexts;
+use EventCrew\Telegram\BuyerListReset;
 use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
@@ -1137,7 +1138,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(BuyerImport::class),
                 $container->get(Mailer::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                $container->get(TelegramClient::class)
             )
         );
 
@@ -1311,6 +1313,16 @@ final class Kernel
                 $container->get(BotLog::class),
                 $container->get(FollowupCommand::class),
                 $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(BuyerListReset::class)
+            )
+        );
+
+        $this->container->singleton(
+            BuyerListReset::class,
+            fn (Container $container) => new BuyerListReset(
+                $container->get(PersonRepository::class),
+                $container->get(TicketBuyerRepository::class),
                 $container->get(TelegramClient::class)
             )
         );

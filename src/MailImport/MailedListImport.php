@@ -10,10 +10,15 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\BuyerListParser;
 use EventCrew\Support\Dates;
+use EventCrew\Support\DmBody;
+use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\TicketFileException;
 use EventCrew\Support\TicketMail;
+use EventCrew\Telegram\BuyerListReset;
+use EventCrew\Telegram\TelegramClient;
 
 /**
  * Takes the lists organizers mail to the import mailbox, which the site reads
@@ -24,6 +29,12 @@ use EventCrew\Support\TicketMail;
  * already on that night's guest list. The list is only taken from an
  * organizer's address or one of the extra sender addresses. It always goes to
  * the next event night.
+ *
+ * What came of a list goes to every organizer by email and, when they have a
+ * private chat with the bot, as a bot message in their language; each
+ * organizer turns either off with the LIST_IMPORT row of their notification
+ * settings. The bot message about imported tickets has a "🗑 Reset the list"
+ * button (BuyerListReset).
  */
 final class MailedListImport
 {
@@ -40,7 +51,8 @@ final class MailedListImport
         private readonly PersonRepository $people,
         private readonly BuyerImport $import,
         private readonly Mailer $mailer,
-        private readonly GuestRepository $guests
+        private readonly GuestRepository $guests,
+        private readonly ?TelegramClient $telegram = null
     ) {
     }
 
@@ -225,9 +237,10 @@ final class MailedListImport
         // and where to cancel it.
         $pending = $added > 0 ? TicketMail::pending() : null;
 
-        // The texts are the Messages page templates (MessageTemplates).
+        // The texts are the Messages page templates (MessageTemplates). The
+        // day is written in the language of each reader.
         $template = $fromFile ? 'import_tickets' : 'import_guests';
-        $context = [
+        $context = static fn (): array => [
             'added' => $added,
             'skipped' => $skipped,
             'plus_ones' => $plusOnes,
@@ -249,9 +262,12 @@ final class MailedListImport
 
         $this->tellOrganizers(
             $from,
-            MessageTemplates::subject($template, $context),
-            self::dropEmptyLines(MessageTemplates::body($template, $context)),
-            [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]]
+            MessageTemplates::subject($template, $context()),
+            self::dropEmptyLines(MessageTemplates::body($template, $context())),
+            [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]],
+            static fn (): string => self::dropEmptyLines(MessageTemplates::body($template . '_dm', $context())),
+            // Only the tickets can be reset from the bot.
+            $fromFile ? static fn (): array => BuyerListReset::markup($date) : null
         );
     }
 
@@ -278,32 +294,63 @@ final class MailedListImport
         $this->tellOrganizers(
             $from,
             MessageTemplates::subject('import_failed', $context),
-            MessageTemplates::body('import_failed', $context)
+            MessageTemplates::body('import_failed', $context),
+            [],
+            static fn (): string => MessageTemplates::body('import_failed_dm', $context)
         );
     }
 
     /**
      * One email to each organizer, and one to $from when it is not an
-     * organizer's address (an extra sender address).
+     * organizer's address (an extra sender address). Each organizer with a
+     * private chat with the bot also gets $dm(), with the buttons of
+     * $markup(), built in their language. The organizer's LIST_IMPORT row
+     * decides whether each of the two comes.
      *
      * @param array<int, array{label: string, url: string}> $actions
+     * @param \Closure(): string $dm
+     * @param (\Closure(): array<string, mixed>)|null $markup
      */
-    private function tellOrganizers(string $from, string $subject, string $body, array $actions = []): void
-    {
+    private function tellOrganizers(
+        string $from,
+        string $subject,
+        string $body,
+        array $actions,
+        \Closure $dm,
+        ?\Closure $markup = null
+    ): void {
+        $prefs = new NotificationPreferences();
+        $organizerAddresses = [];
         $sent = [];
+        $messaged = [];
 
         foreach ($this->people->organizers() as $organizer) {
             $address = strtolower(trim($organizer->email));
+            $organizerAddresses[$address] = true;
 
-            if (isset($sent[$address])) {
+            if (! isset($sent[$address]) && $prefs->emailAllowed($organizer, NotificationPreferences::LIST_IMPORT)) {
+                $sent[$address] = true;
+                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
+            }
+
+            if (
+                null === $this->telegram
+                || isset($messaged[(int) $organizer->telegramChatId])
+                || ! $prefs->dmAllowed($organizer, NotificationPreferences::LIST_IMPORT)
+            ) {
                 continue;
             }
 
-            $sent[$address] = true;
-            $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
+            $messaged[(int) $organizer->telegramChatId] = true;
+            Language::forPerson($organizer, fn (): mixed => $this->telegram?->sendMessage(
+                (int) $organizer->telegramChatId,
+                DmBody::frame($organizer, $dm()),
+                null === $markup ? null : $markup()
+            ));
         }
 
-        if ('' !== $from && ! isset($sent[$from])) {
+        // An organizer who turned the email off gets no copy as the sender.
+        if ('' !== $from && ! isset($organizerAddresses[$from])) {
             $this->mailer->toUnconfirmedAddress($from, $subject, $body, $actions);
         }
     }

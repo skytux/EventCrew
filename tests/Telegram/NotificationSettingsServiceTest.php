@@ -102,7 +102,7 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         $this->wpdb->nextRows[] = $row + ['is_organizer' => 1];
         $this->service()->start(555, 555);
         self::assertSame(
-            ['standing', 'credit', 'ticket', 'permission', 'open_task', 'role_news', 'role_met', 'chat_forward'],
+            ['standing', 'credit', 'ticket', 'permission', 'open_task', 'role_news', 'role_met', 'chat_forward', 'list_import'],
             $this->keyboardTypes()
         );
     }

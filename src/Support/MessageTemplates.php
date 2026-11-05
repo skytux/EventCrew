@@ -1224,6 +1224,67 @@ final class MessageTemplates
         $chatName = ['name' => $member];
 
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $ticketsLine = static fn (): string => self::tag(
+            /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
+            __('%1$d tickets were imported for %2$s.', 'eventcrew'),
+            ['%1$d' => '{added}', '%2$s' => '{day}']
+        );
+        $guestsLine = static fn (): string => self::tag(
+            /* translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug" */
+            __('%1$d guests were added to the guest list for %2$s.', 'eventcrew'),
+            ['%1$d' => '{added}', '%2$s' => '{day}']
+        );
+        $failedTitle = static fn (): string => __('The ticket list could not be imported', 'eventcrew');
+        $nothingAdded = static fn (): string => __('Nothing was added to the door list.', 'eventcrew');
+        $ticketPlaceholders = [
+            'added' => $added,
+            'day' => $day,
+            'skipped' => self::placeholder(
+                __('The sentence saying how many tickets were skipped because they were already on the list. Empty when none were.', 'eventcrew'),
+                static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
+                    ? sprintf(
+                        /* translators: %d: number of tickets skipped */
+                        __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
+                        (int) $c['skipped']
+                    )
+                    : ''
+            ),
+            'sending' => $sending,
+            'from' => $from,
+        ];
+        $guestPlaceholders = [
+            'added' => $added,
+            'day' => $day,
+            'plus_ones' => self::placeholder(
+                __('The sentence saying how many plus-ones the guests bring. Empty when none.', 'eventcrew'),
+                static fn (array $c): string => (int) ($c['plus_ones'] ?? 0) > 0
+                    ? sprintf(
+                        /* translators: %d: total number of plus-ones the added guests bring */
+                        __('They bring %d plus-ones in total.', 'eventcrew'),
+                        (int) $c['plus_ones']
+                    )
+                    : ''
+            ),
+            'skipped' => self::placeholder(
+                __('The sentence saying how many names were skipped because they were already on the guest list. Empty when none were.', 'eventcrew'),
+                static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
+                    ? sprintf(
+                        /* translators: %d: number of names skipped */
+                        __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
+                        (int) $c['skipped']
+                    )
+                    : ''
+            ),
+            'sending' => $sending,
+            'from' => $from,
+        ];
+        $failedPlaceholders = [
+            'reason' => self::placeholder(
+                __('Why the list could not be imported.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['reason'] ?? '')
+            ),
+            'from' => $from,
+        ];
         return [
             new MessageTemplate(
                 'role_met',
@@ -1307,27 +1368,8 @@ final class MessageTemplates
                     __('Ticket buyers imported for %s', 'eventcrew'),
                     ['%s' => '{day}']
                 ),
-                static fn (): string => self::tag(
-                    /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
-                    __('%1$d tickets were imported for %2$s.', 'eventcrew'),
-                    ['%1$d' => '{added}', '%2$s' => '{day}']
-                ) . "\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
-                [
-                    'added' => $added,
-                    'day' => $day,
-                    'skipped' => self::placeholder(
-                        __('The sentence saying how many tickets were skipped because they were already on the list. Empty when none were.', 'eventcrew'),
-                        static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
-                            ? sprintf(
-                                /* translators: %d: number of tickets skipped */
-                                __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
-                                (int) $c['skipped']
-                            )
-                            : ''
-                    ),
-                    'sending' => $sending,
-                    'from' => $from,
-                ]
+                static fn (): string => $ticketsLine() . "\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                $ticketPlaceholders
             ),
             new MessageTemplate(
                 'import_guests',
@@ -1339,52 +1381,44 @@ final class MessageTemplates
                     __('Guests added for %s', 'eventcrew'),
                     ['%s' => '{day}']
                 ),
-                static fn (): string => self::tag(
-                    /* translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug" */
-                    __('%1$d guests were added to the guest list for %2$s.', 'eventcrew'),
-                    ['%1$d' => '{added}', '%2$s' => '{day}']
-                ) . " {plus_ones}\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
-                [
-                    'added' => $added,
-                    'day' => $day,
-                    'plus_ones' => self::placeholder(
-                        __('The sentence saying how many plus-ones the guests bring. Empty when none.', 'eventcrew'),
-                        static fn (array $c): string => (int) ($c['plus_ones'] ?? 0) > 0
-                            ? sprintf(
-                                /* translators: %d: total number of plus-ones the added guests bring */
-                                __('They bring %d plus-ones in total.', 'eventcrew'),
-                                (int) $c['plus_ones']
-                            )
-                            : ''
-                    ),
-                    'skipped' => self::placeholder(
-                        __('The sentence saying how many names were skipped because they were already on the guest list. Empty when none were.', 'eventcrew'),
-                        static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
-                            ? sprintf(
-                                /* translators: %d: number of names skipped */
-                                __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
-                                (int) $c['skipped']
-                            )
-                            : ''
-                    ),
-                    'sending' => $sending,
-                    'from' => $from,
-                ]
+                static fn (): string => $guestsLine() . " {plus_ones}\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                $guestPlaceholders
             ),
             new MessageTemplate(
                 'import_failed',
                 __('Ticket list not imported (email)', 'eventcrew'),
                 $email,
                 __('Sent to the organizers, and to the sender, when a ticket file mailed to the import mailbox cannot be imported.', 'eventcrew'),
-                static fn (): string => __('The ticket list could not be imported', 'eventcrew'),
-                static fn (): string => "{reason}\n\n" . __('Nothing was added to the door list.', 'eventcrew') . "\n\n" . $sentFrom(),
-                [
-                    'reason' => self::placeholder(
-                        __('Why the list could not be imported.', 'eventcrew'),
-                        static fn (array $c): string => (string) ($c['reason'] ?? '')
-                    ),
-                    'from' => $from,
-                ]
+                $failedTitle,
+                static fn (): string => "{reason}\n\n" . $nothingAdded() . "\n\n" . $sentFrom(),
+                $failedPlaceholders
+            ),
+            new MessageTemplate(
+                'import_tickets_dm',
+                __('Ticket list imported (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, after a ticket file mailed to the import mailbox is imported. Under it is a button that deletes the imported ticket buyers of that night, after asking first. A line left empty by a placeholder is removed.', 'eventcrew'),
+                null,
+                static fn (): string => '🎟 ' . $ticketsLine() . "\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                $ticketPlaceholders
+            ),
+            new MessageTemplate(
+                'import_guests_dm',
+                __('Guest list imported (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed.', 'eventcrew'),
+                null,
+                static fn (): string => '🎟 ' . $guestsLine() . " {plus_ones}\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                $guestPlaceholders
+            ),
+            new MessageTemplate(
+                'import_failed_dm',
+                __('Ticket list not imported (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, when a ticket file mailed to the import mailbox cannot be imported.', 'eventcrew'),
+                null,
+                static fn (): string => '⚠️ ' . $failedTitle() . "\n\n{reason}\n\n" . $nothingAdded() . "\n\n" . $sentFrom(),
+                $failedPlaceholders
             ),
             new MessageTemplate(
                 'chat_forward',

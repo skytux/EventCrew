@@ -7919,3 +7919,51 @@ msgstr "Viestit: jokaisen sähköpostin ja Telegram-viestin teksti, tekoälyn ke
 
 msgid "With the tick on, the AI writes this message's text the day before each event, from this prompt. You can read and change the text on the Coming events tab of this page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above."
 msgstr "Kun ruksi on päällä, tekoäly kirjoittaa tämän viestin tekstin tästä kehotteesta tapahtumaa edeltävänä päivänä. Voit lukea ja muuttaa tekstiä tämän sivun Tulevat tapahtumat -välilehdellä ja Crew-sovelluksessa ennen lähetystä. Jos tekoäly epäonnistuu, lähetetään yllä oleva teksti. Aihe pysyy yllä olevana."
+
+msgid "Ticket and guest list imports"
+msgstr "Lippu- ja vieraslistojen tuonnit"
+
+msgid "Ticket list imported (Telegram)"
+msgstr "Lippulista tuotu (Telegram)"
+
+msgid "Guest list imported (Telegram)"
+msgstr "Vieraslista tuotu (Telegram)"
+
+msgid "Ticket list not imported (Telegram)"
+msgstr "Lippulistaa ei tuotu (Telegram)"
+
+msgid "Sent to the organizers who use the bot, after a ticket file mailed to the import mailbox is imported. Under it is a button that deletes the imported ticket buyers of that night, after asking first. A line left empty by a placeholder is removed."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun tuontipostilaatikkoon lähetetty lipputiedosto on tuotu. Viestin alla on painike, joka poistaa illan tuodut lipunostajat, kun siitä on ensin kysytty. Rivi, jonka paikkamerkki jättää tyhjäksi, poistetaan."
+
+msgid "Sent to the organizers who use the bot, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun tuontipostilaatikkoon lähetetty vieraslista on lisätty vieraslistalle. Rivi, jonka paikkamerkki jättää tyhjäksi, poistetaan."
+
+msgid "Sent to the organizers who use the bot, when a ticket file mailed to the import mailbox cannot be imported."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun tuontipostilaatikkoon lähetettyä lipputiedostoa ei voida tuoda."
+
+msgid "Reset the list"
+msgstr "Nollaa lista"
+
+msgid "Only organizers can reset the ticket list."
+msgstr "Vain järjestäjät voivat nollata lippulistan."
+
+msgid "Cancelled. The ticket list was not changed."
+msgstr "Peruttu. Lippulistaa ei muutettu."
+
+#. translators: 1: number of ticket buyers deleted, 2: the event day, e.g. "Sat 1 Aug"
+#, php-format
+msgid "Deleted %1$d ticket buyers for %2$s."
+msgstr "Poistettu %1$d lipunostajaa päivältä %2$s"
+
+#. translators: %s: the event day, e.g. "Sat 1 Aug"
+#, php-format
+msgid "There are no imported ticket buyers for %s."
+msgstr "Päivälle %s ei ole tuotuja lipunostajia."
+
+#. translators: 1: number of imported ticket buyers, 2: the event day, e.g. "Sat 1 Aug"
+#, php-format
+msgid "Delete all %1$d imported ticket buyers for %2$s? Their tickets stop working."
+msgstr "Poistetaanko päivän %2$s kaikki %1$d tuotua lipunostajaa? Heidän lippunsa lakkaavat toimimasta."
+
+msgid "Yes, delete"
+msgstr "Kyllä, poista"

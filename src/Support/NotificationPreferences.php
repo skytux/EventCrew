@@ -30,12 +30,14 @@ final class NotificationPreferences
     /**
      * Toggleable types only an organizer receives, so only an organizer sees
      * their rows: a person given a role or made an organizer (RoleNotifier),
-     * a person newly meeting a role's conditions (RoleNotifier), and a bot
-     * chat passed on to the organizers (ChatForwarder).
+     * a person newly meeting a role's conditions (RoleNotifier), a bot
+     * chat passed on to the organizers (ChatForwarder), and what came of a
+     * ticket or guest list mailed to the import mailbox (MailedListImport).
      */
     public const ROLE_NEWS = 'role_news';
     public const ROLE_MET = 'role_met';
     public const CHAT_FORWARD = 'chat_forward';
+    public const LIST_IMPORT = 'list_import';
 
     /**
      * Locked commitment types the confirmation and reminder notifiers use: never
@@ -86,6 +88,7 @@ final class NotificationPreferences
             self::ROLE_NEWS => __('Roles given and new organizers', 'eventcrew'),
             self::ROLE_MET => __('Someone meets a role’s conditions', 'eventcrew'),
             self::CHAT_FORWARD => __('Bot chats sent to organizers', 'eventcrew'),
+            self::LIST_IMPORT => __('Ticket and guest list imports', 'eventcrew'),
         ];
     }
 

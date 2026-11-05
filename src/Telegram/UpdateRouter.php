@@ -59,7 +59,8 @@ final class UpdateRouter
         private readonly ?BotLog $botLog = null,
         private readonly ?FollowupCommand $followup = null,
         private readonly ?PersonRepository $people = null,
-        private readonly ?TelegramClient $telegram = null
+        private readonly ?TelegramClient $telegram = null,
+        private readonly ?BuyerListReset $buyerListReset = null
     ) {
     }
 
@@ -162,6 +163,8 @@ final class UpdateRouter
                 $this->events->onConfirm($callbackQuery);
             } elseif (null !== $this->webLogin && str_starts_with($data, TelegramLogin::CALLBACK_PREFIX)) {
                 $this->webLogin->onConfirm($callbackQuery);
+            } elseif (null !== $this->buyerListReset && str_starts_with($data, BuyerListReset::PREFIX)) {
+                $this->buyerListReset->onTap($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
