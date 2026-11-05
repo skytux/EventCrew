@@ -217,6 +217,36 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringNotContainsString('confirm', strtolower($this->mails[0]['body']));
     }
 
+    /** No privacy contact: the button writes to the site's admin email. */
+    public function testTheAlreadySubscribedEmailFallsBackToTheAdminEmail(): void
+    {
+        $this->options['admin_email'] = 'admin@site.test';
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $this->controller()->join('fan@example.test', '', '');
+
+        self::assertStringContainsString('mailto:admin@site.test', $this->mails[0]['body']);
+        self::assertStringContainsString('write to admin@site.test with the button below', $this->mails[0]['body']);
+    }
+
+    /** No email address anywhere: no empty mailto button and no "write to" sentence. */
+    public function testTheAlreadySubscribedEmailHasNoEmptyContactLink(): void
+    {
+        $this->options['eventcrew_privacy_contact'] = 'Owner at the door';
+        $this->options['admin_email'] = '';
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $this->controller()->join('fan@example.test', '', '');
+
+        self::assertCount(1, $this->mails);
+        $body = $this->mails[0]['body'];
+        self::assertStringNotContainsString('mailto:', $body);
+        self::assertStringNotContainsString('write to', $body);
+        self::assertStringNotContainsString('Message', $body);
+        self::assertStringContainsString('so nothing more is needed.', $body);
+        self::assertStringContainsString('joten mitään muuta ei tarvita.', $body);
+    }
+
     public function testTheConfirmLinkConfirms(): void
     {
         $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);

@@ -1244,7 +1244,8 @@ final class NewsletterController
     /**
      * Tells an address that is already subscribed so, and whom to write to when
      * the announcements do not arrive: the contact of the privacy settings, or
-     * the site's admin email. At most once an hour per address.
+     * the site's admin email, or no one when neither is an email address. At
+     * most once an hour per address.
      */
     private function sendAlreadySubscribed(string $email, string $language = ''): void
     {
@@ -1255,13 +1256,16 @@ final class NewsletterController
         }
 
         set_transient($key, 1, self::RESEND_AFTER_SECONDS);
+        // The privacy contact when it is an email address, else the site's
+        // admin email; with neither, the email has no button to write with.
         $contact = PrivacyPolicy::contact();
-        $contact = '' !== $contact ? $contact : (string) get_option('admin_email', '');
+        $contact = is_email($contact) ? $contact : trim((string) get_option('admin_email', ''));
+        $contact = is_email($contact) ? $contact : '';
         $site = (string) get_bloginfo('name');
         $this->sendCard(
             $email,
             static fn (): array => NewsletterConfirmMail::alreadyWords($site, $contact),
-            'mailto:' . $contact,
+            '' === $contact ? '' : 'mailto:' . $contact,
             $language
         );
     }

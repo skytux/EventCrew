@@ -51,12 +51,28 @@ final class NewsletterConfirmMail
 
     /**
      * The words of the email to an address that is already subscribed and was
-     * entered in the form again. The button writes to $contact.
+     * entered in the form again. The button writes to $contact; with no
+     * $contact there is no button (html() and text() with an empty URL).
      *
      * @return array{subject: string, heading: string, promise: string, body: string, button: string}
      */
     public static function alreadyWords(string $site, string $contact): array
     {
+        // No address to write to: no "write to" sentence and no button.
+        if ('' === $contact) {
+            return [
+                'subject' => __('You are already subscribed to the next events announcement', 'eventcrew'),
+                'heading' => __('You are already subscribed', 'eventcrew'),
+                'promise' => '',
+                'body' => sprintf(
+                    /* translators: %s: the site's name */
+                    __('This address already gets the next events announcement of %s, so nothing more is needed.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    $site
+                ),
+                'button' => '',
+            ];
+        }
+
         return [
             'subject' => __('You are already subscribed to the next events announcement', 'eventcrew'),
             'heading' => __('You are already subscribed', 'eventcrew'),
@@ -125,7 +141,7 @@ final class NewsletterConfirmMail
             esc_html(HybridPolicy::join(HybridPolicy::field($parts, 'promise')))
         );
         $label = HybridPolicy::join(HybridPolicy::field($parts, 'button'));
-        $button = sprintf(
+        $button = '' === $confirmUrl ? '' : sprintf(
             '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="margin:0 auto">'
                 . '<tr><td bgcolor="#ffffff" style="border-radius:28px;background:#ffffff;border:1px solid %1$s;'
@@ -166,13 +182,15 @@ final class NewsletterConfirmMail
                 . ' style="margin:18px auto 0"><tr><td style="width:48px;height:2px;line-height:2px;font-size:0;'
                 . 'background:#d9b27a">&nbsp;</td></tr></table></td></tr>'
                 . '<tr><td style="padding:0">%s</td></tr>'
-                . '<tr><td align="center" style="padding:26px 0 6px;text-align:center">%s</td></tr></table>',
+                . '%s</table>',
             self::IMAGE_WIDTH,
             $image,
             $heading,
             $promise,
             $texts,
-            $button
+            '' === $button
+                ? ''
+                : '<tr><td align="center" style="padding:26px 0 6px;text-align:center">' . $button . '</td></tr>'
         );
     }
 
@@ -239,6 +257,10 @@ final class NewsletterConfirmMail
 
         if ('' === $first['promise']) {
             unset($lines[1]);
+        }
+
+        if ('' === $confirmUrl) {
+            unset($lines[4], $lines[5]);
         }
 
         return implode("\n", $lines);

@@ -6117,6 +6117,10 @@ msgstr "Olet jo tilaaja"
 msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
 msgstr "Tämä osoite saa jo sivuston %1$s tulevien tapahtumien tiedotteen, joten mitään muuta ei tarvita. Jos tiedotteet eivät tule perille ja haluat ne, kirjoita osoitteeseen %2$s alla olevalla painikkeella, niin joku selvittää asian."
 
+#, php-format
+msgid "This address already gets the next events announcement of %s, so nothing more is needed."
+msgstr "Tämä osoite saa jo sivuston %s tulevien tapahtumien tiedotteen, joten mitään muuta ei tarvita."
+
 msgid "Event cards"
 msgstr "Tapahtumakortit"
 
