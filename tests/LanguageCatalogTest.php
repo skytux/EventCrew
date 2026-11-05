@@ -24,6 +24,14 @@ final class LanguageCatalogTest extends PHPUnitTestCase
         self::assertSame([], array_values(array_diff($po, $pot)));
     }
 
+    /** The Crew app's button that stops the next announcement is in Finnish (Lou, Q238). */
+    public function testTheStopAnnouncementButtonIsTranslated(): void
+    {
+        $po = (string) file_get_contents(dirname(__DIR__) . '/languages/eventcrew-fi.po');
+
+        self::assertStringContainsString("msgid \"Stop this announcement\"\nmsgstr \"Lopeta tämä ilmoitus\"\n", $po);
+    }
+
     /**
      * Each entry's msgctxt and msgid, joined by "\x04" as in a .mo file. The
      * header (empty msgid) is left out.

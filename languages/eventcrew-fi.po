@@ -6398,3 +6398,6 @@ msgstr "Kun sähköposti on annettu, vieras saa lipun sähköpostiin noin 10 min
 
 msgid "Cancel the waiting ticket emails? None of them will be sent, also those for guests added elsewhere."
 msgstr "Perutaanko odottavat lippuviestit? Yhtäkään ei lähetetä, ei myöskään muualla lisättyjen vieraiden viestejä."
+
+msgid "Stop this announcement"
+msgstr "Lopeta tämä ilmoitus"
