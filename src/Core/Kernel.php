@@ -32,6 +32,7 @@ use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
@@ -307,6 +308,24 @@ final class Kernel
                 => $this->container->get(RoleNotifier::class)->organizerGiven($personId, $giver),
             10,
             2
+        );
+
+        // The person's own message when an organizer gives them a role, a
+        // one-time pass or organizer rights, from wherever it was given.
+        add_action(
+            RoleNotifier::GIVEN_HOOK,
+            fn (int $personId, string $slug)
+                => $this->container->get(AccessNotifier::class)->roleGiven($personId, $slug),
+            10,
+            2
+        );
+        add_action(
+            RoleNotifier::ORGANIZER_HOOK,
+            fn (int $personId) => $this->container->get(AccessNotifier::class)->organizerGiven($personId)
+        );
+        add_action(
+            AccessNotifier::PASS_HOOK,
+            fn (int $personId) => $this->container->get(AccessNotifier::class)->passGiven($personId)
         );
 
         // The PWA layer over the signup page: serves the manifest, service worker
@@ -728,6 +747,15 @@ final class Kernel
             RoleNotifier::class,
             fn (Container $container) => new RoleNotifier(
                 $container->get(RoleConditions::class),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            AccessNotifier::class,
+            fn (Container $container) => new AccessNotifier(
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class)
@@ -1237,8 +1265,7 @@ final class Kernel
             fn (Container $container) => new PermissionService(
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(RoleConditions::class),
-                $container->get(Mailer::class)
+                $container->get(RoleConditions::class)
             )
         );
 

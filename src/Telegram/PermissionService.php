@@ -6,11 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
-use EventCrew\Support\Mailer;
-use EventCrew\Support\MessageTemplates;
-use EventCrew\Support\DmBody;
-use EventCrew\Support\Language;
-use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
@@ -40,8 +36,7 @@ final class PermissionService
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
-        private readonly RoleConditions $conditions,
-        private readonly Mailer $mailer
+        private readonly RoleConditions $conditions
     ) {
     }
 
@@ -244,17 +239,12 @@ final class PermissionService
             return;
         }
 
-        [$answer, $dmKind] = 'role' === $action
+        // What is given fires its hook, and AccessNotifier tells the person.
+        $answer = 'role' === $action
             ? $this->toggleRole($person, $slug, $organizer->name())
             : $this->apply($action, $person->id, $person->name(), $person->isOrganizer, $organizer->name());
         $this->telegram->answerCallbackQuery($callbackId, $answer);
         $this->refreshMenu($callbackQuery, $person->id);
-
-        // Tell the affected person on both channels they allow, in their own
-        // language rather than the organizer's.
-        if ('' !== $dmKind) {
-            Language::forPerson($person, fn () => $this->tellPerson($person, $dmKind));
-        }
     }
 
     /**
@@ -282,14 +272,13 @@ final class PermissionService
 
     /**
      * Gives or takes away one restricted role (DJ, VJ, ...). Only active
-     * restricted roles are accepted, the ones the buttons offer.
-     *
-     * @return array{0: string, 1: string}
+     * restricted roles are accepted, the ones the buttons offer. Returns the
+     * organizer's confirmation.
      */
-    private function toggleRole(Person $person, string $slug, string $giverName): array
+    private function toggleRole(Person $person, string $slug, string $giverName): string
     {
         if (! in_array($slug, array_column(Roles::assignable(), 'slug'), true)) {
-            return [__('That role is no longer offered.', 'eventcrew'), ''];
+            return __('That role is no longer offered.', 'eventcrew');
         }
 
         $label = Roles::label($slug);
@@ -298,59 +287,28 @@ final class PermissionService
             $this->people->setRoles($person->id, array_values(array_diff($person->roleSlugs, [$slug])));
 
             /* translators: 1: person's name, 2: role name */
-            return [sprintf(__('%1$s no longer has the role %2$s.', 'eventcrew'), $person->name(), $label), ''];
+            return sprintf(__('%1$s no longer has the role %2$s.', 'eventcrew'), $person->name(), $label);
         }
 
         $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]));
         RoleNotifier::rolesChanged($person->id, $person->roleSlugs, [$slug], $giverName);
 
         /* translators: 1: person's name, 2: role name */
-        return [sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label), 'role:' . $slug];
-    }
-
-    private function tellPerson(Person $person, string $dmKind): void
-    {
-        $dm = $this->dmText($dmKind, $person);
-        $prefs = new NotificationPreferences();
-
-        if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
-            // Unprompted from the affected person's side: an organizer, not
-            // they, pressed the button that caused this.
-            $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $dm));
-        }
-
-        if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
-            $context = ['person' => $person, 'change' => $dm];
-            // A new role's tasks are on the crew page too, which the text
-            // names: the email links to it. No crew page, no button.
-            $actions = str_starts_with($dmKind, 'role:')
-                ? [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
-                : [];
-
-            $this->mailer->toPerson(
-                $person->id,
-                $person->email,
-                MessageTemplates::subject('access_changed', $context),
-                MessageTemplates::body('access_changed', $context),
-                $actions
-            );
-        }
+        return sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label);
     }
 
     /**
-     * Applies one permission action, returning the organizer's confirmation and
-     * which message the affected person gets ('pass', 'admin', or '' for none;
-     * dmText() words it).
-     *
-     * @return array{0: string, 1: string}
+     * Applies one permission action, returning the organizer's confirmation.
      */
-    private function apply(string $action, int $personId, string $name, bool $isOrganizer, string $giverName): array
+    private function apply(string $action, int $personId, string $name, bool $isOrganizer, string $giverName): string
     {
         switch ($action) {
             case 'pass':
                 $this->people->grantAtRiskPass($personId);
+                AccessNotifier::passGranted($personId);
 
-                return [sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name), 'pass'];
+                /* translators: %s: person's name */
+                return sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name);
             case 'admin':
                 $this->people->setOrganizer($personId, ! $isOrganizer);
                 do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $personId);
@@ -359,34 +317,15 @@ final class PermissionService
                     RoleNotifier::madeOrganizer($personId, $giverName);
                 }
 
-                return $isOrganizer
-                    ? [sprintf(__('%s is no longer an organizer.', 'eventcrew'), $name), '']
-                    : [sprintf(__('%s is now an organizer.', 'eventcrew'), $name), 'admin'];
+                /* translators: %s: person's name */
+                $gone = __('%s is no longer an organizer.', 'eventcrew');
+                /* translators: %s: person's name */
+                $made = __('%s is now an organizer.', 'eventcrew');
+
+                return sprintf($isOrganizer ? $gone : $made, $name);
             default:
-                return [__('That button no longer works. Send /people again.', 'eventcrew'), ''];
+                return __('That button no longer works. Send /people again.', 'eventcrew');
         }
-    }
-
-    /**
-     * The message to the affected person for a permission they were given, in
-     * whatever language is current; '' for none.
-     */
-    private function dmText(string $dmKind, Person $person): string
-    {
-        if (str_starts_with($dmKind, 'role:')) {
-            // The person picks the bot or the crew page text (CrewPageHelp);
-            // the email repeats this text.
-            return MessageTemplates::body(
-                'access_role_dm',
-                ['role' => Roles::label(substr($dmKind, strlen('role:'))), 'person' => $person]
-            );
-        }
-
-        return match ($dmKind) {
-            'pass' => MessageTemplates::body('access_pass_dm'),
-            'admin' => MessageTemplates::body('access_organizer_dm'),
-            default => '',
-        };
     }
 
     /**

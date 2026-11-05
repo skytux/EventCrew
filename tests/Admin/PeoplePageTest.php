@@ -76,6 +76,10 @@ final class PeoplePageTest extends TestCase
         ];
 
         $page = $this->page();
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
 
         try {
             $page->save();
@@ -90,6 +94,28 @@ final class PeoplePageTest extends TestCase
         ));
         self::assertCount(1, $people);
         self::assertSame('dj,vj', $people[0]['data']['role_slugs']);
+        // Each new role is announced, and the person told (AccessNotifier listens).
+        self::assertContains(\EventCrew\Support\RoleNotifier::GIVEN_HOOK, array_column($fired, 0));
+    }
+
+    public function testGrantingAPassTellsThePerson(): void
+    {
+        $_POST = ['person_id' => '8'];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        try {
+            $this->page()->grantPass();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        self::assertSame(1, (int) $this->wpdb->updates[0]['data']['at_risk_pass']);
+        self::assertContains([\EventCrew\Support\AccessNotifier::PASS_HOOK, [8]], $fired);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace EventCrew\Web;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
@@ -177,6 +178,7 @@ final class CrewAdminPeople
         }
 
         $this->people->grantAtRiskPass($person->id);
+        AccessNotifier::passGranted($person->id);
 
         return 'admin_pass_granted';
     }

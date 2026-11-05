@@ -7,11 +7,9 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
-use EventCrew\Support\EmailTemplate;
-use EventCrew\Support\Logger;
-use EventCrew\Support\Mailer;
-use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\RoleConditions;
+use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Telegram\PermissionService;
 
@@ -46,8 +44,7 @@ final class PermissionServiceTest extends TelegramTestCase
         return new PermissionService(
             new PersonRepository(),
             $this->client(),
-            new RoleConditions(new AssignmentRepository(), new PersonRepository()),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            new RoleConditions(new AssignmentRepository(), new PersonRepository())
         );
     }
 
@@ -177,7 +174,7 @@ final class PermissionServiceTest extends TelegramTestCase
         ];
     }
 
-    public function testRolesGivesARestrictedRoleAndTellsThePerson(): void
+    public function testRolesGivesARestrictedRole(): void
     {
         $this->withDjRole();
         $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
@@ -187,8 +184,6 @@ final class PermissionServiceTest extends TelegramTestCase
 
         self::assertSame('dj', $this->wpdb->updates[0]['data']['role_slugs']);
         self::assertSame('Sam now has the role DJ.', $this->lastCallTo('answerCallbackQuery')['text']);
-        self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
-        self::assertStringContainsString('You now have the role DJ.', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testRolesTakesAwayARoleThePersonHas(): void
@@ -246,39 +241,14 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 
-    // ---- The Messages page template (access_changed) -----------------------
+    // ---- The person is told (AccessNotifier, through the hooks) -------------
 
-    private function giveTheDjRole(): void
-    {
-        $this->withDjRole();
-        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
-        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999, 'role_slugs' => ''];
-
-        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
-    }
-
-    public function testTheAccessChangedEmailIsUnchangedWhenNothingIsStored(): void
-    {
-        // The plain-text mail, so the whole text can be compared.
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-
-        $this->giveTheDjRole();
-
-        self::assertCount(1, $this->mails);
-        self::assertSame(
-            "Your EventCrew access changed\n---\nHi Sam,\n\nYou now have the role DJ. Its tasks are shown to you"
-                . ' with /board in a private chat with the bot and in the Crew app, and you can sign up for them.'
-                . "\n\n—\nManage your account or stop these emails:"
-                . ' https://site.test/wp-json/eventcrew/v1/manage?token=OA.465b20b7ad35e80d4ae52de1fa2bbec531610cef441cda9d829654404f1fb57f',
-            $this->mails[0]['subject'] . "\n---\n" . $this->mails[0]['body']
-        );
-    }
-
-    // ---- The Messages page templates (access_role_dm, access_pass_dm,
-    // access_organizer_dm) ----------------------------------------------------
-
-    /** The DM to Sam (chat 999) after the organizer taps $data. */
-    private function dmAfter(string $data, int $isOrganizer = 0): string
+    /**
+     * Sam (8) after the organizer taps $data, and the actions fired.
+     *
+     * @return array<int, array{0: string, 1: array<int, mixed>}>
+     */
+    private function firedAfter(string $data, string $roles = '', int $isOrganizer = 0): array
     {
         $this->withDjRole();
         $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Lou', 'is_organizer' => 1, 'telegram_user_id' => 555];
@@ -287,158 +257,45 @@ final class PermissionServiceTest extends TelegramTestCase
             'display_name' => 'Sam',
             'email' => 'sam@example.com',
             'telegram_chat_id' => 999,
-            'role_slugs' => '',
+            'role_slugs' => $roles,
             'is_organizer' => $isOrganizer,
         ];
 
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
         $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => $data]);
 
-        $dm = $this->lastCallTo('sendMessage');
-        self::assertSame(999, $dm['chat_id']);
-
-        return $dm['text'];
+        return $fired;
     }
 
-    private function storeDm(string $id, string $text): void
+    public function testGivingAPassTellsThePerson(): void
     {
-        $this->options[MessageTemplates::OPTION_PREFIX . $id] = [
-            MessageTemplates::BODY => ['source' => $text, 'texts' => ['en' => $text], 'manual' => ['en' => false]],
-        ];
+        self::assertContains([AccessNotifier::PASS_HOOK, [8]], $this->firedAfter('perm:pass:8'));
     }
 
-    public function testTheRoleDmIsUnchangedWhenNothingIsStored(): void
+    public function testGivingARoleTellsThePerson(): void
     {
-        self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ. Its tasks are shown to you with /board in a private"
-                . ' chat with the bot and in the Crew app, and you can sign up for them.',
-            $this->dmAfter('perm:role:dj:8')
-        );
+        self::assertContains([RoleNotifier::GIVEN_HOOK, [8, 'dj', 'Lou']], $this->firedAfter('perm:role:dj:8'));
     }
 
-    public function testThePassDmIsUnchangedWhenNothingIsStored(): void
+    public function testMakingSomeoneAnOrganizerTellsThePerson(): void
     {
-        self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🎟 You’ve a one-time pass to sign up for your next task, even while your"
-                . ' standing is low.',
-            $this->dmAfter('perm:pass:8')
-        );
+        self::assertContains([RoleNotifier::ORGANIZER_HOOK, [8, 'Lou']], $this->firedAfter('perm:admin:8'));
     }
 
-    public function testTheOrganizerDmIsUnchangedWhenNothingIsStored(): void
+    public function testTakingARoleOrOrganizerRightsAwayTellsNobody(): void
     {
-        self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n⭐ You’re now an EventCrew organizer.",
-            $this->dmAfter('perm:admin:8')
-        );
-    }
-
-    public function testTheRoleDmUsesTheStoredTextAndTheEmailRepeatsIt(): void
-    {
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-        $this->storeDm('access_role_dm', 'You are a {role} now.');
-
-        self::assertStringContainsString('You are a DJ now.', $this->dmAfter('perm:role:dj:8'));
-        self::assertStringStartsWith("Hi Sam,\n\nYou are a DJ now.", $this->mails[0]['body']);
-    }
-
-    public function testThePassDmUsesTheStoredText(): void
-    {
-        $this->storeDm('access_pass_dm', 'One pass for you.');
-
-        self::assertStringContainsString('One pass for you.', $this->dmAfter('perm:pass:8'));
-    }
-
-    public function testTheOrganizerDmUsesTheStoredText(): void
-    {
-        $this->storeDm('access_organizer_dm', 'Welcome to the organizers.');
-
-        self::assertStringContainsString('Welcome to the organizers.', $this->dmAfter('perm:admin:8'));
-    }
-
-    public function testTheAccessChangedEmailUsesTheStoredText(): void
-    {
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-        $this->options[MessageTemplates::OPTION_PREFIX . 'access_changed'] = [
-            MessageTemplates::SUBJECT => ['source' => 'News, {name}', 'texts' => ['en' => 'News, {name}'], 'manual' => ['en' => false]],
-            MessageTemplates::BODY => ['source' => 'Dear {name}: {change}', 'texts' => ['en' => 'Dear {name}: {change}'], 'manual' => ['en' => false]],
-        ];
-
-        $this->giveTheDjRole();
-
-        self::assertSame('News, Sam', $this->mails[0]['subject']);
-        self::assertStringStartsWith('Dear Sam: You now have the role DJ. Its tasks', $this->mails[0]['body']);
-    }
-
-    /** The role email names the Crew app: with a crew page set, it has a button to it (C4). */
-    public function testTheRoleEmailLinksTheCrewPageWhenOneIsSet(): void
-    {
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-        $this->options['eventcrew_signup_page_id'] = 897;
-        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
-
-        $this->giveTheDjRole();
-
-        self::assertStringStartsWith(
-            "Hi Sam,\n\nYou now have the role DJ. Its tasks are shown to you with /board in a private chat with the"
-                . ' bot and in the Crew app, and you can sign up for them.',
-            $this->mails[0]['body'],
-            'a person with a Telegram chat keeps the bot text'
-        );
-        self::assertStringContainsString("\n\nSee open tasks: https://site.test/crew/\n", $this->mails[0]['body']);
-    }
-
-    /**
-     * A person with no Telegram chat gets the Board tab of the crew page in
-     * the role email instead of /board, and keeps the See open tasks button;
-     * the Finnish bot text recombines to the old one.
-     */
-    public function testTheRoleEmailGivesAWebOnlyPersonTheCrewPage(): void
-    {
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-        $this->options['eventcrew_signup_page_id'] = 897;
-        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
-        $this->withDjRole();
-        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
-        $this->wpdb->nextRows[] = [
-            'id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => null,
-            'role_slugs' => '',
-        ];
-
-        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
-
-        self::assertCount(1, $this->mails);
-        self::assertStringStartsWith(
-            "Hi Sam,\n\nYou now have the role DJ. Its tasks are shown to you in the Board tab of the crew page"
-                . ' (https://site.test/crew/), and you can sign up for them.',
-            $this->mails[0]['body']
-        );
-        self::assertStringContainsString("\n\nSee open tasks: https://site.test/crew/\n", $this->mails[0]['body']);
-        self::assertStringNotContainsString('/board', $this->mails[0]['body']);
-    }
-
-    public function testTheRoleDmIsUnchangedInFinnish(): void
-    {
-        $text = \EventCrew\Support\Language::run(
-            \EventCrew\Support\Language::FINNISH,
-            static fn (): string => MessageTemplates::body('access_role_dm', ['role' => 'DJ'])
+        $hooks = array_merge(
+            array_column($this->firedAfter('perm:role:dj:8', 'dj'), 0),
+            array_column($this->firedAfter('perm:admin:8', '', 1), 0)
         );
 
-        self::assertSame(
-            'Sinulla on nyt rooli DJ. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja'
-                . ' Crew-sovelluksessa, ja voit ilmoittautua niihin.',
-            $text
-        );
-    }
-
-    /** A pass or organizer email does not name the Crew app, so it gets no button. */
-    public function testThePassEmailHasNoCrewPageButton(): void
-    {
-        $this->options[EmailTemplate::HTML_OPTION] = false;
-        $this->options['eventcrew_signup_page_id'] = 897;
-        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
-
-        $this->dmAfter('perm:pass:8');
-
-        self::assertStringNotContainsString('See open tasks', $this->mails[0]['body']);
+        self::assertNotContains(RoleNotifier::GIVEN_HOOK, $hooks);
+        self::assertNotContains(RoleNotifier::ORGANIZER_HOOK, $hooks);
+        self::assertNotContains(AccessNotifier::PASS_HOOK, $hooks);
+        self::assertSame([], $this->mails);
     }
 }
