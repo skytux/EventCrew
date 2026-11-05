@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.39
+Stable tag: 1.140.40
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.40 =
+Removed the unused AuthTokenRepository::consume(); sign-in links use only the one-time consumeOnce() (Q278).
 
 = 1.140.39 =
 Removed the old VPS mail poller (tools/mail-import); the site reads the import mailbox itself (Q275).
@@ -1331,6 +1334,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.40 =
+No settings change.
 
 = 1.140.39 =
 No settings change.

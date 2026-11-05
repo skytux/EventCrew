@@ -48,49 +48,7 @@ final class AuthTokenRepository
     /**
      * Consumes a token, returning the person id it was issued for - or null
      * when it is unknown, expired, already used, or issued for a different
-     * purpose. A valid token is stamped used in the same call, so it works
-     * exactly once.
-     */
-    public function consume(string $rawToken, string $purpose): ?int
-    {
-        global $wpdb;
-
-        $rawToken = trim($rawToken);
-
-        if ('' === $rawToken) {
-            return null;
-        }
-
-        $row = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT id, person_id, expires_at, used_at
-                FROM {$this->table()}
-                WHERE token_hash = %s AND purpose = %s",
-                $this->hash($rawToken),
-                $purpose
-            ),
-            ARRAY_A
-        );
-
-        if (! is_array($row) || null !== $row['used_at']) {
-            return null;
-        }
-
-        if ((string) $row['expires_at'] < current_time('mysql')) {
-            return null;
-        }
-
-        $wpdb->update(
-            $this->table(),
-            ['used_at' => current_time('mysql')],
-            ['id' => (int) $row['id']]
-        );
-
-        return (int) $row['person_id'];
-    }
-
-    /**
-     * Like consume(), but the token is stamped used by one conditional UPDATE
+     * purpose. The token is stamped used by one conditional UPDATE
      * that only matches a row that is still unused and unexpired. Two requests
      * spending the same token at the same moment cannot both get the person:
      * only the one whose UPDATE changed the row does. Used for the sales
