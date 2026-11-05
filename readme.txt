@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.104
+Stable tag: 1.140.105
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.105 =
+Saving translations, message templates, site texts, ticket texts, role texts, the Telegram About and Description, and the AI texts no longer waits for the translation or the AI. The save queues a job and returns at once; a bar and a badge per row show Translating, Done or Failed with Try again. An open admin page runs jobs within seconds, otherwise the cron pinger runs them within 5 minutes.
 
 = 1.140.104 =
 The crew privacy notice now says that other crew can see your name and tasks, that names appear in the crew Telegram group (task board and covers), and that standing is seen only by the organizers and the sales desk crew (Q321).
@@ -1526,6 +1529,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.105 =
+No settings change.
 
 = 1.140.104 =
 No settings change.
