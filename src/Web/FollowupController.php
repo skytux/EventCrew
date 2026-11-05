@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Language;
 use WP_REST_Request;
 
@@ -19,6 +20,10 @@ use WP_REST_Request;
  *   opens links must not subscribe anyone); the POST counts the row's first
  *   click, subscribes the row's address to the next events announcement,
  *   and sends the browser to the subscribe form.
+ * - ?eventcrew_optout=<token> on any page: "Don't send me these". Like the
+ *   subscribe button, opening it shows a page that posts the token back at
+ *   once; the POST puts the row's address on the do-not-send list and shows
+ *   a short confirmation in the post-event email's languages.
  * - /wp-json/eventcrew/v1/followup?do=stop&token=…: the Stop link in the
  *   organizers' preview. Opening it shows a button (a mail scanner that
  *   opens links must not stop the email); pressing it stops that night's
@@ -55,6 +60,11 @@ final class FollowupController
         // phpcs:ignore WordPress.Security.NonceVerification -- a signed link from an email; the token is the check.
         if (isset($_GET[FollowupMail::JOIN_ARG]) || isset($_POST[FollowupMail::JOIN_ARG])) {
             $this->handleJoin();
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification -- a signed link from an email; the token is the check.
+        if (isset($_GET[FollowupMail::OPTOUT_ARG]) || isset($_POST[FollowupMail::OPTOUT_ARG])) {
+            $this->handleOptOut();
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a signed link from an email; the token is the check.
@@ -154,6 +164,80 @@ final class FollowupController
         return ['redirect' => null, 'html' => $page['html']];
     }
 
+    /** "Don't send me these". See respondOptOut(). */
+    private function handleOptOut(): void
+    {
+        $method = isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET';
+        $isPost = 'POST' === strtoupper($method);
+        // phpcs:disable WordPress.Security.NonceVerification -- a signed link from an email; the token is the check.
+        $raw = $isPost && isset($_POST[FollowupMail::OPTOUT_ARG])
+            ? $_POST[FollowupMail::OPTOUT_ARG]
+            : ($_GET[FollowupMail::OPTOUT_ARG] ?? '');
+        // phpcs:enable WordPress.Security.NonceVerification
+        $page = $this->respondOptOut(
+            $isPost ? 'POST' : 'GET',
+            preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($raw)) ?? ''
+        );
+
+        nocache_headers();
+        header('X-Robots-Tag: noindex, nofollow', true);
+        status_header($page['status']);
+        header('Content-Type: text/html; charset=utf-8');
+        // Built from literal markup and esc_html()'d values in page().
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $page['html'];
+        exit;
+    }
+
+    /**
+     * What "Don't send me these" does, in the post-event email's languages
+     * (HybridPolicy): opening the link answers with a page whose form posts
+     * the token back, submitted at once by a small script, so a mail scanner
+     * that opens links puts nobody on the list. The POST puts the row's
+     * address on the do-not-send list (FollowupMail::optOutClick()) and
+     * answers with a short confirmation. A token this site did not sign gets
+     * "This link is no longer valid."
+     *
+     * @return array{status: int, html: string}
+     */
+    public function respondOptOut(string $method, string $token): array
+    {
+        $languages = HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP);
+
+        if (! FollowupMail::isOptOutToken($token)) {
+            return $this->page(
+                404,
+                static fn (): string => __('This link is no longer valid.', 'eventcrew'),
+                '',
+                null,
+                $languages
+            );
+        }
+
+        if ('POST' !== strtoupper($method)) {
+            return $this->page(
+                200,
+                static fn (): string => __(
+                    'Press the button to stop getting these emails after our events.',
+                    'eventcrew'
+                ),
+                $this->optOutForm($token, $languages),
+                null,
+                $languages
+            );
+        }
+
+        $this->followup->optOutClick($token);
+
+        return $this->page(
+            200,
+            static fn (): string => __('Done. You will not get these emails after our events any more.', 'eventcrew'),
+            '',
+            null,
+            $languages
+        );
+    }
+
     public function handle(WP_REST_Request $request): void
     {
         $page = $this->respond(
@@ -206,27 +290,37 @@ final class FollowupController
     }
 
     /**
-     * A page with $message in Finnish and in English, and $extra under it.
+     * A page with $message in $languages (Finnish and English when null), and
+     * $extra under it.
      *
+     * @param list<string>|null $languages
      * @return array{status: int, html: string}
      */
-    private function page(int $status, callable $message, string $extra = '', ?callable $title = null): array
-    {
-        $title = self::both($title ?? static fn (): string => __('Post-event email', 'eventcrew'));
-        $fi = (string) Language::run(Language::FINNISH, $message);
-        $en = (string) Language::run(Language::ENGLISH, $message);
+    private function page(
+        int $status,
+        callable $message,
+        string $extra = '',
+        ?callable $title = null,
+        ?array $languages = null
+    ): array {
+        $languages = $languages ?? [Language::FINNISH, Language::ENGLISH];
+        $title = self::both($title ?? static fn (): string => __('Post-event email', 'eventcrew'), $languages);
+        $inner = '';
 
-        $inner = '<p lang="fi">' . esc_html($fi) . '</p>'
-            . ($fi === $en ? '' : '<p lang="en">' . esc_html($en) . '</p>')
-            . $extra;
+        foreach (array_unique(HybridPolicy::inEach($languages, $message)) as $lang => $text) {
+            $inner .= '<p lang="' . esc_attr((string) $lang) . '">' . esc_html((string) $text) . '</p>';
+        }
+
+        $inner .= $extra;
 
         return [
             'status' => $status,
             'html' => sprintf(
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-                '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:28em;margin:3em auto;padding:0 1em"><h1 style="font-size:1.2em">%1$s</h1>%2$s</body></html>',
+                '<!doctype html><html lang="%3$s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:28em;margin:3em auto;padding:0 1em"><h1 style="font-size:1.2em">%1$s</h1>%2$s</body></html>',
                 esc_html($title),
-                $inner
+                $inner,
+                esc_attr($languages[0])
             ),
         ];
     }
@@ -254,12 +348,32 @@ final class FollowupController
         );
     }
 
-    /** "fi / en", or one when both agree. */
-    private static function both(callable $words): string
+    /**
+     * The "Don't send me these" form, sent by the script as soon as the page loads.
+     *
+     * @param list<string> $languages
+     */
+    private function optOutForm(string $token, array $languages): string
     {
-        $fi = (string) Language::run(Language::FINNISH, $words);
-        $en = (string) Language::run(Language::ENGLISH, $words);
+        return sprintf(
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML form; wrapping it just adds stray whitespace.
+            '<form id="eventcrew-optout" method="post" action="%s" style="margin:1em 0"><input type="hidden" name="%s" value="%s"><button type="submit" style="padding:.6em 1em">%s</button></form><script>document.getElementById("eventcrew-optout").submit();</script>',
+            esc_url(home_url('/')),
+            esc_attr(FollowupMail::OPTOUT_ARG),
+            esc_attr($token),
+            esc_html(self::both(static fn (): string => __("Don't send me these", 'eventcrew'), $languages))
+        );
+    }
 
-        return $fi === $en ? $en : $fi . ' / ' . $en;
+    /**
+     * "fi / en" (or the texts in $languages), each different text once.
+     *
+     * @param list<string>|null $languages
+     */
+    private static function both(callable $words, ?array $languages = null): string
+    {
+        return HybridPolicy::join(
+            array_map('strval', HybridPolicy::inEach($languages ?? [Language::FINNISH, Language::ENGLISH], $words))
+        );
     }
 }

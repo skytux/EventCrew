@@ -10,8 +10,11 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupOptOut;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\FollowupController;
 
@@ -133,6 +136,68 @@ final class FollowupControllerTest extends TestCase
         self::assertSame([], $this->wpdb->queries);
         self::assertSame([], $this->wpdb->inserts);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** Opening "Don't send me these" (as a mail scanner does) puts nobody on the list. */
+    public function testOpeningTheOptOutLinkOnlyShowsAFormThatPostsItBack(): void
+    {
+        $token = self::optOutToken('b', 7);
+        $page = $this->controller()->respondOptOut('GET', $token);
+
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('<meta name="robots" content="noindex">', $page['html']);
+        self::assertStringContainsString('<form id="eventcrew-optout" method="post"', $page['html']);
+        self::assertStringContainsString(
+            'name="' . FollowupMail::OPTOUT_ARG . '" value="' . $token . '"',
+            $page['html']
+        );
+        self::assertStringContainsString('document.getElementById("eventcrew-optout").submit()', $page['html']);
+        self::assertStringContainsString('stop getting these emails', $page['html']);
+        self::assertSame([], $this->wpdb->queries, 'no row read');
+        self::assertArrayNotHasKey(FollowupOptOut::OPTION, $this->options);
+    }
+
+    public function testPostingTheOptOutTokenPutsTheAddressOnTheListAndConfirms(): void
+    {
+        $this->wpdb->nextRows[] = ['name' => 'Anna Virtanen', 'email' => 'anna@example.test']; // holder()
+
+        $page = $this->controller()->respondOptOut('POST', self::optOutToken('g', 3));
+
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('You will not get these emails after our events any more.', $page['html']);
+        self::assertSame(['anna@example.test'], array_keys($this->options[FollowupOptOut::OPTION]));
+    }
+
+    /** The page is in the post-event email's languages: only the main one with the Hybrid tick off. */
+    public function testTheOptOutPageIsInTheSiteLanguage(): void
+    {
+        $this->options[HybridPolicy::OPTION] = [HybridPolicy::FOLLOWUP => false];
+        $this->wpdb->nextRows[] = null; // holder(): no row
+
+        $page = $this->controller()->respondOptOut('POST', self::optOutToken('b', 7));
+
+        self::assertStringContainsString('<html lang="' . SiteLanguages::main() . '">', $page['html']);
+        self::assertSame(1, substr_count($page['html'], '<p lang='));
+    }
+
+    public function testAForgedOptOutTokenIsNotFound(): void
+    {
+        foreach (['GET', 'POST'] as $method) {
+            $page = $this->controller()->respondOptOut($method, self::optOutToken('b', 7) . 'x');
+
+            self::assertSame(404, $page['status']);
+            self::assertStringContainsString('no longer valid', $page['html']);
+        }
+
+        self::assertSame([], $this->wpdb->queries);
+        self::assertArrayNotHasKey(FollowupOptOut::OPTION, $this->options);
+    }
+
+    private static function optOutToken(string $kind, int $id): string
+    {
+        parse_str((string) parse_url(FollowupMail::optOutUrl($kind, $id), PHP_URL_QUERY), $query);
+
+        return (string) $query[FollowupMail::OPTOUT_ARG];
     }
 
     private static function joinToken(string $kind, int $id): string

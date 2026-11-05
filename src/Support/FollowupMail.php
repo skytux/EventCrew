@@ -49,6 +49,12 @@ use EventCrew\Web\NewsletterController;
  * greet them with (joinClick()). The press comes from the mailbox the email
  * went to, so no confirmation email follows. A preview's or a test's button
  * subscribes nobody.
+ * At the end, a "Don't send me these" link (?eventcrew_optout=<token>)
+ * carries a signed link to the same row: pressing it puts the row's address
+ * on the do-not-send list (FollowupOptOut, optOutClick()), with no sign-in.
+ * The email is never sent to an address on that list, nor to one that left
+ * the announcement; such a row is marked 'optout'. A preview's or a test's
+ * link puts nobody on the list.
  *
  * Several rows of one night with the same address (one person who bought two
  * tickets) get one email. Its row is the first of them; the others are
@@ -106,14 +112,21 @@ final class FollowupMail
     /** The query argument of the subscribe button. */
     public const JOIN_ARG = 'eventcrew_join';
 
+    /** The query argument of the "Don't send me these" link. */
+    public const OPTOUT_ARG = 'eventcrew_optout';
+
     public const PURPOSE_STOP = 'followup_stop';
     public const PURPOSE_GO = 'followup_go';
     public const PURPOSE_JOIN = 'followup_join';
+    public const PURPOSE_OPTOUT = 'followup_optout';
 
     public const STATUS_SENT = 'sent';
     public const STATUS_FAILED = 'failed';
     public const STATUS_STOPPED = 'stopped';
     public const STATUS_DUPLICATE = 'duplicate';
+
+    /** Not sent: the address is on the do-not-send list or left the announcement. */
+    public const STATUS_OPTOUT = 'optout';
 
     /** stop()'s answers. */
     public const STOPPED = 'stopped';
@@ -150,6 +163,8 @@ final class FollowupMail
 
     private readonly NewsletterSubscriberRepository $subscribers;
 
+    private readonly FollowupOptOut $optOut;
+
     public function __construct(
         private readonly FollowupRepository $rows,
         private readonly TaskRepository $tasks,
@@ -158,12 +173,14 @@ final class FollowupMail
         private readonly ?Logger $logger = null,
         ?FollowupText $text = null,
         ?NewsletterWriter $writer = null,
-        ?NewsletterSubscriberRepository $subscribers = null
+        ?NewsletterSubscriberRepository $subscribers = null,
+        ?FollowupOptOut $optOut = null
     ) {
         $textLogger = $logger ?? new Logger();
         $this->text = $text ?? new FollowupText(new LlmClient($textLogger), $textLogger);
         $this->writer = $writer ?? new NewsletterWriter(new LlmClient($textLogger), $textLogger);
         $this->subscribers = $subscribers ?? new NewsletterSubscriberRepository();
+        $this->optOut = $optOut ?? new FollowupOptOut($this->subscribers);
     }
 
     public function boot(): void
@@ -646,6 +663,74 @@ final class FollowupMail
         return [$parts[0], $parts[1], $parts[2]];
     }
 
+    /**
+     * The "Don't send me these" link for one row ($kind 'b', 'g', or 't' for
+     * a preview or a test, which puts nobody on the list).
+     */
+    public static function optOutUrl(string $kind, int $rowId): string
+    {
+        $token = SignedLink::signPayload(self::PURPOSE_OPTOUT, $kind . "\n" . $rowId);
+
+        return add_query_arg([self::OPTOUT_ARG => $token], home_url('/'));
+    }
+
+    /**
+     * What pressing "Don't send me these" does: puts the row's address on
+     * the do-not-send list. True when the token is one this site signed
+     * (a sample link, or a row whose email was deleted since, adds nothing),
+     * null when it is not.
+     */
+    public function optOutClick(string $token): ?bool
+    {
+        $parts = self::optOutPayload($token);
+
+        if (null === $parts) {
+            return null;
+        }
+
+        [$kind, $id] = $parts;
+        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+
+        if (isset($kinds[$kind]) && $id > 0) {
+            $holder = $this->rows->holder($kinds[$kind], $id);
+
+            if (null !== $holder) {
+                $this->optOut->add($holder['email']);
+            }
+        }
+
+        return true;
+    }
+
+    /** Whether $token is a "Don't send me these" token this site signed. Changes nothing. */
+    public static function isOptOutToken(string $token): bool
+    {
+        return null !== self::optOutPayload($token);
+    }
+
+    /**
+     * The kind and row id signed into a "Don't send me these" token, or null
+     * when the token does not verify.
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    private static function optOutPayload(string $token): ?array
+    {
+        $payload = SignedLink::verifyPayload(self::PURPOSE_OPTOUT, $token);
+
+        if (null === $payload) {
+            return null;
+        }
+
+        $parts = explode("\n", $payload, 2);
+
+        if (2 !== count($parts) || ! ctype_digit($parts[1])) {
+            return null;
+        }
+
+        return [$parts[0], (int) $parts[1]];
+    }
+
     /** The organizers' Stop link for $date's email. */
     public static function stopUrl(string $date): string
     {
@@ -759,6 +844,17 @@ final class FollowupMail
                 . "\n\n" . EmailBody::toText('', $join);
         }
 
+        // Last, small: the link that puts this address on the do-not-send list.
+        $optOut = self::optOutUrl($kind, $rowId);
+        $html .= sprintf(
+            '<p style="margin:28px 0 0;text-align:center;font-family:%s;font-size:13px;color:#5b6470">'
+                . '<a href="%s" style="color:inherit;text-decoration:underline">%s</a></p>',
+            EmailBody::FONT,
+            esc_url($optOut),
+            esc_html($pair('optout'))
+        );
+        $text .= "\n\n" . $pair('optout') . ': ' . $optOut;
+
         return [
             'subject' => $both('subject') . ' – ' . $shortDate,
             'html' => $html,
@@ -857,6 +953,7 @@ final class FollowupMail
     private function sendNight(string $date, array $state): array
     {
         $checkedIn = $this->rows->checkedIn($date);
+        $blocked = $this->optOut->blocked();
         $groups = [];
 
         foreach ($this->rows->recipients($date) as $row) {
@@ -877,6 +974,15 @@ final class FollowupMail
                     if ('' === $row['status']) {
                         $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_DUPLICATE);
                     }
+                }
+
+                continue;
+            }
+
+            // On the do-not-send list, or left the announcement: no email.
+            if (isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])) {
+                foreach ($group as $row) {
+                    $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_OPTOUT);
                 }
 
                 continue;
@@ -947,10 +1053,11 @@ final class FollowupMail
         $missed = $this->compose($date, false, self::sampleName(), self::KIND_SAMPLE, 0);
         $cameNext = $this->text->hasNext(FollowupText::CAME);
         $missedNext = $this->text->hasNext(FollowupText::MISSED);
-        $count = count(array_unique(array_map(
-            static fn (array $row): string => strtolower($row['email']),
+        $blocked = $this->optOut->blocked();
+        $count = count(array_diff_key(array_flip(array_map(
+            static fn (array $row): string => NewsletterSubscriberRepository::normalize($row['email']),
             $this->rows->recipients($date)
-        )));
+        )), $blocked));
         $sendAt = self::sendAt($date);
         $sentTo = 0;
         $adminUrl = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
@@ -1147,7 +1254,7 @@ final class FollowupMail
      * page subject.
      *
      * @param array{text: string, next: bool, template: bool} $text
-     * @return array{body: string, subject: string, join: string, invite: string}
+     * @return array{body: string, subject: string, join: string, invite: string, optout: string}
      */
     private static function words(
         string $variant,
@@ -1187,6 +1294,7 @@ final class FollowupMail
             'body' => $body,
             'subject' => MessageTemplates::subject($id, $context),
             'join' => __('Join the announcement', 'eventcrew'),
+            'optout' => __("Don't send me these", 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];
     }

@@ -491,6 +491,22 @@ final class NewsletterSubscriberRepository
     }
 
     /**
+     * Every address that left the newsletter, in lower case.
+     *
+     * @return array<int, string>
+     */
+    public function unsubscribedEmails(): array
+    {
+        global $wpdb;
+
+        $emails = $wpdb->get_col(
+            $wpdb->prepare("SELECT email FROM {$this->table()} WHERE status = %s", self::STATUS_UNSUBSCRIBED)
+        );
+
+        return array_values(array_map('strval', is_array($emails) ? $emails : []));
+    }
+
+    /**
      * How many confirmed subscribers get the announcement in each language:
      * 'fi' and 'en', and '' for those whose language is not known (they get
      * both languages).
