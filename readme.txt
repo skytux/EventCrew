@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.89
+Stable tag: 1.140.90
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.90 =
+Settings, Telegram tab: with no board yet, an Add the bot to your group button opens the Telegram group picker, and the board appears in the group the bot joins. With a board, Post a new board sits next to Refresh the board and puts a fresh board at the bottom of the group, like /board.
 
 = 1.140.89 =
 Settings: Save changes and Translate again on the settings page ran the Test the webhook button instead of saving, because that button's form sat inside the settings form (since 1.140.34). The test button now sits under the webhook buttons, outside it. A test checks that no template nests forms.
@@ -1481,6 +1484,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.90 =
+No settings change.
 
 = 1.140.89 =
 No settings change.
