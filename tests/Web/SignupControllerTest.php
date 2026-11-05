@@ -199,6 +199,33 @@ final class SignupControllerTest extends TestCase
         self::assertStringNotContainsString('<nav class="eventcrew-tabs"', $html);
     }
 
+    public function testAnExpiredSignInLinkSaysSoAboveTheFormAndKeepsTheTarget(): void
+    {
+        $this->stubPageRender();
+        $_GET = ['eventcrew_notice' => 'bad_link'];
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('remove_query_arg')->justReturn('/signup/?tab=me');
+        Functions\when('wp_validate_redirect')->returnArg(1);
+
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        try {
+            $html = $this->controller()->renderShortcode();
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString(
+            '<p class="eventcrew-signin-expired" role="status">This sign-in link has expired.</p>',
+            $html
+        );
+        // The line, not the toast.
+        self::assertStringContainsString('aria-live="polite"></div>', $html);
+        // The new link goes back to the page the old one opened.
+        self::assertStringContainsString('name="redirect_to" value="/signup/?tab=me"', $html);
+    }
+
     /**
      * Each task has an (i) button opening its description in a bubble, the
      * event's picture is behind its card header, and the Telegram "What each
@@ -1206,6 +1233,55 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('eventcrew_notice=signed_in', $first);
         self::assertStringContainsString('eventcrew_notice=bad_link', $second);
         self::assertSame(1, substr_count(implode("\n", $this->wpdb->queries), 'used_at IS NULL'));
+    }
+
+    public function testAnExpiredLinkOnASignedInDeviceGoesStraightToThePage(): void
+    {
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00'];
+        // The token row: expired.
+        $this->wpdb->nextRows[] = ['person_id' => 7, 'expires_at' => '2026-01-01 00:00:00', 'used_at' => null];
+
+        try {
+            $answer = $this->dispatchSignIn(['token' => 'rawtoken', 'redirect_to' => 'https://site.test/crew/'], []);
+        } finally {
+            $_COOKIE = [];
+        }
+
+        // No button page and no notice: just the page.
+        self::assertSame('https://site.test/crew/', $answer);
+        self::assertStringNotContainsString('UPDATE', implode("\n", $this->wpdb->queries), 'Nothing was spent.');
+    }
+
+    public function testALiveLinkForSomeoneElseOnASignedInDeviceStillShowsTheButton(): void
+    {
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00'];
+        $this->wpdb->nextRows[] = ['person_id' => 8, 'expires_at' => '2999-12-31 00:00:00', 'used_at' => null];
+
+        try {
+            $answer = $this->dispatchSignIn(['token' => 'rawtoken', 'redirect_to' => 'https://site.test/crew/'], []);
+        } finally {
+            $_COOKIE = [];
+        }
+
+        self::assertSame('page 200', $answer);
+    }
+
+    public function testAUsedLinkPressedOnASignedInDeviceOpensThePageWithNoMessage(): void
+    {
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        // The token row, already used; then the person for currentPerson().
+        $this->wpdb->nextRows[] = self::liveSignInToken('2026-11-05 10:00:00');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00'];
+
+        try {
+            $answer = $this->dispatchSignIn([], ['token' => 'rawtoken', 'redirect_to' => 'https://site.test/crew/']);
+        } finally {
+            $_COOKIE = [];
+        }
+
+        self::assertSame('https://site.test/crew/', $answer);
     }
 
     public function testConsumeMagicLinkReturnsNullForABadToken(): void

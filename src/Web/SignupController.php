@@ -809,7 +809,35 @@ final class SignupController
         // phpcs:enable WordPress.Security.NonceVerification
 
         // After the sign-in, back to this page without the token in the address.
-        $this->showSignInButton($token, remove_query_arg('eventcrew_login'));
+        $returnTo = remove_query_arg('eventcrew_login');
+
+        if ($this->alreadySignedInFor($token)) {
+            wp_safe_redirect($returnTo);
+
+            exit;
+        }
+
+        $this->showSignInButton($token, $returnTo);
+    }
+
+    /**
+     * Whether a sign-in link opened on this device can skip the "Sign in"
+     * button: the device is already signed in, and the link is not a live link
+     * for someone else (that one still shows the button, so it can switch who
+     * is signed in). A used or expired link then just opens the page, with no
+     * message. Read-only: the token is never spent here.
+     */
+    private function alreadySignedInFor(string $token): bool
+    {
+        $person = $this->currentPerson();
+
+        if (null === $person) {
+            return false;
+        }
+
+        $owner = $this->tokens->validFor($token, self::LOGIN_PURPOSE);
+
+        return null === $owner || $owner === $person->id;
     }
 
     /**
@@ -898,7 +926,15 @@ final class SignupController
         if (self::LOGIN_ACTION === $action && isset($_GET['token'])) {
             // The emailed link. Opening it only shows a "Sign in" button, so a
             // mail scanner that opens links first does not spend the token.
-            $this->showSignInButton(sanitize_text_field(wp_unslash($_GET['token'])), $redirect);
+            $token = sanitize_text_field(wp_unslash($_GET['token']));
+
+            if ($this->alreadySignedInFor($token)) {
+                wp_safe_redirect($redirect);
+
+                exit;
+            }
+
+            $this->showSignInButton($token, $redirect);
         }
 
         if (self::LOGIN_ACTION === $action && isset($_POST['token'])) {
@@ -909,6 +945,12 @@ final class SignupController
 
             if (null !== $personId) {
                 $this->setSessionCookie(WebSession::mint($personId));
+            } elseif ('bad_link' === $notice && null !== $this->currentPerson()) {
+                // Used or expired, but this device is signed in already: just
+                // the page, with no message.
+                wp_safe_redirect($redirect);
+
+                exit;
             }
 
             $this->redirect($redirect, $notice);
@@ -1141,7 +1183,7 @@ final class SignupController
             'check_email' => __('Check your email for a sign-in link.', 'eventcrew'),
             'bad_email' => __('That doesn’t look like a valid email address.', 'eventcrew'),
             'signed_in' => __('You’re signed in.', 'eventcrew'),
-            'bad_link' => __('That sign-in link is invalid or has expired.', 'eventcrew'),
+            'bad_link' => __('This sign-in link has expired.', 'eventcrew'),
             'captcha_failed' => __('Couldn’t verify you’re human — please try again.', 'eventcrew'),
             'signed_out' => __('You’re signed out.', 'eventcrew'),
             'claimed' => __('You’re signed up — thanks!', 'eventcrew'),

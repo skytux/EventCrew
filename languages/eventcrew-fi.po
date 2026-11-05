@@ -1148,8 +1148,8 @@ msgid "That roster entry was not found."
 msgstr "Läsnäololistan merkintää ei löytynyt."
 
 #: src/Web/SignupController.php:690
-msgid "That sign-in link is invalid or has expired."
-msgstr "Kirjautumislinkki on virheellinen tai vanhentunut."
+msgid "This sign-in link has expired."
+msgstr "Kirjautumislinkki on vanhentunut."
 
 #: src/Telegram/BoardService.php:500 src/Web/SignupController.php:696
 msgid "That slot just filled up."
