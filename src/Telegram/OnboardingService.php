@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\PrivacyPolicy;
 
 /**
@@ -285,18 +286,15 @@ final class OnboardingService
         $link = add_query_arg(['token' => $rawToken], rest_url('eventcrew/v1/verify'));
         $greeting = '' !== $displayName ? $displayName : $email;
 
-        $body = sprintf(
-            /* translators: 1: person's name */
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Hi %1\$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
-            $greeting
-        ) . "\n\n" . PrivacyPolicy::noticeLine();
+        // The text is the Messages page template (MessageTemplates). The
+        // link is the button below it, so an edited text cannot lose it.
+        $context = ['name' => $greeting];
 
         $this->mailer->toPerson(
             $personId,
             $email,
-            __('Confirm your email for EventCrew', 'eventcrew'),
-            $body,
+            MessageTemplates::subject('email_confirm', $context),
+            MessageTemplates::body('email_confirm', $context),
             array_values(array_filter([
                 ['label' => __('Confirm your email', 'eventcrew'), 'url' => $link],
                 $this->privacyAction(),

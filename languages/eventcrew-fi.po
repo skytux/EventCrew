@@ -7103,3 +7103,60 @@ msgstr "Yksi viesti kaikilla sivuston kielillä, yksi osa kullekin kielelle, ja 
 
 msgid "With the tick off, each person gets the message in their own language only, and people whose language is not known get it in the main language."
 msgstr "Kun ruutua ei ole valittu, jokainen saa viestin vain omalla kielellään, ja ne, joiden kieltä ei tiedetä, saavat sen pääkielellä."
+
+msgid "The person's standing and free-entry credits, like: Your standing: Beginner · 0 free-entry credits."
+msgstr "Henkilön luotettavuus ja vapaaliput, esim.: Luotettavuutesi: Aloittelija · 0 vapaalippua."
+
+msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
+msgstr "Välilyönti ja lause siitä, kuinka monta tuntia ennen tehtävää peruutus ei vaikuta luotettavuuteen (Asetukset). Tyhjä, kun luku on 0."
+
+msgid "An empty line and the \"About the task\" text of the task's role. Empty when the role has none."
+msgstr "Tyhjä rivi ja tehtävän roolin \"Tehtävästä\"-teksti. Tyhjä, jos roolilla ei ole sitä."
+
+msgid "\"Thanks for the notice.\", or for a late cancellation the sentence saying it counts against the standing."
+msgstr "\"Kiitos ilmoituksesta.\", tai myöhäisessä peruutuksessa lause, joka kertoo sen heikentävän luotettavuutta."
+
+msgid "The next open tasks, under a line with each date."
+msgstr "Seuraavat avoimet tehtävät, kunkin päivän rivin alla."
+
+msgid "Signed up for a task (email)"
+msgstr "Ilmoittautui tehtävään (sähköposti)"
+
+msgid "Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text."
+msgstr "Lähetetään, kun henkilö ilmoittautuu tehtävään botissa tai verkkosivulla. Lippu-, kalenteri- ja crew-opaspainikkeet lisätään tekstin alle."
+
+msgid "Signed up for a task (Telegram)"
+msgstr "Ilmoittautui tehtävään (Telegram)"
+
+msgid "Cancelled a task (email)"
+msgstr "Perui tehtävän (sähköposti)"
+
+msgid "Sent when a person cancels their own task, in the bot or on the web page."
+msgstr "Lähetetään, kun henkilö peruu oman tehtävänsä botissa tai verkkosivulla."
+
+msgid "Cancelled a task (Telegram)"
+msgstr "Perui tehtävän (Telegram)"
+
+msgid "\"❌ Cancelled\", or \"⚠️ Late cancellation\" when the cancellation was late."
+msgstr "\"❌ Peruttu\", tai \"⚠️ Myöhäinen peruutus\", kun peruutus tuli myöhään."
+
+msgid "Tasks still need people (email)"
+msgstr "Tehtäviin tarvitaan ihmisiä (sähköposti)"
+
+msgid "Sent to the crew before an event that still has open tasks (the times are in Settings), or when an organizer sends it by hand."
+msgstr "Lähetetään crew'lle ennen tapahtumaa, jossa on vielä avoimia tehtäviä (ajat ovat Asetuksissa), tai kun järjestäjä lähettää sen käsin."
+
+msgid "The person's last three tasks and how many tasks they have completed in total."
+msgstr "Henkilön kolme viimeisintä tehtävää ja kuinka monta tehtävää hän on tehnyt yhteensä."
+
+msgid "Tasks still need people (Telegram)"
+msgstr "Tehtäviin tarvitaan ihmisiä (Telegram)"
+
+msgid "Confirm your email (email)"
+msgstr "Vahvista sähköpostisi (sähköposti)"
+
+msgid "Sent when a person types their email in the Telegram bot. The confirmation link is a button below the text and is always added."
+msgstr "Lähetetään, kun henkilö kirjoittaa sähköpostinsa Telegram-bottiin. Vahvistuslinkki on painike tekstin alla, ja se lisätään aina."
+
+msgid "The name the person has in Telegram, or their email address when there is none."
+msgstr "Henkilön nimi Telegramissa, tai hänen sähköpostiosoitteensa, jos nimeä ei ole."

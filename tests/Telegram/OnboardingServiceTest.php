@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\VerificationController;
 
@@ -449,5 +450,66 @@ final class OnboardingServiceTest extends TelegramTestCase
         // button; the plain-text alternative alone carries the address.
         self::assertStringContainsString('Confirm your email', $this->mails[0]['body']);
         self::assertStringContainsString('<a ', $this->mails[0]['body']);
+    }
+
+    // ---- The Messages page template (Q297) --------------------------------
+
+    /**
+     * The confirmation email to sam@example.com as plain text, its link tokens
+     * replaced by TOKEN.
+     *
+     * @param string $name The name the Telegram account has ('' for none).
+     */
+    private function confirmationEmail(string $name): array
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => $name];
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        $mail = $this->mails[0];
+        $mail['body'] = (string) preg_replace('/\?token=[^\s]+/', '?token=TOKEN', $mail['body']);
+
+        return $mail;
+    }
+
+    /** With nothing stored, the email is what it was before the template. */
+    public function testTheConfirmationEmailIsTheSameAsBeforeTheTemplate(): void
+    {
+        $mail = $this->confirmationEmail('Sam');
+
+        self::assertSame('Confirm your email for EventCrew', $mail['subject']);
+        self::assertSame(
+            "Hi Sam,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and"
+                . " expires in a day. If you didn't ask for this, you can ignore this email.\n\n"
+                . "We store your email to run the crew.\n\n"
+                . "Confirm your email: https://example.test/wp-json/eventcrew/v1/verify?token=TOKEN\n\n"
+                . '—' . "\n" . 'Manage your account or stop these emails: '
+                . 'https://example.test/wp-json/eventcrew/v1/manage?token=TOKEN',
+            $mail['body']
+        );
+    }
+
+    /** A text saved on the Messages page is sent; the link button is added all the same. */
+    public function testAStoredConfirmationTextIsSentAndKeepsTheLink(): void
+    {
+        $stored = static fn (string $text): array => [
+            'source' => $text,
+            'texts' => ['fi' => $text, 'en' => $text],
+            'manual' => ['fi' => false, 'en' => false],
+        ];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'email_confirm'] = [
+            MessageTemplates::SUBJECT => $stored('Welcome {name}'),
+            MessageTemplates::BODY => $stored('Tap below, {name}.'),
+        ];
+
+        $mail = $this->confirmationEmail('');
+
+        self::assertSame('Welcome sam@example.com', $mail['subject'], 'no Telegram name: the email address');
+        self::assertStringStartsWith(
+            "Tap below, sam@example.com.\n\nConfirm your email: "
+            . 'https://example.test/wp-json/eventcrew/v1/verify?token=TOKEN',
+            $mail['body']
+        );
     }
 }

@@ -251,13 +251,17 @@ final class OpenTaskCall
 
         $openList = $this->openTasksText($this->digest(self::DIGEST_TASKS));
         $groupLink = self::groupLink();
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['person' => $person, 'open_tasks' => $openList];
 
         if ($emailOk) {
+            $context['recap'] = $this->recap($person);
+
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                __('Some tasks still need people', 'eventcrew'),
-                $this->body($person, $openList),
+                MessageTemplates::subject('open_task_call', $context),
+                MessageTemplates::body('open_task_call', $context),
                 [
                     ['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()],
                     ['label' => __('Open the group in Telegram', 'eventcrew'), 'url' => $groupLink],
@@ -268,15 +272,7 @@ final class OpenTaskCall
         if ($dmOk) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame(
-                    $person,
-                    sprintf(
-                        /* translators: %s: the open-task list, already grouped by date */
-                        __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
-                        $openList
-                    ),
-                    true
-                ),
+                DmBody::frame($person, MessageTemplates::body('open_task_call_dm', $context), true),
                 // The DM arrives in a private chat, so the group is a tap away
                 // rather than a scroll away. Omitted when no link is configured;
                 // a chat id cannot be turned into one.
@@ -334,18 +330,6 @@ final class OpenTaskCall
         }
 
         return $sent;
-    }
-
-    private function body(Person $person, string $openList): string
-    {
-        return sprintf(
-            /* translators: 1: name, 2: open-task list grouped by date, 3: personal recap */
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\nSign up on the board.\n\n%3\$s", 'eventcrew'),
-            $person->name(),
-            $openList,
-            $this->recap($person)
-        );
     }
 
     /**

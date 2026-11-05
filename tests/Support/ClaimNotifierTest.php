@@ -17,8 +17,10 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
@@ -378,5 +380,203 @@ final class ClaimNotifierTest extends TestCase
         });
 
         return $sends;
+    }
+
+    // ---- The Messages page templates (Q297) -------------------------------
+
+    private const MANAGE = "\n\n—\nManage your account or stop these emails: "
+        . 'https://site.test/wp-json/eventcrew/v1/manage?token=Nw.'
+        . '2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398';
+
+    /**
+     * A bot token, the crew guide, a 48-hour notice and plain-text email, plus
+     * $options; the DMs are captured.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function captureWithOptions(array $options = []): stdClass
+    {
+        $sends = $this->captureDms();
+        $options += [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            Roles::GUIDE_URL_OPTION => 'https://docs.example/guide',
+            SignupService::NOTICE_HOURS_OPTION => 48,
+            EmailTemplate::HTML_OPTION => false,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('is_wp_error')->justReturn(false);
+
+        return $sends;
+    }
+
+    /**
+     * The task of the template tests: with a time, so {when} has one.
+     *
+     * @return array<string, mixed>
+     */
+    private function timedTaskRow(): array
+    {
+        return ['starts_at' => '2026-08-01 18:00:00', 'ends_at' => '2026-08-01 20:00:00'] + $this->taskRow();
+    }
+
+    private function signUp(Person $person): void
+    {
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->confirmSignup($person, 5);
+    }
+
+    /** With nothing stored, the sign-up DM and email are what they were before the templates. */
+    public function testTheSignupMessagesAreTheSameAsBeforeTheTemplates(): void
+    {
+        $sends = $this->captureWithOptions();
+
+        $this->signUp($this->personInLanguage(null));
+
+        $about = '📝 About the task: Set up before the dance: close the curtains, check the bathrooms, place the LED'
+            . ' candles, decorate the DJ table, prepare the water and fruit, and open the movable walls.';
+        self::assertSame(
+            "✅ Signed up: Decorate at Party, Sat 1 Aug 18:00–20:00.\n\nShow your ticket at the door - it is the first"
+                . " button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat,"
+                . ' or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.'
+                . ' You can cancel without it affecting your standing up to 48 hours before the task.'
+                . "\n\n" . $about . "\n\nYour standing: Beginner · 0 free-entry credits.",
+            (string) $sends->items[0]['text']
+        );
+        self::assertSame('You’re signed up: Decorate for Party', $this->mails[0]['subject']);
+        self::assertSame(
+            "Hi Sam,\n\nYou're signed up for Decorate at Party, Sat 1 Aug 18:00–20:00. Show your ticket at the door."
+                . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan't make it? Open the bot and tap the task"
+                . ' to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot. You can'
+                . ' cancel without it affecting your standing up to 48 hours before the task.'
+                . "\n\n" . $about . "\n\n"
+                . 'Show your ticket: https://site.test/wp-json/eventcrew/v1/ticket?token='
+                . SignedLink::sign('ticket', 9) . "\n"
+                . 'Add to calendar: https://site.test/wp-json/eventcrew/v1/calendar?token='
+                . SignedLink::sign('calendar', 5) . "\n"
+                . '📋 Crew guide: https://docs.example/guide'
+                . self::MANAGE,
+            $this->mails[0]['body']
+        );
+    }
+
+    /** The same in Finnish, read from the shipped .mo, with no notice hours and no guide. */
+    public function testTheFinnishSignupMessagesAreTheSameAsBeforeTheTemplates(): void
+    {
+        $sends = $this->captureWithOptions([SignupService::NOTICE_HOURS_OPTION => 0, Roles::GUIDE_URL_OPTION => '']);
+
+        $this->signUp($this->personInLanguage('fi'));
+
+        $about = '📝 Tehtävästä: Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät,'
+            . ' somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.';
+        self::assertSame(
+            "✅ Ilmoittauduttu: Somistus, Party, Sat 1 Aug 18:00–20:00.\n\nNäytä lippusi ovella - se on alla"
+                . " ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla"
+                . ' /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai pyydä jotakuta ottamaan'
+                . ' tehtävä napilla 🔁 Ota tehtävä komennon /me alla.'
+                . "\n\n" . $about . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.",
+            (string) $sends->items[0]['text'],
+            'a notice of 0 hours leaves out the free-cancel sentence'
+        );
+        self::assertSame('Olet ilmoittautunut: Somistus, Party', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, Sat 1 Aug 18:00–20:00. Näytä lippusi ovella."
+                . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.\n\nEtkö pääsekään? Avaa botti ja peru"
+                . ' napauttamalla tehtävää, tai pyydä jotakuta ottamaan tehtävä botissa napilla 🔁 Ota tehtävä'
+                . ' komennon /me alla.' . "\n\n" . $about . "\n\nNäytä lippusi: ",
+            $this->mails[0]['body']
+        );
+    }
+
+    /** With nothing stored, both cancellation DMs and emails are what they were before the templates. */
+    public function testTheCancelMessagesAreTheSameAsBeforeTheTemplates(): void
+    {
+        $sends = $this->captureWithOptions();
+        $late = 'This was a late cancellation, which counts against your standing. More notice, or finding a'
+            . ' replacement with 🔁 Take over a task under /me, keeps it clear next time.';
+        $standing = 'Your standing: Beginner · 0 free-entry credits.';
+        $cases = [
+            'cancelled' => ['❌ Cancelled', 'Thanks for the notice.'],
+            'late_cancel' => ['⚠️ Late cancellation', $late],
+        ];
+
+        foreach ($cases as $status => [$kind, $note]) {
+            $sends->items = [];
+            $this->mails = [];
+            $this->wpdb->nextRows[] = $this->timedTaskRow();
+
+            $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, $status);
+
+            self::assertSame(
+                $kind . ': Decorate at Party. ' . $note . "\n\n" . $standing,
+                (string) $sends->items[0]['text'],
+                $status
+            );
+            self::assertSame('Cancelled: Decorate for Party', $this->mails[0]['subject'], $status);
+            self::assertSame(
+                "Hi Sam,\n\nYou've cancelled Decorate at Party, and your ticket is now disabled.\n\n" . $note
+                    . "\n\n" . $standing . self::MANAGE,
+                $this->mails[0]['body'],
+                $status
+            );
+        }
+    }
+
+    /**
+     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     */
+    private static function storedText(string $text): array
+    {
+        return [
+            'source' => $text,
+            'texts' => ['fi' => $text, 'en' => $text],
+            'manual' => ['fi' => false, 'en' => false],
+        ];
+    }
+
+    /** A text saved on the Messages page is what is sent, with its placeholders filled. */
+    public function testAStoredSignupAndCancelTextIsSent(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $sends = $this->captureWithOptions([
+            $prefix . 'signup_confirmed' => [
+                MessageTemplates::SUBJECT => self::storedText('In: {role}'),
+                MessageTemplates::BODY => self::storedText('{name} does {role} at {event}, {when}.{about}|{standing}'),
+            ],
+            $prefix . 'signup_confirmed_dm' => [MessageTemplates::BODY => self::storedText('DM {role}|{standing}')],
+            $prefix . 'cancel_confirmed' => [
+                MessageTemplates::SUBJECT => self::storedText('Out: {role}'),
+                MessageTemplates::BODY => self::storedText('{name}: {note}'),
+            ],
+            $prefix . 'cancel_confirmed_dm' => [MessageTemplates::BODY => self::storedText('{cancelled} {role}')],
+            Roles::GUIDE_URL_OPTION => '',
+        ]);
+
+        $this->signUp($this->personInLanguage(null));
+
+        self::assertSame(
+            'DM Decorate|Your standing: Beginner · 0 free-entry credits.',
+            (string) $sends->items[0]['text']
+        );
+        self::assertSame('In: Decorate', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            "Sam does Decorate at Party, Sat 1 Aug 18:00–20:00.\n\n📝 About the task: Set up",
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString('|Your standing: Beginner', $this->mails[0]['body']);
+        // The ticket button is not part of the text, so it is still there.
+        self::assertStringContainsString('Show your ticket: https://site.test/', $this->mails[0]['body']);
+
+        $sends->items = [];
+        $this->mails = [];
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+        $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, 'late_cancel');
+
+        self::assertSame('⚠️ Late cancellation Decorate', (string) $sends->items[0]['text']);
+        self::assertSame('Out: Decorate', $this->mails[0]['subject']);
+        self::assertStringStartsWith('Sam: This was a late cancellation', $this->mails[0]['body']);
     }
 }
