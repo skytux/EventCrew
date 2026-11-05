@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.100
+Stable tag: 1.140.101
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.101 =
+Role names and descriptions are translated in the background by the AI, like the event texts; hand edits are kept, and the board shows the visitors language.
 
 = 1.140.100 =
 Links from Finnish site pages open the crew page in Finnish; Privacy and Website links follow that language; translated privacy notices say the English original applies.
@@ -1514,6 +1517,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.101 =
+No settings change.
 
 = 1.140.100 =
 No settings change.
