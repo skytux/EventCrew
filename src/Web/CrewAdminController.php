@@ -285,7 +285,8 @@ final class CrewAdminController
             self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
                 $organizer->id,
                 sanitize_key((string) ($post['op'] ?? '')),
-                sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''))
+                sanitize_textarea_field((string) ($post['newsletter_text'] ?? '')),
+                true
             ),
             self::NEWSLETTER_STOP_ACTION => null === $this->newsletterScreen
                 ? ''
@@ -294,7 +295,8 @@ final class CrewAdminController
                 $organizer->id,
                 sanitize_key((string) ($post['variant'] ?? '')),
                 sanitize_key((string) ($post['op'] ?? '')),
-                sanitize_textarea_field((string) ($post['followup_text'] ?? ''))
+                sanitize_textarea_field((string) ($post['followup_text'] ?? '')),
+                true
             ),
             self::AI_TEXT_ACTION => null === $this->aiTextScreen ? '' : $this->aiTextScreen->save($organizer, $post),
             self::NEWCOMER_ACTION => $this->decideNewcomer(

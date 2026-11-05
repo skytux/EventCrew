@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Admin\AiPromptsPage;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventName;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TranslatedText;
 
 /**
  * The Newsletter screen of the crew app's Admin tab: whether the newsletter
@@ -90,13 +93,28 @@ final class CrewAdminNewsletter
     /**
      * Saves or clears the text. $op is 'clear' to clear; anything else saves
      * $text (an empty text clears too). Returns the notice code.
+     *
+     * With $background (the crew app), a text to translate is saved by a
+     * background job (AiPromptsPage::NEWSLETTER_JOB, the same as the
+     * wp-admin save) and 'admin_newsletter_queued' is answered; until then
+     * the announcement keeps the text it had.
      */
-    public function saveText(int $byPersonId, string $op, string $text): string
+    public function saveText(int $byPersonId, string $op, string $text, bool $background = false): string
     {
         if ('clear' === $op || '' === trim($text)) {
             $this->text->clear();
 
             return 'admin_newsletter_cleared';
+        }
+
+        if ($background && TranslatedText::modelReady()) {
+            BackgroundJobs::enqueue(
+                AiPromptsPage::NEWSLETTER_JOB,
+                AiPromptsPage::NEWSLETTER_TARGET,
+                ['text' => $text, 'by' => $byPersonId]
+            );
+
+            return 'admin_newsletter_queued';
         }
 
         $result = $this->text->set($text, $byPersonId);
@@ -124,6 +142,7 @@ final class CrewAdminNewsletter
             'admin_newsletter_stopped' => __('The announcement is stopped. It will not be sent.', 'eventcrew'),
             'admin_newsletter_too_late' => __('Too late: the announcement is already being sent.', 'eventcrew'),
             'admin_newsletter_already' => __('This announcement was already stopped or sent.', 'eventcrew'),
+            'admin_newsletter_queued' => CrewAdminFollowup::queuedNotice(),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 

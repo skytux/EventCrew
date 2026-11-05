@@ -563,7 +563,7 @@ final class AiPromptsPage
     /**
      * The background job that saves a one-time text of the post-event email.
      *
-     * @param array<string, mixed> $args variant and text.
+     * @param array<string, mixed> $args variant, text and by (who saved it, 0 from wp-admin).
      * @return array{ok: bool, error: string}
      */
     public function followupJob(array $args): array
@@ -572,7 +572,12 @@ final class AiPromptsPage
             return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
         }
 
-        $code = $this->followup->saveText(0, (string) ($args['variant'] ?? ''), 'save', (string) ($args['text'] ?? ''));
+        $code = $this->followup->saveText(
+            (int) ($args['by'] ?? 0),
+            (string) ($args['variant'] ?? ''),
+            'save',
+            (string) ($args['text'] ?? '')
+        );
 
         return 'admin_followup_saved' === $code
             ? ['ok' => true, 'error' => '']
@@ -633,7 +638,7 @@ final class AiPromptsPage
     /**
      * The background job that saves the announcement's text.
      *
-     * @param array<string, mixed> $args text.
+     * @param array<string, mixed> $args text and by (who saved it, 0 from wp-admin).
      * @return array{ok: bool, error: string}
      */
     public function newsletterJob(array $args): array
@@ -642,7 +647,7 @@ final class AiPromptsPage
             return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
         }
 
-        $code = $this->newsletter->saveText(0, 'save', (string) ($args['text'] ?? ''));
+        $code = $this->newsletter->saveText((int) ($args['by'] ?? 0), 'save', (string) ($args['text'] ?? ''));
 
         return 'admin_newsletter_saved' === $code
             ? ['ok' => true, 'error' => '']

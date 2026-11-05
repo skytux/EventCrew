@@ -552,6 +552,32 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([], array_intersect_key($this->options, array_flip(FollowupText::NEXT_OPTIONS)));
     }
 
+    /**
+     * Q333: with a model set up, the crew app does not wait for the
+     * translation. The text is saved by a background job, the same one as
+     * the wp-admin save, with the organizer as the one who saved it.
+     */
+    public function testAOneTimePostEventTextIsTranslatedInTheBackground(): void
+    {
+        $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[\EventCrew\Support\AssistantSettings::MODEL_OPTION] = 'test-model';
+        $option = FollowupText::NEXT_OPTIONS[FollowupText::CAME];
+
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(
+            CrewAdminController::FOLLOWUP_TEXT_ACTION,
+            ['variant' => 'came', 'followup_text' => 'Thanks for coming!']
+        );
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_followup_queued'], $result);
+        self::assertArrayNotHasKey($option, $this->options, 'saved by the job, not while the page waits');
+        self::assertSame(CrewAdminFollowup::queuedNotice(), CrewAdminController::noticeText('admin_followup_queued'));
+
+        $job = \EventCrew\Support\BackgroundJobs::latest(\EventCrew\Admin\AiPromptsPage::followupTarget('came'));
+        self::assertSame(\EventCrew\Admin\AiPromptsPage::FOLLOWUP_JOB, $job['kind'] ?? null);
+        self::assertSame(['variant' => 'came', 'text' => 'Thanks for coming!', 'by' => 1], $job['args'] ?? null);
+    }
+
     public function testAMemberCannotSetAPostEventText(): void
     {
         $this->signIn($this->personRow(8));
