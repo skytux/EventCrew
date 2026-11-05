@@ -593,6 +593,76 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('Create my account', $this->mails[0]);
     }
 
+    /**
+     * Q330: a new person signing up from a Finnish page (the link's marker,
+     * the same rule the crew page is shown by) gets Finnish as their message
+     * language, and the link mail is in Finnish.
+     */
+    public function testANewPersonFromAFinnishPageGetsFinnish(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_GET = [PageLanguage::MARKER => 'fi'];
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        try {
+            $this->controller()->loginByEmail('new@example.com');
+        } finally {
+            $_GET = [];
+        }
+
+        $saved = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => array_key_exists('language', $u['data'])
+        ));
+        self::assertCount(1, $saved);
+        self::assertSame('fi', $saved[0]['data']['language']);
+        self::assertStringContainsString('Luo tilini', $this->mails[0]);
+    }
+
+    /** An English page leaves the new person's language unset, as before. */
+    public function testANewPersonFromAnEnglishPageKeepsNoLanguage(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-US,en';
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        try {
+            $this->controller()->loginByEmail('new@example.com');
+        } finally {
+            unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        }
+
+        foreach ($this->wpdb->updates as $update) {
+            self::assertArrayNotHasKey('language', $update['data']);
+        }
+        self::assertStringContainsString('Create my account', $this->mails[0]);
+    }
+
+    /** Someone who already has a record keeps their own language. */
+    public function testAnExistingPersonsLanguageIsNotChangedBySigningIn(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_GET = [PageLanguage::MARKER => 'fi'];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'language' => 'en',
+        ];
+
+        try {
+            $this->controller()->loginByEmail('sam@example.com');
+        } finally {
+            $_GET = [];
+        }
+
+        foreach ($this->wpdb->updates as $update) {
+            self::assertArrayNotHasKey('language', $update['data']);
+        }
+        self::assertStringContainsString('Use the button below to sign in', $this->mails[0]);
+    }
+
     public function testAnExistingAccountGetsThePlainSignInEmail(): void
     {
         $this->wpdb->nextRows[] = [
