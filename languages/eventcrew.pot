@@ -2955,16 +2955,20 @@ msgstr ""
 msgid "If you link a Telegram account, we store its numeric account and chat identifiers so the bot can recognise you and message you. We do not store your Telegram username or phone number."
 msgstr ""
 
+#: src/Support/PrivacyPolicy.php:805
+msgid "If you press \"Don't send me these\" in the message after the event, we keep your email address on a do-not-send list, so that we send you no more of these messages."
+msgstr ""
+
 #: src/Support/PrivacyPolicy.php:443
 msgid "If you sign in with Telegram, the Crew app makes a one-time code and puts a cookie in your browser that ties the code to that browser. The bot uses your Telegram account number to find your crew account. The code and the cookie expire after 30 minutes and cannot be used twice."
 msgstr ""
 
-#: src/Support/PrivacyPolicy.php:807
+#: src/Support/PrivacyPolicy.php:811
 #. translators: %d: number of days
 msgid "If you sign up for the next events announcement but do not confirm your address, the sign-up is deleted after %d days."
 msgstr ""
 
-#: src/Support/PrivacyPolicy.php:643 src/Support/PrivacyPolicy.php:835
+#: src/Support/PrivacyPolicy.php:643 src/Support/PrivacyPolicy.php:839
 msgid "If you think we have handled your data badly, you can complain to your national data protection authority. In the EU you can complain to the one where you live, work, or where the problem happened."
 msgstr ""
 
@@ -7907,7 +7911,7 @@ msgstr ""
 msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
 msgstr ""
 
-#: src/Support/PrivacyPolicy.php:832
+#: src/Support/PrivacyPolicy.php:836
 #. translators: %s: the controller's contact address
 msgid "To do any of these, write to %s and we will answer within one month."
 msgstr ""
@@ -8080,7 +8084,7 @@ msgstr ""
 msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
 msgstr ""
 
-#: src/Support/PrivacyPolicy.php:813
+#: src/Support/PrivacyPolicy.php:817
 msgid "Until then, your name, your ticket code and whether you came in are on that night's door list. After that, the list keeps only how many tickets were sold and used."
 msgstr ""
 
@@ -8772,7 +8776,7 @@ msgstr ""
 msgid "You can ask for a copy of everything we hold about you, ask us to correct it, ask us to delete it, ask us to restrict or stop a particular use of it, and object to us holding it at all. You can also take it elsewhere in a machine-readable form."
 msgstr ""
 
-#: src/Support/PrivacyPolicy.php:826
+#: src/Support/PrivacyPolicy.php:830
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr ""
 
