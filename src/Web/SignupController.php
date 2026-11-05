@@ -68,6 +68,17 @@ final class SignupController
     /** Holds the new address, keyed by a hash of the link's token. */
     private const EMAIL_PENDING_PREFIX = 'eventcrew_email_change_';
 
+    /**
+     * The email sign-in form's limits, each counted for one hour: sign-in
+     * links asked for from one IP address, and asked for one email address.
+     * The IP limit is higher because a venue's Wi-Fi puts many people behind
+     * one address.
+     */
+    private const LOGIN_RATE_PREFIX = 'eventcrew_login_rate_';
+    private const LOGIN_RATE_WINDOW = HOUR_IN_SECONDS;
+    private const LOGIN_LIMIT_PER_IP = 30;
+    private const LOGIN_LIMIT_PER_EMAIL = 5;
+
     /** Composes the board's view model; the presentation half of this class. */
     private readonly SignupBoardView $boardView;
 
@@ -503,13 +514,21 @@ final class SignupController
      * POST email → issue a magic link and mail it. Returns a notice code for
      * the redirect. Creating the person if new mirrors the bot's onboarding: an
      * unverified row that the magic link will verify.
+     *
+     * 'login_busy' when $clientIp or this address asked for too many links in
+     * the last hour (LOGIN_LIMIT_PER_IP, LOGIN_LIMIT_PER_EMAIL); then nothing
+     * is looked up, made or mailed.
      */
-    public function loginByEmail(string $email): string
+    public function loginByEmail(string $email, string $clientIp = ''): string
     {
         $email = sanitize_email($email);
 
         if ('' === $email || ! is_email($email)) {
             return 'bad_email';
+        }
+
+        if (! $this->allowLoginRequest($email, $clientIp)) {
+            return 'login_busy';
         }
 
         $person = $this->people->findByEmail($email);
@@ -928,7 +947,7 @@ final class SignupController
             }
 
             $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
-            $this->finish($redirect, $this->loginByEmail($email), $isAjax);
+            $this->finish($redirect, $this->loginByEmail($email, $this->clientIp()), $isAjax);
         }
 
         // Everything past here needs an authenticated, CSRF-checked person -
@@ -1111,6 +1130,7 @@ final class SignupController
             'tg_return_failed' => __('You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'tg_busy' => __('Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email.', 'eventcrew'),
+            'login_busy' => __('Too many sign-in links were asked for. Wait an hour and try again.', 'eventcrew'),
         ];
 
         // The Admin tab's outcomes are worded by its own controller.
@@ -1247,6 +1267,52 @@ final class SignupController
         // phpcs:enable WordPress.Security.NonceVerification
 
         return wp_validate_redirect($requested, home_url('/'));
+    }
+
+    /**
+     * Counts one sign-in link request against the IP address and against the
+     * email address. False once either has reached its limit within the last
+     * LOGIN_RATE_WINDOW. Both are stored only as hashes, and only for the
+     * window. An empty IP (not known) is not counted.
+     */
+    private function allowLoginRequest(string $email, string $clientIp): bool
+    {
+        $keys = [
+            self::rateKey('email|' . strtolower($email)) => self::LOGIN_LIMIT_PER_EMAIL,
+        ];
+
+        if ('' !== $clientIp) {
+            $keys[self::rateKey('ip|' . $clientIp)] = self::LOGIN_LIMIT_PER_IP;
+        }
+
+        $now = time();
+        $counts = [];
+
+        foreach ($keys as $key => $limit) {
+            $seen = get_transient($key);
+
+            if (! is_array($seen) || (int) ($seen['since'] ?? 0) + self::LOGIN_RATE_WINDOW <= $now) {
+                $seen = ['since' => $now, 'count' => 0];
+            }
+
+            if ((int) $seen['count'] >= $limit) {
+                return false;
+            }
+
+            $counts[$key] = $seen;
+        }
+
+        foreach ($counts as $key => $seen) {
+            $seen['count'] = (int) $seen['count'] + 1;
+            set_transient($key, $seen, max(1, (int) $seen['since'] + self::LOGIN_RATE_WINDOW - $now));
+        }
+
+        return true;
+    }
+
+    private static function rateKey(string $what): string
+    {
+        return self::LOGIN_RATE_PREFIX . substr(hash('sha256', 'eventcrew|' . $what), 0, 32);
     }
 
     /**
