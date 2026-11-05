@@ -6429,3 +6429,16 @@ msgstr "Vain 4 viimeistä merkkiä näytetään. Nähdäksesi salaisuuden kokona
 
 msgid "Too many sign-in links were asked for. Wait an hour and try again."
 msgstr "Kirjautumislinkkejä pyydettiin liian monta. Odota tunti ja yritä uudelleen."
+
+msgid "Confirm deleting your data"
+msgstr "Vahvista tietojesi poistaminen"
+
+msgid "Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email."
+msgstr "Joku pyysi poistamaan crew-tilisi ja sen historian. Jos se olit sinä, paina alla olevaa painiketta. Linkki toimii kerran ja 30 minuutin ajan. Jos se et ollut sinä, älä välitä tästä viestistä."
+
+#, php-format
+msgid "We sent a link to %s. Open it within 30 minutes to delete your data."
+msgstr "Lähetimme linkin osoitteeseen %s. Avaa se 30 minuutin kuluessa poistaaksesi tietosi."
+
+msgid "The email could not be sent. Try again later."
+msgstr "Sähköpostia ei voitu lähettää. Yritä myöhemmin uudelleen."

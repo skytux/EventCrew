@@ -1227,6 +1227,10 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
+#: src/Telegram/ManageController.php:183
+msgid "Confirm deleting your data"
+msgstr ""
+
 #: src/Support/DoorNewMember.php:107
 msgid "Confirm my email"
 msgstr ""
@@ -1511,7 +1515,7 @@ msgstr ""
 msgid "Delete all imported ticket buyers for this date? Guests and the crew are not affected."
 msgstr ""
 
-#: src/Telegram/ManageController.php:107 templates/public/signup.php:583
+#: src/Telegram/ManageController.php:186 src/Telegram/ManageController.php:204 src/Telegram/ManageController.php:218 templates/public/signup.php:583
 msgid "Delete my data"
 msgstr ""
 
@@ -1527,7 +1531,7 @@ msgstr ""
 msgid "Delete your account and all your history? This cannot be undone."
 msgstr ""
 
-#: src/Telegram/ManageController.php:106
+#: src/Telegram/ManageController.php:203 src/Telegram/ManageController.php:216
 msgid "Deleting erases your account and history for good. This cannot be undone."
 msgstr ""
 
@@ -1762,7 +1766,7 @@ msgid "Event start"
 msgstr ""
 
 #: src/Admin/Admin.php:267 src/Admin/Admin.php:268 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
-#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224 src/Telegram/ManageController.php:131
+#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224 src/Telegram/ManageController.php:243
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
 msgstr ""
@@ -2678,7 +2682,7 @@ msgstr ""
 msgid "Link copied."
 msgstr ""
 
-#: src/Telegram/ManageController.php:61
+#: src/Telegram/ManageController.php:165
 msgid "Link expired"
 msgstr ""
 
@@ -2711,7 +2715,7 @@ msgstr ""
 msgid "Mailbox checked: %s."
 msgstr ""
 
-#: src/Telegram/ManageController.php:109
+#: src/Telegram/ManageController.php:197 src/Telegram/ManageController.php:206 src/Telegram/ManageController.php:220
 msgid "Manage your EventCrew account"
 msgstr ""
 
@@ -3131,7 +3135,7 @@ msgstr ""
 msgid "Nothing on your calendar yet — tap a task on the board to sign up."
 msgstr ""
 
-#: src/Telegram/ManageController.php:128
+#: src/Telegram/ManageController.php:240
 msgid "Nothing to do."
 msgstr ""
 
@@ -4533,6 +4537,10 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
+#: src/Telegram/ManageController.php:185
+msgid "Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email."
+msgstr ""
+
 #: src/Support/TakeoverService.php:516
 msgid "Someone else has already asked to take over this task. Wait until that request is answered."
 msgstr ""
@@ -5225,6 +5233,10 @@ msgstr ""
 msgid "The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer."
 msgstr ""
 
+#: src/Telegram/ManageController.php:194
+msgid "The email could not be sent. Try again later."
+msgstr ""
+
 #: src/Admin/SettingsPage.php:1387
 msgid "The email template could not be reset."
 msgstr ""
@@ -5777,7 +5789,7 @@ msgstr ""
 msgid "This link is invalid or has expired"
 msgstr ""
 
-#: src/Support/TakeoverService.php:132 src/Telegram/ManageController.php:62 src/Telegram/ReplacementService.php:227 src/Web/FollowupController.php:185
+#: src/Support/TakeoverService.php:132 src/Telegram/ManageController.php:166 src/Telegram/ReplacementService.php:227 src/Web/FollowupController.php:185
 #: src/Web/NewsletterController.php:1312 src/Web/TakeoverController.php:75
 msgid "This link is no longer valid."
 msgstr ""
@@ -6246,6 +6258,10 @@ msgstr ""
 
 #: src/Web/NewsletterController.php:434
 msgid "We send you an email to confirm. You can leave the announcement at any time with the link in every announcement."
+msgstr ""
+
+#: src/Telegram/ManageController.php:191
+msgid "We sent a link to %s. Open it within 30 minutes to delete your data."
 msgstr ""
 
 #: src/Web/SignupController.php:1121
@@ -6794,7 +6810,7 @@ msgstr ""
 msgid "Your crew account email was changed"
 msgstr ""
 
-#: src/Telegram/ManageController.php:127
+#: src/Telegram/ManageController.php:239
 msgid "Your data has been deleted. Thanks for helping out."
 msgstr ""
 

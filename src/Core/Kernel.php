@@ -1351,7 +1351,9 @@ final class Kernel
             ManageController::class,
             fn (Container $container) => new ManageController(
                 $container->get(PersonRepository::class),
-                $container->get(PersonEraser::class)
+                $container->get(PersonEraser::class),
+                $container->get(AuthTokenRepository::class),
+                $container->get(Mailer::class)
             )
         );
 
