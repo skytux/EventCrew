@@ -1352,12 +1352,6 @@ msgstr "Vastaanotto"
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr "Toivota ihmiset tervetulleiksi ovella, tarkista ja myy liput ja laske, montako ihmistä tulee sisään."
 
-#. translators: %s: the crew's name (the site name)
-#: src/Support/WelcomeSender.php:392
-#, php-format
-msgid "Welcome to the %s crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat."
-msgstr "Tervetuloa %s-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi näet milloin vain: lähetä botille /me yksityiskeskustelussa."
-
 #: src/Support/DoorNewMember.php:129
 msgid "Welcome to the crew"
 msgstr "Tervetuloa crew’hun"
@@ -2966,10 +2960,6 @@ msgstr "Tämä henkilö ei voi hoitaa myyntipistettä tänä iltana. Vain järje
 msgid "Welcome crew  (date: 1.8. or 2026-08-01; default: next night)"
 msgstr "Tervetulotiimi  (päivä: 1.8. tai 2026-08-01; oletus: seuraava ilta)"
 
-#: src/Support/WelcomeSender.php:432
-msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
-msgstr "Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja /me tickets listaa kaikki lippusi."
-
 #: src/Telegram/TicketRedemptionService.php:74
 #. translators: %d: tasks a person completes to earn one free-entry credit
 msgid "You have no free-entry credits yet — you earn one for every task you complete."
@@ -3064,9 +3054,6 @@ msgstr "Vapaaliput, roolit, järjestäjät ja passit"
 msgid "Credits: members earn 1 free-entry credit per %d completed tasks. /people, then 🎁 Give credits, gives credits by hand."
 msgstr "Vapaaliput: jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtävästä. /people ja sitten 🎁 Anna vapaalippuja antaa vapaalippuja käsin."
 
-msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk."
-msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? Lähetä botille /door ja napauta 💳 Myyntipiste."
-
 msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each separately for email and for Telegram. Your notification settings are on your own Crew app and, if you use the bot, under 🔔 Notifications in /me. There is no penalty for switching any of them off."
 msgstr "Kaikki muu on valinnaista ja kytkettävissä pois milloin haluat — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, lupaviestit, kukin erikseen sähköpostille ja Telegramille. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi ja, jos käytät bottia, kohdassa 🔔 Ilmoitukset komennon /me alla. Minkään poiskytkemisestä ei seuraa mitään haittaa."
 
@@ -3075,12 +3062,6 @@ msgstr "Vapaalippu"
 
 msgid "Give credits"
 msgstr "Anna vapaalippuja"
-
-msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Hei %1$s,\n\nmuistutus: olet tehtävässä %2$s, %3$s, %4$s.\n\nEtkö pääsekään? Avaa botti ja peru napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
-
-msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Hei %1$s,\n\nolet ilmoittautunut tehtävään %2$s, %3$s, %4$s. Näytä lippusi ovella.\n\n%5$s\n\nEtkö pääsekään? Avaa botti ja peru napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "I couldn’t find anyone by that name. Send /people to try again, with their exact name or an @mention."
 msgstr "En löytänyt ketään tällä nimellä. Lähetä /people ja yritä uudelleen koko nimellä tai @-maininnalla."
@@ -3157,17 +3138,11 @@ msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rool
 msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /people. ✅ = already has the role."
 msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua; se on vain merkki. Anna rooli muokkaamalla henkilöä, Crew-sovelluksessa tai botin komennolla /people. ✅ = rooli on jo."
 
-msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk."
-msgstr "Olet järjestäjänä %s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /door ja napauta 💳 Myyntipiste."
-
 msgid "You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
 msgstr "Saat 1 vapaalipun jokaisesta %d tekemästäsi tehtävästä. Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
 
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
-
-msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Myöhäinen peruutuksesi tehtävästä %2$s on kirjattu.\n\nSe heikentää luotettavuuttasi. Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana, ja niin myös tuuraaja: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "Your tasks, credits, ticket, settings"
 msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
@@ -7535,3 +7510,75 @@ msgstr "« Edellinen"
 
 msgid "Next »"
 msgstr "Seuraava »"
+
+msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\n%5$s"
+msgstr "Hei %1$s,\n\nmuistutus: olet tehtävässä %2$s, %3$s, %4$s.\n\n%5$s"
+
+msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\n%6$s"
+msgstr "Hei %1$s,\n\nolet ilmoittautunut tehtävään %2$s, %3$s, %4$s. Näytä lippusi ovella.\n\n%5$s\n\n%6$s"
+
+msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. %3$s"
+msgstr "Myöhäinen peruutuksesi tehtävästä %2$s on kirjattu.\n\nSe heikentää luotettavuuttasi. %3$s"
+
+msgid "Can't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "Etkö pääsekään? Avaa botti ja peru napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+
+msgid "Can't make it? Cancel the task under My tasks in the Me tab of the crew page (%s)."
+msgstr "Etkö pääsekään? Peru tehtävä kohdassa Tehtäväni crew-sivun Minä-välilehdellä (%s)."
+
+msgid "More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana, ja niin myös tuuraaja: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+
+msgid "More notice next time keeps it clear. Your tasks are under My tasks in the Me tab of the crew page (%s)."
+msgstr "Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana. Tehtäväsi ovat kohdassa Tehtäväni crew-sivun Minä-välilehdellä (%s)."
+
+msgid "Door list for %1$s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? %2$s"
+msgstr "Ovilista %1$s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? %2$s"
+
+msgid "You are organizing on %1$s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? %2$s"
+msgstr "Olet järjestäjänä %1$s. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? %2$s"
+
+msgid "Send /door to the bot and tap 💳 Sales desk."
+msgstr "Lähetä botille /door ja napauta 💳 Myyntipiste."
+
+msgid "Tap Sales desk in the Me tab of the crew page (%s)."
+msgstr "Napauta Myyntipiste crew-sivun Minä-välilehdellä (%s)."
+
+msgid "Welcome to the %1$s crew. This message explains how it works. %2$s"
+msgstr "Tervetuloa %1$s-crew’hun. Tämä viesti kertoo, miten kaikki toimii. %2$s"
+
+msgid "You can see your own numbers any time: send /me to the bot in a private chat."
+msgstr "Omat lukusi näet milloin vain: lähetä botille /me yksityiskeskustelussa."
+
+msgid "You can see your own numbers any time in the Me tab of the crew page (%s)."
+msgstr "Omat lukusi näet milloin vain crew-sivun Minä-välilehdellä (%s)."
+
+msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. %s"
+msgstr "Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. %s"
+
+msgid "It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
+msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja /me tickets listaa kaikki lippusi."
+
+msgid "It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets."
+msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja crew-sivun Minä-välilehti (%s) listaa kaikki lippusi."
+
+msgid "This was a late cancellation, which counts against your standing. More notice keeps it clear next time."
+msgstr "Tämä oli myöhäinen peruutus, joka heikentää luotettavuuttasi. Aikaisempi ilmoitus pitää tilanteen ensi kerralla puhtaana."
+
+msgid "Manage my tasks"
+msgstr "Hallitse tehtäviäni"
+
+msgid "How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Miten tehtävän voi perua tai löytää sille ottajan: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
+
+msgid "What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page."
+msgstr "Mikä pitää tilanteen ensi kerralla puhtaana: aikaisempi ilmoitus tai botissa löydetty tuuraaja. Henkilölle ilman Telegram-keskustelua: aikaisempi ilmoitus ja linkki crew-sivulle."
+
+msgid "How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Miten saa uuden myyntipisteen linkin: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
+
+msgid "Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Missä omat luvut näkyvät: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
+
+msgid "Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Missä kaikki liput ovat: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."

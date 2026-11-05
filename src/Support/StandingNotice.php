@@ -100,7 +100,9 @@ final class StandingNotice
             $person->id,
             $person->email,
             MessageTemplates::subject($kind, ['person' => $person, 'task' => $task]),
-            MessageAiText::body($kind, ['person' => $person, 'task' => $task], $task->eventPostId)
+            MessageAiText::body($kind, ['person' => $person, 'task' => $task], $task->eventPostId),
+            // A person with no Telegram chat gets the crew page (CrewPageHelp).
+            array_values(array_filter([$isNoShow ? null : CrewPageHelp::manageAction($this->mailer, $person)]))
         );
     }
 

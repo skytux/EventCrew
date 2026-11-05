@@ -162,4 +162,61 @@ final class StandingNoticeTest extends TestCase
         self::assertStringContainsString('You were marked as a no-show', $this->mails[1]);
         self::assertStringNotContainsString('AI ', $this->mails[1]);
     }
+
+    /**
+     * E2: the late-cancel email gives a person with no Telegram chat the crew
+     * page link and a Manage my tasks button; a person with a chat keeps the
+     * bot text and gets no button.
+     */
+    public function testALateCancelNoticeGivesAWebOnlyPersonTheCrewPage(): void
+    {
+        $options = [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            'eventcrew_link_secret' => 'test-secret',
+            'eventcrew_signup_page_id' => 7,
+            EmailTemplate::HTML_OPTION => false,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string|false => 7 === $id ? 'https://site.test/crew/' : false
+        );
+
+        foreach ([null, 4242] as $chatId) {
+            $this->wpdb->nextResults[] = [[
+                'id' => 11, 'task_id' => 5, 'person_id' => 7, 'status' => 'late_cancel',
+                'status_changed_at' => '2026-07-18 09:00:00', 'task_date' => '2026-07-17',
+            ]];
+            $this->wpdb->nextRows[] = [
+                'id' => 5, 'task_date' => '2026-07-17', 'role_slug' => 'decorate', 'capacity' => 2,
+                'event_label' => 'Party',
+            ];
+            $this->wpdb->nextRows[] = [
+                'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => $chatId,
+            ];
+
+            $this->service()->sendDue(25);
+        }
+
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString(
+            'It counts against your standing. More notice next time keeps it clear. Your tasks are under My tasks'
+                . ' in the Me tab of the crew page (https://site.test/crew/).',
+            $this->mails[0]
+        );
+        self::assertStringContainsString(
+            "\nManage my tasks: https://site.test/crew/?eventcrew_login=",
+            $this->mails[0]
+        );
+        self::assertStringNotContainsString('/me', $this->mails[0]);
+
+        self::assertStringContainsString(
+            'It counts against your standing. More notice next time keeps it clear, and so does a replacement: they'
+                . ' send /me to the bot and tap 🔁 Take over a task, and you accept.',
+            $this->mails[1]
+        );
+        self::assertStringNotContainsString('Manage my tasks', $this->mails[1]);
+    }
 }
