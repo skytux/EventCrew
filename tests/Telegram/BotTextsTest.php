@@ -53,7 +53,10 @@ final class BotTextsTest extends TestCase
         Functions\when('wp_remote_post')->alias(function (string $url, array $args): array {
             $this->requests[] = (string) $args['body'];
 
-            return ['answer' => '{"lang": "en", "fi": "x", "sv": "SV-TEXT"}'];
+            // "Translate missing" sends a list of texts and gets a list back.
+            return ['answer' => str_contains((string) $args['body'], 'JSON list')
+                ? '[{"id": "1", "lang": "en", "fi": "x", "sv": "SV-TEXT"}]'
+                : '{"lang": "en", "fi": "x", "sv": "SV-TEXT"}'];
         });
         Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
         Functions\when('wp_remote_retrieve_body')->alias(
@@ -173,9 +176,10 @@ final class BotTextsTest extends TestCase
         $registry = new TranslationRegistry(new TranslatedText(new LlmClient(new Logger()), new Logger()));
         $registry->add(fn (): array => [$this->rowFor($this->registry(), self::BUTTON)]);
 
-        $result = $registry->translateMissing();
+        $id = $this->rowFor($registry, self::BUTTON)->id;
+        $result = $registry->translateRows($registry->missingIds());
 
-        self::assertSame(['filled' => 1, 'failed' => 0, 'error' => ''], $result);
+        self::assertSame(['done' => [$id], 'failed' => [], 'error' => ''], $result);
         self::assertSame(
             [self::BUTTON => ['texts' => ['sv' => 'SV-TEXT'], 'manual' => ['sv' => false]]],
             $this->options[BotTexts::OPTION],

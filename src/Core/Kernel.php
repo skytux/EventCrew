@@ -91,6 +91,7 @@ use EventCrew\Support\TicketQr;
 use EventCrew\Support\TicketReasons;
 use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
@@ -252,6 +253,10 @@ final class Kernel
         // The short DJ or host text under the group board's picture: written
         // by the language model in a single WP-Cron run the board asks for.
         $this->container->get(BoardDjText::class)->boot();
+
+        // "Translate missing" on the Translations page: its batches are a
+        // WP-Cron event, so they run with the page closed.
+        $this->container->get(TranslationJob::class)->boot();
 
         // The AI texts for each event (message templates with the AI tick,
         // and the organizers' own placeholders): written the day before, on
@@ -1580,10 +1585,16 @@ final class Kernel
         );
 
         $this->container->singleton(
+            TranslationJob::class,
+            fn (Container $container) => new TranslationJob($container->get(TranslationRegistry::class))
+        );
+
+        $this->container->singleton(
             TranslationsPage::class,
             fn (Container $container) => new TranslationsPage(
                 $container->get(View::class),
-                $container->get(TranslationRegistry::class)
+                $container->get(TranslationRegistry::class),
+                $container->get(TranslationJob::class)
             )
         );
 

@@ -7,10 +7,12 @@ namespace EventCrew\Tests\Admin;
 use Brain\Monkey\Functions;
 use EventCrew\Admin\TranslationsPage;
 use EventCrew\Admin\View;
+use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\TranslationRow;
 use EventCrew\Tests\FinnishCatalog;
@@ -18,12 +20,16 @@ use EventCrew\Tests\TestCase;
 
 /**
  * The wp-admin Translations page: the language settings, saving one row,
- * "Translate missing" with AI translation off, and the rendered table.
+ * "Translate missing" (it only starts the background job), and the rendered
+ * table.
  */
 final class TranslationsPageTest extends TestCase
 {
     /** @var array<string, mixed> */
     private array $options = [];
+
+    /** @var list<string> The WP-Cron events asked for. */
+    private array $scheduled = [];
 
     protected function setUp(): void
     {
@@ -58,6 +64,14 @@ final class TranslationsPageTest extends TestCase
         );
         Functions\when('wp_unslash')->returnArg(1);
         Functions\when('sanitize_textarea_field')->alias(static fn (string $value): string => trim($value));
+        $this->scheduled = [];
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        Functions\when('wp_schedule_single_event')->alias(function (int $at, string $hook): bool {
+            $this->scheduled[] = $hook;
+
+            return true;
+        });
+        Functions\when('wp_create_nonce')->justReturn('nonce');
         // No model is set up: a request to it would be a test failure.
         Functions\when('wp_remote_post')->alias(static function (): never {
             throw new \RuntimeException('The model was asked.');
@@ -72,7 +86,7 @@ final class TranslationsPageTest extends TestCase
             $this->row('thanks', 'Thanks email', TranslationRow::GROUP_EMAILS),
         ]);
 
-        return new TranslationsPage(new View(), $registry);
+        return new TranslationsPage(new View(), $registry, new TranslationJob($registry));
     }
 
     /** @param list<string> $required */
@@ -136,7 +150,7 @@ final class TranslationsPageTest extends TestCase
         $registry->add(fn (): array => [
             $this->row('moved', 'Address moved', TranslationRow::GROUP_EMAILS, ['{email}']),
         ]);
-        $page = new TranslationsPage(new View(), $registry);
+        $page = new TranslationsPage(new View(), $registry, new TranslationJob($registry));
 
         $notice = $page->applyRow('moved', ['source' => 'Now {email}.', 'texts' => ['fi' => 'Nyt uusi osoite.']]);
 
@@ -154,6 +168,77 @@ final class TranslationsPageTest extends TestCase
         self::assertSame('error', $notice['type']);
         self::assertStringContainsString('AI translation is off', $notice['message']);
         self::assertSame('', $this->options['row.thanks']['texts']['fi']);
+    }
+
+    /**
+     * The button only queues the job and asks WP-Cron for a run: nothing is
+     * translated during the click (a request to the model throws here). A
+     * second click while it runs starts nothing new.
+     */
+    public function testTranslateMissingStartsABackgroundJobOnce(): void
+    {
+        $notice = $this->page()->applyTranslateMissing();
+
+        self::assertSame('success', $notice['type']);
+        self::assertStringContainsString('runs in the background', $notice['message']);
+        self::assertSame([TranslationJob::HOOK], $this->scheduled);
+        $status = TranslationJob::status();
+        self::assertNotNull($status);
+        self::assertTrue($status['running']);
+        self::assertSame(['thanks'], $status['queue']);
+        self::assertSame(1, $status['total']);
+        self::assertSame('', $this->options['row.thanks']['texts']['fi']);
+
+        $notice = $this->page()->applyTranslateMissing();
+
+        self::assertSame('warning', $notice['type']);
+        self::assertStringContainsString('already running', $notice['message']);
+        self::assertSame($status, TranslationJob::status(), 'the running job was not replaced');
+    }
+
+    /** The page says how far the job is, while it runs and after it ended. */
+    public function testTheProgressIsShown(): void
+    {
+        $this->options[TranslationJob::OPTION] = [
+            'running' => true,
+            'total' => 280,
+            'done' => 120,
+            'failed' => 3,
+            'error' => '',
+            'queue' => ['thanks'],
+        ];
+
+        $data = $this->page()->data('', '');
+
+        self::assertSame('Translating: 120 of 280 done. Not translated: 3.', $data['progress']);
+        self::assertTrue($data['running']);
+        self::assertStringContainsString('action=' . TranslationsPage::PROGRESS_ACTION, $data['progress_url']);
+        self::assertStringContainsString('Translating: 120 of 280 done.', $this->rendered(['s' => '', 'show' => '']));
+
+        $this->options[TranslationJob::OPTION] = [
+            'running' => false,
+            'total' => 280,
+            'done' => 270,
+            'failed' => 10,
+            'error' => 'timeout',
+            'queue' => [],
+        ];
+
+        self::assertSame(
+            'Last translation: 270 of 280 done. Not translated: 10. The language model gave the error timeout.',
+            $this->page()->data('', '')['progress']
+        );
+        self::assertSame('', $this->page()->data('', '')['progress_url']);
+        self::assertSame(
+            'Käännetään: 120 / 280 valmiina. Kääntämättä: 3.',
+            Language::run('fi', static fn (): string => TranslationsPage::progressText([
+                'running' => true,
+                'total' => 280,
+                'done' => 120,
+                'failed' => 3,
+                'error' => '',
+            ]))
+        );
     }
 
     public function testTheDataFollowsTheFilter(): void

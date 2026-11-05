@@ -256,6 +256,11 @@ final class Admin
         );
 
         add_action(
+            'wp_ajax_' . TranslationsPage::PROGRESS_ACTION,
+            [$this->container->get(TranslationsPage::class), 'progress']
+        );
+
+        add_action(
             'admin_post_' . NewsletterPage::COPY_ACTION,
             [$this->container->get(NewsletterPage::class), 'viewCopy']
         );

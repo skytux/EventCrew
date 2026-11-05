@@ -6611,18 +6611,32 @@ msgstr "Tallennettu: %s."
 msgid "AI translation is off, so nothing was translated. Switch it on above first."
 msgstr "Tekoälykäännös on pois päältä, joten mitään ei käännetty. Laita se ensin päälle yllä."
 
-#, php-format
-msgid "Translated texts: %1$d. Not translated: %2$d."
-msgstr "Käännetyt tekstit: %1$d. Kääntämättä: %2$d."
-
 msgid "Every text is already in every language."
 msgstr "Jokainen teksti on jo jokaisella kielellä."
 
+msgid "Translation is already running. Nothing new was started."
+msgstr "Kääntäminen on jo käynnissä. Uutta ei aloitettu."
+
+msgid "Translation started. It runs in the background, so you can close this page."
+msgstr "Kääntäminen alkoi. Se jatkuu taustalla, joten voit sulkea tämän sivun."
+
 #, php-format
-msgid "%d text was translated."
-msgid_plural "%d texts were translated."
-msgstr[0] "%d teksti käännettiin."
-msgstr[1] "%d tekstiä käännettiin."
+msgid "Translating: %1$d of %2$d done. Not translated: %3$d."
+msgstr "Käännetään: %1$d / %2$d valmiina. Kääntämättä: %3$d."
+
+#, php-format
+msgid "Last translation: %1$d of %2$d done. Not translated: %3$d."
+msgstr "Edellinen käännös: %1$d / %2$d valmiina. Kääntämättä: %3$d."
+
+msgid "No language model is set up."
+msgstr "Kielimallia ei ole asetettu."
+
+msgid "AI translation was switched off."
+msgstr "Tekoälykäännös laitettiin pois päältä."
+
+#, php-format
+msgid "The language model gave the error %s."
+msgstr "Kielimalli antoi virheen %s."
 
 msgid "Languages"
 msgstr "Kielet"
