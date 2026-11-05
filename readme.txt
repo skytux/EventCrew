@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.62
+Stable tag: 1.140.63
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.63 =
+Two help texts said Finnish and English where the plugin now uses every site language: the ticket email in the organizer guide, and the language model setting.
 
 = 1.140.62 =
 The newsletter is written and sent in every site language: the subject, the footer and the notes each have a text per language, and each subscriber gets the languages HybridPolicy picks (side by side, at most 3, or their own language when the Hybrid tick is off).
@@ -1400,6 +1403,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.63 =
+No settings change.
 
 = 1.140.62 =
 No settings change.
