@@ -318,12 +318,138 @@ final class RosterServiceTest extends TelegramTestCase
         $this->service()->onMark([
             'id' => 'cbq',
             'from' => ['id' => 555],
-            'data' => 'rm:11:c',
+            'data' => 'rm:11:a',
             'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
         ]);
 
-        self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
-        self::assertSame('Marked completed.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame('arrived', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame('Marked arrived.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    /**
+     * The rows that make the Telegram user a non-organizer (id 8) on that
+     * night's sales-desk task, then the marked assignment in $status.
+     */
+    private function salesDeskMarker(string $status): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Lead', 'is_organizer' => 0, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 9, 'status' => $status];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3];
+        $this->wpdb->nextResults[] = [
+            ['id' => 7, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 7, 'person_id' => 8, 'status' => 'signed_up'];
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function creditOrNoShowMarks(): array
+    {
+        return ['done' => ['c'], 'late' => ['l'], 'no-show' => ['n']];
+    }
+
+    /**
+     * @dataProvider creditOrNoShowMarks
+     */
+    public function testTheSalesDeskCannotMarkAnythingButArrived(string $mark): void
+    {
+        $this->salesDeskMarker('signed_up');
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:11:' . $mark,
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            'The welcome crew can only mark people as arrived.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+        self::assertNotContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testTheSalesDeskCannotChangeAMarkAlreadyMade(): void
+    {
+        // Marking a completed person arrived would take their credit away.
+        $this->salesDeskMarker('completed');
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:11:a',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            'The welcome crew can only mark people as arrived.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
+    public function testTheSalesDeskGetsOnlyAnArrivedButton(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Lead', 'is_organizer' => 0, 'telegram_user_id' => 555];
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+        $this->wpdb->nextCols[] = [8];            // personIdsAssignedOn(): the asker is rostered
+        // isOnSalesDesk: the leader task that day, and the asker is on it.
+        $this->wpdb->nextResults[] = [
+            ['id' => 7, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 7, 'person_id' => 8, 'status' => 'signed_up'];
+        // RosterAssembler: one task with one person signed up and one already arrived.
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 9, 'status' => 'signed_up'],
+            ['id' => 12, 'task_id' => 5, 'person_id' => 10, 'status' => 'arrived'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 10, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(
+            [[['text' => '👋 Sam', 'callback_data' => 'rm:11:a']]],
+            $sent['reply_markup']['inline_keyboard']
+        );
+        self::assertStringContainsString('👋 arrived', $sent['text']);
+        self::assertStringNotContainsString('✓ done', $sent['text']);
+    }
+
+    public function testAnOrganizerStillGetsDoneLateAndNoShowButtons(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextCols[] = ['2026-07-20'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(
+            ['rm:11:c', 'rm:11:l', 'rm:11:n'],
+            array_column($sent['reply_markup']['inline_keyboard'][0], 'callback_data')
+        );
+        self::assertStringContainsString('✓ done · ⏰ late · ✗ no-show', $sent['text']);
     }
 
     // --- day buttons and sign-up time ------------------------------------------
