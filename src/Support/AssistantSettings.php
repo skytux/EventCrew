@@ -149,14 +149,16 @@ final class AssistantSettings
      * This is the method to call from a one-off script after
      * require 'wp-load.php'.
      *
-     * @throws \InvalidArgumentException When $url is not an http(s) address.
+     * @throws \InvalidArgumentException When $url is not an https address (or http to localhost).
      */
     public static function saveConnection(string $url, string $model, string $apiKey = '', ?bool $enabled = null): void
     {
         $normalized = self::normalizeUrl($url);
 
         if ('' !== trim($url) && '' === $normalized) {
-            throw new \InvalidArgumentException('The LLM API URL must start with http:// or https://.');
+            throw new \InvalidArgumentException(
+                'The LLM API URL must start with https:// (http:// only to localhost or 127.0.0.1).'
+            );
         }
 
         update_option(self::URL_OPTION, $normalized, false);
@@ -187,7 +189,8 @@ final class AssistantSettings
     /**
      * The address as the client uses it: trimmed, no trailing slash, and no
      * "/chat/completions" if it was pasted with one. '' for anything that is
-     * not an http(s) address.
+     * not an https address, or an http address to localhost or 127.0.0.1:
+     * the API key and the chat text travel to it.
      */
     public static function normalizeUrl(string $url): string
     {
@@ -195,7 +198,7 @@ final class AssistantSettings
         $url = (string) preg_replace('#/chat/completions/?$#i', '', $url);
         $url = rtrim($url, '/');
 
-        if (1 !== preg_match('#^https?://[^\s/?\#]+[^\s]*$#i', $url)) {
+        if (1 !== preg_match('#^https?://[^\s/?\#]+[^\s]*$#i', $url) || ! SecureUrl::isAllowed($url)) {
             return '';
         }
 

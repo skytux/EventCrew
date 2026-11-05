@@ -150,7 +150,11 @@ final class AssistantSettingsTest extends TestCase
 
     public function testNormalizeUrl(): void
     {
-        self::assertSame('http://llm.example.test:8080/v1', AssistantSettings::normalizeUrl(' http://llm.example.test:8080/v1/ '));
+        self::assertSame('https://llm.example.test:8080/v1', AssistantSettings::normalizeUrl(' https://llm.example.test:8080/v1/ '));
+        self::assertSame('http://localhost:8080/v1', AssistantSettings::normalizeUrl('http://localhost:8080/v1/chat/completions'));
+        self::assertSame('http://127.0.0.1/v1', AssistantSettings::normalizeUrl('http://127.0.0.1/v1'));
+        // The key and the chat text travel to it: no plain http to another machine.
+        self::assertSame('', AssistantSettings::normalizeUrl('http://llm.example.test:8080/v1'));
         self::assertSame('', AssistantSettings::normalizeUrl('llm.example.test/v1'));
         self::assertSame('', AssistantSettings::normalizeUrl('javascript:alert(1)'));
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\MailImport;
 
 use Closure;
+use EventCrew\Support\SecureUrl;
 
 /**
  * A JMAP (RFC 8620/8621) mailbox over HTTPS. For hosts that block the IMAP
@@ -309,6 +310,16 @@ final class JmapMailbox implements Mailbox
      */
     private function send(string $method, string $url, ?string $body): array
     {
+        // The login travels with every request, so never over plain http to
+        // another machine. This also covers the API and download addresses
+        // the server's session names.
+        if (! SecureUrl::isAllowed($url)) {
+            throw new MailboxException(
+                'The JMAP address must start with https:// (http:// only to localhost or 127.0.0.1): '
+                . (string) parse_url($url, PHP_URL_HOST)
+            );
+        }
+
         $headers = [
             'Authorization' => 'Basic ' . base64_encode($this->username . ':' . $this->password),
             'Accept' => 'application/json',

@@ -5066,8 +5066,11 @@ msgstr "Läsnäolo"
 msgid "Save first. The test sends one tiny request with the saved settings."
 msgstr "Tallenna ensin. Testi lähettää yhden pienen pyynnön tallennetuilla asetuksilla."
 
-msgid "Settings saved, except the LLM API URL: it must start with http:// or https://."
-msgstr "Asetukset tallennettu, paitsi LLM-API:n osoite: sen täytyy alkaa http:// tai https://."
+msgid "Settings saved, except the LLM API URL: it must start with https:// (http:// only to localhost or 127.0.0.1)."
+msgstr "Asetukset tallennettu, paitsi LLM-API:n osoite: sen täytyy alkaa https:// (http:// vain localhostiin tai 127.0.0.1:een)."
+
+msgid "The mailbox settings were saved, except the server: a JMAP address must start with https:// (http:// only to localhost or 127.0.0.1)."
+msgstr "Postilaatikon asetukset tallennettiin, paitsi palvelin: JMAP-osoitteen täytyy alkaa https:// (http:// vain localhostiin tai 127.0.0.1:een)."
 
 msgid "Test"
 msgstr "Testaa"
