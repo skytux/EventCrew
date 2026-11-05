@@ -672,7 +672,8 @@ final class FollowupMail
                 array_slice($events, self::EVENTS),
                 null,
                 1 === count($languages) ? $languages[0] : '',
-                true
+                true,
+                HybridPolicy::FOLLOWUP
             );
             $html .= '<div style="margin:28px 0 0">' . $coming['html'] . '</div>';
             $text .= "\n\n" . $coming['text'];

@@ -17,6 +17,7 @@ use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -1393,5 +1394,53 @@ final class NewsletterTest extends TestCase
         self::assertSame(168, NewsletterSchedule::clampPreviewHours(500));
         self::assertSame(1, NewsletterSchedule::clampPreviewDays(0));
         self::assertSame('2026-03-01 01:00:00', NewsletterSchedule::addHours('2026-02-28 23:00:00', 2));
+    }
+
+    /**
+     * With 3 site languages a subscriber whose language is the third one
+     * (sv) gets the subject, the footer and the crew note in that language
+     * alone, not the Finnish and English pair, and the "Automatically
+     * translated" note when the text was translated into it. (The tests have
+     * no Swedish catalogue, so the fixed words read as English.)
+     */
+    public function testAThirdSiteLanguageGetsItsOwnSubjectFooterAndNote(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'sv', 'en'];
+        $text = [
+            'fi' => 'Tervetuloa!',
+            'sv' => 'Välkommen!',
+            'en' => 'Welcome!',
+            'source' => 'fi',
+            'translated' => true,
+        ];
+        $mail = $this->composeSample('sv', $text);
+
+        self::assertSame('Coming events – Test Site', $mail['subject']);
+        self::assertStringContainsString('>Välkommen!</p>', $mail['html']);
+        self::assertStringNotContainsString('Tervetuloa', $mail['html']);
+        self::assertStringEndsWith("\n\nAutomatically translated", $mail['text']);
+        self::assertStringNotContainsString('Tulevat', Newsletter::footer('sv') . Newsletter::crewNote('sv'));
+
+        // Written in Swedish: no note on the Swedish email.
+        $own = $this->composeSample('sv', ['source' => 'sv', 'translated' => false] + $text);
+        self::assertStringNotContainsString('Automatically translated', $own['text']);
+
+        // No Swedish text: the main language's text stands in, with no note.
+        $none = $this->composeSample(
+            'sv',
+            ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'source' => 'fi', 'translated' => true]
+        );
+        self::assertStringContainsString('Tervetuloa!', $none['text']);
+        self::assertStringNotContainsString('Automatically translated', $none['text']);
+
+        // A subscriber with no language gets every language, each different text once.
+        self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $this->composeSample('', $text)['subject']);
+    }
+
+    /** The "Automatically translated" note is written in the language it is given. */
+    public function testTheTranslatedNoteIsInTheGivenLanguage(): void
+    {
+        self::assertSame('Automatically translated', NewsletterLayout::translatedNote()['text']);
+        self::assertSame('Käännetty automaattisesti', NewsletterLayout::translatedNote('fi')['text']);
     }
 }

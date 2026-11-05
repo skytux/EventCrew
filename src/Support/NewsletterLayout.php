@@ -102,6 +102,9 @@ final class NewsletterLayout
      * @param bool $band True for the heading in the confirmation card's look
      *        (NewsletterConfirmMail::headingBand()), as the thank-you email
      *        shows it; every-language only.
+     * @param string $kind The message kind (HybridPolicy) whose Hybrid tick
+     *        decides the every-language version: the newsletter's, or the
+     *        post-event email's when it shows the coming events.
      */
     public static function html(
         array $cards,
@@ -109,9 +112,10 @@ final class NewsletterLayout
         ?array $text,
         string $accent,
         string $lang = '',
-        bool $band = false
+        bool $band = false,
+        string $kind = HybridPolicy::NEWSLETTER
     ): string {
-        $langs = self::languages($lang);
+        $langs = self::languages($lang, $kind);
         $words = self::words($langs);
         $headings = array_column($words, 'heading');
         $font = EmailBody::FONT;
@@ -204,10 +208,16 @@ final class NewsletterLayout
      * @param array<int, array<string, mixed>> $later
      * @param array<string, string>|null $text Keyed by language.
      * @param string $lang A site language for a one-language email; '' for every language.
+     * @param string $kind The message kind whose Hybrid tick applies; see html().
      */
-    public static function text(array $cards, array $later, ?array $text, string $lang = ''): string
-    {
-        $langs = self::languages($lang);
+    public static function text(
+        array $cards,
+        array $later,
+        ?array $text,
+        string $lang = '',
+        string $kind = HybridPolicy::NEWSLETTER
+    ): string {
+        $langs = self::languages($lang, $kind);
         $words = self::words($langs);
         $parts = [mb_strtoupper(self::pair($words, 'heading'))];
 
@@ -781,16 +791,16 @@ final class NewsletterLayout
     }
 
     /**
-     * The small muted "Automatically translated" note for an English-only
-     * email whose text was translated by the language model, HTML and plain
-     * text.
+     * The small muted "Automatically translated" note, in $lang, for a
+     * one-language email whose text was translated by the language model,
+     * HTML and plain text.
      *
      * @return array{html: string, text: string}
      */
-    public static function translatedNote(): array
+    public static function translatedNote(string $lang = Language::ENGLISH): array
     {
         $note = (string) Language::run(
-            Language::ENGLISH,
+            $lang,
             static fn (): string => __('Automatically translated', 'eventcrew')
         );
 
@@ -808,17 +818,17 @@ final class NewsletterLayout
     /**
      * The languages the email is written in, main language first: $lang
      * alone when it is a site language; for any other $lang ('' = every
-     * language) the newsletter's every-language version, which is every site
-     * language while hybrid is allowed and ticked (HybridPolicy), else the
-     * main language alone.
+     * language) the every-language version of $kind, which is every site
+     * language while hybrid is allowed and $kind's Hybrid tick is on
+     * (HybridPolicy), else the main language alone.
      *
      * @return list<string>
      */
-    private static function languages(string $lang): array
+    private static function languages(string $lang, string $kind = HybridPolicy::NEWSLETTER): array
     {
         return in_array($lang, HybridPolicy::siteLanguages(), true)
             ? [$lang]
-            : HybridPolicy::languagesFor(HybridPolicy::NEWSLETTER);
+            : HybridPolicy::languagesFor($kind);
     }
 
     /**

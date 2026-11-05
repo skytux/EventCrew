@@ -209,6 +209,36 @@ final class NewsletterLayoutLanguagesTest extends TestCase
         self::assertStringNotContainsString('Tervetuloa', $swedish);
     }
 
+    /**
+     * The every-language version follows the Hybrid tick of the message kind
+     * it is given: with the newsletter's tick off and the post-event email's
+     * on, the newsletter is the main language alone, and the post-event
+     * email's coming events are in both languages.
+     */
+    public function testTheEveryLanguageVersionFollowsTheTickOfItsKind(): void
+    {
+        $this->options[HybridPolicy::OPTION] = [HybridPolicy::NEWSLETTER => false, HybridPolicy::FOLLOWUP => true];
+        $content = self::content();
+
+        $newsletter = NewsletterLayout::text($content['cards'], [], $content['text']);
+        $followup = NewsletterLayout::text($content['cards'], [], $content['text'], '', HybridPolicy::FOLLOWUP);
+        $followupHtml = NewsletterLayout::html(
+            $content['cards'],
+            [],
+            $content['text'],
+            '#7a3cff',
+            '',
+            true,
+            HybridPolicy::FOLLOWUP
+        );
+
+        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\n\nTervetuloa!", $newsletter);
+        self::assertStringNotContainsString('Welcome', $newsletter);
+        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\nCOMING EVENTS\n\nFI: Tervetuloa!", $followup);
+        self::assertStringContainsString('EN: Welcome!', $followup);
+        self::assertStringContainsString('>EN</span>', $followupHtml);
+    }
+
     /** 3 different texts that fit share one line; longer ones go one per line. */
     public function testThreeTextsAreJoinedOnOneLineWhenTheyFit(): void
     {
