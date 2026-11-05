@@ -29,6 +29,7 @@
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
  * @var array<string, mixed> $ticket_text The ticket email's text (TicketText::settings()).
+ * @var array<string, array<string, mixed>> $ticket_reasons The ticket email's {reason} lines by kind (TicketReasons::allSettings()).
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
  * @var int $newsletter_preview_hours Hours after the previous event ends that the preview goes.
@@ -1495,7 +1496,7 @@ if (! defined('ABSPATH')) {
                         <li><code>{first_name}</code> <?php esc_html_e('the ticket holder’s first name. When there is no name, it is left out with the space in front of it: “Hi {first_name},” becomes “Hi,”.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></li>
                         <li><code>{event}</code> <?php esc_html_e('the event’s name.', 'eventcrew'); ?></li>
                         <li><code>{date}</code> <?php esc_html_e('the event’s date, like 14.11.2026.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{reason}</code> <?php esc_html_e('why the person has a ticket, one of four built-in lines: “Thank you for buying a ticket!”, “Thank you for coming! You are on the guest list.”, “Thank you for taking a task!” or “You spent a free-entry credit on this night.”', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></li>
+                        <li><code>{reason}</code> <?php esc_html_e('why the person has a ticket: one of the four lines below, chosen by the kind of ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{tasks}</code> <?php esc_html_e('a crew member’s tasks on the night, as a list. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{plus_ones}</code> <?php esc_html_e('how many people a guest may bring, like “2 people”. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                     </ul>
@@ -1504,6 +1505,27 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+            <?php foreach (\EventCrew\Support\TicketReasons::KINDS as $reason_kind) : ?>
+                <tr>
+                    <th scope="row">
+                        <label for="<?php echo esc_attr('eventcrew-ticket-reason-' . $reason_kind); ?>"><?php echo esc_html(\EventCrew\Support\TicketReasons::label($reason_kind)); ?></label>
+                    </th>
+                    <td>
+                        <?php
+                        \EventCrew\Support\TranslatedText::field(
+                            \EventCrew\Support\TicketReasons::POST_NAME . '[' . $reason_kind . ']',
+                            'eventcrew-ticket-reason-' . $reason_kind,
+                            $ticket_reasons[$reason_kind],
+                            \EventCrew\Support\TicketReasons::MAX_LENGTH,
+                            false
+                        );
+                        ?>
+                        <p class="description">
+                            <?php esc_html_e('The {reason} line of the ticket email for this kind of ticket. Empty, or the same as the built-in line, means the built-in line.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?>
+                        </p>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </table>
 
         <h2><?php esc_html_e('Hybrid messages', 'eventcrew'); ?></h2>

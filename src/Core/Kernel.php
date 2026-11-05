@@ -88,6 +88,7 @@ use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Support\TicketReasons;
 use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRegistry;
@@ -1568,6 +1569,7 @@ final class Kernel
                 );
                 $registry->add([$botProfile, 'translationRows']);
                 $registry->add([TicketText::class, 'translationRows']);
+                $registry->add([TicketReasons::class, 'translationRows']);
                 $registry->add([BotTexts::class, 'translationRows']);
                 $registry->add([SiteTexts::class, 'translationRows']);
                 $registry->add([Roles::class, 'translationRows']);

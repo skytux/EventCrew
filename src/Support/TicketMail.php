@@ -1378,13 +1378,9 @@ final class TicketMail
         if (null !== $deleted) {
             $reason = self::deletedSentence($deleted);
         } elseif ($row instanceof CrewTicket) {
-            $reason = $row->isCredit()
-                ? __('You spent a free-entry credit on this night.', 'eventcrew')
-                : __('Thank you for taking a task!', 'eventcrew');
+            $reason = TicketReasons::text($row->isCredit() ? TicketReasons::CREDIT : TicketReasons::TASK, $lang);
         } else {
-            $reason = $row instanceof Guest
-                ? __('Thank you for coming! You are on the guest list.', 'eventcrew')
-                : __('Thank you for buying a ticket!', 'eventcrew');
+            $reason = TicketReasons::text($row instanceof Guest ? TicketReasons::GUEST : TicketReasons::BOUGHT, $lang);
         }
 
         // A crew ticket lists the person's tasks on the night.

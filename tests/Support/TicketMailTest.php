@@ -839,6 +839,31 @@ final class TicketMailTest extends TestCase
         }
     }
 
+    /**
+     * Q285: a {reason} line edited in Settings > Email is used in each
+     * language part of the email; a kind not edited keeps its built-in line.
+     */
+    public function testAnEditedReasonLineIsUsedInEachLanguage(): void
+    {
+        $this->useOptionStore();
+        $this->options[\EventCrew\Support\TicketReasons::option(\EventCrew\Support\TicketReasons::BOUGHT)] = [
+            'source' => 'Great that you bought one!',
+            'lang' => 'en',
+            'texts' => ['en' => 'Great that you bought one!', 'fi' => 'Hienoa, että ostit lipun!'],
+            'manual' => ['en' => false, 'fi' => true],
+        ];
+        $mail = $this->ticketMail();
+
+        $buyer = $mail->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+        self::assertStringContainsString('Great that you bought one!', $buyer['html']);
+        self::assertStringContainsString('Hienoa, että ostit lipun!', $buyer['html']);
+        self::assertStringNotContainsString('Thank you for buying a ticket!', $buyer['html']);
+
+        $guest = $mail->compose(Guest::fromRow($this->guestRow(9)));
+        self::assertStringContainsString('Thank you for coming! You are on the guest list.', $guest['html']);
+        self::assertStringNotContainsString('Great that you bought one!', $guest['html']);
+    }
+
     /** A credit spent on a night gets the same email, with an EC-F code. */
     public function testACreditGetsTheTicketEmailWithACreditCode(): void
     {

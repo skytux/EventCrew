@@ -41,6 +41,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketFormats;
+use EventCrew\Support\TicketReasons;
 use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\Turnstile;
@@ -172,6 +173,7 @@ final class SettingsPage
                 'newsletter_enabled' => Newsletter::enabled(),
                 'followup_enabled' => FollowupMail::enabled(),
                 'ticket_text' => TicketText::settings(),
+                'ticket_reasons' => TicketReasons::allSettings(),
                 'newsletter_days' => Newsletter::days(),
                 'newsletter_crew' => NewsletterCrew::enabled(),
                 'newsletter_preview_mode' => NewsletterSchedule::previewMode(),
@@ -825,9 +827,10 @@ final class SettingsPage
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         $profile = $this->saveBotProfile();
         $ticketError = $this->saveTicketText();
+        $reasonError = $this->saveTicketReasons();
         $siteError = $this->saveSiteTexts();
         $textsNotice = TranslatedText::errorNotice(
-            current(array_filter([$ticketError, $siteError, $this->rolesError])) ?: ''
+            current(array_filter([$ticketError, $reasonError, $siteError, $this->rolesError])) ?: ''
         );
 
         // Both use the same notice; it is said once.
@@ -896,6 +899,18 @@ final class SettingsPage
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $text->saveSettings($_POST[TicketText::POST_NAME] ?? null);
+    }
+
+    /**
+     * Saves the four {reason} lines of the ticket email (TicketReasons).
+     * Returns the translation error kind, '' when none.
+     */
+    private function saveTicketReasons(): string
+    {
+        $reasons = new TicketReasons($this->llm ?? new LlmClient(new Logger()), new Logger());
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
+        return $reasons->saveSettings($_POST[TicketReasons::POST_NAME] ?? null);
     }
 
     /**
