@@ -1796,7 +1796,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:190 src/Web/NewsletterController.php:1355
+#: src/Web/CrewAdminController.php:190 src/Web/NewsletterController.php:1359
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -3170,7 +3170,7 @@ msgstr ""
 msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:70 templates/admin/diagnostics.php:125 templates/admin/settings.php:1535
+#: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1535
 msgid "Message"
 msgstr ""
 
@@ -3303,7 +3303,7 @@ msgstr ""
 msgid "Next date"
 msgstr ""
 
-#: src/Web/FollowupController.php:151 src/Web/NewsletterController.php:1326 src/Web/NewsletterController.php:1330 templates/admin/settings.php:1586
+#: src/Web/FollowupController.php:151 src/Web/NewsletterController.php:1330 src/Web/NewsletterController.php:1334 templates/admin/settings.php:1586
 #: templates/public/signup.php:664 templates/public/signup.php:1822
 msgid "Next events announcement"
 msgstr ""
@@ -6928,9 +6928,14 @@ msgstr ""
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:66
+#: src/Support/NewsletterConfirmMail.php:82
 #. translators: 1: the site's name, 2: the site's email address
 msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
+msgstr ""
+
+#: src/Support/NewsletterConfirmMail.php:69
+#. translators: %s: the site's name
+msgid "This address already gets the next events announcement of %s, so nothing more is needed."
 msgstr ""
 
 #: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:1141
@@ -6979,7 +6984,7 @@ msgid "This link is invalid or has expired"
 msgstr ""
 
 #: src/Support/TakeoverService.php:132 src/Telegram/ManageController.php:168 src/Telegram/ReplacementService.php:227 src/Web/FollowupController.php:185
-#: src/Web/NewsletterController.php:1314 src/Web/TakeoverController.php:75
+#: src/Web/NewsletterController.php:1318 src/Web/TakeoverController.php:75
 msgid "This link is no longer valid."
 msgstr ""
 
@@ -7941,11 +7946,11 @@ msgstr ""
 msgid "You are already set up. Tap a task on the board to sign up."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:62
+#: src/Support/NewsletterConfirmMail.php:65 src/Support/NewsletterConfirmMail.php:78
 msgid "You are already subscribed"
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:61
+#: src/Support/NewsletterConfirmMail.php:64 src/Support/NewsletterConfirmMail.php:77
 msgid "You are already subscribed to the next events announcement"
 msgstr ""
 
@@ -8030,7 +8035,7 @@ msgstr ""
 msgid "You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
 msgstr ""
 
-#: src/Web/NewsletterController.php:1292
+#: src/Web/NewsletterController.php:1296
 #. translators: %s: the site's name
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
