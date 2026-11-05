@@ -1401,7 +1401,7 @@ final class TicketMail
             '<p style="margin:0 0 10px;font-size:16px;line-height:1;color:#c9802f;text-align:center">✦</p>'
                 . '<p style="margin:0 0 6px;font-family:%1$s;font-size:12px;line-height:1.4;letter-spacing:.14em;'
                 . 'text-transform:uppercase;color:%2$s;text-align:center">%3$s</p>'
-                . '<h1 class="ec-shimmer-light" style="margin:0;font-family:%4$s;font-size:27px;font-weight:700;'
+                . '<h1 class="ec-shimmer" style="margin:0;font-family:%4$s;font-size:27px;font-weight:700;'
                 . 'line-height:1.25;color:%5$s;text-align:center">%6$s — %7$s</h1>'
                 . '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="margin:18px auto 24px"><tr><td width="48" height="2" bgcolor="#d9b27a"'
