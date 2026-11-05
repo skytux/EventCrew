@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.24
+Stable tag: 1.140.25
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.25 =
+Deleting the account needs a one-time link sent by email, valid 30 minutes, and a button press (Q251, S-W4).
 
 = 1.140.24 =
 An emailed sign-in link opened twice at the same moment signs in only one browser (Q251, S-W7).
@@ -1286,6 +1289,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.25 =
+No settings change.
 
 = 1.140.24 =
 No settings change.
