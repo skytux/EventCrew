@@ -1534,6 +1534,45 @@ final class SignupControllerTest extends TestCase
     }
 
     /**
+     * Signed out with the Telegram sign-in on, the card has the code panel:
+     * "Your code", two empty boxes the script fills, the line on what to do
+     * and the Open Telegram link. The page is cached, so no code and no bot
+     * link are in it, and nothing opens a window by itself.
+     */
+    public function testTheSignedOutCardHasTheCodePanelWithoutACode(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        $this->telegramOn();
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller($this->telegramLogin())->renderShortcode();
+
+        self::assertStringContainsString('data-eventcrew-tg-wait hidden', $html);
+        self::assertStringContainsString('>Your code<', $html);
+        self::assertSame(2, substr_count($html, '<span class="eventcrew-tg-pair" data-eventcrew-tg-pair></span>'));
+        self::assertStringContainsString('Telegram shows three codes. Press this one.', $html);
+        self::assertMatchesRegularExpression(
+            '/<a class="tg-auth-button" href="#" target="_blank" rel="noopener" data-eventcrew-tg-open>\s*'
+            . 'Open Telegram\s*<\/a>/',
+            $html
+        );
+        self::assertStringContainsString('Waiting for Telegram…', $html);
+        self::assertStringNotContainsString(
+            't.me/crewbot',
+            $html,
+            'the bot link comes with the code, not in the page'
+        );
+        self::assertStringNotContainsString(
+            "window.open('', '_blank')",
+            $html,
+            'Telegram opens only from the button'
+        );
+        self::assertStringEndsWith('</script>', rtrim($html));
+    }
+
+    /**
      * @return array<string, array{0: array<string, mixed>}>
      */
     public static function telegramUnavailable(): array

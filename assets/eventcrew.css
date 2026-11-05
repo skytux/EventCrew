@@ -914,8 +914,59 @@
     border-radius: var(--eventcrew-radius);
 }
 .eventcrew-signup .eventcrew-tg-note { margin: .75em 0 0; }
+/*
+ * The code card after Telegram was pressed: "Your code", the four digits as
+ * two boxed pairs, one line on what to do, then Open Telegram (or, once that
+ * was pressed, "Waiting for Telegram..." and a link to open it again).
+ * Centred, like the choice row it replaces.
+ */
+.eventcrew-signup .eventcrew-tg-wait { text-align: center; }
 .eventcrew-signup .eventcrew-tg-wait p { margin: 0 0 .75em; }
-.eventcrew-signup .eventcrew-tg-wait a { color: var(--eventcrew-accent); font-weight: 600; }
+.eventcrew-signup .eventcrew-tg-wait a:not(.tg-auth-button) { color: var(--eventcrew-accent); font-weight: 600; }
+.eventcrew-signup .eventcrew-tg-code-label {
+    font-size: .875rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .75;
+}
+.eventcrew-signup .eventcrew-tg-wait .eventcrew-tg-code {
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    margin: 0 0 1rem;
+}
+.eventcrew-signup .eventcrew-tg-pair {
+    box-sizing: border-box;
+    min-width: 2.4em;
+    padding: .1em .3em;
+    border: 2px solid var(--eventcrew-line);
+    border-radius: var(--eventcrew-radius);
+    background: var(--eventcrew-surface);
+    color: var(--eventcrew-ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: clamp(2.25rem, 11vw, 3rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    letter-spacing: .04em;
+}
+.eventcrew-signup .eventcrew-tg-wait .eventcrew-tg-open {
+    display: flex;
+    justify-content: center;
+}
+/* A link with the button's look: keep the theme's link colour and underline off it. */
+.eventcrew-signup .eventcrew-tg-open .tg-auth-button,
+.eventcrew-signup .eventcrew-tg-open .tg-auth-button:visited,
+.eventcrew-signup .eventcrew-tg-open .tg-auth-button:hover,
+.eventcrew-signup .eventcrew-tg-open .tg-auth-button:focus-visible {
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+}
+.eventcrew-signup .eventcrew-tg-waiting { font-weight: 600; }
+/* Last, so it beats the display: flex rules above. */
+.eventcrew-signup .eventcrew-tg-wait [hidden] { display: none; }
 .eventcrew-signup .eventcrew-signin-back { margin: 0 0 .75em; font-size: 1rem; font-weight: 600; }
 .eventcrew-signup .eventcrew-signin-back a { color: var(--eventcrew-accent); }
 

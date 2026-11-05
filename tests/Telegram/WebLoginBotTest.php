@@ -201,7 +201,12 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertCount(1, $rows);
         self::assertCount(3, $rows[0]);
 
-        $shown = array_column($rows[0], 'text');
+        // The buttons show each code in two pairs, as the page does; the
+        // callback data carries the plain four digits.
+        $shown = array_map(
+            static fn (array $button): string => substr((string) $button['callback_data'], -4),
+            $rows[0]
+        );
         self::assertContains($match, $shown);
         self::assertCount(3, array_unique($shown), 'three different codes');
         $decoys = $this->storedCode($code)['decoys'];
@@ -215,10 +220,17 @@ final class WebLoginBotTest extends TelegramTestCase
         );
 
         foreach ($rows[0] as $button) {
-            self::assertMatchesRegularExpression('/^[0-9]{4}$/', $button['text']);
-            self::assertSame('tgl:' . $code . ':' . $button['text'], $button['callback_data']);
+            self::assertMatchesRegularExpression('/^[0-9]{2} [0-9]{2}$/', $button['text']);
+            self::assertSame('tgl:' . $code . ':' . str_replace(' ', '', $button['text']), $button['callback_data']);
             self::assertLessThanOrEqual(64, strlen($button['callback_data']), 'Telegram allows 64 bytes');
         }
+    }
+
+    public function testAButtonShowsItsCodeInTwoPairs(): void
+    {
+        self::assertSame('47 19', WebLoginBot::buttonText('4719'));
+        self::assertSame('00 07', WebLoginBot::buttonText('0007'));
+        self::assertSame('123', WebLoginBot::buttonText('123'), 'not four digits: as it is');
     }
 
     public function testOpeningTheLinkAgainShowsTheSameThreeCodes(): void

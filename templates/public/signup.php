@@ -156,12 +156,39 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </div>
                     <p class="eventcrew-muted eventcrew-hint eventcrew-tg-note" data-eventcrew-tg-note hidden></p>
                 </div>
+                <?php
+                /*
+                 * The code first, Telegram second: the card shows the code in
+                 * two pairs and Telegram opens only on Open Telegram, a plain
+                 * link pressed by the person (no blocked pop-up, and on a phone
+                 * t.me opens the app). The digits are filled in by the script;
+                 * they are never in the cached markup.
+                 */
+                ?>
                 <div class="eventcrew-tg-wait" data-eventcrew-tg-wait hidden>
-                    <p class="eventcrew-tg-wait-text"><?php echo esc_html(\EventCrew\Web\SignupController::noticeText('tg_started')); ?></p>
-                    <p class="eventcrew-tg-match" data-eventcrew-tg-match></p>
-                    <p>
-                        <a href="#" target="_blank" rel="noopener" data-eventcrew-tg-again><?php esc_html_e('Open Telegram again', 'eventcrew'); ?></a>
+                    <p class="eventcrew-tg-code-label"><?php esc_html_e('Your code', 'eventcrew'); ?></p>
+                    <p class="eventcrew-tg-code" data-eventcrew-tg-code>
+                        <span class="eventcrew-tg-pair" data-eventcrew-tg-pair></span>
+                        <span class="eventcrew-tg-pair" data-eventcrew-tg-pair></span>
                     </p>
+                    <p class="eventcrew-tg-hint">
+                        <?php esc_html_e('Telegram shows three codes. Press this one.', 'eventcrew'); ?>
+                    </p>
+                    <p class="eventcrew-tg-open" data-eventcrew-tg-open-row>
+                        <a class="tg-auth-button" href="#" target="_blank" rel="noopener" data-eventcrew-tg-open>
+                            <?php esc_html_e('Open Telegram', 'eventcrew'); ?>
+                        </a>
+                    </p>
+                    <div class="eventcrew-tg-opened" data-eventcrew-tg-opened hidden>
+                        <p class="eventcrew-tg-waiting" role="status">
+                            <?php esc_html_e('Waiting for Telegram…', 'eventcrew'); ?>
+                        </p>
+                        <p>
+                            <a href="#" target="_blank" rel="noopener" data-eventcrew-tg-again>
+                                <?php esc_html_e('Open Telegram again', 'eventcrew'); ?>
+                            </a>
+                        </p>
+                    </div>
                 </div>
             <?php endif; ?>
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
@@ -2871,9 +2898,12 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  * Sign in through the Telegram bot. When it is available the sign-in card
  * offers a choice: the email form, or the Telegram button. Pressing Telegram
  * asks the site for a one-time code (the site also sets a cookie that ties
- * the code to this browser), opens the bot in a new tab with that code, and
- * then asks the site every 3 seconds whether the bot has approved the code.
- * Once it has, the site starts the session and the page reloads signed in.
+ * the code to this browser) and shows the 4-digit code in two pairs, with an
+ * Open Telegram button. Nothing opens until that button is pressed: it is a
+ * plain link to the bot, so no pop-up blocker stops it and a phone opens the
+ * Telegram app. From when the code shows, the page asks the site every 3
+ * seconds whether the bot has approved the code. Once it has, the site
+ * starts the session and the page reloads signed in.
  *
  * The choice shows straight away (a small script under the form swaps it in
  * before the first paint); the email form shows when Email is pressed.
@@ -2893,9 +2923,10 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     var ajax = choice.getAttribute('data-ajax');
     var failedText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_failed')); ?>;
     var expiredText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_expired')); ?>;
-    var matchBox = wait ? wait.querySelector('[data-eventcrew-tg-match]') : null;
-    var matchText = <?php echo wp_json_encode(/* translators: %s: a 4-digit code, one of the bot's buttons */
-        __('Your code is %s. In Telegram, press this code.', 'eventcrew')); ?>;
+    var pairs = wait ? wait.querySelectorAll('[data-eventcrew-tg-pair]') : [];
+    var openRow = wait ? wait.querySelector('[data-eventcrew-tg-open-row]') : null;
+    var openButton = wait ? wait.querySelector('[data-eventcrew-tg-open]') : null;
+    var opened = wait ? wait.querySelector('[data-eventcrew-tg-opened]') : null;
     var POLL_MS = 3000;
     var login = '';       // the code being waited on; '' when not waiting
     var deadline = 0;     // when the code expires, in ms since the epoch
@@ -2912,15 +2943,18 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         setTimeout(function () { box.classList.remove('show'); }, 6000);
     }
 
-    // The Telegram button has Telegram's colours (see eventcrew.css). Copy the
-    // Email button's shape and font onto it, whatever the theme makes that.
+    // The Telegram buttons have Telegram's colours (see eventcrew.css). Copy
+    // the Email button's shape and font onto them, whatever the theme makes
+    // that. Run while the Email button shows, so its height is a real one.
     function matchLook() {
-        var tg = choice.querySelector('.tg-auth-button');
-        if (!tg || !emailButton || !window.getComputedStyle) { return; }
+        if (!emailButton || !window.getComputedStyle) { return; }
         var look = window.getComputedStyle(emailButton);
-        ['fontFamily', 'fontWeight', 'fontSize', 'letterSpacing', 'textTransform', 'borderRadius',
-            'paddingLeft', 'paddingRight', 'height', 'lineHeight'].forEach(function (key) {
-            tg.style[key] = look[key];
+        [tgButton, openButton].forEach(function (tg) {
+            if (!tg) { return; }
+            ['fontFamily', 'fontWeight', 'fontSize', 'letterSpacing', 'textTransform', 'borderRadius',
+                'paddingLeft', 'paddingRight', 'height', 'lineHeight'].forEach(function (key) {
+                tg.style[key] = look[key];
+            });
         });
     }
 
@@ -2942,14 +2976,32 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (back) { back.hidden = false; }
     }
 
-    function showWaiting(url, match) {
+    // The code in two pairs, "47" "19": easier to hold in mind than "4719",
+    // and the bot's buttons show it the same way.
+    function showCode(url, match) {
         choice.hidden = true;
-        if (matchBox) { matchBox.textContent = matchText.replace('%s', match); }
+        if (pairs.length === 2) {
+            var whole = match.length === 4;
+            pairs[0].textContent = whole ? match.slice(0, 2) : match;
+            pairs[1].textContent = whole ? match.slice(2) : '';
+            pairs[1].hidden = !whole;
+        }
         if (note) { note.hidden = true; }
+        if (openButton) { openButton.href = url; }
         if (again) { again.href = url; }
+        if (openRow) { openRow.hidden = false; }
+        if (opened) { opened.hidden = true; }
         if (wait) { wait.hidden = false; }
         if (form) { form.hidden = true; }
         if (back) { back.hidden = false; }
+    }
+
+    // Open Telegram was pressed: the link itself opens the bot. Swap the
+    // button for the waiting line, keeping the code and an "again" link.
+    function showOpened() {
+        if (!login) { return; }
+        if (openRow) { openRow.hidden = true; }
+        if (opened) { opened.hidden = false; }
     }
 
     function stopWaiting() {
@@ -3031,34 +3083,21 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         starting = true;
         if (note) { note.hidden = true; }
 
-        // Opened now, inside the click, so the browser does not block it;
-        // the bot's address is filled in when the site answers.
-        var tab = null;
-        try { tab = window.open('', '_blank'); } catch (err) { tab = null; }
-
         post({ action: choice.getAttribute('data-start-action') }).then(function (data) {
             starting = false;
             var code = data && data.code ? data.code : 'tg_failed';
 
             if (code !== 'tg_started' || !data.login || !data.url || !data.match) {
-                if (tab) { tab.close(); }
                 toast((data && data.notice) || failedText);
                 return;
             }
 
             login = String(data.login);
             deadline = Date.now() + (parseInt(data.expires_in, 10) || 1800) * 1000;
-            showWaiting(data.url, String(data.match));
-
-            if (tab) {
-                try { tab.opener = null; } catch (err) { /* nothing to do */ }
-                tab.location.href = data.url;
-            }
-
+            showCode(data.url, String(data.match));
             schedule();
         }).catch(function () {
             starting = false;
-            if (tab) { tab.close(); }
             toast(failedText);
         });
     }
@@ -3069,6 +3108,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
     if (tgButton) {
         tgButton.addEventListener('click', function () { start(); });
+    }
+
+    // Not prevented: the link opens the bot, in the Telegram app on a phone.
+    if (openButton) {
+        openButton.addEventListener('click', function () { showOpened(); });
     }
 
     if (back) {
