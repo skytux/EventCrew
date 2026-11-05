@@ -3702,8 +3702,14 @@ msgstr "Vahvistukset siitä, mihin ilmoittauduit, ja muistutukset siitä lähete
 msgid "Everything else is optional and switched off whenever you like — open-task alerts, standing notices, credit and ticket news, permission messages, each on its own. Your notification settings are on your own Crew app. There is no penalty for switching any of them off."
 msgstr "Kaikki muu on valinnaista ja poistettavissa käytöstä milloin tahansa — avoimien tehtävien hälytykset, luotettavuusilmoitukset, vapaalippu- ja lippu-uutiset, lupaviestit, kukin erikseen. Ilmoitusasetuksesi ovat omassa Crew-sovelluksessasi. Minkään niistä poistamisesta ei seuraa haittaa."
 
-msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom."
-msgstr "Tapahtumiemme järjestäjät ja illan myyntipistettä hoitava crew näkevät nimesi, luotettavuutesi ja tehtävät, joissa olet mukana — eli läsnäololistan ja ovilistan. Muut crew’n jäsenet näkevät vain, että tehtävä on varattu, eivät koskaan kenen toimesta."
+msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on. No other crew member sees your standing or your cancel and no-show marks."
+msgstr "Tapahtumiemme järjestäjät ja illan myyntipistettä hoitava crew näkevät nimesi, luotettavuutesi ja tehtävät, joissa olet mukana. Kukaan muu crew’n jäsen ei näe luotettavuuttasi eikä peruutus- ja poissaolomerkintöjäsi."
+
+msgid "Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next three events. Your name also appears in the group when someone covers a task for you, or you cover one for someone else."
+msgstr "Muut crew’n jäsenet voivat nähdä nimesi ja tehtäväsi. Saman illan crew näkee ne botin /roster-listassa, ja crew’n Telegram-ryhmän tehtävätaulu näyttää kolmen seuraavan tapahtuman tehtävien tekijöiden etunimet. Nimesi näkyy ryhmässä myös, kun joku tuuraa sinua tehtävässä tai sinä tuuraat jotakuta."
+
+msgid "Other crew members on the same night can see your name and the tasks you are on, in the bot’s /roster. Your name also appears in the crew Telegram group when someone covers a task for you, or you cover one for someone else."
+msgstr "Saman illan muut crew’n jäsenet voivat nähdä nimesi ja tehtäväsi botin /roster-listassa. Nimesi näkyy crew’n Telegram-ryhmässä myös, kun joku tuuraa sinua tehtävässä tai sinä tuuraat jotakuta."
 
 msgid "We do not sell your data, we do not use it for advertising, and we do not profile you for anything beyond deciding whether you can claim a task."
 msgstr "Emme myy tietojasi, emme käytä niitä mainontaan emmekä profiloi sinua mihinkään muuhun kuin sen päättämiseen, voitko varata tehtävän."

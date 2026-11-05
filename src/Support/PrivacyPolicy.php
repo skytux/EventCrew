@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\TelegramClient;
 
@@ -499,14 +500,30 @@ final class PrivacyPolicy
     {
         $paragraphs = [
             __(
-                'The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom.',
-                'eventcrew'
-            ),
-            __(
-                'We do not sell your data, we do not use it for advertising, and we do not profile you for anything beyond deciding whether you can claim a task.',
+                'The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on. No other crew member sees your standing or your cancel and no-show marks.',
                 'eventcrew'
             ),
         ];
+
+        // Who else sees names: the bot's /roster (crew on the same night),
+        // the group's takeover message and, with the card format on, the
+        // group board's first names (BoardRenderer::crewBoard()).
+        if (self::telegramEnabled()) {
+            $paragraphs[] = BoardService::cardsOn()
+                ? __(
+                    'Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next three events. Your name also appears in the group when someone covers a task for you, or you cover one for someone else.',
+                    'eventcrew'
+                )
+                : __(
+                    'Other crew members on the same night can see your name and the tasks you are on, in the bot’s /roster. Your name also appears in the crew Telegram group when someone covers a task for you, or you cover one for someone else.',
+                    'eventcrew'
+                );
+        }
+
+        $paragraphs[] = __(
+            'We do not sell your data, we do not use it for advertising, and we do not profile you for anything beyond deciding whether you can claim a task.',
+            'eventcrew'
+        );
 
         $processors = [];
 
