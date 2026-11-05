@@ -2552,27 +2552,37 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting.', 'eventcrew'); ?>
         </p>
         <p class="description">
-            <?php esc_html_e('It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there.', 'eventcrew'); ?>
+            <?php esc_html_e('Refresh edits the board where it already sits, so nobody in the group is notified. Post a new board puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours).', 'eventcrew'); ?>
         </p>
         <?php if (0 === $telegram['board_chat_id']) : ?>
             <div class="notice notice-warning inline" style="margin:1em 0">
                 <p>
-                    <?php esc_html_e('There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it.', 'eventcrew'); ?>
+                    <?php esc_html_e('There is no board yet. Add the bot to your group: the board appears there by itself. If the bot is already in the group, send /board there once instead.', 'eventcrew'); ?>
                 </p>
+                <?php if ('' !== $telegram['bot_username']) : ?>
+                    <p>
+                        <a
+                            class="button button-primary"
+                            href="<?php echo esc_url('https://t.me/' . rawurlencode($telegram['bot_username']) . '?startgroup=board'); ?>"
+                            target="_blank"
+                            rel="noopener"><?php esc_html_e('Add the bot to your group', 'eventcrew'); ?></a>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('Telegram asks which group. Reload this page afterwards to see the board’s group here.', 'eventcrew'); ?>
+                    </p>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <?php $eventcrew_no_board = 0 === $telegram['board_chat_id'] ? ['disabled' => 'disabled'] : []; ?>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin:1em 0">
             <input type="hidden" name="action" value="eventcrew_refresh_board">
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
-            <?php
-            submit_button(
-                __('Refresh the board', 'eventcrew'),
-                'secondary',
-                'submit',
-                true,
-                0 === $telegram['board_chat_id'] ? ['disabled' => 'disabled'] : []
-            );
-            ?>
+            <?php submit_button(__('Refresh the board', 'eventcrew'), 'secondary', 'submit', false, $eventcrew_no_board); ?>
+        </form>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin:1em 0 1em .5em">
+            <input type="hidden" name="action" value="eventcrew_post_board">
+            <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+            <?php submit_button(__('Post a new board', 'eventcrew'), 'secondary', 'submit', false, $eventcrew_no_board); ?>
         </form>
     <?php endif; ?>
     </div>

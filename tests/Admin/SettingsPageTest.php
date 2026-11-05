@@ -30,7 +30,7 @@ final class SettingsPageTest extends TelegramTestCase
     }
 
     /** Runs an admin-post handler, which ends in a redirect, and returns the notice it set. */
-    private function save(array $post): string
+    private function save(array $post, string $handler = 'saveImportMailbox'): string
     {
         $notice = '';
         \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
@@ -55,13 +55,32 @@ final class SettingsPageTest extends TelegramTestCase
         $_POST = $post;
 
         try {
-            $this->page()->saveImportMailbox();
+            $this->page()->{$handler}();
             self::fail('Expected the redirect.');
         } catch (\RuntimeException $e) {
             self::assertSame('redirected', $e->getMessage());
         }
 
         return $notice;
+    }
+
+    public function testPostANewBoardRepostsIntoTheBoardsGroup(): void
+    {
+        $this->options[\EventCrew\Telegram\BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->wpdb->nextResults[] = []; // render: no upcoming tasks
+
+        $notice = $this->save([], 'postBoard');
+
+        self::assertSame('A new board has been posted in the group.', $notice);
+        self::assertContains('sendMessage', $this->calledMethods());
+    }
+
+    public function testPostANewBoardWithoutAGroupPostsNothing(): void
+    {
+        $notice = $this->save([], 'postBoard');
+
+        self::assertStringStartsWith('The board has no group yet.', $notice);
+        self::assertNotContains('sendMessage', $this->calledMethods());
     }
 
     public function testTheImportMailboxIsSaved(): void
