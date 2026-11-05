@@ -345,7 +345,7 @@ msgstr ""
 msgid "+1 allowed"
 msgstr ""
 
-#: src/Telegram/HelpService.php:224
+#: src/Telegram/HelpService.php:225
 msgid "/board in a private chat – also ➕ to put a person on a task"
 msgstr ""
 
@@ -353,15 +353,15 @@ msgstr ""
 msgid "/board – the open tasks; in a private chat also the tasks of your roles"
 msgstr ""
 
-#: src/Telegram/HelpService.php:213
+#: src/Telegram/HelpService.php:214
 msgid "/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk"
 msgstr ""
 
-#: src/Telegram/HelpService.php:221
+#: src/Telegram/HelpService.php:222
 msgid "/door add [date] Name +N ; note – add a guest (also edit, remove)"
 msgstr ""
 
-#: src/Telegram/HelpService.php:226
+#: src/Telegram/HelpService.php:227
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr ""
 
@@ -385,7 +385,7 @@ msgstr ""
 msgid "/newsletter See you on the dance floor!"
 msgstr ""
 
-#: src/Telegram/HelpService.php:223
+#: src/Telegram/HelpService.php:224
 msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role"
 msgstr ""
 
@@ -393,15 +393,15 @@ msgstr ""
 msgid "/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
 msgstr ""
 
-#: src/Telegram/HelpService.php:212
-msgid "/roster [date] – who works that night; mark ✓ done, ⏰ late, ✗ no-show"
+#: src/Telegram/HelpService.php:213
+msgid "/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers ✓ done, ⏰ late, ✗ no-show"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:150
 msgid "/roster in a private chat with the bot shows the night's crew. Mark each person arrived, arrived late, completed or no-show, one by one or a whole crew at once. EventCrew > Roster in wp-admin does the same for any date. The night's welcome crew can mark the crew too."
 msgstr ""
 
-#: src/Telegram/HelpService.php:225
+#: src/Telegram/HelpService.php:226
 msgid "/say text – post a message in the group; you see it first"
 msgstr ""
 
@@ -3517,7 +3517,7 @@ msgstr ""
 msgid "Organizer notice channels"
 msgstr ""
 
-#: src/Telegram/HelpService.php:220
+#: src/Telegram/HelpService.php:221
 msgid "Organizers"
 msgstr ""
 

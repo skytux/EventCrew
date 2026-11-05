@@ -82,7 +82,12 @@ final class AssistantActions
         ];
 
         if ($audience['organizer'] || $audience['welcomeCrew']) {
-            $list[] = self::entry('/roster [date]', 'who works that night, and marking them arrived or done');
+            $list[] = self::entry(
+                '/roster [date]',
+                "who works that night, with buttons to mark them: an organizer marks done, late or no-show;"
+                . " someone on that night's sales-desk task who is not an organizer marks only arrived,"
+                . ' for people still signed up'
+            );
             $list[] = self::entry('/door [date]', 'the door buttons: door list, guest list, sales desk');
             $list[] = self::entry('menu:doorlist [date]', 'the door list of a night');
             $list[] = self::entry('menu:guestlist [date]', 'the guest list of a night');
