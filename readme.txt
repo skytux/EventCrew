@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.73
+Stable tag: 1.140.74
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.74 =
+Newsletter footer depends on the subscriber: crew members are told they get it because they are in the crew, other subscribers no longer get the crew line.
 
 = 1.140.73 =
 Translate missing on the Translations page now starts a background job and returns at once; you can close the page. It sends up to 30 texts per AI request and the page shows how far it is. A second click while it runs starts nothing. A translation that drops a required placeholder is not stored.
@@ -1433,6 +1436,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.74 =
+No settings change.
 
 = 1.140.73 =
 No settings change.

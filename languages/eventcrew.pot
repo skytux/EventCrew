@@ -1643,10 +1643,6 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Support/Newsletter.php:469
-msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
-msgstr ""
-
 #: src/Support/PrivacyPolicy.php:466
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr ""
@@ -1796,7 +1792,7 @@ msgstr ""
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr ""
 
-#: src/Support/Newsletter.php:901
+#: src/Support/Newsletter.php:920
 msgid "Do Not Send This"
 msgstr ""
 
@@ -2375,7 +2371,7 @@ msgstr ""
 msgid "Give their name."
 msgstr ""
 
-#: src/Support/Newsletter.php:904
+#: src/Support/Newsletter.php:923
 #. translators: 1: date, like 14.11.2026, 2: time, like 10:00, 3: number of subscribers
 msgid "Goes out on %1$s at %2$s to %3$d subscriber."
 msgid_plural "Goes out on %1$s at %2$s to %3$d subscribers."
@@ -3018,6 +3014,10 @@ msgstr ""
 
 #: src/Web/NewsletterController.php:800
 msgid "Leave this field empty"
+msgstr ""
+
+#: src/Support/Newsletter.php:477
+msgid "Leaving the announcement does not stop your other crew messages."
 msgstr ""
 
 #: templates/admin/settings.php:1846
@@ -8062,6 +8062,10 @@ msgstr ""
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
 
+#: src/Support/Newsletter.php:456
+msgid "You get this email because you are in the crew. Change your details or leave the announcement"
+msgstr ""
+
 #: src/Support/FollowupMail.php:716 src/Support/TicketMail.php:1049
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
@@ -8070,7 +8074,7 @@ msgstr ""
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:452
+#: src/Support/Newsletter.php:460
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
