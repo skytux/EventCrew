@@ -2269,6 +2269,13 @@ msgid_plural "%d people updated."
 msgstr[0] "%d henkilö päivitetty."
 msgstr[1] "%d henkilöä päivitetty."
 
+#: src/Admin/RosterPage.php
+#. translators: %d: number of roster marks that were not saved
+msgid "%d mark was not saved because it changed after you opened the page; reload to see it."
+msgid_plural "%d marks were not saved because they changed after you opened the page; reload to see them."
+msgstr[0] "%d merkintää ei tallennettu, koska sitä muutettiin sivun avaamisen jälkeen; lataa sivu uudelleen nähdäksesi sen."
+msgstr[1] "%d merkintää ei tallennettu, koska niitä muutettiin sivun avaamisen jälkeen; lataa sivu uudelleen nähdäksesi ne."
+
 #: src/Admin/RosterPage.php:211 src/Web/CrewAdminRoster.php:403
 msgid "Free entry closed for this date."
 msgstr "Ilmaiset sisäänpääsyt suljettu tälle päivälle."

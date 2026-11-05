@@ -66,7 +66,7 @@ final class RosterPageTest extends TestCase
 
     public function testUpdateAttendanceRecordsTheWordPressUser(): void
     {
-        $_POST = ['status' => ['11' => 'no_show'], 'roster_date' => '2026-07-20'];
+        $_POST = ['status' => ['11' => 'no_show'], 'shown' => ['11' => 'signed_up'], 'roster_date' => '2026-07-20'];
         $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
 
         $page = $this->page();
@@ -76,6 +76,57 @@ final class RosterPageTest extends TestCase
         self::assertSame('no_show', $update['data']['status']);
         self::assertSame(3, $update['data']['changed_by']);
         self::assertSame(MarkedBy::WP_USER, $update['data']['changed_by_kind']);
+    }
+
+    /** @var array{type?: string, message?: string} */
+    private array $notice = [];
+
+    /** Captures the notice the save leaves for the next page load. */
+    private function captureNotice(): void
+    {
+        Functions\when('set_transient')->alias(function (string $key, mixed $value): bool {
+            $this->notice = $value;
+
+            return true;
+        });
+    }
+
+    public function testUpdateAttendanceDoesNotWriteARowTheOrganizerLeftAlone(): void
+    {
+        // Checked in at the door after the page was opened; the page still
+        // shows "Signed up" and the organizer did not touch it.
+        $_POST = ['status' => ['11' => 'signed_up'], 'shown' => ['11' => 'signed_up'], 'roster_date' => '2026-07-20'];
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'arrived'];
+        $this->captureNotice();
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->saveRoster());
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('No changes to save.', $this->notice['message']);
+    }
+
+    public function testUpdateAttendanceSkipsARowThatChangedAfterThePageWasOpened(): void
+    {
+        $_POST = [
+            'status' => ['11' => 'arrived', '12' => 'arrived'],
+            'shown' => ['11' => 'signed_up', '12' => 'signed_up'],
+            'roster_date' => '2026-07-20',
+        ];
+        // 11 cancelled their own place meanwhile; 12 is still as shown.
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'cancelled'];
+        $this->wpdb->nextRows[] = ['id' => 12, 'task_id' => 5, 'person_id' => 9, 'status' => 'signed_up'];
+        $this->captureNotice();
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->saveRoster());
+
+        self::assertSame([['id' => 12]], array_column($this->wpdb->updates, 'where'));
+        self::assertSame('arrived', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame(
+            '1 person updated. 1 mark was not saved because it changed after you opened the page; reload to see it.',
+            $this->notice['message']
+        );
     }
 
     public function testMarkAllRecordsTheWordPressUser(): void

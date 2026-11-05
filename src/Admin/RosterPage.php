@@ -252,10 +252,13 @@ final class RosterPage
     /**
      * The roster's single "Update" action: every person's status picker posts
      * together as status[<assignment_id>], so the organizer sets the whole
-     * night in one submit rather than a row at a time. Only rows whose status
-     * actually changed are written - so re-saving does not restamp untouched
-     * ones - and an unknown status or a stale id is skipped, never failing the
-     * batch.
+     * night in one submit rather than a row at a time. Each row also posts
+     * shown[<assignment_id>], the status the page showed when it was built.
+     * Only rows the organizer changed (status differs from shown) are written.
+     * A changed row whose stored status is no longer the shown one was changed
+     * by someone else after the page was opened: it is not written, and the
+     * notice counts it. An unknown status or a stale id is skipped, never
+     * failing the batch.
      */
     public function saveRoster(): void
     {
@@ -265,23 +268,35 @@ final class RosterPage
         $statuses = isset($_POST['status']) && is_array($_POST['status'])
             ? wp_unslash($_POST['status'])
             : [];
+        $shown = isset($_POST['shown']) && is_array($_POST['shown'])
+            ? wp_unslash($_POST['shown'])
+            : [];
         $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $changedBy = get_current_user_id();
         $updated = 0;
+        $stale = 0;
 
         foreach ($statuses as $assignmentId => $status) {
             $assignmentId = (int) $assignmentId;
             $status = sanitize_key((string) $status);
+            $was = is_scalar($shown[$assignmentId] ?? null) ? sanitize_key((string) $shown[$assignmentId]) : '';
 
-            if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status)) {
+            if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status) || $status === $was) {
                 continue;
             }
 
             $assignment = $this->assignments->find($assignmentId);
 
-            if (null === $assignment || $assignment->status === $status) {
+            if (null === $assignment) {
+                continue;
+            }
+
+            // No shown status (a page built before this field existed) cannot
+            // prove the row is current, so it counts as changed meanwhile.
+            if ($assignment->status !== $was) {
+                ++$stale;
                 continue;
             }
 
@@ -291,16 +306,45 @@ final class RosterPage
 
         Admin::redirectTo(
             self::PAGE_SLUG,
-            0 === $updated
+            self::rosterSavedMessage($updated, $stale),
+            0 === $stale ? 'success' : 'error',
+            $this->dateArg($date)
+        );
+    }
+
+    /**
+     * The notice after saving the roster: how many people were updated, and
+     * how many marks were not saved because they changed after the page was
+     * opened. Shared with the crew app's roster screen.
+     */
+    public static function rosterSavedMessage(int $updated, int $stale): string
+    {
+        $parts = [];
+
+        if ($updated > 0 || 0 === $stale) {
+            $parts[] = 0 === $updated
                 ? __('No changes to save.', 'eventcrew')
                 : sprintf(
                     /* translators: %d: number of people updated */
                     _n('%d person updated.', '%d people updated.', $updated, 'eventcrew'),
                     $updated
+                );
+        }
+
+        if ($stale > 0) {
+            $parts[] = sprintf(
+                /* translators: %d: number of roster marks that were not saved */
+                _n(
+                    '%d mark was not saved because it changed after you opened the page; reload to see it.',
+                    '%d marks were not saved because they changed after you opened the page; reload to see them.',
+                    $stale,
+                    'eventcrew'
                 ),
-            'success',
-            $this->dateArg($date)
-        );
+                $stale
+            );
+        }
+
+        return implode(' ', $parts);
     }
 
     public function markAllForTask(): void

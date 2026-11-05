@@ -1000,6 +1000,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                         <option value="<?php echo esc_attr($eventcrew_status_value); ?>"<?php echo $eventcrew_status_value === $eventcrew_roster_entry['status'] ? ' selected' : ''; ?>><?php echo esc_html($eventcrew_status_label); ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <input type="hidden" name="shown[<?php echo esc_attr((string) $eventcrew_roster_entry['assignment_id']); ?>]" value="<?php echo esc_attr($eventcrew_roster_entry['status']); ?>" form="<?php echo esc_attr($eventcrew_attend_form); ?>">
                                 <noscript><button type="submit" form="<?php echo esc_attr($eventcrew_attend_form); ?>" class="eventcrew-textlink"><?php esc_html_e('Save', 'eventcrew'); ?></button></noscript>
                             </li>
                         <?php endforeach; ?>
