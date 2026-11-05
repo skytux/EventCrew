@@ -296,11 +296,11 @@ msgstr ""
 msgid "%s asks to take over your task"
 msgstr ""
 
-#: src/Telegram/PermissionService.php:347
+#: src/Telegram/PermissionService.php:353
 msgid "%s has a one-time sign-up pass."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:357
+#: src/Telegram/PermissionService.php:363
 msgid "%s is no longer an organizer."
 msgstr ""
 
@@ -309,7 +309,7 @@ msgstr ""
 msgid "%s is not on tonight’s list."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:358
+#: src/Telegram/PermissionService.php:364
 msgid "%s is now an organizer."
 msgstr ""
 
@@ -849,7 +849,7 @@ msgstr ""
 msgid "After that it is anonymised automatically, without anyone having to remember to do it: your email address, name, notes and any Telegram link are erased for good. What remains is an attendance record with nobody attached to it, which is no longer information about you."
 msgstr ""
 
-#: src/Support/FollowupMail.php:910
+#: src/Support/FollowupMail.php:911
 #. translators: 1: event date, 14.11.2026, 2: send date, 3: time, 12:00, 4: number of addresses
 msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
 msgstr ""
@@ -1288,7 +1288,7 @@ msgstr ""
 
 #: src/Support/OrganizerGuide.php:139
 #. translators: %d: hours of notice, e.g. 48
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with 🔁 Take over a task under /me."
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
 msgstr ""
 
 #: templates/admin/settings.php:485
@@ -1796,7 +1796,7 @@ msgstr ""
 msgid "Do Not Send This"
 msgstr ""
 
-#: src/Support/FollowupMail.php:919 src/Web/FollowupController.php:240 templates/admin/roster.php:335 templates/public/signup.php:1349
+#: src/Support/FollowupMail.php:920 src/Web/FollowupController.php:240 templates/admin/roster.php:335 templates/public/signup.php:1349
 msgid "Do not send the post-event email"
 msgstr ""
 
@@ -2515,7 +2515,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:533
 #. translators: 1: name, 2: role, 3: event, 4: date/time
-msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
+msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:774
@@ -2530,7 +2530,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:709
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line
-msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
+msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:739
@@ -2542,7 +2542,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1100 src/Support/MessageTemplates.php:827
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1113 src/Support/MessageTemplates.php:827
 #: src/Support/MessageTemplates.php:1365 src/Support/MessageTemplates.php:1746 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2556,7 +2556,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1098 src/Support/TicketMail.php:1137
+#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1111 src/Support/TicketMail.php:1137
 msgid "Hi,"
 msgstr ""
 
@@ -2876,7 +2876,7 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1110
+#: src/Support/FollowupMail.php:1123
 msgid "Join the announcement"
 msgstr ""
 
@@ -4204,7 +4204,7 @@ msgstr ""
 msgid "Post-event email"
 msgstr ""
 
-#: src/Support/FollowupMail.php:905
+#: src/Support/FollowupMail.php:906
 #. translators: %s: the date the post-event email goes out, like 15.11.2026
 msgid "Post-event email preview: it goes out on %s"
 msgstr ""
@@ -4772,6 +4772,7 @@ msgid "Security"
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:266 src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
+#: src/Telegram/PermissionService.php:327
 msgid "See open tasks"
 msgstr ""
 
@@ -5469,7 +5470,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:918 templates/admin/messages.php:60 templates/admin/newsletter.php:193
+#: src/Support/FollowupMail.php:919 templates/admin/messages.php:60 templates/admin/newsletter.php:193
 msgid "Subject"
 msgstr ""
 
@@ -5796,11 +5797,11 @@ msgstr ""
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
 msgstr ""
 
-#: src/Support/FollowupMail.php:920
+#: src/Support/FollowupMail.php:922
 msgid "Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again."
 msgstr ""
 
-#: src/Support/FollowupMail.php:921
+#: src/Support/FollowupMail.php:923
 msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
 msgstr ""
 
@@ -5857,7 +5858,7 @@ msgstr ""
 msgid "That bulk update could not be applied."
 msgstr ""
 
-#: src/Telegram/PermissionService.php:230 src/Telegram/PermissionService.php:360
+#: src/Telegram/PermissionService.php:230 src/Telegram/PermissionService.php:366
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
@@ -7076,7 +7077,7 @@ msgid "This ticket link is not valid."
 msgstr ""
 
 #: src/Support/ClaimNotifier.php:169
-msgid "This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time."
+msgid "This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr ""
 
 #: src/Support/TicketFile.php:105
@@ -7279,11 +7280,11 @@ msgstr ""
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
 msgstr ""
 
-#: src/Support/FollowupMail.php:916
+#: src/Support/FollowupMail.php:917
 msgid "To those who came"
 msgstr ""
 
-#: src/Support/FollowupMail.php:917
+#: src/Support/FollowupMail.php:918
 msgid "To those who did not come"
 msgstr ""
 
@@ -7508,7 +7509,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1103 src/Support/MessageTemplates.php:1748
+#: src/Support/FollowupMail.php:1116 src/Support/MessageTemplates.php:1748
 msgid "Warmly,"
 msgstr ""
 
@@ -7910,7 +7911,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1111
+#: src/Support/FollowupMail.php:1124
 msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
 msgstr ""
 
@@ -8227,7 +8228,7 @@ msgid "Your language is saved."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:622
-msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear."
+msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:620
@@ -8741,7 +8742,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:722
 #. translators: 1: role, 2: event, 3: date/time
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me."
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr ""
 
 #: src/Telegram/GuestListService.php:273
