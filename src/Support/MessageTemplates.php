@@ -522,7 +522,7 @@ final class MessageTemplates
             static fn (): string => __("Can't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
-                __("Can't make it? Cancel the task under My tasks in the Me tab of the crew page (%s).", 'eventcrew'),
+                __("Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s).", 'eventcrew'),
                 $url
             )
         );
@@ -531,7 +531,7 @@ final class MessageTemplates
             static fn (): string => __('More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.', 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
-                __('More notice next time keeps it clear. Your tasks are under My tasks in the Me tab of the crew page (%s).', 'eventcrew'),
+                __('More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know.', 'eventcrew'),
                 $url
             )
         );
@@ -1492,11 +1492,19 @@ final class MessageTemplates
         $doorHelp = self::botOrWeb(
             __('How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
             static fn (): string => __('Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
-            static fn (string $url): string => sprintf(
-                /* translators: %s: link to the crew page */
-                __('Tap Sales desk in the Me tab of the crew page (%s).', 'eventcrew'),
-                $url
-            )
+            // An organizer has no Sales desk card in the Me tab; theirs is
+            // under Door in the Admin tab (templates/public/signup.php).
+            static fn (string $url, array $c): string => ($c['person'] ?? null) instanceof Person && $c['person']->isOrganizer
+                ? sprintf(
+                    /* translators: %s: link to the crew page */
+                    __('The Sales desk card is under Door in the Admin tab of the crew page (%s).', 'eventcrew'),
+                    $url
+                )
+                : sprintf(
+                    /* translators: %s: link to the crew page */
+                    __('Tap Sales desk in the Me tab of the crew page (%s).', 'eventcrew'),
+                    $url
+                )
         );
 
         return [

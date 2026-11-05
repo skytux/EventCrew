@@ -202,8 +202,8 @@ final class StandingNoticeTest extends TestCase
 
         self::assertCount(2, $this->mails);
         self::assertStringContainsString(
-            'It counts against your standing. More notice next time keeps it clear. Your tasks are under My tasks'
-                . ' in the Me tab of the crew page (https://site.test/crew/).',
+            'It counts against your standing. More notice next time keeps it clear: tap Cancel on your task in the'
+                . ' Board tab of the crew page (https://site.test/crew/) as soon as you know.',
             $this->mails[0]
         );
         self::assertStringContainsString(
