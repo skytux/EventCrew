@@ -8184,6 +8184,10 @@ msgstr ""
 msgid "WP-Cron relies on a loopback request some shared hosts block. If \"Last run\" stays at \"never\" or falls hours behind, turn this on — any visit (including the bot webhook) will then run whatever is due."
 msgstr ""
 
+#: src/Admin/PeopleListTable.php:151
+msgid "Waiting"
+msgstr ""
+
 #: templates/public/signup.php:200
 msgid "Waiting for Telegram…"
 msgstr ""
@@ -8196,7 +8200,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: templates/public/signup-board.php:188
+#: src/Admin/PeopleListTable.php:150 templates/public/signup-board.php:188
 msgid "Waiting for the team’s OK"
 msgstr ""
 
@@ -9489,7 +9493,7 @@ msgstr ""
 msgid "unlinked user #%d"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:169 templates/public/signup.php:841
+#: src/Admin/PeopleListTable.php:175 templates/public/signup.php:841
 msgid "unverified"
 msgstr ""
 
