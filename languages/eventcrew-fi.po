@@ -7525,3 +7525,13 @@ msgstr "Miksi listaa ei voitu tuoda."
 
 msgid "The chat, one message per paragraph, oldest first, each with its time."
 msgstr "Keskustelu, yksi viesti per kappale, vanhin ensin, kukin kellonaikansa kanssa."
+
+#. translators: 1: page number, 2: number of pages
+msgid "page %1$d of %2$d"
+msgstr "sivu %1$d/%2$d"
+
+msgid "« Previous"
+msgstr "« Edellinen"
+
+msgid "Next »"
+msgstr "Seuraava »"

@@ -31,20 +31,36 @@ use EventCrew\Support\RosterAssembler;
  *
  * Under the roster, a row of buttons for the next event days switches the same
  * message to another day's roster (rd:<Y-m-d>), the way /door switches nights.
+ *
+ * Telegram takes at most 100 buttons and 4096 characters in one message, so a
+ * big night is split into pages: the message shows one page, with previous and
+ * next buttons (rd:<Y-m-d>:<page>) above the day buttons. A mark button on a
+ * later page carries its page (rm:<id>:<mark>:<page>), so the edit after the
+ * tap shows that same page again. A night that fits shows as before.
  */
 final class RosterService
 {
     use GroupBreadcrumb;
 
-    /** Callback data prefix for a marking tap: rm:<assignment_id>:<a|c|l|n>. */
+    /** Callback data prefix for a marking tap: rm:<assignment_id>:<a|c|l|n>[:<page>]. */
     private const MARK_PREFIX = 'rm:';
 
-    /** Callback data prefix for a day button under the roster: rd:<Y-m-d>. */
+    /** Callback data prefix for a day or page button under the roster: rd:<Y-m-d>[:<page>]. */
     public const SELECT_PREFIX = 'rd:';
 
     /** How many upcoming days the day buttons offer, and how many per row. */
     private const PICKER_DATES = 6;
     private const PICKER_PER_ROW = 3;
+
+    /** Telegram's limits for one message: inline buttons and text characters. */
+    private const MAX_BUTTONS = 100;
+    private const MAX_TEXT = 4096;
+
+    /** Buttons kept free on every page for the day buttons and the previous/next row. */
+    private const RESERVED_BUTTONS = self::PICKER_DATES + 2;
+
+    /** Characters kept free on every page for the page note and the legend. */
+    private const RESERVED_TEXT = 300;
 
     public function __construct(
         private readonly RosterAssembler $assembler,
@@ -121,13 +137,17 @@ final class RosterService
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $messageId = (int) ($message['message_id'] ?? 0);
-        $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
+        $data = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
+        $valid = 1 === preg_match('#^(\d{4}-\d{2}-\d{2})(?::(\d{1,3}))?$#', $data, $matches);
 
-        if (1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date) || 0 === $chatId || 0 === $messageId) {
+        if (! $valid || 0 === $chatId || 0 === $messageId) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
         }
+
+        $date = $matches[1];
+        $page = (int) ($matches[2] ?? 0);
 
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -138,7 +158,7 @@ final class RosterService
         }
 
         $canMark = $person->isOrganizer || $this->isOnSalesDesk($person->id, $date);
-        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer);
+        $rendered = $this->render($date, $this->assembler->forDate($date), $canMark, $person->isOrganizer, $page);
         $keyboard = array_merge($rendered['keyboard'], $this->pickerRows($person, $date));
 
         $this->telegram->answerCallbackQuery($callbackId);
@@ -158,7 +178,7 @@ final class RosterService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        [$assignmentId, $status] = $this->parseMark((string) ($callbackQuery['data'] ?? ''));
+        [$assignmentId, $status, $page] = $this->parseMark((string) ($callbackQuery['data'] ?? ''));
 
         if (0 === $assignmentId || '' === $status || 0 === $telegramUserId) {
             $this->telegram->answerCallbackQuery($callbackId);
@@ -231,7 +251,7 @@ final class RosterService
             }
         );
 
-        $this->refreshRosterMessage($callbackQuery, $assignment->taskId, $person);
+        $this->refreshRosterMessage($callbackQuery, $assignment->taskId, $person, $page);
     }
 
     private function deniedMessage(): string
@@ -270,10 +290,11 @@ final class RosterService
      * place, so a just-marked person drops out of the "still expected" buttons
      * and the taken counts move. The date comes from the marked task, not the
      * default, so it stays correct even if the default day has since rolled on.
+     * $page is the roster page the tapped button was on.
      *
      * @param array<string, mixed> $callbackQuery
      */
-    private function refreshRosterMessage(array $callbackQuery, int $taskId, Person $person): void
+    private function refreshRosterMessage(array $callbackQuery, int $taskId, Person $person, int $page): void
     {
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
@@ -290,7 +311,7 @@ final class RosterService
             return;
         }
 
-        $rendered = $this->render($date, $this->assembler->forDate($date), true, $person->isOrganizer);
+        $rendered = $this->render($date, $this->assembler->forDate($date), true, $person->isOrganizer, $page);
         // An empty inline_keyboard clears the buttons when nobody is left to
         // mark, rather than leaving stale taps on an already-closed event.
         $this->telegram->editMessageText(
@@ -302,15 +323,18 @@ final class RosterService
     }
 
     /**
-     * Splits "rm:<id>:<a|c|l|n>" into the assignment id and the status it maps
-     * to, or [0, ''] when the data is not a marking tap.
+     * Splits "rm:<id>:<a|c|l|n>[:<page>]" into the assignment id, the status
+     * it maps to and the roster page the button was on (0 when the data names
+     * none), or [0, '', 0] when the data is not a marking tap.
      *
-     * @return array{int, string}
+     * @return array{int, string, int}
      */
     private function parseMark(string $data): array
     {
-        if (1 !== preg_match('#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([acln])$#', $data, $matches)) {
-            return [0, ''];
+        $pattern = '#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([acln])(?::(\d{1,3}))?$#';
+
+        if (1 !== preg_match($pattern, $data, $matches)) {
+            return [0, '', 0];
         }
 
         return [
@@ -321,6 +345,7 @@ final class RosterService
                 'l' => AssignmentStatus::ARRIVED_LATE,
                 default => AssignmentStatus::NO_SHOW,
             },
+            (int) ($matches[3] ?? 0),
         ];
     }
 
@@ -401,64 +426,44 @@ final class RosterService
      * Organizers-only tasks are left out unless the viewer is an organizer
      * ($isOrganizer).
      *
+     * A roster too big for one Telegram message is split into pages, and only
+     * page $page (from 0; past the end means the last) is returned, with
+     * "page 2 of 3" in its first line and previous/next buttons under its mark
+     * buttons. The caller adds the day buttons below.
+     *
      * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
      *     status_label: string, occupying: bool, marked_by: string, signed_up_at?: string}>}> $roster
      * @return array{text: string, keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    private function render(string $date, array $roster, bool $canMark, bool $isOrganizer): array
+    private function render(string $date, array $roster, bool $canMark, bool $isOrganizer, int $page = 0): array
     {
-        $lines = ['📋 ' . $this->dateLabel($date)];
-        $keyboard = [];
+        $pages = $this->paginate($this->blocks($roster, $canMark, $isOrganizer));
+        $count = count($pages);
+        $page = max(0, min($page, $count - 1));
+        $lines = $pages[$page]['lines'];
+        $keyboard = $pages[$page]['keyboard'];
+        $title = '📋 ' . $this->dateLabel($date);
 
-        foreach ($roster as $row) {
-            $task = $row['task'];
-
-            if (! $isOrganizer && $task->isOrganizersOnly()) {
-                continue;
-            }
-
-            $taken = count(array_filter($row['people'], static fn (array $p): bool => $p['occupying']));
-
-            $lines[] = '';
-            $lines[] = $task->hasNoLimit()
-                ? sprintf('%s — %s (%d)', $task->roleDisplay(), $task->eventName(), $taken)
-                : sprintf('%s — %s (%d/%d)', $task->roleDisplay(), $task->eventName(), $taken, $task->capacity);
-
-            if ([] === $row['people']) {
-                $lines[] = '  ' . __('— nobody yet', 'eventcrew');
-
-                continue;
-            }
-
-            foreach ($row['people'] as $person) {
-                $mark = $person['occupying'] ? '•' : '×';
-                $standing = $person['standing'] ?? null;
-                $reliability = null === $standing ? '' : ' — ' . $standing->ratedSummary();
-                $lines[] = sprintf(
-                    '  %s %s (%s)%s%s',
-                    $mark,
-                    $person['name'],
-                    $person['status_label'],
-                    $reliability,
-                    $this->signedUpNote((string) ($person['signed_up_at'] ?? ''))
-                );
-
-                if ('' !== ($person['marked_by'] ?? '')) {
-                    $lines[] = '    ' . $person['marked_by'];
-                }
-
-                if ($canMark && $isOrganizer && $this->isMarkable($person['status'])) {
-                    if (AssignmentStatus::SIGNED_UP === $person['status']) {
-                        $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
-                    }
-
-                    $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);
-                } elseif ($canMark && ! $isOrganizer && AssignmentStatus::SIGNED_UP === $person['status']) {
-                    $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
-                }
-            }
+        if ($count > 1) {
+            /* translators: 1: page number, 2: number of pages */
+            $title .= ' · ' . sprintf(__('page %1$d of %2$d', 'eventcrew'), $page + 1, $count);
         }
+
+        // A mark button on a later page carries the page, so the edit after
+        // the tap shows the same page.
+        if ($page > 0) {
+            $keyboard = array_map(
+                static fn (array $row): array => array_map(
+                    static fn (array $button): array => ['callback_data' => $button['callback_data'] . ':' . $page]
+                        + $button,
+                    $row
+                ),
+                $keyboard
+            );
+        }
+
+        $lines = array_merge([$title], $lines);
 
         // The mark buttons carry only a symbol and a name, so say what each
         // symbol means whenever there are buttons to tap.
@@ -469,7 +474,181 @@ final class RosterService
                 : __('👋 arrived', 'eventcrew');
         }
 
+        if ($count > 1) {
+            $keyboard[] = $this->pageButtons($date, $page, $count);
+        }
+
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
+    }
+
+    /**
+     * The roster cut where a page break may fall: per task its heading lines,
+     * then one piece per person (their lines and their mark buttons), or a
+     * single "nobody yet" piece.
+     *
+     * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array<string, mixed>>}> $roster
+     * @return array<int, array{heading: array<int, string>, pieces: array<int, array{
+     *     lines: array<int, string>, keyboard: array<int, array<int, array{text: string, callback_data: string}>>}>}>
+     */
+    private function blocks(array $roster, bool $canMark, bool $isOrganizer): array
+    {
+        $blocks = [];
+
+        foreach ($roster as $row) {
+            $task = $row['task'];
+
+            if (! $isOrganizer && $task->isOrganizersOnly()) {
+                continue;
+            }
+
+            $taken = count(array_filter($row['people'], static fn (array $p): bool => $p['occupying']));
+            $heading = [
+                '',
+                $task->hasNoLimit()
+                    ? sprintf('%s — %s (%d)', $task->roleDisplay(), $task->eventName(), $taken)
+                    : sprintf('%s — %s (%d/%d)', $task->roleDisplay(), $task->eventName(), $taken, $task->capacity),
+            ];
+
+            if ([] === $row['people']) {
+                $blocks[] = [
+                    'heading' => $heading,
+                    'pieces' => [['lines' => ['  ' . __('— nobody yet', 'eventcrew')], 'keyboard' => []]],
+                ];
+
+                continue;
+            }
+
+            $pieces = [];
+
+            foreach ($row['people'] as $person) {
+                $mark = $person['occupying'] ? '•' : '×';
+                $standing = $person['standing'] ?? null;
+                $reliability = null === $standing ? '' : ' — ' . $standing->ratedSummary();
+                $lines = [sprintf(
+                    '  %s %s (%s)%s%s',
+                    $mark,
+                    $person['name'],
+                    $person['status_label'],
+                    $reliability,
+                    $this->signedUpNote((string) ($person['signed_up_at'] ?? ''))
+                )];
+
+                if ('' !== ($person['marked_by'] ?? '')) {
+                    $lines[] = '    ' . $person['marked_by'];
+                }
+
+                $keyboard = [];
+
+                if ($canMark && $isOrganizer && $this->isMarkable($person['status'])) {
+                    if (AssignmentStatus::SIGNED_UP === $person['status']) {
+                        $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
+                    }
+
+                    $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);
+                } elseif ($canMark && ! $isOrganizer && AssignmentStatus::SIGNED_UP === $person['status']) {
+                    $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
+                }
+
+                $pieces[] = ['lines' => $lines, 'keyboard' => $keyboard];
+            }
+
+            $blocks[] = ['heading' => $heading, 'pieces' => $pieces];
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * Fills pages with the pieces in order, starting a new page when the next
+     * piece would take this one past Telegram's button or text limit, less
+     * the room kept for the day buttons, the page buttons, the page note and
+     * the legend. A task cut by a page break repeats its heading on the next
+     * page. Always at least one page, so a day with no tasks keeps its title.
+     *
+     * @param array<int, array{heading: array<int, string>, pieces: array<int, array{
+     *     lines: array<int, string>,
+     *     keyboard: array<int, array<int, array{text: string, callback_data: string}>>}>}> $blocks
+     * @return array<int, array{lines: array<int, string>,
+     *     keyboard: array<int, array<int, array{text: string, callback_data: string}>>}>
+     */
+    private function paginate(array $blocks): array
+    {
+        $maxButtons = self::MAX_BUTTONS - self::RESERVED_BUTTONS;
+        $maxText = self::MAX_TEXT - self::RESERVED_TEXT;
+        $empty = ['lines' => [], 'keyboard' => [], 'buttons' => 0, 'length' => 0];
+        $pages = [];
+        $page = $empty;
+
+        foreach ($blocks as $block) {
+            foreach ($block['pieces'] as $index => $piece) {
+                $buttons = array_sum(array_map('count', $piece['keyboard']));
+                $lines = 0 === $index ? array_merge($block['heading'], $piece['lines']) : $piece['lines'];
+                $full = $page['buttons'] + $buttons > $maxButtons
+                    || $page['length'] + $this->textLength($lines) > $maxText;
+
+                if ($full && [] !== $page['lines']) {
+                    $pages[] = $page;
+                    $page = $empty;
+                    $lines = array_merge($block['heading'], $piece['lines']);
+                }
+
+                $page['lines'] = array_merge($page['lines'], $lines);
+                $page['keyboard'] = array_merge($page['keyboard'], $piece['keyboard']);
+                $page['buttons'] += $buttons;
+                $page['length'] += $this->textLength($lines);
+            }
+        }
+
+        $pages[] = $page;
+
+        return array_map(
+            static fn (array $p): array => ['lines' => $p['lines'], 'keyboard' => $p['keyboard']],
+            $pages
+        );
+    }
+
+    /**
+     * The length of these lines as Telegram counts it - in UTF-16 code units,
+     * so an emoji counts two - with a newline after each.
+     *
+     * @param array<int, string> $lines
+     */
+    private function textLength(array $lines): int
+    {
+        $length = 0;
+
+        foreach ($lines as $line) {
+            $length += intdiv(strlen((string) mb_convert_encoding($line, 'UTF-16LE', 'UTF-8')), 2) + 1;
+        }
+
+        return $length;
+    }
+
+    /**
+     * The previous/next row of a paged roster. Page one is plain rd:<date>,
+     * the same data its day button sends.
+     *
+     * @return array<int, array{text: string, callback_data: string}>
+     */
+    private function pageButtons(string $date, int $page, int $count): array
+    {
+        $row = [];
+
+        if ($page > 0) {
+            $row[] = [
+                'text' => __('« Previous', 'eventcrew'),
+                'callback_data' => self::SELECT_PREFIX . $date . (1 === $page ? '' : ':' . ($page - 1)),
+            ];
+        }
+
+        if ($page < $count - 1) {
+            $row[] = [
+                'text' => __('Next »', 'eventcrew'),
+                'callback_data' => self::SELECT_PREFIX . $date . ':' . ($page + 1),
+            ];
+        }
+
+        return $row;
     }
 
     /**
