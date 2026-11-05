@@ -723,10 +723,26 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([], $this->wpdb->inserts);
     }
 
+    /**
+     * Records the actions fired from now on.
+     *
+     * @return \ArrayObject<int, array{0: string, 1: array<int, mixed>}>
+     */
+    private function recordActions(): \ArrayObject
+    {
+        $fired = new \ArrayObject();
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use ($fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        return $fired;
+    }
+
     public function testAnOrganizerGrantsAOneTimePass(): void
     {
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextRows[] = $this->personRow(8);
+        $fired = $this->recordActions();
 
         $result = $this->post(CrewAdminController::PASS_ACTION, ['person_id' => '8']);
 
@@ -735,6 +751,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
         self::assertSame(1, $this->wpdb->updates[0]['data']['at_risk_pass']);
         self::assertSame('One-time sign-up pass granted.', CrewAdminController::noticeText('admin_pass_granted'));
+        // The person is told (AccessNotifier listens).
+        self::assertContains([\EventCrew\Support\AccessNotifier::PASS_HOOK, [8]], (array) $fired);
     }
 
     public function testAnOrganizerUnbansAPerson(): void
@@ -1620,11 +1638,20 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $this->wpdb->nextRows[] = null;    // findByEmail: nobody yet
         $created = ['id' => 40, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
         $this->queueNewPersonSignup($task, $created);
+        $fired = $this->recordActions();
 
         $result = $this->post(
             CrewAdminController::ADD_ACTION,
             ['task_ids' => ['9'], 'name' => 'Kim', 'email' => 'kim@example.com', 'counts_credit' => '0']
         );
+
+        // Adding someone to a task of a role they lack gives them the role,
+        // and they are told about it (AccessNotifier listens).
+        $given = array_values(array_filter(
+            (array) $fired,
+            static fn (array $f): bool => \EventCrew\Support\RoleNotifier::GIVEN_HOOK === $f[0]
+        ));
+        self::assertSame([[40, 'dj']], array_map(static fn (array $f): array => array_slice($f[1], 0, 2), $given));
 
         self::assertSame('admin_add_added_mail', $result['notice']);
         $people = $this->personInserts();
@@ -1790,10 +1817,13 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextRows[] = ['role_slugs' => 'dj'] + $this->personRow(8);
+        $fired = $this->recordActions();
 
         $this->post(CrewAdminController::ROLES_ACTION, ['person_id' => '8', 'roles' => []]);
 
         self::assertSame('', $this->wpdb->updates[1]['data']['role_slugs']);
+        // Taking a role away tells nobody.
+        self::assertNotContains(\EventCrew\Support\RoleNotifier::GIVEN_HOOK, array_column((array) $fired, 0));
     }
 
     public function testTheRoleGivenOnTheCrewPageCarriesTheOrganizersName(): void

@@ -1470,10 +1470,6 @@ msgstr ""
 msgid "You weren’t signed up for that one."
 msgstr "Et ollut ilmoittautunut siihen."
 
-#: src/Telegram/PermissionService.php:193
-msgid "Your EventCrew access changed"
-msgstr "EventCrew-oikeutesi muuttuivat"
-
 #: src/Telegram/VerificationController.php:137
 msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
 msgstr "EventCrew-tilisi on nyt liitetty toiseen Telegram-tiliin. Ota yhteyttä järjestäjään, jos se et ollut sinä."
@@ -4325,8 +4321,6 @@ msgstr "Taulu"
 
 msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
 msgstr "Ryhmän taulu piirtyy uudelleen aina, kun siinä muuttuu jotain — joku ilmoittautuu tai peruu, muokkaat tehtävää tai tunneittainen tarkistus huomaa tehtävän menneen. Tämä painike tekee sen heti, mitä tarvitset päivityksen jälkeen (uusi versio voi asetella taulun eri tavalla) tai kun haluat nähdä muutoksen odottamatta."
-
-
 
 msgid "Refresh the board"
 msgstr "Päivitä taulu"
@@ -7349,35 +7343,8 @@ msgstr "Tietojen poiston vahvistus (sähköposti)"
 msgid "Sent when a person presses Delete my data on the manage-account page. The Delete my data button with the link is added under the text."
 msgstr "Lähetetään, kun henkilö painaa Poista tietoni tilinhallintasivulla. Poista tietoni -painike linkkeineen lisätään tekstin alle."
 
-msgid "Access changed (email)"
-msgstr "Oikeudet muuttuivat (sähköposti)"
-
-msgid "Sent when an organizer gives a person a role, a one-time sign-up pass, or organizer rights."
-msgstr "Lähetetään, kun järjestäjä antaa henkilölle roolin, kertaluontoisen ilmoittautumisluvan tai järjestäjän oikeudet."
-
-msgid "What changed, like \"You now have the role DJ.\" with what it means. The same text as the Telegram message."
-msgstr "Mikä muuttui, kuten \"Sinulla on nyt rooli DJ.\" ja mitä se tarkoittaa. Sama teksti kuin Telegram-viestissä."
-
-msgid "Access changed: role (Telegram)"
-msgstr "Oikeudet muuttuivat: rooli (Telegram)"
-
-msgid "Sent when an organizer gives a person a role. The email about it repeats this text."
-msgstr "Lähetetään, kun järjestäjä antaa henkilölle roolin. Siitä lähtevä sähköposti toistaa tämän tekstin."
-
 msgid "The name of the role, like DJ."
 msgstr "Roolin nimi, kuten DJ."
-
-msgid "Access changed: one-time pass (Telegram)"
-msgstr "Oikeudet muuttuivat: kertaluontoinen lupa (Telegram)"
-
-msgid "Sent when an organizer gives a person a one-time sign-up pass. The email about it repeats this text."
-msgstr "Lähetetään, kun järjestäjä antaa henkilölle kertaluontoisen ilmoittautumisluvan. Siitä lähtevä sähköposti toistaa tämän tekstin."
-
-msgid "Access changed: organizer (Telegram)"
-msgstr "Oikeudet muuttuivat: järjestäjä (Telegram)"
-
-msgid "Sent when an organizer makes a person an organizer. The email about it repeats this text."
-msgstr "Lähetetään, kun järjestäjä tekee henkilöstä järjestäjän. Siitä lähtevä sähköposti toistaa tämän tekstin."
 
 #. translators: %s: the placeholders, like {email}
 msgid "Not saved: the text must contain %s, in every language. The message keeps the text it had."
@@ -7592,18 +7559,6 @@ msgstr "avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käyt
 
 msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
 msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
-
-msgid "You now have the role %1$s. %2$s"
-msgstr "Sinulla on nyt rooli %1$s. %2$s"
-
-msgid "Where the role’s tasks are shown: in the bot and the Crew app, or, for a person with no Telegram chat (in the email), on the crew page, with its link."
-msgstr "Missä roolin tehtävät näkyvät: botissa ja Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua (sähköpostissa) crew-sivulla, linkin kanssa."
-
-msgid "Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
-msgstr "Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
-
-msgid "Its tasks are shown to you in the Board tab of the crew page (%s), and you can sign up for them."
-msgstr "Näet sen tehtävät crew-sivun Taulu-välilehdellä (%s), ja voit ilmoittautua niihin."
 
 msgid "You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
 msgstr "Saat 1 vapaalipun jokaisesta %1$d tekemästäsi tehtävästä. %2$s Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
@@ -7846,3 +7801,63 @@ msgstr "Joku täyttää roolin ehdot"
 
 msgid "Bot chats sent to organizers"
 msgstr "Botin keskustelut järjestäjille"
+
+msgid "You were given a role (email)"
+msgstr "Sait roolin (sähköposti)"
+
+msgid "Sent to a person when an organizer gives them a role: with /people in the bot, in the Admin tab of the crew page (also by adding them to a task of that role), or on the wp-admin People page. Not sent when a role is taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a See open tasks button to the crew page under it."
+msgstr "Lähetetään henkilölle, kun järjestäjä antaa hänelle roolin: botin komennolla /people, crew-sivun Ylläpito-välilehdellä (myös lisäämällä hänet roolin tehtävään) tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun rooli otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja Avoimet tehtävät -painike crew-sivulle sen alle."
+
+#, php-format
+msgid "You have a new role: %s"
+msgstr "Sinulla on uusi rooli: %s"
+
+#, php-format
+msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Sen tehtävät ovat avoinna sinulle crew-sivulla, ja voit ilmoittautua niihin."
+
+msgid "You were given a role (Telegram)"
+msgstr "Sait roolin (Telegram)"
+
+msgid "Sent to a person who uses the bot when an organizer gives them a role: with /people in the bot, in the Admin tab of the crew page (also by adding them to a task of that role), or on the wp-admin People page. Not sent when a role is taken away, or to a person who turned off Telegram messages about permission changes."
+msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä antaa hänelle roolin: botin komennolla /people, crew-sivun Ylläpito-välilehdellä (myös lisäämällä hänet roolin tehtävään) tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun rooli otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
+
+#, php-format
+msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
+
+msgid "You were given a one-time pass (email)"
+msgstr "Sait kertaluontoisen luvan (sähköposti)"
+
+msgid "Sent to a person when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off emails about permission changes. The greeting is added above the text, and a See open tasks button to the crew page under it."
+msgstr "Lähetetään henkilölle, kun järjestäjä antaa hänelle kertaluontoisen ilmoittautumisluvan: botin komennolla /people, crew-sivun Ylläpito-välilehdellä tai wp-adminin Ihmiset-sivulla. Ei lähetetä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja Avoimet tehtävät -painike crew-sivulle sen alle."
+
+msgid "You have a one-time pass"
+msgstr "Sinulla on kertaluontoinen lupa"
+
+msgid "You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgstr "Sinulla on kertaluontoinen lupa ilmoittautua seuraavaan tehtävääsi, vaikka luotettavuutesi on matala. Lupa kuluu, kun ilmoittaudut seuraavan kerran."
+
+msgid "You were given a one-time pass (Telegram)"
+msgstr "Sait kertaluontoisen luvan (Telegram)"
+
+msgid "Sent to a person who uses the bot when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off Telegram messages about permission changes."
+msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä antaa hänelle kertaluontoisen ilmoittautumisluvan: botin komennolla /people, crew-sivun Ylläpito-välilehdellä tai wp-adminin Ihmiset-sivulla. Ei lähetetä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
+
+msgid "You were made an organizer (email)"
+msgstr "Sinusta tehtiin järjestäjä (sähköposti)"
+
+msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it."
+msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja painike crew-sivun Ylläpito-välilehdelle sen alle."
+
+msgid "You are now an EventCrew organizer"
+msgstr "Olet nyt EventCrew-järjestäjä"
+
+msgid "You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people."
+msgstr "Olet nyt järjestäjä. Crew-sivulla on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."
+
+msgid "You were made an organizer (Telegram)"
+msgstr "Sinusta tehtiin järjestäjä (Telegram)"
+
+msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes."
+msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."

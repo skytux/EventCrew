@@ -7,6 +7,7 @@ namespace EventCrew\Admin;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleConditions;
@@ -288,6 +289,7 @@ final class PeoplePage
         }
 
         $this->people->grantAtRiskPass($personId);
+        AccessNotifier::passGranted($personId);
 
         Admin::redirectTo(
             self::PAGE_SLUG,

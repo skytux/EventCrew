@@ -240,8 +240,7 @@ abstract class TelegramTestCase extends TestCase
             new PermissionService(
                 new PersonRepository(),
                 $this->client(),
-                new RoleConditions(new AssignmentRepository(), new PersonRepository()),
-                $mailer
+                new RoleConditions(new AssignmentRepository(), new PersonRepository())
             ),
             new NotificationSettingsService(new PersonRepository(), $this->client()),
             $this->doorListService(),

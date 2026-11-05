@@ -1009,69 +1009,95 @@ final class MessageTemplates
                 static fn (): string => __('Confirm deleting your data', 'eventcrew'),
                 static fn (): string => __('Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email.', 'eventcrew')
             ),
+            ...self::accessDefinitions(),
+            ...self::organizerNoticeDefinitions(),
+        ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
+    /**
+     * What AccessNotifier tells a person an organizer gave them: a role, a
+     * one-time sign-up pass, organizer rights. An email and a Telegram text
+     * for each. The context has 'person' (the reader) and, for a role,
+     * 'role' (its name). The emails name the crew page and get the greeting
+     * and a button in code; the Telegram texts name the bot.
+     *
+     * @return list<MessageTemplate>
+     */
+    private static function accessDefinitions(): array
+    {
+        $email = MessageTemplate::CHANNEL_EMAIL;
+        $telegram = MessageTemplate::CHANNEL_TELEGRAM;
+
+        $givenRole = ['role' => self::placeholder(
+            __('The name of the role, like DJ.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['role'] ?? '')
+        )];
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        return [
             new MessageTemplate(
-                'access_changed',
-                __('Access changed (email)', 'eventcrew'),
+                'access_role',
+                __('You were given a role (email)', 'eventcrew'),
                 $email,
-                __('Sent when an organizer gives a person a role, a one-time sign-up pass, or organizer rights.', 'eventcrew'),
-                static fn (): string => __('Your EventCrew access changed', 'eventcrew'),
+                __('Sent to a person when an organizer gives them a role: with /people in the bot, in the Admin tab of the crew page (also by adding them to a task of that role), or on the wp-admin People page. Not sent when a role is taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
                 static fn (): string => self::tag(
-                    /* translators: 1: name, 2: what changed */
-                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                    ['%1$s' => '{name}', '%2$s' => '{change}']
+                    /* translators: %s: role name, such as DJ */
+                    __('You have a new role: %s', 'eventcrew'),
+                    ['%s' => '{role}']
                 ),
-                [
-                    'name' => $name,
-                    'change' => self::placeholder(
-                        __('What changed, like "You now have the role DJ." with what it means. The same text as the Telegram message.', 'eventcrew'),
-                        static fn (array $c): string => (string) ($c['change'] ?? '')
-                    ),
-                ]
+                static fn (): string => self::tag(
+                    /* translators: %s: role name, such as DJ */
+                    __('You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them.', 'eventcrew'),
+                    ['%s' => '{role}']
+                ),
+                $givenRole
             ),
             new MessageTemplate(
                 'access_role_dm',
-                __('Access changed: role (Telegram)', 'eventcrew'),
+                __('You were given a role (Telegram)', 'eventcrew'),
                 $telegram,
-                __('Sent when an organizer gives a person a role. The email about it repeats this text.', 'eventcrew'),
+                __('Sent to a person who uses the bot when an organizer gives them a role: with /people in the bot, in the Admin tab of the crew page (also by adding them to a task of that role), or on the wp-admin People page. Not sent when a role is taken away, or to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
                 static fn (): string => self::tag(
-                    /* translators: 1: role name, such as DJ, 2: where its tasks are shown */
-                    __('You now have the role %1$s. %2$s', 'eventcrew'),
-                    ['%1$s' => '{role}', '%2$s' => '{role_tasks_help}']
+                    /* translators: %s: role name, such as DJ */
+                    __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
+                    ['%s' => '{role}']
                 ),
-                [
-                    'role' => self::placeholder(
-                        __('The name of the role, like DJ.', 'eventcrew'),
-                        static fn (array $c): string => (string) ($c['role'] ?? '')
-                    ),
-                    'role_tasks_help' => self::botOrWeb(
-                        __('Where the role’s tasks are shown: in the bot and the Crew app, or, for a person with no Telegram chat (in the email), on the crew page, with its link.', 'eventcrew'),
-                        static fn (): string => __('Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
-                        static fn (string $url): string => sprintf(
-                            /* translators: %s: link to the crew page */
-                            __('Its tasks are shown to you in the Board tab of the crew page (%s), and you can sign up for them.', 'eventcrew'),
-                            $url
-                        )
-                    ),
-                ]
+                $givenRole
+            ),
+            new MessageTemplate(
+                'access_pass',
+                __('You were given a one-time pass (email)', 'eventcrew'),
+                $email,
+                __('Sent to a person when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off emails about permission changes. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
+                static fn (): string => __('You have a one-time pass', 'eventcrew'),
+                static fn (): string => __('You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew')
             ),
             new MessageTemplate(
                 'access_pass_dm',
-                __('Access changed: one-time pass (Telegram)', 'eventcrew'),
+                __('You were given a one-time pass (Telegram)', 'eventcrew'),
                 $telegram,
-                __('Sent when an organizer gives a person a one-time sign-up pass. The email about it repeats this text.', 'eventcrew'),
+                __('Sent to a person who uses the bot when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
                 static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew')
             ),
             new MessageTemplate(
+                'access_organizer',
+                __('You were made an organizer (email)', 'eventcrew'),
+                $email,
+                __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it.', 'eventcrew'),
+                static fn (): string => __('You are now an EventCrew organizer', 'eventcrew'),
+                static fn (): string => __('You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people.', 'eventcrew')
+            ),
+            new MessageTemplate(
                 'access_organizer_dm',
-                __('Access changed: organizer (Telegram)', 'eventcrew'),
+                __('You were made an organizer (Telegram)', 'eventcrew'),
                 $telegram,
-                __('Sent when an organizer makes a person an organizer. The email about it repeats this text.', 'eventcrew'),
+                __('Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
                 static fn (): string => __('⭐ You’re now an EventCrew organizer.', 'eventcrew')
             ),
-            ...self::organizerNoticeDefinitions(),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
     }
