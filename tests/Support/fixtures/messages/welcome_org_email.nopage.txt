@@ -101,7 +101,7 @@ The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram an
 - 🔹 People: members, their history and credits, the credit log, organizers, and the Role conditions tab.
 - 🔹 Roster: attendance and the door list for any date, and the Holvi ticket buyers.
 - 🔹 Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message.
-- 🔹 Email template: how every email looks.
+- 🔹 Messages: the text of every email and Telegram message, the AI prompts, the texts for the coming events, and how every email looks.
 - 🔹 Bot log: which bot commands and buttons each person used on a day. Message text is not stored.
 - 🔹 Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail.
 

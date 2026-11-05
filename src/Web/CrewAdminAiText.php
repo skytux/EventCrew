@@ -10,7 +10,7 @@ use EventCrew\Support\EventAiText;
 /**
  * The AI texts screen of the crew app's Admin tab: the texts the AI wrote the
  * day before each coming event (EventAiText), each with an edit box. The same
- * texts and the same saving as wp-admin's AI prompts page. A text nobody
+ * texts and the same saving as wp-admin's Messages page (Coming events tab). A text nobody
  * changes is sent as the AI wrote it; a changed text is sent as changed.
  */
 final class CrewAdminAiText

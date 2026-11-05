@@ -6,7 +6,7 @@ namespace EventCrew\Support;
 
 /**
  * The instructions the language model gets, editable in wp-admin under
- * EventCrew > AI prompts (AiPromptsPage).
+ * EventCrew > Messages, AI tab (AiPromptsPage).
  *
  * Each prompt has a built-in text (DEFAULTS). An administrator can replace it;
  * the replacement is kept in OPTION by the prompt's key, and "Reset to

@@ -105,7 +105,7 @@ Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja s�
 - 🔹 Ihmiset: jäsenet, heidän historiansa ja vapaalippunsa, vapaalippuloki, järjestäjät sekä Roolien ehdot -välilehti.
 - 🔹 Läsnäolo: osallistuminen ja ovilista mille tahansa päivälle sekä Holvin lipunostajat.
 - 🔹 Asetukset: roolit, luotettavuus, ilmoitukset ja niiden ajat, Telegram-botti, sähköposti, tietosuoja ja tervetuloviesti.
-- 🔹 Sähköpostipohja: miltä jokainen sähköposti näyttää.
+- 🔹 Viestit: jokaisen sähköpostin ja Telegram-viestin teksti, tekoälyn kehotteet, tulevien tapahtumien tekstit ja miltä jokainen sähköposti näyttää.
 - 🔹 Bottiloki: mitä botin komentoja ja painikkeita kukin käytti päivän aikana. Viestien tekstiä ei tallenneta.
 - 🔹 Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus.
 

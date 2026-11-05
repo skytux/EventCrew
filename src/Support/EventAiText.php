@@ -27,7 +27,8 @@ use EventCrew\Telegram\BoardDjText;
  * When (Q291 = preview). The texts for an event are written the day before
  * the event by the hourly heartbeat (Scheduler::HOOK, in the background only),
  * and kept in TEXTS_OPTION by event and by template or placeholder. The
- * organizers see them in wp-admin (EventCrew > AI prompts) and in the crew
+ * organizers see them in wp-admin (EventCrew > Messages, Coming events tab,
+ * where they can also have them written again at once: rewrite()) and in the crew
  * app's Admin tab, and can change them there. A text changed by hand is kept
  * apart from the AI's text and wins over it. A text nobody changed is sent as
  * the AI wrote it. Nothing asks the model while a message is sent: text()
@@ -177,19 +178,9 @@ final class EventAiText
         }
 
         $started ??= microtime(true);
-        $jobs = [];
-
-        foreach (self::activeTemplates() as $kind => $settings) {
-            $jobs[(string) $kind] = (string) $settings[self::SETTING_AI_PROMPT];
-        }
-
-        foreach (self::placeholders() as $placeholder) {
-            $jobs[self::PLACEHOLDER_PREFIX . $placeholder['name']] = $placeholder['prompt'];
-        }
-
         $written = 0;
 
-        foreach ($jobs as $key => $prompt) {
+        foreach (self::jobs() as $key => $prompt) {
             $entry = self::entry($eventId, $key);
 
             if ([] !== $entry['ai'] || [] !== $entry['edited'] || $entry['tries'] >= self::MAX_TRIES) {
@@ -200,19 +191,112 @@ final class EventAiText
                 break;
             }
 
-            $texts = $this->ask($prompt, $event);
-            $entry['tries']++;
-
-            if (null !== $texts) {
-                $entry['ai'] = $texts;
-                $entry['at'] = (string) current_time('mysql');
+            if ($this->writeOne($event, $key, $prompt, false)) {
                 $written++;
             }
-
-            self::store($event, $key, $entry);
         }
 
         return $written;
+    }
+
+    /**
+     * Writes $eventId's texts again now, when an organizer asks for it
+     * (wp-admin, Messages > Coming events): every text of the templates with
+     * the AI tick on and of the placeholders, or only $key. Each goes
+     * through the same request as the day-before run and counts as a try.
+     * A new text replaces the stored AI text and removes the change by hand
+     * (the organizer confirmed that first), so it is the text that is sent;
+     * the day-before run then finds it written and leaves it. When the model
+     * fails, the stored text and the change by hand stay as they were.
+     *
+     * @return array{found: bool, configured: bool, written: int, failed: int}
+     *     found is false when the event or $key is not known, or there is
+     *     nothing to write; configured is false when the model is not set
+     *     up, and then nothing is asked.
+     */
+    public function rewrite(int $eventId, string $key = ''): array
+    {
+        $result = ['found' => false, 'configured' => AssistantSettings::isConfigured(), 'written' => 0, 'failed' => 0];
+        $event = EventSource::describe($eventId);
+        $jobs = self::jobs();
+
+        if ('' !== $key) {
+            $jobs = isset($jobs[$key]) ? [$key => $jobs[$key]] : [];
+        }
+
+        if (null === $event || [] === $jobs) {
+            return $result;
+        }
+
+        $result['found'] = true;
+
+        if (! $result['configured']) {
+            $result['failed'] = count($jobs);
+
+            return $result;
+        }
+
+        $started = microtime(true);
+
+        foreach ($jobs as $jobKey => $prompt) {
+            // A text the time ran out for is not asked: it counts as not written.
+            if (microtime(true) - $started < self::BUDGET && $this->writeOne($event, $jobKey, $prompt, true)) {
+                $result['written']++;
+            } else {
+                $result['failed']++;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * What is written for each event: the prompt of every template with the
+     * AI tick on and of every placeholder, by key.
+     *
+     * @return array<string, string>
+     */
+    private static function jobs(): array
+    {
+        $jobs = [];
+
+        foreach (self::activeTemplates() as $kind => $settings) {
+            $jobs[(string) $kind] = (string) $settings[self::SETTING_AI_PROMPT];
+        }
+
+        foreach (self::placeholders() as $placeholder) {
+            $jobs[self::PLACEHOLDER_PREFIX . $placeholder['name']] = $placeholder['prompt'];
+        }
+
+        return $jobs;
+    }
+
+    /**
+     * Asks the model for $key's text of $event and stores the outcome: one
+     * more try and, when it worked, the AI's text (with $replace, the change
+     * by hand is removed too). Returns whether a text was written.
+     *
+     * @param array{id: int, title: string, starts_at: string, ends_at: string, date: string} $event
+     */
+    private function writeOne(array $event, string $key, string $prompt, bool $replace): bool
+    {
+        $entry = self::entry($event['id'], $key);
+        $texts = $this->ask($prompt, $event);
+        $entry['tries']++;
+
+        if (null !== $texts) {
+            $entry['ai'] = $texts;
+            $entry['at'] = (string) current_time('mysql');
+
+            if ($replace) {
+                $entry['edited'] = [];
+                $entry['edited_by'] = 0;
+            }
+        }
+
+        self::store($event, $key, $entry);
+
+        return null !== $texts;
     }
 
     /**

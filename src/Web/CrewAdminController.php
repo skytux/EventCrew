@@ -278,7 +278,7 @@ final class CrewAdminController
             self::OPEN_TASK_ACTION => $this->tasksScreen->sendOpenTaskEmail(),
             self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
             self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
-                $organizer,
+                $organizer->id,
                 sanitize_key((string) ($post['op'] ?? '')),
                 sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''))
             ),
@@ -286,7 +286,7 @@ final class CrewAdminController
                 ? ''
                 : $this->newsletterScreen->stop((int) ($post['plan_id'] ?? 0)),
             self::FOLLOWUP_TEXT_ACTION => null === $this->followupScreen ? '' : $this->followupScreen->saveText(
-                $organizer,
+                $organizer->id,
                 sanitize_key((string) ($post['variant'] ?? '')),
                 sanitize_key((string) ($post['op'] ?? '')),
                 sanitize_textarea_field((string) ($post['followup_text'] ?? ''))

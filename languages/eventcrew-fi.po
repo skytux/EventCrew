@@ -3585,9 +3585,6 @@ msgstr "Läsnäolo: osallistuminen ja ovilista mille tahansa päivälle sekä Ho
 msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
 msgstr "Asetukset: roolit, luotettavuus, ilmoitukset ja niiden ajat, Telegram-botti, sähköposti, tietosuoja ja tervetuloviesti."
 
-msgid "Email template: how every email looks."
-msgstr "Sähköpostipohja: miltä jokainen sähköposti näyttää."
-
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr "Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus."
 
@@ -6885,9 +6882,6 @@ msgstr "%s: aihe"
 msgid "%s: text"
 msgstr "%s: teksti"
 
-msgid "AI prompts"
-msgstr "Tekoälyn kehotteet"
-
 msgid "Rules for the newsletter texts"
 msgstr "Uutiskirjeen tekstien säännöt"
 
@@ -7022,9 +7016,6 @@ msgstr "Kirjoita tekoälyllä uusi teksti jokaiseen tapahtumaan"
 
 msgid "What the AI is asked to write"
 msgstr "Mitä tekoälyä pyydetään kirjoittamaan"
-
-msgid "With the tick on, the AI writes this message's text the day before each event, from this prompt. You can read and change the text on the AI prompts page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above."
-msgstr "Kun ruksi on päällä, tekoäly kirjoittaa tämän viestin tekstin tästä kehotteesta tapahtumaa edeltävänä päivänä. Voit lukea ja muuttaa tekstiä Tekoälyn kehotteet -sivulla ja Crew-sovelluksessa ennen lähetystä. Jos tekoäly epäonnistuu, lähetetään yllä oleva teksti. Aihe pysyy yllä olevana."
 
 #, php-format
 msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
@@ -7861,3 +7852,70 @@ msgstr "Sinusta tehtiin järjestäjä (Telegram)"
 
 msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes."
 msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
+
+msgid "AI"
+msgstr "Tekoäly"
+
+msgid "Email look"
+msgstr "Sähköpostin ulkoasu"
+
+msgid "This replaces your edit."
+msgstr "Tämä korvaa muokkauksesi."
+
+#. translators: %s: the night, like 14.11.2026 · Friday dance
+#, php-format
+msgid "The next post-event email is for: %s"
+msgstr "Seuraava tapahtuman jälkeinen viesti koskee iltaa: %s"
+
+msgid "No coming night has a post-event email yet."
+msgstr "Millekään tulevalle illalle ei ole vielä tapahtuman jälkeistä viestiä."
+
+msgid "No announcement is planned yet."
+msgstr "Seuraavaa tiedotetta ei ole vielä suunniteltu."
+
+msgid "\"Write the AI texts now\" asks the AI at once instead of waiting for the day before. The day before, the AI then leaves these texts as they are."
+msgstr "”Kirjoita tekoälytekstit nyt” pyytää tekstit tekoälyltä heti eikä odota edellistä päivää. Edellisenä päivänä tekoäly jättää nämä tekstit sitten ennalleen."
+
+msgid "Write them again"
+msgstr "Kirjoita ne uudelleen"
+
+msgid "Write the AI texts now"
+msgstr "Kirjoita tekoälytekstit nyt"
+
+msgid "No texts are written yet for this event."
+msgstr "Tälle tapahtumalle ei ole vielä kirjoitettu tekstejä."
+
+msgid "Write again"
+msgstr "Kirjoita uudelleen"
+
+msgid "The email template is the frame around every email: the logo, the colours, the signature and the footer. The words of each email are on the Messages tab."
+msgstr "Sähköpostipohja on jokaisen sähköpostin kehys: logo, värit, allekirjoitus ja alatunniste. Kunkin sähköpostin sanat ovat Viestit-välilehdellä."
+
+msgid "Emails are sent as plain text now, so the template is not used. To edit it, tick \"Send notifications as HTML\" in EventCrew > Settings > Email."
+msgstr "Sähköpostit lähetetään nyt pelkkänä tekstinä, joten pohjaa ei käytetä. Muokataksesi sitä rastita ”Lähetä ilmoitukset HTML-muodossa” kohdassa EventCrew > Asetukset > Sähköposti."
+
+msgid "Nothing was written: that event or text was not found."
+msgstr "Mitään ei kirjoitettu: tapahtumaa tai tekstiä ei löytynyt."
+
+msgid "Nothing was written: the AI is not set up. Set it up in EventCrew > Settings."
+msgstr "Mitään ei kirjoitettu: tekoälyä ei ole otettu käyttöön. Ota se käyttöön kohdassa EventCrew > Asetukset."
+
+#. translators: %d: how many texts the AI wrote
+#, php-format
+msgid "The AI wrote %d new text."
+msgid_plural "The AI wrote %d new texts."
+msgstr[0] "Tekoäly kirjoitti %d uuden tekstin."
+msgstr[1] "Tekoäly kirjoitti %d uutta tekstiä."
+
+#. translators: %d: how many texts the AI could not write
+#, php-format
+msgid "The AI could not write %d text; it keeps its old text."
+msgid_plural "The AI could not write %d texts; they keep their old texts."
+msgstr[0] "Tekoäly ei pystynyt kirjoittamaan %d tekstiä; se pitää vanhan tekstinsä."
+msgstr[1] "Tekoäly ei pystynyt kirjoittamaan %d tekstiä; ne pitävät vanhat tekstinsä."
+
+msgid "Messages: the text of every email and Telegram message, the AI prompts, the texts for the coming events, and how every email looks."
+msgstr "Viestit: jokaisen sähköpostin ja Telegram-viestin teksti, tekoälyn kehotteet, tulevien tapahtumien tekstit ja miltä jokainen sähköposti näyttää."
+
+msgid "With the tick on, the AI writes this message's text the day before each event, from this prompt. You can read and change the text on the Coming events tab of this page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above."
+msgstr "Kun ruksi on päällä, tekoäly kirjoittaa tämän viestin tekstin tästä kehotteesta tapahtumaa edeltävänä päivänä. Voit lukea ja muuttaa tekstiä tämän sivun Tulevat tapahtumat -välilehdellä ja Crew-sovelluksessa ennen lähetystä. Jos tekoäly epäonnistuu, lähetetään yllä oleva teksti. Aihe pysyy yllä olevana."

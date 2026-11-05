@@ -91,7 +91,7 @@ final class MessageAiText
         );
         echo '<p class="description" style="max-width:48em">'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            . esc_html__('With the tick on, the AI writes this message\'s text the day before each event, from this prompt. You can read and change the text on the AI prompts page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above.', 'eventcrew')
+            . esc_html__('With the tick on, the AI writes this message\'s text the day before each event, from this prompt. You can read and change the text on the Coming events tab of this page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above.', 'eventcrew')
             . '</p>';
     }
 

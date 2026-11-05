@@ -1626,13 +1626,20 @@ final class Kernel
             MessagesPage::class,
             fn (Container $container) => new MessagesPage(
                 $container->get(View::class),
-                new MessageTemplates($container->get(TranslatedText::class))
+                new MessageTemplates($container->get(TranslatedText::class)),
+                $container->get(AiPromptsPage::class),
+                $container->get(EmailTemplate::class)
             )
         );
 
         $this->container->singleton(
             AiPromptsPage::class,
-            fn (Container $container) => new AiPromptsPage($container->get(View::class))
+            fn (Container $container) => new AiPromptsPage(
+                $container->get(EventAiText::class),
+                $container->get(CrewAdminFollowup::class),
+                $container->get(CrewAdminNewsletter::class),
+                $container->get(FollowupMail::class)
+            )
         );
 
         $this->container->singleton(

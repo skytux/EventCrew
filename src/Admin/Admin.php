@@ -288,6 +288,45 @@ final class Admin
             'admin_post_' . AiPromptsPage::EVENT_TEXT_ACTION,
             [$this->container->get(AiPromptsPage::class), 'saveEventText']
         );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::REWRITE_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'rewriteEventText']
+        );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::FOLLOWUP_TEXT_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'saveFollowupText']
+        );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::NEWSLETTER_TEXT_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'saveNewsletterText']
+        );
+
+        // The Email template's block editor opens from Messages > Email look,
+        // so the menu shows Messages as the open page while it is edited.
+        add_filter('parent_file', [self::class, 'emailTemplateParent']);
+        add_filter('submenu_file', [self::class, 'emailTemplateSubmenu']);
+    }
+
+    /** parent_file: EventCrew while the Email template is edited. */
+    public static function emailTemplateParent(mixed $parent): mixed
+    {
+        return self::editingEmailTemplate() ? self::MENU_SLUG : $parent;
+    }
+
+    /** submenu_file: Messages while the Email template is edited. */
+    public static function emailTemplateSubmenu(mixed $submenu): mixed
+    {
+        return self::editingEmailTemplate() ? MessagesPage::PAGE_SLUG : $submenu;
+    }
+
+    private static function editingEmailTemplate(): bool
+    {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+
+        return is_object($screen) && EmailTemplate::POST_TYPE === ($screen->post_type ?? '');
     }
 
     /**
@@ -360,18 +399,8 @@ final class Admin
             [$this->container->get(SettingsPage::class), 'render']
         );
 
-        // Straight to the editor rather than to a list screen: there is exactly
-        // one template, so a list of one is a click in the way. Passing a
-        // post.php URL as the slug is how WordPress links a menu item at a core
-        // screen; the post is created on the first load that needs it.
-        add_submenu_page(
-            self::MENU_SLUG,
-            __('Email template', 'eventcrew'),
-            __('Email template', 'eventcrew'),
-            self::CAPABILITY,
-            'post.php?post=' . $this->container->get(EmailTemplate::class)->postId() . '&action=edit'
-        );
-
+        // Messages holds every message text, the AI prompts, the texts for the
+        // coming events and the link to the Email template's editor (tabs).
         add_submenu_page(
             self::MENU_SLUG,
             __('Messages', 'eventcrew'),
@@ -399,14 +428,20 @@ final class Admin
             [$this->container->get(TranslationsPage::class), 'render']
         );
 
-        add_submenu_page(
-            self::MENU_SLUG,
-            __('AI prompts', 'eventcrew'),
-            __('AI prompts', 'eventcrew'),
+        // The old AI prompts page, now tabs of Messages: kept as a hidden page
+        // (no menu item) so its old address still opens and redirects there.
+        $oldAiPage = add_submenu_page(
+            'options.php',
+            __('Messages', 'eventcrew'),
+            '',
             self::CAPABILITY,
             AiPromptsPage::PAGE_SLUG,
-            [$this->container->get(AiPromptsPage::class), 'render']
+            '__return_null'
         );
+
+        if (is_string($oldAiPage) && '' !== $oldAiPage) {
+            add_action('load-' . $oldAiPage, [AiPromptsPage::class, 'redirectOldPage']);
+        }
 
         add_submenu_page(
             self::MENU_SLUG,
@@ -506,12 +541,14 @@ final class Admin
      * @param array<string, string> $args Extra query args to carry back, e.g.
      *        the roster's selected date, so a POST handler returns to the same
      *        view it was submitted from.
+     * @param string $anchor A part of the page to land on (#ec-event-12), or ''.
      */
     public static function redirectTo(
         string $page,
         string $message = '',
         string $type = 'success',
-        array $args = []
+        array $args = [],
+        string $anchor = ''
     ): never {
         if ('' !== $message) {
             self::notice($type, $message);
@@ -519,6 +556,7 @@ final class Admin
 
         wp_safe_redirect(
             add_query_arg(['page' => $page] + $args, admin_url('admin.php'))
+            . ('' === $anchor ? '' : '#' . $anchor)
         );
 
         exit;

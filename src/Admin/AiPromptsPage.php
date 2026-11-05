@@ -6,20 +6,32 @@ namespace EventCrew\Admin;
 
 use EventCrew\Support\AiPrompts;
 use EventCrew\Support\EventAiText;
+use EventCrew\Support\EventSource;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TicketMail;
+use EventCrew\Web\CrewAdminFollowup;
+use EventCrew\Web\CrewAdminNewsletter;
 
 /**
- * The AI prompts page (EventCrew > AI prompts), the one place for what the
- * language model is asked:
- * - the built-in prompts (AiPrompts), each with "Reset to built-in";
- * - the organizers' own placeholders (EventAiText::placeholders()), each a
+ * What the language model is asked and what it wrote, shown on two tabs of
+ * the Messages page (MessagesPage):
+ * - AI: the built-in prompts (AiPrompts), each with "Reset to built-in", and
+ *   the organizers' own placeholders (EventAiText::placeholders()), each a
  *   {name} with its prompt and a fallback text for when the AI fails;
- * - the texts the AI wrote for the coming events (EventAiText::overview()),
- *   each with an edit box. A changed text is sent as changed; an empty box
- *   puts the AI's text back.
+ * - Coming events: one card per coming event with the texts the AI wrote
+ *   for it (EventAiText), each with an edit box and "Write again", and
+ *   "Write the AI texts now" for the whole event; above the cards, the
+ *   one-time texts of the next post-event email (FollowupText) and the next
+ *   announcement (NewsletterText), saved through the same code as the crew
+ *   app's Admin tab (CrewAdminFollowup, CrewAdminNewsletter).
+ *
+ * These were the separate AI prompts page (PAGE_SLUG); its old address
+ * redirects to the AI tab (redirectOldPage()).
  */
 final class AiPromptsPage
 {
+    /** The old page's slug: its address redirects to the Messages page. */
     public const PAGE_SLUG = 'eventcrew-ai-prompts';
 
     public const PROMPTS_ACTION = 'eventcrew_ai_prompts_save';
@@ -28,23 +40,35 @@ final class AiPromptsPage
 
     public const EVENT_TEXT_ACTION = 'eventcrew_ai_event_text_save';
 
+    /** "Write the AI texts now" (one event) and "Write again" (one text). */
+    public const REWRITE_ACTION = 'eventcrew_ai_event_text_rewrite';
+
+    public const FOLLOWUP_TEXT_ACTION = 'eventcrew_admin_followup_text';
+
+    public const NEWSLETTER_TEXT_ACTION = 'eventcrew_admin_newsletter_text';
+
     public const NONCE_ACTION = 'eventcrew_ai_prompts';
 
-    public function __construct(private readonly View $view)
-    {
-    }
+    /** How many coming events get a card. */
+    public const EVENT_CARDS = 8;
 
-    public function render(): void
-    {
-        $this->view->render('ai-prompts', $this->data());
+    /** The anchor of the one-time texts on the Coming events tab. */
+    public const ONE_TIME_ANCHOR = 'ec-one-time';
+
+    public function __construct(
+        private readonly ?EventAiText $eventAiText = null,
+        private readonly ?CrewAdminFollowup $followup = null,
+        private readonly ?CrewAdminNewsletter $newsletter = null,
+        private readonly ?FollowupMail $followupMail = null
+    ) {
     }
 
     /**
-     * What the page shows.
+     * What the AI tab shows.
      *
-     * @return array<string, mixed>
+     * @return array{prompts: list<array<string, mixed>>, placeholders: list<array<string, string>>}
      */
-    public function data(): array
+    public function promptsData(): array
     {
         $prompts = [];
 
@@ -61,8 +85,55 @@ final class AiPromptsPage
         return [
             'prompts' => $prompts,
             'placeholders' => EventAiText::placeholders(),
-            'events' => EventAiText::overview(),
-            'templates' => EventAiText::activeTemplates(),
+        ];
+    }
+
+    /**
+     * What the Coming events tab shows: a card per coming event (the next
+     * EVENT_CARDS, and any later one that has texts), the AI texts of each,
+     * and the one-time texts.
+     *
+     * @param list<array{id: int, title: string, date: string}>|null $upcoming The coming events; null reads EventSource.
+     * @return array<string, mixed>
+     */
+    public function eventsData(?array $upcoming = null): array
+    {
+        $today = (string) current_time('Y-m-d');
+        $cards = [];
+
+        foreach ($upcoming ?? EventSource::upcoming() as $event) {
+            if ('' === $event['date'] || $event['date'] < $today || count($cards) >= self::EVENT_CARDS) {
+                continue;
+            }
+
+            $cards[(int) $event['id']] = [
+                'event_id' => (int) $event['id'],
+                'date' => $event['date'],
+                'title' => $event['title'],
+                'items' => [],
+            ];
+        }
+
+        foreach (EventAiText::overview() as $event) {
+            $cards[$event['event_id']] = $event;
+        }
+
+        uasort($cards, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
+
+        $titles = array_column($cards, 'title', 'date');
+        $night = null === $this->followupMail ? '' : $this->followupMail->nextNight(
+            null,
+            null === $upcoming ? null : array_column($upcoming, 'date')
+        );
+
+        return [
+            'events' => array_values($cards),
+            'can_write' => [] !== EventAiText::activeTemplates() || [] !== EventAiText::placeholders(),
+            'followup' => null === $this->followup ? null : $this->followup->view() + [
+                'night' => '' === $night ? '' : TicketMail::shortDate($night)
+                    . (isset($titles[$night]) ? ' · ' . $titles[$night] : ''),
+            ],
+            'newsletter' => null === $this->newsletter ? null : $this->newsletter->view(),
         ];
     }
 
@@ -74,7 +145,7 @@ final class AiPromptsPage
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
         $result = $this->applyPrompts(wp_unslash($_POST));
 
-        Admin::redirectTo(self::PAGE_SLUG, $result);
+        self::back(MessagesPage::TAB_AI, $result);
     }
 
     /**
@@ -112,7 +183,7 @@ final class AiPromptsPage
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
         $notice = $this->applyPlaceholders(wp_unslash($_POST), $type);
 
-        Admin::redirectTo(self::PAGE_SLUG, $notice, $type);
+        self::back(MessagesPage::TAB_AI, $notice, $type);
     }
 
     /**
@@ -193,7 +264,15 @@ final class AiPromptsPage
         Admin::assertCanSave(self::NONCE_ACTION);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        Admin::redirectTo(self::PAGE_SLUG, self::noticeText($this->applyEventText(wp_unslash($_POST))));
+        $post = wp_unslash($_POST);
+        $code = $this->applyEventText($post);
+
+        self::back(
+            MessagesPage::TAB_EVENTS,
+            self::noticeText($code),
+            EventAiText::NOT_FOUND === $code ? 'error' : 'success',
+            self::eventAnchor((int) ($post['event_id'] ?? 0))
+        );
     }
 
     /**
@@ -228,5 +307,197 @@ final class AiPromptsPage
             EventAiText::BACK_TO_AI => __('The AI text is used again.', 'eventcrew'),
             default => __('Nothing was saved: that text was not found.', 'eventcrew'),
         };
+    }
+
+    /**
+     * admin-post: "Write the AI texts now" of one event (a form) or "Write
+     * again" of one text (a link, so event_id and key may come in the URL).
+     */
+    public function rewriteEventText(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification -- verified in assertCanSave().
+        $request = wp_unslash($_POST) + wp_unslash($_GET);
+        // phpcs:enable WordPress.Security.NonceVerification
+
+        $type = 'success';
+        $eventId = (int) ($request['event_id'] ?? 0);
+        $notice = $this->applyRewrite($request, $type);
+
+        self::back(MessagesPage::TAB_EVENTS, $notice, $type, self::eventAnchor($eventId));
+    }
+
+    /**
+     * Asks the AI for the texts of $request's event_id (and key, for one
+     * text) again. Returns the notice; $type becomes 'error' when a text
+     * could not be written.
+     *
+     * @param array<string, mixed> $request
+     */
+    public function applyRewrite(array $request, string &$type = 'success'): string
+    {
+        if (null === $this->eventAiText) {
+            $type = 'error';
+
+            return __('Nothing was written: that event or text was not found.', 'eventcrew');
+        }
+
+        $result = $this->eventAiText->rewrite(
+            (int) ($request['event_id'] ?? 0),
+            sanitize_text_field((string) ($request['key'] ?? ''))
+        );
+
+        return self::rewriteNotice($result, $type);
+    }
+
+    /**
+     * The sentence for EventAiText::rewrite()'s result; $type becomes
+     * 'error' unless every text was written.
+     *
+     * @param array{found: bool, configured: bool, written: int, failed: int} $result
+     */
+    public static function rewriteNotice(array $result, string &$type = 'success'): string
+    {
+        $type = $result['found'] && $result['configured'] && 0 === $result['failed'] ? 'success' : 'error';
+
+        if (! $result['found']) {
+            return __('Nothing was written: that event or text was not found.', 'eventcrew');
+        }
+
+        if (! $result['configured']) {
+            return __('Nothing was written: the AI is not set up. Set it up in EventCrew > Settings.', 'eventcrew');
+        }
+
+        $parts = [];
+
+        if ($result['written'] > 0) {
+            $parts[] = sprintf(
+                /* translators: %d: how many texts the AI wrote */
+                _n('The AI wrote %d new text.', 'The AI wrote %d new texts.', $result['written'], 'eventcrew'),
+                $result['written']
+            );
+        }
+
+        if ($result['failed'] > 0) {
+            $parts[] = sprintf(
+                /* translators: %d: how many texts the AI could not write */
+                _n(
+                    'The AI could not write %d text; it keeps its old text.',
+                    'The AI could not write %d texts; they keep their old texts.',
+                    $result['failed'],
+                    'eventcrew'
+                ),
+                $result['failed']
+            );
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /** admin-post: the one-time text of the next post-event email, from the Coming events tab. */
+    public function saveFollowupText(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $code = $this->applyFollowupText(wp_unslash($_POST));
+
+        self::back(
+            MessagesPage::TAB_EVENTS,
+            CrewAdminFollowup::noticeText($code),
+            'admin_followup_unknown' === $code ? 'error' : 'success',
+            self::ONE_TIME_ANCHOR
+        );
+    }
+
+    /**
+     * The post-event email's one-time text form: variant, op (save or clear)
+     * and followup_text, saved the way the crew app saves it. Returns the
+     * notice code of CrewAdminFollowup::saveText().
+     *
+     * @param array<string, mixed> $post
+     */
+    public function applyFollowupText(array $post): string
+    {
+        if (null === $this->followup) {
+            return 'admin_followup_unknown';
+        }
+
+        return $this->followup->saveText(
+            0,
+            sanitize_key((string) ($post['variant'] ?? '')),
+            sanitize_key((string) ($post['op'] ?? '')),
+            sanitize_textarea_field((string) ($post['followup_text'] ?? ''))
+        );
+    }
+
+    /** admin-post: the text for the next announcement, from the Coming events tab. */
+    public function saveNewsletterText(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $code = $this->applyNewsletterText(wp_unslash($_POST));
+
+        self::back(MessagesPage::TAB_EVENTS, CrewAdminNewsletter::noticeText($code), 'success', self::ONE_TIME_ANCHOR);
+    }
+
+    /**
+     * The announcement's text form: op (save or clear) and newsletter_text,
+     * saved the way the crew app saves it. Returns the notice code of
+     * CrewAdminNewsletter::saveText().
+     *
+     * @param array<string, mixed> $post
+     */
+    public function applyNewsletterText(array $post): string
+    {
+        if (null === $this->newsletter) {
+            return '';
+        }
+
+        return $this->newsletter->saveText(
+            0,
+            sanitize_key((string) ($post['op'] ?? '')),
+            sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''))
+        );
+    }
+
+    /**
+     * load- hook of the hidden old page (Admin::registerMenus()): the old
+     * address of the AI prompts page goes to the AI tab of the Messages page;
+     * with an event_id, to that event on the Coming events tab.
+     */
+    public static function redirectOldPage(): void
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only: where to go.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash((string) $_GET['page'])) : '';
+
+        if (self::PAGE_SLUG !== $page) {
+            return;
+        }
+
+        $eventId = isset($_GET['event_id']) ? (int) $_GET['event_id'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        wp_safe_redirect(
+            0 === $eventId
+                ? MessagesPage::url(MessagesPage::TAB_AI)
+                : MessagesPage::url(MessagesPage::TAB_EVENTS, [], self::eventAnchor($eventId))
+        );
+
+        exit;
+    }
+
+    /** The anchor of $eventId's card on the Coming events tab. */
+    public static function eventAnchor(int $eventId): string
+    {
+        return $eventId > 0 ? 'ec-event-' . $eventId : '';
+    }
+
+    /** Back to $tab of the Messages page with $notice. */
+    private static function back(string $tab, string $notice, string $type = 'success', string $anchor = ''): never
+    {
+        Admin::redirectTo(MessagesPage::PAGE_SLUG, $notice, $type, ['tab' => $tab], $anchor);
     }
 }

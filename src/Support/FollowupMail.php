@@ -324,6 +324,60 @@ final class FollowupMail
     }
 
     /**
+     * The night whose post-event email is the next one to start, so the one
+     * the one-time texts (FollowupText) go into: a night whose preview went
+     * out and that has not started, else the first coming event the email
+     * covers. '' while the email is switched off or no night is known.
+     *
+     * @param list<string>|null $coming The coming event dates (Y-m-d); null reads them from EventSource.
+     */
+    public function nextNight(?\DateTimeImmutable $now = null, ?array $coming = null): string
+    {
+        if (! self::enabled()) {
+            return '';
+        }
+
+        $now = $now ?? self::now();
+        $at = $now->getTimestamp();
+        $today = $now->setTimezone(self::timezone())->format('Y-m-d');
+        $state = $this->state();
+        $nights = [];
+
+        foreach (array_keys($state['previewed']) as $date) {
+            $date = (string) $date;
+
+            if (
+                ! isset($state['started'][$date])
+                && ! isset($state['stopped'][$date])
+                && ! isset($state['expired'][$date])
+                && $at < self::sendAt($date)->getTimestamp() + self::LATE_DAYS * DAY_IN_SECONDS
+            ) {
+                $nights[] = $date;
+            }
+        }
+
+        $coming ??= array_column(EventSource::upcoming(), 'date');
+
+        foreach ($coming as $date) {
+            $date = (string) $date;
+
+            if (
+                '' !== $date
+                && $date >= $today
+                && ! isset($state['stopped'][$date])
+                && ! isset($state['started'][$date])
+                && self::covers($date)
+            ) {
+                $nights[] = $date;
+            }
+        }
+
+        sort($nights);
+
+        return $nights[0] ?? '';
+    }
+
+    /**
      * How many of $date's emails were sent, failed and clicked.
      *
      * @return array{sent: int, failed: int, stopped: int, unsent: int, clicked: int}

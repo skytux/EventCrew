@@ -150,7 +150,7 @@ final class MessagesPageTest extends TestCase
         $this->submit(static fn () => $page->save());
 
         self::assertSame([MessagesPage::SAVE_ACTION], $this->nonces);
-        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'kind' => 'slot_freed_dm'], $this->redirectArgs);
+        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'tab' => 'messages', 'kind' => 'slot_freed_dm'], $this->redirectArgs);
         self::assertSame(
             'Free: {role} at {event}',
             MessageTemplates::stored('slot_freed_dm')[MessageTemplates::BODY]['source']
@@ -191,7 +191,7 @@ final class MessagesPageTest extends TestCase
         $page = $this->page();
         $this->submit(static fn () => $page->save());
 
-        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'kind' => 'email_changed'], $this->redirectArgs);
+        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'tab' => 'messages', 'kind' => 'email_changed'], $this->redirectArgs);
         self::assertSame(
             [[
                 'type' => 'error',
@@ -258,7 +258,7 @@ final class MessagesPageTest extends TestCase
         $this->submit(static fn () => $page->reset());
 
         self::assertSame([MessagesPage::RESET_ACTION], $this->nonces);
-        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'kind' => 'reminder'], $this->redirectArgs);
+        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'tab' => 'messages', 'kind' => 'reminder'], $this->redirectArgs);
         self::assertFalse(MessageTemplates::isChanged('reminder'));
     }
 }
