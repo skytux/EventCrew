@@ -6848,8 +6848,8 @@ msgstr "Paikka vapautui (Telegram)"
 msgid "Task cancelled by the organizers (email)"
 msgstr "Järjestäjät peruivat tehtävän (sähköposti)"
 
-msgid "Sent to each person signed up for a task when an organizer deletes the task. Sent in Finnish and English."
-msgstr "Lähetetään jokaiselle tehtävään ilmoittautuneelle, kun järjestäjä poistaa tehtävän. Lähetetään suomeksi ja englanniksi."
+msgid "Sent to each person signed up for a task when an organizer deletes the task. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
+msgstr "Lähetetään jokaiselle tehtävään ilmoittautuneelle, kun järjestäjä poistaa tehtävän. Lähetetään kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti."
 
 msgid "Marked as a no-show (email)"
 msgstr "Merkitty saapumatta jääneeksi (sähköposti)"
@@ -6890,8 +6890,8 @@ msgstr "Tapahtuman päivä, esimerkiksi pe 14.11."
 msgid "Ticket (email)"
 msgstr "Lippu (sähköposti)"
 
-msgid "The ticket with its QR code, to ticket buyers, guests and crew. Sent in Finnish and English."
-msgstr "Lippu QR-koodeineen lipun ostajille, vieraille ja crew’lle. Lähetetään suomeksi ja englanniksi."
+msgid "The ticket with its QR code, to ticket buyers, guests and crew. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
+msgstr "Lippu QR-koodeineen lipun ostajille, vieraille ja crew’lle. Lähetetään kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti."
 
 msgid "The thank-you line: for buying a ticket, for coming as a guest, for taking a task, or for spending a credit."
 msgstr "Kiitosrivi: lipun ostamisesta, vieraaksi tulemisesta, tehtävän ottamisesta tai vapaalipun käyttämisestä."
@@ -6899,20 +6899,20 @@ msgstr "Kiitosrivi: lipun ostamisesta, vieraaksi tulemisesta, tehtävän ottamis
 msgid "Ticket cancelled (email)"
 msgstr "Lippu peruttu (sähköposti)"
 
-msgid "Sent when a ticket that was emailed is cancelled. Sent in Finnish and English."
-msgstr "Lähetetään, kun sähköpostilla lähetetty lippu perutaan. Lähetetään suomeksi ja englanniksi."
+msgid "Sent when a ticket that was emailed is cancelled. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
+msgstr "Lähetetään, kun sähköpostilla lähetetty lippu perutaan. Lähetetään kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti."
 
 msgid "After the event: thank you (email)"
 msgstr "Tapahtuman jälkeen: kiitos (sähköposti)"
 
-msgid "Sent the day after an event to the people who came. Sent in Finnish and English."
-msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, jotka tulivat. Lähetetään suomeksi ja englanniksi."
+msgid "Sent the day after an event to the people who came. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
+msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, jotka tulivat. Lähetetään kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti."
 
 msgid "After the event: we missed you (email)"
 msgstr "Tapahtuman jälkeen: kaipasimme sinua (sähköposti)"
 
-msgid "Sent the day after an event to the people who had a ticket but did not come. Sent in Finnish and English."
-msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, joilla oli lippu mutta jotka eivät tulleet. Lähetetään suomeksi ja englanniksi."
+msgid "Sent the day after an event to the people who had a ticket but did not come. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
+msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, joilla oli lippu mutta jotka eivät tulleet. Lähetetään kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti."
 
 msgid "Next events announcement (email)"
 msgstr "Tulevien tapahtumien ilmoitus (sähköposti)"
@@ -7114,4 +7114,4 @@ msgid "One message in all site languages, one part per language, each part start
 msgstr "Yksi viesti kaikilla sivuston kielillä, yksi osa kullekin kielelle, ja jokainen osa alkaa kielen lyhyellä koodilla (FI, EN). Niille, joiden kieltä ei tiedetä."
 
 msgid "With the tick off, each person gets the message in their own language only, and people whose language is not known get it in the main language."
-msgstr "Kun ruutu ei ole valittu, jokainen saa viestin vain omalla kielellään, ja ne, joiden kieltä ei tiedetä, saavat sen pääkielellä."
+msgstr "Kun ruutua ei ole valittu, jokainen saa viestin vain omalla kielellään, ja ne, joiden kieltä ei tiedetä, saavat sen pääkielellä."

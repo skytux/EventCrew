@@ -89,10 +89,22 @@ final class HybridPolicyTest extends TestCase
         $this->options[HybridPolicy::OPTION] = [HybridPolicy::TASK_CANCELLED => false];
 
         self::assertSame(['en'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, $this->person('en')));
-        self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, $this->person(null)));
+        self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, $this->person('fi')));
         self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, 'xx'), 'not a site language');
         self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, null));
         self::assertSame(['en'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, 'en'));
+    }
+
+    public function testWithTheTickOffAPersonWithNoLanguageReadsEnglish(): void
+    {
+        $this->options[HybridPolicy::OPTION] = [HybridPolicy::TASK_CANCELLED => false];
+
+        // A person who has not chosen a language reads English, as everywhere
+        // else (Language::forPerson()); only people who are not persons
+        // (buyers, guests, subscribers) get the main language.
+        self::assertSame(['en'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, $this->person(null)));
+        self::assertSame('en', HybridPolicy::personLanguage($this->person(null)));
+        self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, null));
     }
 
     public function testEachKindHasItsOwnTickAndAllAreOnByDefault(): void
