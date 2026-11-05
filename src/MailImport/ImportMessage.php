@@ -18,9 +18,11 @@ namespace EventCrew\MailImport;
 final class ImportMessage
 {
     /**
-     * [ok, reason]. With $authservId set, only an Authentication-Results
-     * header naming that server counts; otherwise the top one does, since the
-     * receiving server puts its header above anything the sender wrote.
+     * [ok, reason]. Only the topmost Authentication-Results header counts,
+     * and only when its authserv-id is $authservId (our own mail server): the
+     * receiving server puts its header above anything the sender wrote, so a
+     * header lower down, or a top one naming another server, may be forged.
+     * An empty $authservId refuses every message.
      *
      * @return array{0: bool, 1: string}
      */
@@ -33,10 +35,18 @@ final class ImportMessage
             return [false, 'no From address'];
         }
 
+        if ('' === trim($authservId)) {
+            return [false, 'no trusted mail server is set in the mailbox settings'];
+        }
+
+        if ([] === $message->headers('Authentication-Results')) {
+            return [false, 'no Authentication-Results header'];
+        }
+
         $header = self::resultsHeader($message, $authservId);
 
         if ('' === $header) {
-            return [false, 'no Authentication-Results header from our mail server'];
+            return [false, 'the top Authentication-Results header is not from our mail server'];
         }
 
         $dmarc = self::results($header, 'dmarc');
@@ -150,23 +160,19 @@ final class ImportMessage
         return false === $at ? '' : strtolower(substr($address, $at + 1));
     }
 
+    /** The topmost Authentication-Results header when our server wrote it, else ''. */
     private static function resultsHeader(MimeMessage $message, string $authservId): string
     {
-        foreach ($message->headers('Authentication-Results') as $header) {
-            $text = trim((string) preg_replace('/\s+/', ' ', $header));
+        $headers = $message->headers('Authentication-Results');
 
-            if ('' === $authservId) {
-                return $text;
-            }
-
-            $server = strtolower(trim(explode(';', $text, 2)[0]));
-
-            if ($server === strtolower(trim($authservId))) {
-                return $text;
-            }
+        if ([] === $headers) {
+            return '';
         }
 
-        return '';
+        $text = trim((string) preg_replace('/\s+/', ' ', $headers[0]));
+        $server = strtolower(trim(explode(';', $text, 2)[0]));
+
+        return $server === strtolower(trim($authservId)) ? $text : '';
     }
 
     /**

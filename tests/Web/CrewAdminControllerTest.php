@@ -1495,7 +1495,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('admin_mail_checked', $result['notice']);
         self::assertTrue($this->options[MailFetchSettings::STATUS_OPTION]['ok']);
         self::assertSame(
-            'Mailbox checked: 0 imported, 0 rejected, 0 left to try again.',
+            // switchMailOn() sets no trusted mail server, and the status says so.
+            'Mailbox checked: 0 imported, 0 rejected, 0 left to try again'
+            . ' (no trusted mail server is set, so every message is refused).',
             CrewAdminController::noticeText($result['notice'])
         );
     }

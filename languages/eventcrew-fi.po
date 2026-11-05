@@ -4265,8 +4265,8 @@ msgstr "Kansio, johon hylätyt viestit siirretään. Luodaan, jos sitä ei ole."
 msgid "Trusted mail server"
 msgstr "Luotettu sähköpostipalvelin"
 
-msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one."
-msgstr "Oman sähköpostipalvelimesi lisäämän Authentication-Results-otsakkeen ensimmäinen sana, esimerkiksi mx.example.org. DMARC-tarkistuksessa luotetaan vain tähän otsakkeeseen. Tyhjänä luotetaan ylimpään."
+msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only the top Authentication-Results header is trusted, and only when it names this server. Empty refuses every message."
+msgstr "Oman sähköpostipalvelimesi lisäämän Authentication-Results-otsakkeen ensimmäinen sana, esimerkiksi mx.example.org. Vain ylimpään Authentication-Results-otsakkeeseen luotetaan, ja vain jos siinä on tämä palvelin. Tyhjänä kaikki viestit hylätään."
 
 msgid "Save the mailbox settings"
 msgstr "Tallenna postilaatikon asetukset"

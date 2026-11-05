@@ -2272,7 +2272,7 @@ if (! defined('ABSPATH')) {
                 <th scope="row"><label for="eventcrew-mail-fetch-authserv"><?php esc_html_e('Trusted mail server', 'eventcrew'); ?></label></th>
                 <td>
                     <input type="text" name="mail_fetch_authserv_id" id="eventcrew-mail-fetch-authserv" class="regular-text" value="<?php echo esc_attr($mail_fetch['authserv_id']); ?>">
-                    <p class="description"><?php esc_html_e('The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only the top Authentication-Results header is trusted, and only when it names this server. Empty refuses every message.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>
