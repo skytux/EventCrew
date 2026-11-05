@@ -126,6 +126,8 @@ abstract class TestCase extends PHPUnitTestCase
         Functions\when('do_blocks')->returnArg(1);
         Functions\when('get_post')->justReturn(null);
         Functions\when('get_post_type')->justReturn(false);
+        // EventMesh is off unless a test fakes its events (EventTimes reads them).
+        Functions\when('post_type_exists')->justReturn(false);
         Functions\when('wp_insert_post')->justReturn(123);
         Functions\when('update_option')->justReturn(true);
         Functions\when('is_wp_error')->justReturn(false);

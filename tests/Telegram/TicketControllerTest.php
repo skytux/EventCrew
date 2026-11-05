@@ -299,6 +299,22 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026</p>', $html);
     }
 
+    public function testRenderPageShowsTheEventsStartTime(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+        Functions\when('post_type_exists')->justReturn(true);
+        Functions\when('get_post')->justReturn((object) ['post_type' => 'eventmesh_event', 'post_title' => 'Party']);
+        Functions\when('get_post_meta')->alias(
+            static fn (int $id, string $key): string => '_eventmesh_starts_at' === $key ? '2026-08-01T19:00:00' : ''
+        );
+        $ticket = $this->sampleTicket();
+        $ticket['event_id'] = 41;
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026 · 19:00</p>', $html);
+    }
+
     public function testRenderPageShowsTheValidAndDisabledBands(): void
     {
         $ticket = $this->sampleTicket();

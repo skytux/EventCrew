@@ -1207,9 +1207,10 @@ final class TicketMail
      * alternative. $deleted, when an organizer deleted one of a crew
      * member's tasks, is named in the text instead of the thank-you line.
      *
-     * The content: the "Your ticket" line, the event and the date as the
-     * heading, the ticket text (TicketText) in each language HybridPolicy
-     * picks, each with its greeting on its own line in italics, the ticket note,
+     * The content: the "Your ticket" line, the event, the date and the
+     * start time as the heading, the ticket text (TicketText) in each
+     * language HybridPolicy picks, each with its greeting on its own line in
+     * italics, the ticket note,
      * the "Open my ticket" button and the "See you on the dancefloor" line.
      * The corner (ticketCorner()): the holder's name, a buyer's code, the
      * offline hint and the small QR code in the bottom-right corner.
@@ -1229,7 +1230,14 @@ final class TicketMail
         ) {
             $parts[$lang] = Language::run(
                 $lang,
-                fn (): array => $this->words($row, self::eventIn($event, $eventId, $lang), $date, $lang, $deleted)
+                fn (): array => $this->words(
+                    $row,
+                    self::eventIn($event, $eventId, $lang),
+                    $date,
+                    $lang,
+                    $deleted,
+                    $eventId
+                )
             );
         }
 
@@ -1256,7 +1264,7 @@ final class TicketMail
         // The same ticket note as the web ticket (door code, address), in
         // the languages of the rest of this email.
         $noteValue = SiteTexts::value('ticket_note');
-        $noteTags = TicketNote::values();
+        $noteTags = TicketNote::values($eventId);
         $note = implode("\n\n", array_unique(array_filter(array_map(
             static fn (string $lang): string => TicketNote::fill(TranslatedText::forReader($noteValue, $lang), $noteTags),
             array_keys($parts)
@@ -1270,7 +1278,10 @@ final class TicketMail
             $partsHtml[] = $this->ticketPart($words, $tags[$lang]);
         }
 
-        $html = $this->ticketTop($both('subject', ' · '), $event, $date)
+        // The heading: "event — 14.11.2026 · 19:00", the time when the event has one.
+        $start = EventTimes::start($eventId);
+        $when = '' === $start ? $date : $date . ' · ' . $start;
+        $html = $this->ticketTop($both('subject', ' · '), $event, $when)
             . implode('<hr style="border:0;border-top:1px solid ' . self::RULE_COLOR . ';margin:20px 0">', $partsHtml)
             . ('' === $note ? '' : sprintf(
                 '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
@@ -1374,7 +1385,8 @@ final class TicketMail
         string $event,
         string $date,
         string $lang,
-        ?Task $deleted = null
+        ?Task $deleted = null,
+        ?int $eventId = null
     ): array {
         if (null !== $deleted) {
             $reason = self::deletedSentence($deleted);
@@ -1409,6 +1421,7 @@ final class TicketMail
             TicketText::FIRST_NAME_TAG => DoorDesk::firstName($row->name),
             TicketText::EVENT_TAG => $event,
             TicketText::DATE_TAG => $date,
+            TicketText::START_TIME_TAG => EventTimes::start($eventId),
             TicketText::REASON_TAG => $reason,
             TicketText::TASKS_TAG => $tasks,
             TicketText::PLUS_ONES_TAG => $plusOnes,
