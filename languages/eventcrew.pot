@@ -60,7 +60,7 @@ msgstr ""
 msgid "%1$d tickets were imported for %2$s."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:495
+#: src/Support/OpenTaskCall.php:503
 #. translators: 1: recent-task list, 2: total completed
 msgid "%1$s\n\nTasks completed in total: %2$d."
 msgstr ""
@@ -85,6 +85,16 @@ msgstr ""
 #: src/Support/MessageTemplates.php:1666
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
+msgstr ""
+
+#: src/Support/OpenTaskCall.php:389
+#. translators: 1: role, 2: event, 3: places taken, 4: places in all
+msgid "%1$s at %2$s (%3$d/%4$d)"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:1797
+#. translators: 1: role, 2: event, 3: day and time
+msgid "%1$s at %2$s, %3$s"
 msgstr ""
 
 #: src/Support/MessageTemplates.php:1656
@@ -2536,7 +2546,7 @@ msgid "Hi %s!"
 msgstr ""
 
 #: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1121 src/Support/MessageTemplates.php:847
-#: src/Support/MessageTemplates.php:1385 src/Support/MessageTemplates.php:1805 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
+#: src/Support/MessageTemplates.php:1385 src/Support/MessageTemplates.php:1811 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
 #. translators: %s: the person's first name
 msgid "Hi %s,"
 msgstr ""
@@ -3920,11 +3930,11 @@ msgstr ""
 msgid "Open the bot in a private chat and send /start there to set up your account."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:282
+#: src/Support/OpenTaskCall.php:285
 msgid "Open the group"
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:267
+#: src/Support/OpenTaskCall.php:270
 msgid "Open the group in Telegram"
 msgstr ""
 
@@ -4782,7 +4792,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:200 src/Support/OpenTaskCall.php:266 src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
+#: src/Support/ClaimNotifier.php:200 src/Support/OpenTaskCall.php:269 src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
 #: src/Telegram/PermissionService.php:327
 msgid "See open tasks"
 msgstr ""
@@ -7117,7 +7127,7 @@ msgstr ""
 msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:490
+#: src/Support/OpenTaskCall.php:498
 msgid "This will be your first task — welcome!"
 msgstr ""
 
@@ -7542,7 +7552,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1124 src/Support/MessageTemplates.php:1807
+#: src/Support/FollowupMail.php:1124 src/Support/MessageTemplates.php:1813
 msgid "Warmly,"
 msgstr ""
 
@@ -8323,7 +8333,7 @@ msgstr ""
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:491
+#: src/Support/OpenTaskCall.php:499
 msgid "Your recent tasks:"
 msgstr ""
 
