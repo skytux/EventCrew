@@ -45,6 +45,31 @@ final class EventSourceTest extends TestCase
      * A source "doors open 21:00" stays 21:00 - never shifted to 00:00 by a
      * timezone conversion of a value that was never in UTC to begin with.
      */
+    /** Q209: the event a new task's form starts on. */
+    public function testANewTaskStartsOnTheNextEventOrTheEventOfTheShownDate(): void
+    {
+        $event = static fn (int $id, string $date, string $starts): array => [
+            'id' => $id,
+            'title' => 'E' . $id,
+            'starts_at' => '' === $starts ? '' : $date . ' ' . $starts,
+            'ends_at' => '',
+            'date' => $date,
+        ];
+        $events = [
+            $event(1, '2026-07-10', '21:00:00'),
+            $event(2, '2026-07-25', ''),
+            $event(3, '2026-08-01', '20:00:00'),
+        ];
+
+        // The next event with a start, from today on.
+        self::assertSame(3, EventSource::forNewTask($events, '2026-07-20')['id'] ?? null);
+        // The event of the shown date, also a past one.
+        self::assertSame(1, EventSource::forNewTask($events, '2026-07-20', '2026-07-10')['id'] ?? null);
+        // No event on the shown date, or none ahead: none.
+        self::assertNull(EventSource::forNewTask($events, '2026-07-20', '2026-07-11'));
+        self::assertNull(EventSource::forNewTask($events, '2026-08-02'));
+    }
+
     public function testTakesTheStoredWallClockVerbatim(): void
     {
         $this->stubEvent('2026-08-01T21:00:00', '2026-08-02T01:00:00');

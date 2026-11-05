@@ -54,6 +54,7 @@ final class TasksPage
         $table->prepare_items();
 
         $editing = $this->taskBeingEdited();
+        $events = EventSource::upcoming();
 
         $this->view->render(
             'tasks',
@@ -64,8 +65,12 @@ final class TasksPage
                 // may sit on an archived one - that role is appended so
                 // reopening an old task does not silently move it elsewhere.
                 'roles' => $this->rolesForForm($editing),
-                'events' => EventSource::upcoming(),
+                'events' => $events,
                 'events_available' => EventSource::isAvailable(),
+                // A new task starts on the next event, with its start time.
+                'new_task_event' => null === $editing
+                    ? EventSource::forNewTask($events, (string) current_time('Y-m-d'))
+                    : null,
                 'roster' => $this->rosterForEditedTask(),
                 'nonce_action' => self::NONCE_ACTION,
                 'template_nonce_action' => self::TEMPLATE_NONCE_ACTION,

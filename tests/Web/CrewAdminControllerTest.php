@@ -2725,6 +2725,28 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
     }
 
+    /** Q209: a new task starts on the shown date's event, with its start time. */
+    public function testANewTaskStartsAtTheEventsStart(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $this->stubEvent(70);
+        Functions\when('get_posts')->justReturn([(object) ['ID' => 70]]);
+        $_GET = ['tasks_date' => '2026-08-01'];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1));
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertMatchesRegularExpression('/<option value="70"[^>]* selected>/', $html);
+        self::assertStringContainsString(
+            'id="eventcrew-admin-task-starts" value="2026-08-01T21:00"',
+            $html
+        );
+    }
+
     public function testTheTasksScreenOpensARoleForEditing(): void
     {
         Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));

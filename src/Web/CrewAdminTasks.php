@@ -73,6 +73,7 @@ final class CrewAdminTasks
         $editing = $taskId > 0 ? $this->tasks->find($taskId) : null;
         $roles = Roles::all();
         $roleEditing = '' === $roleSlug ? null : Roles::find($roleSlug);
+        $events = EventSource::upcoming();
 
         return [
             'date' => $date,
@@ -83,8 +84,10 @@ final class CrewAdminTasks
             'editing' => $editing,
             'signed_up' => null === $editing ? [] : $this->signedUp($editing->id),
             'roles' => $this->rolesForForm($editing),
-            'events' => EventSource::upcoming(),
+            'events' => $events,
             'events_available' => EventSource::isAvailable(),
+            // A new task starts on the shown date's event, with its start time.
+            'new_task_event' => null === $editing ? EventSource::forNewTask($events, $today, $date) : null,
             'event_other' => self::EVENT_OTHER,
             'active_recipients' => count($this->people->activeEmailRecipients()),
             'role_list' => $roles,

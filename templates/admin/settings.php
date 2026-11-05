@@ -127,7 +127,8 @@ if (! defined('ABSPATH')) {
             'plus_ones' => 0,
             'conditions' => \EventCrew\Support\Roles::noConditions(),
             'anchor' => \EventCrew\Support\Roles::ANCHOR_START,
-            'start_offset' => null,
+            // A new role's tasks start when the event starts (offset 0).
+            'start_offset' => 0,
             'end_offset' => null,
             'description' => '',
         ];

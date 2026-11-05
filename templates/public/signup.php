@@ -1400,6 +1400,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             $eventcrew_task_event = $eventcrew_task_is_edit && null !== $eventcrew_task_editing->eventPostId
                 ? (string) $eventcrew_task_editing->eventPostId
                 : $eventcrew_task_other;
+            // A new task starts on the shown date's event, and its start time is that event's.
+            $eventcrew_task_new_event = $eventcrew_task_is_edit || [] === $eventcrew_task_events
+                ? null
+                : ($eventcrew_tasks['new_task_event'] ?? null);
+            if (null !== $eventcrew_task_new_event) {
+                $eventcrew_task_event = (string) $eventcrew_task_new_event['id'];
+            }
             // datetime-local wants Y-m-d\TH:i; the column holds Y-m-d H:i:s.
             $eventcrew_task_local = static function (?string $stored): string {
                 return null === $stored || '' === $stored ? '' : str_replace(' ', 'T', substr($stored, 0, 16));
@@ -1497,7 +1504,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </p>
                     <p>
                         <label for="eventcrew-admin-task-starts"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
-                        <input type="datetime-local" name="starts_at" id="eventcrew-admin-task-starts" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->startsAt : null)); ?>">
+                        <input type="datetime-local" name="starts_at" id="eventcrew-admin-task-starts" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->startsAt : ($eventcrew_task_new_event['starts_at'] ?? null))); ?>">
                     </p>
                     <p>
                         <label for="eventcrew-admin-task-ends"><?php esc_html_e('Ends', 'eventcrew'); ?></label>
