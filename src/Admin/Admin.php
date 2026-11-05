@@ -86,6 +86,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_test_webhook',
+            [$this->container->get(SettingsPage::class), 'testWebhook']
+        );
+
+        add_action(
             'admin_post_eventcrew_assistant_test',
             [$this->container->get(SettingsPage::class), 'testAssistant']
         );

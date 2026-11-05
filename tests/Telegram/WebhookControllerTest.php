@@ -112,6 +112,45 @@ final class WebhookControllerTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
     }
 
+    /**
+     * The Settings page's "Test the webhook" body, on both doors, through a
+     * router with the language service and the blocked check: 200, and the
+     * bot does nothing - no Telegram call, no row written, and the "highest
+     * update handled" mark is not moved.
+     */
+    public function testTheSettingsTestBodyIsAnsweredWithoutTheBotActing(): void
+    {
+        $this->options[WebhookController::SECRET_OPTION] = 'correct-secret';
+        Functions\when('get_transient')->justReturn(false);
+        Functions\when('set_transient')->justReturn(true);
+        $controller = new WebhookController(
+            $this->updateRouter(
+                new \EventCrew\Telegram\LanguageService(
+                    new \EventCrew\Repositories\PersonRepository(),
+                    $this->client()
+                ),
+                null,
+                null,
+                null,
+                null,
+                true
+            )
+        );
+
+        self::assertSame(200, $controller->processFallback('correct-secret', WebhookController::TEST_BODY));
+
+        $request = $this->request('correct-secret');
+        $request->body = WebhookController::TEST_BODY;
+        $request->body_params = json_decode(WebhookController::TEST_BODY, true);
+        self::assertTrue($controller->authorize($request));
+        self::assertSame(200, $controller->handle($request)->get_status());
+
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(0, $this->wpdb->lastUpdateId);
+    }
+
     public function testWebhookUrlUsesRestByDefault(): void
     {
         Functions\when('rest_url')->alias(static fn (string $path): string => 'https://example.test/wp-json/' . $path);
