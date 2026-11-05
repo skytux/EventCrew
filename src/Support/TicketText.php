@@ -19,7 +19,7 @@ namespace EventCrew\Support;
  * - {first_name}: the holder's first name;
  * - {event}: the event's name;
  * - {date}: the event's date, like 14.11.2026;
- * - {reason}: why they have a ticket, one of four built-in lines;
+ * - {reason}: why they have a ticket, one of four lines (TicketReasons);
  * - {tasks}: a crew member's tasks on the night, as a list;
  * - {plus_ones}: how many people a guest may bring, like "2 people".
  *

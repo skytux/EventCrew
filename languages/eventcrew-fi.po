@@ -6534,14 +6534,30 @@ msgid "the event’s date, like 14.11.2026."
 msgstr "tapahtuman päivämäärä, esimerkiksi 14.11.2026."
 
 msgid ""
-"why the person has a ticket, one of four built-in lines: “Thank you for "
-"buying a ticket!”, “Thank you for coming! You are on the guest list.”, "
-"“Thank you for taking a task!” or “You spent a free-entry credit on this "
-"night.”"
+"why the person has a ticket: one of the four lines below, chosen by the kind "
+"of ticket."
 msgstr ""
-"miksi henkilöllä on lippu, yksi neljästä valmiista rivistä: ”Kiitos, että "
-"ostit lipun!”, ”Kiitos, että tulet! Olet vieraslistalla.”, ”Kiitos, että "
-"otit tehtävän!” tai ”Käytit vapaalipun tähän iltaan.”"
+"miksi henkilöllä on lippu: yksi alla olevista neljästä rivistä, lipun tyypin "
+"mukaan."
+
+msgid "Line for a bought ticket"
+msgstr "Rivi ostetulle lipulle"
+
+msgid "Line for a guest-list ticket"
+msgstr "Rivi vieraslistan lipulle"
+
+msgid "Line for a crew ticket"
+msgstr "Rivi crew-lipulle"
+
+msgid "Line for a free-entry ticket"
+msgstr "Rivi vapaalipulle"
+
+msgid ""
+"The {reason} line of the ticket email for this kind of ticket. Empty, or the "
+"same as the built-in line, means the built-in line."
+msgstr ""
+"Lippusähköpostin {reason}-rivi tälle lipputyypille. Tyhjä, tai sama kuin "
+"valmis rivi, tarkoittaa valmista riviä."
 
 msgid "a crew member’s tasks on the night, as a list. Empty for everyone else."
 msgstr "crew-jäsenen tehtävät illan aikana listana. Tyhjä kaikille muille."
