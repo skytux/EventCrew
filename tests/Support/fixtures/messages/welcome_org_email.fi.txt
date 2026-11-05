@@ -1,0 +1,117 @@
+EMAIL Järjestäjän opas: näin EventCrew toimii
+
+Hei Person 3,
+
+Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensin lyhyesti ja sitten tarkemmin.
+
+📖 Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: https://site.test/crew/#eventcrew-help-organizer
+
+📑 Sisältö
+
+- ⚡ Lyhyesti
+- 🗓️ Tehtävät ja tapahtumat
+- 📣 Taulu ja ilmoittautuminen
+- 🌙 Illan aikana: läsnäolo ja myyntipiste
+- 🎟️ Liput, vapaaliput ja luotettavuus
+- 🔑 Roolit ja oikeudet
+- 🔔 Automaattiset viestit
+- ⚙️ Wp-adminin sivut
+
+⚡ Lyhyesti
+
+- 🗓️ Tehtävät: luot ne wp-adminissa kohdassa EventCrew > Tehtävät. Yhdellä napsautuksella syntyvät illan kaikki tehtävät.
+- ✋ Ilmoittautuminen: jäsenet napauttavat tehtävää Telegram-ryhmän taululla tai käyttävät verkon ilmoittautumissivua. /board julkaisee ryhmään uuden taulun.
+- 🌙 Illan aikana: /roster merkitsee, kuka saapui, kuka teki tehtävänsä ja kuka ei tullut. Myyntipisteen linkillä myydään lippuja ja kirjataan ihmiset sisään ovella; /door ja sitten 💳 Myyntipiste lähettää sinulle linkin.
+- 🎁 Vapaaliput: jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä. /people ja sitten 🎁 Anna vapaalippuja antaa vapaalippuja käsin.
+- 📈 Luotettavuus: 60% tai enemmän on hyvä luotettavuus. Se perustuu siihen, miten kunkin jäsenen aiemmat tehtävät menivät.
+- 🔑 Roolit: /people ja sitten 🏷 Roolit, järjestäjät ja passit tekee jostakusta järjestäjän, antaa kertaluvan ilmoittautumisrajan ohi ja antaa tai poistaa rooleja, kuten DJ.
+- 🎧 Roolitehtävät (DJ, VJ, Organize, ...) eivät ole ryhmän taululla. Ne, joilla rooli on, näkevät ne komennolla /board yksityiskeskustelussa ja Crew-sovelluksessa. Voit lisätä siellä jonkun, myös henkilön, joka ei ole tiimin jäsen.
+- 🔔 Viestit: muistutukset ja kutsut lähtevät itsestään, vain klo 09:00–21:00.
+- ⚙️ Wp-adminin EventCrew > Asetukset muuttaa toimintaa. EventCrew > Diagnostiikka näyttää, toimiiko kaikki.
+- 🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+
+🗓️ Tehtävät ja tapahtumat
+
+Rooli on työn laji, esimerkiksi Vastaanotto tai Siivous. Roolit asetetaan Asetuksissa: nimi, emoji, lyhyt kuvaus, montako ihmistä tarvitaan sekä milloin rooli alkaa ja päättyy suhteessa tapahtumaan.
+
+Tehtävä on yksi rooli yhtenä päivänä. Kohdassa EventCrew > Tehtävät luot tehtävät yksi kerrallaan tai illan kaikki tehtävät kerralla roolien pohjalta. Tehtävän voi liittää tapahtumaan, jolloin se näkyy tapahtuman nimen alla. Tehtävä, jonka paikkamäärä on 0, pysyy tallessa mutta poistuu taululta.
+
+📣 Taulu ja ilmoittautuminen
+
+Telegram-ryhmän taulu listaa avoimet tehtävät kunkin tapahtuman ja päivän alla. Jokainen tehtävä on painike, joka näyttää roolin, ajan ja varatut paikat; jäsen ilmoittautuu napauttamalla sitä. Taulu päivittyy itsestään aina, kun jokin muuttuu. Ryhmässä /board julkaisee uuden kopion alimmaksi. Asetukset > Telegram-botti > Päivitä taulu piirtää sen uudelleen samaan paikkaan.
+
+Uusi jäsen lähettää botille /start yksityisviestinä ja vahvistaa sähköpostiosoitteensa. Verkon ilmoittautumissivulla hän kirjautuu sähköpostiin lähetetyllä linkillä. Molemmissa pätevät samat säännöt.
+
+Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista, sivuston sivuista ja virallisesta sähköpostiosoitteesta (yhteystieto kohdassa Asetukset > Tietosuoja), ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Se muistaa yksityisen keskustelun 24 tuntia ja ryhmässä sen, mitä kukin on sille kirjoittanut, erikseen, myös 24 tuntia. Se tietää kunkin roolit ja jättää pois sen, mikä on tarkoitettu vain muille. Kun järjestäjä kirjoittaa sille yksityisesti, se tuntee myös tämän oppaan ja infrastruktuurimuistiinpanon. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen. Kun joku antaa yksityisessä keskustelussa palautetta, on tyytymätön tai hyvin tyytyväinen tai pyytää ihmistä, jokainen järjestäjä saa keskustelun sähköpostilla ja lyhyen Telegram-viestin, enintään kerran tunnissa samalta henkilöltä (pois päältä kohdassa Asetukset > Telegram-botti).
+
+Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi pyytää jotakuta muuta ottamaan tehtävän napilla 🔁 Ota tehtävä komennon /me alla.
+
+🌙 Illan aikana: läsnäolo ja myyntipiste
+
+/roster yksityisviestissä botin kanssa näyttää illan crew’n. Merkitse jokainen saapuneeksi, myöhässä saapuneeksi, tehdyksi tai ei saapuneeksi, yksi kerrallaan tai koko crew kerralla. Wp-adminin EventCrew > Läsnäolo tekee saman mille tahansa päivälle. Illan vastaanottocrew voi myös merkitä crew’n.
+
+Myyntipiste on verkkosivu ovelle. Se näyttää illan listan: crew’n, jäsenet, joilla on vapaalippu, vieraat ja Holvin lipunostajat. Merkitset ihmiset sisään ja ulos ja kerrot, montako ihmistä he toivat mukanaan. Lisää myy lipun ovella, lisää vieraan tai lisää jäsenen, joka käyttää vapaalipun tai ottaa jonkin illan tehtävistä.
+
+Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin 30 minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Admin-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna "Opens the sales desk", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle.
+
+Holvin lipunostajat: valitse kohdassa EventCrew > Läsnäolo päivä ja liitä nimet, yksi per rivi, kohtaan "Holvin lipunostajat". Listalla jo oleva nimi ohitetaan.
+
+Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti. Roster ja Admin-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. "Lähetä testi minulle" lähettää yhden omaan osoitteeseesi; "Lähetä loput nyt" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet.
+
+Jokainen lähetys odottaa 10 minuuttia ennen kuin mitään lähtee, aloitti sen tuonti tai "Lähetä loput nyt". Siihen asti Roster ja Admin-välilehti näyttävät kellonajan, montako saa viestin, ja "Peru lähetys" -painikkeen. Peruminen ei lähetä mitään; liput jäävät lähettämättä. "Lähetä testi minulle" ei odota.
+
+Sama lippusähköposti lähtee seuraavassa erässä vieraalle, jonka lisäät sähköpostiosoitteen kanssa (wp-adminin Roster, Admin-välilehti tai /door add Nimi nimi@example.com), ja myyntipisteessä sähköpostiosoitteen kanssa lisätylle Holvi-ostajalle. Crew saa erillisen lippusähköpostin, kun ottaa tehtävän tai käyttää vapaalipun. Kun vieras poistetaan tai tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, hän saa lyhyen "Lippusi on peruttu" -viestin.
+
+🎟️ Liput, vapaaliput ja luotettavuus
+
+Tehtävään ilmoittautuminen antaa jäsenelle vapaalipun sille illalle. Lippu on verkkosivu, jossa on käyvä kello. Kello, joka ei liiku, on kuvakaappaus.
+
+Jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä ja käyttävät sen napilla 🎟 Vapaalippu komennon /me alla tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä.
+
+Luotettavuus lasketaan joka kerta uudelleen siitä, miten jäsenen aiemmat tehtävät menivät; tuoreet tehtävät painavat enemmän. Jäsen saa arvion 3 tehdyn tehtävän jälkeen. 60% tai enemmän on hyvä luotettavuus. Painot ja rajat ovat kohdassa Asetukset > Luotettavuus.
+
+Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle 60%, ei voi ilmoittautua uusiin tehtäviin. /people voi antaa hänelle kertaluvan.
+
+🔑 Roolit ja oikeudet
+
+Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin roolin tehtävää jäsen on tehnyt. Ehtojen täyttyminen ei anna roolia. Saat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää roolin ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. /people ja sitten ✅ Kuka voi saada minkäkin roolin näyttää, kuka täyttää kunkin roolin ehdot.
+
+Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Admin-välilehdellä tai myyntipisteessä.
+
+/people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Admin-välilehti.
+
+🔔 Automaattiset viestit
+
+- 🔹 Ilmoittautumis- ja perumisvahvistukset heti.
+- 🔹 Muistutus 24 tuntia ennen jokaista tehtävää.
+- 🔹 Kutsu kaikille jäsenille, kun tehtäviin tarvitaan vielä ihmisiä.
+- 🔹 Ilmoitukset luotettavuudesta, vapaalipuista, lipuista ja oikeuksista.
+- 🔹 Myyntipisteen linkki illan aikana.
+- 🔹 Tervetuloviesti jokaiselle uudelle jäsenelle, kun hän vahvistaa sähköpostinsa, ja tämä opas jokaiselle järjestäjälle.
+
+Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset napilla 🔔 Ilmoitukset komennon /me alla; vahvistukset ja muistutukset lähtevät aina.
+
+📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle.
+
+💌 Tapahtuman jälkeinen viesti lähtee, jos ylläpitäjä on kytkenyt sen päälle, jokaisen tapahtuman jälkeisenä päivänä klo 12.00 kaikille, joilla oli lippu ja jotka antoivat sähköpostiosoitteensa: kiitos niille, jotka merkittiin sisään ovella, ja lämmin "harmi, ettet päässyt" niille, joita ei merkitty. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa molemmista esikatselun, jossa on painike viestin pysäyttämiseen; Läsnäolo-sivulla ja Crew-sovelluksen Admin-välilehdellä on sama painike sekä "Lähetä testi minulle" -painike. Läsnäolo-sivu näyttää, montako viestiä lähti ja moniko avasi linkin.
+
+✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit.
+
+📸 /events näyttää sinulle yksityiskeskustelussa botin kanssa seuraavat 5 tulevaa tapahtumaa kortteina: kuva, päivämäärä, hinta, lyhyt kuvaus sekä painikkeet lipun ostamiseen ja DJ:n kuunteluun. Napauta Vahvista, niin botti julkaisee samat kortit ryhmässä; napauta Peru, niin mitään ei lähetetä. Voit myös kysyä botilta omin sanoin, mitkä tapahtumat ovat seuraavina.
+
+⚙️ Wp-adminin sivut
+
+- 🔹 Tehtävät: tehtävien luonti, muuttaminen ja poisto.
+- 🔹 Ihmiset: jäsenet, heidän historiansa ja vapaalippunsa, vapaalippuloki, järjestäjät sekä Roolien ehdot -välilehti.
+- 🔹 Läsnäolo: osallistuminen ja ovilista mille tahansa päivälle sekä Holvin lipunostajat.
+- 🔹 Asetukset: roolit, luotettavuus, ilmoitukset ja niiden ajat, Telegram-botti, sähköposti, tietosuoja ja tervetuloviesti.
+- 🔹 Sähköpostipohja: miltä jokainen sähköposti näyttää.
+- 🔹 Bottiloki: mitä botin komentoja ja painikkeita kukin käytti päivän aikana. Viestien tekstiä ei tallenneta.
+- 🔹 Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus.
+
+🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+
+Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+
+—
+Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

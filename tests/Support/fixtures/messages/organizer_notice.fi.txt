@@ -1,0 +1,11 @@
+EMAIL Järjestäjänä Mon 20 Jul
+
+Hei Person,
+
+Olet järjestäjänä Mon 20 Jul. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /door ja napauta 💳 Myyntipiste.
+
+🚪 Avaa myyntipiste: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_door&t=TOKEN&d=2026-07-20&s=TOKEN
+🛠️ Avaa Admin-välilehti: https://site.test/crew/#eventcrew-panel-admin
+
+—
+Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

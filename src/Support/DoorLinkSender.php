@@ -243,7 +243,8 @@ final class DoorLinkSender
             return false;
         }
 
-        $body = self::messageBody($date);
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['person' => $person, 'day' => Dates::dayLabel($date)];
         $label = self::buttonLabel();
 
         // The DM goes to the chat the person opened with the bot, or - for an
@@ -253,7 +254,7 @@ final class DoorLinkSender
         if (null !== $chatId) {
             $this->telegram->sendMessage(
                 $chatId,
-                DmBody::frame($person, $body),
+                DmBody::frame($person, MessageTemplates::body('sales_desk_link_dm', $context)),
                 ['inline_keyboard' => [[['text' => $label, 'url' => $url]]]]
             );
         }
@@ -264,12 +265,8 @@ final class DoorLinkSender
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                sprintf(
-                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
-                    __('Sales desk for %s', 'eventcrew'),
-                    Dates::dayLabel($date)
-                ),
-                EmailBody::withGreeting($person->displayName, $body),
+                MessageTemplates::subject('sales_desk_link', $context),
+                EmailBody::withGreeting($person->displayName, MessageTemplates::body('sales_desk_link', $context)),
                 [['label' => $label, 'url' => $url]]
             );
         }
@@ -291,18 +288,6 @@ final class DoorLinkSender
         }
 
         return DoorSession::loginUrl($this->tokens->issue($person->id, DoorSession::TOKEN_PURPOSE, $ttl), $date);
-    }
-
-    /**
-     * The message text. The link itself is the button under it.
-     */
-    public static function messageBody(string $date): string
-    {
-        return sprintf(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            Dates::dayLabel($date)
-        );
     }
 
     public static function buttonLabel(): string
@@ -394,7 +379,8 @@ final class DoorLinkSender
             return false;
         }
 
-        $body = self::organizerBody($date);
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['person' => $person, 'day' => Dates::dayLabel($date)];
         $buttons = [['label' => self::buttonLabel(), 'url' => $url]];
         $adminUrl = HelpPage::url(self::ADMIN_ANCHOR);
 
@@ -409,7 +395,7 @@ final class DoorLinkSender
             );
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, $body),
+                DmBody::frame($person, MessageTemplates::body('organizer_notice_dm', $context)),
                 ['inline_keyboard' => $rows]
             );
         }
@@ -418,29 +404,13 @@ final class DoorLinkSender
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                sprintf(
-                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
-                    __('You are organizing on %s', 'eventcrew'),
-                    Dates::dayLabel($date)
-                ),
-                EmailBody::withGreeting($person->displayName, $body),
+                MessageTemplates::subject('organizer_notice', $context),
+                EmailBody::withGreeting($person->displayName, MessageTemplates::body('organizer_notice', $context)),
                 $buttons
             );
         }
 
         return true;
-    }
-
-    /**
-     * The organizer notice's text. The two links are the buttons under it.
-     */
-    public static function organizerBody(string $date): string
-    {
-        return sprintf(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            Dates::dayLabel($date)
-        );
     }
 
     public static function adminButtonLabel(): string

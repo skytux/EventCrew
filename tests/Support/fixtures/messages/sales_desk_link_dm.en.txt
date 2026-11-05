@@ -1,0 +1,5 @@
+DM 📣 Test Crew
+
+Hi Person 8,
+
+Door list for Mon 20 Jul: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.

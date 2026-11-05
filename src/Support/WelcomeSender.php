@@ -241,15 +241,18 @@ final class WelcomeSender
             $actions[] = self::wpAdminAction();
         }
 
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = [
+            'person' => $person,
+            'open_tasks' => $this->openTasksText(false),
+            'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
+        ];
+
         return $this->mailer->toPerson(
             $person->id,
             $person->email,
-            self::subject(),
-            sprintf(
-                /* translators: %s: the person's first name */
-                __('Hi %s,', 'eventcrew'),
-                $person->name()
-            ) . "\n\n" . $this->body() . self::webLine(HelpPage::PANEL_ANCHOR),
+            MessageTemplates::subject(self::KIND_EMAIL, $context),
+            MessageTemplates::body(self::KIND_EMAIL, $context),
             $actions
         );
     }
@@ -284,9 +287,15 @@ final class WelcomeSender
             $keyboard[] = [$guide];
         }
 
+        $context = [
+            'person' => $person,
+            'open_tasks' => $this->openTasksText(true),
+            'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
+        ];
+
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm($this->body(true) . self::webLine(HelpPage::PANEL_ANCHOR)), true),
+            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_DM, $context)), true),
             [] === $keyboard ? null : ['inline_keyboard' => $keyboard]
         );
     }
@@ -301,17 +310,17 @@ final class WelcomeSender
         }
 
         $actions[] = self::wpAdminAction();
+        $context = [
+            'person' => $person,
+            'help_line' => self::webLine(HelpPage::ORGANIZER_ANCHOR),
+            'guide' => OrganizerGuide::full(),
+        ];
 
         return $this->mailer->toPerson(
             $person->id,
             $person->email,
-            OrganizerGuide::subject(),
-            sprintf(
-                /* translators: %s: the person's first name */
-                __('Hi %s,', 'eventcrew'),
-                $person->name()
-            ) . "\n\n" . $this->organizerIntro() . self::webLine(HelpPage::ORGANIZER_ANCHOR)
-                . "\n\n" . OrganizerGuide::full(),
+            MessageTemplates::subject(self::KIND_ORG_EMAIL, $context),
+            MessageTemplates::body(self::KIND_ORG_EMAIL, $context),
             $actions
         );
     }
@@ -341,13 +350,15 @@ final class WelcomeSender
 
     private function sendOrganizerDm(Person $person): bool
     {
-        $text = $this->organizerIntro() . "\n\n" . OrganizerGuide::short() . "\n\n"
-            . __('The full guide, with the details, is in your email.', 'eventcrew')
-            . self::webLine(HelpPage::ORGANIZER_ANCHOR);
+        $context = [
+            'person' => $person,
+            'help_line' => self::webLine(HelpPage::ORGANIZER_ANCHOR),
+            'guide' => OrganizerGuide::short(),
+        ];
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm($text))
+            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context)))
         );
     }
 
@@ -371,31 +382,37 @@ final class WelcomeSender
         );
     }
 
-    private function organizerIntro(): string
+    /**
+     * The first line of the organizer guide email and DM, with {crew} for the
+     * crew's name. Part of their built-in texts in MessageTemplates.
+     */
+    public static function organizerIntroTemplate(): string
     {
-        return sprintf(
+        return MessageTemplates::tag(
             /* translators: %s: the crew's name (the site name) */
             __('You are an organizer of %s. This guide explains how EventCrew works, first in short and then in detail.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            trim((string) get_bloginfo('name'))
+            ['%s' => '{crew}']
         );
     }
 
     /**
-     * The message itself, after the greeting. Plain text with "## " headings;
-     * EmailBody draws those as headings and strips them for the DM.
+     * The message itself, after the greeting, with {placeholders}: the
+     * built-in text of the welcome_email and welcome_dm templates in
+     * MessageTemplates. Plain text with "## " headings; EmailBody draws those
+     * as headings and strips them for the DM.
      */
-    public function body(bool $forDm = false): string
+    public static function bodyTemplate(): string
     {
         return implode("\n\n", [
-            sprintf(
+            MessageTemplates::tag(
                 /* translators: %s: the crew's name (the site name) */
                 __('Welcome to the %s crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                trim((string) get_bloginfo('name'))
+                ['%s' => '{crew}']
             ),
-            ...self::sections(),
+            ...self::sectionsTemplate(),
             '## 📋 ' . __('Open tasks', 'eventcrew'),
-            $this->openTasksText($forDm),
-        ]);
+            '{open_tasks}',
+        ]) . '{help_line}';
     }
 
     /**
@@ -421,25 +438,65 @@ final class WelcomeSender
      */
     private static function sections(): array
     {
+        $pairs = [];
+
+        foreach (self::sectionValues() as $name => $value) {
+            $pairs['{' . $name . '}'] = $value;
+        }
+
+        return array_map(static fn (string $text): string => strtr($text, $pairs), self::sectionsTemplate());
+    }
+
+    /**
+     * The sections with {placeholders} for the numbers and lists that come
+     * from the live settings (sectionValues()).
+     *
+     * @return array<int, string>
+     */
+    private static function sectionsTemplate(): array
+    {
+        return [
+            '## 🧩 ' . __('The tasks', 'eventcrew'),
+            '{roles}',
+            '## 🎟️ ' . __('Tickets', 'eventcrew'),
+            __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '## 🎁 ' . __('Credits', 'eventcrew'),
+            MessageTemplates::tag(
+                /* translators: %d: completed tasks needed for one credit */
+                __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                ['%d' => '{tasks_per_credit}']
+            ),
+            '## 📈 ' . __('Standing', 'eventcrew'),
+            __('Your standing comes from how your past tasks went:', 'eventcrew'),
+            '{outcomes}',
+            MessageTemplates::tag(
+                /* translators: 1: hours of notice, 2: tasks before a rating, 3: good-standing percentage */
+                __('Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                ['%1$d' => '{notice_hours}', '%2$d' => '{rated_tasks}', '%3$d' => '{good_standing}']
+            ) . '{gate_rule}',
+        ];
+    }
+
+    /**
+     * What each placeholder of the sections becomes, from the live settings:
+     * name (without the curly brackets) => text.
+     *
+     * @return array<string, string>
+     */
+    public static function sectionValues(): array
+    {
         $settings = new ReputationSettings();
         $noticeHours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
         $threshold = (int) round($settings->threshold() * 100);
 
         return [
-            '## 🧩 ' . __('The tasks', 'eventcrew'),
-            implode("\n", self::roleLines()),
-            '## 🎟️ ' . __('Tickets', 'eventcrew'),
-            __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            '## 🎁 ' . __('Credits', 'eventcrew'),
-            sprintf(
-                /* translators: %d: completed tasks needed for one credit */
-                __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                $settings->tasksPerCredit()
-            ),
-            '## 📈 ' . __('Standing', 'eventcrew'),
-            __('Your standing comes from how your past tasks went:', 'eventcrew'),
-            implode("\n", self::weightLines($settings, $noticeHours)),
-            self::standingRules($settings, $noticeHours, $threshold),
+            'roles' => implode("\n", self::roleLines()),
+            'tasks_per_credit' => (string) $settings->tasksPerCredit(),
+            'outcomes' => implode("\n", self::weightLines($settings, $noticeHours)),
+            'notice_hours' => (string) $noticeHours,
+            'rated_tasks' => (string) $settings->minRatedTasks(),
+            'good_standing' => (string) $threshold,
+            'gate_rule' => self::gateRule($threshold),
         ];
     }
 
@@ -493,26 +550,22 @@ final class WelcomeSender
         return $lines;
     }
 
-    private static function standingRules(ReputationSettings $settings, int $noticeHours, int $threshold): string
+    /**
+     * The sentence that someone below good standing cannot sign up, with a
+     * space before it. Empty when the standing gate is off: then nothing stops
+     * anyone signing up.
+     */
+    private static function gateRule(int $threshold): string
     {
-        $text = sprintf(
-            /* translators: 1: hours of notice, 2: tasks before a rating, 3: good-standing percentage */
-            __('Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            $noticeHours,
-            $settings->minRatedTasks(),
-            $threshold
-        );
-
-        // Only when the gate is on: otherwise nothing stops anyone signing up.
-        if ((bool) get_option(SignupService::GATE_OPTION, true)) {
-            $text .= ' ' . sprintf(
-                /* translators: %d: good-standing percentage */
-                __('Below %d%%, you cannot sign up for new tasks until you talk to an organizer.', 'eventcrew'),
-                $threshold
-            );
+        if (! (bool) get_option(SignupService::GATE_OPTION, true)) {
+            return '';
         }
 
-        return $text;
+        return ' ' . sprintf(
+            /* translators: %d: good-standing percentage */
+            __('Below %d%%, you cannot sign up for new tasks until you talk to an organizer.', 'eventcrew'),
+            $threshold
+        );
     }
 
     private function openTasksText(bool $forDm): string
