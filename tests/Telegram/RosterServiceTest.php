@@ -596,4 +596,293 @@ final class RosterServiceTest extends TelegramTestCase
             $this->lastCallTo('sendMessage')['text']
         );
     }
+
+    // --- Telegram's message limits on a big night (Q281) ---------------------
+
+    /** The upcoming days the picker shows in the big-night tests: the most it offers. */
+    private const BIG_NIGHT_DAYS = [
+        '2026-07-20', '2026-07-27', '2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24',
+    ];
+
+    /**
+     * Queues one task on 2026-07-20 with $count people in $status, in the
+     * order the assembler reads them, then the picker's upcoming days.
+     */
+    private function bigNight(int $count, string $status, string $namePrefix = 'Person'): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => $count],
+        ];
+        $assignments = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $assignments[] = [
+                'id' => 1000 + $i, 'task_id' => 5, 'person_id' => 100 + $i, 'status' => $status,
+                'signed_up_at' => '2026-07-02 14:05:00',
+            ];
+        }
+
+        $this->wpdb->nextResults[] = $assignments;
+
+        for ($i = 1; $i <= $count; $i++) {
+            $this->wpdb->nextRows[] = [
+                'id' => 100 + $i, 'email' => "p{$i}@example.com", 'display_name' => $namePrefix . ' ' . $i,
+            ];
+        }
+
+        $this->wpdb->nextCols[] = self::BIG_NIGHT_DAYS; // upcomingDates()
+    }
+
+    /**
+     * Fails unless one sent or edited message keeps inside Telegram's limits:
+     * at most 100 inline buttons, at most 8 on a row, callback data of 1-64
+     * bytes, and text of 1-4096 characters (counted in UTF-16, as Telegram does).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function assertWithinTelegramLimits(array $body): void
+    {
+        $text = (string) $body['text'];
+        $length = intdiv(strlen((string) mb_convert_encoding($text, 'UTF-16LE', 'UTF-8')), 2);
+        self::assertGreaterThan(0, $length);
+        self::assertLessThanOrEqual(4096, $length, 'message text too long');
+
+        $rows = $body['reply_markup']['inline_keyboard'] ?? [];
+        self::assertLessThanOrEqual(100, count(array_merge([], ...array_values($rows))), 'more than 100 buttons');
+
+        foreach ($rows as $row) {
+            self::assertLessThanOrEqual(8, count($row), 'more than 8 buttons on a row');
+
+            foreach ($row as $button) {
+                self::assertGreaterThan(0, strlen($button['callback_data']));
+                self::assertLessThanOrEqual(64, strlen($button['callback_data']), 'callback_data over 64 bytes');
+            }
+        }
+    }
+
+    /** The asker as a linked person, organizer or not (id 7). */
+    private function asker(bool $isOrganizer): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'boss@example.com', 'display_name' => 'Boss',
+            'is_organizer' => $isOrganizer ? 1 : 0, 'telegram_user_id' => 555,
+        ];
+    }
+
+    /**
+     * Every page of the roster for 2026-07-20: /roster, then a tap on each
+     * next-page button in turn, with $queue queuing that page's rows each time.
+     *
+     * @param callable(): void $queue
+     * @return array<int, array<string, mixed>> The message body of each page.
+     */
+    private function allPages(callable $queue, bool $isOrganizer): array
+    {
+        $this->asker($isOrganizer);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+
+        if (! $isOrganizer) {
+            $this->wpdb->nextCols[] = [7];   // personIdsAssignedOn(): rostered that day
+            $this->wpdb->nextResults[] = []; // isOnSalesDesk(): no task that day
+        }
+
+        $queue();
+        $this->service()->onRosterCommand(555, 555);
+        $pages = [$this->lastCallTo('sendMessage')];
+
+        for ($guard = 0; $guard < 20; $guard++) {
+            $next = $this->pageButton($pages[count($pages) - 1], 'Next »');
+
+            if (null === $next) {
+                break;
+            }
+
+            $this->asker($isOrganizer);
+
+            if (! $isOrganizer) {
+                $this->wpdb->nextCols[] = [7];   // personIdsAssignedOn()
+                $this->wpdb->nextResults[] = []; // isOnSalesDesk()
+            }
+
+            $queue();
+            $this->service()->onSelect([
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'data' => $next,
+                'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+            ]);
+            $pages[] = $this->lastCallTo('editMessageText');
+        }
+
+        return $pages;
+    }
+
+    /**
+     * The callback data of the first button whose text starts with $label, or null.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function pageButton(array $body, string $label): ?string
+    {
+        foreach (array_merge([], ...array_values($body['reply_markup']['inline_keyboard'] ?? [])) as $button) {
+            if (str_starts_with($button['text'], $label)) {
+                return $button['callback_data'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $pages
+     * @return array<int, string> Every mark callback across the pages.
+     */
+    private function markCallbacks(array $pages): array
+    {
+        $data = [];
+
+        foreach ($pages as $page) {
+            foreach (array_merge([], ...array_values($page['reply_markup']['inline_keyboard'] ?? [])) as $button) {
+                if (str_starts_with($button['callback_data'], 'rm:')) {
+                    $data[] = $button['callback_data'];
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    public function testABigNightForAnOrganizerStaysWithinTelegramLimits(): void
+    {
+        // 40 people still signed up: 4 buttons each (👋, then ✓ ⏰ ✗) is 160,
+        // plus the day buttons - far over Telegram's 100.
+        $pages = $this->allPages(fn () => $this->bigNight(40, 'signed_up'), true);
+
+        $this->assertWithinTelegramLimits($pages[0]);
+        self::assertGreaterThan(1, count($pages));
+
+        foreach ($pages as $page) {
+            $this->assertWithinTelegramLimits($page);
+            // Every page keeps the day buttons and the legend.
+            self::assertNotNull($this->pageButton($page, '▶ Mon 20 Jul'));
+            self::assertStringContainsString('👋 arrived · ✓ done · ⏰ late · ✗ no-show', $page['text']);
+        }
+
+        // Across the pages each of the 40 gets all four buttons exactly once.
+        $marks = array_map(
+            static fn (string $data): string => (string) preg_replace('#^(rm:\d+:[acln]).*$#', '$1', $data),
+            $this->markCallbacks($pages)
+        );
+        self::assertCount(160, $marks);
+        self::assertCount(160, array_unique($marks));
+
+        // Everyone is listed once, on one page or another.
+        $text = implode("\n", array_column($pages, 'text'));
+        for ($i = 1; $i <= 40; $i++) {
+            self::assertSame(1, substr_count($text, "Person {$i} ("), "Person {$i}");
+        }
+
+        // The pages say which page they are, and the last has no next button.
+        self::assertStringContainsString('page 1 of ' . count($pages), $pages[0]['text']);
+        self::assertNull($this->pageButton($pages[count($pages) - 1], 'Next »'));
+        self::assertNotNull($this->pageButton($pages[count($pages) - 1], '« Previous'));
+    }
+
+    public function testABigNightForTheSalesDeskStaysWithinTelegramLimits(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        // A non-organizer on that night's sales desk: 👋 only, one per person.
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Lead', 'is_organizer' => 0, 'telegram_user_id' => 555];
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+        $this->wpdb->nextCols[] = [8];            // personIdsAssignedOn()
+        $this->wpdb->nextResults[] = [
+            ['id' => 7, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 7, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->bigNight(120, 'signed_up');
+        // The picker asks per day whether the asker is rostered on it: only the first.
+        $this->wpdb->nextCols[] = [8];
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $sent = $this->lastCallTo('sendMessage');
+        $this->assertWithinTelegramLimits($sent);
+        self::assertNotNull($this->pageButton($sent, 'Next »'));
+    }
+
+    public function testALongRosterTextIsSplitIntoPagesUnder4096Characters(): void
+    {
+        // 70 people with long names, seen by a rostered crew member with no
+        // buttons: the text alone runs far past 4096 characters.
+        $pages = $this->allPages(
+            fn () => $this->bigNight(70, 'completed', 'Someone With A Rather Long Name Äöå'),
+            false
+        );
+
+        $this->assertWithinTelegramLimits($pages[0]);
+        self::assertGreaterThan(1, count($pages));
+
+        foreach ($pages as $page) {
+            $this->assertWithinTelegramLimits($page);
+        }
+
+        $text = implode("\n", array_column($pages, 'text'));
+        for ($i = 1; $i <= 70; $i++) {
+            self::assertSame(1, substr_count($text, "Äöå {$i} ("), "Person {$i}");
+        }
+    }
+
+    public function testAMarkOnALaterPageEditsThatPageInPlace(): void
+    {
+        $pages = $this->allPages(fn () => $this->bigNight(40, 'signed_up'), true);
+        $second = $this->markCallbacks([$pages[1]]);
+        // The first ✓ on page two carries the page: rm:<id>:c:1.
+        $tap = array_values(array_filter($second, static fn (string $d): bool => str_contains($d, ':c')))[0];
+        self::assertMatchesRegularExpression('#^rm:\d+:c:1$#', $tap);
+        $assignmentId = (int) explode(':', $tap)[1];
+        $this->telegramCalls = [];
+
+        $this->asker(true);
+        $this->wpdb->nextRows[] = ['id' => $assignmentId, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 40];
+        $this->bigNight(40, 'signed_up');
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => $tap,
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
+        $edit = $this->lastCallTo('editMessageText');
+        $this->assertWithinTelegramLimits($edit);
+        // The edited message is still page two, not page one.
+        self::assertSame($pages[1]['text'], $edit['text']);
+        self::assertStringContainsString('page 2 of', $edit['text']);
+    }
+
+    public function testAMarkFromAButtonWithoutAPageEditsPageOne(): void
+    {
+        // Buttons sent before pages existed carry no page.
+        $this->asker(true);
+        $this->wpdb->nextRows[] = ['id' => 1001, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 40];
+        $this->bigNight(40, 'signed_up');
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:1001:c',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
+        $edit = $this->lastCallTo('editMessageText');
+        $this->assertWithinTelegramLimits($edit);
+        self::assertStringContainsString('page 1 of', $edit['text']);
+    }
 }
