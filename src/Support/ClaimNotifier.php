@@ -166,7 +166,7 @@ final class ClaimNotifier
 
         $note = AssignmentStatus::LATE_CANCEL === $status
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time.", 'eventcrew')
+            ? __("This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew')
             : __('Thanks for the notice.', 'eventcrew');
 
         // The texts are the Messages page templates (MessageTemplates).

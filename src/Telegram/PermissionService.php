@@ -321,12 +321,18 @@ final class PermissionService
 
         if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
             $context = ['person' => $person, 'change' => $dm];
+            // A new role's tasks are on the crew page too, which the text
+            // names: the email links to it. No crew page, no button.
+            $actions = str_starts_with($dmKind, 'role:')
+                ? [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+                : [];
 
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
                 MessageTemplates::subject('access_changed', $context),
-                MessageTemplates::body('access_changed', $context)
+                MessageTemplates::body('access_changed', $context),
+                $actions
             );
         }
     }

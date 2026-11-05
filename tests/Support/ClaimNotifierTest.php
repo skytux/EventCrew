@@ -441,8 +441,9 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame(
             "✅ Signed up: Decorate at Party, Sat 1 Aug 18:00–20:00.\n\nShow your ticket at the door - it is the first"
                 . " button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat,"
-                . ' or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.'
-                . ' You can cancel without it affecting your standing up to 48 hours before the task.'
+                . ' or tap Cancel in your reminder. Or find someone to take it over: they send /me to the bot and tap'
+                . ' 🔁 Take over a task, and you accept. You can cancel without it affecting your standing up to'
+                . ' 48 hours before the task.'
                 . "\n\n" . $about . "\n\nYour standing: Beginner · 0 free-entry credits.",
             (string) $sends->items[0]['text']
         );
@@ -450,8 +451,8 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame(
             "Hi Sam,\n\nYou're signed up for Decorate at Party, Sat 1 Aug 18:00–20:00. Show your ticket at the door."
                 . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan't make it? Open the bot and tap the task"
-                . ' to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot. You can'
-                . ' cancel without it affecting your standing up to 48 hours before the task.'
+                . ' to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task,'
+                . ' and you accept. You can cancel without it affecting your standing up to 48 hours before the task.'
                 . "\n\n" . $about . "\n\n"
                 . 'Show your ticket: https://site.test/wp-json/eventcrew/v1/ticket?token='
                 . SignedLink::sign('ticket', 9) . "\n"
@@ -475,8 +476,8 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame(
             "✅ Ilmoittauduttu: Somistus, Party, Sat 1 Aug 18:00–20:00.\n\nNäytä lippusi ovella - se on alla"
                 . " ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla"
-                . ' /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai pyydä jotakuta ottamaan'
-                . ' tehtävä napilla 🔁 Ota tehtävä komennon /me alla.'
+                . ' /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai etsi joku ottamaan se: hän'
+                . ' lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt.'
                 . "\n\n" . $about . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.",
             (string) $sends->items[0]['text'],
             'a notice of 0 hours leaves out the free-cancel sentence'
@@ -485,8 +486,8 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringStartsWith(
             "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, Sat 1 Aug 18:00–20:00. Näytä lippusi ovella."
                 . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.\n\nEtkö pääsekään? Avaa botti ja peru"
-                . ' napauttamalla tehtävää, tai pyydä jotakuta ottamaan tehtävä botissa napilla 🔁 Ota tehtävä'
-                . ' komennon /me alla.' . "\n\n" . $about . "\n\nNäytä lippusi: ",
+                . ' napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa'
+                . ' 🔁 Ota tehtävä, ja sinä hyväksyt.' . "\n\n" . $about . "\n\nNäytä lippusi: ",
             $this->mails[0]['body']
         );
     }
@@ -495,8 +496,8 @@ final class ClaimNotifierTest extends TestCase
     public function testTheCancelMessagesAreTheSameAsBeforeTheTemplates(): void
     {
         $sends = $this->captureWithOptions();
-        $late = 'This was a late cancellation, which counts against your standing. More notice, or finding a'
-            . ' replacement with 🔁 Take over a task under /me, keeps it clear next time.';
+        $late = 'This was a late cancellation, which counts against your standing. Next time, more notice keeps it'
+            . ' clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.';
         $standing = 'Your standing: Beginner · 0 free-entry credits.';
         $cases = [
             'cancelled' => ['❌ Cancelled', 'Thanks for the notice.'],

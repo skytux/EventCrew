@@ -273,6 +273,28 @@ final class FollowupMailTest extends TestCase
         self::assertSame([], $this->db->updates, 'the preview marks no row');
     }
 
+    /** The preview names the crew page's Admin tab: with a crew page set, it links to it (C4). */
+    public function testThePreviewLinksTheAdminTabOnlyWithACrewPage(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->organizer();
+
+        $this->followup()->run($this->at('2026-11-13 12:00'));
+        self::assertStringNotContainsString('#eventcrew-panel-admin', $this->mails[0]['body'], 'no crew page');
+
+        $this->mails = [];
+        unset($this->options[FollowupMail::STATE_OPTION]);
+        $this->options['eventcrew_signup_page_id'] = 897;
+        $this->followup()->run($this->at('2026-11-13 12:00'));
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString(
+            'href="https://site.test/event-897/#eventcrew-panel-admin"',
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString('Open the Admin tab', $this->mails[0]['body']);
+    }
+
     public function testTheEmailsGoAt12TheDayAfter(): void
     {
         $this->buyer(1, 'Anna Example', 'anna@example.test');

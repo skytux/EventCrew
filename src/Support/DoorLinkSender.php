@@ -55,7 +55,7 @@ final class DoorLinkSender
     public const ORGANIZER_CHANNELS = ['telegram', 'email'];
 
     /** The crew page's Admin tab. */
-    private const ADMIN_ANCHOR = 'eventcrew-panel-admin';
+    public const ADMIN_ANCHOR = 'eventcrew-panel-admin';
 
     /** The ledger kind. One per person per night. */
     public const KIND = 'door_link';
