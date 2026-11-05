@@ -1205,8 +1205,8 @@ msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr "Yllä olevan kellon pitää näyttää nykyinen aika. Pysähtynyt kello tarkoittaa kuvakaappausta."
 
 #: templates/public/door.php:191
-msgid "The email is only shown on the list. Nothing is sent to it."
-msgstr "Sähköposti näkyy vain listalla. Siihen ei lähetetä mitään."
+msgid "With an email, the buyer gets their ticket by email in about 10 minutes."
+msgstr "Kun sähköposti on annettu, ostaja saa lipun sähköpostiin noin 10 minuutissa."
 
 #: src/Support/WelcomeSender.php:345
 msgid "The full guide, with the details, is in your email."

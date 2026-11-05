@@ -192,6 +192,19 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString("email: el('ec-guest-email').value.trim()", $html);
     }
 
+    /** A Holvi buyer added with an email gets the ticket email, and the step says so. */
+    public function testTheHolviStepSaysTheTicketEmailIsSent(): void
+    {
+        $html = $this->page();
+
+        self::assertMatchesRegularExpression(
+            '~<div id="ec-step-holvi" hidden>.*?<p class="ec-muted">With an email, the buyer gets their ticket '
+            . 'by email in about 10 minutes\.</p>~s',
+            $html
+        );
+        self::assertStringNotContainsString('Nothing is sent to it', $html);
+    }
+
     /** The waiting ticket send shows above the lists, with "Cancel sending" after a confirm. */
     public function testAWaitingTicketSendCanBeCancelledFromTheDesk(): void
     {
