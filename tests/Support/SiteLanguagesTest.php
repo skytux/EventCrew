@@ -173,6 +173,32 @@ final class SiteLanguagesTest extends TestCase
         self::assertSame('en_US', Language::filterLocale('en_US'), 'outside run(): the site locale');
     }
 
+    /**
+     * Every languages/eventcrew-<locale>.po belongs to a language a site can
+     * choose: its code switches to exactly that locale, and the language
+     * then has its own strings.
+     */
+    public function testEveryTranslationFileIsReachableFromTheSiteLanguages(): void
+    {
+        $files = glob(dirname(__DIR__, 2) . '/languages/eventcrew-*.po');
+        self::assertNotEmpty($files);
+        $codeFor = [];
+
+        foreach (array_keys(SiteLanguages::KNOWN) as $code) {
+            $codeFor[SiteLanguages::locale($code)] = $code;
+        }
+
+        foreach ($files as $file) {
+            $locale = substr(basename($file, '.po'), strlen('eventcrew-'));
+            self::assertArrayHasKey($locale, $codeFor, $locale . ': no site language uses this file');
+
+            $code = $codeFor[$locale];
+            self::assertTrue(SiteLanguages::hasCatalog($code), $code . ': its .mo is not found');
+            $this->options[SiteLanguages::OPTION] = [$code, 'en'];
+            self::assertSame($locale, Language::run($code, static fn (): mixed => Language::filterLocale('en_US')));
+        }
+    }
+
     /** A person whose language is not a site language reads English; fi and en are as before. */
     public function testForPersonFallsBackToEnglish(): void
     {
