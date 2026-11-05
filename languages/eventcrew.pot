@@ -1002,6 +1002,16 @@ msgstr ""
 msgid "App name"
 msgstr ""
 
+#: src/Support/Dates.php:227
+msgctxt "short month name"
+msgid "Apr"
+msgstr ""
+
+#: src/Support/Dates.php:246
+msgctxt "month name after a day number"
+msgid "April"
+msgstr ""
+
 #: templates/admin/settings.php:166
 msgid "Archived"
 msgstr ""
@@ -1061,6 +1071,16 @@ msgstr ""
 
 #: src/Web/CrewAdminController.php:793
 msgid "Attendance saved."
+msgstr ""
+
+#: src/Support/Dates.php:231
+msgctxt "short month name"
+msgid "Aug"
+msgstr ""
+
+#: src/Support/Dates.php:250
+msgctxt "month name after a day number"
+msgid "August"
 msgstr ""
 
 #: templates/admin/settings.php:532
@@ -1674,6 +1694,16 @@ msgstr ""
 msgid "Custom dates"
 msgstr ""
 
+#: src/Support/Dates.php:37
+msgctxt "date format"
+msgid "D j M"
+msgstr ""
+
+#: src/Support/Dates.php:68
+msgctxt "date format"
+msgid "D j M H:i"
+msgstr ""
+
 #: src/Telegram/TicketController.php:338
 msgid "DISABLED"
 msgstr ""
@@ -1701,6 +1731,16 @@ msgstr ""
 
 #: templates/admin/settings.php:1626
 msgid "Days"
+msgstr ""
+
+#: src/Support/Dates.php:235
+msgctxt "short month name"
+msgid "Dec"
+msgstr ""
+
+#: src/Support/Dates.php:254
+msgctxt "month name after a day number"
+msgid "December"
 msgstr ""
 
 #: templates/admin/settings.php:2284
@@ -2182,6 +2222,16 @@ msgstr ""
 msgid "Fallback text"
 msgstr ""
 
+#: src/Support/Dates.php:225
+msgctxt "short month name"
+msgid "Feb"
+msgstr ""
+
+#: src/Support/Dates.php:244
+msgctxt "month name after a day number"
+msgid "February"
+msgstr ""
+
 #: src/Admin/TasksListTable.php:52
 msgid "Filled"
 msgstr ""
@@ -2301,6 +2351,16 @@ msgstr ""
 
 #: src/Support/NotificationPreferences.php:57
 msgid "Free-entry ticket ready"
+msgstr ""
+
+#: src/Support/Dates.php:203
+msgctxt "short weekday name"
+msgid "Fri"
+msgstr ""
+
+#: src/Support/Dates.php:216
+msgctxt "weekday name"
+msgid "Friday"
 msgstr ""
 
 #: templates/admin/newsletter.php:113
@@ -2469,6 +2529,11 @@ msgstr ""
 #: src/Support/MessageTemplates.php:1294
 #. translators: %s: the event day, e.g. "Sat 1 Aug"
 msgid "Guests added for %s"
+msgstr ""
+
+#: src/Telegram/TicketController.php:484
+msgctxt "date format"
+msgid "H:i, D j M"
 msgstr ""
 
 #: templates/admin/settings.php:624
@@ -2909,6 +2974,16 @@ msgstr ""
 msgid "JMAP (over HTTPS)"
 msgstr ""
 
+#: src/Support/Dates.php:224
+msgctxt "short month name"
+msgid "Jan"
+msgstr ""
+
+#: src/Support/Dates.php:243
+msgctxt "month name after a day number"
+msgid "January"
+msgstr ""
+
 #: src/Web/FollowupController.php:253
 msgid "Join"
 msgstr ""
@@ -2932,6 +3007,26 @@ msgstr ""
 
 #: templates/admin/newsletter.php:70
 msgid "Joins, leaves and sent newsletters"
+msgstr ""
+
+#: src/Support/Dates.php:230
+msgctxt "short month name"
+msgid "Jul"
+msgstr ""
+
+#: src/Support/Dates.php:249
+msgctxt "month name after a day number"
+msgid "July"
+msgstr ""
+
+#: src/Support/Dates.php:229
+msgctxt "short month name"
+msgid "Jun"
+msgstr ""
+
+#: src/Support/Dates.php:248
+msgctxt "month name after a day number"
+msgid "June"
 msgstr ""
 
 #: templates/admin/settings.php:1857
@@ -3154,6 +3249,16 @@ msgstr ""
 msgid "Manage your account or stop these emails"
 msgstr ""
 
+#: src/Support/Dates.php:226
+msgctxt "short month name"
+msgid "Mar"
+msgstr ""
+
+#: src/Support/Dates.php:245
+msgctxt "month name after a day number"
+msgid "March"
+msgstr ""
+
 #: templates/admin/roster.php:457 templates/public/signup.php:1027
 msgid "Mark all arrived"
 msgstr ""
@@ -3196,6 +3301,16 @@ msgstr ""
 
 #: templates/admin/settings.php:751
 msgid "Max people per event"
+msgstr ""
+
+#: src/Support/Dates.php:247
+msgctxt "month name after a day number"
+msgid "May"
+msgstr ""
+
+#: src/Support/Dates.php:228
+msgctxt "short month name"
+msgid "May"
 msgstr ""
 
 #: templates/public/signup.php:85 templates/public/signup.php:361
@@ -3266,6 +3381,16 @@ msgstr ""
 
 #: templates/admin/settings.php:2093
 msgid "Model"
+msgstr ""
+
+#: src/Support/Dates.php:199
+msgctxt "short weekday name"
+msgid "Mon"
+msgstr ""
+
+#: src/Support/Dates.php:212
+msgctxt "weekday name"
+msgid "Monday"
 msgstr ""
 
 #: src/Support/MessageTemplates.php:531
@@ -3714,6 +3839,16 @@ msgstr ""
 msgid "Notifications"
 msgstr ""
 
+#: src/Support/Dates.php:234
+msgctxt "short month name"
+msgid "Nov"
+msgstr ""
+
+#: src/Support/Dates.php:253
+msgctxt "month name after a day number"
+msgid "November"
+msgstr ""
+
 #: templates/admin/translations.php:58
 #. translators: %s: the languages, e.g. "Suomi (fi), English (en)"
 msgid "Now: %s."
@@ -3721,6 +3856,16 @@ msgstr ""
 
 #: templates/admin/diagnostics.php:28
 msgid "OK"
+msgstr ""
+
+#: src/Support/Dates.php:233
+msgctxt "short month name"
+msgid "Oct"
+msgstr ""
+
+#: src/Support/Dates.php:252
+msgctxt "month name after a day number"
+msgid "October"
 msgstr ""
 
 #: templates/admin/settings.php:2313
@@ -4669,6 +4814,16 @@ msgstr ""
 msgid "Sales desk link, welcome crew (minutes before)"
 msgstr ""
 
+#: src/Support/Dates.php:204
+msgctxt "short weekday name"
+msgid "Sat"
+msgstr ""
+
+#: src/Support/Dates.php:217
+msgctxt "weekday name"
+msgid "Saturday"
+msgstr ""
+
 #: src/Web/NewsletterController.php:668 src/Web/NewsletterController.php:1236 templates/admin/ai-prompts.php:138 templates/admin/roster.php:214
 #: templates/admin/translations.php:211 templates/admin/translations.php:290 templates/public/signup.php:1016 templates/public/signup.php:1231
 #: templates/public/signup.php:1811 templates/public/signup.php:1903 templates/public/signup.php:1986 templates/public/signup.php:2039
@@ -5170,6 +5325,16 @@ msgstr ""
 msgid "Sent. Check your email, or Telegram if you use the bot."
 msgstr ""
 
+#: src/Support/Dates.php:232
+msgctxt "short month name"
+msgid "Sep"
+msgstr ""
+
+#: src/Support/Dates.php:251
+msgctxt "month name after a day number"
+msgid "September"
+msgstr ""
+
 #: templates/admin/settings.php:2320
 msgid "Server"
 msgstr ""
@@ -5526,6 +5691,16 @@ msgstr ""
 
 #: templates/admin/newsletter.php:56 templates/admin/newsletter.php:154
 msgid "Subscribed"
+msgstr ""
+
+#: src/Support/Dates.php:198
+msgctxt "short weekday name"
+msgid "Sun"
+msgstr ""
+
+#: src/Support/Dates.php:211
+msgctxt "weekday name"
+msgid "Sunday"
 msgstr ""
 
 #: templates/public/door.php:207
@@ -7157,6 +7332,16 @@ msgstr ""
 msgid "This will be your first task — welcome!"
 msgstr ""
 
+#: src/Support/Dates.php:202
+msgctxt "short weekday name"
+msgid "Thu"
+msgstr ""
+
+#: src/Support/Dates.php:215
+msgctxt "weekday name"
+msgid "Thursday"
+msgstr ""
+
 #: src/Web/CrewAdminController.php:796
 msgid "Tick at least one task."
 msgstr ""
@@ -7439,6 +7624,16 @@ msgstr ""
 msgid "Trusted mail server"
 msgstr ""
 
+#: src/Support/Dates.php:200
+msgctxt "short weekday name"
+msgid "Tue"
+msgstr ""
+
+#: src/Support/Dates.php:213
+msgctxt "weekday name"
+msgid "Tuesday"
+msgstr ""
+
 #: templates/admin/settings.php:1962
 msgid "Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save."
 msgstr ""
@@ -7670,6 +7865,16 @@ msgstr ""
 
 #: templates/public/crew-app.php:63
 msgid "Website"
+msgstr ""
+
+#: src/Support/Dates.php:201
+msgctxt "short weekday name"
+msgid "Wed"
+msgstr ""
+
+#: src/Support/Dates.php:214
+msgctxt "weekday name"
+msgid "Wednesday"
 msgstr ""
 
 #: src/Admin/NewsletterPage.php:374
@@ -8630,6 +8835,21 @@ msgstr ""
 
 #: templates/admin/roster.php:105 templates/public/signup.php:1121
 msgid "is sold out"
+msgstr ""
+
+#: src/Support/Dates.php:181
+msgctxt "date format"
+msgid "j M H:i"
+msgstr ""
+
+#: src/Support/Dates.php:48
+msgctxt "date format"
+msgid "l j F"
+msgstr ""
+
+#: src/Support/Dates.php:58
+msgctxt "date format"
+msgid "l j F Y"
 msgstr ""
 
 #: src/Support/MarkedBy.php:73

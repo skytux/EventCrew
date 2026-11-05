@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.86
+Stable tag: 1.140.87
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.87 =
+Dates on the board, in emails, in Telegram and on the ticket page now use Finnish day and month names and Finnish date layout when the reader is Finnish (la 14.11., lauantai 14. marraskuuta). English dates are unchanged.
 
 = 1.140.86 =
 The cancel advice in crew emails names the Board tab, and an organizer is pointed to the Sales desk card under Door in the Admin tab.
@@ -1472,6 +1475,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.87 =
+No settings change.
 
 = 1.140.86 =
 No settings change.
