@@ -8,6 +8,7 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventSource;
@@ -86,6 +87,10 @@ final class SettingsPage
     private const ASSISTANT_PAGE_CHOICES = 100;
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
+    /** The background job that re-installs the webhook after the address moved. */
+    public const WEBHOOK_JOB = 'telegram_webhook';
+    public const WEBHOOK_TARGET = 'telegram:webhook';
+
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
 
     /** When the last automatic install failed; installOnUpdate() waits WEBHOOK_RETRY_GAP after it. */
@@ -860,20 +865,10 @@ final class SettingsPage
         // to remember. Only when a bot is configured - there is nothing to
         // install otherwise - and a failure is reported rather than swallowed,
         // since the alternative is a bot that has quietly stopped receiving.
+        // The Telegram calls run in the background (webhookJob); the Webhook
+        // heading shows the job's badge, a failure included.
         if ($doorMoved && $this->telegram->isConfigured()) {
-            $result = $this->installWebhook();
-
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                ($result['ok']
-                    ? __('Settings saved, and the webhook was re-installed on the new address.', 'eventcrew')
-                    : sprintf(
-                        /* translators: %s: the reason the webhook could not be installed */
-                        __('Settings saved, but the webhook could not be re-installed: %s', 'eventcrew'),
-                        $result['error']
-                    )) . $profileSuffix,
-                $result['ok'] && $profile['ok'] ? 'success' : 'error'
-            );
+            BackgroundJobs::enqueue(self::WEBHOOK_JOB, self::WEBHOOK_TARGET, []);
         }
 
         if ('' !== $assistantError) {
@@ -1869,6 +1864,27 @@ final class SettingsPage
         }
 
         update_option(self::WEBHOOK_FAILED_OPTION, time());
+    }
+
+    /**
+     * The background job (WEBHOOK_JOB) queued by a settings save that moved
+     * the webhook address: installs the webhook on the new address.
+     *
+     * @param array<string, mixed> $args None.
+     * @return array{ok: bool, error: string}
+     */
+    public function webhookJob(array $args = []): array
+    {
+        $result = $this->installWebhook();
+
+        return [
+            'ok' => $result['ok'],
+            'error' => $result['ok'] ? '' : sprintf(
+                /* translators: %s: the reason the webhook could not be installed */
+                __('The webhook could not be re-installed: %s', 'eventcrew'),
+                $result['error']
+            ),
+        ];
     }
 
     /**

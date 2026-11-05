@@ -1684,6 +1684,10 @@ final class Kernel
                         $container->get(TranslatedText::class)
                     ))->pushJob($args)
                 );
+                $jobs->handle(
+                    SettingsPage::WEBHOOK_JOB,
+                    fn (array $args): array => $container->get(SettingsPage::class)->webhookJob($args)
+                );
 
                 return $jobs;
             }

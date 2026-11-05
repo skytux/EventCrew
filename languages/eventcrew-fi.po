@@ -3329,12 +3329,6 @@ msgstr "WordPress loi webhookin osoitteen %s, joka ei ole HTTPS, joten Telegram 
 msgid "Telegram refused the webhook: %s"
 msgstr "Telegram hylkäsi webhookin: %s"
 
-msgid "Settings saved, and the webhook was re-installed on the new address."
-msgstr "Asetukset tallennettiin, ja webhook asennettiin uudelleen uuteen osoitteeseen."
-
-msgid "Settings saved, but the webhook could not be re-installed: %s"
-msgstr "Asetukset tallennettiin, mutta webhookia ei voitu asentaa uudelleen: %s"
-
 msgid "A privacy page is already chosen."
 msgstr "Tietosuojasivu on jo valittu."
 
@@ -8234,3 +8228,7 @@ msgstr "Mitään ei tallennettu: tapahtumaa ei löytynyt."
 
 msgid "The text is translated in the background and saved when that is done. Reload the page in a few minutes to see every language."
 msgstr "Teksti käännetään taustalla ja tallennetaan, kun se on valmis. Lataa sivu uudelleen muutaman minuutin päästä, niin näet kaikki kielet."
+
+#, php-format
+msgid "The webhook could not be re-installed: %s"
+msgstr "Webhookia ei voitu asentaa uudelleen: %s"
