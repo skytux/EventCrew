@@ -131,8 +131,9 @@ final class TranslationRegistry
     /**
      * Saves one row as edited on the page: $source and the posted language
      * $texts. A language text that changed becomes "edited by hand"; an
-     * emptied one stops being so and is filled again. When the source
-     * changed, every language text not edited by hand is translated again.
+     * emptied one stops being so and is filled again. A row with a fixed
+     * source keeps its source whatever is posted. When the source changed,
+     * every language text not edited by hand is translated again.
      *
      * @param array<string, string> $texts
      * @return array{found: bool, error: string} error is a TranslatedText error kind, '' when none.
@@ -143,6 +144,10 @@ final class TranslationRegistry
 
         if (null === $row) {
             return ['found' => false, 'error' => ''];
+        }
+
+        if ($row->fixedSource) {
+            $source = $row->value['source'];
         }
 
         $result = $this->translator->update($row->value, $source, $texts, false, $row->maxLength, $row->multiline);

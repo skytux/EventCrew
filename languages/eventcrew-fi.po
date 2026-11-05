@@ -6725,3 +6725,10 @@ msgstr "Telegram-botti: Tietoja"
 
 msgid "Telegram bot: Description"
 msgstr "Telegram-botti: Kuvaus"
+
+#, php-format
+msgid "Bot text (%s)"
+msgstr "Botin teksti (%s)"
+
+msgid "Bot answers and buttons"
+msgstr "Botin vastaukset ja painikkeet"

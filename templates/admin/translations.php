@@ -214,7 +214,12 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
                             <span class="description"><?php echo esc_html($eventcrew_tr_row->groupLabel()); ?></span>
                         </td>
                         <td>
-                            <?php $eventcrew_tr_input('row[source]', $eventcrew_tr_form . '-source', $eventcrew_tr_row->value['source']); ?>
+                            <?php if ($eventcrew_tr_row->fixedSource) : ?>
+                                <p><?php echo nl2br(esc_html($eventcrew_tr_row->value['source'])); ?></p>
+                                <input type="hidden" form="<?php echo esc_attr($eventcrew_tr_form); ?>" name="row[source]" value="<?php echo esc_attr($eventcrew_tr_row->value['source']); ?>">
+                            <?php else : ?>
+                                <?php $eventcrew_tr_input('row[source]', $eventcrew_tr_form . '-source', $eventcrew_tr_row->value['source']); ?>
+                            <?php endif; ?>
                             <p class="description">
                                 <?php
                                 echo '' === $eventcrew_tr_lang

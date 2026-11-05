@@ -89,6 +89,7 @@ use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\BotTexts;
 use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\ManageController;
@@ -165,6 +166,10 @@ final class Kernel
         // Turns the bot's four old About/Description fields into the two
         // written-once texts. Runs once per site.
         BotProfileSettings::migrate();
+
+        // The bot's answers and buttons as edited on the Translations page.
+        // Registered on every request: the bot answers on the webhook path.
+        BotTexts::boot();
 
         // Empties the page cache once after each update, so no visitor gets a
         // page built by the old version.
@@ -1525,6 +1530,7 @@ final class Kernel
                 );
                 $registry->add([$botProfile, 'translationRows']);
                 $registry->add([FollowupText::class, 'translationRows']);
+                $registry->add([BotTexts::class, 'translationRows']);
 
                 return $registry;
             }
