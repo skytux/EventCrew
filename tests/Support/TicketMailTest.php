@@ -20,6 +20,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\CrewAdminRoster;
 
@@ -29,6 +30,8 @@ use EventCrew\Web\CrewAdminRoster;
  */
 final class TicketMailTest extends TestCase
 {
+    use FakeEvents;
+
     /** @var list<array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
@@ -383,6 +386,22 @@ final class TicketMailTest extends TestCase
         self::assertStringContainsString('tapahtumaan Salsa Night 14.11.2026', $mail['html']);
         // The event picture is no longer in the ticket email.
         self::assertStringNotContainsString('poster.jpg', $mail['html']);
+    }
+
+    /** The heading has the event's start time when EventMesh has one. */
+    public function testTheTicketHeadingHasTheStartTime(): void
+    {
+        $this->fakeEvents();
+        $this->event(55, '2026-11-14', 'Salsa Night');
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
+        $this->wpdb->nextResults[] = [[
+            'id' => 3,
+            'task_date' => '2026-11-14',
+            'event_post_id' => 55,
+        ]];
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringContainsString('14.11.2026 · 21:00</h1>', $mail['html']);
     }
 
     public function testTheEmailShowsTheTicketNoteAboveTheButton(): void

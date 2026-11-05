@@ -14,7 +14,7 @@ namespace EventCrew\Support;
 final class TicketNote
 {
     /** Every placeholder, in the order the Settings help lists them. */
-    public const TAGS = [Organization::TAG];
+    public const TAGS = [Organization::TAG, EventTimes::START_TAG];
 
     /**
      * $note with its placeholders replaced by $values (placeholder => text).
@@ -42,12 +42,16 @@ final class TicketNote
     }
 
     /**
-     * The values of the note's placeholders.
+     * The values of the note's placeholders on a ticket to the event
+     * $eventId (null: no linked event).
      *
      * @return array<string, string>
      */
-    public static function values(): array
+    public static function values(?int $eventId = null): array
     {
-        return [Organization::TAG => Organization::name()];
+        return [
+            Organization::TAG => Organization::name(),
+            EventTimes::START_TAG => EventTimes::start($eventId),
+        ];
     }
 }

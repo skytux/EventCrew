@@ -8167,3 +8167,9 @@ msgstr "Paikkamerkit: %s. Rivi, jonka paikkamerkki on tyhjä, jätetään pois."
 
 msgid "the organization’s name (Web page tab, else the site name)."
 msgstr "organisaation nimi (Verkkosivu-välilehti, muuten sivuston nimi)."
+
+msgid "the event’s start time, like 19:00. Empty when the event has none."
+msgstr "tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
+
+msgid "The event’s start time, like 19:00. Empty when the event has none."
+msgstr "Tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."

@@ -78,6 +78,7 @@ final class MessageTemplates
         $list = [];
 
         $shared = self::sharedPlaceholders();
+        $eventTimes = self::eventTimePlaceholders();
 
         foreach (self::definitions() as $template) {
             $list[$template->id] = new MessageTemplate(
@@ -87,7 +88,9 @@ final class MessageTemplates
                 $template->description,
                 $template->subject,
                 $template->body,
-                $template->placeholders + $shared,
+                $template->placeholders
+                    + (isset($template->placeholders['event']) ? $eventTimes : [])
+                    + $shared,
                 $template->wired
             );
         }
@@ -106,6 +109,25 @@ final class MessageTemplates
             'organization' => self::placeholder(
                 __('The organization’s name (Settings > Web page, else the site name).', 'eventcrew'),
                 static fn (): string => Organization::name()
+            ),
+        ];
+    }
+
+    /**
+     * The placeholders of the event's times, for every kind that names the
+     * event ({event}). Empty when the message is not about a task of a
+     * linked event.
+     *
+     * @return array<string, array{description: string, resolve: Closure, required: bool}>
+     */
+    private static function eventTimePlaceholders(): array
+    {
+        $eventId = static fn (array $c): ?int => ($c['task'] ?? null) instanceof Task ? $c['task']->eventPostId : null;
+
+        return [
+            'start_time' => self::placeholder(
+                __('The event’s start time, like 19:00. Empty when the event has none.', 'eventcrew'),
+                static fn (array $c): string => EventTimes::start($eventId($c))
             ),
         ];
     }

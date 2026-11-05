@@ -14,6 +14,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\EventName;
+use EventCrew\Support\EventTimes;
 use EventCrew\Support\Organization;
 use EventCrew\Support\TicketNote;
 use EventCrew\Support\Language;
@@ -358,16 +359,21 @@ final class TicketController
 
         $watermark = ltrim($this->watermarkStyle(), ';');
         // The event's clean name in the page's language (EventName).
-        $event = null === ($ticket['event_id'] ?? null)
-            ? $ticket['event']
-            : EventName::name((int) $ticket['event_id'], EventName::lang(), $ticket['event']);
+        $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
+        $event = null === $eventId ? $ticket['event'] : EventName::name($eventId, EventName::lang(), $ticket['event']);
 
         return $this->document(
             $title,
-            $this->headBlock($title, $event, $ticket['date'], (string) ($ticket['image'] ?? ''))
+            $this->headBlock(
+                $title,
+                $event,
+                $ticket['date'],
+                EventTimes::start($eventId),
+                (string) ($ticket['image'] ?? '')
+            )
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
             . $body . $band . $this->qrBlock($ticket['qr'] ?? '') . $this->codeBlock($ticket['code'] ?? '')
-            . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])
+            . $this->noteBlock($eventId) . $this->antiFraudBlock($ticket['issued'])
             . '</div>'
         );
     }
@@ -389,12 +395,13 @@ final class TicketController
      * The card's header, like an event card on the crew board: the event's
      * picture behind it under a dark layer (faces sit about a third of the way
      * down the posters, hence centre 25%), the event name large, and the date
-     * written out. Without a picture the header is plain dark.
+     * written out with the event's start time ($start, '' when not known).
+     * Without a picture the header is plain dark.
      *
      * The picture URL goes through esc_url() inside &quot; quotes, as in
      * watermarkStyle().
      */
-    private function headBlock(string $title, string $event, string $date, string $image): string
+    private function headBlock(string $title, string $event, string $date, string $start, string $image): string
     {
         $style = '' === $image
             ? ''
@@ -408,7 +415,7 @@ final class TicketController
             $style,
             esc_html($title),
             esc_html($event),
-            esc_html(Dates::longDayLabel($date))
+            esc_html(Dates::longDayLabel($date) . ('' === $start ? '' : ' · ' . $start))
         );
     }
 
@@ -450,9 +457,9 @@ final class TicketController
      * ticket's language (SiteTexts), as plain text with its line breaks
      * kept, or '' when none is set.
      */
-    private function noteBlock(): string
+    private function noteBlock(?int $eventId): string
     {
-        $note = TicketNote::fill(SiteTexts::text('ticket_note'), TicketNote::values());
+        $note = TicketNote::fill(SiteTexts::text('ticket_note'), TicketNote::values($eventId));
 
         if ('' === $note) {
             return '';
