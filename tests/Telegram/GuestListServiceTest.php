@@ -330,4 +330,154 @@ final class GuestListServiceTest extends TelegramTestCase
             $this->lastCallTo('answerCallbackQuery')['text']
         );
     }
+
+    public function testASmallListIsTheSameTextAndButtonsAsBefore(): void
+    {
+        $this->asker(true);
+        $this->wpdb->nextResults[] = [$this->guest(1, 'Anna', 2, 'press'), $this->guest(2, 'Bo')]; // render
+        $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01'];                                    // nearbyDates
+
+        $this->guestListService()->onGuestCommand(555, 555, true, '1.8.');
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(
+            implode("\n", [
+                '🎫 Guest list — Sat 1 Aug',
+                '2 guests, 4 people in all',
+                '',
+                '1. Anna +2 (press)',
+                '2. Bo',
+                '',
+                'Add: /door add Name ; note  (just the guest)',
+                'Add with extra people: /door add Name +2 ; note  (the guest and 2 more)',
+                'No +N, or +0, means no extra people.',
+                'Email the ticket: /door add Name name@example.com',
+                'Change: /door edit 2 +3  (number from the list; give only what changes)',
+                'Remove: /door remove 2',
+                'Another night: put the date first, e.g. /door add 1.8. Name',
+            ]),
+            $sent['text']
+        );
+        self::assertSame(
+            ['inline_keyboard' => [[['text' => 'Sat 8 Aug', 'callback_data' => 'gl:2026-08-08']]]],
+            $sent['reply_markup']
+        );
+    }
+
+    // --- Telegram's text limit on a big night ---------------------------------
+
+    /**
+     * Queues $count guests with long names and notes for 1 Aug, then the
+     * nearby nights.
+     */
+    private function bigList(int $count): void
+    {
+        $list = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $name = sprintf('Guest Of Honour Øystein Äöå %03d', $i);
+            $list[] = $this->guest($i, $name, 2, 'partner of the DJ 🎧, at the door');
+        }
+
+        $this->wpdb->nextResults[] = $list;
+        $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-25'];
+    }
+
+    /**
+     * Every page of the guest list for 1 Aug: /door 1.8. (the 👥 list), then
+     * a tap on each next-page button in turn.
+     *
+     * @return array<int, array<string, mixed>> The message body of each page.
+     */
+    private function allPages(int $count): array
+    {
+        $this->asker(true);
+        $this->bigList($count);
+        $this->guestListService()->onGuestCommand(555, 555, true, '1.8.');
+        $pages = [$this->lastCallTo('sendMessage')];
+
+        for ($guard = 0; $guard < 20; $guard++) {
+            $next = $this->callbackOf($pages[count($pages) - 1], 'Next »');
+
+            if (null === $next) {
+                break;
+            }
+
+            $this->asker(true);
+            $this->bigList($count);
+            $this->guestListService()->onSelect([
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'data' => $next,
+                'message' => ['chat' => ['id' => 555], 'message_id' => 42],
+            ]);
+            $pages[] = $this->lastCallTo('editMessageText');
+        }
+
+        return $pages;
+    }
+
+    public function testABigListIsSplitIntoPagesThatEachFitOneMessage(): void
+    {
+        $pages = $this->allPages(150);
+
+        self::assertGreaterThan(1, count($pages));
+
+        foreach ($pages as $number => $page) {
+            $this->assertFitsOneTelegramMessage($page);
+            self::assertStringStartsWith(
+                '🎫 Guest list — Sat 1 Aug · page ' . ($number + 1) . ' of ' . count($pages)
+                    . "\n150 guests, 450 people in all\n",
+                $page['text']
+            );
+            // Every page keeps the organizer help and the night buttons.
+            self::assertStringEndsWith('Another night: put the date first, e.g. /door add 1.8. Name', $page['text']);
+            self::assertNotNull($this->callbackOf($page, 'Sat 25 Jul'));
+        }
+
+        // Each guest is listed once, with the number /door edit and remove take.
+        $text = implode("\n", array_column($pages, 'text'));
+        for ($i = 1; $i <= 150; $i++) {
+            $line = sprintf("\n%d. Guest Of Honour Øystein Äöå %03d +2", $i, $i);
+            self::assertSame(1, substr_count($text, $line), "Guest {$i}");
+        }
+
+        self::assertNull($this->callbackOf($pages[0], '« Previous'));
+        self::assertSame('gl:2026-08-01:1', $this->callbackOf($pages[0], 'Next »'));
+        self::assertSame('gl:2026-08-01', $this->callbackOf($pages[1], '« Previous'));
+        self::assertNull($this->callbackOf($pages[count($pages) - 1], 'Next »'));
+    }
+
+    public function testAddingToABigListWithAnEmailStillFitsOneMessage(): void
+    {
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        Functions\when('wp_schedule_single_event')->justReturn(true);
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() + 600, 'rest' => []];
+        $this->asker(true);
+        $this->bigList(150);
+
+        $service = new GuestListService(
+            new GuestRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            new PersonRepository(),
+            $this->client(),
+            new TicketMail(
+                new TicketBuyerRepository(),
+                new GuestRepository(),
+                new TaskRepository(),
+                new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            )
+        );
+        $service->onGuestCommand(555, 555, true, 'add 1.8. ' . str_repeat('Long Name ', 10) . 'anna@example.com');
+
+        $sent = $this->lastCallTo('sendMessage');
+        $this->assertFitsOneTelegramMessage($sent);
+        self::assertStringStartsWith('✅ Added Long Name', $sent['text']);
+        self::assertStringContainsString('Ticket emails go out at ', $sent['text']);
+        self::assertStringContainsString('· page 1 of ', $sent['text']);
+        // The page buttons come first, the Cancel sending button last.
+        self::assertSame('gl:2026-08-01:1', $this->callbackOf($sent, 'Next »'));
+        $rows = $sent['reply_markup']['inline_keyboard'];
+        self::assertSame('gl:cancel', $rows[count($rows) - 1][0]['callback_data']);
+    }
 }

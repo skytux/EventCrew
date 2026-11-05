@@ -52,9 +52,8 @@ final class RosterService
     private const PICKER_DATES = 6;
     private const PICKER_PER_ROW = 3;
 
-    /** Telegram's limits for one message: inline buttons and text characters. */
+    /** Telegram's limit for inline buttons in one message. */
     private const MAX_BUTTONS = 100;
-    private const MAX_TEXT = 4096;
 
     /** Buttons kept free on every page for the day buttons and the previous/next row. */
     private const RESERVED_BUTTONS = self::PICKER_DATES + 2;
@@ -446,8 +445,7 @@ final class RosterService
         $title = '📋 ' . $this->dateLabel($date);
 
         if ($count > 1) {
-            /* translators: 1: page number, 2: number of pages */
-            $title .= ' · ' . sprintf(__('page %1$d of %2$d', 'eventcrew'), $page + 1, $count);
+            $title .= MessagePages::note($page, $count);
         }
 
         // A mark button on a later page carries the page, so the edit after
@@ -475,7 +473,7 @@ final class RosterService
         }
 
         if ($count > 1) {
-            $keyboard[] = $this->pageButtons($date, $page, $count);
+            $keyboard[] = MessagePages::buttons(self::SELECT_PREFIX . $date, $page, $count);
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
@@ -574,7 +572,7 @@ final class RosterService
     private function paginate(array $blocks): array
     {
         $maxButtons = self::MAX_BUTTONS - self::RESERVED_BUTTONS;
-        $maxText = self::MAX_TEXT - self::RESERVED_TEXT;
+        $maxText = MessagePages::MAX_TEXT - self::RESERVED_TEXT;
         $empty = ['lines' => [], 'keyboard' => [], 'buttons' => 0, 'length' => 0];
         $pages = [];
         $page = $empty;
@@ -584,7 +582,7 @@ final class RosterService
                 $buttons = array_sum(array_map('count', $piece['keyboard']));
                 $lines = 0 === $index ? array_merge($block['heading'], $piece['lines']) : $piece['lines'];
                 $full = $page['buttons'] + $buttons > $maxButtons
-                    || $page['length'] + $this->textLength($lines) > $maxText;
+                    || $page['length'] + MessagePages::textLength($lines) > $maxText;
 
                 if ($full && [] !== $page['lines']) {
                     $pages[] = $page;
@@ -595,7 +593,7 @@ final class RosterService
                 $page['lines'] = array_merge($page['lines'], $lines);
                 $page['keyboard'] = array_merge($page['keyboard'], $piece['keyboard']);
                 $page['buttons'] += $buttons;
-                $page['length'] += $this->textLength($lines);
+                $page['length'] += MessagePages::textLength($lines);
             }
         }
 
@@ -605,50 +603,6 @@ final class RosterService
             static fn (array $p): array => ['lines' => $p['lines'], 'keyboard' => $p['keyboard']],
             $pages
         );
-    }
-
-    /**
-     * The length of these lines as Telegram counts it - in UTF-16 code units,
-     * so an emoji counts two - with a newline after each.
-     *
-     * @param array<int, string> $lines
-     */
-    private function textLength(array $lines): int
-    {
-        $length = 0;
-
-        foreach ($lines as $line) {
-            $length += intdiv(strlen((string) mb_convert_encoding($line, 'UTF-16LE', 'UTF-8')), 2) + 1;
-        }
-
-        return $length;
-    }
-
-    /**
-     * The previous/next row of a paged roster. Page one is plain rd:<date>,
-     * the same data its day button sends.
-     *
-     * @return array<int, array{text: string, callback_data: string}>
-     */
-    private function pageButtons(string $date, int $page, int $count): array
-    {
-        $row = [];
-
-        if ($page > 0) {
-            $row[] = [
-                'text' => __('« Previous', 'eventcrew'),
-                'callback_data' => self::SELECT_PREFIX . $date . (1 === $page ? '' : ':' . ($page - 1)),
-            ];
-        }
-
-        if ($page < $count - 1) {
-            $row[] = [
-                'text' => __('Next »', 'eventcrew'),
-                'callback_data' => self::SELECT_PREFIX . $date . ':' . ($page + 1),
-            ];
-        }
-
-        return $row;
     }
 
     /**

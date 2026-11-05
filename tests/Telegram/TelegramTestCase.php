@@ -431,4 +431,42 @@ abstract class TelegramTestCase extends TestCase
 
         return null;
     }
+
+    /**
+     * Fails unless one sent or edited message keeps inside Telegram's limits:
+     * text of 1-4096 characters (counted in UTF-16, as Telegram does), at
+     * most 100 inline buttons and callback data of 1-64 bytes.
+     *
+     * @param array<string, mixed> $body
+     */
+    protected function assertFitsOneTelegramMessage(array $body): void
+    {
+        $length = intdiv(strlen((string) mb_convert_encoding((string) $body['text'], 'UTF-16LE', 'UTF-8')), 2);
+        self::assertGreaterThan(0, $length);
+        self::assertLessThanOrEqual(4096, $length, 'message text too long');
+
+        $buttons = array_merge([], ...array_values($body['reply_markup']['inline_keyboard'] ?? []));
+        self::assertLessThanOrEqual(100, count($buttons), 'more than 100 buttons');
+
+        foreach ($buttons as $button) {
+            self::assertGreaterThan(0, strlen($button['callback_data']));
+            self::assertLessThanOrEqual(64, strlen($button['callback_data']), 'callback_data over 64 bytes');
+        }
+    }
+
+    /**
+     * The callback data of the first button whose text starts with $label, or null.
+     *
+     * @param array<string, mixed> $body
+     */
+    protected function callbackOf(array $body, string $label): ?string
+    {
+        foreach (array_merge([], ...array_values($body['reply_markup']['inline_keyboard'] ?? [])) as $button) {
+            if (str_starts_with($button['text'], $label)) {
+                return $button['callback_data'];
+            }
+        }
+
+        return null;
+    }
 }

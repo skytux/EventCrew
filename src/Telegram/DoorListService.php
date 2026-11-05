@@ -21,16 +21,23 @@ use EventCrew\Support\DoorList;
  * role can look at their own night. The list always goes to the asker's DM.
  * A date can be given ("/door 1.8."), and buttons under the list switch between the
  * nearby nights by editing the message in place.
+ *
+ * A list too long for one Telegram message is split into pages: the message
+ * shows one page, with previous and next buttons (dl:<Y-m-d>:<page>) above
+ * the night buttons. A night that fits shows as before.
  */
 final class DoorListService
 {
     use GroupBreadcrumb;
 
-    /** Callback data prefix for a night button: dl:<Y-m-d>. */
+    /** Callback data prefix for a night or page button: dl:<Y-m-d>[:<page>]. */
     private const SELECT_PREFIX = 'dl:';
 
     /** Night buttons per keyboard row. */
     private const BUTTONS_PER_ROW = 2;
+
+    /** Characters kept free on every page for the page note. */
+    private const RESERVED_TEXT = 100;
 
     public function __construct(
         private readonly DoorList $doorList,
@@ -75,12 +82,18 @@ final class DoorListService
             return;
         }
 
-        $this->telegram->sendMessage($telegramUserId, $this->render($date), $this->markup($person, $date));
+        $rendered = $this->render($date);
+        $this->telegram->sendMessage(
+            $telegramUserId,
+            $rendered['text'],
+            $this->markup($person, $date, $rendered['pages'])
+        );
         $this->sentDmNote($chatId, $isPrivate);
     }
 
     /**
-     * A night button tap: shows that night's list in the same message.
+     * A night or page button tap: shows that night's list, at that page, in
+     * the same message.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -93,13 +106,17 @@ final class DoorListService
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $messageId = (int) ($message['message_id'] ?? 0);
 
-        $date = substr($data, strlen(self::SELECT_PREFIX));
+        $data = substr($data, strlen(self::SELECT_PREFIX));
+        $valid = 1 === preg_match('#^(\d{4}-\d{2}-\d{2})(?::(\d{1,3}))?$#', $data, $matches);
 
-        if (1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date) || 0 === $chatId || 0 === $messageId) {
+        if (! $valid || 0 === $chatId || 0 === $messageId) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
         }
+
+        $date = $matches[1];
+        $page = (int) ($matches[2] ?? 0);
 
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -110,10 +127,23 @@ final class DoorListService
         }
 
         $this->telegram->answerCallbackQuery($callbackId);
-        $this->telegram->editMessageText($chatId, $messageId, $this->render($date), $this->markup($person, $date));
+        $rendered = $this->render($date, $page);
+        $this->telegram->editMessageText(
+            $chatId,
+            $messageId,
+            $rendered['text'],
+            $this->markup($person, $date, $rendered['pages'])
+        );
     }
 
-    private function render(string $date): string
+    /**
+     * The list for $date at page $page (from 0; past the end means the last),
+     * with "page 2 of 3" in its first line when it takes more than one page.
+     * 'pages' is the previous/next row, empty when the list fits.
+     *
+     * @return array{text: string, pages: array<int, array{text: string, callback_data: string}>}
+     */
+    private function render(string $date, int $page = 0): array
     {
         $entrants = $this->doorList->entrantsFor($date);
         $guests = $this->guests->forDate($date);
@@ -126,7 +156,7 @@ final class DoorListService
         if ([] === $entrants && [] === $guests) {
             $lines[] = __('Nobody has a ticket yet.', 'eventcrew');
 
-            return implode("\n", $lines);
+            return ['text' => implode("\n", $lines), 'pages' => []];
         }
 
         // Everyone let in: the people below plus each guest and their plus-ones.
@@ -137,34 +167,50 @@ final class DoorListService
             _n('%d person', '%d people', $total, 'eventcrew'),
             $total
         );
-        $lines[] = '';
+        $blocks = [];
 
-        foreach ($entrants as $entrant) {
-            $lines[] = sprintf('• %s — %s', $entrant['name'], $entrant['detail']);
+        if ([] !== $entrants) {
+            $blocks[] = [
+                'heading' => [''],
+                'lines' => array_map(
+                    static fn (array $entrant): string => sprintf('• %s — %s', $entrant['name'], $entrant['detail']),
+                    $entrants
+                ),
+            ];
         }
 
         if ([] !== $guests) {
-            if ([] !== $entrants) {
-                $lines[] = '';
-            }
-
-            $lines[] = '🎫 ' . __('Guests', 'eventcrew');
-
-            foreach ($guests as $guest) {
-                $lines[] = '• ' . $guest->line();
-            }
+            // A blank line, then the heading, both after the people above
+            // and straight under the total.
+            $blocks[] = [
+                'heading' => ['', '🎫 ' . __('Guests', 'eventcrew')],
+                'lines' => array_map(static fn (Guest $guest): string => '• ' . $guest->line(), $guests),
+            ];
         }
 
-        return implode("\n", $lines);
+        $maxText = MessagePages::MAX_TEXT - MessagePages::textLength($lines) - self::RESERVED_TEXT;
+        $pages = MessagePages::split($blocks, $maxText);
+        $count = count($pages);
+        $page = max(0, min($page, $count - 1));
+
+        if ($count > 1) {
+            $lines[0] .= MessagePages::note($page, $count);
+        }
+
+        return [
+            'text' => implode("\n", array_merge($lines, $pages[$page])),
+            'pages' => $count > 1 ? MessagePages::buttons(self::SELECT_PREFIX . $date, $page, $count) : [],
+        ];
     }
 
     /**
-     * Buttons for the other nearby nights this person may see, or null when
-     * there is none to switch to.
+     * The previous/next row of a paged list ($pages), then buttons for the
+     * other nearby nights this person may see, or null when there is none.
      *
+     * @param array<int, array{text: string, callback_data: string}> $pages
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}|null
      */
-    private function markup(Person $person, string $shown): ?array
+    private function markup(Person $person, string $shown, array $pages = []): ?array
     {
         $buttons = [];
 
@@ -176,7 +222,9 @@ final class DoorListService
             $buttons[] = ['text' => Dates::dayLabel($date), 'callback_data' => self::SELECT_PREFIX . $date];
         }
 
-        return [] === $buttons ? null : ['inline_keyboard' => array_chunk($buttons, self::BUTTONS_PER_ROW)];
+        $rows = array_merge([] === $pages ? [] : [$pages], array_chunk($buttons, self::BUTTONS_PER_ROW));
+
+        return [] === $rows ? null : ['inline_keyboard' => $rows];
     }
 
     private function deniedMessage(): string

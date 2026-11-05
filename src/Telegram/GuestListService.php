@@ -20,12 +20,17 @@ use EventCrew\Support\TicketMail;
  * Organizers add, edit and remove guests; people on a night's task of a
  * sales-desk role can see the list for their night. Every answer goes to the
  * asker's DM. See GuestCommand for the syntax.
+ *
+ * A list too long for one Telegram message is split into pages: the message
+ * shows one page, with previous and next buttons (gl:<Y-m-d>:<page>) above
+ * the night buttons. A list that fits shows as before. The guest numbers run
+ * on across pages, so /door edit and /door remove take the same numbers.
  */
 final class GuestListService
 {
     use GroupBreadcrumb;
 
-    /** Callback data prefix for a night button: gl:<Y-m-d>. */
+    /** Callback data prefix for a night or page button: gl:<Y-m-d>[:<page>]. */
     private const SELECT_PREFIX = 'gl:';
 
     /** Callback data of the button that cancels the waiting ticket send. */
@@ -33,6 +38,12 @@ final class GuestListService
 
     /** Night buttons per keyboard row. */
     private const BUTTONS_PER_ROW = 2;
+
+    /** Characters kept free on every page for the page note. */
+    private const RESERVED_TEXT = 100;
+
+    /** Characters kept free for the "Ticket emails go out at ..." line under an add. */
+    private const RESERVED_PENDING = 200;
 
     public function __construct(
         private readonly GuestRepository $guests,
@@ -99,13 +110,16 @@ final class GuestListService
             return;
         }
 
-        $text = '' === $done ? $this->render($person, $date) : $done . "\n\n" . $this->render($person, $date);
-        $markup = $this->markup($person, $date);
+        $withEmail = GuestCommand::ADD === $command['action'] && '' !== (string) ($command['email'] ?? '');
+        // Room for the line above the list and the pending line under it.
+        $reserved = ('' === $done ? 0 : MessagePages::textLength([$done, '']))
+            + ($withEmail ? self::RESERVED_PENDING : 0);
+        $rendered = $this->render($person, $date, 0, $reserved);
+        $text = '' === $done ? $rendered['text'] : $done . "\n\n" . $rendered['text'];
+        $markup = $this->markup($person, $date, $rendered['pages']);
         // A guest added with an email address starts the waiting ticket send:
         // say when it goes out, with a button that cancels it.
-        $pending = GuestCommand::ADD === $command['action'] && '' !== (string) ($command['email'] ?? '')
-            ? $this->ticketMail?->pendingSummary()
-            : null;
+        $pending = $withEmail ? $this->ticketMail?->pendingSummary() : null;
 
         if (null !== $pending) {
             $text .= "\n\n" . TicketMail::pendingLine($pending);
@@ -120,7 +134,8 @@ final class GuestListService
     }
 
     /**
-     * A night button tap: shows that night's guest list in the same message.
+     * A night or page button tap: shows that night's guest list, at that
+     * page, in the same message.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -131,7 +146,7 @@ final class GuestListService
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $messageId = (int) ($message['message_id'] ?? 0);
-        $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
+        $data = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::SELECT_PREFIX));
 
         if (self::CANCEL_DATA === (string) ($callbackQuery['data'] ?? '')) {
             $this->onCancel($callbackId, $telegramUserId, $message);
@@ -139,11 +154,16 @@ final class GuestListService
             return;
         }
 
-        if (1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date) || 0 === $chatId || 0 === $messageId) {
+        $valid = 1 === preg_match('#^(\d{4}-\d{2}-\d{2})(?::(\d{1,3}))?$#', $data, $matches);
+
+        if (! $valid || 0 === $chatId || 0 === $messageId) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
         }
+
+        $date = $matches[1];
+        $page = (int) ($matches[2] ?? 0);
 
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -154,11 +174,12 @@ final class GuestListService
         }
 
         $this->telegram->answerCallbackQuery($callbackId);
+        $rendered = $this->render($person, $date, $page);
         $this->telegram->editMessageText(
             $chatId,
             $messageId,
-            $this->render($person, $date),
-            $this->markup($person, $date)
+            $rendered['text'],
+            $this->markup($person, $date, $rendered['pages'])
         );
     }
 
@@ -298,7 +319,15 @@ final class GuestListService
         return $this->guests->forDate($date)[$number - 1] ?? null;
     }
 
-    private function render(Person $person, string $date): string
+    /**
+     * The guest list for $date at page $page (from 0; past the end means the
+     * last), with "page 2 of 3" in its first line when it takes more than one
+     * page. $reserved characters are kept free for text the caller adds.
+     * 'pages' is the previous/next row, empty when the list fits.
+     *
+     * @return array{text: string, pages: array<int, array{text: string, callback_data: string}>}
+     */
+    private function render(Person $person, string $date, int $page = 0, int $reserved = 0): array
     {
         $guests = $this->guests->forDate($date);
         $lines = ['🎫 ' . sprintf(
@@ -306,6 +335,8 @@ final class GuestListService
             __('Guest list — %s', 'eventcrew'),
             Dates::dayLabel($date)
         )];
+
+        $numbered = [];
 
         if ([] === $guests) {
             $lines[] = __('No guests yet.', 'eventcrew');
@@ -323,30 +354,47 @@ final class GuestListService
             $lines[] = '';
 
             foreach ($guests as $index => $guest) {
-                $lines[] = sprintf('%d. %s', $index + 1, $guest->line());
+                $numbered[] = sprintf('%d. %s', $index + 1, $guest->line());
             }
         }
 
+        $help = [];
+
         if ($person->isOrganizer) {
-            $lines[] = '';
-            $lines[] = __('Add: /door add Name ; note  (just the guest)', 'eventcrew');
-            $lines[] = __('Add with extra people: /door add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
-            $lines[] = __('No +N, or +0, means no extra people.', 'eventcrew');
-            $lines[] = __('Email the ticket: /door add Name name@example.com', 'eventcrew');
-            $lines[] = __('Change: /door edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
-            $lines[] = __('Remove: /door remove 2', 'eventcrew');
-            $lines[] = __('Another night: put the date first, e.g. /door add 1.8. Name', 'eventcrew');
+            $help[] = '';
+            $help[] = __('Add: /door add Name ; note  (just the guest)', 'eventcrew');
+            $help[] = __('Add with extra people: /door add Name +2 ; note  (the guest and 2 more)', 'eventcrew');
+            $help[] = __('No +N, or +0, means no extra people.', 'eventcrew');
+            $help[] = __('Email the ticket: /door add Name name@example.com', 'eventcrew');
+            $help[] = __('Change: /door edit 2 +3  (number from the list; give only what changes)', 'eventcrew');
+            $help[] = __('Remove: /door remove 2', 'eventcrew');
+            $help[] = __('Another night: put the date first, e.g. /door add 1.8. Name', 'eventcrew');
         }
 
-        return implode("\n", $lines);
+        $maxText = MessagePages::MAX_TEXT - MessagePages::textLength(array_merge($lines, $help))
+            - self::RESERVED_TEXT - $reserved;
+        $pages = MessagePages::split([['heading' => [], 'lines' => $numbered]], $maxText);
+        $count = count($pages);
+        $page = max(0, min($page, $count - 1));
+
+        if ($count > 1) {
+            $lines[0] .= MessagePages::note($page, $count);
+        }
+
+        return [
+            'text' => implode("\n", array_merge($lines, $pages[$page], $help)),
+            'pages' => $count > 1 ? MessagePages::buttons(self::SELECT_PREFIX . $date, $page, $count) : [],
+        ];
     }
 
     /**
-     * Buttons for the other nearby nights this person may see, or null.
+     * The previous/next row of a paged list ($pages), then buttons for the
+     * other nearby nights this person may see, or null when there is none.
      *
+     * @param array<int, array{text: string, callback_data: string}> $pages
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}|null
      */
-    private function markup(Person $person, string $shown): ?array
+    private function markup(Person $person, string $shown, array $pages = []): ?array
     {
         $buttons = [];
 
@@ -358,7 +406,9 @@ final class GuestListService
             $buttons[] = ['text' => Dates::dayLabel($date), 'callback_data' => self::SELECT_PREFIX . $date];
         }
 
-        return [] === $buttons ? null : ['inline_keyboard' => array_chunk($buttons, self::BUTTONS_PER_ROW)];
+        $rows = array_merge([] === $pages ? [] : [$pages], array_chunk($buttons, self::BUTTONS_PER_ROW));
+
+        return [] === $rows ? null : ['inline_keyboard' => $rows];
     }
 
     private function errorMessage(string $error): string
