@@ -11,6 +11,7 @@ use EventCrew\Support\BuyerImport;
 use EventCrew\Support\BuyerListParser;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TicketFileException;
 use EventCrew\Support\TicketMail;
 use WP_REST_Request;
@@ -331,63 +332,20 @@ final class BuyerImportController
         bool $fromFile,
         int $plusOnes = 0
     ): void {
-        $day = Dates::dayLabel($date);
-
-        if ($fromFile) {
-            $body = sprintf(
-                /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
-                __('%1$d tickets were imported for %2$s.', 'eventcrew'),
-                $added,
-                $day
-            );
-        } else {
-            $body = sprintf(
-                /* translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug" */
-                __('%1$d guests were added to the guest list for %2$s.', 'eventcrew'),
-                $added,
-                $day
-            );
-
-            if ($plusOnes > 0) {
-                $body .= ' ' . sprintf(
-                    /* translators: %d: total number of plus-ones the added guests bring */
-                    __('They bring %d plus-ones in total.', 'eventcrew'),
-                    $plusOnes
-                );
-            }
-        }
-
-        if ($skipped > 0) {
-            $body .= "\n\n" . ($fromFile
-                ? sprintf(
-                    /* translators: %d: number of tickets skipped */
-                    __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
-                    $skipped
-                )
-                : sprintf(
-                    /* translators: %d: number of names skipped */
-                    __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
-                    $skipped
-                ));
-        }
-
         // The import started the waiting ticket send: say when it goes out
         // and where to cancel it.
         $pending = $added > 0 ? TicketMail::pending() : null;
 
-        if (null !== $pending) {
-            $body .= "\n\n" . sprintf(
-                /* translators: %s: time of day, e.g. 21:40 */
-                __('The ticket emails go out at %s. To stop them, press "Cancel sending" on the Roster page before then.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                TicketMail::clock($pending['at'])
-            );
-        }
-
-        $body .= "\n\n" . sprintf(
-            /* translators: %s: the email address the list was sent from */
-            __('The list was sent from %s.', 'eventcrew'),
-            $from
-        );
+        // The texts are the Messages page templates (MessageTemplates).
+        $template = $fromFile ? 'import_tickets' : 'import_guests';
+        $context = [
+            'added' => $added,
+            'skipped' => $skipped,
+            'plus_ones' => $plusOnes,
+            'day' => Dates::dayLabel($date),
+            'from' => $from,
+            'sending_at' => null === $pending ? '' : TicketMail::clock($pending['at']),
+        ];
 
         // The Admin tab's Roster screen on the crew page: organizers run the
         // night from their phone, not from wp-admin. wp-admin's Roster page
@@ -402,20 +360,21 @@ final class BuyerImportController
 
         $this->tellOrganizers(
             $from,
-            $fromFile
-                ? sprintf(
-                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
-                    __('Ticket buyers imported for %s', 'eventcrew'),
-                    $day
-                )
-                : sprintf(
-                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
-                    __('Guests added for %s', 'eventcrew'),
-                    $day
-                ),
-            $body,
+            MessageTemplates::subject($template, $context),
+            self::dropEmptyLines(MessageTemplates::body($template, $context)),
             [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]]
         );
+    }
+
+    /**
+     * $text without what an empty placeholder leaves behind: spaces at the end
+     * of a line, and more than one empty line in a row.
+     */
+    private static function dropEmptyLines(string $text): string
+    {
+        $text = implode("\n", array_map(static fn (string $line): string => rtrim($line, ' '), explode("\n", $text)));
+
+        return trim((string) preg_replace("/\n{3,}/", "\n\n", $text), "\n");
     }
 
     /**
@@ -424,16 +383,13 @@ final class BuyerImportController
      */
     private function notifyFailure(string $from, string $reason): void
     {
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['reason' => $reason, 'from' => $from];
+
         $this->tellOrganizers(
             $from,
-            __('The ticket list could not be imported', 'eventcrew'),
-            $reason . "\n\n"
-                . __('Nothing was added to the door list.', 'eventcrew') . "\n\n"
-                . sprintf(
-                    /* translators: %s: the email address the list was sent from */
-                    __('The list was sent from %s.', 'eventcrew'),
-                    $from
-                )
+            MessageTemplates::subject('import_failed', $context),
+            MessageTemplates::body('import_failed', $context)
         );
     }
 

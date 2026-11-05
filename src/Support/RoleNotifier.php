@@ -140,51 +140,26 @@ final class RoleNotifier
     /** One organizer, in the language they chose. */
     private function tell(Person $organizer, Person $person, string $slug, string $kind, string $giverName): void
     {
-        if ('organizer' === $kind) {
-            $line = '' === $giverName
-                ? sprintf(
-                    /* translators: %s: the person's name */
-                    __('%s was made an organizer.', 'eventcrew'),
-                    $person->name()
-                )
-                : sprintf(
-                    /* translators: 1: the person's name, 2: the name of the organizer who did it */
-                    __('%1$s was made an organizer by %2$s.', 'eventcrew'),
-                    $person->name(),
-                    $giverName
-                );
-            $subject = __('Someone was made an organizer', 'eventcrew');
-        } elseif ('met' === $kind) {
-            $line = sprintf(
-                /* translators: 1: the person's name, 2: the role */
-                __('%1$s now meets the conditions for the role %2$s. You can give them the role with /people.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                $person->name(),
-                Roles::display($slug)
-            );
-            $subject = __('Someone meets the conditions for a role', 'eventcrew');
-        } elseif ('' === $giverName) {
-            $line = sprintf(
-                /* translators: 1: the person's name, 2: the role */
-                __('%1$s was given the role %2$s.', 'eventcrew'),
-                $person->name(),
-                Roles::display($slug)
-            );
-            $subject = __('Someone was given a role', 'eventcrew');
-        } else {
-            $line = sprintf(
-                /* translators: 1: the person's name, 2: the role, 3: the name of the organizer who gave it */
-                __('%1$s was given the role %2$s by %3$s.', 'eventcrew'),
-                $person->name(),
-                Roles::display($slug),
-                $giverName
-            );
-            $subject = __('Someone was given a role', 'eventcrew');
-        }
+        // The texts are the Messages page templates (MessageTemplates).
+        $template = match ($kind) {
+            'organizer' => 'organizer_made',
+            'met' => 'role_met',
+            default => 'role_given',
+        };
+        $context = ['member' => $person, 'role' => $slug, 'giver' => $giverName];
 
         if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
-            $this->telegram->sendMessage($organizer->telegramChatId, DmBody::frame($organizer, $line));
+            $this->telegram->sendMessage(
+                $organizer->telegramChatId,
+                DmBody::frame($organizer, MessageTemplates::body($template . '_dm', $context))
+            );
         }
 
-        $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $line);
+        $this->mailer->toPerson(
+            $organizer->id,
+            $organizer->email,
+            MessageTemplates::subject($template, $context),
+            MessageTemplates::body($template, $context)
+        );
     }
 }

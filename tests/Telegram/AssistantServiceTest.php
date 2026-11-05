@@ -16,6 +16,7 @@ use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\OrganizerGuide;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Telegram\AssistantService;
@@ -1241,6 +1242,46 @@ final class AssistantServiceTest extends TelegramTestCase
             $subjects[$kind] = $this->mails[0]['subject'] ?? '';
             self::assertSame($subject, $subjects[$kind]);
         }
+    }
+
+    public function testTheForwardedChatIsTheBuiltInTextWhenNothingIsStored(): void
+    {
+        $this->forwardWorld();
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->forwardReply('Thanks!', 'human');
+
+        $this->ask(self::privateMessage('a message'));
+
+        self::assertSame('Bot chat: Sam wants a human', $this->mails[0]['subject']);
+        self::assertMatchesRegularExpression(
+            '/^Sam \(sam@example\.com\) wrote to the bot in a private chat\. Here is that chat, oldest first\.\n\n'
+            . '\[\d{4}-\d\d-\d\d \d\d:\d\d\] Sam: a message\n\n\[\d{4}-\d\d-\d\d \d\d:\d\d\] Bot: Thanks!/',
+            $this->mails[0]['body']
+        );
+        self::assertSame(
+            ["📣 Test Site\n\nHi Lee,\n\nI emailed you a transcript of my private chat with Sam."],
+            $this->textsTo(501)
+        );
+    }
+
+    public function testTheForwardedChatUsesAStoredText(): void
+    {
+        $this->forwardWorld();
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->options[MessageTemplates::OPTION_PREFIX . 'chat_forward'] = [
+            'subject' => ['source' => 'Chat with {name}'],
+            'body' => ['source' => "{name} <{email}>\n\n{transcript}"],
+        ];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'chat_forward_dm'] = [
+            'body' => ['source' => 'Check your email about {name}.'],
+        ];
+        $this->forwardReply('Thanks!', 'unhappy');
+
+        $this->ask(self::privateMessage('a message'));
+
+        self::assertSame('Chat with Sam', $this->mails[0]['subject']);
+        self::assertMatchesRegularExpression('/^Sam <sam@example\.com>\n\n\[[^]]+\] Sam: a message/', $this->mails[0]['body']);
+        self::assertSame(["📣 Test Site\n\nHi Lee,\n\nCheck your email about Sam."], $this->textsTo(501));
     }
 
     public function testAtMostOneForwardPerPersonPerHour(): void

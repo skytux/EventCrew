@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
@@ -199,6 +200,95 @@ final class RoleNotifierTest extends TelegramTestCase
         self::assertCount(1, $this->mails);
         self::assertSame('owner@example.com', $this->mails[0]['to']);
         self::assertArrayHasKey('made:organizer', json_decode($this->wpdb->updates[0]['data']['role_notices'], true));
+    }
+
+    // --- the texts are the Messages page templates ------------------------
+
+    /**
+     * Runs one notice about Jo (id 8) to organizer Owner, with plain-text email.
+     */
+    private function runNotice(string $kind, string $giver = ''): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $jo = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        if ('met' === $kind) {
+            // organizers(); people->all; completedByRole; markRoleNotice's find.
+            $this->wpdb->nextResults[] = [$this->organizerRow()];
+            $this->wpdb->nextResults[] = [$jo];
+            $this->wpdb->nextResults[] = [['role_slug' => 'welcome', 'n' => 2]];
+            $this->wpdb->nextRows[] = $jo;
+            $this->notifier()->run();
+
+            return;
+        }
+
+        // find(person); organizers(); markRoleNotice's find.
+        $this->wpdb->nextRows[] = $jo;
+        $this->wpdb->nextResults[] = [$this->organizerRow()];
+        $this->wpdb->nextRows[] = $jo;
+
+        if ('organizer' === $kind) {
+            $this->notifier()->organizerGiven(8, $giver);
+        } else {
+            $this->notifier()->roleGiven(8, 'leader', $giver);
+        }
+    }
+
+    public function testEachNoticeSendsItsBuiltInTextWhenNothingIsStored(): void
+    {
+        $cases = [
+            ['met', '', 'Someone meets the conditions for a role', 'Jo now meets the conditions for the role Crew leader. You can give them the role with /people.'],
+            ['given', '', 'Someone was given a role', 'Jo was given the role Crew leader.'],
+            ['given', 'Sam', 'Someone was given a role', 'Jo was given the role Crew leader by Sam.'],
+            ['organizer', '', 'Someone was made an organizer', 'Jo was made an organizer.'],
+            ['organizer', 'Sam', 'Someone was made an organizer', 'Jo was made an organizer by Sam.'],
+        ];
+
+        foreach ($cases as [$kind, $giver, $subject, $line]) {
+            $this->mails = [];
+            $this->telegramCalls = [];
+            $this->runNotice($kind, $giver);
+
+            self::assertSame("📣 Test Site\n\nHi Owner,\n\n" . $line, $this->lastCallTo('sendMessage')['text'], $line);
+            self::assertCount(1, $this->mails, $line);
+            self::assertSame($subject, $this->mails[0]['subject'], $line);
+            self::assertStringStartsWith($line . "\n\n", $this->mails[0]['body'], $line);
+        }
+    }
+
+    public function testAStoredTextIsUsedForTheEmailAndTheTelegramMessage(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'role_given'] = [
+            MessageTemplates::SUBJECT => ['source' => 'New role: {role}'],
+            MessageTemplates::BODY => ['source' => '{name} now has {role}, from {giver}.'],
+        ];
+        $this->options[$prefix . 'role_given_dm'] = [
+            MessageTemplates::BODY => ['source' => '{name} got {role} ({giver}).'],
+        ];
+        $this->options[$prefix . 'organizer_made'] = [
+            MessageTemplates::BODY => ['source' => '{name} organizes now.'],
+        ];
+        $this->options[$prefix . 'role_met_dm'] = [
+            MessageTemplates::BODY => ['source' => '{name} could be {role}.'],
+        ];
+
+        $this->runNotice('given', 'Sam');
+        self::assertSame("📣 Test Site\n\nHi Owner,\n\nJo got Crew leader (Sam).", $this->lastCallTo('sendMessage')['text']);
+        self::assertSame('New role: Crew leader', $this->mails[0]['subject']);
+        self::assertStringStartsWith("Jo now has Crew leader, from Sam.\n\n", $this->mails[0]['body']);
+
+        $this->mails = [];
+        $this->runNotice('organizer', 'Sam');
+        self::assertSame('Someone was made an organizer', $this->mails[0]['subject'], 'The subject was not changed.');
+        self::assertStringStartsWith("Jo organizes now.\n\n", $this->mails[0]['body']);
+        self::assertStringEndsWith('Jo was made an organizer by Sam.', $this->lastCallTo('sendMessage')['text']);
+
+        $this->mails = [];
+        $this->runNotice('met');
+        self::assertStringEndsWith("\n\nJo could be Crew leader.", $this->lastCallTo('sendMessage')['text']);
+        self::assertStringStartsWith('Jo now meets the conditions', $this->mails[0]['body']);
     }
 
     public function testBeingMadeAnOrganizerAgainIsNotAnnounced(): void

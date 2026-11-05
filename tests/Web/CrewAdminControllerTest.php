@@ -33,6 +33,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PersonEraser;
@@ -1852,6 +1853,43 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertCount(1, $this->mails);
         self::assertSame('p1@example.com', $this->mails[0]['to']);
         self::assertStringContainsString(self::IP, $this->mails[0]['body']);
+    }
+
+    public function testTheForgedRequestAlertIsTheBuiltInTextWhenNothingIsStored(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];
+
+        $this->post(CrewAdminController::GIFT_ACTION, ['person_id' => '8', 'credits' => '5'], 8);
+
+        $text = "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: Person 8 (p8@example.com)\nWhen: 2026-07-20 12:00:00\nAction: Give a credit\nIP address: " . self::IP . "\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban.";
+        self::assertSame($text, $this->lastCallTo('sendMessage')['text']);
+        self::assertSame('Crew app: a member is blocked after a forged admin request', $this->mails[0]['subject']);
+        self::assertStringStartsWith($text . "\n\n", $this->mails[0]['body']);
+    }
+
+    public function testTheForgedRequestAlertUsesAStoredText(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->options[MessageTemplates::OPTION_PREFIX . 'forged_request'] = [
+            MessageTemplates::SUBJECT => ['source' => 'Blocked: {name}'],
+            MessageTemplates::BODY => ['source' => '{name} ({email}) tried {action} at {when} from {ip}.'],
+        ];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'forged_request_dm'] = [
+            MessageTemplates::BODY => ['source' => 'Blocked {name}.'],
+        ];
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];
+
+        $this->post(CrewAdminController::GIFT_ACTION, ['person_id' => '8', 'credits' => '5'], 8);
+
+        self::assertSame('Blocked Person 8.', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame('Blocked: Person 8', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            'Person 8 (p8@example.com) tried Give a credit at 2026-07-20 12:00:00 from ' . self::IP . ".\n\n",
+            $this->mails[0]['body']
+        );
     }
 
     public function testAMemberWithABadTokenIsStillBlocked(): void

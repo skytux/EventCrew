@@ -7191,6 +7191,102 @@ msgstr "Välilyönti ja sen jälkeen lause, jonka mukaan hyvän tason alittavat 
 msgid "The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so."
 msgstr "Seuraavat avoimet tehtävät, kukin omalla rivillään, ja rivi siitä, miten ilmoittaudutaan. Kun niitä ei ole, rivi joka kertoo sen."
 
+msgid "A person meets the conditions for a role (email)"
+msgstr "Henkilö täyttää roolin ehdot (sähköposti)"
+
+msgid "A person meets the conditions for a role (Telegram)"
+msgstr "Henkilö täyttää roolin ehdot (Telegram)"
+
+msgid "A person was given a role (email)"
+msgstr "Henkilö sai roolin (sähköposti)"
+
+msgid "A person was given a role (Telegram)"
+msgstr "Henkilö sai roolin (Telegram)"
+
+msgid "A person was made an organizer (email)"
+msgstr "Henkilöstä tehtiin järjestäjä (sähköposti)"
+
+msgid "A person was made an organizer (Telegram)"
+msgstr "Henkilöstä tehtiin järjestäjä (Telegram)"
+
+msgid "Member blocked after a forged admin request (email)"
+msgstr "Jäsen estetty väärennetyn ylläpitopyynnön jälkeen (sähköposti)"
+
+msgid "Member blocked after a forged admin request (Telegram)"
+msgstr "Jäsen estetty väärennetyn ylläpitopyynnön jälkeen (Telegram)"
+
+msgid "Ticket list imported (email)"
+msgstr "Lippulista tuotu (sähköposti)"
+
+msgid "Guest list imported (email)"
+msgstr "Vieraslista tuotu (sähköposti)"
+
+msgid "Ticket list not imported (email)"
+msgstr "Lippulistaa ei tuotu (sähköposti)"
+
+msgid "Bot chat sent to the organizers (email)"
+msgstr "Bottikeskustelu lähetetty järjestäjille (sähköposti)"
+
+msgid "Bot chat sent to the organizers (Telegram)"
+msgstr "Bottikeskustelu lähetetty järjestäjille (Telegram)"
+
+msgid "Sent to the organizers the first time a person meets the conditions of a role. Checked every hour."
+msgstr "Lähetetään järjestäjille, kun henkilö täyttää roolin ehdot ensimmäisen kerran. Tarkistetaan tunnin välein."
+
+msgid "Sent to the organizers who use the bot, the first time a person meets the conditions of a role."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun henkilö täyttää roolin ehdot ensimmäisen kerran."
+
+msgid "Sent to the organizers the first time a person is given a role. The built-in text names who gave it when that is known."
+msgstr "Lähetetään järjestäjille, kun henkilö saa roolin ensimmäisen kerran. Valmis teksti kertoo, kuka sen antoi, kun se tiedetään."
+
+msgid "Sent to the organizers who use the bot, the first time a person is given a role. The built-in text names who gave it when that is known."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun henkilö saa roolin ensimmäisen kerran. Valmis teksti kertoo, kuka sen antoi, kun se tiedetään."
+
+msgid "Sent to the other organizers when a person is made an organizer. The built-in text names who did it when that is known."
+msgstr "Lähetetään muille järjestäjille, kun henkilöstä tehdään järjestäjä. Valmis teksti kertoo, kuka sen teki, kun se tiedetään."
+
+msgid "Sent to the other organizers who use the bot, when a person is made an organizer. The built-in text names who did it when that is known."
+msgstr "Lähetetään muille bottia käyttäville järjestäjille, kun henkilöstä tehdään järjestäjä. Valmis teksti kertoo, kuka sen teki, kun se tiedetään."
+
+msgid "Sent to the organizers with a confirmed email address when a member who is not an organizer sends an admin request from the Crew app and is blocked."
+msgstr "Lähetetään järjestäjille, joilla on vahvistettu sähköpostiosoite, kun jäsen, joka ei ole järjestäjä, lähettää ylläpitopyynnön Crew-sovelluksesta ja hänet estetään."
+
+msgid "Sent to the organizers who have a chat with the bot when a member who is not an organizer sends an admin request from the Crew app and is blocked."
+msgstr "Lähetetään järjestäjille, joilla on keskustelu botin kanssa, kun jäsen, joka ei ole järjestäjä, lähettää ylläpitopyynnön Crew-sovelluksesta ja hänet estetään."
+
+msgid "Sent to the organizers, and to the sender, after a ticket file mailed to the import mailbox is imported. A line left empty by a placeholder is removed."
+msgstr "Lähetetään järjestäjille ja lähettäjälle, kun tuontipostilaatikkoon lähetetty lipputiedosto on tuotu. Rivi, jonka paikkamerkki jättää tyhjäksi, poistetaan."
+
+msgid "Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
+msgstr "Lähetetään järjestäjille ja lähettäjälle, kun tuontipostilaatikkoon lähetetty vieraslista on lisätty vieraslistalle. Rivi, jonka paikkamerkki jättää tyhjäksi, poistetaan."
+
+msgid "Sent to the organizers, and to the sender, when a ticket file mailed to the import mailbox cannot be imported."
+msgstr "Lähetetään järjestäjille ja lähettäjälle, kun tuontipostilaatikkoon lähetettyä lipputiedostoa ei voida tuoda."
+
+msgid "Sent to the organizers when the bot finds that a person in a private chat gives feedback, is unhappy, is very happy or asks for a human. The built-in subject says which; a changed subject is used for all four."
+msgstr "Lähetetään järjestäjille, kun botti huomaa, että henkilö yksityisessä keskustelussa antaa palautetta, on tyytymätön, on hyvin tyytyväinen tai pyytää ihmistä. Valmis otsikko kertoo, mikä näistä; muutettua otsikkoa käytetään kaikissa neljässä."
+
+msgid "Sent to the organizers who use the bot, after the bot chat email reached them."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun bottikeskustelun sähköposti on tavoittanut heidät."
+
+msgid "The name of the person the notice is about."
+msgstr "Sen henkilön nimi, jota ilmoitus koskee."
+
+msgid "The email address of the person the notice is about."
+msgstr "Sen henkilön sähköpostiosoite, jota ilmoitus koskee."
+
+msgid "The name of the role, like Crew leader."
+msgstr "Roolin nimi, esimerkiksi Crew leader."
+
+msgid "The name of the organizer who did it. Empty when it is not known."
+msgstr "Sen tehneen järjestäjän nimi. Tyhjä, kun sitä ei tiedetä."
+
+msgid "The email address the list was sent from."
+msgstr "Sähköpostiosoite, josta lista lähetettiin."
+
+msgid "How many were added."
+msgstr "Kuinka monta lisättiin."
+
 msgid "The day of the event, like Sat 1 Aug."
 msgstr "Tapahtuman päivä, esimerkiksi la 1.8."
 
@@ -7392,3 +7488,30 @@ msgstr "Lähetetään henkilölle, joka antoi tehtävänsä toiselle, kun tehtä
 
 msgid "Sent to a person who let someone take over their task, when the task has moved. Not sent when they answered in the bot."
 msgstr "Lähetetään henkilölle, joka antoi tehtävänsä toiselle, kun tehtävä on siirtynyt. Ei lähetetä, jos hän vastasi botissa."
+
+msgid "The sentence saying when the ticket emails go out and how to stop them. Empty when no ticket emails are waiting."
+msgstr "Lause, joka kertoo, milloin lippuviestit lähtevät ja miten ne estetään. Tyhjä, kun lippuviestejä ei ole odottamassa."
+
+msgid "The date and time of the request, like 2026-11-14 21:05:00."
+msgstr "Pyynnön päivä ja kellonaika, esimerkiksi 2026-11-14 21:05:00."
+
+msgid "The name of the admin action that was asked for, like Give a credit."
+msgstr "Pyydetyn ylläpitotoiminnon nimi, esimerkiksi Anna vapaalippu."
+
+msgid "The IP address the request came from."
+msgstr "IP-osoite, josta pyyntö tuli."
+
+msgid "The sentence saying how many tickets were skipped because they were already on the list. Empty when none were."
+msgstr "Lause, joka kertoo, montako lippua ohitettiin, koska ne olivat jo listalla. Tyhjä, kun yhtään ei ohitettu."
+
+msgid "The sentence saying how many plus-ones the guests bring. Empty when none."
+msgstr "Lause, joka kertoo, montako lisähenkilöä vieraat tuovat. Tyhjä, kun ei yhtään."
+
+msgid "The sentence saying how many names were skipped because they were already on the guest list. Empty when none were."
+msgstr "Lause, joka kertoo, montako nimeä ohitettiin, koska ne olivat jo vieraslistalla. Tyhjä, kun yhtään ei ohitettu."
+
+msgid "Why the list could not be imported."
+msgstr "Miksi listaa ei voitu tuoda."
+
+msgid "The chat, one message per paragraph, oldest first, each with its time."
+msgstr "Keskustelu, yksi viesti per kappale, vanhin ensin, kukin kellonaikansa kanssa."

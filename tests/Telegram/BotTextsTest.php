@@ -25,7 +25,7 @@ use EventCrew\Tests\TestCase;
 final class BotTextsTest extends TestCase
 {
     private const BUTTON = 'Take over a task';
-    private const WITH_NAME = 'I emailed you a transcript of my private chat with %s.';
+    private const WITH_NAME = '%s is now an organizer.';
 
     /** @var array<string, mixed> */
     private array $options = [];
@@ -146,17 +146,17 @@ final class BotTextsTest extends TestCase
     /** A text whose placeholders differ from the English one is not used. */
     public function testAWrongPlaceholderIsNotUsed(): void
     {
-        BotTexts::store(self::WITH_NAME, ['texts' => ['fi' => 'Lähetin keskustelun.'], 'manual' => ['fi' => true]]);
+        BotTexts::store(self::WITH_NAME, ['texts' => ['fi' => 'Hänestä tuli järjestäjä.'], 'manual' => ['fi' => true]]);
 
         self::assertSame(
             'built-in',
             Language::run('fi', static fn (): mixed => BotTexts::filter('built-in', self::WITH_NAME))
         );
 
-        BotTexts::store(self::WITH_NAME, ['texts' => ['fi' => 'Lähetin keskustelun (%s).'], 'manual' => ['fi' => true]]);
+        BotTexts::store(self::WITH_NAME, ['texts' => ['fi' => '%s on nyt järjestäjä.'], 'manual' => ['fi' => true]]);
 
         self::assertSame(
-            'Lähetin keskustelun (%s).',
+            '%s on nyt järjestäjä.',
             Language::run('fi', static fn (): mixed => BotTexts::filter('built-in', self::WITH_NAME))
         );
     }

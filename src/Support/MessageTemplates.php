@@ -1011,6 +1011,337 @@ final class MessageTemplates
                 null,
                 static fn (): string => __('⭐ You’re now an EventCrew organizer.', 'eventcrew')
             ),
+            ...self::organizerNoticeDefinitions(),
+        ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
+    /**
+     * The notices to the organizers: a person meets the conditions of a role,
+     * is given a role or is made an organizer (RoleNotifier); a member is
+     * blocked after a forged admin request (CrewAdminController); a mailed
+     * list was imported or could not be (BuyerImportController); a bot chat
+     * is sent to the organizers (ChatForwarder).
+     *
+     * @return list<MessageTemplate>
+     */
+    private static function organizerNoticeDefinitions(): array
+    {
+        $email = MessageTemplate::CHANNEL_EMAIL;
+        $telegram = MessageTemplate::CHANNEL_TELEGRAM;
+
+        $member = self::placeholder(
+            __('The name of the person the notice is about.', 'eventcrew'),
+            static fn (array $c): string => ($c['member'] ?? null) instanceof Person ? $c['member']->name() : ''
+        );
+        $memberEmail = self::placeholder(
+            __('The email address of the person the notice is about.', 'eventcrew'),
+            static fn (array $c): string => ($c['member'] ?? null) instanceof Person ? $c['member']->email : ''
+        );
+        $roleName = self::placeholder(
+            __('The name of the role, like Crew leader.', 'eventcrew'),
+            static fn (array $c): string => '' === (string) ($c['role'] ?? '') ? '' : Roles::display((string) $c['role'])
+        );
+        $giver = self::placeholder(
+            __('The name of the organizer who did it. Empty when it is not known.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['giver'] ?? '')
+        );
+        $from = self::placeholder(
+            __('The email address the list was sent from.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['from'] ?? '')
+        );
+        $added = self::placeholder(
+            __('How many were added.', 'eventcrew'),
+            static fn (array $c): string => (string) (int) ($c['added'] ?? 0)
+        );
+        $day = self::placeholder(
+            __('The day of the event, like Sat 1 Aug.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['day'] ?? '')
+        );
+        $sending = self::placeholder(
+            __('The sentence saying when the ticket emails go out and how to stop them. Empty when no ticket emails are waiting.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            static fn (array $c): string => '' === (string) ($c['sending_at'] ?? '')
+                ? ''
+                : sprintf(
+                    /* translators: %s: time of day, e.g. 21:40 */
+                    __('The ticket emails go out at %s. To stop them, press "Cancel sending" on the Roster page before then.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    (string) $c['sending_at']
+                )
+        );
+        $sentFrom = static fn (): string => self::tag(
+            /* translators: %s: the email address the list was sent from */
+            __('The list was sent from %s.', 'eventcrew'),
+            ['%s' => '{from}']
+        );
+
+        // The role and organizer notices name who did it, unless the context
+        // says that is not known ('giver' => ''). The Messages page, with no
+        // context, shows the text that names them.
+        $byKnown = static fn (array $c): bool => '' !== (string) ($c['giver'] ?? '-');
+        $met = static fn (): string => self::tag(
+            /* translators: 1: the person's name, 2: the role */
+            __('%1$s now meets the conditions for the role %2$s. You can give them the role with /people.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ['%1$s' => '{name}', '%2$s' => '{role}']
+        );
+        $given = static fn (array $c): string => $byKnown($c)
+            ? self::tag(
+                /* translators: 1: the person's name, 2: the role, 3: the name of the organizer who gave it */
+                __('%1$s was given the role %2$s by %3$s.', 'eventcrew'),
+                ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{giver}']
+            )
+            : self::tag(
+                /* translators: 1: the person's name, 2: the role */
+                __('%1$s was given the role %2$s.', 'eventcrew'),
+                ['%1$s' => '{name}', '%2$s' => '{role}']
+            );
+        $made = static fn (array $c): string => $byKnown($c)
+            ? self::tag(
+                /* translators: 1: the person's name, 2: the name of the organizer who did it */
+                __('%1$s was made an organizer by %2$s.', 'eventcrew'),
+                ['%1$s' => '{name}', '%2$s' => '{giver}']
+            )
+            : self::tag(
+                /* translators: %s: the person's name */
+                __('%s was made an organizer.', 'eventcrew'),
+                ['%s' => '{name}']
+            );
+        $roleNotice = ['name' => $member, 'role' => $roleName, 'giver' => $giver];
+
+        $forged = static fn (): string => self::tag(
+            /*
+             * translators: 1: person's name, 2: their email, 3: date and time,
+             * 4: the admin action's name, 5: IP address
+             */
+            __(
+                "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1\$s (%2\$s)\nWhen: %3\$s\nAction: %4\$s\nIP address: %5\$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban.", // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'eventcrew'
+            ),
+            ['%1$s' => '{name}', '%2$s' => '{email}', '%3$s' => '{when}', '%4$s' => '{action}', '%5$s' => '{ip}']
+        );
+        $forgedPlaceholders = [
+            'name' => $member,
+            'email' => $memberEmail,
+            'when' => self::placeholder(
+                __('The date and time of the request, like 2026-11-14 21:05:00.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['when'] ?? '')
+            ),
+            'action' => self::placeholder(
+                __('The name of the admin action that was asked for, like Give a credit.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['action'] ?? '')
+            ),
+            'ip' => self::placeholder(
+                __('The IP address the request came from.', 'eventcrew'),
+                static fn (array $c): string => '' !== (string) ($c['ip'] ?? '') ? (string) $c['ip'] : __('unknown', 'eventcrew')
+            ),
+        ];
+
+        $chatName = ['name' => $member];
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        return [
+            new MessageTemplate(
+                'role_met',
+                __('A person meets the conditions for a role (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers the first time a person meets the conditions of a role. Checked every hour.', 'eventcrew'),
+                static fn (): string => __('Someone meets the conditions for a role', 'eventcrew'),
+                $met,
+                $roleNotice
+            ),
+            new MessageTemplate(
+                'role_met_dm',
+                __('A person meets the conditions for a role (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, the first time a person meets the conditions of a role.', 'eventcrew'),
+                null,
+                $met,
+                $roleNotice
+            ),
+            new MessageTemplate(
+                'role_given',
+                __('A person was given a role (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers the first time a person is given a role. The built-in text names who gave it when that is known.', 'eventcrew'),
+                static fn (): string => __('Someone was given a role', 'eventcrew'),
+                $given,
+                $roleNotice
+            ),
+            new MessageTemplate(
+                'role_given_dm',
+                __('A person was given a role (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, the first time a person is given a role. The built-in text names who gave it when that is known.', 'eventcrew'),
+                null,
+                $given,
+                $roleNotice
+            ),
+            new MessageTemplate(
+                'organizer_made',
+                __('A person was made an organizer (email)', 'eventcrew'),
+                $email,
+                __('Sent to the other organizers when a person is made an organizer. The built-in text names who did it when that is known.', 'eventcrew'),
+                static fn (): string => __('Someone was made an organizer', 'eventcrew'),
+                $made,
+                ['name' => $member, 'giver' => $giver]
+            ),
+            new MessageTemplate(
+                'organizer_made_dm',
+                __('A person was made an organizer (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the other organizers who use the bot, when a person is made an organizer. The built-in text names who did it when that is known.', 'eventcrew'),
+                null,
+                $made,
+                ['name' => $member, 'giver' => $giver]
+            ),
+            new MessageTemplate(
+                'forged_request',
+                __('Member blocked after a forged admin request (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers with a confirmed email address when a member who is not an organizer sends an admin request from the Crew app and is blocked.', 'eventcrew'),
+                static fn (): string => __('Crew app: a member is blocked after a forged admin request', 'eventcrew'),
+                $forged,
+                $forgedPlaceholders
+            ),
+            new MessageTemplate(
+                'forged_request_dm',
+                __('Member blocked after a forged admin request (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who have a chat with the bot when a member who is not an organizer sends an admin request from the Crew app and is blocked.', 'eventcrew'),
+                null,
+                $forged,
+                $forgedPlaceholders
+            ),
+            new MessageTemplate(
+                'import_tickets',
+                __('Ticket list imported (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers, and to the sender, after a ticket file mailed to the import mailbox is imported. A line left empty by a placeholder is removed.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
+                    __('Ticket buyers imported for %s', 'eventcrew'),
+                    ['%s' => '{day}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: number of tickets added, 2: the event day, e.g. "Sat 1 Aug" */
+                    __('%1$d tickets were imported for %2$s.', 'eventcrew'),
+                    ['%1$d' => '{added}', '%2$s' => '{day}']
+                ) . "\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                [
+                    'added' => $added,
+                    'day' => $day,
+                    'skipped' => self::placeholder(
+                        __('The sentence saying how many tickets were skipped because they were already on the list. Empty when none were.', 'eventcrew'),
+                        static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
+                            ? sprintf(
+                                /* translators: %d: number of tickets skipped */
+                                __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
+                                (int) $c['skipped']
+                            )
+                            : ''
+                    ),
+                    'sending' => $sending,
+                    'from' => $from,
+                ]
+            ),
+            new MessageTemplate(
+                'import_guests',
+                __('Guest list imported (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the event day, e.g. "Sat 1 Aug" */
+                    __('Guests added for %s', 'eventcrew'),
+                    ['%s' => '{day}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug" */
+                    __('%1$d guests were added to the guest list for %2$s.', 'eventcrew'),
+                    ['%1$d' => '{added}', '%2$s' => '{day}']
+                ) . " {plus_ones}\n\n{skipped}\n\n{sending}\n\n" . $sentFrom(),
+                [
+                    'added' => $added,
+                    'day' => $day,
+                    'plus_ones' => self::placeholder(
+                        __('The sentence saying how many plus-ones the guests bring. Empty when none.', 'eventcrew'),
+                        static fn (array $c): string => (int) ($c['plus_ones'] ?? 0) > 0
+                            ? sprintf(
+                                /* translators: %d: total number of plus-ones the added guests bring */
+                                __('They bring %d plus-ones in total.', 'eventcrew'),
+                                (int) $c['plus_ones']
+                            )
+                            : ''
+                    ),
+                    'skipped' => self::placeholder(
+                        __('The sentence saying how many names were skipped because they were already on the guest list. Empty when none were.', 'eventcrew'),
+                        static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
+                            ? sprintf(
+                                /* translators: %d: number of names skipped */
+                                __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
+                                (int) $c['skipped']
+                            )
+                            : ''
+                    ),
+                    'sending' => $sending,
+                    'from' => $from,
+                ]
+            ),
+            new MessageTemplate(
+                'import_failed',
+                __('Ticket list not imported (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers, and to the sender, when a ticket file mailed to the import mailbox cannot be imported.', 'eventcrew'),
+                static fn (): string => __('The ticket list could not be imported', 'eventcrew'),
+                static fn (): string => "{reason}\n\n" . __('Nothing was added to the door list.', 'eventcrew') . "\n\n" . $sentFrom(),
+                [
+                    'reason' => self::placeholder(
+                        __('Why the list could not be imported.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['reason'] ?? '')
+                    ),
+                    'from' => $from,
+                ]
+            ),
+            new MessageTemplate(
+                'chat_forward',
+                __('Bot chat sent to the organizers (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers when the bot finds that a person in a private chat gives feedback, is unhappy, is very happy or asks for a human. The built-in subject says which; a changed subject is used for all four.', 'eventcrew'),
+                static fn (array $c): string => match ($c['kind'] ?? '') {
+                    /* translators: %s: the person's name */
+                    'unhappy' => self::tag(__('Bot chat: %s is unhappy', 'eventcrew'), ['%s' => '{name}']),
+                    /* translators: %s: the person's name */
+                    'very_happy' => self::tag(__('Bot chat: %s is very happy', 'eventcrew'), ['%s' => '{name}']),
+                    /* translators: %s: the person's name */
+                    'human' => self::tag(__('Bot chat: %s wants a human', 'eventcrew'), ['%s' => '{name}']),
+                    /* translators: %s: the person's name */
+                    default => self::tag(__('Bot chat: feedback from %s', 'eventcrew'), ['%s' => '{name}']),
+                },
+                static fn (): string => self::tag(
+                    /* translators: 1: the person's name, 2: their email address */
+                    __('%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first.', 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{email}']
+                ) . "\n\n{transcript}",
+                [
+                    'name' => $member,
+                    'email' => $memberEmail,
+                    'transcript' => self::placeholder(
+                        __('The chat, one message per paragraph, oldest first, each with its time.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['transcript'] ?? '')
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                'chat_forward_dm',
+                __('Bot chat sent to the organizers (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot, after the bot chat email reached them.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: %s: the person's name */
+                    __('I emailed you a transcript of my private chat with %s.', 'eventcrew'),
+                    ['%s' => '{name}']
+                ),
+                $chatName
+            ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
     }
