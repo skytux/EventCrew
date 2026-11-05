@@ -112,7 +112,11 @@ final class StandingNoticeTest extends TestCase
         self::assertCount(1, $this->sends);
         self::assertSame(4242, $this->sends[0]['chat_id']);
         self::assertStringContainsString('no-show', (string) $this->sends[0]['text']);
+        // The day as the other emails write it, not 2026-07-17.
+        self::assertStringContainsString('Decorate at Party, Fri 17 Jul', (string) $this->sends[0]['text']);
         self::assertCount(1, $this->mails);
+        self::assertStringContainsString('Decorate at Party, Fri 17 Jul', $this->mails[0]);
+        self::assertStringNotContainsString('2026-07-17', $this->mails[0]);
         // The ledger row that stops the next run repeating it.
         self::assertStringContainsString('standing_hit', $this->wpdb->lastQuery());
     }

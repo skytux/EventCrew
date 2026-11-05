@@ -136,6 +136,25 @@ final class OpenTaskCallTest extends TestCase
         self::assertStringContainsString('ON DUPLICATE KEY UPDATE', $this->wpdb->lastQuery());
     }
 
+    /** The date heading and the recent tasks show the day as "Sat 1 Aug", not 2026-08-01. */
+    public function testTheDatesAreReadableDays(): void
+    {
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
+        $this->wpdb->nextCols[] = ['2026-08-01'];                                         // upcomingDates
+        $this->wpdb->nextVars[] = 1;                                                     // countCompletedFor
+        $this->wpdb->nextResults[] = [['id' => 3, 'status' => 'signed_up', 'task_date' => '2026-07-18']];
+
+        $this->call()->sendForDate('2026-08-01');
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('Sat 1 Aug', $body);
+        self::assertStringContainsString('- Sat 18 Jul: ', $body);
+        self::assertStringNotContainsString('2026-08-01', $body);
+        self::assertStringNotContainsString('2026-07-18', $body);
+    }
+
     public function testSendsNothingWhenEverythingIsStaffed(): void
     {
         $this->queueOpenDate(2);   // the one task is full (2 of 2)
@@ -305,8 +324,8 @@ final class OpenTaskCallTest extends TestCase
         $this->call()->sendDue($this->leads(), 25);
 
         $body = $this->mails[0]['body'];
-        self::assertStringContainsString('2026-07-21', $body);
-        self::assertStringContainsString('2026-08-01', $body);
+        self::assertStringContainsString('Tue 21 Jul', $body);
+        self::assertStringContainsString('Sat 1 Aug', $body);
     }
 
     public function testTheGroupLinkIsOfferedWhenOneIsConfigured(): void
@@ -397,7 +416,7 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame('Some tasks still need people', $this->mails[0]['subject']);
         self::assertSame(
-            "Hi Sam,\n\nSome tasks still need people:\n\n2026-08-01\n- Decorate at Party (0/2)\n\nSign up on the"
+            "Hi Sam,\n\nSome tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (0/2)\n\nSign up on the"
                 . " board.\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.\n\n"
                 . "Open the group in Telegram: https://t.me/+abc\n\n—\nManage your account or stop these emails: "
                 . 'https://example.test/wp-json/eventcrew/v1/manage?token='
@@ -405,7 +424,7 @@ final class OpenTaskCallTest extends TestCase
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\n2026-08-01\n- Decorate at Party (0/2)"
+            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (0/2)"
                 . "\n\nSign up on the board in the group.",
             (string) $dms[0]['text']
         );
@@ -432,11 +451,11 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame('Help, Sam', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "Open:\n2026-08-01\n- Decorate at Party (0/2)\nThis will be your first task — welcome!",
+            "Open:\nSat 1 Aug\n- Decorate at Party (0/2)\nThis will be your first task — welcome!",
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nOpen: 2026-08-01\n- Decorate at Party (0/2)",
+            "📣 Test Site\n\nHi Sam,\n\nOpen: Sat 1 Aug\n- Decorate at Party (0/2)",
             (string) $dms[0]['text']
         );
     }
