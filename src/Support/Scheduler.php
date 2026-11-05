@@ -49,7 +49,8 @@ final class Scheduler
         private readonly CommandMenu $commandMenu,
         private readonly ?Newsletter $newsletter = null,
         private readonly ?FollowupMail $followup = null,
-        private readonly ?TakeoverService $takeovers = null
+        private readonly ?TakeoverService $takeovers = null,
+        private readonly ?SlotFreedNotice $slotFreed = null
     ) {
     }
 
@@ -106,6 +107,10 @@ final class Scheduler
         $this->takeovers?->expireDue(self::BATCH);
 
         if (SendWindow::isOpen()) {
+            // "A spot just opened", queued by a late cancellation. Dropped
+            // here when the task is full again, under way or deleted.
+            $this->slotFreed?->sendDue(self::BATCH);
+
             $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
             $this->standingNotices->sendDue(self::BATCH);
             $this->boardPush->run();

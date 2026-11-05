@@ -16,9 +16,10 @@ namespace EventCrew\Support;
  * One setting rather than two: the window opens at the chosen hour and runs for
  * twelve, so a 9 means "somewhere between breakfast and the evening" without
  * anyone having to describe both ends of it. Notifications that answer
- * something a person just did - a signup confirmation, a freed slot - are not
- * scheduled and do not come through here; they go immediately, which is the
- * whole point of them.
+ * something a person just did - a signup confirmation - are not scheduled and
+ * do not come through here; they go immediately, which is the whole point of
+ * them. A freed slot is told to the whole crew, so it is queued and waits for
+ * the window.
  */
 final class SendWindow
 {

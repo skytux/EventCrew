@@ -24,7 +24,9 @@ use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Scheduler;
+use EventCrew\Support\SendWindow;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Telegram\BoardService;
@@ -34,7 +36,7 @@ use EventCrew\Tests\TestCase;
 
 final class SchedulerTest extends TestCase
 {
-    private function scheduler(): Scheduler
+    private function scheduler(?SlotFreedNotice $slotFreed = null): Scheduler
     {
         $tasks = new TaskRepository();
         $assignments = new AssignmentRepository();
@@ -78,8 +80,90 @@ final class SchedulerTest extends TestCase
                 $tasks,
                 new \EventCrew\Support\DoorAccess($tasks, $assignments),
                 $telegram
-            )
+            ),
+            null,
+            null,
+            null,
+            $slotFreed
         );
+    }
+
+    private function slotFreedNotice(): SlotFreedNotice
+    {
+        return new SlotFreedNotice(
+            new TaskRepository(),
+            new PersonRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
+        );
+    }
+
+    /**
+     * Runs the scheduler with task 5 queued as freed, the window opening at
+     * $openHour (the test clock is 12:00). Returns the addresses mailed and
+     * the queue as the run left it.
+     *
+     * @return array{0: list<string>, 1: mixed}
+     */
+    private function runWithFreedSlot(int $openHour): array
+    {
+        $options = [
+            SendWindow::OPTION => $openHour,
+            SlotFreedNotice::QUEUE_OPTION => [5 => ['queued_at' => 1, 'cancellers' => [7], 'told' => []]],
+        ];
+        Functions\when('get_option')->alias(
+            static function (string $key, mixed $default = false) use (&$options): mixed {
+                return $options[$key] ?? $default;
+            }
+        );
+        Functions\when('update_option')->alias(static function (string $key, mixed $value) use (&$options): bool {
+            $options[$key] = $value;
+
+            return true;
+        });
+        Functions\when('get_the_title')->justReturn('');
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $mailed = [];
+        Functions\when('wp_mail')->alias(static function (string $to) use (&$mailed): bool {
+            $mailed[] = $to;
+
+            return true;
+        });
+
+        $this->wpdb->nextResults[] = []; // reminders: startingBetween -> no tasks
+        $this->wpdb->nextRows[] = [ // slot freed: findLive
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => null, 'ends_at' => null,
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]]; // occupancyFor
+        $this->wpdb->nextResults[] = [ // activeEmailRecipients
+            ['id' => 8, 'email' => 'member@example.com', 'email_verified_at' => '2026-07-01 00:00:00'],
+        ];
+
+        $this->scheduler($this->slotFreedNotice())->run();
+
+        return [$mailed, $options[SlotFreedNotice::QUEUE_OPTION]];
+    }
+
+    /** Window 09:00-21:00, clock 12:00: the queued notice goes out. */
+    public function testRunSendsAQueuedFreedSlotInsideTheSendWindow(): void
+    {
+        [$mailed, $queue] = $this->runWithFreedSlot(9);
+
+        self::assertSame(['member@example.com'], $mailed);
+        self::assertSame([], $queue);
+    }
+
+    /** Window 13:00-01:00, clock 12:00: the notice waits in the queue. */
+    public function testRunKeepsAQueuedFreedSlotOutsideTheSendWindow(): void
+    {
+        [$mailed, $queue] = $this->runWithFreedSlot(13);
+
+        self::assertSame([], $mailed);
+        self::assertSame([5], array_keys($queue));
     }
 
     /**

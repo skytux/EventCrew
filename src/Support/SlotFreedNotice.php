@@ -14,14 +14,30 @@ use EventCrew\Telegram\TelegramClient;
  * When a late cancellation frees a slot - close to the event, when it most needs
  * filling - this tells the crew, on both channels, so someone can step in.
  *
- * Listens on the eventcrew/slot_freed action that ClaimNotifier fires. The
- * audience is every active recipient except the person who just cancelled -
- * someone already working that day is deliberately still told, since they may
- * want a second, non-overlapping slot. It honours each person's open-task
- * preference so a fill-call and the scheduled open-task call share one switch.
+ * Listens on the eventcrew/slot_freed action that ClaimNotifier fires, but does
+ * not send there: the cancellation only puts the task in a queue (an option).
+ * The hourly Scheduler run sends it, inside the SendWindow like the other
+ * crew-wide messages, in batches, so a cancellation at 02:00 does not message
+ * the whole crew at 02:00, and the request that cancelled does not send one
+ * email per person.
+ *
+ * At send time the notice is dropped when the task is gone, under way, or full
+ * again (the person re-joined, or someone else took the place).
+ *
+ * The audience is every active recipient except the people who cancelled and
+ * anyone blocked - someone already working that day is deliberately still told,
+ * since they may want a second, non-overlapping slot. It honours each person's
+ * open-task preference so a fill-call and the scheduled open-task call share
+ * one switch.
  */
 final class SlotFreedNotice
 {
+    /**
+     * The queue: task id => queued_at (timestamp), cancellers (person ids not
+     * to tell), told (person ids already handled by an earlier batch).
+     */
+    public const QUEUE_OPTION = 'eventcrew_slot_freed_queue';
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
@@ -32,39 +48,134 @@ final class SlotFreedNotice
 
     public function boot(): void
     {
-        add_action('eventcrew/slot_freed', [$this, 'announce'], 10, 2);
+        add_action('eventcrew/slot_freed', [$this, 'queue'], 10, 2);
     }
 
-    public function announce(int $taskId, int $cancellerId): void
+    /**
+     * Puts the task in the queue. Sends nothing. A second late cancellation on
+     * a task already queued adds its canceller and keeps the rest, so nobody
+     * already told is told twice.
+     */
+    public function queue(int $taskId, int $cancellerId): void
     {
-        $task = $this->tasks->find($taskId);
+        $queue = self::queued();
+        $entry = $queue[$taskId] ?? ['queued_at' => time(), 'cancellers' => [], 'told' => []];
 
-        // A cancelled organize slot frees nothing: it has no limit, and it is
-        // not something to announce to people who may not take it.
-        if (null === $task || $task->isRestricted()) {
+        if (! in_array($cancellerId, $entry['cancellers'], true)) {
+            $entry['cancellers'][] = $cancellerId;
+        }
+
+        $queue[$taskId] = $entry;
+
+        update_option(self::QUEUE_OPTION, $queue, false);
+    }
+
+    /**
+     * Sends the queued notices, at most $limit people per run. Called by the
+     * Scheduler, only while the SendWindow is open. A task's entry stays in the
+     * queue until everyone has been handled, so the next run carries on.
+     */
+    public function sendDue(int $limit): void
+    {
+        $queue = self::queued();
+
+        if ([] === $queue) {
             return;
         }
 
-        // A task already under way cannot be stepped into: telling the crew a
-        // spot opened would only send people to a task that has begun.
-        if ($task->hasStarted()) {
-            return;
-        }
-
+        $sent = 0;
+        $recipients = null;
         $prefs = new NotificationPreferences();
 
-        foreach ($this->people->activeEmailRecipients() as $person) {
-            // Skip only the person who just cancelled this slot.
-            if ($person->id === $cancellerId) {
+        foreach ($queue as $taskId => $entry) {
+            $task = $this->tasks->findLive($taskId);
+
+            if (null === $task || ! $this->stillOpen($task)) {
+                unset($queue[$taskId]);
                 continue;
             }
 
-            Language::forPerson($person, fn () => $this->tell($person, $task, $prefs));
+            if ($sent >= $limit) {
+                break;
+            }
+
+            $recipients ??= $this->people->activeEmailRecipients();
+            $finished = true;
+
+            foreach ($recipients as $person) {
+                if (in_array($person->id, $entry['told'], true)) {
+                    continue;
+                }
+
+                if ($sent >= $limit) {
+                    $finished = false;
+                    break;
+                }
+
+                $entry['told'][] = $person->id;
+
+                // Skip the people who cancelled this slot, and anyone blocked.
+                if (in_array($person->id, $entry['cancellers'], true) || $person->isBanned()) {
+                    continue;
+                }
+
+                if (Language::forPerson($person, fn (): bool => $this->tell($person, $task, $prefs))) {
+                    $sent++;
+                }
+            }
+
+            if ($finished) {
+                unset($queue[$taskId]);
+            } else {
+                $queue[$taskId] = $entry;
+            }
         }
+
+        update_option(self::QUEUE_OPTION, $queue, false);
     }
 
-    /** One person, in the language they chose. */
-    private function tell(Person $person, Task $task, NotificationPreferences $prefs): void
+    /**
+     * Whether the freed place is still there to step into. A cancelled
+     * organize slot frees nothing: it has no limit, and it is not something to
+     * announce to people who may not take it. A task already under way cannot
+     * be stepped into. A task full again needs nobody.
+     */
+    private function stillOpen(Task $task): bool
+    {
+        if ($task->isRestricted() || $task->hasStarted()) {
+            return false;
+        }
+
+        $taken = $this->tasks->occupancyFor([$task->id])[$task->id] ?? 0;
+
+        return $taken < $task->capacity;
+    }
+
+    /**
+     * @return array<int, array{queued_at: int, cancellers: list<int>, told: list<int>}>
+     */
+    private static function queued(): array
+    {
+        $raw = get_option(self::QUEUE_OPTION, []);
+        $queue = [];
+
+        foreach (is_array($raw) ? $raw : [] as $taskId => $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $queue[(int) $taskId] = [
+                'queued_at' => (int) ($entry['queued_at'] ?? 0),
+                'cancellers' => array_values(array_map('intval', (array) ($entry['cancellers'] ?? []))),
+                'told' => array_values(array_map('intval', (array) ($entry['told'] ?? []))),
+            ];
+        }
+
+        return $queue;
+    }
+
+    /** One person, in the language they chose. Returns whether anything was sent. */
+    private function tell(Person $person, Task $task, NotificationPreferences $prefs): bool
     {
         $day = Dates::dayLabel($task->taskDate);
         $when = '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
@@ -75,12 +186,14 @@ final class SlotFreedNotice
             $task->eventName(),
             $when
         );
+        $sent = false;
 
         if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
                 DmBody::frame($person, '⚡ ' . $line, true)
             );
+            $sent = true;
         }
 
         if ($prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)) {
@@ -96,6 +209,9 @@ final class SlotFreedNotice
                 ),
                 [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
             );
+            $sent = true;
         }
+
+        return $sent;
     }
 }
