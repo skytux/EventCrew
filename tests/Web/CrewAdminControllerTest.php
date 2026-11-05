@@ -1898,6 +1898,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     public function testASignInLinkMailedBeforeTheBlockStartsNoSession(): void
     {
         $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 8, 'expires_at' => '2026-12-31 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->bannedRow(8);
 
         $outcome = $this->signupController()->magicLinkSignIn('rawtoken');
