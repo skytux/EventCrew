@@ -1743,8 +1743,8 @@ msgstr "❌ Peruttu"
 
 #: src/Telegram/PermissionService.php:245
 #, php-format
-msgid "⭐ You’re now an %s organizer."
-msgstr "⭐ Olet nyt %s -järjestäjä."
+msgid "⭐ You’re now an organizer of %s."
+msgstr "⭐ Olet nyt järjestäjä: %s."
 
 #: src/Support/ClaimNotifier.php:114 src/Telegram/TicketRedemptionService.php:246
 msgid "🎟 Show your ticket"
@@ -7857,8 +7857,8 @@ msgid "Sent to a person when an organizer makes them an organizer: with /people 
 msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja painike crew-sivun Ylläpito-välilehdelle sen alle."
 
 #, php-format
-msgid "You are now an %s organizer"
-msgstr "Olet nyt %s -järjestäjä"
+msgid "You are now an organizer of %s."
+msgstr "Olet nyt järjestäjä: %s."
 
 msgid "You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people."
 msgstr "Olet nyt järjestäjä. Crew-sivulla on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."

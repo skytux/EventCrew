@@ -129,15 +129,15 @@ final class MessageTemplatesTest extends TestCase
             self::assertArrayHasKey('{organization}', $template->placeholderList(), $template->id);
         }
 
-        self::assertSame('You are now an {organization} organizer', MessageTemplates::find('access_organizer')->defaultSubject());
-        self::assertSame('You are now an Test Site organizer', MessageTemplates::subject('access_organizer'));
+        self::assertSame('You are now an organizer of {organization}.', MessageTemplates::find('access_organizer')->defaultSubject());
+        self::assertSame('You are now an organizer of Test Site.', MessageTemplates::subject('access_organizer'));
 
         $this->options[Organization::OPTION] = 'Ecstatic Dance Helsinki';
 
-        self::assertSame('You are now an Ecstatic Dance Helsinki organizer', MessageTemplates::subject('access_organizer'));
-        self::assertSame('⭐ You’re now an Ecstatic Dance Helsinki organizer.', MessageTemplates::body('access_organizer_dm'));
+        self::assertSame('You are now an organizer of Ecstatic Dance Helsinki.', MessageTemplates::subject('access_organizer'));
+        self::assertSame('⭐ You’re now an organizer of Ecstatic Dance Helsinki.', MessageTemplates::body('access_organizer_dm'));
         self::assertSame(
-            'Olet nyt Ecstatic Dance Helsinki -järjestäjä',
+            'Olet nyt järjestäjä: Ecstatic Dance Helsinki.',
             Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('access_organizer'))
         );
     }
