@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.105
+Stable tag: 1.140.106
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.106 =
+A person who signs up on the web or with the bot now waits for an OK from the team before taking tasks. The organizers get one message with OK and No buttons (Telegram DM, or email with an Admin tab button), the first answer counts, and the newcomer is told on OK. Everyone already in the list is OK. Getting a role or a pass also makes a person OK. Database update 33.
 
 = 1.140.105 =
 Saving translations, message templates, site texts, ticket texts, role texts, the Telegram About and Description, and the AI texts no longer waits for the translation or the AI. The save queues a job and returns at once; a bar and a badge per row show Translating, Done or Failed with Try again. An open admin page runs jobs within seconds, otherwise the cron pinger runs them within 5 minutes.
@@ -1529,6 +1532,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.106 =
+No settings change.
 
 = 1.140.105 =
 No settings change.
