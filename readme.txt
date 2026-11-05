@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.106
+Stable tag: 1.140.107
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.107 =
+The ticket page, ticket and other emails, the bot and the boards show the clean event name (without the date) from EventMesh, in each language (Q312).
 
 = 1.140.106 =
 A person who signs up on the web or with the bot now waits for an OK from the team before taking tasks. The organizers get one message with OK and No buttons (Telegram DM, or email with an Admin tab button), the first answer counts, and the newcomer is told on OK. Everyone already in the list is OK. Getting a role or a pass also makes a person OK. Database update 33.
@@ -1532,6 +1535,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.107 =
+No settings change.
 
 = 1.140.106 =
 No settings change.
