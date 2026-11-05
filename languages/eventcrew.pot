@@ -60,7 +60,7 @@ msgstr ""
 msgid "%1$d tickets were imported for %2$s."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:494
+#: src/Support/OpenTaskCall.php:495
 #. translators: 1: recent-task list, 2: total completed
 msgid "%1$s\n\nTasks completed in total: %2$d."
 msgstr ""
@@ -2527,7 +2527,7 @@ msgid "Hi %s!"
 msgstr ""
 
 #: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1121 src/Support/MessageTemplates.php:827
-#: src/Support/MessageTemplates.php:1365 src/Support/MessageTemplates.php:1746 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
+#: src/Support/MessageTemplates.php:1365 src/Support/MessageTemplates.php:1739 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
 #. translators: %s: the person's first name
 msgid "Hi %s,"
 msgstr ""
@@ -6720,7 +6720,7 @@ msgid "The task could not be moved, so you keep it."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:470
-msgid "The task, the event and the date, like Door at Dance Night, 2026-11-14 18:00–20:00."
+msgid "The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00."
 msgstr ""
 
 #: src/Support/WelcomeSender.php:459
@@ -7061,7 +7061,7 @@ msgstr ""
 msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:489
+#: src/Support/OpenTaskCall.php:490
 msgid "This will be your first task — welcome!"
 msgstr ""
 
@@ -7486,7 +7486,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1124 src/Support/MessageTemplates.php:1748
+#: src/Support/FollowupMail.php:1124 src/Support/MessageTemplates.php:1741
 msgid "Warmly,"
 msgstr ""
 
@@ -8244,7 +8244,7 @@ msgstr ""
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:490
+#: src/Support/OpenTaskCall.php:491
 msgid "Your recent tasks:"
 msgstr ""
 
