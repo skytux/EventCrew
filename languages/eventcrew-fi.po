@@ -3892,8 +3892,8 @@ msgstr "Kuvan URL-osoite, esimerkiksi sivustosi taustakuva, joka näytetään ha
 msgid "Ticket note"
 msgstr "Lipun teksti"
 
-msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
-msgstr "Teksti, joka näytetään jokaisessa lipussa VALID-rivin alla, esimerkiksi ovikoodi ja osoite. Rivinvaihdot säilyvät. Jätä tyhjäksi, jos et halua näyttää mitään."
+msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Left blank, the ticket shows only when the doors close, if it knows."
+msgstr "Teksti, joka näytetään jokaisessa lipussa VALID-rivin alla, esimerkiksi ovikoodi ja osoite. Rivinvaihdot säilyvät. Tyhjänä lipussa näkyy vain ovien sulkemisaika, jos se tiedetään."
 
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr "Miten tätä sivustoa ylläpidetään: missä se on hostattu, mitä kiertoteitä se tarvitsee, miten sähköposti kulkee, mitä ulkopuolisia palveluita on käytössä. Näytetään vain järjestäjille Crew-sovelluksen Ohje-välilehdellä. Merkeillä \"## \" alkava rivi on otsikko, merkeillä \"- \" alkavat rivit ovat luettelo, ja tyhjä rivi aloittaa uuden kappaleen. Älä kirjoita tähän salasanoja tai avaimia. Jätä tyhjäksi, jos et halua näyttää mitään."
@@ -8173,3 +8173,46 @@ msgstr "tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sit
 
 msgid "The event’s start time, like 19:00. Empty when the event has none."
 msgstr "Tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
+
+#, php-format
+msgid "Doors close at %s."
+msgstr "Ovet sulkeutuvat klo %s."
+
+msgid "When the doors close, like 19:30. Empty when doors close is off (Settings > Web page) and the event has no time of its own."
+msgstr "Milloin ovet sulkeutuvat, esim. 19:30. Tyhjä, kun ovien sulkeminen on pois päältä (Asetukset > Verkkosivu) eikä tapahtumalla ole omaa aikaa."
+
+msgid "when the doors close, like 19:30. Empty when doors close is off."
+msgstr "milloin ovet sulkeutuvat, esim. 19:30. Tyhjä, kun ovien sulkeminen on pois päältä."
+
+msgid "Doors close"
+msgstr "Ovet sulkeutuvat"
+
+#, php-format
+msgid "Doors close %s minutes after the start"
+msgstr "Ovet sulkeutuvat %s minuuttia alun jälkeen"
+
+msgid "In the ticket note and the message texts it is {doors_close}, like 19:30. A time set for one event on the Messages page, Coming events tab, wins."
+msgstr "Lipun tekstissä ja viestiteksteissä se on {doors_close}, esim. 19:30. Yhdelle tapahtumalle Viestit-sivun Tulevat tapahtumat -välilehdellä asetettu aika menee edelle."
+
+msgid "This event follows the doors setting again."
+msgstr "Tapahtuma noudattaa taas ovien asetusta."
+
+#, php-format
+msgid "The doors of this event close at %s."
+msgstr "Tämän tapahtuman ovet sulkeutuvat klo %s."
+
+msgid "Doors close at"
+msgstr "Ovet sulkeutuvat klo"
+
+msgid "This event’s own time. Clear it to follow the setting."
+msgstr "Tapahtuman oma aika. Tyhjennä, niin asetus on käytössä."
+
+#, php-format
+msgid "Blank: %s, from the setting."
+msgstr "Tyhjänä: %s, asetuksesta."
+
+msgid "Blank: no doors time."
+msgstr "Tyhjänä: ei ovien aikaa."
+
+msgid "Nothing was saved: that event was not found."
+msgstr "Mitään ei tallennettu: tapahtumaa ei löytynyt."

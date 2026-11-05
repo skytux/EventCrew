@@ -402,6 +402,29 @@ final class TicketMailTest extends TestCase
         $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
 
         self::assertStringContainsString('14.11.2026 · 21:00</h1>', $mail['html']);
+        self::assertStringNotContainsString('Doors close', $mail['html'], 'doors close is off');
+    }
+
+    /** With no note stored and doors close on, the note is the doors line, in each language. */
+    public function testTheBuiltInNoteSaysWhenTheDoorsClose(): void
+    {
+        $this->fakeEvents();
+        $this->event(55, '2026-11-14', 'Salsa Night');
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_doors_close_on' === $name
+                ? '1'
+                : $default
+        );
+        $this->wpdb->nextResults[] = [[
+            'id' => 3,
+            'task_date' => '2026-11-14',
+            'event_post_id' => 55,
+        ]];
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringContainsString('Doors close at 21:30.', $mail['html']);
+        self::assertStringContainsString('Ovet sulkeutuvat klo 21:30.', $mail['html']);
     }
 
     public function testTheEmailShowsTheTicketNoteAboveTheButton(): void

@@ -1266,7 +1266,12 @@ final class TicketMail
         $noteValue = SiteTexts::value('ticket_note');
         $noteTags = TicketNote::values($eventId);
         $note = implode("\n\n", array_unique(array_filter(array_map(
-            static fn (string $lang): string => TicketNote::fill(TranslatedText::forReader($noteValue, $lang), $noteTags),
+            static fn (string $lang): string => TicketNote::fill(
+                Language::run($lang, static fn (): string => TicketNote::orBuiltIn(
+                    TranslatedText::forReader($noteValue, $lang)
+                )),
+                $noteTags
+            ),
             array_keys($parts)
         ))));
 
@@ -1422,6 +1427,7 @@ final class TicketMail
             TicketText::EVENT_TAG => $event,
             TicketText::DATE_TAG => $date,
             TicketText::START_TIME_TAG => EventTimes::start($eventId),
+            TicketText::DOORS_CLOSE_TAG => EventTimes::doorsClose($eventId),
             TicketText::REASON_TAG => $reason,
             TicketText::TASKS_TAG => $tasks,
             TicketText::PLUS_ONES_TAG => $plusOnes,

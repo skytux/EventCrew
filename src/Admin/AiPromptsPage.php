@@ -10,6 +10,7 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\EventTimes;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\MessageTemplates;
@@ -51,6 +52,9 @@ final class AiPromptsPage
     public const FOLLOWUP_TEXT_ACTION = 'eventcrew_admin_followup_text';
 
     public const NEWSLETTER_TEXT_ACTION = 'eventcrew_admin_newsletter_text';
+
+    /** One event's own doors time (EventTimes), from its card on the Coming events tab. */
+    public const DOORS_ACTION = 'eventcrew_event_doors_close';
 
     public const NONCE_ACTION = 'eventcrew_ai_prompts';
 
@@ -134,6 +138,11 @@ final class AiPromptsPage
         }
 
         uasort($cards, static fn (array $a, array $b): int => $a['date'] <=> $b['date']);
+
+        foreach ($cards as $id => $card) {
+            $cards[$id]['doors_own'] = EventTimes::ownDoorsClose((int) $card['event_id']);
+            $cards[$id]['doors_close'] = EventTimes::doorsClose((int) $card['event_id']);
+        }
 
         $titles = array_column($cards, 'title', 'date');
         $night = null === $this->followupMail ? '' : $this->followupMail->nextNight(
@@ -456,6 +465,43 @@ final class AiPromptsPage
         }
 
         return implode(' ', $parts);
+    }
+
+    /** admin-post: one event's own doors time, from its card on the Coming events tab. */
+    public function saveDoorsClose(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $post = wp_unslash($_POST);
+        $eventId = (int) ($post['event_id'] ?? 0);
+        $notice = $this->applyDoorsClose($post);
+
+        self::back(MessagesPage::TAB_EVENTS, $notice, 'success', self::eventAnchor($eventId));
+    }
+
+    /**
+     * The doors form of one event: event_id and doors_close (HH:MM, blank
+     * goes back to the setting). Returns the notice.
+     *
+     * @param array<string, mixed> $post
+     */
+    public function applyDoorsClose(array $post): string
+    {
+        $eventId = (int) ($post['event_id'] ?? 0);
+
+        if ($eventId <= 0 || null === EventSource::describe($eventId)) {
+            return __('Nothing was saved: that event was not found.', 'eventcrew');
+        }
+
+        $time = EventTimes::saveOwnDoorsClose($eventId, sanitize_text_field((string) ($post['doors_close'] ?? '')));
+
+        if ('' === $time) {
+            return __('This event follows the doors setting again.', 'eventcrew');
+        }
+
+        /* translators: %s: a time like 19:30 */
+        return sprintf(__('The doors of this event close at %s.', 'eventcrew'), $time);
     }
 
     /** admin-post: the one-time text of the next post-event email, from the Coming events tab. */

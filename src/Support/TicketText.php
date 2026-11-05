@@ -20,6 +20,7 @@ namespace EventCrew\Support;
  * - {event}: the event's name;
  * - {date}: the event's date, like 14.11.2026;
  * - {start_time}: the event's start time, like 19:00;
+ * - {doors_close}: when the doors close, like 19:30 (EventTimes);
  * - {reason}: why they have a ticket, one of four lines (TicketReasons);
  * - {tasks}: a crew member's tasks on the night, as a list;
  * - {plus_ones}: how many people a guest may bring, like "2 people";
@@ -47,6 +48,7 @@ final class TicketText
     public const EVENT_TAG = '{event}';
     public const DATE_TAG = '{date}';
     public const START_TIME_TAG = EventTimes::START_TAG;
+    public const DOORS_CLOSE_TAG = EventTimes::DOORS_TAG;
     public const REASON_TAG = '{reason}';
     public const TASKS_TAG = '{tasks}';
     public const PLUS_ONES_TAG = '{plus_ones}';
@@ -58,6 +60,7 @@ final class TicketText
         self::EVENT_TAG,
         self::DATE_TAG,
         self::START_TIME_TAG,
+        self::DOORS_CLOSE_TAG,
         self::REASON_TAG,
         self::TASKS_TAG,
         self::PLUS_ONES_TAG,
