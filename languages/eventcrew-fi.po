@@ -6460,3 +6460,29 @@ msgstr "Tämä ei ole crew-sovelluksen koodi, joten kirjautuminen peruttiin. Alo
 
 msgid "The code is right."
 msgstr "Koodi on oikein."
+
+msgid "Test the webhook"
+msgstr "Testaa webhook"
+
+msgid "The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message."
+msgstr "Sivusto lähettää tyhjän päivityksen omaan webhookiinsa oikealla salaisuudella ja näyttää HTTP-tilan. Botti ei lähetä viestiä."
+
+msgid "Install the webhook first, then test it."
+msgstr "Asenna webhook ensin ja testaa se sitten."
+
+#, php-format
+msgid "The test request could not be sent: %s"
+msgstr "Testipyyntöä ei voitu lähettää: %s"
+
+msgid "The webhook answered HTTP 200. It works: messages from Telegram reach the bot."
+msgstr "Webhook vastasi HTTP 200. Se toimii: Telegramin viestit tulevat botille."
+
+msgid "The site did not accept the secret. If the secret is not in the address, your host may remove the secret header."
+msgstr "Sivusto ei hyväksynyt salaisuutta. Jos salaisuus ei ole osoitteessa, palvelin voi poistaa salaisuuden otsakkeen."
+
+msgid "Telegram gets the same answer, so the bot does not receive messages."
+msgstr "Telegram saa saman vastauksen, joten botti ei saa viestejä."
+
+#, php-format
+msgid "The webhook answered HTTP %1$d. %2$s"
+msgstr "Webhook vastasi HTTP %1$d. %2$s"

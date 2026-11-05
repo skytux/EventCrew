@@ -50,7 +50,15 @@ final class WebhookController
     public const FALLBACK_ACTION = 'eventcrew_telegram_webhook';
 
     /** The header Telegram sends the configured secret token in. */
-    private const SECRET_HEADER = 'X-Telegram-Bot-Api-Secret-Token';
+    public const SECRET_HEADER = 'X-Telegram-Bot-Api-Secret-Token';
+
+    /**
+     * The body of the Settings page's "Test the webhook" request: an update
+     * with nothing in it. It has no update_id, so it does not move the
+     * "highest update handled" mark, and no message, button press or chat
+     * change, so the router does nothing and the bot sends no message.
+     */
+    public const TEST_BODY = '{}';
 
     public function __construct(
         private readonly UpdateRouter $router

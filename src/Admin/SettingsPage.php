@@ -1511,6 +1511,80 @@ final class SettingsPage
     }
 
     /**
+     * The Settings "Test the webhook" button: the site posts an empty update
+     * (WebhookController::TEST_BODY) to the address Telegram posts to, with
+     * the real secret, the way Telegram sends it. The notice shows the HTTP
+     * status and what it means. The response body is never shown, and the
+     * secret is masked in any error text. The empty update makes the bot do
+     * nothing, so no Telegram message is sent.
+     */
+    public function testWebhook(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
+
+        if ('' === $secret) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Install the webhook first, then test it.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $response = wp_remote_post(
+            WebhookController::webhookUrl($secret),
+            [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    WebhookController::SECRET_HEADER => $secret,
+                ],
+                'body' => WebhookController::TEST_BODY,
+                'timeout' => 15,
+                // Telegram does not follow redirects, so neither does the test.
+                'redirection' => 0,
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the reason, e.g. a connection timeout */
+                    __('The test request could not be sent: %s', 'eventcrew'),
+                    str_replace($secret, SecretMask::mask($secret), $response->get_error_message())
+                ),
+                'error'
+            );
+        }
+
+        $status = (int) wp_remote_retrieve_response_code($response);
+
+        if (200 === $status) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('The webhook answered HTTP 200. It works: messages from Telegram reach the bot.', 'eventcrew')
+            );
+        }
+
+        $meaning = 403 === $status
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ? __('The site did not accept the secret. If the secret is not in the address, your host may remove the secret header.', 'eventcrew')
+            : __('Telegram gets the same answer, so the bot does not receive messages.', 'eventcrew');
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            sprintf(
+                /* translators: 1: an HTTP status code, e.g. 403; 2: what it means */
+                __('The webhook answered HTTP %1$d. %2$s', 'eventcrew'),
+                $status,
+                $meaning
+            ),
+            'error'
+        );
+    }
+
+    /**
      * Saves the import settings: the address organizers mail ticket buyer
      * lists to, the extra sender addresses and the ticket file formats. An
      * empty mailbox removes it, and the guide and the Roster page then leave

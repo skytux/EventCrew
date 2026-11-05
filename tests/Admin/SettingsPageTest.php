@@ -582,4 +582,165 @@ final class SettingsPageTest extends TelegramTestCase
 
         return $html;
     }
+
+    private const WEBHOOK_SECRET = 'whsecret-0123456789abcdefWXYZ';
+
+    /**
+     * Runs the "Test the webhook" button. $response is what wp_remote_post
+     * answers. Returns the notice it set and every wp_remote_post call.
+     *
+     * @return array{
+     *     notice: array{type: string, message: string}|null,
+     *     requests: list<array{url: string, args: array<string, mixed>}>
+     * }
+     */
+    private function testWebhook(mixed $response, bool $isError = false): array
+    {
+        $notice = null;
+        $requests = [];
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
+        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(3);
+        \Brain\Monkey\Functions\when('set_transient')->alias(
+            static function (string $key, $value) use (&$notice): bool {
+                $notice = $value;
+                return true;
+            }
+        );
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path
+        );
+        \Brain\Monkey\Functions\when('admin_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path
+        );
+        \Brain\Monkey\Functions\when('add_query_arg')->justReturn('https://site.test/wp-admin/admin.php');
+        \Brain\Monkey\Functions\when('wp_safe_redirect')->alias(static function (): void {
+            throw new \RuntimeException('redirected');
+        });
+        \Brain\Monkey\Functions\when('wp_remote_post')->alias(
+            static function (string $url, array $args) use (&$requests, $response): mixed {
+                $requests[] = ['url' => $url, 'args' => $args];
+                return $response;
+            }
+        );
+        \Brain\Monkey\Functions\when('is_wp_error')->justReturn($isError);
+        \Brain\Monkey\Functions\when('wp_remote_retrieve_response_code')->alias(
+            static fn (mixed $r): int => (int) ($r['response']['code'] ?? 0)
+        );
+
+        try {
+            $this->page()->testWebhook();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        return ['notice' => $notice, 'requests' => $requests];
+    }
+
+    public function testTheWebhookTestSendsAnEmptyUpdateWithTheRealSecretAndShowsTheStatus(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;
+
+        $result = $this->testWebhook(['response' => ['code' => 200], 'body' => '']);
+
+        self::assertCount(1, $result['requests']);
+        $request = $result['requests'][0];
+        self::assertSame('https://site.test/wp-json/eventcrew/v1/telegram/webhook', $request['url']);
+        self::assertSame(self::WEBHOOK_SECRET, $request['args']['headers']['X-Telegram-Bot-Api-Secret-Token']);
+        self::assertSame('{}', $request['args']['body']);
+        self::assertSame(0, $request['args']['redirection']);
+
+        self::assertSame('success', $result['notice']['type']);
+        self::assertStringContainsString('HTTP 200', $result['notice']['message']);
+        self::assertStringNotContainsString(self::WEBHOOK_SECRET, $result['notice']['message']);
+    }
+
+    public function testAFailedWebhookTestShowsTheStatusButNeverTheBody(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;
+
+        $result = $this->testWebhook(['response' => ['code' => 403], 'body' => 'echo: ' . self::WEBHOOK_SECRET]);
+
+        self::assertSame('error', $result['notice']['type']);
+        self::assertStringContainsString('HTTP 403', $result['notice']['message']);
+        self::assertStringContainsString('did not accept the secret', $result['notice']['message']);
+        self::assertStringNotContainsString(self::WEBHOOK_SECRET, $result['notice']['message']);
+        self::assertStringNotContainsString('echo', $result['notice']['message']);
+    }
+
+    public function testAWebhookTestThatCouldNotBeSentMasksTheSecretInTheReason(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;
+        $error = new class (self::WEBHOOK_SECRET) {
+            public function __construct(private readonly string $secret)
+            {
+            }
+
+            public function get_error_message(): string // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+            {
+                return 'cURL error 28: timed out on ?token=' . $this->secret;
+            }
+        };
+
+        $result = $this->testWebhook($error, true);
+
+        self::assertSame('error', $result['notice']['type']);
+        self::assertStringContainsString('could not be sent', $result['notice']['message']);
+        self::assertStringContainsString('••••WXYZ', $result['notice']['message']);
+        self::assertStringNotContainsString(self::WEBHOOK_SECRET, $result['notice']['message']);
+    }
+
+    public function testTheWebhookTestNeedsAStoredSecret(): void
+    {
+        $result = $this->testWebhook(['response' => ['code' => 200]]);
+
+        self::assertSame([], $result['requests']);
+        self::assertSame('error', $result['notice']['type']);
+        self::assertSame('Install the webhook first, then test it.', $result['notice']['message']);
+    }
+
+    public function testTheWebhookTestChecksTheNonceAndTheCapabilityBeforeSending(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;
+        $nonceAction = null;
+        $sent = 0;
+        \Brain\Monkey\Functions\when('wp_remote_post')->alias(static function () use (&$sent): array {
+            $sent++;
+            return [];
+        });
+        \Brain\Monkey\Functions\when('wp_die')->alias(static function (): void {
+            throw new \RuntimeException('died');
+        });
+
+        // Not an administrator.
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(false);
+        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
+
+        try {
+            $this->page()->testWebhook();
+            self::fail('Expected wp_die.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('died', $e->getMessage());
+        }
+
+        // An administrator without a valid nonce (check_admin_referer dies).
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('check_admin_referer')->alias(
+            static function (string $action) use (&$nonceAction): void {
+                $nonceAction = $action;
+                throw new \RuntimeException('bad nonce');
+            }
+        );
+
+        try {
+            $this->page()->testWebhook();
+            self::fail('Expected the nonce check to stop it.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('bad nonce', $e->getMessage());
+        }
+
+        self::assertSame('eventcrew_telegram_setup', $nonceAction);
+        self::assertSame(0, $sent, 'nothing was sent');
+    }
 }
