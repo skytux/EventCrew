@@ -1120,7 +1120,7 @@ final class SignupController
             // The same confirmation the bot sends on a join, so a slot claimed
             // from the web arrives with its door ticket too.
             if ('claimed' === $notice) {
-                $this->notifier->confirmSignup($person, $taskId);
+                $this->notifier->signedUp($person, $taskId);
             }
 
             $this->finish($redirect, $notice, $isAjax);
@@ -1164,7 +1164,7 @@ final class SignupController
             $assignment = $this->assignments->findFor($taskId, $person->id);
 
             if (null !== $assignment) {
-                $this->notifier->confirmCancellation($person, $taskId, $assignment->status);
+                $this->notifier->cancelled($person, $taskId, $assignment->status);
             }
         }
 

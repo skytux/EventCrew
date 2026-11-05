@@ -988,7 +988,7 @@ final class BoardService
         $this->telegram->answerCallbackQuery($callbackId, $message, true);
 
         if ($joined) {
-            $this->notifier->confirmSignup($person, $taskId);
+            $this->notifier->signedUp($person, $taskId);
         }
 
         return $joined;
@@ -1014,7 +1014,7 @@ final class BoardService
             return false;
         }
 
-        $this->notifier->confirmCancellation($person, $taskId, $status);
+        $this->notifier->cancelled($person, $taskId, $status);
 
         return true;
     }

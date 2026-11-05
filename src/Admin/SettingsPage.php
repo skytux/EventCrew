@@ -35,6 +35,7 @@ use EventCrew\Support\SecureUrl;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
+use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SiteTexts;
 use EventCrew\Support\StandingCalculator;
@@ -132,6 +133,7 @@ final class SettingsPage
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
                 'notice_hours' => max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48)),
                 'signout_lock_minutes' => SignupService::signoutLockMinutes(),
+                'second_thoughts_minutes' => SecondThoughts::minutes(),
                 'takeover_rows' => $this->takeoverRows(),
                 'reputation_threshold' => (float) get_option(
                     StandingCalculator::THRESHOLD_OPTION,
@@ -600,6 +602,11 @@ final class SettingsPage
             ? max(0, (int) $_POST['signout_lock_minutes'])
             : SignupService::SIGNOUT_LOCK_DEFAULT;
         update_option(SignupService::SIGNOUT_LOCK_OPTION, $lockMinutes);
+
+        $secondThoughts = isset($_POST['second_thoughts_minutes'])
+            ? max(0, (int) $_POST['second_thoughts_minutes'])
+            : SecondThoughts::DEFAULT;
+        update_option(SecondThoughts::OPTION, $secondThoughts);
 
         foreach ($this->takeoverRows() as $row) {
             if (isset($_POST[$row['name']]) && is_numeric($_POST[$row['name']])) {

@@ -7979,3 +7979,11 @@ msgstr "Valmis. Et saa näitä viestejä enää tapahtumien jälkeen."
 
 msgid "If the translation and the English original differ, the English original applies."
 msgstr "Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan englanninkielistä alkuperäistä."
+
+#: templates/admin/settings.php
+msgid "Second thoughts window (minutes)"
+msgstr "Katumisaika (minuuttia)"
+
+#: templates/admin/settings.php
+msgid "Taking or cancelling a task shows at once everywhere. The messages and tickets it causes wait this many minutes, and then only what is still true is sent. A cancel within these minutes after taking the task is never a late cancellation. The wait runs on WP-Cron, so it can be a few minutes longer. 0 turns this off. Default 5."
+msgstr "Tehtävän ottaminen tai peruminen näkyy heti kaikkialla. Sen viestit ja liput odottavat näin monta minuuttia, ja sitten lähetetään vain se, mikä yhä pitää paikkansa. Näiden minuuttien aikana ottamisen jälkeen tehty peruutus ei ole koskaan myöhäinen peruutus. Odotus kulkee WP-Cronilla, joten se voi venyä muutaman minuutin. 0 poistaa tämän käytöstä. Oletus 5."

@@ -236,6 +236,16 @@ final class AssignmentRepositoryTest extends TestCase
         self::assertSame(AssignmentStatus::LATE_CANCEL, $this->wpdb->updates[0]['data']['status']);
     }
 
+    public function testAFreeCancelIsPlainEvenInsideTheNoticeWindow(): void
+    {
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::SIGNED_UP],
+            ['starts_at' => '2026-07-21 10:00:00', 'task_date' => '2026-07-21'],
+        ];
+
+        self::assertSame(AssignmentStatus::CANCELLED, (new AssignmentRepository())->cancel(3, 1, 48, 0, true));
+    }
+
     public function testCancelRecordsAPlainCancelWithEnoughNotice(): void
     {
         $this->wpdb->nextRows = [

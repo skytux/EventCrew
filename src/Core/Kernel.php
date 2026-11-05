@@ -221,6 +221,8 @@ final class Kernel
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
         $this->container->get(SlotFreedNotice::class)->boot();
+        // The end of a second thoughts window, a WP-Cron event.
+        $this->container->get(ClaimNotifier::class)->boot();
         $this->container->get(TaskCancelledNotice::class)->boot();
 
         // The site's own reader for the import mailbox (IMAP or JMAP): a
@@ -688,7 +690,8 @@ final class Kernel
                 $container->get(Mailer::class),
                 $container->get(TelegramClient::class),
                 $container->get(StandingCalculator::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                $container->get(PersonRepository::class)
             )
         );
 
