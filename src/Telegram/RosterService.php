@@ -29,6 +29,10 @@ use EventCrew\Support\RosterAssembler;
  * up. Someone on that night's sales-desk task who is not an organizer gets
  * only the arrived button.
  *
+ * Only organizers and that night's sales desk see each person's status,
+ * standing and score, and the cancelled and no-show rows. Other crew rostered
+ * that night see only the names of the people on each task.
+ *
  * Under the roster, a row of buttons for the next event days switches the same
  * message to another day's roster (rd:<Y-m-d>), the way /door switches nights.
  *
@@ -417,8 +421,10 @@ final class RosterService
     }
 
     /**
-     * The roster as a message: the text everyone rostered sees, and - for
-     * someone who may mark ($canMark) - a keyboard of per-person mark buttons:
+     * The roster as a message. Someone who may mark ($canMark: an organizer or
+     * that night's sales desk) sees every row with its status, standing and
+     * sign-up time; other crew see only the names of the people on each task.
+     * For someone who may mark it also carries a keyboard of per-person mark buttons:
      * done, late and no-show for an organizer, plus arrived on a row of its own
      * above them for someone still signed up (four buttons on one row cut the
      * names short on a phone), and only arrived for the sales desk.
@@ -507,7 +513,13 @@ final class RosterService
                     : sprintf('%s — %s (%d/%d)', $task->roleDisplay(), $task->eventName(), $taken, $task->capacity),
             ];
 
-            if ([] === $row['people']) {
+            // Crew who may not mark see only who is on the task: names, no
+            // status, standing or sign-up time, and no cancelled or no-show rows.
+            $people = $canMark
+                ? $row['people']
+                : array_values(array_filter($row['people'], static fn (array $p): bool => $p['occupying']));
+
+            if ([] === $people) {
                 $blocks[] = [
                     'heading' => $heading,
                     'pieces' => [['lines' => ['  ' . __('— nobody yet', 'eventcrew')], 'keyboard' => []]],
@@ -518,7 +530,13 @@ final class RosterService
 
             $pieces = [];
 
-            foreach ($row['people'] as $person) {
+            foreach ($people as $person) {
+                if (! $canMark) {
+                    $pieces[] = ['lines' => ['  • ' . $person['name']], 'keyboard' => []];
+
+                    continue;
+                }
+
                 $mark = $person['occupying'] ? '•' : '×';
                 $standing = $person['standing'] ?? null;
                 $reliability = null === $standing ? '' : ' — ' . $standing->ratedSummary();
