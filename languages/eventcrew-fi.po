@@ -6366,10 +6366,6 @@ msgstr "Lähetimme linkin osoitteeseen %s. Avaa se 30 minuutin kuluessa poistaak
 msgid "The email could not be sent. Try again later."
 msgstr "Sähköpostia ei voitu lähettää. Yritä myöhemmin uudelleen."
 
-#, php-format
-msgid "Your code is %s. In Telegram, press this code."
-msgstr "Koodisi on %s. Paina tätä koodia Telegramissa."
-
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr "Kirjautuaksesi crew-sovellukseen paina koodia, jonka näytölläsi oleva crew-sovellus näyttää. Jos et juuri itse painanut Telegram-painiketta crew-sovelluksessa, älä paina mitään."
 
@@ -7820,3 +7816,15 @@ msgstr "Julkaise uusi taulu"
 
 msgid "Refresh edits the board where it already sits, so nobody in the group is notified. Post a new board puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours)."
 msgstr "Päivitä muokkaa taulua sen nykyisellä paikalla, joten kukaan ryhmässä ei saa ilmoitusta. Julkaise uusi taulu lisää uuden kopion ryhmän alimmaiseksi, kuten /board ryhmässä, ja poistaa vanhan, jos Telegram sen sallii (48 tunnin sisällä)."
+
+msgid "Your code"
+msgstr "Koodisi"
+
+msgid "Telegram shows three codes. Press this one."
+msgstr "Telegram näyttää kolme koodia. Paina tätä."
+
+msgid "Open Telegram"
+msgstr "Avaa Telegram"
+
+msgid "Waiting for Telegram…"
+msgstr "Odotetaan Telegramia…"

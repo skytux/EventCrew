@@ -12,12 +12,13 @@ use EventCrew\Support\TelegramLogin;
 /**
  * The bot's half of signing in to the Crew app through the bot.
  *
- * The page's Telegram button opens t.me/<bot>?start=login-<code>. In the
+ * The page's Open Telegram button opens t.me/<bot>?start=login-<code>. In the
  * private chat that arrives here as "/start login-<code>":
  * - a code that is unknown, expired or used gets a short "expired" message;
  * - a blocked crew member is refused;
- * - otherwise the bot shows three 4-digit codes as buttons: the code the
- *   page shows and two wrong ones, in random order. A bot link someone else
+ * - otherwise the bot shows three 4-digit codes as buttons ("47 19", two
+ *   pairs, as the page shows it): the code the page shows and two wrong
+ *   ones, in random order. A bot link someone else
  *   sent them would sign in that other person's browser, and they cannot
  *   know which button is right. A wrong press cancels the code;
  * - after the right press, a Telegram account linked to a crew member with a
@@ -74,7 +75,7 @@ final class WebLoginBot
 
         foreach ($choices as $choice) {
             $buttons[] = [
-                'text' => $choice,
+                'text' => self::buttonText($choice),
                 'callback_data' => TelegramLogin::CALLBACK_PREFIX . $code . ':' . $choice,
             ];
         }
@@ -175,6 +176,19 @@ final class WebLoginBot
                 'url' => TelegramLogin::returnUrl($code),
             ]]]]
         );
+    }
+
+    /**
+     * A code as its button shows it: two pairs, "47 19", the way the page
+     * shows it. Anything that is not four digits is shown as it is.
+     */
+    public static function buttonText(string $choice): string
+    {
+        if (1 !== preg_match('/^[0-9]{4}$/', $choice)) {
+            return $choice;
+        }
+
+        return substr($choice, 0, 2) . ' ' . substr($choice, 2);
     }
 
     /** The same rule the email link and the old Telegram sign-in used: a confirmed, real address. */
