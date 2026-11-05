@@ -198,16 +198,20 @@ final class MailImporter
             $mailbox->close();
         }
 
-        return [
-            'time' => time(),
-            'ok' => true,
-            'message' => sprintf(
-                '%d imported, %d rejected, %d left to try again',
-                $counts['imported'],
-                $counts['rejected'],
-                $counts['retry']
-            ),
-        ];
+        $message = sprintf(
+            '%d imported, %d rejected, %d left to try again',
+            $counts['imported'],
+            $counts['rejected'],
+            $counts['retry']
+        );
+
+        // Without our own mail server's name no sender can be checked, so
+        // every message was refused; say why where the organizer looks.
+        if ('' === trim($authservId)) {
+            $message .= ' (no trusted mail server is set, so every message is refused)';
+        }
+
+        return ['time' => time(), 'ok' => true, 'message' => $message];
     }
 
     /**

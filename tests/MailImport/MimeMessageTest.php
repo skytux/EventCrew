@@ -100,15 +100,69 @@ final class MimeMessageTest extends TestCase
         self::assertSame([true, 'spf=pass (no DMARC result)'], ImportMessage::senderCheck($message, self::AUTHSERV));
     }
 
-    public function testAHeaderWrittenBySomeoneElseIsIgnored(): void
+    public function testATopHeaderNamingAnotherServerIsRefused(): void
     {
         // The sender wrote a passing header naming another server; ours is absent.
         $message = MimeMessage::parse(self::message('evil.example.net; dmarc=pass header.from=example.com'));
 
         self::assertSame(
-            [false, 'no Authentication-Results header from our mail server'],
+            [false, 'the top Authentication-Results header is not from our mail server'],
             ImportMessage::senderCheck($message, self::AUTHSERV)
         );
+    }
+
+    public function testAForgedHeaderNamingOurServerBelowOursIsIgnored(): void
+    {
+        // Our server's real, failing header is on top; the sender's passing
+        // one, forged with our server's name, sits below it and is not read.
+        $raw = 'Authentication-Results: ' . self::AUTHSERV . "; dmarc=fail header.from=example.com\r\n"
+            . self::message(self::AUTHSERV . '; dmarc=pass header.from=example.com');
+
+        self::assertSame(
+            [false, 'dmarc did not pass for example.com'],
+            ImportMessage::senderCheck(MimeMessage::parse($raw), self::AUTHSERV)
+        );
+    }
+
+    public function testAForgedHeaderNamingAnotherServerAboveOursIsRefused(): void
+    {
+        $raw = "Authentication-Results: evil.example.net; dmarc=pass header.from=example.com\r\n"
+            . self::message(self::AUTHSERV . '; dmarc=pass header.from=example.com');
+
+        self::assertSame(
+            [false, 'the top Authentication-Results header is not from our mail server'],
+            ImportMessage::senderCheck(MimeMessage::parse($raw), self::AUTHSERV)
+        );
+    }
+
+    public function testOurHeaderOnTopIsAcceptedWhateverLiesBelowIt(): void
+    {
+        // Our server's header is on top; a sender-written one further down is ignored.
+        $raw = 'Authentication-Results: ' . self::AUTHSERV . "; dmarc=pass header.from=example.com\r\n"
+            . self::message('evil.example.net; dmarc=fail header.from=example.com');
+
+        self::assertSame([true, 'dmarc=pass'], ImportMessage::senderCheck(MimeMessage::parse($raw), self::AUTHSERV));
+    }
+
+    public function testAMessageWithoutAnAuthenticationResultsHeaderIsRefused(): void
+    {
+        $raw = "From: owner@example.com\r\nContent-Type: text/plain\r\n\r\nAnna\r\n";
+
+        self::assertSame(
+            [false, 'no Authentication-Results header'],
+            ImportMessage::senderCheck(MimeMessage::parse($raw), self::AUTHSERV)
+        );
+    }
+
+    public function testAnEmptyTrustedServerRefusesEvenAPassingMessage(): void
+    {
+        $message = MimeMessage::parse(self::message(self::AUTHSERV . '; dmarc=pass header.from=example.com'));
+
+        self::assertSame(
+            [false, 'no trusted mail server is set in the mailbox settings'],
+            ImportMessage::senderCheck($message, '')
+        );
+        self::assertFalse(ImportMessage::senderCheck($message, '  ')[0]);
     }
 
     public function testDmarcPassForAnotherDomainDoesNotCover(): void

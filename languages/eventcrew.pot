@@ -5256,7 +5256,7 @@ msgid "The events could not be posted in the group. Please send /events again."
 msgstr ""
 
 #: templates/admin/settings.php:2275
-msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only that header is trusted for the DMARC check. Empty trusts the top one."
+msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only the top Authentication-Results header is trusted, and only when it names this server. Empty refuses every message."
 msgstr ""
 
 #: templates/admin/settings.php:2264

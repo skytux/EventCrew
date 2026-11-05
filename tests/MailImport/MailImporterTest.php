@@ -164,6 +164,22 @@ final class MailImporterTest extends TestCase
         self::assertSame(['owner@example.com'], $this->mails);
     }
 
+    public function testWithoutATrustedMailServerEveryMessageIsRefusedAndTheStatusSaysWhy(): void
+    {
+        $this->options[MailFetchSettings::OPTION] = ['protocol' => 'jmap', 'authserv_id' => ''];
+        $pass = self::AUTHSERV . '; dmarc=pass header.from=example.com';
+        $mailbox = $this->fakeMailbox(['31' => self::mail('owner@example.com', $pass)]);
+
+        $status = $this->importer($mailbox)->run();
+
+        self::assertSame(['rejected 31'], $mailbox->moves);
+        self::assertSame(
+            '0 imported, 1 rejected, 0 left to try again (no trusted mail server is set, so every message is refused)',
+            $status['message']
+        );
+        self::assertSame([], $this->mails);
+    }
+
     public function testAnXlsxAttachmentIsImportedOneRowPerTicket(): void
     {
         $pass = self::AUTHSERV . '; dmarc=pass header.from=example.com';
