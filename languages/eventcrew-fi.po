@@ -6407,3 +6407,12 @@ msgstr "Tällä aikavälillä: liittyneet %1$d, eronneet %2$d, lähetetyt tiedot
 
 msgid "No newsletter was sent in this time range."
 msgstr "Tällä aikavälillä ei lähetetty tiedotteita."
+
+msgid "EventCrew tasks"
+msgstr "EventCrew-tehtävät"
+
+msgid "Move the tasks too"
+msgstr "Siirrä myös tehtävät"
+
+msgid "When the start time changes, every task of this event moves by the same amount."
+msgstr "Kun alkamisaika muuttuu, jokainen tämän tapahtuman tehtävä siirtyy saman verran."

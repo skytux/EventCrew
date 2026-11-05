@@ -137,6 +137,27 @@ final class TaskRepository
     }
 
     /**
+     * Every task linked to one event, on any date. Deleted tasks are left out.
+     *
+     * @return array<int, Task>
+     */
+    public function forEvent(int $eventPostId): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE event_post_id = %d AND deleted_at IS NULL
+                ORDER BY starts_at ASC, id ASC",
+                $eventPostId
+            ),
+            ARRAY_A
+        );
+
+        return $this->hydrate($rows);
+    }
+
+    /**
      * The open board: tasks that have not yet finished.
      *
      * A timed task drops the moment its end passes, so a day's board winds down
