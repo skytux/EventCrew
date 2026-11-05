@@ -218,5 +218,6 @@ final class Scheduler
         wp_clear_scheduled_hook(Newsletter::HOOK);
         wp_clear_scheduled_hook(FollowupMail::HOOK);
         wp_clear_scheduled_hook(BoardDjText::HOOK);
+        wp_clear_scheduled_hook(RoleTranslations::HOOK);
     }
 }

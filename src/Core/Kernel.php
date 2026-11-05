@@ -74,6 +74,7 @@ use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
+use EventCrew\Support\RoleTranslations;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Scheduler;
@@ -255,6 +256,10 @@ final class Kernel
         // "Translate missing" on the Translations page: its batches are a
         // WP-Cron event, so they run with the page closed.
         $this->container->get(TranslationJob::class)->boot();
+
+        // The role names and descriptions in every site language: filled by
+        // the language model on the hourly run and right after a save.
+        $this->container->get(RoleTranslations::class)->boot();
 
         // The AI texts for each event (message templates with the AI tick,
         // and the organizers' own placeholders): written the day before, on
@@ -1623,6 +1628,11 @@ final class Kernel
         $this->container->singleton(
             TranslationJob::class,
             fn (Container $container) => new TranslationJob($container->get(TranslationRegistry::class))
+        );
+
+        $this->container->singleton(
+            RoleTranslations::class,
+            fn (Container $container) => new RoleTranslations($container->get(TranslationRegistry::class))
         );
 
         $this->container->singleton(
