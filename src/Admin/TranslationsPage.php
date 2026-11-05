@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Support\LlmClient;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 
 /**
@@ -16,7 +18,8 @@ use EventCrew\Support\TranslationRegistry;
  * every translatable text (TranslationRegistry), one row each, with its
  * source and one editable text per language. Saving a row marks each changed
  * language text "edited by hand"; the language model never overwrites such a
- * text. "Translate missing" fills every empty language text.
+ * text. "Translate missing" starts a background job (TranslationJob) that
+ * fills every empty language text; the page shows how far it is.
  */
 final class TranslationsPage
 {
@@ -25,10 +28,12 @@ final class TranslationsPage
     public const SAVE_SETTINGS_ACTION = 'eventcrew_save_translation_settings';
     public const SAVE_ROW_ACTION = 'eventcrew_save_translation_row';
     public const TRANSLATE_MISSING_ACTION = 'eventcrew_translate_missing';
+    public const PROGRESS_ACTION = 'eventcrew_translate_progress';
 
     public function __construct(
         private readonly View $view,
-        private readonly TranslationRegistry $registry
+        private readonly TranslationRegistry $registry,
+        private readonly TranslationJob $job
     ) {
     }
 
@@ -58,6 +63,8 @@ final class TranslationsPage
         $show = isset($shows[$show]) ? $show : '';
         $rows = $this->registry->rows();
         $languages = TranslatedText::languages();
+        $status = TranslationJob::status();
+        $running = null !== $status && $status['running'];
 
         return [
             'languages' => $languages,
@@ -75,6 +82,12 @@ final class TranslationsPage
             'show' => $show,
             'shows' => $shows,
             'post_url' => admin_url('admin-post.php'),
+            'progress' => self::progressText($status),
+            'running' => $running,
+            'progress_url' => $running
+                ? admin_url('admin-ajax.php') . '?action=' . self::PROGRESS_ACTION
+                    . '&_ajax_nonce=' . wp_create_nonce(self::PROGRESS_ACTION)
+                : '',
         ];
     }
 
@@ -194,46 +207,94 @@ final class TranslationsPage
     }
 
     /**
-     * Fills every empty language text with the language model.
+     * Starts "Translate missing" in the background (TranslationJob). Nothing
+     * is translated during the click.
      *
      * @return array{type: string, message: string}
      */
     public function applyTranslateMissing(): array
     {
-        if (! TranslatedText::autoEnabled()) {
-            return [
+        return match ($this->job->start()) {
+            TranslationJob::OFF => [
                 'type' => 'error',
                 'message' => __('AI translation is off, so nothing was translated. Switch it on above first.', 'eventcrew'),
-            ];
+            ],
+            TranslationJob::NOTHING => [
+                'type' => 'success',
+                'message' => __('Every text is already in every language.', 'eventcrew'),
+            ],
+            TranslationJob::RUNNING => [
+                'type' => 'warning',
+                'message' => __('Translation is already running. Nothing new was started.', 'eventcrew'),
+            ],
+            default => [
+                'type' => 'success',
+                'message' => __('Translation started. It runs in the background, so you can close this page.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ],
+        };
+    }
+
+    /** admin-ajax handler: the progress line, for the page to refresh while a job runs. */
+    public function progress(): never
+    {
+        if (! current_user_can(Admin::CAPABILITY)) {
+            wp_send_json_error(null, 403);
         }
 
-        $result = $this->registry->translateMissing();
-        $error = TranslatedText::errorNotice($result['error']);
+        check_ajax_referer(self::PROGRESS_ACTION);
 
-        if ('' !== $error) {
-            return [
-                'type' => 'error',
-                'message' => sprintf(
-                    /* translators: 1: how many texts were translated, 2: how many were not */
-                    __('Translated texts: %1$d. Not translated: %2$d.', 'eventcrew'),
-                    $result['filled'],
-                    $result['failed']
-                ) . ' ' . $error,
-            ];
+        $status = TranslationJob::status();
+
+        wp_send_json_success([
+            'running' => null !== $status && $status['running'],
+            'text' => self::progressText($status),
+        ]);
+    }
+
+    /**
+     * The line that says how far "Translate missing" is, '' when it was
+     * never used.
+     *
+     * @param array{running: bool, total: int, done: int, failed: int, error: string}|null $status
+     *     TranslationJob::status().
+     */
+    public static function progressText(?array $status): string
+    {
+        if (null === $status) {
+            return '';
         }
 
-        if (0 === $result['filled']) {
-            return ['type' => 'success', 'message' => __('Every text is already in every language.', 'eventcrew')];
+        if ($status['running']) {
+            return sprintf(
+                /* translators: 1: texts done, 2: texts in all, 3: texts that could not be translated */
+                __('Translating: %1$d of %2$d done. Not translated: %3$d.', 'eventcrew'),
+                $status['done'],
+                $status['total'],
+                $status['failed']
+            );
         }
 
-        return [
-            'type' => 'success',
-            'message' => sprintf(
-                /* translators: %d: how many texts were translated */
-                _n('%d text was translated.', '%d texts were translated.', $result['filled'], 'eventcrew'),
-                $result['filled']
+        $line = sprintf(
+            /* translators: 1: texts done, 2: texts in all, 3: texts that could not be translated */
+            __('Last translation: %1$d of %2$d done. Not translated: %3$d.', 'eventcrew'),
+            $status['done'],
+            $status['total'],
+            $status['failed']
+        );
+
+        if (0 === $status['failed'] || '' === $status['error']) {
+            return $line;
+        }
+
+        return $line . ' ' . match ($status['error']) {
+            LlmClient::ERROR_NOT_CONFIGURED => __('No language model is set up.', 'eventcrew'),
+            TranslatedText::ERROR_OFF => __('AI translation was switched off.', 'eventcrew'),
+            default => sprintf(
+                /* translators: %s: the kind of error, e.g. timeout or http_401 */
+                __('The language model gave the error %s.', 'eventcrew'),
+                $status['error']
             ),
-        ];
+        };
     }
 
     /**

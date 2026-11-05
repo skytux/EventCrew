@@ -16,6 +16,9 @@
  * @var string $show
  * @var array<string, string> $shows
  * @var string $post_url
+ * @var string $progress How far "Translate missing" is; '' when it was never used.
+ * @var bool $running Whether "Translate missing" is running.
+ * @var string $progress_url The admin-ajax URL that answers the progress; '' when not running.
  */
 
 declare(strict_types=1);
@@ -127,7 +130,7 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
         <input type="hidden" name="action" value="<?php echo esc_attr(TranslationsPage::TRANSLATE_MISSING_ACTION); ?>">
         <?php wp_nonce_field(TranslationsPage::TRANSLATE_MISSING_ACTION); ?>
         <?php $eventcrew_tr_list_fields(); ?>
-        <button type="submit" class="button button-secondary"<?php disabled(! $translate_auto); ?>>
+        <button type="submit" class="button button-secondary"<?php disabled(! $translate_auto || $running); ?>>
             <?php esc_html_e('Translate missing', 'eventcrew'); ?>
         </button>
         <span class="description">
@@ -137,7 +140,36 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
                 : esc_html__('AI translation is off.', 'eventcrew');
             ?>
         </span>
+        <?php if ('' !== $progress) : ?>
+            <p id="ec-tr-progress" data-url="<?php echo esc_url($progress_url); ?>">
+                <?php echo esc_html($progress); ?>
+            </p>
+        <?php endif; ?>
     </form>
+    <?php if ($running) : ?>
+        <script>
+        (function () {
+            var line = document.getElementById('ec-tr-progress');
+            if (!line || !line.dataset.url || !window.fetch) {
+                return;
+            }
+            var timer = setInterval(function () {
+                fetch(line.dataset.url, {credentials: 'same-origin'})
+                    .then(function (response) { return response.json(); })
+                    .then(function (answer) {
+                        if (!answer || !answer.success) {
+                            return;
+                        }
+                        line.textContent = answer.data.text;
+                        if (!answer.data.running) {
+                            clearInterval(timer);
+                        }
+                    })
+                    .catch(function () {});
+            }, 5000);
+        })();
+        </script>
+    <?php endif; ?>
 
     <form method="get" class="ec-tr-search" style="margin:0 0 1em">
         <input type="hidden" name="page" value="<?php echo esc_attr(TranslationsPage::PAGE_SLUG); ?>">

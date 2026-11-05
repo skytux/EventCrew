@@ -25,8 +25,8 @@ namespace EventCrew\Support;
  * reads as the source, with no texts yet.
  *
  * A language added to the site has an empty, not manual text in every stored
- * value, so the next update() (a save, or "Translate missing" on the
- * Translations page) fills it. The texts of a language taken off the site are
+ * value, so the next update() (a save) or fillMany() ("Translate missing" on
+ * the Translations page, many texts per request) fills it. The texts of a language taken off the site are
  * kept in the value, unused, so adding it back brings them back.
  *
  * On a save (update()), the language model (LlmClient) is asked once for the
@@ -271,6 +271,103 @@ final class TranslatedText
         bool $multiline = true,
         ?string $sourceLang = null
     ): array {
+        $plan = self::plan($previous, $source, $texts, $again, $maxLength, $multiline, $sourceLang);
+
+        if ([] === $plan['fill']) {
+            return ['value' => $plan['value'], 'error' => ''];
+        }
+
+        return self::apply($plan, $this->translate($plan['value']['source'], $maxLength, $multiline, $plan['lang']));
+    }
+
+    /**
+     * "Translate missing" for many stored values with one request to the
+     * model: for each value, what update() does when it is saved with
+     * nothing changed (each empty language text that was not edited by hand
+     * is filled). A value with nothing to fill is not sent.
+     *
+     * @param array<string, array{value: array<string, mixed>|string, maxLength: int, multiline: bool}> $items
+     *     Keyed by any string, for example a row id.
+     * @return array{
+     *     values: array<string, array{value: array<string, mixed>, error: string}>,
+     *     error: string
+     * } values: per key, as update() returns it; an item the answer left out
+     *     or got wrong has the error ERROR_BAD_ANSWER. error: the request's
+     *     own error kind ('' when the request worked or was not needed);
+     *     then every item sent has that error.
+     */
+    public function fillMany(array $items, int $timeout = LlmClient::TIMEOUT): array
+    {
+        $values = [];
+        $plans = [];
+        $ask = [];
+
+        foreach ($items as $key => $item) {
+            $key = (string) $key;
+            $plan = self::plan(
+                $item['value'],
+                self::normalize($item['value'])['source'],
+                [],
+                false,
+                $item['maxLength'],
+                $item['multiline'],
+                null
+            );
+            $values[$key] = ['value' => $plan['value'], 'error' => ''];
+
+            if ([] !== $plan['fill']) {
+                $plans[$key] = $plan;
+                $ask[$key] = [
+                    'source' => $plan['value']['source'],
+                    'lang' => $plan['lang'],
+                    'maxLength' => $item['maxLength'],
+                    'multiline' => $item['multiline'],
+                ];
+            }
+        }
+
+        if ([] === $ask) {
+            return ['values' => $values, 'error' => ''];
+        }
+
+        $answers = $this->translateMany($ask, $timeout);
+
+        foreach ($plans as $key => $plan) {
+            $values[$key] = self::apply($plan, $answers['results'][$key]);
+        }
+
+        return ['values' => $values, 'error' => $answers['error']];
+    }
+
+    /**
+     * What update() works out before asking the model: the new value, the
+     * source's language, and the languages to fill. When there is nothing
+     * to fill, value is final.
+     *
+     * @param array<string, mixed>|string $previous
+     * @param array<string, string> $texts
+     * @return array{
+     *     value: array{
+     *         source: string,
+     *         lang: string,
+     *         detected: bool,
+     *         texts: array<string, string>,
+     *         manual: array<string, bool>
+     *     },
+     *     lang: string,
+     *     detected: bool,
+     *     fill: list<string>
+     * }
+     */
+    private static function plan(
+        array|string $previous,
+        string $source,
+        array $texts,
+        bool $again,
+        int $maxLength,
+        bool $multiline,
+        ?string $sourceLang
+    ): array {
         $before = self::normalize($previous);
         // Texts of languages that are not site languages (any more) stay.
         $value = $before;
@@ -323,7 +420,7 @@ final class TranslatedText
                 }
             }
 
-            return ['value' => $value, 'error' => ''];
+            return ['value' => $value, 'lang' => $lang, 'detected' => $detected, 'fill' => []];
         }
 
         $fill = [];
@@ -339,10 +436,31 @@ final class TranslatedText
         }
 
         if ([] === $fill) {
-            return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => ''];
+            return [
+                'value' => self::withSourceLanguage($value, $lang, $detected),
+                'lang' => $lang,
+                'detected' => $detected,
+                'fill' => [],
+            ];
         }
 
-        $result = $this->translate($value['source'], $maxLength, $multiline, $lang);
+        return ['value' => $value, 'lang' => $lang, 'detected' => $detected, 'fill' => $fill];
+    }
+
+    /**
+     * Puts a translate() result into a plan() with languages to fill. When
+     * the translation failed, an empty language text gets the source.
+     *
+     * @param array{value: array<string, mixed>, lang: string, detected: bool, fill: list<string>} $plan
+     * @param array{ok: bool, lang: string, texts: array<string, string>, error: string} $result
+     * @return array{value: array<string, mixed>, error: string}
+     */
+    private static function apply(array $plan, array $result): array
+    {
+        $value = $plan['value'];
+        $lang = $plan['lang'];
+        $detected = $plan['detected'];
+        $fill = $plan['fill'];
 
         if ($result['ok']) {
             if ('' === $lang) {
@@ -456,6 +574,134 @@ final class TranslatedText
     }
 
     /**
+     * translate() for many texts with one request: a JSON list goes in (one
+     * item per text: id, lang, text, and max when the text has a length
+     * limit) and a JSON list comes out (one object per text, matched by id).
+     * A text the answer leaves out or gets wrong fails alone, with
+     * ERROR_BAD_ANSWER; the others keep their translation.
+     *
+     * @param array<string, array{source: string, lang: string, maxLength: int, multiline: bool}> $items
+     * @return array{
+     *     results: array<string, array{ok: bool, lang: string, texts: array<string, string>, error: string}>,
+     *     error: string
+     * } results: per key, as translate() returns it. error: the request's
+     *     own error kind, '' when the request worked.
+     */
+    private function translateMany(array $items, int $timeout): array
+    {
+        $failed = static fn (string $error): array => ['ok' => false, 'lang' => '', 'texts' => [], 'error' => $error];
+        $failAll = static fn (string $error): array => [
+            'results' => array_map(static fn (): array => $failed($error), $items),
+            'error' => $error,
+        ];
+
+        if (! self::autoEnabled()) {
+            return $failAll(self::ERROR_OFF);
+        }
+
+        $results = [];
+        $list = [];
+        $keys = [];
+        $tokens = 0;
+
+        foreach ($items as $key => $item) {
+            $lang = self::code($item['lang']);
+
+            if ('' === $lang && ! SiteLanguages::detectEnabled()) {
+                $lang = self::mainLanguage();
+            }
+
+            $items[$key]['lang'] = $lang;
+            $targets = array_values(array_diff(self::languages(), [$lang]));
+
+            if ('' !== $lang && [] === $targets) {
+                $results[$key] = ['ok' => true, 'lang' => $lang, 'texts' => [$lang => $item['source']], 'error' => ''];
+
+                continue;
+            }
+
+            $id = (string) (count($list) + 1);
+            $keys[$id] = $key;
+            $entry = ['id' => $id, 'lang' => $lang, 'text' => $item['source']];
+
+            if ($item['maxLength'] > 0) {
+                $entry['max'] = $item['maxLength'];
+            }
+
+            $list[] = $entry;
+            $length = function_exists('mb_strlen') ? mb_strlen($item['source']) : strlen($item['source']);
+            $tokens += min(self::TOKENS_PER_LANGUAGE, 100 + $length) * max(1, count($targets));
+        }
+
+        if ([] === $list) {
+            return ['results' => $results, 'error' => ''];
+        }
+
+        $answer = $this->llm->chat(
+            [
+                ['role' => 'system', 'content' => self::batchPrompt()],
+                ['role' => 'user', 'content' => (string) wp_json_encode($list)],
+            ],
+            $tokens,
+            $timeout
+        );
+
+        if (! $answer['ok']) {
+            return $failAll($answer['error']);
+        }
+
+        $content = trim($answer['content']);
+
+        // Some models wrap JSON in a Markdown code fence.
+        if (1 === preg_match('/^```(?:json)?\s*(.*?)\s*```$/s', $content, $matches)) {
+            $content = $matches[1];
+        }
+
+        $decoded = json_decode($content, true);
+
+        if (is_array($decoded) && is_array($decoded['items'] ?? null)) {
+            $decoded = $decoded['items'];
+        }
+
+        if (! is_array($decoded) || ! array_is_list($decoded)) {
+            $this->logger->warning('Translation: the language model answer could not be read.');
+
+            return $failAll(self::ERROR_BAD_ANSWER);
+        }
+
+        $answers = [];
+
+        foreach ($decoded as $entry) {
+            if (is_array($entry) && is_scalar($entry['id'] ?? null) && isset($keys[(string) $entry['id']])) {
+                $answers[$keys[(string) $entry['id']]] = $entry;
+            }
+        }
+
+        foreach ($keys as $key) {
+            $item = $items[$key];
+            $parsed = isset($answers[$key]) ? self::parseDecoded($answers[$key], $item['lang']) : null;
+
+            if (null === $parsed) {
+                $results[$key] = $failed(self::ERROR_BAD_ANSWER);
+
+                continue;
+            }
+
+            $out = [];
+
+            foreach (self::languages() as $code) {
+                $out[$code] = $code === $parsed['lang']
+                    ? $item['source']
+                    : self::clean($parsed['texts'][$code], $item['maxLength'], $item['multiline']);
+            }
+
+            $results[$key] = ['ok' => true, 'lang' => $parsed['lang'], 'texts' => $out, 'error' => ''];
+        }
+
+        return ['results' => $results, 'error' => ''];
+    }
+
+    /**
      * Reads the model's JSON answer: the source's language code and a text
      * for every site language except that one. Null when it is not that
      * shape. With $lang (the language chosen by hand), that language is the
@@ -475,10 +721,17 @@ final class TranslatedText
 
         $decoded = json_decode($content, true);
 
-        if (! is_array($decoded)) {
-            return null;
-        }
+        return is_array($decoded) ? self::parseDecoded($decoded, $lang) : null;
+    }
 
+    /**
+     * parse() on the decoded JSON of one text.
+     *
+     * @param array<mixed> $decoded
+     * @return array{lang: string, texts: array<string, string>}|null
+     */
+    private static function parseDecoded(array $decoded, string $lang): ?array
+    {
         if ('' === $lang) {
             $lang = self::code($decoded['lang'] ?? null);
 
@@ -793,6 +1046,32 @@ final class TranslatedText
     private static function name(string $lang): string
     {
         return SiteLanguages::name($lang);
+    }
+
+    /** The instruction sent to the model with a list of texts (translateMany()). */
+    private static function batchPrompt(): string
+    {
+        $targets = [];
+        $shape = [];
+
+        foreach (self::languages() as $code) {
+            $name = self::name($code);
+            $targets[] = $name . ' (' . $code . ')';
+            $shape[] = '"' . $code . '": "the text in ' . $name . '"';
+        }
+
+        return 'You translate short texts written by the organizers of an event. '
+            . 'You get a JSON list. Each item has "id", "text" and "lang": the code of the language the text is '
+            . 'written in, or "" when it is not known; then first decide which language the text is written in. '
+            . 'Translate each text into each of these languages: ' . implode(', ', $targets) . ', '
+            . 'leaving out the language the text is already written in. '
+            . 'Keep the line breaks, links, names, dates, times, emoji and placeholders such as {name} or %s '
+            . 'exactly as they are. '
+            . 'Do not add anything and do not leave anything out. '
+            . 'When an item has "max", keep each of its translations at most that many characters long. '
+            . 'Answer with JSON only, with no other text: a list with one object per item, '
+            . '{"id": "the item\'s id", "lang": "the code of the language the text is written in", '
+            . implode(', ', $shape) . '}';
     }
 
     /** The instruction sent to the model with the source. */

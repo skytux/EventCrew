@@ -18,7 +18,8 @@ use EventCrew\Tests\TestCase;
 
 /**
  * The rows of the Translations page: where they come from, the search and
- * filters, saving one row, and "Translate missing". The model is a stub of
+ * filters, saving one row, and "Translate missing" for a batch of rows
+ * (translateRows(): one request for many texts). The model is a stub of
  * wp_remote_post; nothing leaves the test.
  */
 final class TranslationRegistryTest extends TestCase
@@ -143,7 +144,10 @@ final class TranslationRegistryTest extends TestCase
     /** A translation that drops a required placeholder is not stored, on save and on "Translate missing". */
     public function testATranslationWithoutARequiredPlaceholderIsNotStored(): void
     {
-        $this->withModel('{"lang": "en", "fi": "Nyt uusi osoite."}');
+        $this->withModel(
+            '{"lang": "en", "fi": "Nyt uusi osoite."}',
+            '[{"id": "1", "lang": "en", "fi": "Nyt uusi osoite."}]'
+        );
         $before = $this->withRequired()->find('moved')?->value;
 
         $result = $this->withRequired()->saveRow('moved', 'Now {email}.', []);
@@ -151,9 +155,9 @@ final class TranslationRegistryTest extends TestCase
         self::assertSame(['{email}'], $result['missing']);
         self::assertSame($before, TranslatedText::normalize($this->stored('moved')));
 
-        $result = $this->withRequired()->translateMissing();
+        $result = $this->withRequired()->translateRows(['moved']);
 
-        self::assertSame(['filled' => 0, 'failed' => 1, 'error' => ''], $result);
+        self::assertSame(['done' => [], 'failed' => ['moved'], 'error' => ''], $result);
         self::assertSame('', $this->stored('moved')['texts']['fi']);
     }
 
@@ -264,19 +268,72 @@ final class TranslationRegistryTest extends TestCase
         self::assertSame('en', $this->stored('a')['lang']);
     }
 
+    /**
+     * The texts one request sent: the JSON list in the user message.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sent(int $request): array
+    {
+        $body = json_decode($this->requests[$request], true);
+
+        return json_decode((string) $body['messages'][1]['content'], true);
+    }
+
     /** "Translate missing" fills the empty texts only; rows with nothing missing are not sent. */
     public function testTranslateMissingFillsOnlyTheEmptyTexts(): void
     {
-        $this->withModel('{"lang": "en", "fi": "Kiitos"}');
+        $this->withModel('[{"id": "1", "lang": "en", "fi": "Kiitos"}]');
+        $registry = $this->sample();
 
-        $result = $this->sample()->translateMissing();
+        self::assertSame(['b'], $registry->missingIds());
 
-        self::assertSame(['filled' => 1, 'failed' => 0, 'error' => ''], $result);
+        $result = $registry->translateRows(['a', 'b', 'c']);
+
+        self::assertSame(['done' => ['a', 'c', 'b'], 'failed' => [], 'error' => ''], $result);
         self::assertCount(1, $this->requests, 'only row b had an empty text');
+        self::assertSame([['id' => '1', 'lang' => '', 'text' => 'Thank you']], $this->sent(0));
         self::assertSame(['fi' => 'Kiitos', 'en' => 'Thank you'], $this->stored('b')['texts']);
         self::assertSame(['fi' => false, 'en' => false], $this->stored('b')['manual']);
+        self::assertSame('en', $this->stored('b')['lang'], 'the language the model found');
         self::assertSame('Hei', $this->stored('a')['texts']['fi']);
-        self::assertSame(['filled' => 0, 'failed' => 0, 'error' => ''], $this->sample()->translateMissing());
+        self::assertSame([], $this->sample()->missingIds());
+        self::assertSame(['done' => ['b'], 'failed' => [], 'error' => ''], $this->sample()->translateRows(['b']));
+        self::assertCount(1, $this->requests, 'a filled row is not sent again');
+    }
+
+    /** Many texts go in one request, and the answer is matched by id, in any order. */
+    public function testManyTextsGoInOneRequest(): void
+    {
+        $this->withModel('[{"id": "2", "lang": "en", "fi": "Kaksi"}, {"id": "1", "lang": "en", "fi": "Yksi"}]');
+        $this->options['row.one'] = ['source' => 'One', 'lang' => 'en', 'texts' => ['fi' => '', 'en' => 'One']];
+        $this->options['row.two'] = ['source' => 'Two', 'lang' => 'en', 'texts' => ['fi' => '', 'en' => 'Two']];
+        $registry = $this->registry();
+        $registry->add(fn (): array => [$this->row('one', []), $this->row('two', [])]);
+
+        $result = $registry->translateRows(['one', 'two']);
+
+        self::assertSame(['done' => ['one', 'two'], 'failed' => [], 'error' => ''], $result);
+        self::assertCount(1, $this->requests);
+        self::assertSame(['One', 'Two'], array_column($this->sent(0), 'text'));
+        self::assertSame('Yksi', $this->stored('one')['texts']['fi']);
+        self::assertSame('Kaksi', $this->stored('two')['texts']['fi']);
+    }
+
+    /** A text the answer leaves out fails alone; the other text of the request is stored. */
+    public function testATextMissingFromTheAnswerFailsAlone(): void
+    {
+        $this->withModel('[{"id": "1", "lang": "en", "fi": "Yksi"}]');
+        $this->options['row.one'] = ['source' => 'One', 'lang' => 'en', 'texts' => ['fi' => '', 'en' => 'One']];
+        $this->options['row.two'] = ['source' => 'Two', 'lang' => 'en', 'texts' => ['fi' => '', 'en' => 'Two']];
+        $registry = $this->registry();
+        $registry->add(fn (): array => [$this->row('one', []), $this->row('two', [])]);
+
+        $result = $registry->translateRows(['one', 'two']);
+
+        self::assertSame(['done' => ['one'], 'failed' => ['two'], 'error' => ''], $result);
+        self::assertSame('Yksi', $this->stored('one')['texts']['fi']);
+        self::assertSame('', $this->stored('two')['texts']['fi']);
     }
 
     /**
@@ -287,7 +344,15 @@ final class TranslationRegistryTest extends TestCase
     public function testAThirdLanguageIsFilledForEveryRow(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
-        $this->withModel('{"lang": "en", "fi": "MODEL-FI", "sv": "MODEL-SV"}');
+        $this->withModel((string) json_encode(array_map(
+            static fn (int $id): array => [
+                'id' => (string) $id,
+                'lang' => 'en',
+                'fi' => 'MODEL-FI',
+                'sv' => 'MODEL-SV',
+            ],
+            [1, 2, 3, 4]
+        )));
         $registry = $this->sample();
         // The post-event email's two texts, as the Messages page rows.
         $registry->add(static fn (): array => array_values(array_filter(
@@ -301,9 +366,11 @@ final class TranslationRegistryTest extends TestCase
             self::ids(TranslationRegistry::filter($registry->rows(), '', TranslationRegistry::SHOW_MISSING))
         );
 
-        $result = $registry->translateMissing();
+        $result = $registry->translateRows($registry->missingIds());
 
-        self::assertSame(['filled' => 4, 'failed' => 0, 'error' => ''], $result);
+        self::assertSame(4, count($result['done']));
+        self::assertSame([], $result['failed']);
+        self::assertCount(1, $this->requests, 'the four texts went in one request');
         self::assertSame(['fi' => 'Hei', 'en' => 'Hello', 'sv' => 'MODEL-SV'], $this->stored('a')['texts']);
         self::assertSame(['fi' => 'MODEL-FI', 'en' => 'Thank you', 'sv' => 'MODEL-SV'], $this->stored('b')['texts']);
 
@@ -316,8 +383,8 @@ final class TranslationRegistryTest extends TestCase
         self::assertStringContainsString('sv', $prompt);
     }
 
-    /** The model fails: nothing is stored, and the remaining rows are not sent. */
-    public function testAnErrorStopsTheRun(): void
+    /** The request fails: nothing of it is stored, and every text in it failed. */
+    public function testAFailedRequestStoresNothing(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
         $this->withModel('{"lang": "en", "fi": "x", "sv": "x"}');
@@ -326,11 +393,9 @@ final class TranslationRegistryTest extends TestCase
         $before->rows();
         $stored = $this->options;
 
-        $result = $before->translateMissing();
+        $result = $before->translateRows($before->missingIds());
 
-        self::assertSame(2, $result['failed']);
-        self::assertSame(0, $result['filled']);
-        self::assertNotSame('', $result['error']);
+        self::assertSame(['done' => [], 'failed' => ['a', 'b'], 'error' => 'http_500'], $result);
         self::assertCount(1, $this->requests);
         self::assertSame($stored['row.a'], $this->options['row.a']);
         self::assertSame($stored['row.b'], $this->options['row.b']);
@@ -341,12 +406,12 @@ final class TranslationRegistryTest extends TestCase
     {
         $this->options[SiteLanguages::DETECT_OPTION] = '0';
         $this->options[SiteLanguages::OPTION] = ['en', 'fi'];
-        $this->withModel('{"fi": "Kiitos"}');
+        $this->withModel('[{"id": "1", "fi": "Kiitos"}]');
 
-        $result = $this->sample()->translateMissing();
+        $result = $this->sample()->translateRows(['b']);
 
-        self::assertSame(['filled' => 1, 'failed' => 0, 'error' => ''], $result);
-        self::assertStringContainsString('written in English (en)', $this->requests[0]);
+        self::assertSame(['done' => ['b'], 'failed' => [], 'error' => ''], $result);
+        self::assertSame('en', $this->sent(0)[0]['lang']);
         self::assertSame('en', $this->stored('b')['lang']);
         self::assertSame('Kiitos', $this->stored('b')['texts']['fi']);
     }
@@ -355,11 +420,11 @@ final class TranslationRegistryTest extends TestCase
     public function testAutoOffTranslatesNothing(): void
     {
         $this->options[TranslatedText::AUTO_OPTION] = '0';
-        $this->withModel('{"lang": "en", "fi": "Kiitos"}');
+        $this->withModel('[{"id": "1", "lang": "en", "fi": "Kiitos"}]');
 
-        $result = $this->sample()->translateMissing();
+        $result = $this->sample()->translateRows(['b']);
 
-        self::assertSame(0, $result['filled']);
+        self::assertSame(['done' => [], 'failed' => ['b'], 'error' => TranslatedText::ERROR_OFF], $result);
         self::assertSame([], $this->requests);
         self::assertSame('', $this->stored('b')['texts']['fi']);
     }

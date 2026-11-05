@@ -14,9 +14,10 @@ namespace EventCrew\Support;
  * with the FILTER filter. A row whose id is already taken is left out.
  *
  * The registry also does the two things the page asks for: saving one row
- * (saveRow()) and filling every empty language text ("Translate missing",
- * translateMissing()). Both go through TranslatedText::update(), so a text
- * edited by hand is never overwritten.
+ * (saveRow()) and filling the empty language texts of some rows ("Translate
+ * missing", translateRows(), which TranslationJob runs batch by batch in the
+ * background). Both go through TranslatedText (update(), fillMany()), so a
+ * text edited by hand is never overwritten.
  */
 final class TranslationRegistry
 {
@@ -178,65 +179,81 @@ final class TranslationRegistry
     }
 
     /**
-     * "Translate missing": every row with a source and an empty language
-     * text gets that text from the language model. Texts edited by hand are
-     * left as they are. Stops asking the model after the first error, so a
-     * model that is down is not asked once per row.
+     * The ids of the rows with a source and an empty language text, in page
+     * order: what "Translate missing" has to do.
      *
-     * @return array{filled: int, failed: int, error: string}
-     *     filled: rows that now have every language; failed: rows still
-     *     missing a language; error: the first error kind, '' when none.
+     * @return list<string>
      */
-    public function translateMissing(): array
+    public function missingIds(): array
     {
-        $filled = 0;
-        $failed = 0;
-        $error = '';
+        return array_values(array_map(
+            static fn (TranslationRow $row): string => $row->id,
+            array_filter($this->rows(), static fn (TranslationRow $row): bool => $row->isMissing())
+        ));
+    }
+
+    /**
+     * "Translate missing" for the rows $ids, with one request to the
+     * language model (TranslatedText::fillMany()): each empty language text
+     * of these rows is filled. Texts edited by hand are left as they are.
+     * Each row is stored on its own, so a row that fails does not lose the
+     * others' translations.
+     *
+     * @param list<string> $ids
+     * @return array{done: list<string>, failed: list<string>, error: string}
+     *     done: rows that now have every language, or no longer needed it
+     *     (filled since, or gone); failed: rows not stored (the model failed,
+     *     or the translation dropped a required placeholder); error: the
+     *     request's error kind, '' when the request worked.
+     */
+    public function translateRows(array $ids, int $timeout = LlmClient::TIMEOUT): array
+    {
+        $rows = [];
 
         foreach ($this->rows() as $row) {
-            if (! $row->isMissing()) {
-                continue;
-            }
-
-            if ('' !== $error) {
-                $failed++;
-
-                continue;
-            }
-
-            // The same path as a save with nothing changed: update() fills
-            // each empty language text that was not edited by hand.
-            $result = $this->translator->update(
-                $row->value,
-                $row->value['source'],
-                [],
-                false,
-                $row->maxLength,
-                $row->multiline
-            );
-
-            if ('' !== $result['error']) {
-                // update() put the source into the empty texts; keep them
-                // empty instead, so the row stays "not translated yet".
-                $error = $result['error'];
-                $failed++;
-
-                continue;
-            }
-
-            // A translation that dropped a required placeholder is not
-            // stored; the row stays missing that language.
-            if ([] !== $row->missingRequired($result['value'])) {
-                $failed++;
-
-                continue;
-            }
-
-            $row->store($result['value']);
-            $filled++;
+            $rows[$row->id] = $row;
         }
 
-        return ['filled' => $filled, 'failed' => $failed, 'error' => $error];
+        $done = [];
+        $items = [];
+
+        foreach ($ids as $id) {
+            $row = $rows[$id] ?? null;
+
+            if (null === $row || ! $row->isMissing()) {
+                $done[] = $id;
+
+                continue;
+            }
+
+            $items[$id] = ['value' => $row->value, 'maxLength' => $row->maxLength, 'multiline' => $row->multiline];
+        }
+
+        if ([] === $items) {
+            return ['done' => $done, 'failed' => [], 'error' => ''];
+        }
+
+        $result = $this->translator->fillMany($items, $timeout);
+        $failed = [];
+
+        foreach (array_keys($items) as $id) {
+            $id = (string) $id;
+            $filled = $result['values'][$id];
+
+            // On an error the empty texts hold the source; keep them empty
+            // instead, so the row stays "not translated yet". A translation
+            // that dropped a required placeholder is not stored either.
+            if ('' !== $filled['error'] || [] !== $rows[$id]->missingRequired($filled['value'])) {
+                $failed[] = $id;
+
+                continue;
+            }
+
+            $rows[$id]->store($filled['value']);
+            $done[] = $id;
+        }
+
+        return ['done' => $done, 'failed' => $failed, 'error' => $result['error']];
     }
 
     private static function lower(string $text): string
