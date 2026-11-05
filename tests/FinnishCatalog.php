@@ -28,6 +28,22 @@ final class FinnishCatalog
         return '' === $found ? $text : $found;
     }
 
+    /**
+     * _x(): the entry with this context ("context\x04text" in the .mo) when
+     * there is one, else the entry without a context, as before contexts were
+     * read here.
+     */
+    public static function translateInContext(string $text, string $context): string
+    {
+        if (Language::FINNISH !== Language::current()) {
+            return $text;
+        }
+
+        $found = self::entries()[$context . "\x04" . $text] ?? '';
+
+        return '' === $found ? self::translate($text) : $found;
+    }
+
     public static function translatePlural(string $single, string $plural, int $number): string
     {
         if (Language::FINNISH !== Language::current()) {

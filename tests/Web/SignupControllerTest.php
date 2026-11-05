@@ -418,6 +418,35 @@ final class SignupControllerTest extends TestCase
         self::assertStringNotContainsString('Checking you', $html);
     }
 
+    /**
+     * The board's dates follow the page's language, not WordPress's: a Finnish
+     * browser reads the card's day in Finnish, an English one as before.
+     */
+    public function testTheBoardDateIsInThePagesLanguage(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+
+        $render = function (string $browser): string {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = $browser;
+            $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming (Sat 2026-08-01)
+            $this->wpdb->nextResults[] = [];                 // occupancyFor
+
+            try {
+                return $this->controller()->renderShortcode();
+            } finally {
+                unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            }
+        };
+
+        $finnish = $render('fi');
+        self::assertStringContainsString('<span class="eventcrew-event-date">lauantai 1. elokuuta</span>', $finnish);
+        self::assertStringNotContainsString('Saturday', $finnish);
+
+        $english = $render('en');
+        self::assertStringContainsString('<span class="eventcrew-event-date">Saturday 1 August</span>', $english);
+    }
+
     public function testASignedInPersonsOwnChoiceWinsOverTheBrowser(): void
     {
         Functions\when('wp_unslash')->returnArg(1);

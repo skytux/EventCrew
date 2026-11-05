@@ -480,7 +480,8 @@ final class TicketController
         // when the ticket was made), so Dates::wallClock reformats its own digits
         // without running it back through a timezone - the door only cares what
         // the clock read when it was issued, not which zone that was.
-        return Dates::wallClock($issued, 'H:i, D j M');
+        /* translators: PHP date() format of when a ticket was issued, like "21:05, Sat 1 Aug". */
+        return Dates::wallClock($issued, _x('H:i, D j M', 'date format', 'eventcrew'));
     }
 
     /**

@@ -79,7 +79,7 @@ endif; ?>
     ));
     $eventcrew_one_day = 1 === count($eventcrew_dates);
     $eventcrew_group_date = $eventcrew_one_day
-        ? date_i18n('l j F', (int) strtotime((string) reset($eventcrew_dates)))
+        ? \EventCrew\Support\Dates::dayHeading((string) reset($eventcrew_dates))
         : '';
     ?>
     <?php
@@ -108,7 +108,7 @@ endif; ?>
             $eventcrew_full = ! $eventcrew_no_limit && $eventcrew_row['taken'] >= $eventcrew_task->capacity;
             $eventcrew_when = $eventcrew_one_day
                 ? $eventcrew_time
-                : date_i18n('D j M', (int) strtotime($eventcrew_task->taskDate))
+                : \EventCrew\Support\Dates::dayLabel($eventcrew_task->taskDate)
                     . ('' === $eventcrew_time ? '' : ' · ' . $eventcrew_time);
             /* translators: 1: people signed up so far, 2: people needed in total */
             $eventcrew_fill = sprintf(__('%1$d of %2$d', 'eventcrew'), $eventcrew_row['taken'], $eventcrew_task->capacity);

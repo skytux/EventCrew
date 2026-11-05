@@ -14,25 +14,38 @@ namespace EventCrew\Support;
  * it move the source: dayLabel() formats a day at noon UTC (the label can never
  * roll to a neighbouring day), and wallClock() reformats a stored datetime's own
  * digits without any conversion (see the v1.3.1 ticket-issue-time fix).
+ *
+ * Day and month names follow Language, not WordPress. Language switches only
+ * the eventcrew text domain, so WordPress's own day and month names
+ * ($wp_locale, which wp_date and date_i18n use) stay in the site's core
+ * language - English on a site whose Finnish comes from Polylang. So inside a
+ * Language::run() format() writes the date itself, with the names and the
+ * layout from the plugin's own translations ("la 14.11." in Finnish). Nothing
+ * global is changed, so nothing can leak into the next person's message.
+ * Outside any run() - wp-admin - wp_date writes it, as before.
  */
 final class Dates
 {
     /**
-     * A bare Y-m-d as a short, localized day label like "Sat 1 Aug". Formatted
-     * at noon UTC so a far-east or far-west site zone can never nudge it onto the
-     * day before or after.
+     * A bare Y-m-d as a short, localized day label like "Sat 1 Aug" ("la 1.8."
+     * in Finnish). Formatted at noon UTC so a far-east or far-west site zone can
+     * never nudge it onto the day before or after.
      */
     public static function dayLabel(string $ymd): string
     {
-        $timestamp = strtotime($ymd . ' 12:00:00 UTC');
+        /* translators: PHP date() format of a short day label, like "Sat 1 Aug". */
+        return self::formatDay($ymd, _x('D j M', 'date format', 'eventcrew'));
+    }
 
-        if (false === $timestamp) {
-            return $ymd;
-        }
-
-        return function_exists('wp_date')
-            ? (string) wp_date('D j M', $timestamp, new \DateTimeZone('UTC'))
-            : gmdate('D j M', $timestamp);
+    /**
+     * A bare Y-m-d as a heading without the year, like "Saturday 1 August"
+     * ("lauantai 1. elokuuta" in Finnish). Noon UTC for the same reason as
+     * dayLabel().
+     */
+    public static function dayHeading(string $ymd): string
+    {
+        /* translators: PHP date() format of a day heading without the year, like "Saturday 1 August". */
+        return self::formatDay($ymd, _x('l j F', 'date format', 'eventcrew'));
     }
 
     /**
@@ -41,15 +54,66 @@ final class Dates
      */
     public static function longDayLabel(string $ymd): string
     {
-        $timestamp = strtotime($ymd . ' 12:00:00 UTC');
+        /* translators: PHP date() format of a full date, like "Saturday 1 August 2026". */
+        return self::formatDay($ymd, _x('l j F Y', 'date format', 'eventcrew'));
+    }
 
-        if (false === $timestamp) {
-            return $ymd;
+    /**
+     * A day and a time, like "Sat 1 Aug 18:00" ("la 1.8. 18:00" in Finnish),
+     * written in $zone (UTC when none).
+     */
+    public static function dayTimeLabel(int $timestamp, ?\DateTimeZone $zone = null): string
+    {
+        /* translators: PHP date() format of a day and a time, like "Sat 1 Aug 18:00". */
+        return self::format(_x('D j M H:i', 'date format', 'eventcrew'), $timestamp, $zone);
+    }
+
+    /**
+     * $timestamp in the PHP date() $format, written in $zone (UTC when none).
+     *
+     * Inside a Language::run() the day and month names (D, l, M, F) are the
+     * plugin's own, in that language, and every other letter is PHP's. A month
+     * written out in full (F) takes the form that follows a day number, which
+     * in Finnish is not the plain name ("1. elokuuta", not "elokuu"). Outside
+     * a run wp_date writes it with WordPress's names; without WordPress (the
+     * unit tests) PHP does.
+     */
+    public static function format(string $format, int $timestamp, ?\DateTimeZone $zone = null): string
+    {
+        $zone ??= new \DateTimeZone('UTC');
+
+        if (null === Language::current() && function_exists('wp_date')) {
+            return (string) wp_date($format, $timestamp, $zone);
         }
 
-        return function_exists('wp_date')
-            ? (string) wp_date('l j F Y', $timestamp, new \DateTimeZone('UTC'))
-            : gmdate('l j F Y', $timestamp);
+        $when = (new \DateTimeImmutable('@' . $timestamp))->setTimezone($zone);
+
+        if (null === Language::current()) {
+            return $when->format($format);
+        }
+
+        $out = '';
+        $length = strlen($format);
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $format[$i];
+
+            if ('\\' === $char) {
+                ++$i;
+                $out .= $format[$i] ?? '';
+                continue;
+            }
+
+            $out .= match ($char) {
+                'D' => self::weekdayShort((int) $when->format('w')),
+                'l' => self::weekday((int) $when->format('w')),
+                'M' => self::monthShort((int) $when->format('n')),
+                'F' => self::monthInDate((int) $when->format('n')),
+                default => $when->format($char),
+            };
+        }
+
+        return $out;
     }
 
     /**
@@ -86,12 +150,18 @@ final class Dates
      * A stored wall-clock datetime (as written by current_time('mysql'))
      * reformatted as-is. The digits are already local, so they are never run
      * back through a timezone - doing that moves them by the site's offset.
+     * Inside a Language::run() the names are in that language (format()).
      */
     public static function wallClock(string $mysqlDatetime, string $format): string
     {
-        $when = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $mysqlDatetime);
+        $when = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $mysqlDatetime, new \DateTimeZone('UTC'));
 
-        return false === $when ? $mysqlDatetime : $when->format($format);
+        if (false === $when) {
+            return $mysqlDatetime;
+        }
+
+        // Read as UTC and written in UTC, so the digits stay as stored.
+        return null === Language::current() ? $when->format($format) : self::format($format, $when->getTimestamp());
     }
 
     /**
@@ -107,8 +177,81 @@ final class Dates
             return '';
         }
 
-        return function_exists('wp_date')
-            ? (string) wp_date('j M H:i', $timestamp, new \DateTimeZone('UTC'))
-            : gmdate('j M H:i', $timestamp);
+        /* translators: PHP date() format of when someone signed up, like "2 Nov 14:05". */
+        return self::format(_x('j M H:i', 'date format', 'eventcrew'), $timestamp);
+    }
+
+    /**
+     * A bare Y-m-d at noon UTC in $format, or the Y-m-d itself when it is not
+     * a date.
+     */
+    private static function formatDay(string $ymd, string $format): string
+    {
+        $timestamp = strtotime($ymd . ' 12:00:00 UTC');
+
+        return false === $timestamp ? $ymd : self::format($format, $timestamp);
+    }
+
+    private static function weekdayShort(int $day): string
+    {
+        return match ($day) {
+            0 => _x('Sun', 'short weekday name', 'eventcrew'),
+            1 => _x('Mon', 'short weekday name', 'eventcrew'),
+            2 => _x('Tue', 'short weekday name', 'eventcrew'),
+            3 => _x('Wed', 'short weekday name', 'eventcrew'),
+            4 => _x('Thu', 'short weekday name', 'eventcrew'),
+            5 => _x('Fri', 'short weekday name', 'eventcrew'),
+            default => _x('Sat', 'short weekday name', 'eventcrew'),
+        };
+    }
+
+    private static function weekday(int $day): string
+    {
+        return match ($day) {
+            0 => _x('Sunday', 'weekday name', 'eventcrew'),
+            1 => _x('Monday', 'weekday name', 'eventcrew'),
+            2 => _x('Tuesday', 'weekday name', 'eventcrew'),
+            3 => _x('Wednesday', 'weekday name', 'eventcrew'),
+            4 => _x('Thursday', 'weekday name', 'eventcrew'),
+            5 => _x('Friday', 'weekday name', 'eventcrew'),
+            default => _x('Saturday', 'weekday name', 'eventcrew'),
+        };
+    }
+
+    private static function monthShort(int $month): string
+    {
+        return match ($month) {
+            1 => _x('Jan', 'short month name', 'eventcrew'),
+            2 => _x('Feb', 'short month name', 'eventcrew'),
+            3 => _x('Mar', 'short month name', 'eventcrew'),
+            4 => _x('Apr', 'short month name', 'eventcrew'),
+            5 => _x('May', 'short month name', 'eventcrew'),
+            6 => _x('Jun', 'short month name', 'eventcrew'),
+            7 => _x('Jul', 'short month name', 'eventcrew'),
+            8 => _x('Aug', 'short month name', 'eventcrew'),
+            9 => _x('Sep', 'short month name', 'eventcrew'),
+            10 => _x('Oct', 'short month name', 'eventcrew'),
+            11 => _x('Nov', 'short month name', 'eventcrew'),
+            default => _x('Dec', 'short month name', 'eventcrew'),
+        };
+    }
+
+    /** The month in full as it follows a day number: "1 August", in Finnish "1. elokuuta". */
+    private static function monthInDate(int $month): string
+    {
+        return match ($month) {
+            1 => _x('January', 'month name after a day number', 'eventcrew'),
+            2 => _x('February', 'month name after a day number', 'eventcrew'),
+            3 => _x('March', 'month name after a day number', 'eventcrew'),
+            4 => _x('April', 'month name after a day number', 'eventcrew'),
+            5 => _x('May', 'month name after a day number', 'eventcrew'),
+            6 => _x('June', 'month name after a day number', 'eventcrew'),
+            7 => _x('July', 'month name after a day number', 'eventcrew'),
+            8 => _x('August', 'month name after a day number', 'eventcrew'),
+            9 => _x('September', 'month name after a day number', 'eventcrew'),
+            10 => _x('October', 'month name after a day number', 'eventcrew'),
+            11 => _x('November', 'month name after a day number', 'eventcrew'),
+            default => _x('December', 'month name after a day number', 'eventcrew'),
+        };
     }
 }
