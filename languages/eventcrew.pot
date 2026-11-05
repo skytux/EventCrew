@@ -8734,7 +8734,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:1180
 #. translators: %s: the organization's name
-msgid "You are now an %s organizer"
+msgid "You are now an organizer of %s."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:1183
@@ -9628,7 +9628,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:1193
 #. translators: %s: the organization's name
-msgid "⭐ You’re now an %s organizer."
+msgid "⭐ You’re now an organizer of %s."
 msgstr ""
 
 #: src/Support/MessageTemplates.php:1586
