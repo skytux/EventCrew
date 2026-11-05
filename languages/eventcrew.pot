@@ -21,6 +21,14 @@ msgstr ""
 msgid "\"Opens the sales desk\": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster."
 msgstr ""
 
+#: src/Support/MessageTemplates.php:478
+msgid "\"Thanks for the notice.\", or for a late cancellation the sentence saying it counts against the standing."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:731
+msgid "\"❌ Cancelled\", or \"⚠️ Late cancellation\" when the cancellation was late."
+msgstr ""
+
 #: src/Web/BuyerImportController.php:346
 #. translators: 1: number of guests added, 2: the event day, e.g. "Sat 1 Aug"
 msgid "%1$d guests were added to the guest list for %2$s."
@@ -52,7 +60,7 @@ msgstr ""
 msgid "%1$d tickets were imported for %2$s."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:510
+#: src/Support/OpenTaskCall.php:494
 #. translators: 1: recent-task list, 2: total completed
 msgid "%1$s\n\nTasks completed in total: %2$d."
 msgstr ""
@@ -157,7 +165,7 @@ msgstr ""
 msgid "%1$s: %2$d unsubscribed"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:195
+#: src/Support/MessageTemplates.php:726
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 msgid "%1$s: %2$s at %3$s. %4$s"
 msgstr ""
@@ -559,20 +567,24 @@ msgstr ""
 msgid "A send is already waiting. It goes out at %s."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:504
+#: src/Support/MessageTemplates.php:469
+msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:530
 msgid "A spot just opened up"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:463
+#: src/Support/MessageTemplates.php:489
 #. translators: 1: role, 2: event, 3: date/time
 msgid "A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:514
+#: src/Support/MessageTemplates.php:540
 msgid "A spot opened (Telegram)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:501
+#: src/Support/MessageTemplates.php:527
 msgid "A spot opened (email)"
 msgstr ""
 
@@ -747,7 +759,7 @@ msgstr ""
 msgid "Add the open-task board to any page with the %s shortcode, or the \"EventCrew signup\" block. Visitors sign in by email — no account needed — and signing up respects the same rules as the bot."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:99 templates/public/signup.php:399
+#: src/Support/ClaimNotifier.php:82 templates/public/signup.php:399
 msgid "Add to calendar"
 msgstr ""
 
@@ -801,11 +813,11 @@ msgstr ""
 msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:690
+#: src/Support/MessageTemplates.php:836
 msgid "After the event: thank you (email)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:699
+#: src/Support/MessageTemplates.php:845
 msgid "After the event: we missed you (email)"
 msgstr ""
 
@@ -857,6 +869,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1237
 msgid "An address or phone number people can use directly. This is the field that decides whether a DPO is published at all."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:473
+msgid "An empty line and the \"About the task\" text of the task's role. Empty when the role has none."
 msgstr ""
 
 #: templates/admin/settings.php:877
@@ -1178,6 +1194,14 @@ msgstr ""
 msgid "Cancelled"
 msgstr ""
 
+#: src/Support/MessageTemplates.php:720
+msgid "Cancelled a task (Telegram)"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:703
+msgid "Cancelled a task (email)"
+msgstr ""
+
 #: src/Support/Reputation.php:70
 msgid "Cancelled late"
 msgstr ""
@@ -1195,7 +1219,7 @@ msgstr ""
 msgid "Cancelled. Nothing was sent to the group."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:210
+#: src/Support/MessageTemplates.php:708
 #. translators: 1: role, 2: event
 msgid "Cancelled: %1$s for %2$s"
 msgstr ""
@@ -1258,7 +1282,7 @@ msgstr ""
 msgid "Check the welcome message"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:221
+#: src/Telegram/OnboardingService.php:222
 msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
 msgstr ""
 
@@ -1306,7 +1330,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:714 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:902
+#: src/Support/MessageTemplates.php:860 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:902
 msgid "Coming events"
 msgstr ""
 
@@ -1371,11 +1395,15 @@ msgstr ""
 msgid "Confirm new email"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:301
+#: src/Telegram/OnboardingService.php:299
 msgid "Confirm your email"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:298
+#: src/Support/MessageTemplates.php:771
+msgid "Confirm your email (email)"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:774
 msgid "Confirm your email for EventCrew"
 msgstr ""
 
@@ -2155,11 +2183,11 @@ msgstr ""
 msgid "Free entry closed for this date."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:608
+#: src/Support/MessageTemplates.php:634
 msgid "Free entry given (Telegram)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:590
+#: src/Support/MessageTemplates.php:616
 msgid "Free entry given (email)"
 msgstr ""
 
@@ -2195,7 +2223,7 @@ msgstr ""
 msgid "Free-entry ticket"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:626
+#: src/Support/MessageTemplates.php:652
 msgid "Free-entry ticket (Telegram)"
 msgstr ""
 
@@ -2383,7 +2411,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:656 src/Support/TicketText.php:80
+#: src/Support/MessageTemplates.php:802 src/Support/TicketText.php:80
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
 msgstr ""
@@ -2396,7 +2424,7 @@ msgstr ""
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:507 src/Support/TakeoverService.php:364 src/Support/TakeoverService.php:391 src/Support/TakeoverService.php:419
+#: src/Support/MessageTemplates.php:533 src/Support/TakeoverService.php:364 src/Support/TakeoverService.php:391 src/Support/TakeoverService.php:419
 #: src/Telegram/PermissionService.php:328
 #. translators: 1: name, 2: the opening line
 #. translators: 1: name, 2: the cover line
@@ -2404,14 +2432,15 @@ msgstr ""
 msgid "Hi %1$s,\n\n%2$s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:596
+#: src/Support/MessageTemplates.php:622
 #. translators: 1: the person's name, 2: number of credits
 msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
 msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/OnboardingService.php:291
+#: src/Support/MessageTemplates.php:777
+#. translators: 1: person's name
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
@@ -2420,25 +2449,28 @@ msgstr ""
 msgid "Hi %1$s,\n\nHere is your free-entry ticket for %2$s. Show it at the door."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:481
+#: src/Support/MessageTemplates.php:507
 #. translators: 1: name, 2: role, 3: event, 4: date/time
 msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:344
+#: src/Support/MessageTemplates.php:748
+#. translators: 1: name, 2: open-task list grouped by date, 3: personal recap
 msgid "Hi %1$s,\n\nSome tasks still need people:\n\n%2$s\n\nSign up on the board.\n\n%3$s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:533
+#: src/Support/MessageTemplates.php:559
 #. translators: 1: name, 2: role, 3: event, 4: date/time
 msgid "Hi %1$s,\n\nThe organizers have cancelled the task %2$s at %3$s, %4$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:85
+#: src/Support/MessageTemplates.php:683
+#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line
 msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:217
+#: src/Support/MessageTemplates.php:713
+#. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
 msgid "Hi %1$s,\n\nYou've cancelled %2$s at %3$s, and your ticket is now disabled.\n\n%4$s\n\n%5$s"
 msgstr ""
 
@@ -2446,8 +2478,8 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1100 src/Support/MessageTemplates.php:653
-#: src/Support/MessageTemplates.php:765 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76 src/Support/WelcomeSender.php:250
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1100 src/Support/MessageTemplates.php:799
+#: src/Support/MessageTemplates.php:911 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76 src/Support/WelcomeSender.php:250
 #: src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2863,11 +2895,11 @@ msgstr ""
 msgid "Late cancellation"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:577
+#: src/Support/MessageTemplates.php:603
 msgid "Late cancellation recorded (Telegram)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:565
+#: src/Support/MessageTemplates.php:591
 msgid "Late cancellation recorded (email)"
 msgstr ""
 
@@ -2912,7 +2944,7 @@ msgstr ""
 msgid "Lets them sign up once even if their standing is at risk. Spent automatically on their next successful signup."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:157
+#: src/Telegram/OnboardingService.php:158
 msgid "Let’s set you up in a private chat — tap below to open the bot."
 msgstr ""
 
@@ -2993,11 +3025,11 @@ msgstr ""
 msgid "Marked arrived."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:552
+#: src/Support/MessageTemplates.php:578
 msgid "Marked as a no-show (Telegram)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:540
+#: src/Support/MessageTemplates.php:566
 msgid "Marked as a no-show (email)"
 msgstr ""
 
@@ -3168,7 +3200,7 @@ msgstr ""
 msgid "Next events announcement"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:711
+#: src/Support/MessageTemplates.php:857
 msgid "Next events announcement (email)"
 msgstr ""
 
@@ -3728,15 +3760,15 @@ msgstr ""
 msgid "Open the Roster page"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:149
+#: src/Telegram/OnboardingService.php:150
 msgid "Open the bot in a private chat and send /start there to set up your account."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:286
+#: src/Support/OpenTaskCall.php:282
 msgid "Open the group"
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:263
+#: src/Support/OpenTaskCall.php:267
 msgid "Open the group in Telegram"
 msgstr ""
 
@@ -4226,7 +4258,7 @@ msgstr ""
 msgid "Rejected folder"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:476
+#: src/Support/MessageTemplates.php:502
 #. translators: 1: role, 2: event
 msgid "Reminder: %1$s for %2$s"
 msgstr ""
@@ -4578,7 +4610,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:226 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
+#: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:266 src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
 msgid "See open tasks"
 msgstr ""
 
@@ -4688,11 +4720,11 @@ msgstr ""
 msgid "Sent"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:567 src/Support/MessageTemplates.php:579
+#: src/Support/MessageTemplates.php:593 src/Support/MessageTemplates.php:605
 msgid "Sent a day after a late cancellation is recorded."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:542 src/Support/MessageTemplates.php:554
+#: src/Support/MessageTemplates.php:568 src/Support/MessageTemplates.php:580
 msgid "Sent a day after an organizer marks a person as a no-show."
 msgstr ""
 
@@ -4705,19 +4737,19 @@ msgstr ""
 msgid "Sent newsletters"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:692
+#: src/Support/MessageTemplates.php:838
 msgid "Sent the day after an event to the people who came. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:701
+#: src/Support/MessageTemplates.php:847
 msgid "Sent the day after an event to the people who had a ticket but did not come. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:490
+#: src/Support/MessageTemplates.php:516
 msgid "Sent the day before a task to each person signed up for it who uses the bot."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:473
+#: src/Support/MessageTemplates.php:499
 msgid "Sent the day before a task to each person signed up for it."
 msgstr ""
 
@@ -4730,11 +4762,15 @@ msgstr ""
 msgid "Sent to %2$s: %1$s."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:525
+#: src/Support/MessageTemplates.php:551
 msgid "Sent to each person signed up for a task when an organizer deletes the task. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:503 src/Support/MessageTemplates.php:516
+#: src/Support/MessageTemplates.php:744 src/Support/MessageTemplates.php:760
+msgid "Sent to the crew before an event that still has open tasks (the times are in Settings), or when an organizer sends it by hand."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:529 src/Support/MessageTemplates.php:542
 msgid "Sent to the crew when someone cancels a task late and its place is free again."
 msgstr ""
 
@@ -4742,15 +4778,27 @@ msgstr ""
 msgid "Sent to the group."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:628
+#: src/Support/MessageTemplates.php:705 src/Support/MessageTemplates.php:722
+msgid "Sent when a person cancels their own task, in the bot or on the web page."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:675 src/Support/MessageTemplates.php:692
+msgid "Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:654
 msgid "Sent when a person spends a free-entry credit on a night. The ticket itself comes in the ticket email."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:676
+#: src/Support/MessageTemplates.php:773
+msgid "Sent when a person types their email in the Telegram bot. The confirmation link is a button below the text and is always added."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:822
 msgid "Sent when a ticket that was emailed is cancelled. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:592 src/Support/MessageTemplates.php:610
+#: src/Support/MessageTemplates.php:618 src/Support/MessageTemplates.php:636
 msgid "Sent when an organizer gives a person free-entry credits."
 msgstr ""
 
@@ -4770,7 +4818,7 @@ msgstr ""
 msgid "Set a start time. A task cannot be saved without one."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:159
+#: src/Telegram/OnboardingService.php:160
 msgid "Set me up →"
 msgstr ""
 
@@ -4838,7 +4886,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:98 src/Support/ReminderCall.php:138 src/Telegram/TicketRedemptionService.php:288
+#: src/Support/ClaimNotifier.php:81 src/Support/ReminderCall.php:138 src/Telegram/TicketRedemptionService.php:288
 msgid "Show your ticket"
 msgstr ""
 
@@ -4963,6 +5011,14 @@ msgstr ""
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr ""
 
+#: src/Support/MessageTemplates.php:690
+msgid "Signed up for a task (Telegram)"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:673
+msgid "Signed up for a task (email)"
+msgstr ""
+
 #: templates/public/signup.php:560
 msgid "Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again."
 msgstr ""
@@ -4999,7 +5055,7 @@ msgstr ""
 msgid "Sold out"
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:259
+#: src/Support/MessageTemplates.php:745
 msgid "Some tasks still need people"
 msgstr ""
 
@@ -5156,7 +5212,7 @@ msgstr ""
 msgid "Task added."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:523
+#: src/Support/MessageTemplates.php:549
 msgid "Task cancelled by the organizers (email)"
 msgstr ""
 
@@ -5164,7 +5220,7 @@ msgstr ""
 msgid "Task cancelled email"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:528
+#: src/Support/MessageTemplates.php:554
 #. translators: 1: role, 2: event
 msgid "Task cancelled: %1$s for %2$s"
 msgstr ""
@@ -5177,11 +5233,11 @@ msgstr ""
 msgid "Task deleted."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:488
+#: src/Support/MessageTemplates.php:514
 msgid "Task reminder (Telegram)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:471
+#: src/Support/MessageTemplates.php:497
 msgid "Task reminder (email)"
 msgstr ""
 
@@ -5220,6 +5276,14 @@ msgstr ""
 
 #: templates/admin/settings.php:845
 msgid "Tasks per credit"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:758
+msgid "Tasks still need people (Telegram)"
+msgstr ""
+
+#: src/Support/MessageTemplates.php:742
+msgid "Tasks still need people (email)"
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:292
@@ -5400,7 +5464,7 @@ msgstr ""
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:693
+#: src/Support/MessageTemplates.php:839
 msgid "Thank you for dancing with us"
 msgstr ""
 
@@ -5420,7 +5484,7 @@ msgstr ""
 msgid "Thank-you text (came)"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:187
+#: src/Support/ClaimNotifier.php:170
 msgid "Thanks for the notice."
 msgstr ""
 
@@ -5460,7 +5524,7 @@ msgstr ""
 msgid "That does not look like an email address. Please check it."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:184
+#: src/Telegram/OnboardingService.php:185
 msgid "That doesn't look like an email address. Try again?"
 msgstr ""
 
@@ -5653,7 +5717,7 @@ msgstr ""
 msgid "The announcement is stopped. It will not be sent."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:713
+#: src/Support/MessageTemplates.php:859
 msgid "The announcement of the coming events, to the subscribers."
 msgstr ""
 
@@ -5742,7 +5806,7 @@ msgstr ""
 msgid "The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: %s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:718
+#: src/Support/MessageTemplates.php:864
 msgid "The coming events, as the newsletter writes them."
 msgstr ""
 
@@ -5778,7 +5842,7 @@ msgstr ""
 msgid "The date of the event, like 14.11.2026."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:637
+#: src/Support/MessageTemplates.php:663
 msgid "The day of the event, like Fri 14 Nov."
 msgstr ""
 
@@ -5975,6 +6039,10 @@ msgstr ""
 msgid "The name of the task, like Door."
 msgstr ""
 
+#: src/Support/MessageTemplates.php:782
+msgid "The name the person has in Telegram, or their email address when there is none."
+msgstr ""
+
 #: templates/admin/roster.php:351 templates/public/signup.php:1357
 msgid "The names go to the date shown above. A name already on the list is skipped."
 msgstr ""
@@ -5997,6 +6065,10 @@ msgstr ""
 
 #: templates/public/signup.php:1818
 msgid "The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:482
+msgid "The next open tasks, under a line with each date."
 msgstr ""
 
 #: src/Telegram/FollowupCommand.php:93 src/Web/CrewAdminFollowup.php:89
@@ -6036,6 +6108,14 @@ msgstr ""
 
 #: src/Support/RoleTaskService.php:221
 msgid "The person could not be added. Try again."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:752
+msgid "The person's last three tasks and how many tasks they have completed in total."
+msgstr ""
+
+#: src/Support/MessageTemplates.php:465
+msgid "The person's standing and free-entry credits, like: Your standing: Beginner · 0 free-entry credits."
 msgstr ""
 
 #: templates/admin/settings.php:618
@@ -6249,7 +6329,7 @@ msgstr ""
 msgid "The texts were not translated because no language model is set up. Empty language fields now hold the text as you wrote it."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:662
+#: src/Support/MessageTemplates.php:808
 msgid "The thank-you line: for buying a ticket, for coming as a guest, for taking a task, or for spending a credit."
 msgstr ""
 
@@ -6266,7 +6346,7 @@ msgstr ""
 msgid "The ticket list could not be imported"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:650
+#: src/Support/MessageTemplates.php:796
 msgid "The ticket with its QR code, to ticket buyers, guests and crew. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
@@ -6397,7 +6477,7 @@ msgstr ""
 msgid "This QR code is not one of our tickets."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:199 src/Telegram/VerificationController.php:155
+#: src/Telegram/OnboardingService.php:200 src/Telegram/VerificationController.php:155
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
@@ -6521,7 +6601,7 @@ msgstr ""
 msgid "This ticket link is not valid."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:186
+#: src/Support/ClaimNotifier.php:169
 msgid "This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time."
 msgstr ""
 
@@ -6529,7 +6609,7 @@ msgstr ""
 msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:505
+#: src/Support/OpenTaskCall.php:489
 msgid "This will be your first task — welcome!"
 msgstr ""
 
@@ -6545,7 +6625,7 @@ msgstr ""
 msgid "Ticket"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:648
+#: src/Support/MessageTemplates.php:794
 msgid "Ticket (email)"
 msgstr ""
 
@@ -6574,7 +6654,7 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:674
+#: src/Support/MessageTemplates.php:820
 msgid "Ticket cancelled (email)"
 msgstr ""
 
@@ -6942,7 +7022,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1103 src/Support/MessageTemplates.php:767
+#: src/Support/FollowupMail.php:1103 src/Support/MessageTemplates.php:913
 msgid "Warmly,"
 msgstr ""
 
@@ -6983,7 +7063,7 @@ msgstr[1] ""
 msgid "We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:702
+#: src/Support/MessageTemplates.php:848
 msgid "We missed you this time"
 msgstr ""
 
@@ -7068,7 +7148,7 @@ msgstr ""
 msgid "Welcome to the crew: how tasks, tickets and credits work"
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:89
+#: src/Telegram/OnboardingService.php:90
 msgid "Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks."
 msgstr ""
 
@@ -7382,7 +7462,7 @@ msgstr ""
 msgid "You are added to the next events announcement only if you press its button in that message. We then take the first word of the name on your ticket as the name to greet you with. Not joining has no effect on your ticket."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:74
+#: src/Telegram/OnboardingService.php:75
 msgid "You are already set up. Tap a task on the board to sign up."
 msgstr ""
 
@@ -7446,7 +7526,7 @@ msgstr ""
 msgid "You can bring %s with you."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:126
+#: src/Support/ClaimNotifier.php:109
 #. translators: %d: hours before the task's start
 msgid "You can cancel without it affecting your standing up to %d hour before the task."
 msgid_plural "You can cancel without it affecting your standing up to %d hours before the task."
@@ -7543,11 +7623,11 @@ msgstr ""
 msgid "You were already signed up for that."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:543
+#: src/Support/MessageTemplates.php:569
 msgid "You were marked as a no-show"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:545
+#: src/Support/MessageTemplates.php:571
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
@@ -7640,11 +7720,11 @@ msgstr ""
 msgid "Your language is saved."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:570
+#: src/Support/MessageTemplates.php:596
 msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:568
+#: src/Support/MessageTemplates.php:594
 msgid "Your late cancellation was recorded"
 msgstr ""
 
@@ -7680,7 +7760,7 @@ msgstr ""
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:506
+#: src/Support/OpenTaskCall.php:490
 msgid "Your recent tasks:"
 msgstr ""
 
@@ -7706,7 +7786,7 @@ msgstr ""
 msgid "Your standing comes from how your past tasks went:"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:274
+#: src/Support/ClaimNotifier.php:240
 #. translators: 1: standing level and score, 2: number of free-entry credits
 msgid "Your standing: %1$s · %2$d free-entry credits."
 msgstr ""
@@ -7728,11 +7808,11 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:651 src/Support/TicketMail.php:1143 src/Support/TicketMail.php:1434
+#: src/Support/MessageTemplates.php:797 src/Support/TicketMail.php:1143 src/Support/TicketMail.php:1434
 msgid "Your ticket"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:677 src/Support/TicketMail.php:1088
+#: src/Support/MessageTemplates.php:823 src/Support/TicketMail.php:1088
 msgid "Your ticket is cancelled"
 msgstr ""
 
@@ -7740,7 +7820,7 @@ msgstr ""
 msgid "Your ticket moved to another address"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:680 src/Support/TicketMail.php:1084
+#: src/Support/MessageTemplates.php:826 src/Support/TicketMail.php:1084
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
 msgstr ""
@@ -7798,12 +7878,12 @@ msgstr ""
 msgid "You’re signed up — thanks!"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:78
+#: src/Support/MessageTemplates.php:678
 #. translators: 1: role, 2: event
 msgid "You’re signed up: %1$s for %2$s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:593
+#: src/Support/MessageTemplates.php:619
 msgid "You’ve been given free entry"
 msgstr ""
 
@@ -8120,21 +8200,21 @@ msgstr ""
 msgid "⏰ %s"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:494
+#: src/Support/MessageTemplates.php:520
 #. translators: 1: role, 2: event, 3: date/time
 msgid "⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:197
+#: src/Support/ClaimNotifier.php:177
 msgid "⚠️ Late cancellation"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:558
+#: src/Support/MessageTemplates.php:584
 #. translators: %s: role at event, date
 msgid "⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:583
+#: src/Support/MessageTemplates.php:609
 #. translators: %s: role at event, date
 msgid "⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
 msgstr ""
@@ -8153,7 +8233,8 @@ msgstr ""
 msgid "✅ Let them take it"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:65
+#: src/Support/MessageTemplates.php:696
+#. translators: 1: role, 2: event, 3: date/time
 msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me."
 msgstr ""
 
@@ -8177,7 +8258,7 @@ msgstr ""
 msgid "✗ %s"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:198
+#: src/Support/ClaimNotifier.php:178
 msgid "❌ Cancelled"
 msgstr ""
 
@@ -8193,18 +8274,18 @@ msgstr ""
 msgid "⭐ You’re now an EventCrew organizer."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:614
+#: src/Support/MessageTemplates.php:640
 #. translators: %d: number of free-entry credits granted
 msgid "🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event."
 msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/ClaimNotifier.php:147 src/Telegram/TicketRedemptionService.php:263
+#: src/Support/ClaimNotifier.php:130 src/Telegram/TicketRedemptionService.php:263
 msgid "🎟 Show your ticket"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:632
+#: src/Support/MessageTemplates.php:658
 #. translators: %s: event date
 msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr ""
@@ -8241,7 +8322,7 @@ msgstr ""
 msgid "💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone who had a ticket and gave an email address: a thank-you to those who were checked in at the door, and a kind \"sorry we missed you\" to those who were not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a \"Send a test to me\" button. The Roster page shows how many were sent and how many people opened a link."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:148
+#: src/Support/ClaimNotifier.php:131
 msgid "📅 Add to calendar"
 msgstr ""
 
@@ -8283,7 +8364,7 @@ msgstr ""
 msgid "🔑 Sign in on the web"
 msgstr ""
 
-#: src/Support/OpenTaskCall.php:275
+#: src/Support/MessageTemplates.php:764
 #. translators: %s: the open-task list, already grouped by date
 msgid "🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group."
 msgstr ""
