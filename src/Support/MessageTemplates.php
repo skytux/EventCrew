@@ -1177,7 +1177,7 @@ final class MessageTemplates
                 __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it.', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: %s: the organization's name */
-                    __('You are now an %s organizer', 'eventcrew'),
+                    __('You are now an organizer of %s.', 'eventcrew'),
                     ['%s' => Organization::TAG]
                 ),
                 static fn (): string => __('You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people.', 'eventcrew')
@@ -1190,7 +1190,7 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: %s: the organization's name */
-                    __('⭐ You’re now an %s organizer.', 'eventcrew'),
+                    __('⭐ You’re now an organizer of %s.', 'eventcrew'),
                     ['%s' => Organization::TAG]
                 )
             ),

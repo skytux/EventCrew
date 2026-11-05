@@ -137,9 +137,9 @@ final class AccessNotifierTest extends TelegramTestCase
 
         $this->notifier()->organizerGiven(8);
 
-        self::assertSame("📣 Test Site\n\nHi Sam Lee,\n\n⭐ You’re now an Test Site organizer.", $this->dm());
+        self::assertSame("📣 Test Site\n\nHi Sam Lee,\n\n⭐ You’re now an organizer of Test Site.", $this->dm());
         self::assertSame(
-            "You are now an Test Site organizer\n---\nHi Sam,\n\nYou are now an organizer. The crew page has an"
+            "You are now an organizer of Test Site.\n---\nHi Sam,\n\nYou are now an organizer. The crew page has an"
                 . ' Admin tab for you, where you manage tasks and people.'
                 . "\n\n🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin",
             $this->mailText()
