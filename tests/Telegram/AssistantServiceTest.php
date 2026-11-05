@@ -1077,7 +1077,11 @@ final class AssistantServiceTest extends TelegramTestCase
      * The person (Telegram id 555) and two organizers, answered by what the
      * query asks for rather than from the queues, and every email captured.
      */
-    private function forwardWorld(bool $verified = true): void
+    /**
+     * @param array<string, mixed> $leeExtra columns added to the organizer Lee's row
+     * @param array<string, mixed> $kimExtra columns added to the organizer Kim's row
+     */
+    private function forwardWorld(bool $verified = true, array $leeExtra = [], array $kimExtra = []): void
     {
         $person = [
             'id' => 7,
@@ -1095,14 +1099,14 @@ final class AssistantServiceTest extends TelegramTestCase
                 'email_verified_at' => '2026-01-01 00:00:00',
                 'is_organizer' => 1,
                 'telegram_chat_id' => 501,
-            ],
+            ] + $leeExtra,
             [
                 'id' => 2,
                 'email' => 'kim@example.com',
                 'display_name' => 'Kim',
                 'email_verified_at' => '2026-01-01 00:00:00',
                 'is_organizer' => 1,
-            ],
+            ] + $kimExtra,
         ];
 
         $wpdb = new class ($person, $organizers) extends \FakeWpdb {
@@ -1222,6 +1226,42 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertCount(1, $toLee);
         self::assertStringContainsString('I emailed you a transcript of my private chat with Sam.', $toLee[0]);
         self::assertStringNotContainsString('badly organised', $toLee[0]);
+    }
+
+    public function testAnOrganizerWhoTurnedTheChatRowsTelegramOffGetsOnlyTheEmail(): void
+    {
+        $this->forwardWorld(true, ['notify_prefs' => '{"chat_forward":{"dm":false,"email":true}}']);
+        $this->forwardReply('Thanks!', 'human');
+
+        $this->ask(self::privateMessage('can I talk to a person?'));
+
+        self::assertSame(['lee@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame([], $this->textsTo(501));
+    }
+
+    public function testAnOrganizerWhoTurnedTheChatEmailOffGetsNeitherAndTheOthersStillDo(): void
+    {
+        // The Telegram message only points at the email, so it does not come alone.
+        $this->forwardWorld(true, ['notify_prefs' => '{"chat_forward":{"dm":true,"email":false}}']);
+        $this->forwardReply('Thanks!', 'human');
+
+        $this->ask(self::privateMessage('can I talk to a person?'));
+
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame([], $this->textsTo(501));
+        self::assertStringContainsString('I have passed this chat on to the organizers.', $this->textsTo(555)[0]);
+    }
+
+    public function testWhenNoOrganizerWantsTheChatThePersonIsNotToldItWasPassedOn(): void
+    {
+        $off = ['notify_prefs' => '{"chat_forward":{"dm":false,"email":false}}'];
+        $this->forwardWorld(true, $off, $off);
+        $this->forwardReply('Thanks!', 'human');
+
+        $this->ask(self::privateMessage('can I talk to a person?'));
+
+        self::assertSame([], $this->mails);
+        self::assertStringNotContainsString('passed this chat on', $this->textsTo(555)[0]);
     }
 
     public function testEachKindNamesItselfInTheSubject(): void

@@ -77,4 +77,69 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         self::assertFalse($saved['credit']['dm']);
         self::assertContains('editMessageText', $this->calledMethods());
     }
+
+    /** @return list<string> the types with a row in the keyboard */
+    private function keyboardTypes(): array
+    {
+        $types = [];
+
+        foreach (array_slice($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'], 1) as $row) {
+            $types[] = explode(':', (string) $row[1]['callback_data'])[1];
+        }
+
+        return $types;
+    }
+
+    public function testOnlyAnOrganizerSeesTheOrganizerRows(): void
+    {
+        $row = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555];
+        $row['telegram_chat_id'] = 999;
+
+        $this->wpdb->nextRows[] = $row;
+        $this->service()->start(555, 555);
+        self::assertSame(['standing', 'credit', 'ticket', 'permission', 'open_task'], $this->keyboardTypes());
+
+        $this->wpdb->nextRows[] = $row + ['is_organizer' => 1];
+        $this->service()->start(555, 555);
+        self::assertSame(
+            ['standing', 'credit', 'ticket', 'permission', 'open_task', 'role_news', 'role_met', 'chat_forward'],
+            $this->keyboardTypes()
+        );
+    }
+
+    public function testANonOrganizerCannotToggleAnOrganizerRow(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555];
+
+        $this->service()->onToggle([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:role_met:dm',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testAnOrganizerTogglesAnOrganizerRow(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 999,
+            'is_organizer' => 1,
+        ];
+
+        $this->service()->onToggle([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:chat_forward:email',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        $saved = json_decode((string) $this->wpdb->updates[0]['data']['notify_prefs'], true);
+        self::assertFalse($saved['chat_forward']['email']);
+        self::assertTrue($saved['chat_forward']['dm']);
+    }
 }

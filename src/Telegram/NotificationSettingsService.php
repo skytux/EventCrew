@@ -117,8 +117,17 @@ final class NotificationSettingsService
             ['text' => '✉', 'callback_data' => self::PREFIX . 'noop'],
         ];
 
-        foreach (NotificationPreferences::labels() as $type => $label) {
-            $pref = $map[$type] ?? ['dm' => true, 'email' => true];
+        // The map holds only the rows this person sees (asMap), so the
+        // organizer-only rows reach the organizers alone.
+        $labels = NotificationPreferences::labels(true);
+
+        foreach ($map as $type => $pref) {
+            $label = $labels[$type] ?? '';
+
+            if ('' === $label) {
+                continue;
+            }
+
             $rows[] = [
                 [
                     'text' => $label,

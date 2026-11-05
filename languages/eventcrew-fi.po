@@ -7837,3 +7837,12 @@ msgstr "Lähetetään linkitettyyn Telegram-keskusteluun, kun henkilö on vahvis
 
 msgid "📧 Your crew account email is now %s. If you did not do this, tell an organizer."
 msgstr "📧 Crew-tilisi sähköpostiosoite on nyt %s. Jos et tehnyt tätä itse, kerro järjestäjälle."
+
+msgid "Roles given and new organizers"
+msgstr "Annetut roolit ja uudet järjestäjät"
+
+msgid "Someone meets a role’s conditions"
+msgstr "Joku täyttää roolin ehdot"
+
+msgid "Bot chats sent to organizers"
+msgstr "Botin keskustelut järjestäjille"
