@@ -1488,6 +1488,36 @@ final class SettingsPage
     }
 
     /**
+     * "Post a new board": the /board repost, from wp-admin. A fresh board at
+     * the foot of the group, and the old one deleted where Telegram allows.
+     */
+    public function postBoard(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        if (! $this->telegram->isConfigured()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Add a bot token first, then install the webhook.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        if (! $this->board->hasHome()) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The board has no group yet. Use Add the bot to your group, or send /board in the group once.', 'eventcrew'),
+                'error'
+            );
+        }
+
+        $this->board->repost();
+
+        Admin::redirectTo(self::PAGE_SLUG, __('A new board has been posted in the group.', 'eventcrew'));
+    }
+
+    /**
      * Replaces the webhook secret with a fresh one and re-installs.
      *
      * The secret is the bot's only authentication: anything that can post a
