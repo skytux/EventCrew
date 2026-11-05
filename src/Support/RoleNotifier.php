@@ -21,6 +21,9 @@ use EventCrew\Telegram\TelegramClient;
  *
  * The "given" and "organizer" notices name who did it, when that is known.
  *
+ * Each organizer chooses the channels in their notification settings: "met"
+ * is the ROLE_MET row, "given" and "organizer" share the ROLE_NEWS row.
+ *
  * The record of what was sent is the person's role_notices column
  * ("met:<slug>", "given:<slug>", "made:organizer").
  */
@@ -147,12 +150,19 @@ final class RoleNotifier
             default => 'role_given',
         };
         $context = ['member' => $person, 'role' => $slug, 'giver' => $giverName];
+        // The organizer's own rows in the notification settings.
+        $type = 'met' === $kind ? NotificationPreferences::ROLE_MET : NotificationPreferences::ROLE_NEWS;
+        $prefs = new NotificationPreferences();
 
-        if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
+        if ($prefs->dmAllowed($organizer, $type)) {
             $this->telegram->sendMessage(
                 $organizer->telegramChatId,
                 DmBody::frame($organizer, MessageTemplates::body($template . '_dm', $context))
             );
+        }
+
+        if (! $prefs->emailAllowed($organizer, $type)) {
+            return;
         }
 
         $this->mailer->toPerson(

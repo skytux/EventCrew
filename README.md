@@ -323,6 +323,10 @@ freed-slot calls — can go out by **Telegram DM and email**. Each *convenience*
 type has an independent DM and email toggle, set from the **Notifications** tab on
 the web profile or the 🔔 Notifications button under `/me` (the two share one
 store). Signup/cancellation confirmations and task reminders are always sent.
+Organizers see three more rows, for the notices only they get: roles given and
+new organizers, someone meeting a role's conditions, and bot chats passed on to
+them. The Telegram message about a bot chat only points at its email, so it
+needs the email row on.
 When an organizer deletes a coming task, everyone signed up for it gets an email.
 
 ## Next events announcement

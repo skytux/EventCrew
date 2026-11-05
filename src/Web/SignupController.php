@@ -1085,16 +1085,8 @@ final class SignupController
 
         if (self::PREFS_ACTION === $action) {
             $posted = isset($_POST['prefs']) && is_array($_POST['prefs']) ? wp_unslash($_POST['prefs']) : [];
-            $map = [];
 
-            foreach (array_keys(NotificationPreferences::labels()) as $slug) {
-                $map[$slug] = [
-                    'dm' => isset($posted[$slug]['dm']),
-                    'email' => isset($posted[$slug]['email']),
-                ];
-            }
-
-            $this->people->setNotifyPrefs($person->id, $map);
+            $this->people->setNotifyPrefs($person->id, NotificationPreferences::fromForm($person, $posted));
             $this->finish($redirect, 'prefs_saved', $isAjax);
         }
 

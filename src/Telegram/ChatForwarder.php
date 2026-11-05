@@ -12,6 +12,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NotificationPreferences;
 
 /**
  * Sends a private chat with the bot's language-model helper to the
@@ -21,6 +22,10 @@ use EventCrew\Support\MessageTemplates;
  * Every organizer gets the chat of the last 24 hours (ConversationLog), plus
  * the bot's answer to the newest message, by email to their confirmed
  * address, and a short Telegram message saying so.
+ *
+ * Each organizer chooses in their notification settings (CHAT_FORWARD row)
+ * whether the email and the Telegram message come; the Telegram message
+ * only says the email was sent, so it needs the email.
  *
  * Nothing is sent when the setting is off, when the person has no confirmed
  * email, or when this person's chat was already sent in the last hour.
@@ -105,9 +110,13 @@ final class ChatForwarder
     {
         // The texts are the Messages page templates (MessageTemplates).
         $context = ['member' => $person, 'kind' => $kind, 'transcript' => $this->transcript($entries, $person->name())];
+        $prefs = new NotificationPreferences();
 
+        // The Telegram message only points at the email, so an organizer who
+        // turned the email off gets neither.
         if (
-            ! $this->mailer->toPerson(
+            ! $prefs->emailAllowed($organizer, NotificationPreferences::CHAT_FORWARD)
+            || ! $this->mailer->toPerson(
                 $organizer->id,
                 $organizer->email,
                 MessageTemplates::subject('chat_forward', $context),
@@ -117,7 +126,7 @@ final class ChatForwarder
             return false;
         }
 
-        if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
+        if ($prefs->dmAllowed($organizer, NotificationPreferences::CHAT_FORWARD)) {
             $this->telegram->sendMessage(
                 $organizer->telegramChatId,
                 DmBody::frame($organizer, MessageTemplates::body('chat_forward_dm', $context))

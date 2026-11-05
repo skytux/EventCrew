@@ -305,4 +305,56 @@ final class RoleNotifierTest extends TelegramTestCase
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertSame([], $this->mails);
     }
+
+    // --- each organizer's notification settings ---------------------------
+
+    public function testAnOrganizerWhoTurnedTheMetRowsTelegramOffGetsOnlyTheEmail(): void
+    {
+        $lou = $this->organizerRow() + ['notify_prefs' => '{"role_met":{"dm":false,"email":true}}'];
+        $this->wpdb->nextResults[] = [$lou];
+        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com']];
+        $this->wpdb->nextResults[] = [['role_slug' => 'welcome', 'n' => 2]];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        $this->notifier()->run();
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertCount(1, $this->mails);
+        // Still recorded, so it is not announced again next hour.
+        self::assertArrayHasKey('met:leader', json_decode($this->wpdb->updates[0]['data']['role_notices'], true));
+    }
+
+    public function testRolesGivenAndNewOrganizersShareOneRowThatCanBeTurnedOff(): void
+    {
+        $lou = $this->organizerRow() + ['notify_prefs' => '{"role_news":{"dm":false,"email":false}}'];
+        $jo = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        $this->wpdb->nextRows[] = $jo;
+        $this->wpdb->nextResults[] = [$lou];
+        $this->wpdb->nextRows[] = $jo;
+        $this->notifier()->roleGiven(8, 'leader', 'Sam');
+
+        $this->wpdb->nextRows[] = $jo + ['is_organizer' => 1];
+        $this->wpdb->nextResults[] = [$lou];
+        $this->wpdb->nextRows[] = $jo;
+        $this->notifier()->organizerGiven(8, 'Sam');
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
+        self::assertCount(2, $this->wpdb->updates);
+    }
+
+    public function testTheMetRowDoesNotSilenceTheGivenNotice(): void
+    {
+        $lou = $this->organizerRow() + ['notify_prefs' => '{"role_met":{"dm":false,"email":false}}'];
+        $jo = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+        $this->wpdb->nextRows[] = $jo;
+        $this->wpdb->nextResults[] = [$lou];
+        $this->wpdb->nextRows[] = $jo;
+
+        $this->notifier()->roleGiven(8, 'leader');
+
+        self::assertSame(500, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertCount(1, $this->mails);
+    }
 }
