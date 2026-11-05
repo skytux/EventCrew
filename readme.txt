@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.117
+Stable tag: 1.140.118
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.118 =
+The privacy notice translation note names the original's language and links to the original page (Q329).
 
 = 1.140.117 =
 The ticket buyer privacy notice says the Don't send me these link keeps the address on a do-not-send list (Q327).
@@ -1565,6 +1568,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.118 =
+No settings change.
 
 = 1.140.117 =
 No settings change.
