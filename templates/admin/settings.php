@@ -1052,7 +1052,14 @@ if (! defined('ABSPATH')) {
                 </th>
                 <td>
                     <?php
-                    \EventCrew\Support\TranslatedText::field('app_name', 'eventcrew-app-name', $app_name, 0, false);
+                    \EventCrew\Support\TranslatedText::field(
+                        'app_name',
+                        'eventcrew-app-name',
+                        $app_name,
+                        0,
+                        false,
+                        get_bloginfo('name')
+                    );
                     ?>
                     <p class="description"><?php esc_html_e('Shown under the home-screen icon. Blank uses the site name.', 'eventcrew'); ?></p>
                 </td>
@@ -1368,7 +1375,8 @@ if (! defined('ABSPATH')) {
                         'eventcrew-signature',
                         $signature,
                         0,
-                        true
+                        true,
+                        __('Barefoot and with ♥ — the Example crew', 'eventcrew')
                     );
                     ?>
                     <p class="description">

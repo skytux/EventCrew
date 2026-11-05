@@ -518,6 +518,9 @@ final class SettingsPage
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
+        // Before the roles and the other texts, so they are translated (or
+        // not) by the new switch.
+        $this->saveTranslateSwitch();
         Roles::save($this->submittedRoles());
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
@@ -800,8 +803,6 @@ final class SettingsPage
         $this->savePrivacy();
         $assistantError = $this->saveAssistant();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
-        // Before the bot texts, so they are translated (or not) by the new switch.
-        $this->saveTranslateSwitch();
         $profile = $this->saveBotProfile();
         $followupError = $this->saveFollowupTexts();
         $ticketError = $this->saveTicketText();

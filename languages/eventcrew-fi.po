@@ -4016,6 +4016,9 @@ msgstr "Jokainen ilmoitus lähetetään muotoiltuna HTML-sähköpostina, jonka y
 msgid "Signature"
 msgstr "Allekirjoitus"
 
+msgid "Barefoot and with ♥ — the Example crew"
+msgstr "Paljain jaloin ja ♥:llä — Example-crew"
+
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
 msgstr "Teksti, jolla crew’si lopettaa viestit. Se on jokaisen ilmoitussähköpostin lopussa sekä kaikille lähtevissä Telegram-viesteissä — avoimien tehtävien kutsussa, muistutuksissa ja ”paikka vapautui” -ilmoituksessa. Jätä tyhjäksi, jos et halua lopputervehdystä."
 
