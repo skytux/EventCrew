@@ -69,7 +69,7 @@ final class NewsletterConfirmMail
                 $site,
                 $contact
             ),
-            'button' => __('Write to us', 'eventcrew'),
+            'button' => __('Message', 'eventcrew'),
         ];
     }
 
