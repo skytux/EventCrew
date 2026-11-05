@@ -112,8 +112,8 @@ final class FollowupMailTest extends TestCase
             return true;
         });
         Functions\when('wp_mail')->alias(
-            function (string $to, string $subject, string $body): bool {
-                $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body];
+            function (string $to, string $subject, string $body, mixed $headers = []): bool {
+                $this->mails[] = ['to' => $to, 'subject' => $subject, 'body' => $body, 'headers' => $headers];
 
                 return ! in_array($to, $this->failing, true);
             }
@@ -684,6 +684,47 @@ final class FollowupMailTest extends TestCase
         self::assertSame("g\n9", SignedLink::verifyPayload(FollowupMail::PURPOSE_OPTOUT, $token[1]));
         self::assertStringContainsString("Don't send me these", html_entity_decode($mail['html'], ENT_QUOTES));
         self::assertStringContainsString('eventcrew_optout=' . $token[1], $mail['text']);
+    }
+
+    /** Q328: the email carries List-Unsubscribe headers with the same link, for one-click unsubscribe. */
+    public function testTheEmailHasListUnsubscribeHeadersWithTheOptOutLink(): void
+    {
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 4);
+
+        self::assertSame(
+            [
+                'List-Unsubscribe: <' . FollowupMail::optOutUrl('b', 4) . '>',
+                'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+            ],
+            $mail['headers']
+        );
+        self::assertStringStartsWith('List-Unsubscribe: <https://', $mail['headers'][0]);
+        self::assertStringNotContainsString('mailto:', $mail['headers'][0]);
+    }
+
+    public function testTheSentEmailCarriesTheListUnsubscribeHeaders(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        $sent = array_values(array_filter(
+            $this->mails,
+            static fn (array $mail): bool => 'anna@example.test' === $mail['to']
+        ));
+        self::assertCount(1, $sent);
+        self::assertContains('Content-Type: text/html; charset=UTF-8', $sent[0]['headers']);
+        self::assertContains(
+            'List-Unsubscribe: <' . FollowupMail::optOutUrl('b', 1) . '>',
+            $sent[0]['headers']
+        );
+        self::assertContains('List-Unsubscribe-Post: List-Unsubscribe=One-Click', $sent[0]['headers']);
+    }
+
+    public function testNoListUnsubscribeHeadersForALinkThatIsNotHttps(): void
+    {
+        self::assertSame([], FollowupMail::unsubscribeHeaders('http://site.test/?eventcrew_optout=x'));
     }
 
     public function testTheOptOutLinkPutsTheRowsAddressOnTheList(): void
