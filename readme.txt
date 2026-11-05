@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.69
+Stable tag: 1.140.70
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.70 =
+The bot language question and the language switch on the crew page now offer every site language, main language first, each written in its own name (Suomi, English, Svenska...). The bot shows three buttons per row; the crew page switch wraps onto a new line when there are many.
 
 = 1.140.69 =
 The organizer notices (role met, role given, made organizer), the forged-request alert, the import emails and the bot chat forward can now be edited on the Messages page. The bot-chat subjects and the transcript line are no longer listed as Bot answers on the Translations page; a hand-edited language text there must be entered again under Messages.
@@ -1421,6 +1424,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.70 =
+No settings change.
 
 = 1.140.69 =
 No settings change.
