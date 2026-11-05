@@ -785,6 +785,7 @@ final class MessageTemplates
                 ]
             ),
             // End of Q297 group A.
+            ...self::welcomeAndDoorKinds($name),
             // TODO(messages): TicketMail does not read this template yet. It is
             // being rewritten (2026-11-05); its compose()/words() should call
             // MessageTemplates::subject('ticket', $context) and body() with
@@ -866,6 +867,200 @@ final class MessageTemplates
                     ),
                 ],
                 false
+            ),
+        ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
+    /**
+     * The welcome message (WelcomeSender), the new member email of the sales
+     * desk (DoorNewMember), and the sales desk link and the organizer notice
+     * (DoorLinkSender). Their sign-in links are buttons under the text, not
+     * placeholders, so no text can lose them.
+     *
+     * @param array{description: string, resolve: Closure(array<string, mixed>): string} $name
+     * @return list<MessageTemplate>
+     */
+    private static function welcomeAndDoorKinds(array $name): array
+    {
+        $email = MessageTemplate::CHANNEL_EMAIL;
+        $telegram = MessageTemplate::CHANNEL_TELEGRAM;
+        $given = static fn (string $key): Closure => static fn (array $c): string => (string) ($c[$key] ?? '');
+        $setting = static fn (string $key): Closure => static fn (): string => WelcomeSender::sectionValues()[$key];
+        /* translators: %s: the person's first name */
+        $hi = static fn (): string => self::tag(__('Hi %s,', 'eventcrew'), ['%s' => '{name}']) . "\n\n";
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $crew = self::placeholder(
+            __('The crew’s name (the site name).', 'eventcrew'),
+            static fn (): string => trim((string) get_bloginfo('name'))
+        );
+        $helpLine = self::placeholder(
+            __('An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set.', 'eventcrew'),
+            $given('help_line')
+        );
+        $welcome = [
+            'crew' => $crew,
+            'roles' => self::placeholder(
+                __('The tasks on offer, one line each, with what each one involves.', 'eventcrew'),
+                $setting('roles')
+            ),
+            'tasks_per_credit' => self::placeholder(
+                __('How many completed tasks earn one free-entry credit (Settings).', 'eventcrew'),
+                $setting('tasks_per_credit')
+            ),
+            'outcomes' => self::placeholder(
+                __('How each way a task can go counts for standing, one line each, in percent (Settings).', 'eventcrew'),
+                $setting('outcomes')
+            ),
+            'notice_hours' => self::placeholder(
+                __('How many hours before a task a cancellation counts as late (Settings).', 'eventcrew'),
+                $setting('notice_hours')
+            ),
+            'rated_tasks' => self::placeholder(
+                __('How many finished tasks a person needs before they get a rating (Settings).', 'eventcrew'),
+                $setting('rated_tasks')
+            ),
+            'good_standing' => self::placeholder(
+                __('The percentage that is good standing (Settings).', 'eventcrew'),
+                $setting('good_standing')
+            ),
+            'gate_rule' => self::placeholder(
+                __('A space, then the sentence that people below good standing cannot sign up for new tasks. Empty when that rule is off in Settings.', 'eventcrew'),
+                $setting('gate_rule')
+            ),
+            'open_tasks' => self::placeholder(
+                __('The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so.', 'eventcrew'),
+                $given('open_tasks')
+            ),
+            'help_line' => $helpLine,
+        ];
+        $day = self::placeholder(__('The day of the event, like Sat 1 Aug.', 'eventcrew'), $given('day'));
+
+        $salesDesk = static fn (): string => self::tag(
+            /* translators: %s: event day, e.g. "Sat 1 Aug" */
+            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
+            ['%s' => '{day}']
+        );
+        $organizing = static fn (): string => self::tag(
+            /* translators: %s: event day, e.g. "Sat 1 Aug" */
+            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
+            ['%s' => '{day}']
+        );
+
+        return [
+            new MessageTemplate(
+                WelcomeSender::KIND_EMAIL,
+                __('Welcome message (email)', 'eventcrew'),
+                $email,
+                __('Sent once to each member when their email address is confirmed: how tasks, tickets, credits and standing work, and the open tasks. Only when the welcome message is on in Settings.', 'eventcrew'),
+                static fn (): string => WelcomeSender::subject(),
+                static fn (): string => $hi() . WelcomeSender::bodyTemplate(),
+                ['name' => $name] + $welcome
+            ),
+            new MessageTemplate(
+                WelcomeSender::KIND_DM,
+                __('Welcome message (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings.', 'eventcrew'),
+                null,
+                static fn (): string => WelcomeSender::bodyTemplate(),
+                $welcome
+            ),
+            new MessageTemplate(
+                WelcomeSender::KIND_ORG_EMAIL,
+                __('Organizer guide (email)', 'eventcrew'),
+                $email,
+                __('Sent once to each organizer, with the whole organizer guide. Only when the welcome message is on in Settings.', 'eventcrew'),
+                static fn (): string => OrganizerGuide::subject(),
+                static fn (): string => $hi() . WelcomeSender::organizerIntroTemplate() . "{help_line}\n\n{guide}",
+                [
+                    'name' => $name,
+                    'crew' => $crew,
+                    'help_line' => $helpLine,
+                    'guide' => self::placeholder(
+                        __('The whole organizer guide. It is made from the settings when it is sent.', 'eventcrew'),
+                        $given('guide')
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                WelcomeSender::KIND_ORG_DM,
+                __('Organizer guide (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings.', 'eventcrew'),
+                null,
+                static fn (): string => WelcomeSender::organizerIntroTemplate() . "\n\n{guide}\n\n"
+                    . __('The full guide, with the details, is in your email.', 'eventcrew') . '{help_line}',
+                [
+                    'crew' => $crew,
+                    'guide' => self::placeholder(
+                        __('The short part of the organizer guide ("In short"). It is made from the settings when it is sent.', 'eventcrew'),
+                        $given('guide')
+                    ),
+                    'help_line' => $helpLine,
+                ]
+            ),
+            new MessageTemplate(
+                'door_new_member',
+                __('New member added at the door (email)', 'eventcrew'),
+                $email,
+                __('Sent when the sales desk adds a new member. The first button under the text confirms their email address and signs them in. The greeting above the text and the privacy line under it are always added, in the member\'s language.', 'eventcrew'),
+                static fn (): string => __('Welcome to the crew', 'eventcrew'),
+                static fn (): string => __(
+                    "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours.",
+                    'eventcrew'
+                ) . '{group_line}',
+                [
+                    'group_line' => self::placeholder(
+                        __('An empty line, then the line about the button that opens the crew’s Telegram group. Empty when no group link is known; then there is no such button.', 'eventcrew'),
+                        $given('group_line')
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                'sales_desk_link',
+                __('Sales desk link (email)', 'eventcrew'),
+                $email,
+                __('Sent on an event night to the people on a sales desk task, once they are marked arrived. The button under the text opens the sales desk.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
+                    __('Sales desk for %s', 'eventcrew'),
+                    ['%s' => '{day}']
+                ),
+                $salesDesk,
+                ['day' => $day]
+            ),
+            new MessageTemplate(
+                'sales_desk_link_dm',
+                __('Sales desk link (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent on an event night to the people on a sales desk task, once they are marked arrived, and to anyone who asks with /door. The button under the text opens the sales desk.', 'eventcrew'),
+                null,
+                $salesDesk,
+                ['day' => $day]
+            ),
+            new MessageTemplate(
+                'organizer_notice',
+                __('Organizer on the night (email)', 'eventcrew'),
+                $email,
+                __('Sent on an event night to the organizers signed up on the Organize task, before the first task starts. The buttons under the text open the sales desk and the Admin tab.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: event day, e.g. "Sat 1 Aug" */
+                    __('You are organizing on %s', 'eventcrew'),
+                    ['%s' => '{day}']
+                ),
+                $organizing,
+                ['day' => $day]
+            ),
+            new MessageTemplate(
+                'organizer_notice_dm',
+                __('Organizer on the night (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent on an event night to the organizers signed up on the Organize task, before the first task starts. The buttons under the text open the sales desk and the Admin tab.', 'eventcrew'),
+                null,
+                $organizing,
+                ['day' => $day]
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong

@@ -1,0 +1,17 @@
+EMAIL Welcome to the crew
+
+Hi Person,
+
+You were added to the crew at the door. Welcome!
+
+The first button confirms your email address and signs you in. It works once, for 24 hours.
+
+The second button opens the crew’s Telegram group, where tasks are posted.
+
+We store your email to run the crew.
+
+Confirm my email: https://site.test/crew/?eventcrew_login=TOKEN
+Join the Telegram group: https://t.me/+door
+
+—
+Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

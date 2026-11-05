@@ -105,22 +105,17 @@ final class DoorNewMember
     private function sendWelcome(Person $person, string $email): void
     {
         $actions = [['label' => __('Confirm my email', 'eventcrew'), 'url' => $this->loginUrl($person->id)]];
-        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        $body = __(
-            "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours.",
-            'eventcrew'
-        );
-        // phpcs:enable Generic.Files.LineLength.TooLong
+        // The texts are the Messages page template (MessageTemplates).
+        $context = ['person' => $person, 'group_line' => ''];
 
         $invite = $this->groupInvite();
 
         if ('' !== $invite) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            $body .= "\n\n" . __('The second button opens the crew’s Telegram group, where tasks are posted.', 'eventcrew');
+            $context['group_line'] = "\n\n" . __('The second button opens the crew’s Telegram group, where tasks are posted.', 'eventcrew');
             $actions[] = ['label' => __('Join the Telegram group', 'eventcrew'), 'url' => $invite];
         }
 
-        $body .= "\n\n" . PrivacyPolicy::noticeLine();
         $noticeUrl = PrivacyPolicy::noticeUrl();
 
         if ('' !== $noticeUrl) {
@@ -130,8 +125,13 @@ final class DoorNewMember
         $this->mailer->toPerson(
             $person->id,
             $email,
-            __('Welcome to the crew', 'eventcrew'),
-            EmailBody::withGreeting($person->displayName, $body),
+            MessageTemplates::subject('door_new_member', $context),
+            // The greeting and the privacy line are added here, in the new
+            // member's language, so an edited text cannot lose them.
+            EmailBody::withGreeting(
+                $person->displayName,
+                MessageTemplates::body('door_new_member', $context) . "\n\n" . PrivacyPolicy::noticeLine()
+            ),
             $actions
         );
     }

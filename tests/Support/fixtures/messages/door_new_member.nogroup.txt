@@ -1,0 +1,14 @@
+EMAIL Welcome to the crew
+
+Hi Person,
+
+You were added to the crew at the door. Welcome!
+
+The first button confirms your email address and signs you in. It works once, for 24 hours.
+
+We store your email to run the crew.
+
+Confirm my email: https://site.test/crew/?eventcrew_login=TOKEN
+
+—
+Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

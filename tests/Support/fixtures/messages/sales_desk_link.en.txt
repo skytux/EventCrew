@@ -1,0 +1,10 @@
+EMAIL Sales desk for Mon 20 Jul
+
+Hi Person,
+
+Door list for Mon 20 Jul: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.
+
+🚪 Open the sales desk: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_door&t=TOKEN&d=2026-07-20&s=TOKEN
+
+—
+Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

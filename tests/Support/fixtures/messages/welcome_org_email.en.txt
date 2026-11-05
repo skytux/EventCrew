@@ -1,0 +1,117 @@
+EMAIL Organizer guide: how EventCrew works
+
+Hi Person 3,
+
+You are an organizer of Test Crew. This guide explains how EventCrew works, first in short and then in detail.
+
+📖 This guide is also in the Crew app, in the Help tab, after you sign in: https://site.test/crew/#eventcrew-help-organizer
+
+📑 Contents
+
+- ⚡ In short
+- 🗓️ Tasks and events
+- 📣 The board and sign-up
+- 🌙 On the night: roster and sales desk
+- 🎟️ Tickets, credits and standing
+- 🔑 Roles and permissions
+- 🔔 Automatic messages
+- ⚙️ The wp-admin pages
+
+⚡ In short
+
+- 🗓️ Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night.
+- ✋ Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group.
+- 🌙 On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /door, then 💳 Sales desk, sends you the link.
+- 🎁 Credits: members earn 1 free-entry credit per 2 completed tasks. /people, then 🎁 Give credits, gives credits by hand.
+- 📈 Standing: 60% or higher is good standing. It comes from how each member's past tasks went.
+- 🔑 Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.
+- 🎧 Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /board in a private chat and in the Crew app. You can add someone there, even a person who is not a crew member.
+- 🔔 Messages: reminders and calls go out by themselves, only between 09:00 and 21:00.
+- ⚙️ wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running.
+- 🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+
+🗓️ Tasks and events
+
+A role is a kind of job, for example Welcome or Clean. You set the roles in Settings: name, emoji, a short description, how many people, and when it starts and ends compared to the event.
+
+A task is one role on one date. In EventCrew > Tasks you create tasks one by one, or all the tasks of a night at once from the roles. A task can be linked to an event, so it shows under the event's name. A task set to 0 people stays saved but leaves the board.
+
+📣 The board and sign-up
+
+The board in the Telegram group lists the open tasks under each event and date. Each task is a button that shows its role, time and places taken; a member taps it to sign up. It updates itself whenever something changes. /board in the group posts a new copy at the bottom. Settings > Telegram bot > Refresh the board redraws it in place.
+
+A new member sends /start to the bot in a private chat and confirms their email address. On the web sign-up page they sign in with a link sent to their email. Both follow the same rules.
+
+If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours, and in the group what each person wrote to it, separately, also for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot).
+
+Cancelling less than 48 hours before the task counts as a late cancellation. A member who cannot come can ask someone else to take the task with 🔁 Take over a task under /me.
+
+🌙 On the night: roster and sales desk
+
+/roster in a private chat with the bot shows the night's crew. Mark each person arrived, arrived late, completed or no-show, one by one or a whole crew at once. EventCrew > Roster in wp-admin does the same for any date. The night's welcome crew can mark the crew too.
+
+The sales desk is a web page for the door. It shows tonight's list: the crew, members with a free-entry ticket, guests and Holvi ticket buyers. You mark people in and out and say how many people they brought. Add sells a ticket at the door, adds a guest, or adds a member who spends a credit or takes one of tonight's tasks.
+
+When you are signed up for the night's Organize task, you get the sales desk link 30 minutes before the night's first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked "Opens the sales desk") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list.
+
+Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under "Holvi ticket buyers". A name already on the list is skipped.
+
+After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket's QR code, in every site language, or in one language when its Hybrid tick in Settings > Email is off. Roster and the Admin tab show how many were sent, failed or not sent yet. "Send a test to me" sends one to your own address; "Send the rest now" sends every ticket not sent yet, failed ones too.
+
+Every send waits 10 minutes before anything goes out, whether an import or "Send the rest now" started it. Until then, Roster and the Admin tab show the time, how many get an email, and a "Cancel sending" button. Cancelling sends nothing; those tickets stay not sent. "Send a test to me" is not delayed.
+
+The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short "Your ticket is cancelled" email.
+
+🎟️ Tickets, credits and standing
+
+Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot.
+
+Members earn 1 free-entry credit per 2 completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.
+
+Standing is worked out again each time from how a member's past tasks went; recent tasks count more. A member gets a rating after 3 finished tasks. 60% or higher is good standing. Settings > Reputation holds the weights and limits.
+
+The sign-up gate is on: a member below 60% cannot sign up for new tasks. /people can give them a one-time pass.
+
+🔑 Roles and permissions
+
+A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role's conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role.
+
+As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk.
+
+/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.
+
+🔔 Automatic messages
+
+- 🔹 Sign-up and cancellation confirmations, at once.
+- 🔹 A reminder 24 hours before each task.
+- 🔹 A call to all members when tasks still need people.
+- 🔹 Notices about standing, credits, tickets and permissions.
+- 🔹 The sales desk link on the night.
+- 🔹 A welcome message to each new member when they confirm their email, and this guide to each organizer.
+
+The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go.
+
+📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into every site language.
+
+💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone who had a ticket and gave an email address: a thank-you to those who were checked in at the door, and a kind "sorry we missed you" to those who were not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a "Send a test to me" button. The Roster page shows how many were sent and how many people opened a link.
+
+✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts.
+
+📸 /events, in a private chat with the bot, shows you the next 5 coming events as cards: the picture, the date, the price, a short description, and buttons to buy a ticket and to listen to the DJ. Tap Confirm and the bot posts the same cards in the group; tap Cancel and nothing is sent. You can also ask the bot in your own words which events come next.
+
+⚙️ The wp-admin pages
+
+- 🔹 Tasks: create, change and remove tasks.
+- 🔹 People: members, their history and credits, the credit log, organizers, and the Role conditions tab.
+- 🔹 Roster: attendance and the door list for any date, and the Holvi ticket buyers.
+- 🔹 Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message.
+- 🔹 Email template: how every email looks.
+- 🔹 Bot log: which bot commands and buttons each person used on a day. Message text is not stored.
+- 🔹 Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail.
+
+🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+
+Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+
+—
+Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

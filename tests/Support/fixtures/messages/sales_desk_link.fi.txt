@@ -1,0 +1,10 @@
+EMAIL Myyntipiste Mon 20 Jul
+
+Hei Person,
+
+Ovilista Mon 20 Jul: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? Lähetä botille /door ja napauta 💳 Myyntipiste.
+
+🚪 Avaa myyntipiste: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_door&t=TOKEN&d=2026-07-20&s=TOKEN
+
+—
+Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

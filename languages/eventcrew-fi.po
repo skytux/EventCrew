@@ -7160,3 +7160,96 @@ msgstr "Lähetetään, kun henkilö kirjoittaa sähköpostinsa Telegram-bottiin.
 
 msgid "The name the person has in Telegram, or their email address when there is none."
 msgstr "Henkilön nimi Telegramissa, tai hänen sähköpostiosoitteensa, jos nimeä ei ole."
+
+msgid "The crew’s name (the site name)."
+msgstr "Tiimin nimi (sivuston nimi)."
+
+msgid "An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set."
+msgstr "Tyhjä rivi ja sen jälkeen rivi, jossa on linkki Crew-sovelluksen Ohje-välilehdelle. Tyhjä, kun tiimisivua ei ole asetettu."
+
+msgid "The tasks on offer, one line each, with what each one involves."
+msgstr "Tarjolla olevat tehtävät, kukin omalla rivillään, ja mitä kukin sisältää."
+
+msgid "How many completed tasks earn one free-entry credit (Settings)."
+msgstr "Montako tehtyä tehtävää antaa yhden ilmaisen sisäänpääsyn hyvityksen (Asetukset)."
+
+msgid "How each way a task can go counts for standing, one line each, in percent (Settings)."
+msgstr "Miten kukin tehtävän lopputulos lasketaan luotettavuuteen, kukin omalla rivillään, prosentteina (Asetukset)."
+
+msgid "How many hours before a task a cancellation counts as late (Settings)."
+msgstr "Montako tuntia ennen tehtävää tehty peruutus lasketaan myöhäiseksi (Asetukset)."
+
+msgid "How many finished tasks a person needs before they get a rating (Settings)."
+msgstr "Montako päättynyttä tehtävää henkilö tarvitsee ennen kuin hän saa arvion (Asetukset)."
+
+msgid "The percentage that is good standing (Settings)."
+msgstr "Prosenttiosuus, joka on hyvä taso (Asetukset)."
+
+msgid "A space, then the sentence that people below good standing cannot sign up for new tasks. Empty when that rule is off in Settings."
+msgstr "Välilyönti ja sen jälkeen lause, jonka mukaan hyvän tason alittavat eivät voi ilmoittautua uusiin tehtäviin. Tyhjä, kun sääntö on pois päältä Asetuksissa."
+
+msgid "The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so."
+msgstr "Seuraavat avoimet tehtävät, kukin omalla rivillään, ja rivi siitä, miten ilmoittaudutaan. Kun niitä ei ole, rivi joka kertoo sen."
+
+msgid "The day of the event, like Sat 1 Aug."
+msgstr "Tapahtuman päivä, esimerkiksi la 1.8."
+
+msgid "Welcome message (email)"
+msgstr "Tervetuloviesti (sähköposti)"
+
+msgid "Sent once to each member when their email address is confirmed: how tasks, tickets, credits and standing work, and the open tasks. Only when the welcome message is on in Settings."
+msgstr "Lähetetään kerran jokaiselle jäsenelle, kun hänen sähköpostiosoitteensa on vahvistettu: miten tehtävät, liput, hyvitykset ja luotettavuus toimivat, sekä avoimet tehtävät. Vain kun tervetuloviesti on päällä Asetuksissa."
+
+msgid "Welcome message (Telegram)"
+msgstr "Tervetuloviesti (Telegram)"
+
+msgid "Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings."
+msgstr "Lähetetään kerran jokaiselle botin käyttäjälle, ja jokaiselle avoimelle tehtävälle on painike. Vain kun tervetuloviesti on päällä Asetuksissa."
+
+msgid "Organizer guide (email)"
+msgstr "Järjestäjän opas (sähköposti)"
+
+msgid "Sent once to each organizer, with the whole organizer guide. Only when the welcome message is on in Settings."
+msgstr "Lähetetään kerran jokaiselle järjestäjälle, ja mukana on koko järjestäjän opas. Vain kun tervetuloviesti on päällä Asetuksissa."
+
+msgid "The whole organizer guide. It is made from the settings when it is sent."
+msgstr "Koko järjestäjän opas. Se kootaan asetuksista lähetyksen hetkellä."
+
+msgid "Organizer guide (Telegram)"
+msgstr "Järjestäjän opas (Telegram)"
+
+msgid "Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings."
+msgstr "Lähetetään kerran jokaiselle botin käyttäjälle, joka on järjestäjä, ja mukana on järjestäjän oppaan lyhyt osa. Vain kun tervetuloviesti on päällä Asetuksissa."
+
+msgid "The short part of the organizer guide (\"In short\"). It is made from the settings when it is sent."
+msgstr "Järjestäjän oppaan lyhyt osa (\"Lyhyesti\"). Se kootaan asetuksista lähetyksen hetkellä."
+
+msgid "New member added at the door (email)"
+msgstr "Ovella lisätty uusi jäsen (sähköposti)"
+
+msgid "Sent when the sales desk adds a new member. The first button under the text confirms their email address and signs them in. The greeting above the text and the privacy line under it are always added, in the member's language."
+msgstr "Lähetetään, kun myyntipiste lisää uuden jäsenen. Tekstin alla oleva ensimmäinen painike vahvistaa hänen sähköpostiosoitteensa ja kirjaa hänet sisään. Tervehdys tekstin yläpuolelle ja tietosuojarivi sen alle lisätään aina, jäsenen kielellä."
+
+msgid "An empty line, then the line about the button that opens the crew’s Telegram group. Empty when no group link is known; then there is no such button."
+msgstr "Tyhjä rivi ja sen jälkeen rivi painikkeesta, joka avaa tiimin Telegram-ryhmän. Tyhjä, kun ryhmän linkkiä ei tiedetä; silloin painiketta ei ole."
+
+msgid "Sales desk link (email)"
+msgstr "Myyntipisteen linkki (sähköposti)"
+
+msgid "Sent on an event night to the people on a sales desk task, once they are marked arrived. The button under the text opens the sales desk."
+msgstr "Lähetetään tapahtumailtana myyntipisteen tehtävässä oleville, kun heidät on merkitty saapuneiksi. Tekstin alla oleva painike avaa myyntipisteen."
+
+msgid "Sales desk link (Telegram)"
+msgstr "Myyntipisteen linkki (Telegram)"
+
+msgid "Sent on an event night to the people on a sales desk task, once they are marked arrived, and to anyone who asks with /door. The button under the text opens the sales desk."
+msgstr "Lähetetään tapahtumailtana myyntipisteen tehtävässä oleville, kun heidät on merkitty saapuneiksi, ja kaikille, jotka pyytävät sitä komennolla /door. Tekstin alla oleva painike avaa myyntipisteen."
+
+msgid "Organizer on the night (email)"
+msgstr "Illan järjestäjä (sähköposti)"
+
+msgid "Sent on an event night to the organizers signed up on the Organize task, before the first task starts. The buttons under the text open the sales desk and the Admin tab."
+msgstr "Lähetetään tapahtumailtana Järjestelyt-tehtävään ilmoittautuneille järjestäjille ennen ensimmäisen tehtävän alkua. Tekstin alla olevat painikkeet avaavat myyntipisteen ja Ylläpito-välilehden."
+
+msgid "Organizer on the night (Telegram)"
+msgstr "Illan järjestäjä (Telegram)"

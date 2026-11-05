@@ -1,0 +1,11 @@
+EMAIL You are organizing on Mon 20 Jul
+
+Hi Person,
+
+You are organizing on Mon 20 Jul. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.
+
+🚪 Open the sales desk: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_door&t=TOKEN&d=2026-07-20&s=TOKEN
+🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin
+
+—
+Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN
