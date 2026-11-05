@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.71
+Stable tag: 1.140.72
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.72 =
+Settings > Email has four new fields under the ticket email text: the line for a bought ticket, a guest-list ticket, a crew ticket and a free-entry ticket, one text per site language. Empty means the built-in line. They are also rows on the Translations page.
 
 = 1.140.71 =
 The switch Translate texts automatically with the language model is removed from the Settings page; it is now only on the Translations page. Saving the Settings page never changes it.
@@ -1427,6 +1430,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.72 =
+No settings change.
 
 = 1.140.71 =
 No settings change.
