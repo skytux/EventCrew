@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.56
+Stable tag: 1.140.57
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.57 =
+Saving the roster no longer undoes marks made after you opened the page. Before, Update attendance wrote every row shown, so a door check-in, a cancellation or a takeover made in the meantime went back to the old status. Now only the rows you changed are saved; a row someone else changed since you opened the page is left alone, and the notice says how many and asks you to reload. Applies to the wp-admin Roster page and the crew app.
 
 = 1.140.56 =
 Site languages and one way to manage them (Q284, Q287, Q292, Q295): Settings lists the site languages (any number for single-language texts, at most 3 shown side by side in hybrid messages). A new Translations page shows every editable text, the bot answers and buttons included, in every site language, with machine drafts you can correct. Every translated field (app name, signature, role names and descriptions, ticket note, ticket email text) works the same way, with a language menu for the text you write. The bot and crew app speak each person their own language when a translation exists, English otherwise.
@@ -1382,6 +1385,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.57 =
+No settings change.
 
 = 1.140.56 =
 No settings change.
