@@ -17,10 +17,10 @@ use EventCrew\Telegram\TelegramClient;
  * says OK.
  *
  * - When they confirm their email the first time, the organizers get
- *   "New: <name> wants to join": by Telegram with OK and No buttons, or
- *   by email (with a button to the Admin tab) to organizers without
- *   Telegram. Each organizer's NotificationPreferences::NEWCOMER row
- *   decides whether they get it.
+ *   "New: <name> wants to join": by Telegram with OK and No buttons
+ *   (organizers with Telegram) and by email with a button to the Admin
+ *   tab. Each organizer's NotificationPreferences::NEWCOMER row switches
+ *   either route off; both are on by default.
  * - The first organizer to press OK or No decides
  *   (PersonRepository::decideNewcomer()); a later press is told who did.
  * - On OK the newcomer is told: by Telegram if linked, else by email. On
@@ -194,22 +194,21 @@ final class NewcomerApproval
             : '✅ ' . sprintf(__('OK, by %s.', 'eventcrew'), $by);
     }
 
-    /** One organizer, in their language: Telegram if they have it, else email. */
+    /**
+     * One organizer, in their language: by Telegram (if they have it) and by
+     * email, each unless they switched that route off.
+     */
     private function ask(Person $organizer, Person $person): void
     {
         $context = ['member' => $person];
         $prefs = new NotificationPreferences();
 
-        if (null !== $organizer->telegramChatId) {
-            if ($prefs->dmAllowed($organizer, NotificationPreferences::NEWCOMER)) {
-                $this->telegram->sendMessage(
-                    $organizer->telegramChatId,
-                    DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', $context)),
-                    self::markup($person->id)
-                );
-            }
-
-            return;
+        if ($prefs->dmAllowed($organizer, NotificationPreferences::NEWCOMER)) {
+            $this->telegram->sendMessage(
+                $organizer->telegramChatId,
+                DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', $context)),
+                self::markup($person->id)
+            );
         }
 
         if (! $prefs->emailAllowed($organizer, NotificationPreferences::NEWCOMER)) {
