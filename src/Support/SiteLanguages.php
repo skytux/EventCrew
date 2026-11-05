@@ -138,6 +138,34 @@ final class SiteLanguages
         };
     }
 
+    /**
+     * The name of $code written in that language itself ("Suomi",
+     * "Svenska"), or the code itself for an unknown code.
+     */
+    public static function ownName(string $code): string
+    {
+        return self::KNOWN[$code][1] ?? $code;
+    }
+
+    /**
+     * The languages a person can choose for themselves (the bot's language
+     * question and the crew page's language switch): every site language,
+     * main language first, each with its own name. The names are not
+     * translated, so a reader can find theirs whichever language is on.
+     *
+     * @return array<string, string> code => own name
+     */
+    public static function choices(): array
+    {
+        $choices = [];
+
+        foreach (self::codes() as $code) {
+            $choices[$code] = self::ownName($code);
+        }
+
+        return $choices;
+    }
+
     /** Whether the language model is asked which language a text is written in. */
     public static function detectEnabled(): bool
     {

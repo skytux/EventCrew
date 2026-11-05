@@ -6,10 +6,11 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Language;
+use EventCrew\Support\SiteLanguages;
 
 /**
- * Which language the bot writes to a Telegram user in, and the "Suomi /
- * English" question that sets it.
+ * Which language the bot writes to a Telegram user in, and the language
+ * question (one button per site language) that sets it.
  *
  * The choice lives on the person record. Someone who has no record yet - a
  * newcomer who has not given an email - keeps the choice in a transient keyed
@@ -23,8 +24,11 @@ use EventCrew\Support\Language;
  */
 final class LanguageService
 {
-    /** Callback data prefix for a choice: lang:<en|fi>. */
+    /** Callback data prefix for a choice: lang:<site language code>. */
     public const PREFIX = 'lang:';
+
+    /** The language buttons in one row of the question. */
+    private const BUTTONS_PER_ROW = 3;
 
     private const CHOICE_PREFIX = 'eventcrew_tg_language_';
     private const PENDING_PREFIX = 'eventcrew_tg_language_pending_';
@@ -42,7 +46,7 @@ final class LanguageService
     }
 
     /**
-     * 'en' or 'fi' as this Telegram user chose it, or null if they have not
+     * The language code this Telegram user chose, or null if they have not
      * chosen yet (which reads as English everywhere).
      */
     public function languageFor(int $telegramUserId): ?string
@@ -68,7 +72,7 @@ final class LanguageService
     }
 
     /**
-     * Sends the "Suomi / English" question, keeping $pendingMessage (the
+     * Sends the language question, keeping $pendingMessage (the
      * command the person sent) to be run once they answer.
      *
      * @param array<string, mixed>|null $pendingMessage
@@ -81,20 +85,25 @@ final class LanguageService
             delete_transient(self::PENDING_PREFIX . $telegramUserId);
         }
 
-        // Both languages at once and not through gettext: the reader has not
-        // chosen yet, so the question has to make sense to either of them.
+        // Finnish and English at once and not through gettext: the reader has
+        // not chosen yet, so the question has to make sense to either of them.
+        // One button per site language, main language first, each in its own
+        // name, BUTTONS_PER_ROW to a row.
+        $buttons = [];
+
+        foreach (SiteLanguages::choices() as $code => $name) {
+            $buttons[] = ['text' => $name, 'callback_data' => self::PREFIX . $code];
+        }
+
         $this->telegram->sendMessage(
             $chatId,
             'Valitse kieli · Choose your language',
-            ['inline_keyboard' => [[
-                ['text' => 'Suomi', 'callback_data' => self::PREFIX . Language::FINNISH],
-                ['text' => 'English', 'callback_data' => self::PREFIX . Language::ENGLISH],
-            ]]]
+            ['inline_keyboard' => array_chunk($buttons, self::BUTTONS_PER_ROW)]
         );
     }
 
     /**
-     * A tap on Suomi or English: saves it, answers the tap and confirms in the
+     * A tap on a language button: saves it, answers the tap and confirms in the
      * chosen language. Returns the chosen language and the command that was
      * waiting behind the question, if any, for the router to run next.
      *

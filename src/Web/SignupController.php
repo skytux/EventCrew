@@ -19,6 +19,7 @@ use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\Turnstile;
@@ -366,6 +367,7 @@ final class SignupController
             'language_action' => self::LANGUAGE_ACTION,
             'profile_action' => self::PROFILE_ACTION,
             'language' => null === $person ? null : ($person->language ?? Language::ENGLISH),
+            'language_choices' => SiteLanguages::choices(),
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
         ];
     }
@@ -839,9 +841,9 @@ final class SignupController
     }
 
     /**
-     * The "Suomi | English" switch: saves the language on the person's record
-     * and returns the notice to show. A value other than en/fi changes nothing
-     * and says nothing.
+     * The language switch: saves the language on the person's record and
+     * returns the notice to show. A value that is not a site language (or
+     * English) changes nothing and says nothing.
      */
     public function chooseLanguage(int $personId, string $posted): string
     {

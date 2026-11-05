@@ -649,12 +649,12 @@
 /* Pushed to the far end of the identity row, whatever the name's length. */
 .eventcrew-signup .eventcrew-signout { margin: 0 0 0 auto; }
 /*
- * Suomi | English, between the name and Sign out. It takes the push to the far
+ * The language switch (Suomi | English | ...), between the name and Sign out. It takes the push to the far
  * end itself and Sign out sits right after it. Plain text buttons: the one in
  * use is bold, the other underlined like a link.
  */
 .eventcrew-signup .eventcrew-language {
-    display: flex; align-items: center; gap: .35em; margin: 0 0 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .35em; margin: 0 0 0 auto;
 }
 .eventcrew-signup .eventcrew-language + .eventcrew-signout { margin-left: .5em; }
 .eventcrew-signup .eventcrew-language button {
