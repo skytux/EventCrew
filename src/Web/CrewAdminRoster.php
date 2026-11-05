@@ -201,36 +201,54 @@ final class CrewAdminRoster
 
     /**
      * "Update attendance": every status picker of one task posts together as
-     * status[<assignment_id>]. Only rows whose status changed are written, so
-     * saving again does not restamp the others; an unknown status or an id
-     * that is not found is skipped.
+     * status[<assignment_id>], with shown[<assignment_id>] holding the status
+     * the page showed when it was built. Only rows the organizer changed
+     * (status differs from shown) are written, so the rest are never
+     * restamped. A changed row whose stored status is no longer the shown one
+     * was changed by someone else after the page was opened: it is not
+     * written, and the notice counts it. An unknown status or an id that is
+     * not found is skipped.
      *
      * @param array<mixed> $statuses
+     * @param array<mixed> $shown
      */
-    public function saveRoster(Person $organizer, string $date, array $statuses): string
+    public function saveRoster(Person $organizer, string $date, array $statuses, array $shown = []): string
     {
         if (! self::isValidDate($date)) {
             return 'admin_change_failed';
         }
 
         $updated = 0;
+        $stale = 0;
 
         foreach ($statuses as $assignmentId => $status) {
             $assignmentId = (int) $assignmentId;
             $status = is_scalar($status) ? sanitize_key((string) $status) : '';
+            $was = is_scalar($shown[$assignmentId] ?? null) ? sanitize_key((string) $shown[$assignmentId]) : '';
 
-            if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status)) {
+            if ($assignmentId <= 0 || ! AssignmentStatus::isValid($status) || $status === $was) {
                 continue;
             }
 
             $assignment = $this->assignments->find($assignmentId);
 
-            if (null === $assignment || $assignment->status === $status) {
+            if (null === $assignment) {
+                continue;
+            }
+
+            // No shown status (a page built before this field existed) cannot
+            // prove the row is current, so it counts as changed meanwhile.
+            if ($assignment->status !== $was) {
+                ++$stale;
                 continue;
             }
 
             $this->assignments->setStatus($assignmentId, $status, $organizer->id, MarkedBy::PERSON);
             ++$updated;
+        }
+
+        if ($stale > 0) {
+            return 'admin_roster_saved_' . $updated . '_' . $stale;
         }
 
         return 0 === $updated ? 'admin_roster_none' : 'admin_roster_updated_' . $updated;
@@ -612,6 +630,10 @@ final class CrewAdminRoster
 
         if (isset($map[$code])) {
             return $map[$code];
+        }
+
+        if (1 === preg_match('/^admin_roster_saved_(\d+)_(\d+)$/', $code, $m)) {
+            return RosterPage::rosterSavedMessage((int) $m[1], (int) $m[2]);
         }
 
         if (1 === preg_match('/^admin_roster_updated_(\d+)$/', $code, $m)) {

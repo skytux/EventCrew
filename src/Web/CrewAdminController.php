@@ -456,7 +456,8 @@ final class CrewAdminController
                 : $this->rosterScreen->saveRoster(
                     $organizer,
                     $date,
-                    is_array($post['status'] ?? null) ? $post['status'] : []
+                    is_array($post['status'] ?? null) ? $post['status'] : [],
+                    is_array($post['shown'] ?? null) ? $post['shown'] : []
                 ),
             self::DOOR_ACTION => match ($op) {
                 'toggle' => $this->rosterScreen->toggleFreeEntry($date),

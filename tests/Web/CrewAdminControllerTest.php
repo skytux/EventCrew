@@ -968,13 +968,13 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     public function testSavingAttendanceWritesOnlyTheRowsThatChanged(): void
     {
         $this->signIn($this->organizerRow(1));
-        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'signed_up');   // changes
-        $this->wpdb->nextRows[] = $this->assignmentRow(31, 6, 9, 'arrived');     // the same status
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'signed_up');   // changed, still as shown
         $this->wpdb->nextRows[] = null;                                          // 33: not found
 
         $result = $this->post(CrewAdminController::ROSTER_ACTION, [
             'roster_date' => self::NIGHT,
             'status' => ['30' => 'completed', '31' => 'arrived', '32' => 'bogus', '33' => 'no_show'],
+            'shown' => ['30' => 'signed_up', '31' => 'arrived', '32' => 'signed_up', '33' => 'signed_up'],
         ]);
 
         self::assertSame('admin_roster_updated_1', $result['notice']);
@@ -983,8 +983,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('completed', $this->wpdb->updates[0]['data']['status']);
         self::assertSame(1, $this->wpdb->updates[0]['data']['changed_by']);
         self::assertSame(MarkedBy::PERSON, $this->wpdb->updates[0]['data']['changed_by_kind']);
-        // The invalid status was skipped before any lookup.
+        // The unchanged row and the invalid status were skipped before any lookup.
         self::assertSame([], $this->wpdb->nextRows);
+        self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_contains($sql, 'WHERE id = 31')));
         self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_contains($sql, 'WHERE id = 32')));
         self::assertSame('1 person updated.', CrewAdminController::noticeText($result['notice']));
     }
@@ -992,12 +993,58 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     public function testSavingAttendanceWithNothingChangedWritesNothing(): void
     {
         $this->signIn($this->organizerRow(1));
+        // Checked in at the door after the page was opened: the page still
+        // shows "Signed up", and the organizer did not touch this row.
         $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'arrived');
 
-        $result = $this->post(CrewAdminController::ROSTER_ACTION, ['roster_date' => self::NIGHT, 'status' => ['30' => 'arrived']]);
+        $result = $this->post(CrewAdminController::ROSTER_ACTION, [
+            'roster_date' => self::NIGHT,
+            'status' => ['30' => 'signed_up'],
+            'shown' => ['30' => 'signed_up'],
+        ]);
 
         self::assertSame('admin_roster_none', $result['notice']);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testSavingAttendanceSkipsARowThatChangedAfterThePageWasOpened(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'cancelled');   // was signed_up on the page
+        $this->wpdb->nextRows[] = $this->assignmentRow(31, 6, 9, 'signed_up');   // still as shown
+
+        $result = $this->post(CrewAdminController::ROSTER_ACTION, [
+            'roster_date' => self::NIGHT,
+            'status' => ['30' => 'arrived', '31' => 'arrived'],
+            'shown' => ['30' => 'signed_up', '31' => 'signed_up'],
+        ]);
+
+        self::assertSame('admin_roster_saved_1_1', $result['notice']);
+        self::assertSame([['id' => 31]], array_column($this->wpdb->updates, 'where'));
+        self::assertSame(
+            '1 person updated. 1 mark was not saved because it changed after you opened the page; reload to see it.',
+            CrewAdminController::noticeText($result['notice'])
+        );
+    }
+
+    public function testSavingAttendanceWithOnlyStaleRowsNamesThemAll(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, 'replaced');
+        $this->wpdb->nextRows[] = $this->assignmentRow(31, 6, 9, 'arrived');
+
+        $result = $this->post(CrewAdminController::ROSTER_ACTION, [
+            'roster_date' => self::NIGHT,
+            'status' => ['30' => 'no_show', '31' => 'no_show'],
+            'shown' => ['30' => 'signed_up', '31' => 'signed_up'],
+        ]);
+
+        self::assertSame('admin_roster_saved_0_2', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            '2 marks were not saved because they changed after you opened the page; reload to see them.',
+            CrewAdminController::noticeText($result['notice'])
+        );
     }
 
     public function testMarkAllSkipsCancelledAndAbsentPeople(): void

@@ -438,6 +438,7 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <input type="hidden" name="shown[<?php echo esc_attr((string) $eventcrew_person['assignment_id']); ?>]" value="<?php echo esc_attr($eventcrew_person['status']); ?>" form="eventcrew-roster-save">
                                     <?php if ('' !== $eventcrew_person['marked_by']) : ?>
                                         <br><span class="description"><?php echo esc_html($eventcrew_person['marked_by']); ?></span>
                                     <?php endif; ?>
