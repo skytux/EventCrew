@@ -5683,6 +5683,9 @@ msgstr "Tapahtuman jälkeinen viesti oli jo pysäytetty."
 msgid "There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon."
 msgstr "Uusia iltoja on tulossa, ja tanssilattialla on paikka sinulle. Seuraavat näet alta. Toivottavasti nähdään pian."
 
+msgid "The next ones are below."
+msgstr "Seuraavat näet alta."
+
 msgid "To those who came"
 msgstr "Niille, jotka tulivat"
 

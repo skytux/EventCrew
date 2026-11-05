@@ -1116,11 +1116,28 @@ final class FollowupMailTest extends TestCase
                 . 'We missed you at Test Site on 14.11.2026. We are sorry you could not make it this time. We'
                 . ' understand it may have been frustrating, and we hope all is well with you.'
                 . "\n\n"
-                . 'There are more evenings to come, and there is a place for you on the dance floor. The next ones'
-                . ' are below. We hope to see you soon.'
+                . 'There are more evenings to come, and there is a place for you on the dance floor. We hope to'
+                . ' see you soon.'
                 . "\n\nWarmly,\nTest Site",
             $missed
         );
+    }
+
+    /** "The next ones are below" only when coming events are below it, in both languages. */
+    public function testTheNextOnesAreBelowOnlyWithComingEvents(): void
+    {
+        $none = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 1);
+
+        self::assertStringNotContainsString('The next ones are below', $none['html'] . $none['text']);
+        self::assertStringNotContainsString('Seuraavat näet alta', $none['html'] . $none['text']);
+        self::assertStringContainsString('on the dance floor. We hope to see you soon.', $none['text']);
+        self::assertStringContainsString('paikka sinulle. Toivottavasti nähdään pian.', $none['text']);
+
+        $this->sampleEvents();
+        $some = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 1);
+
+        self::assertStringContainsString('The next ones are below. We hope to see you soon.', $some['text']);
+        self::assertStringContainsString('Seuraavat näet alta. Toivottavasti nähdään pian.', $some['text']);
     }
 
     /** The Messages page text is the whole text, with its own greeting; its subject is used too. */
