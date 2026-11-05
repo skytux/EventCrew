@@ -597,6 +597,69 @@ final class RosterServiceTest extends TelegramTestCase
         );
     }
 
+    // --- Who sees what on the roster (Q304) -----------------------------------
+
+    /**
+     * One task on 2026-07-20 with Sam signed up, Jo a no-show and Kim a late
+     * cancel, in the order the assembler reads them.
+     */
+    private function nightWithANoShow(): void
+    {
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up', 'signed_up_at' => '2026-07-02 14:05:00'],
+            ['id' => 12, 'task_id' => 5, 'person_id' => 9, 'status' => 'no_show'],
+            ['id' => 13, 'task_id' => 5, 'person_id' => 10, 'status' => 'late_cancel'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'jo@example.com', 'display_name' => 'Jo'];
+        $this->wpdb->nextRows[] = ['id' => 10, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
+    }
+
+    public function testOtherCrewSeeOnlyTheNamesOfThePeopleOnATask(): void
+    {
+        $this->organizer(false);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+        $this->wpdb->nextCols[] = [7];            // personIdsAssignedOn(): rostered that day
+        $this->wpdb->nextResults[] = [];          // isOnSalesDesk(): no sales-desk task
+        $this->nightWithANoShow();
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString("(1/3)\n  • Sam", $text);
+        self::assertStringNotContainsString('Beginner', $text);
+        self::assertStringNotContainsString('Signed up', $text);
+        self::assertStringNotContainsString('signed up 2 Jul', $text);
+        self::assertStringNotContainsString('Jo', $text);
+        self::assertStringNotContainsString('No-show', $text);
+        self::assertStringNotContainsString('Kim', $text);
+    }
+
+    public function testThatNightsSalesDeskSeesEverything(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'leader', 'label' => 'Crew leader', 'restricted' => true, 'sales_desk' => true],
+        ];
+        $this->organizer(false);
+        $this->wpdb->nextCols[] = ['2026-07-20']; // defaultDate()
+        $this->wpdb->nextCols[] = [7];            // personIdsAssignedOn(): rostered that day
+        // isOnSalesDesk(): a sales-desk task that day, and the asker is on it.
+        $this->wpdb->nextResults[] = [['id' => 4, 'task_date' => '2026-07-20', 'role_slug' => 'leader', 'capacity' => 1]];
+        $this->wpdb->nextRows[] = ['id' => 20, 'task_id' => 4, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->nightWithANoShow();
+
+        $this->service()->onRosterCommand(555, 555);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('Sam (Signed up) — Beginner', $text);
+        self::assertStringContainsString('Jo (No-show) — Beginner', $text);
+        self::assertStringContainsString('Kim (Late cancel', $text);
+    }
+
     // --- Telegram's message limits on a big night (Q281) ---------------------
 
     /** The upcoming days the picker shows in the big-night tests: the most it offers. */
@@ -815,10 +878,10 @@ final class RosterServiceTest extends TelegramTestCase
 
     public function testALongRosterTextIsSplitIntoPagesUnder4096Characters(): void
     {
-        // 70 people with long names, seen by a rostered crew member with no
-        // buttons: the text alone runs far past 4096 characters.
+        // 110 people with long names, seen by a rostered crew member with no
+        // buttons and names only: the text alone runs past 4096 characters.
         $pages = $this->allPages(
-            fn () => $this->bigNight(70, 'completed', 'Someone With A Rather Long Name Äöå'),
+            fn () => $this->bigNight(110, 'completed', 'Someone With A Rather Long Name Äöå'),
             false
         );
 
@@ -829,9 +892,9 @@ final class RosterServiceTest extends TelegramTestCase
             $this->assertWithinTelegramLimits($page);
         }
 
-        $text = implode("\n", array_column($pages, 'text'));
-        for ($i = 1; $i <= 70; $i++) {
-            self::assertSame(1, substr_count($text, "Äöå {$i} ("), "Person {$i}");
+        $text = implode("\n", array_column($pages, 'text')) . "\n";
+        for ($i = 1; $i <= 110; $i++) {
+            self::assertSame(1, substr_count($text, "Äöå {$i}\n"), "Person {$i}");
         }
     }
 
