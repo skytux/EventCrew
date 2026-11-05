@@ -8231,3 +8231,6 @@ msgstr "Tyhjänä: ei ovien aikaa."
 
 msgid "Nothing was saved: that event was not found."
 msgstr "Mitään ei tallennettu: tapahtumaa ei löytynyt."
+
+msgid "The text is translated in the background and saved when that is done. Reload the page in a few minutes to see every language."
+msgstr "Teksti käännetään taustalla ja tallennetaan, kun se on valmis. Lataa sivu uudelleen muutaman minuutin päästä, niin näet kaikki kielet."
