@@ -2071,6 +2071,42 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     }
 
     /**
+     * The whole crew page for an organizer, Admin tab included, renders
+     * through to its last line: a fatal error or an exception anywhere in the
+     * Admin part of templates/public/signup.php fails this test instead of
+     * reaching the live page. The organizer twin of SignupControllerTest's
+     * testTheWholePageRendersForASignedInPerson.
+     */
+    public function testTheWholePageRendersForAnOrganizer(): void
+    {
+        // Dates with tasks: read once for the sales desk night, then by the picker.
+        $this->wpdb->nextCols[] = [self::NIGHT];
+        $this->wpdb->nextCols[] = [self::NIGHT];
+
+        $html = $this->renderAs($this->organizerRow(1));
+
+        self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
+        self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
+        self::assertStringContainsString('<nav class="eventcrew-subtabs"', $html);
+        foreach (['roster', 'tasks', 'door', 'people', 'telegram', 'followup'] as $screen) {
+            self::assertStringContainsString('data-eventcrew-subpanel="' . $screen . '"', $html, $screen);
+        }
+        foreach (
+            [
+                CrewAdminController::BOARD_ACTION,
+                CrewAdminController::PERSON_ACTION,
+                CrewAdminController::DOOR_ACTION,
+                CrewAdminController::GUEST_ACTION,
+                CrewAdminController::SALES_ACTION,
+            ] as $action
+        ) {
+            self::assertStringContainsString('value="' . $action . '"', $html, $action);
+        }
+        // The template's last line came out: nothing stopped it half-way.
+        self::assertStringEndsWith('</script>', rtrim($html));
+    }
+
+    /**
      * The Door list, Guest list and Holvi ticket buyers cards are on the Door
      * screen, after the Sales desk and the date bar, and every form there
      * sends the page back to the Door screen. The Roster screen has the crew

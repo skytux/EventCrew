@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.37
+Stable tag: 1.140.38
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.38 =
+Tests: the whole crew app page is rendered for an organizer, Admin tab included, so a PHP error there fails the tests (Q279).
 
 = 1.140.37 =
 Crew app: the text after Telegram opens now says to press the code shown on the page. Settings: the "Test the endpoint by hand" example sends the same empty update as the test button (Q274).
@@ -1325,6 +1328,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.38 =
+No settings change.
 
 = 1.140.37 =
 No settings change.
