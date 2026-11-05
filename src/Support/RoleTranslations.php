@@ -16,7 +16,8 @@ namespace EventCrew\Support;
  * (TranslationRegistry::translateRows()). A text edited by hand is never
  * overwritten, and a text that could not be translated stays empty, so
  * readers get the original (TranslatedText::forReader()) and the next run
- * tries again.
+ * tries again. A text whose translation is already a background job
+ * (BackgroundJobs, as a new role's is) is left to that job.
  */
 final class RoleTranslations
 {
@@ -62,7 +63,10 @@ final class RoleTranslations
 
         $ids = array_values(array_filter(
             $this->registry->missingIds(),
+            // A row with its translation queued (BackgroundJobs) is left to
+            // that job, so the model is not asked twice.
             static fn (string $id): bool => str_starts_with($id, self::ROW_PREFIX)
+                && ! BackgroundJobs::isActive(BackgroundJobs::latest(TranslatedText::jobTarget($id)))
         ));
 
         if ([] === $ids) {

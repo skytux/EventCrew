@@ -2084,12 +2084,30 @@ final class SettingsPage
         $translator = $this->translator();
         $this->rolesError = '';
 
+        // The slugs a new role cannot get: Roles::save() would drop it, or
+        // put it in place of a role posted after it.
+        $taken = array_fill_keys(array_merge([Roles::ORGANIZE_SLUG], array_values(array_filter($slugs))), true);
+
         foreach (array_keys($labels) as $index) {
             $previous = '' === ($slugs[$index] ?? '') ? null : Roles::find($slugs[$index]);
-            // A role saved before translates in the background, as its
-            // Translations page row; a new one (its slug is made on save)
-            // is translated now.
+            // A role translates in the background, as its Translations page
+            // row. A new role gets its slug from its name on save
+            // (Roles::save()), so its row is known now. A new row whose name
+            // gives no slug of its own (an empty line, or a slug taken) is
+            // left out, as Roles::save() would, and nothing is translated.
             $row = null === $previous || Roles::ORGANIZE_SLUG === $previous['slug'] ? null : 'role.' . $previous['slug'];
+
+            if ('' === ($slugs[$index] ?? '')) {
+                $newSlug = self::newRoleSlug($labels[$index] ?? null, $taken);
+
+                if (null === $newSlug) {
+                    continue;
+                }
+
+                $row = 'role.' . $newSlug;
+                $taken[$newSlug] = true;
+            }
+
             $label = $this->roleText(
                 $translator,
                 $previous['label_text'] ?? '',
@@ -2172,6 +2190,26 @@ final class SettingsPage
         }
 
         return $result['value'];
+    }
+
+    /**
+     * The slug Roles::save() makes for a new role named $raw (a posted
+     * TranslatedText field, or a plain string), or null when it would make
+     * none of its own: an empty slug, or one in $taken.
+     *
+     * @param array<string, true> $taken
+     */
+    private static function newRoleSlug(mixed $raw, array $taken): ?string
+    {
+        $input = TranslatedText::fromPost(is_scalar($raw) ? ['source' => (string) $raw] : $raw, false);
+
+        if (null === $input) {
+            return null;
+        }
+
+        $slug = sanitize_key(TranslatedText::clean($input['source'], 0, false));
+
+        return '' === $slug || isset($taken[$slug]) ? null : $slug;
     }
 
     /**
