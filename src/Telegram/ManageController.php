@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\PersonEraser;
@@ -181,8 +182,11 @@ final class ManageController
             $person->id,
             $person->email,
             __('Confirm deleting your data', 'eventcrew'),
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email.', 'eventcrew'),
+            EmailBody::withGreeting(
+                $person->displayName,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email.', 'eventcrew')
+            ),
             [['label' => __('Delete my data', 'eventcrew'), 'url' => $url]]
         );
 

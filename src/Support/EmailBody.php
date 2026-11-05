@@ -16,17 +16,41 @@ namespace EventCrew\Support;
  * starts with an emoji ("- 🎟️ ...") draws the emoji as its bullet, with more
  * room between the lines; only the welcome message and the organizer guide
  * write those. "[text](#anchor)" links to a heading in the same message (the
- * organizer guide's contents list). Every style
+ * organizer guide's contents list). "**bold**" and "*italic*" mark words
+ * inside a line. A first paragraph that is only a greeting ("Hi Aino,") is
+ * drawn on its own line in italics, like the opening of a letter. Every style
  * is inline: an email client is not a browser, and a stylesheet in the head is
- * the first thing Gmail throws away.
+ * the first thing Gmail throws away. The one exception is the gold shimmer on
+ * headings (the ec-shimmer class), which EmailTemplate adds in the head for
+ * the mail apps that can draw it; elsewhere the inline gold is what shows.
  */
 final class EmailBody
 {
     /** The font stack, repeated inline because email clients inherit nothing. */
     public const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
-    private const TEXT_COLOR = '#1f2328';
-    private const MUTED_COLOR = '#5b6470';
+    /** The serif for the greeting, headings and closing. No web font is linked. */
+    public const HEAD_FONT = "Georgia,'Times New Roman',serif";
+
+    /** The text colour on the cream card. */
+    public const TEXT_COLOR = '#2a2233';
+
+    public const MUTED_COLOR = '#6b5f73';
+
+    /** The gold of headings, and of the crew name in the closing. */
+    public const GOLD = '#a8641f';
+
+    /**
+     * The colour of a warning button (the newsletter preview's stop button),
+     * which stays filled red instead of white with a glow.
+     */
+    public const DANGER_COLOR = '#c62828';
+
+    /** "**bold**": two stars on each side, no space just inside them. */
+    private const BOLD = '/\*\*(?=\S)(.+?)(?<=\S)\*\*/u';
+
+    /** "*italic*": one star on each side, not inside a word, no space just inside them. */
+    private const ITALIC = '/(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])/u';
 
     /** An emoji at the start of a line: the symbol and pictograph blocks. */
     private const EMOJI_START = '/^[\x{2190}-\x{2BFF}\x{1F000}-\x{1FAFF}]/u';
@@ -61,18 +85,12 @@ final class EmailBody
 
     /**
      * $buttonsHtml (from toHtml() with no text) with every button centred.
+     * Every button is centred already since the v4 look, so this returns
+     * $buttonsHtml as it is; it stays for the callers that ask for it.
      */
     public static function centred(string $buttonsHtml): string
     {
-        return str_replace(
-            ['<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 12px">',
-                '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">'],
-            ['<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
-                . ' style="margin:8px auto 12px">',
-                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
-                . ' style="margin:0 auto 12px">'],
-            $buttonsHtml
-        );
+        return $buttonsHtml;
     }
 
     /**
@@ -104,6 +122,10 @@ final class EmailBody
     public static function plainHeadings(string $text): string
     {
         $text = (string) preg_replace('/^## /m', '', $text);
+
+        // Bold and italic cannot be drawn in plain text: keep the words.
+        $text = (string) preg_replace(self::BOLD, '$1', $text);
+        $text = (string) preg_replace(self::ITALIC, '$1', $text);
 
         // A contents link cannot jump anywhere in plain text: keep its words.
         return (string) preg_replace(self::ANCHOR_LINK, '$1', $text);
@@ -166,6 +188,7 @@ final class EmailBody
         $blocks = preg_split('/\n{2,}/', trim($text)) ?: [];
         $html = '';
         $prefix = '' === $tag ? '' : self::langTag($tag);
+        $first = true;
 
         foreach ($blocks as $block) {
             $block = trim($block, "\n");
@@ -173,6 +196,19 @@ final class EmailBody
             if ('' === trim($block)) {
                 continue;
             }
+
+            // A greeting as the first paragraph gets its own italic line,
+            // with the language tag on a small line of its own above it.
+            if ($first && self::isGreeting($block)) {
+                $html .= ('' === $prefix ? '' : '<p style="margin:0 0 6px;line-height:17px">' . $prefix . '</p>')
+                    . self::greeting(self::inline(trim($block)));
+                $prefix = '';
+                $first = false;
+
+                continue;
+            }
+
+            $first = false;
 
             if (self::isHeading($block)) {
                 $html .= self::heading(substr(trim($block), 3));
@@ -197,20 +233,87 @@ final class EmailBody
     /**
      * The small "FI" or "EN" tag at the start of a text in that language, so
      * a reader of a two-language email finds their part at a glance: bold,
-     * letter-spaced, in a thin rounded frame, in $color (a muted gold by
+     * letter-spaced, with no frame, in $color (a muted gold by
      * default; a lighter one on a dark card). The space after it is written
      * out, as Outlook drops the margin of an inline element.
      */
     public static function langTag(string $label, string $color = self::TAG_COLOR): string
     {
         return sprintf(
-            '<span style="display:inline-block;padding:0 6px;border:1px solid %1$s;'
-                . 'border-radius:4px;font-family:%2$s;font-size:11px;font-weight:700;line-height:17px;'
-                . 'letter-spacing:.1em;color:%1$s;vertical-align:1px">%3$s</span>&nbsp; ',
+            '<span style="display:inline-block;font-family:%2$s;font-size:11px;font-weight:700;line-height:17px;'
+                . 'letter-spacing:.12em;color:%1$s;vertical-align:1px">%3$s</span>&nbsp; ',
             esc_attr($color),
             self::FONT,
             esc_html($label)
         );
+    }
+
+    /**
+     * $body with the greeting in front of it as its own paragraph: "Hi Aino,"
+     * with the first word of $name, or "Hi," when $name is blank. For the
+     * emails whose text starts without one. In the current language.
+     */
+    public static function withGreeting(string $name, string $body): string
+    {
+        $first = DoorDesk::firstName($name);
+
+        return ('' === $first
+                ? __('Hi,', 'eventcrew')
+                /* translators: %s: the person's first name */
+                : sprintf(__('Hi %s,', 'eventcrew'), $first))
+            . "\n\n" . $body;
+    }
+
+    /**
+     * A block that is only a greeting: one short line ending in a comma, like
+     * "Hi Aino," or "Hei,".
+     */
+    public static function isGreeting(string $block): bool
+    {
+        $block = trim($block);
+
+        return '' !== $block
+            && ! str_contains($block, "\n")
+            && str_ends_with($block, ',')
+            && mb_strlen($block) <= 60
+            && ! str_starts_with($block, '- ')
+            && ! str_starts_with($block, '## ');
+    }
+
+    /**
+     * The greeting paragraph: the serif, in italics, a little larger than the
+     * text. $html is already escaped.
+     */
+    public static function greeting(string $html): string
+    {
+        return sprintf(
+            '<p style="margin:0 0 18px;font-family:%s;font-size:18px;font-style:italic;line-height:1.5;color:%s">'
+                . '%s</p>',
+            self::HEAD_FONT,
+            self::TEXT_COLOR,
+            $html
+        );
+    }
+
+    /**
+     * A centred title for the top of a card: a small star, the title in gold
+     * (with the shimmer where the mail app draws it) and a short gold rule.
+     * $text is plain text and is escaped here.
+     */
+    public static function title(string $text): string
+    {
+        return '<p style="margin:0 0 14px;font-family:' . self::FONT . ';font-size:16px;line-height:1;'
+            . 'color:#c9802f;text-align:center">&#10022;</p>'
+            . sprintf(
+                '<h1 class="ec-shimmer" style="margin:0;font-family:%s;font-size:28px;font-weight:700;'
+                    . 'line-height:1.25;color:%s;text-align:center">%s</h1>',
+                self::HEAD_FONT,
+                self::GOLD,
+                esc_html($text)
+            )
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"'
+            . ' style="margin:18px auto 26px"><tr><td style="width:48px;height:2px;line-height:2px;'
+            . 'font-size:0;background:#d9b27a">&nbsp;</td></tr></table>';
     }
 
     private static function isHeading(string $block): bool
@@ -221,11 +324,11 @@ final class EmailBody
     private static function heading(string $text): string
     {
         return sprintf(
-            '<p id="%s" style="margin:32px 0 12px;font-family:%s;font-size:18px;font-weight:700;'
-                . 'line-height:1.3;color:%s">%s</p>',
+            '<p id="%s" class="ec-shimmer" style="margin:32px 0 12px;font-family:%s;font-size:21px;'
+                . 'font-weight:700;line-height:1.3;color:%s">%s</p>',
             esc_attr(self::anchor($text)),
-            self::FONT,
-            self::TEXT_COLOR,
+            self::HEAD_FONT,
+            self::GOLD,
             esc_html($text)
         );
     }
@@ -258,7 +361,7 @@ final class EmailBody
         // An emoji list: the emoji is the bullet, so no dot and no indent.
         return sprintf(
             '<ul style="margin:0 0 20px;padding:%s;font-family:%s;font-size:16px;'
-                . 'line-height:1.6;color:%s%s">%s</ul>',
+                . 'line-height:1.7;color:%s%s">%s</ul>',
             $emoji ? '0' : '0 0 0 20px',
             self::FONT,
             self::TEXT_COLOR,
@@ -270,7 +373,7 @@ final class EmailBody
     private static function paragraph(string $block, string $prefix = ''): string
     {
         return sprintf(
-            '<p style="margin:0 0 16px;font-family:%s;font-size:16px;line-height:1.6;color:%s">%s%s</p>',
+            '<p style="margin:0 0 16px;font-family:%s;font-size:16px;line-height:1.7;color:%s">%s%s</p>',
             self::FONT,
             self::TEXT_COLOR,
             $prefix,
@@ -282,7 +385,10 @@ final class EmailBody
      * Escapes a run of text and links any bare URL left in it. Escaping first
      * means the href carries the same &amp; entities as the visible text, which
      * is what HTML wants in an attribute anyway - no second pass can double-
-     * encode it.
+     * encode it. "**bold**" and "*italic*" are applied last, and only to the
+     * text outside code and links, so a star in a URL or a command is left
+     * alone. The stars are matched in the escaped text, so the words between
+     * them can never carry markup of their own.
      */
     public static function inline(string $text): string
     {
@@ -304,7 +410,7 @@ final class EmailBody
             $escaped
         );
 
-        return (string) preg_replace_callback(
+        $escaped = (string) preg_replace_callback(
             '~https?://[^\s<>"\']+~',
             static function (array $match): string {
                 // Sentence punctuation that trailed the URL in the source text
@@ -321,12 +427,47 @@ final class EmailBody
             },
             $escaped
         );
+
+        return self::emphasis($escaped);
+    }
+
+    /**
+     * "**bold**" as <strong> and "*italic*" as <em> in $html, outside its
+     * <code> and <a> elements.
+     */
+    private static function emphasis(string $html): string
+    {
+        if (! str_contains($html, '*')) {
+            return $html;
+        }
+
+        $parts = preg_split('~(<code\b[^>]*>.*?</code>|<a\b[^>]*>.*?</a>)~s', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        if (false === $parts) {
+            return $html;
+        }
+
+        foreach ($parts as $index => $part) {
+            // The odd parts are the code and link elements themselves.
+            if (1 === $index % 2) {
+                continue;
+            }
+
+            $part = (string) preg_replace(self::BOLD, '<strong>$1</strong>', $part);
+            $parts[$index] = (string) preg_replace(self::ITALIC, '<em>$1</em>', $part);
+        }
+
+        return implode('', $parts);
     }
 
     /**
      * One table per button. A table (rather than a styled anchor alone) is what
      * keeps Outlook's Word renderer from dropping the background colour, and
      * stacking them one per row is what keeps them readable on a phone.
+     *
+     * Every button is centred and white with a rounded gold edge; the first
+     * also glows gold (box-shadow: an app that cannot draw it shows the edge
+     * only). A warning button ($accent DANGER_COLOR) is filled red instead.
      *
      * @param array<int, array{label: string, url: string}> $actions
      *
@@ -344,17 +485,23 @@ final class EmailBody
                 continue;
             }
 
+            $danger = 0 === strcasecmp(trim($accent), self::DANGER_COLOR);
             $buttons[] = sprintf(
-                '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">'
-                    . '<tr><td style="border-radius:8px;background:%s;border:1px solid %s">'
-                    . '<a href="%s" style="display:inline-block;padding:12px 24px;font-family:%s;font-size:15px;'
-                    . 'font-weight:600;line-height:1.2;color:%s;text-decoration:none;border-radius:8px">%s</a>'
+                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                    . ' style="margin:0 auto 12px">'
+                    . '<tr><td bgcolor="%1$s" style="border-radius:28px;background:%1$s;border:1px solid %2$s%3$s">'
+                    . '<a href="%4$s" style="display:inline-block;padding:14px 34px;font-family:%5$s;font-size:16px;'
+                    . 'font-weight:%6$s;line-height:1.2;color:%7$s;text-decoration:none;border-radius:28px">%8$s</a>'
                     . '</td></tr></table>',
-                $primary ? esc_attr($accent) : '#ffffff',
-                esc_attr($accent),
+                $danger && $primary ? self::DANGER_COLOR : '#ffffff',
+                $danger ? self::DANGER_COLOR : ($primary ? '#ffc98f' : '#e3c79f'),
+                $primary && ! $danger
+                    ? ';box-shadow:0 0 18px rgba(255,190,120,.55),0 0 46px rgba(255,190,120,.25)'
+                    : '',
                 esc_url($url),
                 self::FONT,
-                $primary ? self::readableOn($accent) : esc_attr($accent),
+                $primary ? '700' : '600',
+                $danger ? ($primary ? '#ffffff' : self::DANGER_COLOR) : '#241238',
                 esc_html($action['label'])
             );
 
@@ -364,7 +511,7 @@ final class EmailBody
         if ([] !== $buttons) {
             // The buttons sit closer to the text than a paragraph gap, and the
             // first one carries the top margin for the whole group.
-            $buttons[0] = str_replace('style="margin:0 0 12px"', 'style="margin:8px 0 12px"', $buttons[0]);
+            $buttons[0] = str_replace('style="margin:0 auto 12px"', 'style="margin:8px auto 12px"', $buttons[0]);
         }
 
         return $buttons;
@@ -412,7 +559,7 @@ final class EmailBody
     public static function footerHtml(string $text, string $url): string
     {
         return sprintf(
-            '<p style="margin:0;font-family:%s;font-size:12px;line-height:1.6;color:%s">%s</p>',
+            '<p style="margin:0;font-family:%s;font-size:13px;line-height:1.6;color:%s;text-align:center">%s</p>',
             self::FONT,
             self::MUTED_COLOR,
             '' === $url

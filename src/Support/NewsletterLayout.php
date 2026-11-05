@@ -165,7 +165,8 @@ final class NewsletterLayout
      * The greeting line at the top of one recipient's announcement, HTML and
      * plain text: "Hei Anna! · Hi Anna!", or "Hei! · Hi!" without a name. In
      * a one-language email ($lang 'fi' or 'en') only that language: "Hei
-     * Anna!" or "Hi Anna!". The name is escaped in the HTML.
+     * Anna!" or "Hi Anna!". The name is escaped in the HTML. The HTML line is
+     * EmailBody::greeting(): its own line, in italics.
      *
      * @return array{html: string, text: string}
      */
@@ -186,12 +187,7 @@ final class NewsletterLayout
         };
 
         return [
-            'html' => sprintf(
-                '<p style="margin:0 0 16px;font-family:%s;font-size:17px;line-height:1.4;color:%s">%s</p>',
-                EmailBody::FONT,
-                self::TEXT_COLOR,
-                self::pairHtml($line)
-            ),
+            'html' => EmailBody::greeting(self::pairHtml($line)),
             'text' => $line,
         ];
     }

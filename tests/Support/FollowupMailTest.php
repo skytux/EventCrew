@@ -907,11 +907,15 @@ final class FollowupMailTest extends TestCase
         $this->options[Newsletter::ENABLED_OPTION] = '1';
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
+        // The greeting is its own italic line, with the tag on a line above it.
         self::assertMatchesRegularExpression(
-            '~<span [^>]*color:#9a7440[^>]*>FI</span>&nbsp; Hei Anna,</p>~',
+            '~<span [^>]*color:#9a7440[^>]*>FI</span>&nbsp; </p><p [^>]*font-style:italic[^>]*>Hei Anna,</p>~',
             $mail['html']
         );
-        self::assertMatchesRegularExpression('~<span [^>]*>EN</span>&nbsp; Hi Anna,</p>~', $mail['html']);
+        self::assertMatchesRegularExpression(
+            '~<span [^>]*>EN</span>&nbsp; </p><p [^>]*font-style:italic[^>]*>Hi Anna,</p>~',
+            $mail['html']
+        );
         self::assertMatchesRegularExpression('~>FI</span>&nbsp; Haluatko kuulla~', $mail['html'], 'the invitation');
         self::assertMatchesRegularExpression('~>EN</span>&nbsp; Would you like~', $mail['html']);
         self::assertStringContainsString('Tilaa tiedote · Join the announcement', $mail['html'], 'the button as is');
@@ -921,9 +925,9 @@ final class FollowupMailTest extends TestCase
 
     /**
      * The coming events part opens with a heading in the confirmation card's
-     * look: a dark band, the sparkle, the Finnish heading big and centred,
-     * and the English heading on a line of its own under it. The
-     * announcement keeps its plain heading.
+     * look: the sparkle, the Finnish heading big, gold and centred, the
+     * English heading on a line of its own under it, and a short gold rule.
+     * The announcement keeps its plain heading.
      */
     public function testTheEventsPartOpensWithTheEpicHeading(): void
     {
@@ -931,9 +935,11 @@ final class FollowupMailTest extends TestCase
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
         self::assertMatchesRegularExpression(
-            '~<table [^>]*background:#1d1422;border:1px solid #e9c58f;[^>]*><tr><td align="center"[^>]*>'
-                . '<p [^>]*>✦</p><h1 [^>]*font-size:28px;[^>]*color:#ffe2bf;text-align:center">Tulevat tapahtumat</h1>'
-                . '<p [^>]*font-size:17px;[^>]*color:#d9c3a8;text-align:center">Coming events</p></td></tr></table>~u',
+            '~<table [^>]*><tr><td align="center"[^>]*>'
+                . '<p [^>]*>✦</p><h1 class="ec-shimmer" [^>]*font-size:28px;[^>]*color:#a8641f;text-align:center">'
+                . 'Tulevat tapahtumat</h1>'
+                . '<p [^>]*font-size:17px;[^>]*color:#6b5f73;text-align:center">Coming events</p>'
+                . '<table [^>]*><tr><td [^>]*background:#d9b27a">&nbsp;</td></tr></table></td></tr></table>~u',
             $mail['html']
         );
         self::assertStringNotContainsString('font-size:26px', $mail['html'], 'not the plain heading');

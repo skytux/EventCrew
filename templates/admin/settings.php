@@ -60,6 +60,8 @@
  * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
+ * @var string $signature_fi The Finnish sign-off; blank uses $signature.
+ * @var string $email_background The picture behind every email; blank draws the purple fade alone.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var string $ticket_note Free text shown on every ticket; blank shows nothing.
  * @var string $infrastructure_note How the site is run, shown to organizers in the crew page's Help tab; blank shows nothing.
@@ -1355,6 +1357,20 @@ if (! defined('ABSPATH')) {
                         rows="2"
                         class="large-text"
                         placeholder="<?php esc_attr_e('Barefoot and with ♥ — the Example crew', 'eventcrew'); ?>"><?php echo esc_textarea($signature); ?></textarea>
+                    <p>
+                        <label for="eventcrew-signature-fi"><?php esc_html_e('In Finnish', 'eventcrew'); ?></label>
+                    </p>
+                    <textarea
+                        id="eventcrew-signature-fi"
+                        name="signature_fi"
+                        rows="2"
+                        class="large-text"><?php echo esc_textarea($signature_fi); ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e('Used in Finnish messages, and next to the first one in emails written in Finnish and English. Leave it blank to use the first one everywhere.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines.', 'eventcrew'); ?>
+                    </p>
                     <p class="description">
                         <?php esc_html_e('How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off.', 'eventcrew'); ?>
                     </p>
@@ -1394,6 +1410,25 @@ if (! defined('ABSPATH')) {
                 </td>
             </tr>
             <tr>
+                <th scope="row">
+                    <label for="eventcrew-email-background"><?php esc_html_e('Background picture', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="url"
+                        id="eventcrew-email-background"
+                        name="email_background"
+                        value="<?php echo esc_attr($email_background); ?>"
+                        class="large-text"
+                        placeholder="https://…"
+                        autocomplete="off"
+                        spellcheck="false">
+                    <p class="description">
+                        <?php esc_html_e('The picture behind the whole email, around the card. Use a JPEG that is already darkened, so the light logo and writing on it stay readable. Leave this blank for the purple fade alone; the fade is also what shows when a mail client does not load the picture.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
                 <th scope="row"><?php esc_html_e('Design', 'eventcrew'); ?></th>
                 <td>
                     <a href="<?php echo esc_url($email_edit_url); ?>" class="button">
@@ -1410,12 +1445,13 @@ if (! defined('ABSPATH')) {
                     </p>
                     <p class="description">
                         <?php esc_html_e('Available tags:', 'eventcrew'); ?>
-                        <code>{{content}}</code> <code>{{logo}}</code> <code>{{footer}}</code>
+                        <code>{{content}}</code> <code>{{logo}}</code> <code>{{tagline}}</code>
+                        <code>{{backdrop}}</code> <code>{{signature}}</code> <code>{{footer}}</code>
                         <code>{{accent}}</code> <code>{{site_name}}</code> <code>{{site_url}}</code>
                         <code>{{subject}}</code> <code>{{year}}</code>
                     </p>
                     <p class="description">
-                        <?php esc_html_e('The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent.', 'eventcrew'); ?>
+                        <?php esc_html_e('The built-in template draws the background picture (or the purple fade), the logo and the site’s tagline (Settings > General) above a cream card, the sign-off centred at the foot of the card, and the site name at the bottom. Buttons are white with a gold glow, and headings are gold. {{accent}} gives the colour set under “Web page”, for a template of your own that wants it.', 'eventcrew'); ?>
                     </p>
                     <p class="description">
                         <?php esc_html_e('Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one.', 'eventcrew'); ?>

@@ -127,7 +127,13 @@ final class DoorNewMember
             $actions[] = ['label' => PrivacyPolicy::noticeLinkLabel(), 'url' => $noticeUrl];
         }
 
-        $this->mailer->toPerson($person->id, $email, __('Welcome to the crew', 'eventcrew'), $body, $actions);
+        $this->mailer->toPerson(
+            $person->id,
+            $email,
+            __('Welcome to the crew', 'eventcrew'),
+            EmailBody::withGreeting($person->displayName, $body),
+            $actions
+        );
     }
 
     /**

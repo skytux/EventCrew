@@ -29,14 +29,30 @@ final class EmailTemplate
     /** An explicit logo URL, overriding the site's own logo. */
     public const LOGO_OPTION = 'eventcrew_email_logo';
 
+    /**
+     * The picture behind the whole email: a URL, best a photo already
+     * darkened so the light writing on it stays readable. Blank draws the
+     * purple fade alone.
+     */
+    public const BACKGROUND_OPTION = 'eventcrew_email_background';
+
+    /** The night colour under everything: what shows when no picture or fade is drawn. */
+    public const NIGHT = '#0e091e';
+
+    /** The cream of the card. */
+    public const CREAM = '#fbf6ec';
+
+    /** The purple fade behind the email, under the picture or instead of it. */
+    private const FADE = 'linear-gradient(180deg,#2b1d57 0%,#160f2e 60%,#0e091e 100%)';
+
     /** The post holding the wrapper markup. */
     public const POST_OPTION = 'eventcrew_email_template_id';
 
     /** The slot the message drops into; a wrapper without it is unusable. */
     private const CONTENT_TAG = '{{content}}';
 
-    /** The widest the banner at the top is drawn: the 600px card less its 32px padding each side. */
-    private const MASTHEAD_WIDTH = 536;
+    /** The widest the logo above the card is drawn. */
+    private const MASTHEAD_WIDTH = 230;
 
     /** The tallest the banner at the top is drawn. */
     private const MASTHEAD_HEIGHT = 140;
@@ -199,6 +215,9 @@ final class EmailTemplate
      *
      * $after is HTML put after the whole template, at the very bottom of the
      * email (the newsletter preview's "Do Not Send This" button).
+     *
+     * $bothLanguages is for an email written in Finnish and then English: the
+     * closing ({{signature}}) shows the Finnish sign-off too.
      */
     public function render(
         string $subject,
@@ -206,13 +225,16 @@ final class EmailTemplate
         string $footer,
         bool $lightOnly = false,
         ?\DateTimeInterface $now = null,
-        string $after = ''
+        string $after = '',
+        bool $bothLanguages = false
     ): string {
         $body = str_replace(
             [
                 '{{footer}}',
                 '{{signature}}',
                 '{{logo}}',
+                '{{tagline}}',
+                '{{backdrop}}',
                 '{{accent}}',
                 '{{site_name}}',
                 '{{site_url}}',
@@ -221,8 +243,10 @@ final class EmailTemplate
             ],
             [
                 $footer,
-                Signature::html(),
+                Signature::html($bothLanguages),
                 self::logoHtml(),
+                self::taglineHtml(),
+                self::backdrop(),
                 esc_attr(self::accent()),
                 esc_html(self::siteName()),
                 esc_url(home_url('/')),
@@ -249,12 +273,85 @@ final class EmailTemplate
                     . '<style>:root{color-scheme:light only}</style>' . "\n"
                 : '<meta name="color-scheme" content="light">' . "\n")
             . '<title>' . esc_html($subject) . '</title>' . "\n"
+            . self::styles()
             . '</head>' . "\n"
-            . '<body style="margin:0;padding:0;background:#f4f5f7;">' . "\n"
+            . '<body style="margin:0;padding:0;background:' . self::NIGHT . ';">' . "\n"
             . $body . "\n"
             . ('' === $after ? '' : $after . "\n")
             . '</body>' . "\n"
             . '</html>';
+    }
+
+    /**
+     * The two style blocks in the head. Everything else is inline; these only
+     * add what inline styles cannot say, and an app that drops them loses
+     * nothing it needs.
+     *
+     * The first narrows the card's padding on a phone. The second is the
+     * gold shimmer on headings (the ec-shimmer class): the gold is clipped to
+     * the letters and moves slowly across them. The ec-shimmer-light class is
+     * the same with a cream shine, for a heading on a dark band such as the
+     * ticket's header. It is guarded by @supports,
+     * because an app that made the letters transparent without clipping the
+     * gold to them would show no heading at all, and it is left out for a
+     * reader who asked for less motion. It is a block of its own because
+     * Gmail throws away a whole style block it does not understand; Gmail
+     * shows the inline gold, as does Outlook.
+     */
+    private static function styles(): string
+    {
+        return '<style>@media only screen and (max-width:600px){'
+            . '.ec-card-pad{padding:30px 22px 24px!important}'
+            . '.ec-close-pad{padding:14px 22px 26px!important}}</style>' . "\n"
+            . '<style>@supports ((-webkit-background-clip:text) or (background-clip:text)){'
+            . '@media (prefers-reduced-motion:no-preference){'
+            . '@keyframes ec-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}'
+            . '.ec-shimmer{background:linear-gradient(90deg,#8a4f12 0%,#c9802f 25%,#f0b45c 50%,#c9802f 75%,'
+            . '#8a4f12 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;'
+            . '-webkit-text-fill-color:transparent;animation:ec-shimmer 6s linear infinite}'
+            . '.ec-shimmer-light{background:linear-gradient(90deg,#ffe2b8 0%,#fff4e0 25%,#ffffff 50%,#fff4e0 75%,'
+            . '#ffe2b8 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;'
+            . '-webkit-text-fill-color:transparent;animation:ec-shimmer 6s linear infinite}}}</style>' . "\n";
+    }
+
+    /**
+     * The attributes of the outermost table, for {{backdrop}}: the night
+     * colour as bgcolor (what Outlook and an app that drops CSS backgrounds
+     * show), the picture as the old background attribute (what some of those
+     * still draw), and in the style the picture over the purple fade, both
+     * covering the email.
+     */
+    public static function backdrop(): string
+    {
+        $photo = trim((string) get_option(self::BACKGROUND_OPTION, ''));
+        $photo = '' === $photo ? '' : esc_url($photo);
+        $layers = '' === $photo ? self::FADE : "url('" . $photo . "')," . self::FADE;
+
+        return 'bgcolor="' . self::NIGHT . '"'
+            . ('' === $photo ? '' : ' background="' . $photo . '"')
+            . ' style="background-color:' . self::NIGHT . ';background-image:' . $layers . ';'
+            . 'background-position:' . ('' === $photo ? 'center' : '50% 0,center') . ';'
+            . 'background-size:' . ('' === $photo ? 'cover' : 'cover,cover') . ';background-repeat:no-repeat"';
+    }
+
+    /**
+     * The site's tagline (Settings > General) in italics under the logo, for
+     * {{tagline}}; '' when the site has none.
+     */
+    public static function taglineHtml(): string
+    {
+        $tagline = trim((string) get_bloginfo('description'));
+
+        if ('' === $tagline) {
+            return '';
+        }
+
+        return sprintf(
+            '<p style="margin:16px 0 0;font-family:%s;font-size:16px;font-style:italic;line-height:1.4;'
+                . 'letter-spacing:.05em;color:#ffe2b8;text-align:center">%s</p>',
+            EmailBody::HEAD_FONT,
+            esc_html($tagline)
+        );
     }
 
     /**
@@ -293,44 +390,40 @@ final class EmailTemplate
     }
 
     /**
-     * The shipped template: a centred card on a light background, logo on top.
+     * The shipped template (the v4 look): the darkened photo, or the purple
+     * fade, behind the whole email; the logo and the site's tagline above a
+     * cream card with a soft gold glow; the closing centred at the foot of the
+     * card; and "✦ SITE ✦" under it.
      *
-     * Tables and inline styles throughout, and a 600px card, because that is
-     * what still renders the same in Outlook, Gmail and Apple Mail. The merge
-     * tags are the whole contract with the editor: {{logo}}, {{content}},
-     * {{footer}}, {{signature}}, {{accent}}, {{site_name}}, {{site_url}},
-     * {{subject}} and {{year}}.
-     *
-     * The masthead sits on the accent colour rather than on the card's white,
-     * because a logo drawn in white - the usual thing a site has ready for a
-     * dark header - is invisible on white and looks to the reader like a broken
-     * image.
+     * Tables and inline styles throughout, and a 560px card, because that is
+     * what still renders the same in Outlook, Gmail and Apple Mail. Each
+     * background has a plain colour behind it (bgcolor and background-color),
+     * so an app that draws no picture and no gradient still shows the night
+     * colour, with the light writing readable on it. The merge tags are the
+     * whole contract with the editor: {{logo}}, {{tagline}}, {{backdrop}},
+     * {{content}}, {{footer}}, {{signature}}, {{accent}}, {{site_name}},
+     * {{site_url}}, {{subject}} and {{year}}.
      */
     public static function defaultWrapper(): string
     {
-        $font = EmailBody::FONT;
+        $head = EmailBody::HEAD_FONT;
+        $cream = self::CREAM;
 
         return <<<HTML
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                style="background:#f4f5f7;margin:0;padding:24px 12px">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" {{backdrop}}>
                 <tr>
-                    <td align="center">
-                        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-                            style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e6e8eb;border-radius:14px">
+                    <td align="center" style="padding:52px 14px 40px">
+                        {{logo}}{{tagline}}
+                        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" bgcolor="{$cream}"
+                            style="width:100%;max-width:560px;margin:40px auto 0;background:{$cream};border-radius:30px;border-collapse:separate;box-shadow:0 0 0 1px rgba(255,201,143,.5),0 0 40px rgba(255,190,120,.35),0 0 120px rgba(255,190,120,.18)">
                             <tr>
-                                <td align="center"
-                                    style="padding:28px 32px;background:{{accent}};border-radius:13px 13px 0 0">{{logo}}</td>
+                                <td class="ec-card-pad" style="padding:40px 40px 30px">{{content}}</td>
                             </tr>
                             <tr>
-                                <td style="padding:28px 32px">{{content}}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:20px 32px;border-top:1px solid #eceef1">{{signature}}{{footer}}</td>
+                                <td class="ec-close-pad" align="center" style="padding:18px 40px 32px;text-align:center">{{signature}}{{footer}}</td>
                             </tr>
                         </table>
-                        <p style="margin:16px 0 0;font-family:{$font};font-size:12px;line-height:1.5;color:#9aa1ab">
-                            {{site_name}}
-                        </p>
+                        <p style="margin:34px 0 0;font-family:{$head};font-size:12px;line-height:1.5;letter-spacing:.24em;text-transform:uppercase;color:#ffc98f;text-align:center">&#10022;&nbsp;&nbsp;{{site_name}}&nbsp;&nbsp;&#10022;</p>
                     </td>
                 </tr>
             </table>
@@ -434,9 +527,8 @@ final class EmailTemplate
      * of the rest. A tall logo is bounded by height, a wide banner by width, so
      * a square icon and a letterbox banner both land at a sensible size.
      *
-     * The banner may fill the masthead's whole width (MASTHEAD_WIDTH, the
-     * 600px card less its 32px padding each side) and stand up to
-     * MASTHEAD_HEIGHT tall; a picture is never drawn larger than it is. When
+     * The logo may be up to MASTHEAD_WIDTH wide (above the card, on the
+     * dark background) and MASTHEAD_HEIGHT tall; a picture is never drawn larger than it is. When
      * the size is known, a height attribute goes with the width, so Outlook
      * keeps the proportions; max-width:100% and height:auto shrink it on a
      * phone.
@@ -457,27 +549,31 @@ final class EmailTemplate
         // margin:0 auto, not the td's align="center": that attribute sets
         // text-align, which centres inline content and does nothing for a
         // display:block image - the logo would sit against the left padding.
+        // The font and colour are for the alt text, which an app that blocks
+        // images draws in the image's place, on the dark background.
         return sprintf(
             '<img src="%s" alt="%s" width="%d"%s style="display:block;margin:0 auto;border:0;outline:none;'
-                . 'width:%dpx;max-width:100%%;height:auto">',
+                . 'width:%dpx;max-width:100%%;height:auto;font-family:%s;font-size:22px;font-weight:700;'
+                . 'color:#fff4e0;text-align:center">',
             esc_url($url),
             esc_attr(self::siteName()),
             $rendered,
             $renderedHeight > 0 ? sprintf(' height="%d"', $renderedHeight) : '',
-            $rendered
+            $rendered,
+            EmailBody::HEAD_FONT
         );
     }
 
     /**
-     * The fallback masthead: the site's name, set large. White, because it sits
-     * on the accent-coloured band the default template gives the header.
+     * The fallback masthead: the site's name, set large in the serif. Light,
+     * because it sits on the dark background above the card.
      */
     private static function wordmark(): string
     {
         return sprintf(
-            '<p style="margin:0;font-family:%s;font-size:22px;font-weight:700;line-height:1.2;color:%s">%s</p>',
-            EmailBody::FONT,
-            EmailBody::readableOn(self::accent()),
+            '<p style="margin:0;font-family:%s;font-size:26px;font-weight:700;line-height:1.2;color:#fff4e0;'
+                . 'text-align:center">%s</p>',
+            EmailBody::HEAD_FONT,
             esc_html(self::siteName())
         );
     }

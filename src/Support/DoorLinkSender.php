@@ -269,7 +269,7 @@ final class DoorLinkSender
                     __('Sales desk for %s', 'eventcrew'),
                     Dates::dayLabel($date)
                 ),
-                $body,
+                EmailBody::withGreeting($person->displayName, $body),
                 [['label' => $label, 'url' => $url]]
             );
         }
@@ -423,7 +423,7 @@ final class DoorLinkSender
                     __('You are organizing on %s', 'eventcrew'),
                     Dates::dayLabel($date)
                 ),
-                $body,
+                EmailBody::withGreeting($person->displayName, $body),
                 $buttons
             );
         }

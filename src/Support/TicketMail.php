@@ -1022,10 +1022,10 @@ final class TicketMail
 
     /**
      * The cancel email for one ticket: subject, HTML content and plain text.
-     * The HTML is drawn like the ticket email: the same texts-then-card
-     * order, the same card and dark header, and a red band across the card
-     * that says the ticket is cancelled. The card has the holder's name and
-     * no QR code, since the cancelled code no longer gets anyone in.
+     * The HTML is in the v4 look (composeNotice()): the event as the gold
+     * title, the texts, and a box with the holder's name and a red line that
+     * says the ticket is cancelled. There is no QR code, since the cancelled
+     * code no longer gets anyone in.
      * $deleted, when an organizer deleted the task, is named first.
      *
      * @return array{subject: string, html: string, text: string}
@@ -1069,10 +1069,12 @@ final class TicketMail
     }
 
     /**
-     * A cancel or moved email: the greeting and $texts' sentence, then the
-     * card with the red band. $texts gets the event's name and the short
-     * date and returns, in the current language, the sentence, the subject
-     * and the band's text.
+     * A cancel or moved email in the v4 look, without a QR code: the event
+     * and date as the gold title, the greeting and $texts' sentence in
+     * Finnish, a thin rule, the same in English, then the box with the
+     * holder's name and the red status line. $texts gets the event's name and
+     * the short date and returns, in the current language, the sentence, the
+     * subject and the status line's text.
      *
      * @param callable(string, string): array{sentence: string, subject: string, band: string} $texts
      * @return array{subject: string, html: string, text: string}
@@ -1080,7 +1082,7 @@ final class TicketMail
     private function composeNotice(string $name, string $date, callable $texts): array
     {
         $short = self::shortDate($date);
-        [$event, $image] = $this->event($date);
+        [$event] = $this->event($date);
         $words = static function () use ($name, $event, $short, $texts): array {
             $first = DoorDesk::firstName($name);
             $own = $texts($event, $short);
@@ -1102,40 +1104,49 @@ final class TicketMail
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
         // Each language's text starts with its FI / EN tag, when the two differ.
         $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
-        $holder = trim($name);
-
-        $card = $this->ticketCard(
-            $this->ticketHead($both('kicker'), $event, $short, $image),
-            '' === $holder ? '' : sprintf(
-                '<p style="margin:0;%1$sfont-size:30px;font-weight:700;line-height:1.15;color:#1d1d1f">%2$s</p>',
-                self::PAGE_FONT,
-                esc_html($holder)
-            ),
-            $this->cancelledBand($both('band'))
-        );
+        $title = '' === $event ? $short : $event . ' — ' . $short;
 
         return [
             'subject' => $both('subject') . ' – ' . $short,
-            'html' => EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
-                . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
+            'html' => EmailBody::title($title)
+                . EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
+                . '<hr style="border:0;border-top:1px solid #ead9bf;margin:22px 0">'
                 . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1])
-                . $card,
+                . $this->cancelledBand($both('band'), $both('kicker'), trim($name)),
             'text' => $fi['body'] . "\n\n" . $en['body'] . "\n\n" . $both('band'),
         ];
     }
 
     /**
-     * The red band of a cancelled ticket, as the ticket page draws its
-     * DISABLED band: full width, white capitals on red, under the header.
+     * The box at the end of a cancel or moved email: $kicker ("Your ticket")
+     * small and muted, the holder's name in the serif (left out when there is
+     * none), and $text as a band of white capitals on red, as the ticket page
+     * draws its DISABLED band. The red has bgcolor and a one-colour gradient
+     * behind it, so a mail app in dark mode does not repaint it.
      */
-    private function cancelledBand(string $text): string
+    private function cancelledBand(string $text, string $kicker, string $holder): string
     {
         return sprintf(
-            '<td align="center" bgcolor="#b32d2e" style="padding:9px 12px;text-align:center;background-color:#b32d2e;'
-                . 'background-image:linear-gradient(#b32d2e,#b32d2e)">'
+            '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3eadb"'
+                . ' style="margin:26px 0 6px;background:#f3eadb;border-radius:14px;border-collapse:separate">'
+                . '<tr><td align="center" style="padding:18px 18px 8px;text-align:center">'
+                . '<p style="margin:0 0 6px;%1$sfont-size:12px;font-weight:700;line-height:1.4;letter-spacing:.12em;'
+                . 'text-transform:uppercase;color:%2$s">%3$s</p>%4$s</td></tr>'
+                . '<tr><td align="center" style="padding:6px 18px 18px">'
+                . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>'
+                . '<td align="center" bgcolor="#b32d2e" style="padding:9px 18px;border-radius:8px;text-align:center;'
+                . 'background-color:#b32d2e;background-image:linear-gradient(#b32d2e,#b32d2e)">'
                 . '<p style="margin:0;%1$sfont-size:15px;font-weight:700;line-height:1.4;letter-spacing:.15em;'
-                . 'color:#ffffff">%2$s</p></td>',
+                . 'color:#ffffff">%5$s</p></td></tr></table></td></tr></table>',
             self::PAGE_FONT,
+            EmailBody::MUTED_COLOR,
+            esc_html($kicker),
+            '' === $holder ? '' : sprintf(
+                '<p style="margin:0;font-family:%s;font-size:24px;font-weight:700;line-height:1.2;color:%s">%s</p>',
+                EmailBody::HEAD_FONT,
+                EmailBody::TEXT_COLOR,
+                esc_html($holder)
+            ),
             esc_html($text)
         );
     }

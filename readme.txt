@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.42
+Stable tag: 1.140.43
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.43 =
+Every email gets the v4 look (Q283): photo or purple backdrop, logo and tagline, cream card, gold headings, white buttons with a gold glow, an italic greeting line, **bold** and *italic*, and a centred "With love," closing; new Settings fields for a background picture and a Finnish sign-off. The cancelled and moved ticket emails use the same look.
 
 = 1.140.42 =
 Deleting a task sends each person on it one email: their ticket again with the tasks left, or "Your ticket is cancelled", both naming the deleted task; the "Task cancelled" email only when no ticket was emailed (Q263).
@@ -1340,6 +1343,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.43 =
+No settings change.
 
 = 1.140.42 =
 No settings change.
