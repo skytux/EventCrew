@@ -1170,7 +1170,7 @@ final class SignupControllerTest extends TestCase
         }
 
         self::assertSame(
-            'Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself.',
+            'Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself.',
             SignupController::noticeText('tg_started')
         );
     }

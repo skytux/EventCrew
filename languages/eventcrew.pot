@@ -3388,7 +3388,7 @@ msgid "Open Telegram again"
 msgstr ""
 
 #: src/Web/SignupController.php:1134
-msgid "Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself."
+msgid "Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself."
 msgstr ""
 
 #: templates/public/door.php:80

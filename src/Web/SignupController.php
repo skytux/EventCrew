@@ -1131,7 +1131,7 @@ final class SignupController
             'bad_email_link' => __('That email change link is invalid or has expired.', 'eventcrew'),
             'tg_failed' => __('Telegram sign-in did not work. Please try again, or sign in with email.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'tg_started' => __('Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself.', 'eventcrew'),
+            'tg_started' => __('Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself.', 'eventcrew'),
             'tg_pending' => '',
             'tg_expired' => __('The link expired. Press Telegram again.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
