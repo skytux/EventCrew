@@ -10,6 +10,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\DmBody;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
@@ -24,6 +25,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\WebLoginBot;
 
@@ -109,7 +111,9 @@ final class SignupController
         // Optional for the same reason: without it no Admin tab is drawn.
         private readonly ?CrewAdminController $admin = null,
         // Optional too: without it the page offers only the email sign-in.
-        private readonly ?TelegramLogin $telegramLogin = null
+        private readonly ?TelegramLogin $telegramLogin = null,
+        // Optional too: without it the email-changed notice goes by email only.
+        private readonly ?TelegramClient $telegram = null
     ) {
         $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup);
     }
@@ -662,8 +666,8 @@ final class SignupController
 
     /**
      * Opens the link from updateProfile(): moves the account to the new
-     * address, counts it as confirmed, and tells the old address. Returns the
-     * notice code.
+     * address, counts it as confirmed, and tells the old address and the
+     * linked Telegram chat. Returns the notice code.
      */
     public function confirmEmailChange(string $token): string
     {
@@ -699,6 +703,16 @@ final class SignupController
                 MessageTemplates::subject('email_changed', $context),
                 EmailBody::withGreeting($person->displayName, MessageTemplates::body('email_changed', $context))
             );
+
+            // A security notice, so the Telegram twin goes out whatever the
+            // person's notification settings say: someone who took over the
+            // account cannot hide the change by muting the bot first.
+            if (null !== $this->telegram && null !== $person->telegramChatId) {
+                $this->telegram->sendMessage(
+                    $person->telegramChatId,
+                    DmBody::frame($person, MessageTemplates::body('email_changed_dm', $context))
+                );
+            }
         });
 
         return 'email_changed';
