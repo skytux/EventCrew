@@ -53,6 +53,23 @@ final class SecondThoughts
     }
 
     /**
+     * Whether this person took this task less than the window ago: a window
+     * opened on a take is waiting and its time has not come yet. Unlike
+     * opened(), this ends on the minute, not when WP-Cron runs the event. A
+     * cancel then gets through the sign-out lock (SignupService::drop()).
+     */
+    public static function justTaken(int $personId, int $taskId): bool
+    {
+        if (false !== self::opened($personId, $taskId)) {
+            return false;
+        }
+
+        $at = wp_next_scheduled(self::HOOK, [$personId, $taskId, 0]);
+
+        return false !== $at && (int) $at > time();
+    }
+
+    /**
      * Holds back the messages of a take ($heldBefore false) or a cancel
      * ($heldBefore true). True when they wait for the window - a window was
      * open already, or one is opened now - and false when they should be sent

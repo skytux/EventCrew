@@ -383,6 +383,51 @@ final class SignupServiceTest extends TestCase
         self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
     }
 
+    /**
+     * Q331: taken 1 minute before the lock and cancelled 2 minutes later,
+     * inside the lock: the 5-minute window is still running, so it works.
+     */
+    public function testACancelInsideTheFiveMinutesGetsThroughTheLock(): void
+    {
+        // Taken 2 minutes ago: the take's window ends in 3 minutes.
+        $ends = time() + 3 * 60;
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [9, 5, 0] === $args ? $ends : false
+        );
+        $this->queueDrop('2026-07-20 12:04:00');
+
+        self::assertSame(AssignmentStatus::CANCELLED, $this->service()->drop(9, 5));
+        self::assertNotSame([], $this->wpdb->updates);
+    }
+
+    /**
+     * Q331: taken 10 minutes ago and cancelled inside the lock is refused,
+     * even while WP-Cron has not yet run the window's event.
+     */
+    public function testACancelAfterTheFiveMinutesIsStillLocked(): void
+    {
+        $ends = time() - 5 * 60;
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [9, 5, 0] === $args ? $ends : false
+        );
+        $this->queueDrop('2026-07-20 12:04:00');
+
+        self::assertSame(AssignmentRepository::CANCEL_LOCKED, $this->service()->drop(9, 5));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** A window opened by a cancel (then a take again) does not open the lock. */
+    public function testAWindowOpenedByACancelKeepsTheLock(): void
+    {
+        $ends = time() + 3 * 60;
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [9, 5, 1] === $args ? $ends : false
+        );
+        $this->queueDrop('2026-07-20 12:04:00');
+
+        self::assertSame(AssignmentRepository::CANCEL_LOCKED, $this->service()->drop(9, 5));
+    }
+
     /** Someone not on the task is told so, not that sign-out is closed. */
     public function testSomeoneNotSignedUpGetsNothingEvenInsideTheLock(): void
     {

@@ -273,7 +273,8 @@ final class SignupService
      * Drops a slot, recording a cancellation classified by notice. Returns the
      * status recorded, or '' when there was no live slot. A cancel inside the
      * second thoughts window after taking the task is never late
-     * (SecondThoughts).
+     * (SecondThoughts), and inside its minutes the sign-out lock does not
+     * apply (Q331).
      */
     public function drop(int $personId, int $taskId): string
     {
@@ -281,7 +282,7 @@ final class SignupService
             $taskId,
             $personId,
             $this->noticeHours(),
-            self::signoutLockMinutes(),
+            SecondThoughts::justTaken($personId, $taskId) ? 0 : self::signoutLockMinutes(),
             false === SecondThoughts::opened($personId, $taskId)
         );
     }
