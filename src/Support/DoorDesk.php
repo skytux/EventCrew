@@ -151,13 +151,12 @@ final class DoorDesk
 
     /**
      * The person and night a door cookie stands for, or null when the cookie
-     * is not valid or the person has since been deleted. 'open' says whether
-     * the session still works right now: the person is read fresh on every
-     * request, so an organizer keeps the night until 06:00 while a crew member
-     * on a sales-desk role loses it when the event ends. Whether they are
-     * still on the night's crew is not re-checked: that was decided when the
-     * link was given, and re-checking it on every poll would cost a query per
-     * task.
+     * is not valid, or the person has since been deleted, blocked or erased,
+     * or is no longer on the night's crew (SalesDeskGate::stillOnDoor()).
+     * The person is read fresh on every request the page makes, so any of
+     * these ends the session at once. 'open' says whether the session still
+     * works right now: an organizer keeps the night until 06:00 while a crew
+     * member on a sales-desk role loses it when the event ends.
      *
      * @return array{person: Person, date: string, open: bool}|null
      */
@@ -171,7 +170,11 @@ final class DoorDesk
 
         $person = $this->people->find($read['person_id']);
 
-        if (null === $person) {
+        if (null === $person || $person->isBanned() || $person->isAnonymized()) {
+            return null;
+        }
+
+        if (! $this->gate->stillOnDoor($person, $read['date'])) {
             return null;
         }
 

@@ -52,6 +52,33 @@ final class SalesDeskGateTest extends SalesDeskTestCase
         self::assertSame([], $this->wpdb->queries);
     }
 
+    public function testAnOrganizerIsStillOnTheDoorWithoutReadingAnything(): void
+    {
+        self::assertTrue($this->gate()->stillOnDoor($this->person(1, true), self::NIGHT));
+        self::assertSame([], $this->wpdb->queries);
+    }
+
+    public function testCrewAreStillOnTheDoorWhileTheyHoldAPlaceOnASalesDeskTask(): void
+    {
+        $this->queueDoorTask('welcome', '12:10', 'signed_up');
+
+        self::assertTrue($this->gate()->stillOnDoor($this->person(8), self::NIGHT));
+    }
+
+    public function testCrewTakenOffTheSalesDeskTaskAreNotOnTheDoor(): void
+    {
+        $this->queueDoorTask('welcome', '12:10', 'cancelled');
+
+        self::assertFalse($this->gate()->stillOnDoor($this->person(8), self::NIGHT));
+    }
+
+    public function testCrewOnlyOnAnotherRolesTaskAreNotOnTheDoor(): void
+    {
+        $this->queueDoorTask('bar', '12:10', 'arrived');
+
+        self::assertFalse($this->gate()->stillOnDoor($this->person(8), self::NIGHT));
+    }
+
     public function testArrivedWelcomeCrewMayOpenItTenMinutesBeforeTheirTask(): void
     {
         $this->queueDoorTask('welcome', '12:10', 'arrived');

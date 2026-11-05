@@ -16,7 +16,8 @@ use EventCrew\Repositories\TaskRepository;
  * that night's task of a role with "Sales desk" ticked in Settings (Welcome
  * ships with it) may from a few minutes before their own task starts, once
  * they are marked arrived, and only until the event ends. The same rule decides the automatic link, the 💳 Sales desk button under /door, the button on the
- * member's web page, and - for the end time - every request the page makes.
+ * member's web page, and - for the end time and whether they still have a
+ * place on that task - every request the page makes.
  */
 final class SalesDeskGate
 {
@@ -169,6 +170,33 @@ final class SalesDeskGate
         }
 
         return $onDoor ? self::NOT_YET : self::NOT_CREW;
+    }
+
+    /**
+     * Whether $person may still hold a door session for $date: an organizer
+     * may; anyone else only while they still have a place (not cancelled) on
+     * that night's task of a sales-desk role. Asked on every request the page
+     * makes, so taking someone off that task ends their session at once.
+     */
+    public function stillOnDoor(Person $person, string $date): bool
+    {
+        if ($person->isOrganizer) {
+            return true;
+        }
+
+        foreach ($this->tasks->forDate($date) as $task) {
+            if (! self::isDoorRole($task->roleSlug)) {
+                continue;
+            }
+
+            $assignment = $this->assignments->findFor($task->id, $person->id);
+
+            if (null !== $assignment && $assignment->isOccupying()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
