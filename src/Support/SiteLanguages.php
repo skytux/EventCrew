@@ -67,7 +67,7 @@ final class SiteLanguages
         'nb' => ['Norwegian (Bokmål)', 'Norsk bokmål', 'nb_NO'],
         'nl' => ['Dutch', 'Nederlands', 'nl_NL'],
         'pl' => ['Polish', 'Polski', 'pl_PL'],
-        'pt' => ['Portuguese', 'Português', 'pt_PT'],
+        'pt' => ['Portuguese', 'Português', 'pt_BR'],
         'ro' => ['Romanian', 'Română', 'ro_RO'],
         'ru' => ['Russian', 'Русский', 'ru_RU'],
         'sk' => ['Slovak', 'Slovenčina', 'sk_SK'],
