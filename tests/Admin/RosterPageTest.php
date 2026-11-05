@@ -193,6 +193,7 @@ final class RosterPageTest extends TestCase
         $page = $this->page();
         (function (): void {
             $this->guests = new \EventCrew\Repositories\GuestRepository();
+            $this->ticketMail = null;
         })->call($page);
         $this->submit(static fn () => $page->saveGuest());
 

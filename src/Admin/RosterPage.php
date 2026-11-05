@@ -444,7 +444,9 @@ final class RosterPage
             }
 
             $this->guests->update($guestId, $name, $plusOnes, $note);
-            $code = null === $email ? 'admin_guest_saved' : CrewAdminRoster::changeGuestEmail($this->guests, $guest, $email);
+            $code = null === $email
+                ? 'admin_guest_saved'
+                : CrewAdminRoster::changeGuestEmail($this->guests, $guest, $email, $this->ticketMail);
             $message = CrewAdminRoster::noticeText($code);
         }
 

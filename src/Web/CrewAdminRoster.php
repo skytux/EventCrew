@@ -373,7 +373,9 @@ final class CrewAdminRoster
 
         $this->guests->update($guestId, $name, $plusOnes, $note);
 
-        return null === $email ? 'admin_guest_saved' : self::changeGuestEmail($this->guests, $guest, $email);
+        return null === $email
+            ? 'admin_guest_saved'
+            : self::changeGuestEmail($this->guests, $guest, $email, $this->ticketMail);
     }
 
     /**
@@ -381,11 +383,17 @@ final class CrewAdminRoster
      * other capitals) gives the guest a new ticket code, so the old ticket
      * scans as no longer valid, and sends the new ticket to the new address
      * with the ticket email's 10-minute batch. An emptied address only takes
-     * the ticket away. Returns the message code to show; RosterPage uses it
-     * too.
+     * the ticket away. When the old address had been sent the ticket, it
+     * gets a short email that the ticket moved to another address and its
+     * code no longer works (TicketMail::guestMoved()). Returns the message
+     * code to show; RosterPage uses it too.
      */
-    public static function changeGuestEmail(GuestRepository $guests, Guest $guest, string $email): string
-    {
+    public static function changeGuestEmail(
+        GuestRepository $guests,
+        Guest $guest,
+        string $email,
+        ?TicketMail $ticketMail = null
+    ): string {
         if (0 === strcasecmp($email, $guest->email)) {
             return 'admin_guest_saved';
         }
@@ -397,6 +405,7 @@ final class CrewAdminRoster
         }
 
         TicketMail::schedule();
+        $ticketMail?->guestMoved($guest);
 
         return 'admin_guest_email_changed';
     }

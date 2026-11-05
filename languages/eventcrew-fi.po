@@ -6418,3 +6418,12 @@ msgstr "Aseta alkamisaika. Tehtävää ei voi tallentaa ilman sitä."
 
 msgid "The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning."
 msgstr "Alkamisaika on pakollinen. Jätä loppu tyhjäksi, jos sitä ei ole päätetty. Alkua aiempi loppu tulkitaan seuraavaksi aamuksi."
+
+msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
+msgstr "Lippusi tapahtumaan %1$s %2$s siirrettiin toiseen sähköpostiosoitteeseen. Aiemman lippusähköpostin QR-koodi ei enää toimi ovella."
+
+msgid "Your ticket moved to another address"
+msgstr "Lippusi siirrettiin toiseen osoitteeseen"
+
+msgid "TICKET MOVED"
+msgstr "LIPPU SIIRRETTY"

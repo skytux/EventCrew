@@ -21,6 +21,7 @@ use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
 use EventCrew\Tests\TestCase;
+use EventCrew\Web\CrewAdminRoster;
 
 /**
  * The ticket email: who is picked, what is recorded, what the email holds.
@@ -781,6 +782,52 @@ final class TicketMailTest extends TestCase
 
         self::assertTrue($mail->crewCancelled($this->person(), '2026-07-01 10:00:00', '2026-11-14'));
         self::assertSame(['mia@example.test'], array_column($this->mails, 'to'));
+    }
+
+    /**
+     * Q242: when an organizer changes a guest's email, the old address gets a
+     * short email that the ticket moved and its code no longer works, drawn
+     * like the cancel email with a red band. Only when the ticket had been
+     * sent to the old address, and never with the new address in it.
+     */
+    public function testTheOldAddressIsToldTheTicketMoved(): void
+    {
+        $mail = $this->ticketMail();
+        $unsent = Guest::fromRow($this->guestRow(10));
+
+        self::assertFalse($mail->guestMoved($unsent));
+        self::assertSame([], $this->mails);
+
+        $sent = Guest::fromRow(['ticket_mail_status' => 'sent'] + $this->guestRow(9));
+        CrewAdminRoster::changeGuestEmail(new GuestRepository(), $sent, 'new@example.test', $mail);
+
+        self::assertSame(['cy@example.test'], array_column($this->mails, 'to'));
+        self::assertSame(
+            'Lippusi siirrettiin toiseen osoitteeseen / Your ticket moved to another address – 14.11.2026',
+            $this->mails[0]['subject']
+        );
+        self::assertStringContainsString(
+            'Your ticket to Test Site on 14.11.2026 was moved to another email address. The QR code in your '
+                . 'earlier ticket email no longer works at the door.',
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString('Lippusi tapahtumaan Test Site 14.11.2026 siirrettiin', $this->mails[0]['body']);
+        self::assertStringContainsString('LIPPU SIIRRETTY / TICKET MOVED', $this->mails[0]['body']);
+        self::assertStringContainsString('bgcolor="#b32d2e"', $this->mails[0]['body']);
+        self::assertStringNotContainsString('new@example.test', $this->mails[0]['body']);
+        self::assertStringNotContainsString('new@example.test', $this->mails[0]['subject']);
+    }
+
+    /** Emptying the address, or the same address in other capitals, tells nobody. */
+    public function testNoMovedEmailWhenTheAddressIsClearedOrTheSame(): void
+    {
+        $mail = $this->ticketMail();
+        $sent = Guest::fromRow(['ticket_mail_status' => 'sent'] + $this->guestRow(9));
+
+        CrewAdminRoster::changeGuestEmail(new GuestRepository(), $sent, 'CY@example.test', $mail);
+        CrewAdminRoster::changeGuestEmail(new GuestRepository(), $sent, '', $mail);
+
+        self::assertSame([], $this->mails);
     }
 
     /** Decision 5: a desk buyer's ticket code is a short signed EC-B code. */
