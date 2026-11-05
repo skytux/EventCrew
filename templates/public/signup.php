@@ -2014,7 +2014,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 <?php if ($eventcrew_ai_item['failed']) : ?>
                                     <p class="eventcrew-muted"><?php esc_html_e('The AI could not write this text. The normal message text is used, unless you write one here.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                                 <?php endif; ?>
-                                <?php foreach (\EventCrew\Support\TranslatedText::LANGUAGES as $eventcrew_ai_lang) : ?>
+                                <?php foreach (\EventCrew\Support\TranslatedText::languages() as $eventcrew_ai_lang) : ?>
                                     <?php $eventcrew_ai_id = 'eventcrew-admin-aitext-' . $eventcrew_ai_event['event_id'] . '-' . sanitize_key($eventcrew_ai_item['key']) . '-' . $eventcrew_ai_lang; ?>
                                     <p>
                                         <label for="<?php echo esc_attr($eventcrew_ai_id); ?>">

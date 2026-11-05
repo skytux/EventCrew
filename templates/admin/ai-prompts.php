@@ -120,7 +120,7 @@ $eventcrew_rows = array_merge($placeholders, [['name' => '', 'prompt' => '', 'fa
                 <?php if ($eventcrew_item['failed']) : ?>
                     <p class="description"><?php esc_html_e('The AI could not write this text. The normal message text is used, unless you write one here.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                 <?php endif; ?>
-                <?php foreach (TranslatedText::LANGUAGES as $eventcrew_lang) : ?>
+                <?php foreach (TranslatedText::languages() as $eventcrew_lang) : ?>
                     <?php $eventcrew_id = 'eventcrew-ai-text-' . $eventcrew_event['event_id'] . '-' . sanitize_key($eventcrew_item['key']) . '-' . $eventcrew_lang; ?>
                     <p>
                         <label for="<?php echo esc_attr($eventcrew_id); ?>">
