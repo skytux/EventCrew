@@ -663,7 +663,10 @@ final class DoorDesk
             return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, $task->taskDate);
         }
 
-        if (! $assignment->isOccupying()) {
+        // One ticket per person per night: the code of a task they no longer
+        // hold still gets them in while they hold another task that night
+        // (TicketMail sends the same code again with the new task list).
+        if (! $assignment->isOccupying() && ! $this->assignments->holdsTaskOn($assignment->personId, $date)) {
             return self::scanAnswer(self::SCAN_DISABLED, '', $name, $date);
         }
 

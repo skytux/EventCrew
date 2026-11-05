@@ -627,6 +627,84 @@ final class TicketMailTest extends TestCase
         self::assertSame(31, SignedLink::verify('ticket', (string) $query['token']));
     }
 
+    /** @return array<string, mixed> */
+    private function crewTaskRow(int $id, string $role, string $startsAt): array
+    {
+        return [
+            'id' => $id, 'task_date' => '2026-11-14', 'role_slug' => $role, 'role_label' => ucfirst($role),
+            'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+            'starts_at' => $startsAt, 'ends_at' => null,
+        ];
+    }
+
+    /**
+     * Q228: the crew ticket email lists the person's tasks that night, earliest
+     * first. A second sign-up that night sends the ticket again with the code
+     * of the ticket already emailed, so the QR code they have keeps working.
+     */
+    public function testASecondTaskThatNightResendsTheSameCodeWithBothTasks(): void
+    {
+        $first = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $second = ['id' => 32, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextResults[] = [$first, $second]; // emailedTicketId
+        $this->wpdb->nextResults[] = [$first, $second]; // tasksOn
+        $this->wpdb->nextRows[] = $this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00');
+        $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
+
+        self::assertTrue($this->ticketMail()->sendCrewTicket($this->person(), 32, '2026-11-14'));
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('Your tasks on this night:', $body);
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $body);
+        self::assertStringNotContainsString('token=' . SignedLink::sign('ticket', 32), $body);
+        // Earliest first: the 18:00 task before the 22:00 one.
+        self::assertSame(4, substr_count($body, '<li '), 'one list item per task, in each language');
+        self::assertLessThan((int) strpos($body, '22:00'), (int) strpos($body, '18:00'));
+        // The new sign-up is marked as mailed.
+        self::assertSame(['id' => 32], $this->updates()[0]['where']);
+    }
+
+    /**
+     * Q228: after a task is taken away, the emailed ticket is sent again with
+     * the task left and the same code; with no task left, the cancel email.
+     * Nothing when the night's ticket was never emailed, or the night is past.
+     */
+    public function testCrewTasksChangedResendsOrCancels(): void
+    {
+        $mail = $this->ticketMail();
+        $gone = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'cancelled',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $kept = ['id' => 32, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up'];
+
+        // Never emailed: nothing.
+        $this->wpdb->nextResults[] = [['ticket_mailed_at' => null] + $gone];
+        self::assertFalse($mail->crewTasksChanged($this->person(), '2026-11-14'));
+        self::assertSame([], $this->mails);
+
+        // A task left: the ticket again, code of assignment 31.
+        $this->wpdb->nextResults[] = [$gone, $kept];
+        $this->wpdb->nextResults[] = [$gone, $kept];
+        $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
+        self::assertTrue($mail->crewTasksChanged($this->person(), '2026-11-14'));
+        self::assertSame('Lippusi / Your ticket – 14.11.2026', $this->mails[0]['subject']);
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $this->mails[0]['body']);
+        self::assertStringContainsString('18:00', $this->mails[0]['body']);
+
+        // No task left: the cancel email with the red band.
+        $this->wpdb->nextResults[] = [$gone];
+        $this->wpdb->nextResults[] = [$gone];
+        self::assertTrue($mail->crewTasksChanged($this->person(), '2026-11-14'));
+        self::assertSame('Lippusi on peruttu / Your ticket is cancelled – 14.11.2026', $this->mails[1]['subject']);
+
+        // A night already past: nothing.
+        $this->wpdb->nextResults[] = [$gone, $kept];
+        $this->wpdb->nextResults[] = [$gone, $kept];
+        $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
+        self::assertFalse($mail->crewTasksChanged($this->person(), '2026-07-19'));
+        self::assertCount(2, $this->mails);
+    }
+
     /**
      * A bought ticket, a guest-list ticket, a crew sign-up and a spent credit
      * get the one email: the same subject, the same card in the same order,

@@ -1378,7 +1378,8 @@ final class Kernel
             fn (Container $container) => new TaskCancelledNotice(
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(TicketMail::class)
             )
         );
 
