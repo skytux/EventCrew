@@ -23,9 +23,12 @@ both.
      Otherwise the message is moved to `Rejected`.
    - It takes the names from a `.txt` or `.csv` attachment (first column of
      each row), or else from the plain-text body.
-   - It sends them to the site as JSON `{"from", "text", "message_id"}`, with
-     the header `X-EventCrew-Signature: sha256=<HMAC-SHA256 of the body>`,
-     signed with `IMPORT_SECRET`.
+   - It sends them to the site as JSON `{"from", "text", "message_id",
+     "sent_at"}`, with the header
+     `X-EventCrew-Signature: sha256=<HMAC-SHA256 of the body>`, signed with
+     `IMPORT_SECRET`. `sent_at` is the Unix time of sending. The site refuses
+     (401) a body whose `sent_at` is more than 5 minutes from its own clock,
+     so keep this machine's clock right (NTP).
    - The site checks that the sender is an organizer, adds the names and mails
      the organizer a confirmation.
    - Site answered 200: the message is marked read and moved to `Imported`.
@@ -33,8 +36,9 @@ both.
      is marked read and moved to `Rejected`.
      Anything else (network error, 401 wrong secret, 5xx): the message stays
      unread where it is, and the next run tries it again.
-4. The same message sent twice is imported once: the site remembers each
-   message's Message-ID.
+4. The same message sent twice adds nothing the second time: the site skips
+   every name that is already on that night's guest list. (It still mails the
+   organizers a confirmation that says the names were skipped.)
 
 The site is hosted on InfinityFree, which answers the first request with a
 JavaScript page that sets a `__test` cookie. The script solves that page the

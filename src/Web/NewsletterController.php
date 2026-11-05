@@ -37,8 +37,10 @@ use WP_REST_Request;
  *   goes nowhere. The language the browser prefers (Accept-Language) is
  *   stored with the sign-up.
  * - The REST route Newsletter::ROUTE answers the signed links: confirm (a
- *   GET confirms), unsubscribe (a GET or a POST unsubscribes; the POST is the
- *   one-click unsubscribe of the List-Unsubscribe-Post header), and stop (an
+ *   GET shows a button, the POST confirms), unsubscribe (a GET shows a
+ *   button, the POST unsubscribes; a POST straight to the link is also the
+ *   one-click unsubscribe of the List-Unsubscribe-Post header, RFC 8058), so
+ *   a mail scanner opening links changes nothing, and stop (an
  *   organizer's link from the preview email: a GET shows a button, the POST
  *   stops the newsletter, so a mail client opening links in advance cannot
  *   stop it), and manage (the footer link of every announcement: a GET shows
@@ -1038,7 +1040,29 @@ final class NewsletterController
         if ('confirm' === $do) {
             $id = SignedLink::verify(Newsletter::PURPOSE_CONFIRM, $token);
 
-            if (null !== $id && $this->subscribers->confirm($id)) {
+            if (null === $id) {
+                return $this->invalid();
+            }
+
+            // Opening the link only shows the button: a mail scanner that
+            // opens links does not subscribe anybody.
+            if (! $post) {
+                return $this->page(
+                    200,
+                    static fn (): string => __(
+                        'Press the button to subscribe to the next events announcement.',
+                        'eventcrew'
+                    ),
+                    $this->buttonForm(
+                        'confirm',
+                        $token,
+                        static fn (): string => __('Subscribe', 'eventcrew'),
+                        false
+                    )
+                );
+            }
+
+            if ($this->subscribers->confirm($id)) {
                 return $this->page(
                     200,
                     static fn (): string => __(
@@ -1054,7 +1078,30 @@ final class NewsletterController
         if ('unsubscribe' === $do) {
             $id = SignedLink::verify(Newsletter::PURPOSE_UNSUBSCRIBE, $token);
 
-            if (null !== $id && $this->subscribers->unsubscribe($id)) {
+            if (null === $id) {
+                return $this->invalid();
+            }
+
+            // Opening the link only shows the button. The one-click
+            // unsubscribe of RFC 8058 (List-Unsubscribe-Post) is a POST to
+            // this same address, so it still works in one step.
+            if (! $post) {
+                return $this->page(
+                    200,
+                    static fn (): string => __(
+                        'Press the button to leave the announcement.',
+                        'eventcrew'
+                    ),
+                    $this->buttonForm(
+                        'unsubscribe',
+                        $token,
+                        static fn (): string => __('Leave the announcement', 'eventcrew'),
+                        true
+                    )
+                );
+            }
+
+            if ($this->subscribers->unsubscribe($id)) {
                 return $this->page(
                     200,
                     static fn (): string => __(
@@ -1300,14 +1347,32 @@ final class NewsletterController
 
     private function stopForm(string $token): string
     {
-        $words = static fn (): string => __('Do not send this announcement', 'eventcrew');
+        return $this->buttonForm(
+            'stop',
+            $token,
+            static fn (): string => __('Do not send this announcement', 'eventcrew'),
+            true
+        );
+    }
+
+    /**
+     * One button that POSTs $do with the token back to this address. $words
+     * is the label, shown in Finnish and English; $red marks a button that
+     * ends something.
+     *
+     * @param callable(): string $words
+     */
+    private function buttonForm(string $do, string $token, callable $words, bool $red): string
+    {
         $label = (string) Language::run(Language::FINNISH, $words);
         $labelEn = (string) Language::run(Language::ENGLISH, $words);
 
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML form; wrapping it just adds stray whitespace.
-            '<form method="post" style="margin:1em 0"><input type="hidden" name="do" value="stop"><input type="hidden" name="token" value="%s"><button type="submit" style="padding:.6em 1em;color:#b32d2e">%s</button></form>',
+            '<form method="post" style="margin:1em 0"><input type="hidden" name="do" value="%s"><input type="hidden" name="token" value="%s"><button type="submit" style="padding:.6em 1em%s">%s</button></form>',
+            esc_attr($do),
             esc_attr($token),
+            $red ? ';color:#b32d2e' : '',
             esc_html($label === $labelEn ? $labelEn : $label . ' / ' . $labelEn)
         );
     }

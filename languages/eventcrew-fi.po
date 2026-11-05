@@ -5227,6 +5227,12 @@ msgstr "Vain järjestäjät voivat käyttää komentoa /newsletter."
 msgid "Press the button to stop this announcement. It will not be sent."
 msgstr "Pysäytä tämä tiedote painamalla painiketta. Sitä ei silloin lähetetä."
 
+msgid "Press the button to subscribe to the next events announcement."
+msgstr "Tilaa tulevien tapahtumien tiedote painamalla painiketta."
+
+msgid "Press the button to leave the announcement."
+msgstr "Peru tiedotteen tilaus painamalla painiketta."
+
 msgid "Remove the text"
 msgstr "Poista teksti"
 

@@ -123,5 +123,7 @@ abstract class TestCase extends PHPUnitTestCase
         // An import asks WP-Cron to email the tickets (TicketMail::schedule).
         Functions\when('wp_next_scheduled')->justReturn(false);
         Functions\when('wp_schedule_single_event')->justReturn(true);
+        // Admin::notice() keeps each notice per administrator.
+        Functions\when('get_current_user_id')->justReturn(1);
     }
 }

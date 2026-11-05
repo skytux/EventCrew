@@ -9,7 +9,7 @@ One run:
        must have dmarc=pass, or spf=pass when there is no DMARC result at all;
      - takes the list: a .txt or .csv attachment (first column of each row),
        otherwise the text/plain body;
-     - POSTs {"from", "text", "message_id"} as JSON to IMPORT_URL, signed with
+     - POSTs {"from", "text", "message_id", "sent_at"} as JSON to IMPORT_URL, signed with
        X-EventCrew-Signature: sha256=<HMAC-SHA256 of the body under IMPORT_SECRET>;
      - marks it seen and moves it to IMPORTED_FOLDER when the site took it, or
        to REJECTED_FOLDER when the site or the check above refused it.
@@ -40,6 +40,7 @@ import os
 import re
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -287,6 +288,9 @@ def process(message, site, authserv_id=''):
         'from': sender,
         'text': text,
         'message_id': str(message.get('Message-ID', '')).strip(),
+        # Signed with the rest: the site refuses a body more than five minutes
+        # from its own clock, so a copied request cannot be sent again later.
+        'sent_at': int(time.time()),
     }
     try:
         status, answer = site.post(payload)
