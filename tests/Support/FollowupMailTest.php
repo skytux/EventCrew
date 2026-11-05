@@ -11,6 +11,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupOptOut;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -669,6 +670,72 @@ final class FollowupMailTest extends TestCase
             SignedLink::verifyPayload(FollowupMail::PURPOSE_JOIN, $token[1])
         );
         self::assertStringContainsString('eventcrew_join=' . $token[1], $mail['text']);
+    }
+
+    // ---- "Don't send me these" (Q305) -------------------------------------
+
+    /** The email ends with the row's signed opt-out link, in the HTML and the text. */
+    public function testTheEmailEndsWithTheRowsOptOutLink(): void
+    {
+        $mail = $this->followup()->compose(self::NIGHT, false, 'Anna', 'g', 9);
+
+        preg_match('/eventcrew_optout=([A-Za-z0-9_.\-]+)/', $mail['html'], $token);
+        self::assertNotEmpty($token, 'the opt-out link is in the email');
+        self::assertSame("g\n9", SignedLink::verifyPayload(FollowupMail::PURPOSE_OPTOUT, $token[1]));
+        self::assertStringContainsString("Don't send me these", html_entity_decode($mail['html'], ENT_QUOTES));
+        self::assertStringContainsString('eventcrew_optout=' . $token[1], $mail['text']);
+    }
+
+    public function testTheOptOutLinkPutsTheRowsAddressOnTheList(): void
+    {
+        $url = FollowupMail::optOutUrl('b', 7);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->db->nextRows[] = ['name' => 'Anna Virtanen', 'email' => ' Anna@Example.test ']; // holder()
+
+        self::assertTrue($this->followup()->optOutClick((string) $query[FollowupMail::OPTOUT_ARG]));
+        self::assertContains('SELECT name, email FROM wp_eventcrew_ticket_buyers WHERE id = 7', $this->db->queries);
+        self::assertSame(['anna@example.test'], array_keys($this->options[FollowupOptOut::OPTION]));
+        self::assertSame('2026-07-20 12:00:00', $this->options[FollowupOptOut::OPTION]['anna@example.test']);
+        self::assertTrue((new FollowupOptOut())->listed('ANNA@example.test'));
+    }
+
+    public function testASampleOrForgedOptOutLinkPutsNobodyOnTheList(): void
+    {
+        $mail = $this->followup();
+        $sample = FollowupMail::optOutUrl('t', 0);
+        parse_str((string) parse_url($sample, PHP_URL_QUERY), $query);
+
+        self::assertTrue($mail->optOutClick((string) $query[FollowupMail::OPTOUT_ARG]));
+        self::assertNull($mail->optOutClick('garbage'));
+        self::assertNull($mail->optOutClick(SignedLink::signPayload(FollowupMail::PURPOSE_JOIN, "b\n7")));
+        self::assertNull($mail->optOutClick((string) $query[FollowupMail::OPTOUT_ARG] . 'x'));
+        self::assertSame([], $this->db->queries);
+        self::assertArrayNotHasKey(FollowupOptOut::OPTION, $this->options);
+    }
+
+    /** An address on the list, or one that left the announcement, gets no email; its rows are marked optout. */
+    public function testNoEmailToAnAddressOnTheListOrThatLeftTheAnnouncement(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->buyer(2, 'Bo Example', 'BO@example.test');
+        $this->buyer(3, 'Bo Again', 'bo@example.test');
+        $this->guest(5, 'Gus Example', 'gus@example.test');
+        $this->options[FollowupOptOut::OPTION] = ['bo@example.test' => '2026-11-01 10:00:00'];
+        $this->db->nextCols[] = ['Gus@Example.test']; // unsubscribedEmails()
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(['anna@example.test'], array_column($this->mails, 'to'));
+        self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('buyer', 1));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('buyer', 2));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('buyer', 3));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('guest', 5));
+        self::assertContains(
+            "SELECT email FROM wp_eventcrew_newsletter_subscribers WHERE status = 'unsubscribed'",
+            $this->db->queries
+        );
+        self::assertTrue($this->state()['done'][self::NIGHT] ?? false);
     }
 
     // ---- The counts line --------------------------------------------------

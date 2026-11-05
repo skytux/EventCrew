@@ -7967,3 +7967,12 @@ msgstr "Poistetaanko päivän %2$s kaikki %1$d tuotua lipunostajaa? Heidän lipp
 
 msgid "Yes, delete"
 msgstr "Kyllä, poista"
+
+msgid "Don't send me these"
+msgstr "Älä lähetä minulle näitä"
+
+msgid "Press the button to stop getting these emails after our events."
+msgstr "Paina painiketta, niin et saa näitä viestejä enää tapahtumien jälkeen."
+
+msgid "Done. You will not get these emails after our events any more."
+msgstr "Valmis. Et saa näitä viestejä enää tapahtumien jälkeen."
