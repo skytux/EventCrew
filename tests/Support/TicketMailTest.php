@@ -929,6 +929,98 @@ final class TicketMailTest extends TestCase
         self::assertNull(TicketMail::pending());
     }
 
+    /**
+     * The cron list as the test's scheduled events: wp_next_scheduled answers
+     * from $this->events, and clearing a hook takes its events off.
+     */
+    private function useCronList(): void
+    {
+        Functions\when('wp_next_scheduled')->alias(function (string $hook): int|false {
+            foreach ($this->events as $event) {
+                if ($hook === $event['hook']) {
+                    return $event['at'];
+                }
+            }
+
+            return false;
+        });
+        Functions\when('wp_clear_scheduled_hook')->alias(function (string $hook): int {
+            $this->cleared[] = $hook;
+            $this->events = array_values(array_filter(
+                $this->events,
+                static fn (array $event): bool => $hook !== $event['hook']
+            ));
+
+            return 1;
+        });
+    }
+
+    /** Q232: a waiting send whose cron event was missed by over 5 minutes is run on a page load. */
+    public function testAStuckWaitingSendIsRunOnAPageLoad(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $at = time() - TicketMail::RESCUE_MARGIN - 1;
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => $at, 'rest' => []];
+        $this->events[] = ['at' => $at, 'hook' => TicketMail::START_HOOK];
+        $this->wpdb->nextResults[] = [$this->buyerRow(1)]; // buyers
+        $this->wpdb->nextResults[] = [];                    // guests
+
+        self::assertSame(1, $this->ticketMail()->rescueStuckSend());
+        self::assertSame(['anna1@example.test'], array_column($this->mails, 'to'));
+        self::assertNull(TicketMail::pending());
+        self::assertSame([], $this->events);
+        self::assertSame([], $this->wpdb->heldLocks);
+
+        // The next page load finds nothing late and sends nothing.
+        self::assertSame(0, $this->ticketMail()->rescueStuckSend());
+        self::assertCount(1, $this->mails);
+    }
+
+    /** Within the 5-minute margin the cron still has its chance: nothing runs. */
+    public function testASendLessThanFiveMinutesLateIsLeftToTheCron(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $at = time() - TicketMail::RESCUE_MARGIN + 30;
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => $at, 'rest' => []];
+        $this->events[] = ['at' => $at, 'hook' => TicketMail::START_HOOK];
+
+        self::assertSame(0, $this->ticketMail()->rescueStuckSend());
+        self::assertSame([], $this->mails);
+        self::assertNotNull(TicketMail::pending());
+        self::assertCount(1, $this->events);
+    }
+
+    /** While another page load holds the lock, this one runs nothing. */
+    public function testAStuckSendIsNotRunWhileAnotherPageLoadHoldsTheLock(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $at = time() - TicketMail::RESCUE_MARGIN - 1;
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => $at, 'rest' => []];
+        $this->events[] = ['at' => $at, 'hook' => TicketMail::START_HOOK];
+        $this->wpdb->heldLocks['eventcrew_ticket_send_rescue'] = true;
+
+        self::assertSame(0, $this->ticketMail()->rescueStuckSend());
+        self::assertSame([], $this->mails);
+        self::assertNotNull(TicketMail::pending());
+    }
+
+    /** A next batch whose cron event was missed is run the same way. */
+    public function testAStuckNextBatchIsRunOnAPageLoad(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $this->events[] = ['at' => time() - TicketMail::RESCUE_MARGIN - 1, 'hook' => TicketMail::HOOK];
+        $this->wpdb->nextResults[] = [$this->buyerRow(2)]; // buyers
+        $this->wpdb->nextResults[] = [];                    // guests
+
+        self::assertSame(1, $this->ticketMail()->rescueStuckSend());
+        self::assertSame(['anna2@example.test'], array_column($this->mails, 'to'));
+        self::assertSame([], $this->events);
+    }
+
     public function testCancelSendsNothingAndTheTicketsStayNotSent(): void
     {
         $this->useOptionStore();

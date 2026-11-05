@@ -83,6 +83,15 @@ final class TicketMail
     /** Emails per cron run or per "Send the rest now". */
     public const BATCH = 25;
 
+    /**
+     * How late a send's cron event may be before a page load runs it
+     * (rescueStuckSend()): 5 minutes.
+     */
+    public const RESCUE_MARGIN = 300;
+
+    /** MySQL lock name that keeps two page loads from running a stuck send twice. */
+    private const RESCUE_LOCK = 'eventcrew_ticket_send_rescue';
+
     public const KIND_BUYERS = 'buyers';
     public const KIND_GUESTS = 'guests';
 
@@ -126,6 +135,63 @@ final class TicketMail
     {
         add_action(self::HOOK, [$this, 'run']);
         add_action(self::START_HOOK, [$this, 'start']);
+        // Late on init, as the cron fallback (CronFallbackTrigger) runs.
+        add_action('init', [$this, 'rescueStuckSend'], 99);
+    }
+
+    /**
+     * A page load after a send's planned time: when the hosting's cron missed
+     * the send's event (the waiting send's START_HOOK, or the next batch's
+     * HOOK) by more than RESCUE_MARGIN, the event is taken off the cron list
+     * and run here. Under a MySQL lock, so two page loads at once run it only
+     * once: the waiting send is gone and the sent rows are marked by the
+     * time the second one gets the lock, so it sends nothing twice. Returns
+     * how many emails were tried.
+     *
+     * Each page load only reads the cron list, which WordPress has in memory
+     * already; nothing more is read unless an event is late.
+     */
+    public function rescueStuckSend(): int
+    {
+        if (! function_exists('wp_next_scheduled')) {
+            return 0;
+        }
+
+        $late = time() - self::RESCUE_MARGIN;
+        $start = wp_next_scheduled(self::START_HOOK);
+        $batch = wp_next_scheduled(self::HOOK);
+        $startLate = false !== $start && (int) $start < $late;
+        $batchLate = false !== $batch && (int) $batch < $late;
+
+        if (! $startLate && ! $batchLate) {
+            return 0;
+        }
+
+        global $wpdb;
+
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::RESCUE_LOCK))) {
+            return 0;
+        }
+
+        try {
+            // Read again under the lock: another page load may have run it
+            // between the first look and the lock.
+            if ($startLate && false !== wp_next_scheduled(self::START_HOOK)) {
+                wp_clear_scheduled_hook(self::START_HOOK);
+
+                return $this->start();
+            }
+
+            if ($batchLate && false !== wp_next_scheduled(self::HOOK)) {
+                wp_clear_scheduled_hook(self::HOOK);
+
+                return $this->run();
+            }
+
+            return 0;
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::RESCUE_LOCK));
+        }
     }
 
     /**
