@@ -16,7 +16,9 @@ use Closure;
  * - value: the text in TranslatedText's shape: source, lang (the source's
  *   language, '' when not known), texts per language, manual per language;
  * - save: called with the new value (the same shape) to store it;
- * - maxLength, multiline: what TranslatedText::update() cuts the text to.
+ * - maxLength, multiline: what TranslatedText::update() cuts the text to;
+ * - fixedSource: the source is the code's own text and cannot be changed on
+ *   the page (the bot's texts); only the language texts are edited.
  *
  * Rows come from TranslationRegistry, which asks each provider for its rows
  * every time the page is drawn or saved, so a row always holds the stored
@@ -28,6 +30,7 @@ final class TranslationRow
     public const GROUP_TELEGRAM = 'telegram';
     public const GROUP_TEXTS = 'texts';
     public const GROUP_MESSAGES = 'messages';
+    public const GROUP_BOT = 'bot';
 
     /** @var array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>} */
     public readonly array $value;
@@ -43,7 +46,8 @@ final class TranslationRow
         array $value,
         public readonly Closure $save,
         public readonly int $maxLength = 0,
-        public readonly bool $multiline = true
+        public readonly bool $multiline = true,
+        public readonly bool $fixedSource = false
     ) {
         $this->value = TranslatedText::normalize($value);
     }
@@ -56,6 +60,7 @@ final class TranslationRow
             self::GROUP_TELEGRAM => __('Telegram bot', 'eventcrew'),
             self::GROUP_TEXTS => __('Texts', 'eventcrew'),
             self::GROUP_MESSAGES => __('Messages', 'eventcrew'),
+            self::GROUP_BOT => __('Bot answers and buttons', 'eventcrew'),
             default => $this->group,
         };
     }
