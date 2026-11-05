@@ -42,8 +42,8 @@ final class MessagesPage
      *
      * @return list<array{
      *     id: string, label: string, channel: string, description: string, wired: bool, changed: bool,
-     *     subject: ?array, body: array, placeholders: array<string, string>, formatting: string,
-     *     template: MessageTemplate, settings: array<string, mixed>
+     *     subject: ?array, body: array, placeholders: array<string, string>, required: list<string>,
+     *     formatting: string, template: MessageTemplate, settings: array<string, mixed>
      * }>
      */
     public static function entries(): array
@@ -61,6 +61,7 @@ final class MessagesPage
                 'subject' => $template->hasSubject() ? MessageTemplates::value($id, MessageTemplates::SUBJECT) : null,
                 'body' => MessageTemplates::value($id, MessageTemplates::BODY),
                 'placeholders' => $template->placeholderList(),
+                'required' => $template->requiredPlaceholders(),
                 'formatting' => self::formatting($template->channel),
                 'template' => $template,
                 'settings' => MessageTemplates::settings($id),
@@ -93,6 +94,20 @@ final class MessagesPage
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         $error = $this->templates->save($id, $_POST[MessageTemplates::POST_NAME] ?? null);
+
+        if (MessageTemplates::ERROR_MISSING_PLACEHOLDER === $error) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                sprintf(
+                    /* translators: %s: the placeholders, like {email} */
+                    __('Not saved: the text must contain %s, in every language. The message keeps the text it had.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    implode(', ', MessageTemplates::find($id)?->requiredPlaceholders() ?? [])
+                ),
+                'error',
+                ['kind' => $id]
+            );
+        }
+
         $notice = TranslatedText::errorNotice($error);
 
         Admin::redirectTo(

@@ -22,8 +22,11 @@ use Closure;
  *   context the message is composed with, or with [] on the Messages page; a
  *   text that depends on a number (one credit, two credits) reads it from
  *   the context.
- * - placeholders: name => [description, resolver]. The description says what
- *   the placeholder becomes; the resolver turns the context into that text.
+ * - placeholders: name => [description, resolver, required]. The description
+ *   says what the placeholder becomes; the resolver turns the context into
+ *   that text. A required placeholder (optional key, false when missing)
+ *   must stay in the text: the Messages page refuses to save a text without
+ *   it (missingRequired()).
  * - wired: whether the code that sends the message reads this template.
  *   False for a kind that is listed but still sends its built-in text; the
  *   Messages page says so.
@@ -36,7 +39,9 @@ final class MessageTemplate
     public const CHANNEL_TELEGRAM = 'telegram';
 
     /**
-     * @param array<string, array{description: string, resolve: Closure(array<string, mixed>): string}> $placeholders
+     * @param array<string, array{
+     *     description: string, resolve: Closure(array<string, mixed>): string, required?: bool
+     * }> $placeholders
      * @param (Closure(array<string, mixed>): string)|null $subject Null for a Telegram message.
      * @param Closure(array<string, mixed>): string $body
      */
@@ -115,5 +120,41 @@ final class MessageTemplate
         }
 
         return $list;
+    }
+
+    /**
+     * The required placeholders, as '{name}'.
+     *
+     * @return list<string>
+     */
+    public function requiredPlaceholders(): array
+    {
+        $list = [];
+
+        foreach ($this->placeholders as $name => $placeholder) {
+            if (true === ($placeholder['required'] ?? false)) {
+                $list[] = '{' . $name . '}';
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * The required placeholders, as '{name}', that $text does not contain.
+     * An empty text is not checked: it means the built-in text is used.
+     *
+     * @return list<string>
+     */
+    public function missingRequired(string $text): array
+    {
+        if ('' === trim($text)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->requiredPlaceholders(),
+            static fn (string $tag): bool => ! str_contains($text, $tag)
+        ));
     }
 }

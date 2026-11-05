@@ -308,6 +308,20 @@ final class MessageTemplatesTest extends TestCase
         );
     }
 
+    /** The Translations page row of a text keeps the kind's required placeholders; a subject row has none. */
+    public function testTheTranslationsPageRowKnowsTheRequiredPlaceholders(): void
+    {
+        $rows = [];
+
+        foreach (MessageTemplates::translationRows() as $row) {
+            $rows[$row->id] = $row;
+        }
+
+        self::assertSame(['{email}'], $rows['message.email_changed.body']->required);
+        self::assertSame([], $rows['message.email_changed.subject']->required);
+        self::assertSame([], $rows['message.credit_granted.body']->required);
+    }
+
     public function testARowSavedOnTheTranslationsPageIsTheMessagesPageText(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];

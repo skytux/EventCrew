@@ -7253,3 +7253,73 @@ msgstr "Lähetetään tapahtumailtana Järjestelyt-tehtävään ilmoittautuneill
 
 msgid "Organizer on the night (Telegram)"
 msgstr "Illan järjestäjä (Telegram)"
+
+msgid "Sign-in link (email)"
+msgstr "Kirjautumislinkki (sähköposti)"
+
+msgid "Sent when a person with an account asks for a sign-in link on the crew page. The Sign in button with the link is added under the text."
+msgstr "Lähetetään, kun tilin omaava henkilö pyytää kirjautumislinkkiä crew-sivulla. Kirjaudu-painike linkkeineen lisätään tekstin alle."
+
+msgid "New account link (email)"
+msgstr "Uuden tilin linkki (sähköposti)"
+
+msgid "Sent when someone without an account asks for a sign-in link on the crew page. The Create my account button with the link is added under the text, and for a new address the privacy line too."
+msgstr "Lähetetään, kun joku ilman tiliä pyytää kirjautumislinkkiä crew-sivulla. Luo tilini -painike linkkeineen lisätään tekstin alle, ja uudelle osoitteelle myös tietosuojarivi."
+
+msgid "Confirm a new email address (email)"
+msgstr "Uuden sähköpostiosoitteen vahvistus (sähköposti)"
+
+msgid "Sent to the new address when a person changes their email address on the crew page. The Confirm new email button with the link is added under the text."
+msgstr "Lähetetään uuteen osoitteeseen, kun henkilö vaihtaa sähköpostiosoitteensa crew-sivulla. Vahvista uusi sähköposti -painike linkkeineen lisätään tekstin alle."
+
+msgid "Email address changed (email)"
+msgstr "Sähköpostiosoite vaihdettu (sähköposti)"
+
+msgid "Sent to the old address when a person has confirmed their new email address."
+msgstr "Lähetetään vanhaan osoitteeseen, kun henkilö on vahvistanut uuden sähköpostiosoitteensa."
+
+msgid "The new email address."
+msgstr "Uusi sähköpostiosoite."
+
+msgid "Confirm deleting data (email)"
+msgstr "Tietojen poiston vahvistus (sähköposti)"
+
+msgid "Sent when a person presses Delete my data on the manage-account page. The Delete my data button with the link is added under the text."
+msgstr "Lähetetään, kun henkilö painaa Poista tietoni tilinhallintasivulla. Poista tietoni -painike linkkeineen lisätään tekstin alle."
+
+msgid "Access changed (email)"
+msgstr "Oikeudet muuttuivat (sähköposti)"
+
+msgid "Sent when an organizer gives a person a role, a one-time sign-up pass, or organizer rights."
+msgstr "Lähetetään, kun järjestäjä antaa henkilölle roolin, kertaluontoisen ilmoittautumisluvan tai järjestäjän oikeudet."
+
+msgid "What changed, like \"You now have the role DJ.\" with what it means. The same text as the Telegram message."
+msgstr "Mikä muuttui, kuten \"Sinulla on nyt rooli DJ.\" ja mitä se tarkoittaa. Sama teksti kuin Telegram-viestissä."
+
+msgid "Access changed: role (Telegram)"
+msgstr "Oikeudet muuttuivat: rooli (Telegram)"
+
+msgid "Sent when an organizer gives a person a role. The email about it repeats this text."
+msgstr "Lähetetään, kun järjestäjä antaa henkilölle roolin. Siitä lähtevä sähköposti toistaa tämän tekstin."
+
+msgid "The name of the role, like DJ."
+msgstr "Roolin nimi, kuten DJ."
+
+msgid "Access changed: one-time pass (Telegram)"
+msgstr "Oikeudet muuttuivat: kertaluontoinen lupa (Telegram)"
+
+msgid "Sent when an organizer gives a person a one-time sign-up pass. The email about it repeats this text."
+msgstr "Lähetetään, kun järjestäjä antaa henkilölle kertaluontoisen ilmoittautumisluvan. Siitä lähtevä sähköposti toistaa tämän tekstin."
+
+msgid "Access changed: organizer (Telegram)"
+msgstr "Oikeudet muuttuivat: järjestäjä (Telegram)"
+
+msgid "Sent when an organizer makes a person an organizer. The email about it repeats this text."
+msgstr "Lähetetään, kun järjestäjä tekee henkilöstä järjestäjän. Siitä lähtevä sähköposti toistaa tämän tekstin."
+
+#. translators: %s: the placeholders, like {email}
+msgid "Not saved: the text must contain %s, in every language. The message keeps the text it had."
+msgstr "Ei tallennettu: tekstissä on oltava %s, jokaisella kielellä. Viesti pitää aiemman tekstinsä."
+
+msgid "Required: a text without it is not saved."
+msgstr "Pakollinen: tekstiä ilman sitä ei tallenneta."

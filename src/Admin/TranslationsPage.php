@@ -157,6 +157,18 @@ final class TranslationsPage
         }
 
         $result = $this->registry->saveRow($id, $input['source'], $input['texts']);
+
+        if ([] !== $result['missing']) {
+            return [
+                'type' => 'error',
+                'message' => sprintf(
+                    /* translators: %s: the placeholders, like {email} */
+                    __('Not saved: the text must contain %s, in every language. The message keeps the text it had.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    implode(', ', $result['missing'])
+                ),
+            ];
+        }
+
         $error = TranslatedText::errorNotice($result['error']);
 
         return '' === $error

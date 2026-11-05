@@ -75,7 +75,8 @@ final class TranslationsPageTest extends TestCase
         return new TranslationsPage(new View(), $registry);
     }
 
-    private function row(string $id, string $label, string $group): TranslationRow
+    /** @param list<string> $required */
+    private function row(string $id, string $label, string $group, array $required = []): TranslationRow
     {
         return new TranslationRow(
             $id,
@@ -84,7 +85,8 @@ final class TranslationsPageTest extends TestCase
             (array) $this->options['row.' . $id],
             function (array $value) use ($id): void {
                 $this->options['row.' . $id] = $value;
-            }
+            },
+            required: $required
         );
     }
 
@@ -123,6 +125,24 @@ final class TranslationsPageTest extends TestCase
 
         $notice = $this->page()->applyRow('nope', ['source' => 'x']);
         self::assertSame('error', $notice['type']);
+    }
+
+    /** A text without a required placeholder is not saved, and the notice names the placeholder. */
+    public function testARowWithoutARequiredPlaceholderIsNotSaved(): void
+    {
+        $before = ['source' => 'Now {email}.', 'texts' => ['fi' => 'Nyt {email}.', 'en' => 'Now {email}.']];
+        $this->options['row.moved'] = $before;
+        $registry = new TranslationRegistry(new TranslatedText(new LlmClient(new Logger()), new Logger()));
+        $registry->add(fn (): array => [
+            $this->row('moved', 'Address moved', TranslationRow::GROUP_EMAILS, ['{email}']),
+        ]);
+        $page = new TranslationsPage(new View(), $registry);
+
+        $notice = $page->applyRow('moved', ['source' => 'Now {email}.', 'texts' => ['fi' => 'Nyt uusi osoite.']]);
+
+        self::assertSame('error', $notice['type']);
+        self::assertStringContainsString('{email}', $notice['message']);
+        self::assertSame($before, $this->options['row.moved']);
     }
 
     public function testTranslateMissingNeedsAiTranslation(): void

@@ -99,7 +99,14 @@ use EventCrew\Support\TranslatedText;
                         <tbody>
                             <?php foreach ($eventcrew_entry['placeholders'] as $eventcrew_tag => $eventcrew_what) : ?>
                                 <tr>
-                                    <td><code><?php echo esc_html((string) $eventcrew_tag); ?></code></td>
+                                    <td>
+                                        <code><?php echo esc_html((string) $eventcrew_tag); ?></code>
+                                        <?php if (in_array($eventcrew_tag, $eventcrew_entry['required'], true)) : ?>
+                                            <br><strong>
+                                                <?php esc_html_e('Required: a text without it is not saved.', 'eventcrew'); ?>
+                                            </strong>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo esc_html((string) $eventcrew_what); ?></td>
                                 </tr>
                             <?php endforeach; ?>

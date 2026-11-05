@@ -114,7 +114,7 @@ final class BotTextsTest extends TestCase
 
         $result = $registry->saveRow($id, 'A changed source', ['fi' => 'Ota tämä tehtävä', 'en' => self::BUTTON]);
 
-        self::assertSame(['found' => true, 'error' => ''], $result);
+        self::assertSame(['found' => true, 'error' => '', 'missing' => []], $result);
         self::assertSame([], $this->requests);
         self::assertSame(
             [self::BUTTON => ['texts' => ['fi' => 'Ota tämä tehtävä'], 'manual' => ['fi' => true]]],

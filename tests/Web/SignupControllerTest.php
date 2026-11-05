@@ -576,6 +576,188 @@ final class SignupControllerTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
+    // ---- The Messages page templates (sign_in_link, account_create_link,
+    // email_change_confirm, email_changed) -----------------------------------
+
+    /** The sent mail with its one-time token replaced by TOKEN, so it can be compared. */
+    private function sentMail(int $index = 0): string
+    {
+        return $this->sent[$index]['subject'] . "\n---\n"
+            . (string) preg_replace('/token=[A-Za-z0-9_-]+/', 'token=TOKEN', $this->mails[$index]);
+    }
+
+    /**
+     * @param array<string, mixed> $stored
+     */
+    private function storeTemplate(string $id, array $stored): void
+    {
+        // The plain-text mail, as with no options at all.
+        $options = [
+            \EventCrew\Support\MessageTemplates::OPTION_PREFIX . $id => $stored,
+            EmailTemplate::HTML_OPTION => false,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, $default = false) => $options[$name] ?? $default
+        );
+    }
+
+    /**
+     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     */
+    private function storedText(string $text): array
+    {
+        return ['source' => $text, 'texts' => ['en' => $text], 'manual' => ['en' => false]];
+    }
+
+    public function testTheSignInEmailIsUnchangedWhenNothingIsStored(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+
+        $this->controller()->loginByEmail('sam@example.com');
+
+        self::assertSame(
+            "Your EventCrew sign-in link\n---\nHi Sam,\n\n"
+                . "Use the button below to sign in and manage your tasks.\n\n"
+                . "The link is good for 30 minutes, and works once.\n\n"
+                . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
+                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
+                . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheCreateAccountEmailIsUnchangedWhenNothingIsStored(): void
+    {
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        $this->controller()->loginByEmail('new@example.com');
+
+        self::assertSame(
+            "Create your crew account\n---\nHi,\n\n"
+                . "There is no crew account for this email address yet. The button below"
+                . " creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you"
+                . " did not ask for this, ignore this email.\n\nWe store your email to run the crew.\n\n"
+                . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
+                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
+                . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.12c6aa29e718d0f450ae312aadd7b4a5574cbd732e15063ef00e534d9e56e15b',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheEmailChangeConfirmationIsUnchangedWhenNothingIsStored(): void
+    {
+        $sam = $this->sam();
+
+        $this->controller()->updateProfile($sam, 'Sam', 'sam2@example.com');
+
+        self::assertSame(
+            "Confirm your new email address\n---\nHi Sam,\n\n"
+                . "Use the button below to make this the email address of your crew account.\n\n"
+                . "The link is good for 24 hours, and works once. Until you use it, your account keeps its"
+                . " old address. If you did not ask for this, ignore this email.\n\n"
+                . 'Confirm new email: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_profile&token=TOKEN'
+                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails: ",
+            $this->sentMail()
+        );
+    }
+
+    public function testTheEmailChangedNoticeIsUnchangedWhenNothingIsStored(): void
+    {
+        $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'sam2@example.com';
+        $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+
+        $this->controller()->confirmEmailChange('raw1');
+
+        self::assertSame(
+            "Your crew account email was changed\n---\nHi Sam,\n\nThe email address of your crew account is now"
+                . " sam2@example.com. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an"
+                . " organizer.\n\n—\nManage your account or stop these emails:"
+                . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheSignInEmailUsesTheStoredTextAndKeepsTheButton(): void
+    {
+        $this->storeTemplate('sign_in_link', [
+            'subject' => $this->storedText('Sign in, please'),
+            'body' => $this->storedText('Press the button.'),
+        ]);
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+
+        $this->controller()->loginByEmail('sam@example.com');
+
+        self::assertStringStartsWith(
+            "Sign in, please\n---\nHi Sam,\n\nPress the button.\n\n"
+                . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheCreateAccountEmailUsesTheStoredTextAndKeepsThePrivacyLine(): void
+    {
+        $this->storeTemplate('account_create_link', [
+            'subject' => $this->storedText('Welcome'),
+            'body' => $this->storedText('Press the button to join.'),
+        ]);
+        $this->wpdb->nextRows[] = null;
+
+        $this->controller()->loginByEmail('new@example.com');
+
+        self::assertStringStartsWith(
+            "Welcome\n---\nHi,\n\nPress the button to join.\n\nWe store your email to run the crew.\n\n"
+                . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheEmailChangeConfirmationUsesTheStoredText(): void
+    {
+        $this->storeTemplate('email_change_confirm', [
+            'subject' => $this->storedText('Is this you?'),
+            'body' => $this->storedText('Confirm below.'),
+        ]);
+        $sam = $this->sam();
+
+        $this->controller()->updateProfile($sam, 'Sam', 'sam2@example.com');
+
+        self::assertStringStartsWith(
+            "Is this you?\n---\nHi Sam,\n\nConfirm below.\n\n"
+                . 'Confirm new email: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_profile&token=TOKEN',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheEmailChangedNoticeUsesTheStoredText(): void
+    {
+        $this->storeTemplate('email_changed', [
+            'subject' => $this->storedText('Address moved'),
+            'body' => $this->storedText('Now {email}.'),
+        ]);
+        $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'sam2@example.com';
+        $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+
+        $this->controller()->confirmEmailChange('raw1');
+
+        self::assertStringStartsWith("Address moved\n---\nHi Sam,\n\nNow sam2@example.com.\n\n", $this->sentMail());
+    }
+
     private function accentStyle(): string
     {
         Functions\when('sanitize_hex_color')->returnArg(1);

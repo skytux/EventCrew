@@ -89,8 +89,12 @@ final class TranslationRegistryTest extends TestCase
      *
      * @param array<string, mixed> $value
      */
-    private function row(string $id, array $value, string $group = TranslationRow::GROUP_TEXTS): TranslationRow
-    {
+    private function row(
+        string $id,
+        array $value,
+        string $group = TranslationRow::GROUP_TEXTS,
+        array $required = []
+    ): TranslationRow {
         $this->options['row.' . $id] ??= $value;
 
         return new TranslationRow(
@@ -100,8 +104,57 @@ final class TranslationRegistryTest extends TestCase
             (array) $this->options['row.' . $id],
             function (array $value) use ($id): void {
                 $this->options['row.' . $id] = $value;
-            }
+            },
+            required: $required
         );
+    }
+
+    /** A registry with one row "moved" that must keep {email}. */
+    private function withRequired(): TranslationRegistry
+    {
+        $registry = $this->registry();
+        $registry->add(fn (): array => [
+            $this->row(
+                'moved',
+                ['source' => 'Now {email}.', 'lang' => 'en', 'texts' => ['fi' => '', 'en' => 'Now {email}.']],
+                TranslationRow::GROUP_EMAILS,
+                ['{email}']
+            ),
+        ]);
+
+        return $registry;
+    }
+
+    /** A posted text without a required placeholder is not stored and the model is not asked. */
+    public function testARowWithoutARequiredPlaceholderIsNotSaved(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Nyt {email}."}');
+        $registry = $this->withRequired();
+        $registry->find('moved'); // Reading the rows stores the row's first value.
+        $before = $this->stored('moved');
+
+        $result = $registry->saveRow('moved', 'Now {email}.', ['fi' => 'Nyt uusi osoite.']);
+
+        self::assertSame(['found' => true, 'error' => '', 'missing' => ['{email}']], $result);
+        self::assertSame([], $this->requests);
+        self::assertSame($before, $this->stored('moved'));
+    }
+
+    /** A translation that drops a required placeholder is not stored, on save and on "Translate missing". */
+    public function testATranslationWithoutARequiredPlaceholderIsNotStored(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Nyt uusi osoite."}');
+        $before = $this->withRequired()->find('moved')?->value;
+
+        $result = $this->withRequired()->saveRow('moved', 'Now {email}.', []);
+
+        self::assertSame(['{email}'], $result['missing']);
+        self::assertSame($before, TranslatedText::normalize($this->stored('moved')));
+
+        $result = $this->withRequired()->translateMissing();
+
+        self::assertSame(['filled' => 0, 'failed' => 1, 'error' => ''], $result);
+        self::assertSame('', $this->stored('moved')['texts']['fi']);
     }
 
     /** @return array<string, mixed> */
@@ -180,11 +233,14 @@ final class TranslationRegistryTest extends TestCase
 
         $result = $this->sample()->saveRow('a', 'Hello', ['fi' => 'Hei', 'en' => 'Hello there']);
 
-        self::assertSame(['found' => true, 'error' => ''], $result);
+        self::assertSame(['found' => true, 'error' => '', 'missing' => []], $result);
         self::assertSame([], $this->requests);
         self::assertSame(['fi' => 'Hei', 'en' => 'Hello there'], $this->stored('a')['texts']);
         self::assertSame(['fi' => true, 'en' => true], $this->stored('a')['manual']);
-        self::assertSame(['found' => false, 'error' => ''], $this->sample()->saveRow('zzz', 'x', []));
+        self::assertSame(
+            ['found' => false, 'error' => '', 'missing' => []],
+            $this->sample()->saveRow('zzz', 'x', [])
+        );
     }
 
     /** A new source is translated again, except the texts edited by hand. */

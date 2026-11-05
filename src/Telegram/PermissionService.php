@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\NotificationPreferences;
@@ -319,16 +320,13 @@ final class PermissionService
         }
 
         if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
+            $context = ['person' => $person, 'change' => $dm];
+
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                __('Your EventCrew access changed', 'eventcrew'),
-                sprintf(
-                    /* translators: 1: name, 2: what changed */
-                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                    $person->name(),
-                    $dm
-                )
+                MessageTemplates::subject('access_changed', $context),
+                MessageTemplates::body('access_changed', $context)
             );
         }
     }
@@ -370,17 +368,15 @@ final class PermissionService
     private function dmText(string $dmKind): string
     {
         if (str_starts_with($dmKind, 'role:')) {
-            return sprintf(
-                /* translators: %s: role name, such as DJ */
-                __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                Roles::label(substr($dmKind, strlen('role:')))
+            return MessageTemplates::body(
+                'access_role_dm',
+                ['role' => Roles::label(substr($dmKind, strlen('role:')))]
             );
         }
 
         return match ($dmKind) {
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'pass' => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew'),
-            'admin' => __('⭐ You’re now an EventCrew organizer.', 'eventcrew'),
+            'pass' => MessageTemplates::body('access_pass_dm'),
+            'admin' => MessageTemplates::body('access_organizer_dm'),
             default => '',
         };
     }
