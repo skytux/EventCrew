@@ -14,35 +14,30 @@ namespace EventCrew\Support;
  * entirely when it is, so an install that never sets one is not left with a
  * stray blank line or a half-written sentence.
  *
- * A second, optional setting holds the Finnish sign-off. A message composed in
- * Finnish uses it; a two-language email (Finnish, then English) shows both.
- * When it is blank, the one sign-off is used everywhere, as before.
+ * The sign-off is a written-once text (SiteTexts, TranslatedText): written in
+ * any language and kept in every site language. A message composed in Finnish
+ * uses the Finnish text; a two-language email (Finnish, then English) shows
+ * both.
  */
 final class Signature
 {
     public const OPTION = 'eventcrew_signature';
 
-    /** The Finnish sign-off; blank uses OPTION for Finnish too. */
+    /**
+     * The Finnish sign-off of the time before the sign-off was a
+     * TranslatedText value. Only read: SiteTexts::value() takes it as the
+     * Finnish text until the signature is saved again.
+     */
     public const FINNISH_OPTION = 'eventcrew_signature_fi';
 
     /**
-     * The raw sign-off, for the plain-text bodies and the DMs: the Finnish one
-     * when $language (or, when null, the language being composed in) is
-     * Finnish and a Finnish one is set, the main one otherwise.
+     * The raw sign-off, for the plain-text bodies and the DMs: the text in
+     * $language (or, when null, the language being composed in, else the
+     * main language), as SiteTexts::text() gives it.
      */
     public static function text(?string $language = null): string
     {
-        $language ??= Language::current();
-
-        if (Language::FINNISH === $language) {
-            $finnish = trim((string) get_option(self::FINNISH_OPTION, ''));
-
-            if ('' !== $finnish) {
-                return $finnish;
-            }
-        }
-
-        return trim((string) get_option(self::OPTION, ''));
+        return SiteTexts::text('signature', $language);
     }
 
     public static function isSet(): bool

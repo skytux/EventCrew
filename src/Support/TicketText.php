@@ -91,15 +91,18 @@ final class TicketText
      * The built-in text as a settings value: the English text as the source
      * and each site language's own text, none of them edited by hand.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array<string, mixed> A TranslatedText value.
      */
     public static function defaultValue(): array
     {
         $value = TranslatedText::blank();
         $value['source'] = (string) Language::run(Language::ENGLISH, static fn (): string => self::defaultText());
+        $value['lang'] = Language::ENGLISH;
 
-        foreach (TranslatedText::LANGUAGES as $lang) {
-            $value['texts'][$lang] = (string) Language::run($lang, static fn (): string => self::defaultText());
+        foreach (TranslatedText::languages() as $lang) {
+            $value['texts'][$lang] = SiteLanguages::hasCatalog($lang)
+                ? (string) Language::run($lang, static fn (): string => self::defaultText())
+                : '';
         }
 
         return $value;
@@ -109,7 +112,7 @@ final class TicketText
      * The wp-admin text: the stored value, or the built-in one when nothing
      * (or only empty fields) is stored.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array<string, mixed> A TranslatedText value.
      */
     public static function settings(): array
     {
@@ -147,20 +150,12 @@ final class TicketText
      */
     public function saveSettings(mixed $posted): string
     {
-        $input = TranslatedText::fromPost($posted, true);
+        $result = $this->translator->save(self::settings(), $posted, self::MAX_LENGTH, true);
 
-        if (null === $input) {
+        if (null === $result) {
             return '';
         }
 
-        $result = $this->translator->update(
-            self::settings(),
-            $input['source'],
-            $input['texts'],
-            $input['again'],
-            self::MAX_LENGTH,
-            true
-        );
         $value = $result['value'];
 
         if ($value === self::defaultValue() || '' === $value['source'] . implode('', $value['texts'])) {
@@ -170,6 +165,29 @@ final class TicketText
         }
 
         return $result['error'];
+    }
+
+    /**
+     * The text as a row of the wp-admin Translations page
+     * (TranslationRegistry).
+     *
+     * @return list<TranslationRow>
+     */
+    public static function translationRows(): array
+    {
+        return [
+            new TranslationRow(
+                'email.ticket',
+                __('Ticket email text', 'eventcrew'),
+                TranslationRow::GROUP_EMAILS,
+                self::settings(),
+                static function (array $value): void {
+                    update_option(self::OPTION, $value);
+                },
+                self::MAX_LENGTH,
+                true
+            ),
+        ];
     }
 
     /**

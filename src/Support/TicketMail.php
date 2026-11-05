@@ -14,7 +14,6 @@ use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
-use EventCrew\Telegram\TicketController;
 use EventCrew\Web\SignupBoardView;
 
 /**
@@ -1208,8 +1207,9 @@ final class TicketMail
             $holder = trim($holder . ' +' . $row->plusOnes);
         }
 
-        // The same ticket note as the web ticket (door code, address), as typed.
-        $note = trim((string) get_option(TicketController::NOTE_OPTION, ''));
+        // The same ticket note as the web ticket (door code, address), in
+        // every language, as the rest of this email is.
+        $note = implode("\n\n", SiteTexts::allLanguages('ticket_note'));
 
         // Each language's part starts with its FI / EN tag, when the two differ.
         $same = $fi['text'] === $en['text'];

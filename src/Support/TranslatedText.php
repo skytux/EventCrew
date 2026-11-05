@@ -10,13 +10,19 @@ namespace EventCrew\Support;
  *
  * One stored value holds:
  * - source: the text as the organizer wrote it;
- * - lang: the language the source is written in, as the language model found
- *   it (or the main language when detection is off); '' when not known;
+ * - lang: the language code of the source ('' when not known yet);
+ * - detected: true when the language model chose lang, false when the
+ *   organizer chose it in the language menu, when language detection is off
+ *   (then it is the main language), or when it is not known;
  * - texts: one text per site language (languages(), set on the Translations
  *   page);
  * - manual: per language, true when that language's text was written or
- *   changed by hand. A manual text is not overwritten by a translation,
+ *   changed by hand. A manual text is never overwritten by a translation,
  *   except by "Translate again".
+ *
+ * A value stored before lang and detected existed reads with lang '' (found
+ * on the next save). A plain string (a field that was a plain text before)
+ * reads as the source, with no texts yet.
  *
  * A language added to the site has an empty, not manual text in every stored
  * value, so the next update() (a save, or "Translate missing" on the
@@ -24,16 +30,20 @@ namespace EventCrew\Support;
  * kept in the value, unused, so adding it back brings them back.
  *
  * On a save (update()), the language model (LlmClient) is asked once for the
- * source's language and its translation into every other language. A
- * language the source is already written in gets the source itself. The
- * model is asked only when there is something to fill: the source changed, a
- * language text that is not manual is empty, or "Translate again" was used.
+ * source's language (unless the organizer chose it, or detection is off) and
+ * its translation into every other site language. The source's own language
+ * gets the source itself. The model is asked only when there is something to
+ * fill: the source or its language changed, a language text that is not
+ * manual is empty, or "Translate again" was used.
  *
  * The switch AUTO_OPTION ("Translate texts automatically with the language
  * model", on by default) turns the model off for every text: nothing is sent,
  * and an empty language text gets the source as written. The same happens
  * when the model is not set up or its answer cannot be used; update() and
  * translate() then return the error, so the caller can say so.
+ *
+ * Readers use forReader(): the text in the reader's language, else in the
+ * main language (the first site language), else the source.
  *
  * The settings field is drawn by field() and read back by fromPost(). Each
  * caller keeps its value in its own option; this class keeps nothing.
@@ -75,6 +85,12 @@ final class TranslatedText
         return SiteLanguages::codes();
     }
 
+    /** The main language: the first site language. */
+    public static function mainLanguage(): string
+    {
+        return SiteLanguages::main();
+    }
+
     /** Whether texts are translated with the language model (the global switch). */
     public static function autoEnabled(): bool
     {
@@ -84,7 +100,13 @@ final class TranslatedText
     /**
      * An empty value.
      *
-     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{
+     *     source: string,
+     *     lang: string,
+     *     detected: bool,
+     *     texts: array<string, string>,
+     *     manual: array<string, bool>
+     * }
      */
     public static function blank(): array
     {
@@ -93,6 +115,7 @@ final class TranslatedText
         return [
             'source' => '',
             'lang' => '',
+            'detected' => false,
             'texts' => array_fill_keys($languages, ''),
             'manual' => array_fill_keys($languages, false),
         ];
@@ -100,22 +123,34 @@ final class TranslatedText
 
     /**
      * A stored value in the full shape: every site language present, a text
-     * that is not a string read as ''. Texts of languages that are not site
-     * languages (any more) are kept after them.
+     * that is not a string read as ''. A plain string (a field stored before
+     * it was translated) becomes the source.
      *
-     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{
+     *     source: string,
+     *     lang: string,
+     *     detected: bool,
+     *     texts: array<string, string>,
+     *     manual: array<string, bool>
+     * }
      */
     public static function normalize(mixed $stored): array
     {
         $value = self::blank();
+
+        if (is_string($stored)) {
+            $value['source'] = trim(str_replace(["\r\n", "\r"], "\n", $stored));
+
+            return $value;
+        }
 
         if (! is_array($stored)) {
             return $value;
         }
 
         $value['source'] = is_string($stored['source'] ?? null) ? $stored['source'] : '';
-        $lang = is_string($stored['lang'] ?? null) ? strtolower(trim($stored['lang'])) : '';
-        $value['lang'] = 1 === preg_match('/^[a-z]{2,3}$/', $lang) ? $lang : '';
+        $value['lang'] = self::code($stored['lang'] ?? null);
+        $value['detected'] = '' !== $value['lang'] && (bool) ($stored['detected'] ?? false);
         $texts = is_array($stored['texts'] ?? null) ? $stored['texts'] : [];
         $manual = is_array($stored['manual'] ?? null) ? $stored['manual'] : [];
 
@@ -124,11 +159,12 @@ final class TranslatedText
             $value['manual'][$lang] = (bool) ($manual[$lang] ?? false);
         }
 
+        // Texts of languages taken off the site are kept after them.
         foreach ($texts as $lang => $text) {
             if (
                 is_string($lang)
                 && ! isset($value['texts'][$lang])
-                && 1 === preg_match('/^[a-z]{2,3}$/', $lang)
+                && '' !== self::code($lang)
                 && is_string($text)
                 && '' !== $text
             ) {
@@ -141,17 +177,62 @@ final class TranslatedText
     }
 
     /**
-     * The text for $lang: that language's text, or the source when it is
-     * empty.
+     * The text for $lang: that language's text; else the source when it is
+     * written in $lang; else the main language's text; else the source.
      *
-     * @param array<string, mixed> $value
+     * @param array<string, mixed>|string $value A value, or a plain string.
      */
-    public static function text(array $value, string $lang): string
+    public static function text(array|string $value, string $lang): string
     {
         $value = self::normalize($value);
+
         $text = $value['texts'][$lang] ?? '';
 
-        return '' !== $text ? $text : $value['source'];
+        if ('' !== $text) {
+            return $text;
+        }
+
+        if ($lang === $value['lang']) {
+            return $value['source'];
+        }
+
+        $main = $value['texts'][self::mainLanguage()] ?? '';
+
+        return '' !== $main ? $main : $value['source'];
+    }
+
+    /**
+     * The text of a stored value for the person reading it: in $lang, or in
+     * the language text is being composed in now (Language::current()), or
+     * in the main language outside any Language::run(). Falls back as text()
+     * does. Takes the raw option value, a plain string included.
+     */
+    public static function forReader(mixed $stored, ?string $lang = null): string
+    {
+        $lang ??= Language::current() ?? self::mainLanguage();
+
+        return trim(self::text(is_string($stored) ? $stored : (is_array($stored) ? $stored : []), $lang));
+    }
+
+    /**
+     * The text in every site language, in order, for a message written in
+     * all of them at once. A text the same as an earlier one is left out.
+     *
+     * @return array<string, string> By language code; empty texts left out.
+     */
+    public static function allLanguages(mixed $stored): array
+    {
+        $out = [];
+
+        foreach (self::languages() as $lang) {
+            $text = self::forReader($stored, $lang);
+
+            if ('' !== $text && ! in_array($text, $out, true)) {
+                $out[$lang] = $text;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -163,132 +244,199 @@ final class TranslatedText
      * being manual. $again ("Translate again") translates every language,
      * manual ones included, and clears the manual marks.
      *
+     * $sourceLang is the language menu: '' is "Detect automatically", a code
+     * is a language chosen by hand, and null (the menu was not posted) keeps
+     * the stored choice.
+     *
      * @param array<string, mixed> $previous The stored value.
      * @param array<string, string> $texts
      * @return array{
-     *     value: array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>},
+     *     value: array{
+     *         source: string,
+     *         lang: string,
+     *         detected: bool,
+     *         texts: array<string, string>,
+     *         manual: array<string, bool>
+     *     },
      *     error: string
      * } error is '' when nothing had to be translated or the translation
      *     worked, else ERROR_OFF, ERROR_BAD_ANSWER, or an LlmClient error kind.
      */
     public function update(
-        array $previous,
+        array|string $previous,
         string $source,
         array $texts,
         bool $again = false,
         int $maxLength = 0,
-        bool $multiline = true
+        bool $multiline = true,
+        ?string $sourceLang = null
     ): array {
         $before = self::normalize($previous);
+        // Texts of languages that are not site languages (any more) stay.
         $value = $before;
         $value['source'] = self::clean($source, $maxLength, $multiline);
-        $languages = self::languages();
-
-        foreach ($languages as $lang) {
-            $posted = array_key_exists($lang, $texts)
-                ? self::clean((string) $texts[$lang], $maxLength, $multiline)
-                : $before['texts'][$lang];
-
-            $value['texts'][$lang] = $posted;
-            $value['manual'][$lang] = match (true) {
-                $again, '' === $posted => false,
-                $posted !== $before['texts'][$lang] => true,
-                default => $before['manual'][$lang],
-            };
-        }
-
+        $value['lang'] = '';
+        $value['detected'] = false;
         $sourceChanged = $value['source'] !== $before['source'];
 
-        if ($sourceChanged) {
-            $value['lang'] = SiteLanguages::detectEnabled() || '' === $value['source'] ? '' : SiteLanguages::main();
+        // The language of the source: chosen by hand, kept from before, the
+        // main language when detection is off, or '' when it has to be
+        // detected.
+        $chosen = null === $sourceLang
+            ? ($before['detected'] ? '' : $before['lang'])
+            : self::code($sourceLang);
+
+        if ('' !== $chosen) {
+            $lang = $chosen;
+            $detected = false;
+        } elseif (! $sourceChanged && $before['detected']) {
+            $lang = $before['lang'];
+            $detected = true;
+        } elseif (! SiteLanguages::detectEnabled()) {
+            $lang = self::mainLanguage();
+            $detected = false;
+        } else {
+            $lang = '';
+            $detected = false;
         }
 
-        $fill = [];
+        $langChanged = '' !== $lang && $lang !== $before['lang'];
 
-        foreach ($languages as $lang) {
-            if (! $value['manual'][$lang] && ($again || $sourceChanged || '' === $value['texts'][$lang])) {
-                $fill[] = $lang;
-            }
-        }
+        foreach (self::languages() as $code) {
+            $posted = array_key_exists($code, $texts)
+                ? self::clean((string) $texts[$code], $maxLength, $multiline)
+                : $before['texts'][$code];
 
-        if ([] === $fill) {
-            return ['value' => $value, 'error' => ''];
+            $value['texts'][$code] = $posted;
+            $value['manual'][$code] = match (true) {
+                $again, '' === $posted => false,
+                $posted !== $before['texts'][$code] => true,
+                default => $before['manual'][$code],
+            };
         }
 
         if ('' === $value['source']) {
             // No source: the texts that follow it are emptied with it.
-            foreach ($fill as $lang) {
-                $value['texts'][$lang] = '';
+            foreach (self::languages() as $code) {
+                if (! $value['manual'][$code]) {
+                    $value['texts'][$code] = '';
+                }
             }
 
             return ['value' => $value, 'error' => ''];
         }
 
-        $result = $this->translate($value['source'], $maxLength, $multiline);
+        $fill = [];
 
-        if ($result['ok']) {
-            $value['lang'] = $result['lang'];
-        }
-
-        foreach ($fill as $lang) {
-            if ($result['ok']) {
-                $value['texts'][$lang] = $result['texts'][$lang];
-            } elseif ('' === $value['texts'][$lang]) {
-                $value['texts'][$lang] = $value['source'];
+        foreach (self::languages() as $code) {
+            if (
+                $code !== $lang
+                && ! $value['manual'][$code]
+                && ($again || $sourceChanged || $langChanged || '' === $value['texts'][$code])
+            ) {
+                $fill[] = $code;
             }
         }
 
-        return ['value' => $value, 'error' => $result['error']];
+        if ([] === $fill) {
+            return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => ''];
+        }
+
+        $result = $this->translate($value['source'], $maxLength, $multiline, $lang);
+
+        if ($result['ok']) {
+            if ('' === $lang) {
+                $lang = $result['lang'];
+                $detected = true;
+            }
+
+            foreach ($fill as $code) {
+                if ($code !== $lang) {
+                    $value['texts'][$code] = $result['texts'][$code];
+                }
+            }
+
+            return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => ''];
+        }
+
+        foreach ($fill as $code) {
+            if ('' === $value['texts'][$code]) {
+                $value['texts'][$code] = $value['source'];
+            }
+        }
+
+        return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => $result['error']];
+    }
+
+    /**
+     * Sets the source language, and gives that language (when it is a site
+     * language) the source itself as its text, unless that text was edited
+     * by hand (on the Translations page, where every language has a cell).
+     *
+     * @param array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>} $value
+     * @return array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>}
+     */
+    private static function withSourceLanguage(array $value, string $lang, bool $detected): array
+    {
+        $value['lang'] = $lang;
+        $value['detected'] = '' !== $lang && $detected;
+
+        if (
+            '' !== $lang
+            && array_key_exists($lang, $value['texts'])
+            && ! ($value['manual'][$lang] && '' !== $value['texts'][$lang])
+        ) {
+            $value['texts'][$lang] = $value['source'];
+            $value['manual'][$lang] = false;
+        }
+
+        return $value;
     }
 
     /**
      * Translates $source into every site language. The language it is
-     * written in gets $source itself.
-     *
-     * $sourceLang is the language $source is written in, when it is known;
-     * null asks the model, or takes the main language when language
-     * detection is off (SiteLanguages::detectEnabled()).
+     * written in gets $source itself. $lang is the source's language when it
+     * is known; null or '' asks the model to find it, or takes the main
+     * language when language detection is off (SiteLanguages::detectEnabled()).
      *
      * @return array{ok: bool, lang: string, texts: array<string, string>, error: string}
-     *     lang is the language the source is written in ('' when the model
-     *     was not asked or failed). texts is empty unless ok.
+     *     lang is the source's language ('' when it was not asked or
+     *     failed). texts is empty unless ok.
      */
-    public function translate(
-        string $source,
-        int $maxLength = 0,
-        bool $multiline = true,
-        ?string $sourceLang = null
-    ): array {
+    public function translate(string $source, int $maxLength = 0, bool $multiline = true, ?string $lang = null): array
+    {
         $failed = static fn (string $error): array => ['ok' => false, 'lang' => '', 'texts' => [], 'error' => $error];
 
         if (! self::autoEnabled()) {
             return $failed(self::ERROR_OFF);
         }
 
-        if (null === $sourceLang && ! SiteLanguages::detectEnabled()) {
-            $sourceLang = SiteLanguages::main();
+        $lang = self::code($lang);
+
+        if ('' === $lang && ! SiteLanguages::detectEnabled()) {
+            $lang = self::mainLanguage();
         }
 
-        $languages = self::languages();
+        $targets = array_values(array_diff(self::languages(), [$lang]));
 
-        if (null !== $sourceLang && [$sourceLang] === $languages) {
+        if ('' !== $lang && [] === $targets) {
             // The source is in the only site language: nothing to ask.
-            return ['ok' => true, 'lang' => $sourceLang, 'texts' => [$sourceLang => $source], 'error' => ''];
+            return ['ok' => true, 'lang' => $lang, 'texts' => [$lang => $source], 'error' => ''];
         }
 
         $answer = $this->llm->chat(
             [
-                ['role' => 'system', 'content' => self::prompt($maxLength, $sourceLang)],
+                ['role' => 'system', 'content' => self::prompt($maxLength, $lang)],
                 ['role' => 'user', 'content' => $source],
             ],
-            self::TOKENS_PER_LANGUAGE * max(1, count($languages) - 1)
+            self::TOKENS_PER_LANGUAGE * max(1, count($targets))
         );
 
         if (! $answer['ok']) {
             return $failed($answer['error']);
         }
 
-        $parsed = self::parse($answer['content'], $sourceLang);
+        $parsed = self::parse($answer['content'], $lang);
 
         if (null === $parsed) {
             $this->logger->warning('Translation: the language model answer could not be read.');
@@ -298,10 +446,10 @@ final class TranslatedText
 
         $out = [];
 
-        foreach ($languages as $lang) {
-            $out[$lang] = $lang === $parsed['lang']
+        foreach (self::languages() as $code) {
+            $out[$code] = $code === $parsed['lang']
                 ? $source
-                : self::clean($parsed['texts'][$lang], $maxLength, $multiline);
+                : self::clean($parsed['texts'][$code], $maxLength, $multiline);
         }
 
         return ['ok' => true, 'lang' => $parsed['lang'], 'texts' => $out, 'error' => ''];
@@ -310,13 +458,14 @@ final class TranslatedText
     /**
      * Reads the model's JSON answer: the source's language code and a text
      * for every site language except that one. Null when it is not that
-     * shape. With $sourceLang given, that is the source's language, whatever
-     * the answer says.
+     * shape. With $lang (the language chosen by hand), that language is the
+     * source's whatever the model said.
      *
      * @return array{lang: string, texts: array<string, string>}|null
      */
-    public static function parse(string $content, ?string $sourceLang = null): ?array
+    public static function parse(string $content, ?string $lang = null): ?array
     {
+        $lang = self::code($lang);
         $content = trim($content);
 
         // Some models wrap JSON in a Markdown code fence.
@@ -330,11 +479,12 @@ final class TranslatedText
             return null;
         }
 
-        $lang = $sourceLang
-            ?? strtolower(trim(is_string($decoded['lang'] ?? null) ? $decoded['lang'] : ''));
+        if ('' === $lang) {
+            $lang = self::code($decoded['lang'] ?? null);
 
-        if (1 !== preg_match('/^[a-z]{2,3}$/', $lang)) {
-            return null;
+            if ('' === $lang) {
+                return null;
+            }
         }
 
         $texts = [];
@@ -375,11 +525,12 @@ final class TranslatedText
 
     /**
      * Reads the field drawn by field() from a posted array: the source, the
-     * language texts and whether "Translate again" was used. The caller
-     * sanitizes nothing more; update() trims and cuts.
+     * language menu, the language texts and whether "Translate again" was
+     * used. The caller sanitizes nothing more; update() trims and cuts.
      *
-     * @return array{source: string, texts: array<string, string>, again: bool}|null
-     *     null when the field was not posted.
+     * @return array{source: string, lang: ?string, texts: array<string, string>, again: bool}|null
+     *     null when the field was not posted. lang is null when the menu was
+     *     not posted, '' for "Detect automatically", else a language code.
      */
     public static function fromPost(mixed $raw, bool $multiline = true): ?array
     {
@@ -400,11 +551,45 @@ final class TranslatedText
             }
         }
 
+        $lang = null;
+
+        if (isset($raw['lang']) && is_scalar($raw['lang'])) {
+            $lang = self::code($raw['lang']);
+            $lang = in_array($lang, self::languages(), true) ? $lang : '';
+        }
+
         return [
             'source' => $sanitize(is_scalar($raw['source']) ? $raw['source'] : ''),
+            'lang' => $lang,
             'texts' => $texts,
             'again' => '1' === (string) ($raw['again'] ?? ''),
         ];
+    }
+
+    /**
+     * Saves one posted field drawn by field(): reads it (fromPost()) and
+     * applies it to $previous (update()).
+     *
+     * @param array<string, mixed>|string $previous
+     * @return array{value: array<string, mixed>, error: string}|null null when the field was not posted.
+     */
+    public function save(array|string $previous, mixed $raw, int $maxLength = 0, bool $multiline = true): ?array
+    {
+        $input = self::fromPost($raw, $multiline);
+
+        if (null === $input) {
+            return null;
+        }
+
+        return $this->update(
+            $previous,
+            $input['source'],
+            $input['texts'],
+            $input['again'],
+            $maxLength,
+            $multiline,
+            $input['lang']
+        );
     }
 
     /**
@@ -437,23 +622,26 @@ final class TranslatedText
     }
 
     /**
-     * Prints the settings field: the source ("Write in any language"), then
-     * one field per language, each with its "edited by hand" mark, and the
-     * "Translate again" button. Posts as {$name}[source], {$name}[texts][lang]
-     * and {$name}[again].
+     * Prints the settings field: the source ("Write in any language"), the
+     * language menu ("Detect automatically" or a language; after detection
+     * it reads "Finnish, detected"), then one field per other language, each
+     * with its "edited by hand" mark, and the "Translate again" button.
+     * Posts as {$name}[source], {$name}[lang], {$name}[texts][lang] and
+     * {$name}[again]. $maxLength 0 means no limit.
      *
-     * @param array<string, mixed> $value
+     * @param array<string, mixed>|string $value
      */
-    public static function field(string $name, string $id, array $value, int $maxLength, bool $multiline): void
+    public static function field(string $name, string $id, array|string $value, int $maxLength, bool $multiline): void
     {
         $value = self::normalize($value);
-        $input = static function (string $fieldName, string $fieldId, string $text) use ($maxLength, $multiline): void {
+        $limit = $maxLength > 0 ? sprintf(' maxlength="%d"', $maxLength) : '';
+        $input = static function (string $fieldName, string $fieldId, string $text) use ($limit, $multiline): void {
             if ($multiline) {
                 printf(
-                    '<textarea id="%s" name="%s" rows="4" maxlength="%d" class="large-text">%s</textarea>',
+                    '<textarea id="%s" name="%s" rows="4"%s class="large-text">%s</textarea>',
                     esc_attr($fieldId),
                     esc_attr($fieldName),
-                    (int) $maxLength,
+                    $limit, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from an int above.
                     esc_textarea($text)
                 );
 
@@ -461,13 +649,15 @@ final class TranslatedText
             }
 
             printf(
-                '<input type="text" id="%s" name="%s" maxlength="%d" value="%s" class="large-text">',
+                '<input type="text" id="%s" name="%s"%s value="%s" class="large-text">',
                 esc_attr($fieldId),
                 esc_attr($fieldName),
-                (int) $maxLength,
+                $limit, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from an int above.
                 esc_attr($text)
             );
         };
+
+        $byHand = $value['detected'] ? '' : $value['lang'];
 
         echo '<div class="ec-translated" style="max-width:48em">';
         printf(
@@ -478,8 +668,41 @@ final class TranslatedText
         $input($name . '[source]', $id, $value['source']);
         printf('<p class="description"><span class="ec-char-count" data-ec-for="%s"></span></p>', esc_attr($id));
 
+        printf(
+            '<p><label for="%1$s">%2$s</label> <select id="%1$s" name="%3$s" class="ec-translated-lang">',
+            esc_attr($id . '-lang'),
+            esc_html__('Language of this text', 'eventcrew'),
+            esc_attr($name . '[lang]')
+        );
+        printf(
+            '<option value=""%s>%s</option>',
+            selected('', $byHand, false),
+            esc_html(
+                $value['detected']
+                    ? sprintf(
+                        /* translators: %s: a language name, e.g. Finnish */
+                        __('%s, detected', 'eventcrew'),
+                        self::label($value['lang'])
+                    )
+                    : __('Detect automatically', 'eventcrew')
+            )
+        );
+
+        foreach (self::languages() as $lang) {
+            printf(
+                '<option value="%s"%s>%s</option>',
+                esc_attr($lang),
+                selected($lang, $byHand, false),
+                esc_html(self::label($lang))
+            );
+        }
+
+        echo '</select></p>';
+
         foreach (self::languages() as $lang) {
             $langId = $id . '-' . $lang;
+            $hidden = $lang === $value['lang'] && ! $value['manual'][$lang] ? ' hidden' : '';
+            printf('<div class="ec-translated-text" data-ec-lang="%s"%s>', esc_attr($lang), esc_attr($hidden));
             printf(
                 '<p style="margin-top:1em"><label for="%s">%s</label>%s</p>',
                 esc_attr($langId),
@@ -493,6 +716,7 @@ final class TranslatedText
                 '<p class="description"><span class="ec-char-count" data-ec-for="%s"></span></p>',
                 esc_attr($langId)
             );
+            echo '</div>';
         }
 
         printf('<input type="hidden" name="%s" value="">', esc_attr($name . '[again]'));
@@ -505,9 +729,11 @@ final class TranslatedText
     }
 
     /**
-     * Prints the script behind every "Translate again" button: it marks the
-     * field and saves the form. Print it once, after the fields. With JS off
-     * the button does nothing.
+     * Prints the script behind every "Translate again" button (it marks the
+     * field and saves the form) and every language menu (a language chosen
+     * by hand hides that language's translation field, as the source is that
+     * text). Print it once, after the fields. With JS off the button does
+     * nothing and every field stays as drawn.
      */
     public static function script(): void
     {
@@ -522,45 +748,65 @@ final class TranslatedText
             . "            if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }\n"
             . "        });\n"
             . "    });\n"
+            . "    document.querySelectorAll('.ec-translated-lang').forEach(function (menu) {\n"
+            . "        var box = menu.closest('.ec-translated');\n"
+            . "        if (!box) { return; }\n"
+            . "        menu.addEventListener('change', function () {\n"
+            . "            box.querySelectorAll('.ec-translated-text').forEach(function (part) {\n"
+            . "                part.hidden = '' !== menu.value && part.getAttribute('data-ec-lang') === menu.value;\n"
+            . "            });\n"
+            . "        });\n"
+            . "    });\n"
             . "})();\n</script>\n";
     }
 
     /**
-     * The instruction sent to the model with the source. With $sourceLang
-     * the model is told the source's language instead of asked for it.
+     * A language code as stored: two or three lower-case letters, or ''.
      */
-    private static function prompt(int $maxLength, ?string $sourceLang = null): string
+    private static function code(mixed $value): string
+    {
+        $code = strtolower(trim(is_scalar($value) ? (string) $value : ''));
+
+        return 1 === preg_match('/^[a-z]{2,3}$/', $code) ? $code : '';
+    }
+
+    /** The English name of a language for the model. */
+    private static function name(string $lang): string
+    {
+        return SiteLanguages::name($lang);
+    }
+
+    /** The instruction sent to the model with the source. */
+    private static function prompt(int $maxLength, string $lang = ''): string
     {
         $targets = [];
         $shape = [];
 
-        foreach (self::languages() as $lang) {
-            if ($lang === $sourceLang) {
+        foreach (self::languages() as $code) {
+            if ($code === $lang) {
                 continue;
             }
 
-            $name = SiteLanguages::name($lang);
-            $targets[] = $name . ' (' . $lang . ')';
-            $shape[] = '"' . $lang . '": "the text in ' . $name . '"';
+            $name = self::name($code);
+            $targets[] = $name . ' (' . $code . ')';
+            $shape[] = '"' . $code . '": "the text in ' . $name . '"';
         }
 
-        if (null === $sourceLang) {
-            $first = 'First decide which language the text is written in. '
-                . 'Then translate it into each of these languages: ';
-            $langShape = '"the two-letter code of the language the text is written in"';
-        } else {
-            $first = 'The text is written in ' . SiteLanguages::name($sourceLang) . ' (' . $sourceLang . '). '
-                . 'Translate it into each of these languages: ';
-            $langShape = '"' . $sourceLang . '"';
-        }
+        $known = '' !== $lang;
 
         return 'You translate a short text written by the organizers of an event. '
-            . $first . implode(', ', $targets) . '. '
+            . ($known
+                ? 'The text is written in ' . self::name($lang) . ' (' . $lang . '). '
+                : 'First decide which language the text is written in. ')
+            . ($known ? 'Translate' : 'Then translate')
+            . ' it into each of these languages: ' . implode(', ', $targets) . '. '
             . 'Keep the line breaks, links, names, dates, times and emoji exactly as they are. '
             . 'Do not add anything and do not leave anything out. '
             . ($maxLength > 0 ? 'Keep each translation at most ' . $maxLength . ' characters long. ' : '')
-            . (null === $sourceLang ? 'Leave out the language the text is already written in. ' : '')
+            . ($known ? '' : 'Leave out the language the text is already written in. ')
             . 'Answer with JSON only, with no other text: '
-            . '{"lang": ' . $langShape . ', ' . implode(', ', $shape) . '}';
+            . '{"lang": '
+            . ($known ? '"' . $lang . '"' : '"the two-letter code of the language the text is written in"')
+            . ', ' . implode(', ', $shape) . '}';
     }
 }

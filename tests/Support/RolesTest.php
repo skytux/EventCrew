@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Support\Language;
 use EventCrew\Support\Roles;
 use EventCrew\Tests\TestCase;
 
@@ -409,5 +410,50 @@ final class RolesTest extends TestCase
         Roles::save($input);
 
         return $captured;
+    }
+
+    /**
+     * A role stored before names were translated keeps its plain name as
+     * the source, and every reader gets it until the next save translates it.
+     */
+    public function testAPlainNameIsTheSource(): void
+    {
+        Functions\when('get_option')->justReturn([
+            ['slug' => 'decorate', 'label' => 'Koristelu', 'emoji' => '🎈', 'description' => 'Ripusta valot.'],
+        ]);
+
+        $role = Roles::find('decorate');
+
+        self::assertSame('Koristelu', $role['label']);
+        self::assertSame('Koristelu', $role['label_text']['source']);
+        self::assertSame('', $role['label_text']['lang']);
+        self::assertSame('Ripusta valot.', $role['description']);
+        self::assertSame('Koristelu', Language::run('en', static fn (): string => Roles::label('decorate')));
+    }
+
+    /**
+     * A translated name is read in the reader's language, else the main
+     * language; the option keeps the source as the plain name.
+     */
+    public function testATranslatedNameIsReadInTheReadersLanguage(): void
+    {
+        $text = [
+            'source' => 'Decorate',
+            'lang' => 'en',
+            'detected' => true,
+            'texts' => ['fi' => 'Koristelu', 'en' => 'Decorate'],
+            'manual' => ['fi' => false, 'en' => false],
+        ];
+        $stored = [['slug' => 'decorate', 'label' => 'Decorate', 'label_text' => $text, 'emoji' => '🎈']];
+        Functions\when('get_option')->justReturn($stored);
+
+        self::assertSame('Koristelu', Roles::label('decorate'));
+        self::assertSame('Decorate', Language::run('en', static fn (): string => Roles::label('decorate')));
+        self::assertSame('Koristelu', Language::run('fi', static fn (): string => Roles::label('decorate')));
+
+        $saved = $this->captureSavedRoles(Roles::all());
+
+        self::assertSame('Decorate', $saved[0]['label']);
+        self::assertSame($text, $saved[0]['label_text']);
     }
 }

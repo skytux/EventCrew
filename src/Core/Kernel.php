@@ -67,12 +67,14 @@ use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
+use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SiteTexts;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverService;
@@ -81,6 +83,7 @@ use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
@@ -1530,7 +1533,10 @@ final class Kernel
                 );
                 $registry->add([$botProfile, 'translationRows']);
                 $registry->add([FollowupText::class, 'translationRows']);
+                $registry->add([TicketText::class, 'translationRows']);
                 $registry->add([BotTexts::class, 'translationRows']);
+                $registry->add([SiteTexts::class, 'translationRows']);
+                $registry->add([Roles::class, 'translationRows']);
 
                 return $registry;
             }

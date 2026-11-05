@@ -4016,9 +4016,6 @@ msgstr "Jokainen ilmoitus lähetetään muotoiltuna HTML-sähköpostina, jonka y
 msgid "Signature"
 msgstr "Allekirjoitus"
 
-msgid "Barefoot and with ♥ — the Example crew"
-msgstr "Paljain jaloin ja ♥:llä — Example-crew"
-
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
 msgstr "Teksti, jolla crew’si lopettaa viestit. Se on jokaisen ilmoitussähköpostin lopussa sekä kaikille lähtevissä Telegram-viesteissä — avoimien tehtävien kutsussa, muistutuksissa ja ”paikka vapautui” -ilmoituksessa. Jätä tyhjäksi, jos et halua lopputervehdystä."
 
@@ -6480,12 +6477,6 @@ msgstr "Telegram saa saman vastauksen, joten botti ei saa viestejä."
 msgid "The webhook answered HTTP %1$d. %2$s"
 msgstr "Webhook vastasi HTTP %1$d. %2$s"
 
-msgid "In Finnish"
-msgstr "Suomeksi"
-
-msgid "Used in Finnish messages, and next to the first one in emails written in Finnish and English. Leave it blank to use the first one everywhere."
-msgstr "Käytetään suomenkielisissä viesteissä ja ensimmäisen rinnalla sähköposteissa, jotka on kirjoitettu suomeksi ja englanniksi. Jätä tyhjäksi, niin ensimmäistä käytetään kaikkialla."
-
 msgid "In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines."
 msgstr "Sähköposteissa lopputervehdys on keskitetty viestin alle: ensimmäinen rivi kursiivilla, seuraavat rivit kullalla. Yksi rivi jaetaan ensimmäisen pilkun jälkeen, joten ”With love, the crew” tulee kahdelle riville."
 
@@ -6732,3 +6723,24 @@ msgstr "Botin teksti (%s)"
 
 msgid "Bot answers and buttons"
 msgstr "Botin vastaukset ja painikkeet"
+
+msgid "Language of this text"
+msgstr "Tämän tekstin kieli"
+
+msgid "Detect automatically"
+msgstr "Tunnista automaattisesti"
+
+#. translators: %s: a language name, e.g. Finnish
+#, php-format
+msgid "%s, detected"
+msgstr "%s, tunnistettu"
+
+#. translators: %s: the role's name, e.g. Decorate
+#, php-format
+msgid "Role name: %s"
+msgstr "Roolin nimi: %s"
+
+#. translators: %s: the role's name, e.g. Decorate
+#, php-format
+msgid "Role description: %s"
+msgstr "Roolin kuvaus: %s"

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Support\AppIcon;
+use EventCrew\Support\SiteTexts;
 use EventCrew\Support\WebManifest;
 
 /**
@@ -195,7 +196,7 @@ final class PwaController
 
     private function appName(): string
     {
-        $name = trim((string) get_option(self::NAME_OPTION, ''));
+        $name = SiteTexts::text('app_name');
 
         if ('' === $name) {
             $name = trim((string) get_bloginfo('name'));
