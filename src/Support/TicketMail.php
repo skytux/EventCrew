@@ -805,8 +805,12 @@ final class TicketMail
      * the same code; when none is left, the "Your ticket is cancelled" email
      * is sent. Nothing
      * for a night already past. One email per change: there is no waiting.
+     *
+     * $deleted is the task when an organizer deleted it (Q263): the email,
+     * ticket or cancel, then names that task, and it is the only email the
+     * person gets about the deletion (TaskCancelledNotice).
      */
-    public function crewTasksChanged(Person $person, string $date): bool
+    public function crewTasksChanged(Person $person, string $date, ?Task $deleted = null): bool
     {
         $ticketId = $this->emailedTicketId($person->id, $date);
 
@@ -817,7 +821,7 @@ final class TicketMail
         $tasks = $this->tasksOn($person->id, $date);
 
         if ([] === $tasks) {
-            return $this->sendCancelled($person->name(), $person->email, $date);
+            return $this->sendCancelled($person->name(), $person->email, $date, $deleted);
         }
 
         if ($date < (string) current_time('Y-m-d')) {
@@ -831,7 +835,29 @@ final class TicketMail
             $person->name(),
             $person->email,
             $tasks
-        ));
+        ), $deleted);
+    }
+
+    /** True when the person's ticket for the night $date was emailed. */
+    public function ticketEmailed(int $personId, string $date): bool
+    {
+        return null !== $this->emailedTicketId($personId, $date);
+    }
+
+    /**
+     * The sentence that names a task an organizer deleted, in the current
+     * language, for the ticket and cancel emails.
+     */
+    private static function deletedSentence(Task $task): string
+    {
+        $time = $task->timeRange();
+
+        return sprintf(
+            /* translators: %s: the task, e.g. "Bar, 21:00–23:00" */
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('The organizers have cancelled the task %s. You are no longer signed up for it. This does not count against your standing.', 'eventcrew'),
+            $task->roleDisplay() . ('' === $time ? '' : ', ' . $time)
+        );
     }
 
     /**
@@ -897,13 +923,13 @@ final class TicketMail
         return $sent;
     }
 
-    private function sendPersonTicket(CrewTicket $ticket): bool
+    private function sendPersonTicket(CrewTicket $ticket, ?Task $deleted = null): bool
     {
         if ('' === $ticket->email || Person::isPlaceholderEmail($ticket->email) || '' === $ticket->eventDate) {
             return false;
         }
 
-        return $this->deliver($ticket, $ticket->email);
+        return $this->deliver($ticket, $ticket->email, $deleted);
     }
 
     /**
@@ -955,9 +981,9 @@ final class TicketMail
      * The short "Your ticket is cancelled" email, in Finnish and English. Not
      * sent to an empty or placeholder address, or for a night already past.
      */
-    public function sendCancelled(string $name, string $email, string $date): bool
+    public function sendCancelled(string $name, string $email, string $date, ?Task $deleted = null): bool
     {
-        return $this->sendNotice($email, $date, fn (): array => $this->composeCancelled($name, $date));
+        return $this->sendNotice($email, $date, fn (): array => $this->composeCancelled($name, $date, $deleted));
     }
 
     /**
@@ -1000,13 +1026,14 @@ final class TicketMail
      * order, the same card and dark header, and a red band across the card
      * that says the ticket is cancelled. The card has the holder's name and
      * no QR code, since the cancelled code no longer gets anyone in.
+     * $deleted, when an organizer deleted the task, is named first.
      *
      * @return array{subject: string, html: string, text: string}
      */
-    public function composeCancelled(string $name, string $date): array
+    public function composeCancelled(string $name, string $date, ?Task $deleted = null): array
     {
         return $this->composeNotice($name, $date, static fn (string $event, string $short): array => [
-            'sentence' => sprintf(
+            'sentence' => (null === $deleted ? '' : self::deletedSentence($deleted) . "\n\n") . sprintf(
                 /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 __('Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door.', 'eventcrew'),
@@ -1116,16 +1143,17 @@ final class TicketMail
     /**
      * The email for one ticket: subject, the HTML content that goes into the
      * email template (the QR code drawn in it as tables), and the plain-text
-     * alternative.
+     * alternative. $deleted, when an organizer deleted one of a crew
+     * member's tasks, is named in the text instead of the thank-you line.
      *
      * @return array{subject: string, html: string, text: string}
      */
-    public function compose(TicketBuyer|Guest|CrewTicket $row): array
+    public function compose(TicketBuyer|Guest|CrewTicket $row, ?Task $deleted = null): array
     {
         $date = self::shortDate($row->eventDate);
         [$event, $image] = $this->event($row->eventDate);
-        $fi = Language::run(Language::FINNISH, fn (): array => $this->words($row, $event, $date));
-        $en = Language::run(Language::ENGLISH, fn (): array => $this->words($row, $event, $date));
+        $fi = Language::run(Language::FINNISH, fn (): array => $this->words($row, $event, $date, $deleted));
+        $en = Language::run(Language::ENGLISH, fn (): array => $this->words($row, $event, $date, $deleted));
         $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
 
         if ($row instanceof CrewTicket) {
@@ -1233,13 +1261,13 @@ final class TicketMail
         return $sent;
     }
 
-    private function deliver(TicketBuyer|Guest|CrewTicket $row, string $to): bool
+    private function deliver(TicketBuyer|Guest|CrewTicket $row, string $to, ?Task $deleted = null): bool
     {
         if ('' === $to) {
             return false;
         }
 
-        $mail = $this->compose($row);
+        $mail = $this->compose($row, $deleted);
 
         return $this->mailer->toTicketHolder(
             $to,
@@ -1255,11 +1283,13 @@ final class TicketMail
      *
      * @return array{body: string, subject: string, open: string, code: string}
      */
-    private function words(TicketBuyer|Guest|CrewTicket $row, string $event, string $date): array
+    private function words(TicketBuyer|Guest|CrewTicket $row, string $event, string $date, ?Task $deleted = null): array
     {
         $first = DoorDesk::firstName($row->name);
 
-        if ($row instanceof CrewTicket) {
+        if (null !== $deleted) {
+            $thanks = self::deletedSentence($deleted);
+        } elseif ($row instanceof CrewTicket) {
             $thanks = $row->isCredit()
                 ? __('You spent a free-entry credit on this night.', 'eventcrew')
                 : __('Thank you for taking a task!', 'eventcrew');

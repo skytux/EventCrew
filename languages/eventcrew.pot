@@ -180,7 +180,7 @@ msgstr ""
 msgid "%d active account(s) would receive the open-task email."
 msgstr ""
 
-#: src/Support/TicketMail.php:437
+#: src/Support/TicketMail.php:489
 msgid "%d buyer"
 msgid_plural "%d buyers"
 msgstr[0] ""
@@ -193,7 +193,7 @@ msgid_plural "%d credits"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TicketMail.php:441 src/Telegram/GuestListService.php:316
+#: src/Support/TicketMail.php:493 src/Telegram/GuestListService.php:316
 #. translators: %d: number of guests
 msgid "%d guest"
 msgid_plural "%d guests"
@@ -2182,7 +2182,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: src/Support/TicketMail.php:1228
+#: src/Support/TicketMail.php:1310
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
 msgstr ""
@@ -2226,7 +2226,7 @@ msgstr ""
 msgid "Hi %1$s,\n\nSome tasks still need people:\n\n%2$s\n\nSign up on the board.\n\n%3$s"
 msgstr ""
 
-#: src/Support/TaskCancelledNotice.php:98
+#: src/Support/TaskCancelledNotice.php:103
 msgid "Hi %1$s,\n\nThe organizers have cancelled the task %2$s at %3$s, %4$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing."
 msgstr ""
 
@@ -2242,7 +2242,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:1013 src/Support/TicketMail.php:1224
+#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:1092 src/Support/TicketMail.php:1306
 #: src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2256,7 +2256,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:1011 src/Support/TicketMail.php:1222
+#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:1090 src/Support/TicketMail.php:1304
 msgid "Hi,"
 msgstr ""
 
@@ -3435,7 +3435,7 @@ msgstr ""
 msgid "Open the signup page"
 msgstr ""
 
-#: src/Support/TicketMail.php:1263
+#: src/Support/TicketMail.php:1345
 msgid "Open the ticket in your browser"
 msgstr ""
 
@@ -4174,7 +4174,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:104
+#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:109
 msgid "See open tasks"
 msgstr ""
 
@@ -4650,11 +4650,11 @@ msgstr ""
 msgid "Switched off"
 msgstr ""
 
-#: src/Support/TicketMail.php:965
+#: src/Support/TicketMail.php:1044
 msgid "TICKET CANCELLED"
 msgstr ""
 
-#: src/Support/TicketMail.php:988
+#: src/Support/TicketMail.php:1067
 msgid "TICKET MOVED"
 msgstr ""
 
@@ -4690,7 +4690,7 @@ msgstr ""
 msgid "Task added."
 msgstr ""
 
-#: src/Support/TaskCancelledNotice.php:91
+#: src/Support/TaskCancelledNotice.php:96
 #. translators: 1: role, 2: event
 msgid "Task cancelled: %1$s for %2$s"
 msgstr ""
@@ -4873,7 +4873,7 @@ msgstr ""
 msgid "Texts by the language model"
 msgstr ""
 
-#: src/Support/TicketMail.php:1217
+#: src/Support/TicketMail.php:1299
 msgid "Thank you for buying a ticket!"
 msgstr ""
 
@@ -4882,7 +4882,7 @@ msgstr ""
 msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
 msgstr ""
 
-#: src/Support/TicketMail.php:1216
+#: src/Support/TicketMail.php:1298
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
@@ -4890,7 +4890,7 @@ msgstr ""
 msgid "Thank you for dancing with us"
 msgstr ""
 
-#: src/Support/TicketMail.php:1213
+#: src/Support/TicketMail.php:1295
 msgid "Thank you for taking a task!"
 msgstr ""
 
@@ -5425,6 +5425,10 @@ msgstr ""
 msgid "The one-time text is removed. The next post-event email uses the text in Settings."
 msgstr ""
 
+#: src/Support/TicketMail.php:858
+msgid "The organizers have cancelled the task %s. You are no longer signed up for it. This does not count against your standing."
+msgstr ""
+
 #: src/Support/PrivacyPolicy.php:481
 msgid "The organizers of our events, and the crew running the sales desk on a night, can see your name, your standing and the tasks you are on — that is the roster and the door list. Other crew members see only that a task is taken, never by whom."
 msgstr ""
@@ -5942,7 +5946,7 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:1264
+#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:1346
 msgid "Ticket code"
 msgstr ""
 
@@ -5950,7 +5954,7 @@ msgstr ""
 msgid "Ticket code column header"
 msgstr ""
 
-#: src/Support/TicketMail.php:446
+#: src/Support/TicketMail.php:498
 #. translators: 1: time of day, e.g. 21:40, 2: who gets them, e.g. "12 buyers, 2 guests"
 msgid "Ticket emails go out at %1$s to %2$s."
 msgstr ""
@@ -5960,7 +5964,7 @@ msgstr ""
 msgid "Ticket emails go out at %s. Until then you can cancel them."
 msgstr ""
 
-#: src/Support/TicketMail.php:521
+#: src/Support/TicketMail.php:573
 #. translators: 1: tickets emailed, 2: tickets whose email failed, 3: tickets not emailed yet
 msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
 msgstr ""
@@ -6712,7 +6716,7 @@ msgstr ""
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr ""
 
-#: src/Support/TicketMail.php:1250
+#: src/Support/TicketMail.php:1332
 #. translators: %d: how many people the guest may bring
 msgid "You can bring %d person with you."
 msgid_plural "You can bring %d people with you."
@@ -6753,11 +6757,11 @@ msgstr ""
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
 
-#: src/Support/FollowupMail.php:700 src/Support/TicketMail.php:929
+#: src/Support/FollowupMail.php:700 src/Support/TicketMail.php:1007
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
-#: src/Support/TicketMail.php:1157 src/Support/TicketMail.php:1161
+#: src/Support/TicketMail.php:1237 src/Support/TicketMail.php:1241
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
@@ -6804,7 +6808,7 @@ msgstr ""
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
-#: src/Support/TicketMail.php:1212
+#: src/Support/TicketMail.php:1294
 msgid "You spent a free-entry credit on this night."
 msgstr ""
 
@@ -6981,7 +6985,7 @@ msgstr ""
 msgid "Your task moved to %s"
 msgstr ""
 
-#: src/Support/TicketMail.php:1236
+#: src/Support/TicketMail.php:1318
 msgid "Your tasks on this night:"
 msgstr ""
 
@@ -6993,23 +6997,23 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/TicketMail.php:1017 src/Support/TicketMail.php:1262
+#: src/Support/TicketMail.php:1096 src/Support/TicketMail.php:1344
 msgid "Your ticket"
 msgstr ""
 
-#: src/Support/TicketMail.php:964
+#: src/Support/TicketMail.php:1043
 msgid "Your ticket is cancelled"
 msgstr ""
 
-#: src/Support/TicketMail.php:987
+#: src/Support/TicketMail.php:1066
 msgid "Your ticket moved to another address"
 msgstr ""
 
-#: src/Support/TicketMail.php:960
+#: src/Support/TicketMail.php:1039
 msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
 msgstr ""
 
-#: src/Support/TicketMail.php:983
+#: src/Support/TicketMail.php:1062
 msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
 msgstr ""
 
