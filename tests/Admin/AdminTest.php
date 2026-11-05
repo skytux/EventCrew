@@ -37,6 +37,51 @@ final class AdminTest extends TestCase
         self::assertNotFalse(has_action(Scheduler::HOOK, [$settings, 'installOnUpdate']));
     }
 
+    /** S-B12: a notice shows to the administrator who saved, not to another one. */
+    public function testANoticeIsKeptPerAdministrator(): void
+    {
+        $transients = [];
+        $user = 3;
+        \Brain\Monkey\Functions\when('get_current_user_id')->alias(static function () use (&$user): int {
+            return $user;
+        });
+        \Brain\Monkey\Functions\when('set_transient')->alias(
+            static function (string $key, mixed $value) use (&$transients): bool {
+                $transients[$key] = $value;
+
+                return true;
+            }
+        );
+        \Brain\Monkey\Functions\when('get_transient')->alias(
+            static function (string $key) use (&$transients): mixed {
+                return $transients[$key] ?? false;
+            }
+        );
+        \Brain\Monkey\Functions\when('delete_transient')->alias(
+            static function (string $key) use (&$transients): bool {
+                unset($transients[$key]);
+
+                return true;
+            }
+        );
+        \Brain\Monkey\Functions\when('esc_attr')->returnArg(1);
+        \Brain\Monkey\Functions\when('esc_html')->returnArg(1);
+
+        Admin::notice('success', 'Saved by three.');
+        $admin = new Admin(new Container());
+
+        $user = 4;
+        ob_start();
+        $admin->renderNotice();
+        self::assertSame('', ob_get_clean(), 'Another administrator does not see it.');
+
+        $user = 3;
+        ob_start();
+        $admin->renderNotice();
+        self::assertStringContainsString('Saved by three.', (string) ob_get_clean());
+        self::assertSame([], $transients, 'Shown once, then gone.');
+    }
+
     /** An object on which every method name is callable, as hooks require. */
     private static function anyPage(): object
     {

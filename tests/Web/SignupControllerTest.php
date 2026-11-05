@@ -91,6 +91,25 @@ final class SignupControllerTest extends TestCase
         });
     }
 
+    /** S-W8: any page, not only one with the crew app block, while the cookie is there. */
+    public function testASignedInVisitorGetsNoCacheHeadersOnAnyPage(): void
+    {
+        $calls = 0;
+        Functions\when('nocache_headers')->alias(function () use (&$calls): void {
+            ++$calls;
+        });
+        // A page without the block: get_post() and has_block() are no longer asked.
+        Functions\expect('get_post')->never();
+
+        $this->controller()->preventCachingWhenSignedIn();
+        self::assertSame(0, $calls, 'A signed-out visitor sees a public page worth caching.');
+
+        $_COOKIE[WebSession::COOKIE] = 'session';
+        $this->controller()->preventCachingWhenSignedIn();
+        self::assertSame(1, $calls);
+        self::assertTrue(defined('DONOTCACHEPAGE'));
+    }
+
     private function controller(?TelegramLogin $telegramLogin = null): SignupController
     {
         $people = new PersonRepository();

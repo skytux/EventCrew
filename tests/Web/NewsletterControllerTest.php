@@ -221,10 +221,23 @@ final class NewsletterControllerTest extends TestCase
     {
         $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_PENDING);
 
-        $page = $this->controller()->respond('confirm', 'GET', SignedLink::sign(Newsletter::PURPOSE_CONFIRM, 5));
+        $page = $this->controller()->respond('confirm', 'POST', SignedLink::sign(Newsletter::PURPOSE_CONFIRM, 5));
 
         self::assertSame(200, $page['status']);
         self::assertSame('confirmed', $this->wpdb->updates[0]['data']['status']);
+    }
+
+    /** S-W9: opening the confirm link (a mail scanner does) only shows the button. */
+    public function testOpeningTheConfirmLinkOnlyShowsTheButton(): void
+    {
+        $token = SignedLink::sign(Newsletter::PURPOSE_CONFIRM, 5);
+        $page = $this->controller()->respond('confirm', 'GET', $token);
+
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('<form method="post"', $page['html']);
+        self::assertStringContainsString('name="do" value="confirm"', $page['html']);
+        self::assertStringContainsString('value="' . $token . '"', $page['html']);
+        self::assertSame([], $this->wpdb->updates);
     }
 
     /** A token signed for another purpose is not accepted. */
@@ -236,18 +249,32 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame([], $this->wpdb->updates);
     }
 
-    public function testTheUnsubscribeLinkWorksByGetAndByPost(): void
+    /**
+     * S-B11: a GET only shows the button; the POST (the button, or the RFC 8058
+     * one-click POST of List-Unsubscribe-Post to the same link) unsubscribes.
+     */
+    public function testTheUnsubscribeLinkNeedsThePost(): void
     {
         $token = SignedLink::sign(Newsletter::PURPOSE_UNSUBSCRIBE, 5);
 
-        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
-        self::assertSame(200, $this->controller()->respond('unsubscribe', 'GET', $token)['status']);
+        $page = $this->controller()->respond('unsubscribe', 'GET', $token);
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('name="do" value="unsubscribe"', $page['html']);
+        self::assertSame([], $this->wpdb->updates);
 
         $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
         self::assertSame(200, $this->controller()->respond('unsubscribe', 'POST', $token)['status']);
 
-        self::assertCount(2, $this->wpdb->updates);
-        self::assertSame('unsubscribed', $this->wpdb->updates[1]['data']['status']);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame('unsubscribed', $this->wpdb->updates[0]['data']['status']);
+    }
+
+    public function testABadUnsubscribeTokenShowsNoButton(): void
+    {
+        $page = $this->controller()->respond('unsubscribe', 'GET', SignedLink::sign(Newsletter::PURPOSE_CONFIRM, 5));
+
+        self::assertSame(404, $page['status']);
+        self::assertStringNotContainsString('<form', $page['html']);
     }
 
     // ---- The second step: what to call the person ------------------------

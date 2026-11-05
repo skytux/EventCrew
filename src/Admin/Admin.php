@@ -351,25 +351,34 @@ final class Admin
 
     /**
      * Queues a notice to show after the redirect that follows a POST handler.
+     * It is kept per administrator, so it shows to the one who saved and
+     * never on another administrator's next page.
      */
     public static function notice(string $type, string $message): void
     {
         set_transient(
-            self::NOTICE_TRANSIENT,
+            self::noticeKey(),
             ['type' => $type, 'message' => $message],
             60
         );
     }
 
+    /** The notice transient of the signed-in administrator. */
+    public static function noticeKey(): string
+    {
+        return self::NOTICE_TRANSIENT . '_' . (int) get_current_user_id();
+    }
+
     public function renderNotice(): void
     {
-        $notice = get_transient(self::NOTICE_TRANSIENT);
+        $key = self::noticeKey();
+        $notice = get_transient($key);
 
         if (! is_array($notice) || ! isset($notice['message'])) {
             return;
         }
 
-        delete_transient(self::NOTICE_TRANSIENT);
+        delete_transient($key);
 
         $type = (string) ($notice['type'] ?? 'success');
         $class = 'error' === $type ? 'notice-error' : 'notice-success';

@@ -197,20 +197,15 @@ final class SignupController
      * nocache_headers() covers proxies and the browser's own store. Both are
      * skipped for a signed-out visitor, whose view is a public board worth
      * caching.
+     *
+     * Every page is covered while the cookie is there, not only a post with
+     * the crew app block: the app can also reach a page another way (a
+     * template, a page builder, a widget), and a page without it costs only a
+     * cache miss for that one visitor.
      */
     public function preventCachingWhenSignedIn(): void
     {
         if (! isset($_COOKIE[WebSession::COOKIE])) {
-            return;
-        }
-
-        $post = get_post();
-
-        if (! $post instanceof \WP_Post) {
-            return;
-        }
-
-        if (! has_shortcode((string) $post->post_content, 'eventcrew_signup') && ! has_block('eventcrew/signup', $post)) {
             return;
         }
 

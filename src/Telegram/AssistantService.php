@@ -31,9 +31,10 @@ use EventCrew\Support\OrganizerGuide;
  * server for ten minutes under a random id, bound to the person's Telegram
  * id, and checked again when Confirm is tapped.
  *
- * The message text goes to the configured server and is never logged. In a
- * private chat the messages and the helper's answers are kept for 24 hours
- * (ConversationLog) and sent along, so the model can follow the
+ * The message text goes to the configured server. It is not written to the
+ * plugin's error log, but it is kept: in a private chat the messages and the
+ * helper's answers are kept for 24 hours (ConversationLog) and sent along,
+ * so the model can follow the
  * conversation. In a group, the messages written to the bot and its
  * answers are kept the same way, in a separate record per person and group.
  *

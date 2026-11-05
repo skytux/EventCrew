@@ -22,7 +22,11 @@ use WP_REST_Response;
  *
  * The poller cannot send a WordPress nonce or log in, so the request is
  * authenticated by an HMAC of its raw body under a secret shared with the
- * poller (shown in Settings → Email). The sender is checked again here: the
+ * poller (shown in Settings → Email), and the body carries the time it was
+ * sent, so a copied request stops working after a few minutes. A list that
+ * still arrives twice adds nothing twice: a ticket file is recognised by its
+ * Message-ID (BuyerImport::batchFor), and a plain list skips the names already
+ * on that night's guest list. The sender is checked again here: the
  * list is only taken from an organizer's address or one of the extra sender
  * addresses. It always goes to the next event night.
  */
@@ -44,6 +48,9 @@ final class BuyerImportController
 
     /** Carries "sha256=<hex HMAC-SHA256 of the raw body>". */
     private const SIGNATURE_HEADER = 'X-EventCrew-Signature';
+
+    /** How far the signed "sent_at" may be from this server's clock, either way. */
+    public const MAX_AGE_SECONDS = 300;
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -113,8 +120,14 @@ final class BuyerImportController
      * The signature must be the HMAC of the exact bytes received, compared in
      * constant time. With no secret stored everything is refused, and
      * WordPress answers a refused anonymous request with 401.
+     *
+     * The signed body must also carry "sent_at", the Unix time the poller
+     * sent it, no more than MAX_AGE_SECONDS from this server's clock either
+     * way. A request copied off the wire is refused once that time is past.
+     * The 401 makes the poller leave the mail unread and try again next run,
+     * so a wrong clock delays a list but does not lose it.
      */
-    public function authorize(WP_REST_Request $request): bool
+    public function authorize(WP_REST_Request $request, ?int $now = null): bool
     {
         $secret = trim((string) get_option(self::SECRET_OPTION, ''));
 
@@ -122,9 +135,17 @@ final class BuyerImportController
             return false;
         }
 
-        $expected = 'sha256=' . hash_hmac('sha256', (string) $request->get_body(), $secret);
+        $body = (string) $request->get_body();
+        $expected = 'sha256=' . hash_hmac('sha256', $body, $secret);
 
-        return hash_equals($expected, trim((string) $request->get_header(self::SIGNATURE_HEADER)));
+        if (! hash_equals($expected, trim((string) $request->get_header(self::SIGNATURE_HEADER)))) {
+            return false;
+        }
+
+        $data = json_decode($body, true);
+        $sentAt = is_array($data) && is_int($data['sent_at'] ?? null) ? $data['sent_at'] : null;
+
+        return null !== $sentAt && abs(($now ?? time()) - $sentAt) <= self::MAX_AGE_SECONDS;
     }
 
     public function handle(WP_REST_Request $request): WP_REST_Response

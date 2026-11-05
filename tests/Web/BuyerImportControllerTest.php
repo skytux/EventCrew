@@ -101,7 +101,7 @@ final class BuyerImportControllerTest extends TestCase
      */
     private function payload(string $from = 'lou@example.com'): array
     {
-        return ['from' => $from, 'text' => "Anna\nBo", 'message_id' => '<m1@example.com>'];
+        return ['from' => $from, 'text' => "Anna\nBo", 'message_id' => '<m1@example.com>', 'sent_at' => time()];
     }
 
     private function queueOrganizer(bool $isOrganizer = true): void
@@ -162,6 +162,33 @@ final class BuyerImportControllerTest extends TestCase
     public function testRefusesAMissingSignature(): void
     {
         self::assertFalse($this->controller()->authorize($this->request($this->payload(), '')));
+    }
+
+    /** S-W11: a correctly signed request copied off the wire stops working after five minutes. */
+    public function testRefusesASignedRequestThatIsTooOldOrHasNoTime(): void
+    {
+        $now = 1_800_000_000;
+        $at = function (?int $sentAt) use ($now): bool {
+            $payload = $this->payload();
+            unset($payload['sent_at']);
+
+            if (null !== $sentAt) {
+                $payload['sent_at'] = $sentAt;
+            }
+
+            return $this->controller()->authorize($this->request($payload), $now);
+        };
+
+        self::assertTrue($at($now));
+        self::assertTrue($at($now - BuyerImportController::MAX_AGE_SECONDS));
+        self::assertTrue($at($now + BuyerImportController::MAX_AGE_SECONDS), 'A poller clock a little ahead is fine.');
+        self::assertFalse($at($now - BuyerImportController::MAX_AGE_SECONDS - 1), 'A replay later is refused.');
+        self::assertFalse($at($now + BuyerImportController::MAX_AGE_SECONDS + 1));
+        self::assertFalse($at(null), 'A body without the time is refused.');
+
+        $payload = $this->payload();
+        $payload['sent_at'] = (string) $now;
+        self::assertFalse($this->controller()->authorize($this->request($payload), $now), 'The time is a number.');
     }
 
     public function testRefusesEverythingWhenNoSecretIsStored(): void
