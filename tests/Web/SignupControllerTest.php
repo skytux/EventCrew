@@ -449,7 +449,6 @@ final class SignupControllerTest extends TestCase
         );
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         $sam = $this->sam();
-        $this->wpdb->nextRows[] = null; // findByEmail(new) -> free
 
         self::assertSame('email_sent', $this->controller()->updateProfile($sam, 'Sam', 'sam2@example.com'));
         self::assertSame([], $this->wpdb->updates);
@@ -462,14 +461,28 @@ final class SignupControllerTest extends TestCase
         self::assertSame(['sam2@example.com'], array_values($this->transients));
     }
 
-    public function testAnEmailThatBelongsToSomeoneElseIsRefused(): void
+    public function testAnEmailThatBelongsToSomeoneElseGetsTheSameAnswerAsAFreeOne(): void
     {
         $sam = $this->sam();
+
+        // The form does not look the address up, so it cannot tell whether
+        // kim@example.com is registered: the answer is "check the inbox".
+        self::assertSame('email_sent', $this->controller()->updateProfile($sam, 'Sam', 'kim@example.com'));
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('kim@example.com', $this->sent[0]['to']);
+        self::assertSame(['kim@example.com'], array_values($this->transients));
+    }
+
+    public function testTheConfirmLinkForAnAddressOfAnotherAccountChangesNothing(): void
+    {
+        $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'kim@example.com';
+        $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
         $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
 
-        self::assertSame('email_taken', $this->controller()->updateProfile($sam, 'Sam', 'kim@example.com'));
-        self::assertSame([], $this->mails);
-        self::assertSame([], $this->transients);
+        // Only whoever reads kim@example.com's mailbox sees this answer.
+        self::assertSame('email_taken', $this->controller()->confirmEmailChange('raw1'));
+        self::assertNotContains('kim@example.com', array_column(array_column($this->wpdb->updates, 'data'), 'email'));
     }
 
     public function testTheConfirmLinkMovesTheAccountAndTellsTheOldAddress(): void

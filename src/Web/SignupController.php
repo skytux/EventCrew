@@ -535,9 +535,11 @@ final class SignupController
 
         $person = $this->people->findByEmail($email);
 
-        // A blocked account gets no sign-in link at all.
+        // A blocked account gets no sign-in link at all. The answer is the same
+        // "check your inbox" as for any other address, so the form does not
+        // tell anyone which addresses belong to a blocked account.
         if (null !== $person && $person->isBanned()) {
-            return 'blocked';
+            return 'check_email';
         }
 
         // A first sign-in creates the record, so it is the moment the notice is
@@ -618,13 +620,11 @@ final class SignupController
             return 'bad_email';
         }
 
-        if ($emailChanged) {
-            $owner = $this->people->findByEmail($email);
-
-            if (null !== $owner && $owner->id !== $person->id) {
-                return 'email_taken';
-            }
-        }
+        // An address that already belongs to another account is not refused
+        // here: the answer would tell anyone which addresses are registered.
+        // The link goes to that mailbox like any other, and opening it is
+        // refused by confirmEmailChange(), which shows the reason only to
+        // whoever reads that mailbox.
 
         $nameChanged = $name !== $person->displayName;
 

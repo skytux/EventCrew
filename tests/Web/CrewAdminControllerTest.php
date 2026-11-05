@@ -1889,7 +1889,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         Functions\when('set_transient')->justReturn(true);
         $this->wpdb->nextRows[] = $this->bannedRow(8);   // findByEmail
 
-        self::assertSame('blocked', $this->signupController()->loginByEmail('p8@example.com'));
+        // The same answer as for any address, so the form does not tell which
+        // addresses are blocked; but no link is made or mailed.
+        self::assertSame('check_email', $this->signupController()->loginByEmail('p8@example.com'));
         self::assertSame([], $this->wpdb->inserts);
         self::assertSame([], $this->mails);
         self::assertSame('Your account is blocked. Talk to an organizer.', SignupController::noticeText('blocked'));

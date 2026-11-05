@@ -1316,7 +1316,7 @@ msgstr ""
 msgid "Create an event's tasks"
 msgstr ""
 
-#: src/Web/SignupController.php:578
+#: src/Web/SignupController.php:580
 msgid "Create my account"
 msgstr ""
 
@@ -1332,7 +1332,7 @@ msgstr ""
 msgid "Create the ticket buyer privacy page"
 msgstr ""
 
-#: src/Web/SignupController.php:593
+#: src/Web/SignupController.php:595
 msgid "Create your crew account"
 msgstr ""
 
@@ -4399,7 +4399,7 @@ msgstr ""
 msgid "Shown under the home-screen icon. Blank uses the site name."
 msgstr ""
 
-#: src/Web/SignupController.php:578
+#: src/Web/SignupController.php:580
 msgid "Sign in"
 msgstr ""
 
@@ -5679,7 +5679,7 @@ msgstr ""
 msgid "There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it."
 msgstr ""
 
-#: src/Web/SignupController.php:571
+#: src/Web/SignupController.php:573
 msgid "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email."
 msgstr ""
 
@@ -6169,7 +6169,7 @@ msgstr ""
 msgid "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email."
 msgstr ""
 
-#: src/Web/SignupController.php:567
+#: src/Web/SignupController.php:569
 msgid "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once."
 msgstr ""
 
@@ -6800,7 +6800,7 @@ msgstr ""
 msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
 msgstr ""
 
-#: src/Web/SignupController.php:593
+#: src/Web/SignupController.php:595
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
