@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.20
+Stable tag: 1.140.21
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.21 =
+The bot refuses a blocked person everywhere: buttons and private messages get "Your account is blocked. Talk to an organizer.", group messages are ignored (Q246).
 
 = 1.140.20 =
 Signed-in pages are never cached; newsletter confirm and unsubscribe links show a button first (one-click unsubscribe still works); the buyer import needs a fresh time stamp; admin notices are kept per administrator (Q258).
@@ -1274,6 +1277,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.21 =
+No settings change.
 
 = 1.140.20 =
 No settings change.

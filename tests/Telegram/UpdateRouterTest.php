@@ -56,6 +56,85 @@ final class UpdateRouterTest extends TelegramTestCase
         return $this->updateRouter();
     }
 
+    /** A blocked person with Telegram id 555, as a people-table row. */
+    private function blockedRow(): array
+    {
+        return [
+            'id' => 7,
+            'email' => 'blocked@example.test',
+            'display_name' => 'Blocked',
+            'email_verified_at' => '2026-01-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 555,
+            'banned_at' => '2026-08-01 00:00:00',
+        ];
+    }
+
+    public function testABlockedPersonsButtonTapGetsOnlyTheBlockedPopup(): void
+    {
+        $this->wpdb->nextRows[] = $this->blockedRow();
+
+        $this->updateRouter(null, null, null, null, null, true)->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'j:5'],
+        ]);
+
+        self::assertSame(['answerCallbackQuery'], $this->calledMethods());
+        $popup = $this->lastCallTo('answerCallbackQuery');
+        self::assertSame('Your account is blocked. Talk to an organizer.', $popup['text']);
+        self::assertTrue($popup['show_alert']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testABlockedPersonsPrivateCommandGetsOnlyTheBlockedLine(): void
+    {
+        $this->wpdb->nextRows[] = $this->blockedRow();
+
+        $this->updateRouter(null, null, null, null, null, true)->dispatch([
+            'message' => [
+                'text' => '/me',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame('Your account is blocked. Talk to an organizer.', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
+    }
+
+    public function testABlockedPersonsGroupCommandIsIgnored(): void
+    {
+        $this->wpdb->nextRows[] = $this->blockedRow();
+
+        $this->updateRouter(null, null, null, null, null, true)->dispatch([
+            'message' => [
+                'text' => '/board',
+                'chat' => ['id' => -100123, 'type' => 'supergroup'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame([], $this->calledMethods());
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testAPersonWhoIsNotBlockedStillReachesTheBoard(): void
+    {
+        $row = $this->blockedRow();
+        $row['banned_at'] = null;
+        $this->wpdb->nextRows[] = $row;
+
+        $this->updateRouter(null, null, null, null, null, true)->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'j:5'],
+        ]);
+
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+        self::assertNotSame(
+            'Your account is blocked. Talk to an organizer.',
+            $this->lastCallTo('answerCallbackQuery')['text'] ?? ''
+        );
+    }
+
     public function testCallbackQueryGoesToJoinLeave(): void
     {
         $this->router()->dispatch([

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
 use EventCrew\Support\TakeoverService;
@@ -20,6 +21,10 @@ use EventCrew\Support\TelegramLogin;
  * language-model helper (AssistantService), which does nothing while it is
  * switched off. Anything else is ignored - the webhook still answers 200, it
  * just does nothing.
+ *
+ * A blocked (banned) person gets nothing from the bot: a button tap answers
+ * "Your account is blocked", a private message gets the same line, and a group
+ * message is ignored.
  *
  * Every update is handled in the language its sender chose, so their DMs and
  * popups read in it. A private command from someone who has not chosen is held
@@ -52,7 +57,9 @@ final class UpdateRouter
         private readonly ?EventsCommand $events = null,
         private readonly ?WebLoginBot $webLogin = null,
         private readonly ?BotLog $botLog = null,
-        private readonly ?FollowupCommand $followup = null
+        private readonly ?FollowupCommand $followup = null,
+        private readonly ?PersonRepository $people = null,
+        private readonly ?TelegramClient $telegram = null
     ) {
     }
 
@@ -112,6 +119,10 @@ final class UpdateRouter
      */
     private function routeUpdate(array $update, ?string $chosen): void
     {
+        if ($this->refusedAsBlocked($update)) {
+            return;
+        }
+
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
 
@@ -482,6 +493,43 @@ final class UpdateRouter
         Language::run($language, function () use ($pending, $language): void {
             $this->routeMessage($pending, $language);
         });
+    }
+
+    /**
+     * True when the sender of a button tap or a message is a blocked person.
+     * Then the bot answers only "Your account is blocked" - as a popup for a
+     * tap, as a message in a private chat, and not at all in a group - and
+     * nothing else runs.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function refusedAsBlocked(array $update): bool
+    {
+        if (null === $this->people || null === $this->telegram) {
+            return false;
+        }
+
+        $sender = $this->senderId($update);
+
+        if ($sender <= 0) {
+            return false;
+        }
+
+        $person = $this->people->findByTelegramUserId($sender);
+
+        if (null === $person || ! $person->isBanned()) {
+            return false;
+        }
+
+        $text = WebLoginBot::blockedText();
+
+        if (isset($update['callback_query']['id'])) {
+            $this->telegram->answerCallbackQuery((string) $update['callback_query']['id'], $text, true);
+        } elseif ('private' === ($update['message']['chat']['type'] ?? '')) {
+            $this->telegram->sendMessage((int) ($update['message']['chat']['id'] ?? 0), $text);
+        }
+
+        return true;
     }
 
     /**

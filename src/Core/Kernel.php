@@ -1236,7 +1236,9 @@ final class Kernel
                 $container->get(EventsCommand::class),
                 $container->get(WebLoginBot::class),
                 $container->get(BotLog::class),
-                $container->get(FollowupCommand::class)
+                $container->get(FollowupCommand::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
             )
         );
 

@@ -153,7 +153,7 @@ final class WebLoginBot
         return __('This sign-in link has expired. Press Telegram on the crew app again.', 'eventcrew');
     }
 
-    private static function blockedText(): string
+    public static function blockedText(): string
     {
         return __('Your account is blocked. Talk to an organizer.', 'eventcrew');
     }
