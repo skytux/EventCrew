@@ -31,6 +31,7 @@ use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SalesDeskGate;
+use EventCrew\Support\SecretMask;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
@@ -80,6 +81,9 @@ final class SettingsPage
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
+
+    /** Holds a just-generated import secret for one page load; the user id is appended. */
+    private const NEW_IMPORT_SECRET_TRANSIENT = 'eventcrew_new_import_secret_';
 
     /** When the last automatic install failed; installOnUpdate() waits WEBHOOK_RETRY_GAP after it. */
     private const WEBHOOK_FAILED_OPTION = 'eventcrew_webhook_failed_at';
@@ -181,7 +185,7 @@ final class SettingsPage
                 'newsletter_words' => NewsletterWriter::words(),
                 'llm_configured' => AssistantSettings::isConfigured(),
                 'turnstile_site_key' => (string) get_option(Turnstile::SITE_KEY_OPTION, ''),
-                'turnstile_secret' => (string) get_option(Turnstile::SECRET_KEY_OPTION, ''),
+                'turnstile_secret' => SecretMask::mask((string) get_option(Turnstile::SECRET_KEY_OPTION, '')),
                 'cron_fallback' => (bool) get_option(CronFallbackTrigger::OPTION, false),
                 'cron_next_run' => wp_next_scheduled(Scheduler::HOOK),
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
@@ -203,7 +207,8 @@ final class SettingsPage
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
                 'email_test_to' => (string) wp_get_current_user()->user_email,
-                'import_secret' => BuyerImportController::ensureSecret(),
+                'import_secret' => SecretMask::mask(BuyerImportController::ensureSecret()),
+                'import_secret_new' => $this->takeNewImportSecret(),
                 'import_url' => BuyerImportController::endpointUrl(),
                 'import_mailbox' => BuyerImportController::mailbox(),
                 'import_senders' => BuyerImportController::extraSenders(),
@@ -298,10 +303,10 @@ final class SettingsPage
         $useFallback = (bool) get_option(WebhookController::USE_FALLBACK_OPTION, false);
         $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
 
-        // The exact URL Telegram is pointed at, secret and all, so it can be
-        // tested by hand. Shown only to an administrator, on their own settings
-        // screen - the same person who could read it from the database anyway.
-        $testUrl = '' === $secret ? '' : WebhookController::webhookUrl($secret);
+        // The URL Telegram is pointed at, so it can be tested by hand. The
+        // secret in it, if any, is shown only by its last 4 characters, so a
+        // screenshot of the page does not carry it.
+        $testUrl = '' === $secret ? '' : WebhookController::webhookUrl(SecretMask::mask($secret));
 
         // The same request with the secret moved out of the URL and into the
         // header. On the fallback door this is what the endpoint would receive
@@ -323,7 +328,7 @@ final class SettingsPage
             : rest_url(WebhookController::ROUTE_NAMESPACE . WebhookController::ROUTE);
 
         return [
-            'token' => (string) get_option(TelegramClient::TOKEN_OPTION, ''),
+            'token' => SecretMask::mask((string) get_option(TelegramClient::TOKEN_OPTION, '')),
             'configured' => $configured,
             'dns_bypass' => (bool) get_option(TelegramClient::DNS_BYPASS_OPTION, false),
             'web_login' => self::webLoginView(),
@@ -332,7 +337,7 @@ final class SettingsPage
             'webhook_url' => $displayUrl,
             'test_url' => $testUrl,
             'header_only_url' => $headerOnlyUrl,
-            'secret' => $secret,
+            'secret' => SecretMask::mask($secret),
             'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
             'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
@@ -528,10 +533,17 @@ final class SettingsPage
         // phpcs:disable WordPress.Security.NonceVerification.Missing
         update_option(EventMeshSyncListener::OPTION_NAME, isset($_POST['auto_create_tasks']));
 
+        // The page never shows the saved token, so an empty field keeps it;
+        // only the Remove box clears it.
         $token = isset($_POST['telegram_bot_token'])
             ? sanitize_text_field(wp_unslash($_POST['telegram_bot_token']))
             : '';
-        update_option(TelegramClient::TOKEN_OPTION, $token);
+
+        if (isset($_POST['telegram_bot_token_remove'])) {
+            update_option(TelegramClient::TOKEN_OPTION, '');
+        } elseif ('' !== $token) {
+            update_option(TelegramClient::TOKEN_OPTION, $token);
+        }
 
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
         // The group board's card format; the board changes at its next refresh.
@@ -733,12 +745,16 @@ final class SettingsPage
                 ? sanitize_text_field(wp_unslash($_POST['turnstile_site_key']))
                 : ''
         );
-        update_option(
-            Turnstile::SECRET_KEY_OPTION,
-            isset($_POST['turnstile_secret'])
-                ? sanitize_text_field(wp_unslash($_POST['turnstile_secret']))
-                : ''
-        );
+        // Same as the bot token: an empty field keeps the saved secret key.
+        $turnstileSecret = isset($_POST['turnstile_secret'])
+            ? sanitize_text_field(wp_unslash($_POST['turnstile_secret']))
+            : '';
+
+        if (isset($_POST['turnstile_secret_remove'])) {
+            update_option(Turnstile::SECRET_KEY_OPTION, '');
+        } elseif ('' !== $turnstileSecret) {
+            update_option(Turnstile::SECRET_KEY_OPTION, $turnstileSecret);
+        }
 
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
@@ -1642,12 +1658,34 @@ final class SettingsPage
     {
         Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
 
-        BuyerImportController::rotateSecret();
+        $secret = BuyerImportController::rotateSecret();
+
+        // The page shows the secret only masked, so the new one is shown in
+        // full once, to the administrator who made it, on the next page load.
+        set_transient(self::NEW_IMPORT_SECRET_TRANSIENT . get_current_user_id(), $secret, 10 * MINUTE_IN_SECONDS);
 
         Admin::redirectTo(
             self::PAGE_SLUG,
             __('A new import secret was generated. Copy it into the mail poller’s settings.', 'eventcrew')
         );
+    }
+
+    /**
+     * The import secret this administrator has just generated, in full, or ''.
+     * It is read once and then deleted, so a reload shows it masked.
+     */
+    private function takeNewImportSecret(): string
+    {
+        $key = self::NEW_IMPORT_SECRET_TRANSIENT . get_current_user_id();
+        $secret = get_transient($key);
+
+        if (! is_string($secret) || '' === $secret) {
+            return '';
+        }
+
+        delete_transient($key);
+
+        return $secret;
     }
 
     /**

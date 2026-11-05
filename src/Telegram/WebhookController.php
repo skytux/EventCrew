@@ -34,17 +34,12 @@ final class WebhookController
     /**
      * Whether the fallback door's URL carries the secret as a query argument.
      *
-     * Defaults on, which is what every existing install already does. That is a
-     * deliberate choice rather than a security preference: installOnUpdate()
-     * silently re-installs the webhook on every version change, so defaulting
-     * this off would move every fallback install to header-only on upgrade -
-     * and on the hosts this door exists for, the ones that strip custom
-     * headers, the bot would simply go quiet with nothing to point at.
-     *
-     * Off is the better setting wherever it works, because a secret in a query
-     * string is a secret in the server's access log. Settings offers a way to
-     * test the header before switching, so the change is verifiable rather than
-     * hopeful.
+     * Defaults off, because a secret in a query string is a secret in the
+     * server's access log. A value saved on the Settings page ('1' or '0') is
+     * kept as it is; only an install that never saved it gets the new default.
+     * On a host that strips custom headers the bot then goes quiet after the
+     * next webhook install, and ticking the box on the Settings page brings
+     * the URL copy back.
      */
     public const SECRET_IN_URL_OPTION = 'eventcrew_telegram_secret_in_url';
 
@@ -99,7 +94,7 @@ final class WebhookController
     public static function secretTravelsInUrl(): bool
     {
         return (bool) get_option(self::USE_FALLBACK_OPTION, false)
-            && (bool) get_option(self::SECRET_IN_URL_OPTION, true);
+            && (bool) get_option(self::SECRET_IN_URL_OPTION, false);
     }
 
     // --- REST door ----------------------------------------------------------
