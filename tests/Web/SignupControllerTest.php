@@ -704,6 +704,130 @@ final class SignupControllerTest extends TestCase
         self::assertSame(['person_id' => null, 'notice' => 'bad_link'], $second);
     }
 
+    /**
+     * Runs dispatch() for one request and answers how it ended: 'page 200'
+     * when it sent the sign-in button page, or the URL it redirected to.
+     * status_header() and wp_safe_redirect() throw, so the exit is never hit.
+     *
+     * @param array<string, string> $get
+     * @param array<string, string> $post
+     */
+    private function dispatchSignIn(array $get, array $post): string
+    {
+        $_GET = $get;
+        $_POST = $post;
+        $_REQUEST = ['action' => SignupController::LOGIN_ACTION] + $get + $post;
+        $this->stubSignInExits();
+
+        try {
+            $this->controller()->dispatch();
+        } catch (\RuntimeException $answer) {
+            return $answer->getMessage();
+        } finally {
+            $_GET = [];
+            $_POST = [];
+            $_REQUEST = [];
+        }
+
+        self::fail('The controller sent no answer.');
+    }
+
+    private function stubSignInExits(): void
+    {
+        Functions\when('nocache_headers')->justReturn(null);
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('is_ssl')->justReturn(true);
+        Functions\when('status_header')->alias(static function (int $code): void {
+            throw new \RuntimeException('page ' . $code);
+        });
+        Functions\when('wp_safe_redirect')->alias(static function (string $url): void {
+            throw new \RuntimeException($url);
+        });
+        // redirect() calls the three-argument form: key, value, URL.
+        Functions\when('add_query_arg')->alias(
+            static fn (string $key, string $value, string $url): string => $url . '?' . $key . '=' . $value
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private static function liveSignInToken(?string $usedAt = null): array
+    {
+        return ['id' => 1, 'person_id' => 7, 'expires_at' => '2999-12-31 00:00:00', 'used_at' => $usedAt];
+    }
+
+    public function testOpeningTheEmailedSignInLinkShowsAButtonAndDoesNotUseTheToken(): void
+    {
+        // A mail scanner's GET: were the token consumed, this row would be read.
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $answer = $this->dispatchSignIn(['token' => 'rawtoken'], []);
+
+        self::assertSame('page 200', $answer);
+        self::assertCount(1, $this->wpdb->nextRows, 'The token row was never read.');
+        self::assertSame([], $this->wpdb->queries, 'No UPDATE spent the token.');
+        self::assertSame([], $this->wpdb->updates, 'Nobody was marked verified.');
+    }
+
+    public function testOpeningTheAccountLinkInAnEmailShowsAButtonAndDoesNotUseTheToken(): void
+    {
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+        $_GET = ['eventcrew_login' => 'rawtoken'];
+        Functions\when('remove_query_arg')->justReturn('https://site.test/crew/');
+        $this->stubSignInExits();
+
+        try {
+            $this->controller()->maybeSignInFromEmailLink();
+            self::fail('The controller sent no answer.');
+        } catch (\RuntimeException $answer) {
+            self::assertSame('page 200', $answer->getMessage());
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertCount(1, $this->wpdb->nextRows, 'The token row was never read.');
+        self::assertSame([], $this->wpdb->queries);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTheSignInButtonPostsTheTokenBackToTheSignInAction(): void
+    {
+        Functions\when('esc_attr')->returnArg(1);
+        Functions\when('esc_url')->returnArg(1);
+        Functions\when('esc_html__')->returnArg(1);
+
+        $page = $this->controller()->signInButtonPage('rawtoken', 'https://site.test/crew/');
+
+        self::assertStringContainsString(
+            '<form method="post" action="https://site.test/wp-admin/admin-ajax.php">',
+            $page
+        );
+        self::assertStringContainsString('name="action" value="' . SignupController::LOGIN_ACTION . '"', $page);
+        self::assertStringContainsString('name="token" value="rawtoken"', $page);
+        self::assertStringContainsString(
+            'name="redirect_to" value="' . rawurlencode('https://site.test/crew/') . '"',
+            $page
+        );
+        self::assertStringContainsString('>Sign in</button>', $page);
+    }
+
+    public function testTheSignInButtonSignsInOnceAndASecondPressFails(): void
+    {
+        // First POST: a live token, spent by the conditional UPDATE.
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+        $first = $this->dispatchSignIn([], ['token' => 'rawtoken', 'redirect_to' => 'https://site.test/crew/']);
+
+        // Second POST of the same token: the row is now stamped used.
+        $this->wpdb->nextRows[] = self::liveSignInToken('2026-11-05 10:00:00');
+        $second = $this->dispatchSignIn([], ['token' => 'rawtoken', 'redirect_to' => 'https://site.test/crew/']);
+
+        self::assertStringContainsString('eventcrew_notice=signed_in', $first);
+        self::assertStringContainsString('eventcrew_notice=bad_link', $second);
+        self::assertSame(1, substr_count(implode("\n", $this->wpdb->queries), 'used_at IS NULL'));
+    }
+
     public function testConsumeMagicLinkReturnsNullForABadToken(): void
     {
         // No token row queued -> consume returns null.

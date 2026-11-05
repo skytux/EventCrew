@@ -96,10 +96,50 @@ final class AuthTokenRepository
     }
 
     /**
-     * Deletes tokens that can no longer be used - past their expiry, or already
-     * consumed - so the table stays small now that a fresh sign-in token is
-     * issued for every email's account-link footer. Called from the hourly
-     * Scheduler heartbeat. Returns the number of rows removed.
+     * The person id of a token that was already spent and has not expired yet,
+     * or null for any other token (unknown, expired, still unused, or issued
+     * for a different purpose). Read-only: it never spends or changes a token.
+     * Lets a link opened a second time - by the person after a mail scanner, or
+     * a second click - say what already happened instead of "invalid".
+     */
+    public function usedBy(string $rawToken, string $purpose): ?int
+    {
+        global $wpdb;
+
+        $rawToken = trim($rawToken);
+
+        if ('' === $rawToken) {
+            return null;
+        }
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT person_id, expires_at, used_at
+                FROM {$this->table()}
+                WHERE token_hash = %s AND purpose = %s",
+                $this->hash($rawToken),
+                $purpose
+            ),
+            ARRAY_A
+        );
+
+        $now = (string) current_time('mysql');
+
+        if (! is_array($row) || null === $row['used_at'] || (string) $row['expires_at'] < $now) {
+            return null;
+        }
+
+        return (int) $row['person_id'];
+    }
+
+    /**
+     * Deletes tokens past their expiry, used or not, so the table stays small
+     * now that a fresh sign-in token is issued for every email's account-link
+     * footer. A used token is kept until it expires: usedBy() needs it so a
+     * link opened a second time says "already confirmed" instead of "invalid".
+     * It cannot be used again meanwhile, since consumeOnce() refuses it.
+     * Called from the hourly Scheduler heartbeat. Returns the number of rows
+     * removed.
      */
     public function purgeExpired(): int
     {
@@ -107,7 +147,7 @@ final class AuthTokenRepository
 
         return (int) $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$this->table()} WHERE expires_at < %s OR used_at IS NOT NULL",
+                "DELETE FROM {$this->table()} WHERE expires_at < %s",
                 current_time('mysql')
             )
         );

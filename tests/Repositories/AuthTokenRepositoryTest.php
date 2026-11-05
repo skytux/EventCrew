@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Repositories;
 
+use EventCrew\Database\Schema;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Tests\TestCase;
+use PDO;
 
 final class AuthTokenRepositoryTest extends TestCase
 {
@@ -115,7 +117,7 @@ final class AuthTokenRepositoryTest extends TestCase
         ));
     }
 
-    public function testPurgeExpiredDeletesSpentAndExpiredTokens(): void
+    public function testPurgeExpiredSendsOneDeleteAndReturnsItsCount(): void
     {
         $this->wpdb->nextQueryResults[] = 4; // rows the DELETE reports removed
 
@@ -123,9 +125,36 @@ final class AuthTokenRepositoryTest extends TestCase
 
         self::assertSame(4, $removed);
         self::assertCount(1, $this->wpdb->queries);
-        // A single DELETE that clears both the past-expiry and already-used rows.
         self::assertStringContainsString('DELETE FROM', $this->wpdb->queries[0]);
-        self::assertStringContainsString('expires_at <', $this->wpdb->queries[0]);
-        self::assertStringContainsString('used_at IS NOT NULL', $this->wpdb->queries[0]);
+    }
+
+    /**
+     * Runs the DELETE purgeExpired() builds against real rows in an in-memory
+     * SQLite table. The clock in the tests stands at 2026-07-20 12:00:00.
+     */
+    public function testPurgeKeepsAUsedTokenUntilItExpires(): void
+    {
+        if (! extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite is needed to run the DELETE.');
+        }
+
+        $this->repo()->purgeExpired();
+        $delete = $this->wpdb->queries[0];
+        $table = Schema::table(Schema::AUTH_TOKENS);
+
+        $db = new PDO('sqlite::memory:');
+        $db->exec("CREATE TABLE {$table} (name TEXT, expires_at TEXT, used_at TEXT)");
+        $db->exec(
+            "INSERT INTO {$table} VALUES
+            ('used, not expired', '2026-07-20 12:30:00', '2026-07-20 11:55:00'),
+            ('used, expired', '2026-07-20 11:30:00', '2026-07-20 11:05:00'),
+            ('unused, not expired', '2026-07-20 12:30:00', NULL),
+            ('unused, expired', '2026-07-20 11:30:00', NULL)"
+        );
+        $db->exec($delete);
+
+        $left = $db->query("SELECT name FROM {$table} ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
+
+        self::assertSame(['unused, not expired', 'used, not expired'], $left);
     }
 }

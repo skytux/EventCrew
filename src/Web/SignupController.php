@@ -789,12 +789,13 @@ final class SignupController
 
     /**
      * The account link in every email points at this public page carrying a
-     * single-use `web_login` token (see Mailer::manageUrl). On the page load,
-     * consume it - exactly the magic-link sign-in the login form uses, one-time
-     * and good for 30 minutes - and land the person on their own signed-in
-     * profile, where pausing email or deleting their data now lives, instead of
-     * a bare endpoint. A stale or reused link just drops them on the sign-in
-     * form with a notice to request a fresh one.
+     * single-use `web_login` token (see Mailer::manageUrl). Opening it does not
+     * use the token: a mail scanner that opens every link first would spend it.
+     * The page load shows a "Sign in" button instead, and the button's POST
+     * consumes the token - exactly the magic-link sign-in the login form uses,
+     * one-time and good for 30 minutes - and lands the person on their own
+     * signed-in profile. A stale or reused link drops them on the sign-in form
+     * with a notice to request a fresh one.
      */
     public function maybeSignInFromEmailLink(): void
     {
@@ -806,16 +807,51 @@ final class SignupController
         $token = sanitize_text_field(wp_unslash($_GET['eventcrew_login']));
         // phpcs:enable WordPress.Security.NonceVerification
 
-        ['person_id' => $personId, 'notice' => $notice] = $this->magicLinkSignIn($token);
+        // After the sign-in, back to this page without the token in the address.
+        $this->showSignInButton($token, remove_query_arg('eventcrew_login'));
+    }
 
-        if (null !== $personId) {
-            $this->setSessionCookie(WebSession::mint($personId));
+    /**
+     * Answers the GET of a sign-in link with a page holding one "Sign in"
+     * button and nothing else. The token goes into the button's form, which
+     * POSTs it to LOGIN_ACTION; only that POST spends it and signs in. The page
+     * looks the same for a good, a used and an unknown token, so it tells
+     * nobody whether the link or an account exists.
+     */
+    private function showSignInButton(string $token, string $returnTo): never
+    {
+        // The page holds a live token: no page cache may keep or serve it.
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
         }
 
-        // Strip the token and reload so it never lingers in history or a shared
-        // link; the reload renders signed in, or shows the sign-in form on a bad
-        // or expired link.
-        $this->redirect(remove_query_arg('eventcrew_login'), $notice);
+        nocache_headers();
+        status_header(200);
+        header('Content-Type: text/html; charset=utf-8');
+        // Assembled from literal markup and escaped text in signInButtonPage().
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo Language::run($this->pageLanguage(), fn (): string => $this->signInButtonPage($token, $returnTo));
+
+        exit;
+    }
+
+    /** The page showSignInButton() sends; split out so it is testable. */
+    public function signInButtonPage(string $token, string $returnTo): string
+    {
+        $lang = Language::current() ?? str_replace('_', '-', (string) get_bloginfo('language'));
+
+        return sprintf(
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
+            '<!doctype html><html lang="%1$s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>%2$s</title></head><body style="font-family:sans-serif;max-width:32em;margin:4em auto;padding:0 1em;text-align:center"><h1>%2$s</h1><p>%3$s</p><form method="post" action="%4$s"><input type="hidden" name="action" value="%5$s"><input type="hidden" name="token" value="%6$s"><input type="hidden" name="redirect_to" value="%7$s"><button type="submit" style="font-size:1.2em;padding:.5em 1.5em">%2$s</button></form></body></html>',
+            esc_attr($lang),
+            esc_html__('Sign in', 'eventcrew'),
+            esc_html__('Press the button to finish signing in.', 'eventcrew'),
+            esc_url(admin_url('admin-ajax.php')),
+            esc_attr(self::LOGIN_ACTION),
+            esc_attr($token),
+            // safeRedirect() rawurldecode()s it, as it does the emailed link's.
+            esc_attr(rawurlencode($returnTo))
+        );
     }
 
     /**
@@ -859,8 +895,15 @@ final class SignupController
         $isAjax = isset($_POST['eventcrew_ajax']);
 
         if (self::LOGIN_ACTION === $action && isset($_GET['token'])) {
+            // The emailed link. Opening it only shows a "Sign in" button, so a
+            // mail scanner that opens links first does not spend the token.
+            $this->showSignInButton(sanitize_text_field(wp_unslash($_GET['token'])), $redirect);
+        }
+
+        if (self::LOGIN_ACTION === $action && isset($_POST['token'])) {
+            // That button's POST: the token is spent here, once.
             ['person_id' => $personId, 'notice' => $notice] = $this->magicLinkSignIn(
-                sanitize_text_field(wp_unslash($_GET['token']))
+                sanitize_text_field(wp_unslash($_POST['token']))
             );
 
             if (null !== $personId) {

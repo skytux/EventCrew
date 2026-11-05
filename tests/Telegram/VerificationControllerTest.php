@@ -91,6 +91,67 @@ final class VerificationControllerTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
     }
 
+    public function testASecondOpenOfAUsedLinkSaysTheEmailIsAlreadyConfirmed(): void
+    {
+        $used = self::tokenRow('2999-01-01 00:00:00', '2026-11-05 10:00:00');
+
+        // verify(): consumeOnce() reads the row, sees it used, and stops.
+        $this->wpdb->nextRows[] = $used;
+        // alreadyConfirmed(): usedBy() reads it again, then find() the person.
+        $this->wpdb->nextRows[] = $used;
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-11-05 10:00:00',
+            'telegram_chat_id' => 555,
+        ];
+        $controller = $this->controller();
+
+        self::assertFalse($controller->verify('rawtoken'));
+        self::assertTrue($controller->alreadyConfirmed('rawtoken'));
+        // Nothing is marked, linked or sent a second time.
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->telegramCalls);
+
+        $page = $controller->renderPage(false, true);
+        self::assertStringContainsString('Your email is already confirmed.', $page);
+        self::assertStringContainsString('You can return to Telegram and sign up for tasks.', $page);
+        self::assertStringNotContainsString('invalid', $page);
+    }
+
+    /** @return array<string, mixed> */
+    private static function tokenRow(string $expiresAt, ?string $usedAt): array
+    {
+        return ['id' => 3, 'person_id' => 7, 'expires_at' => $expiresAt, 'used_at' => $usedAt];
+    }
+
+    public function testAnUnknownOrExpiredLinkIsNotAlreadyConfirmed(): void
+    {
+        $verified = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-11-05 10:00:00'];
+
+        // Unknown: no token row.
+        self::assertFalse($this->controller()->alreadyConfirmed('nope'));
+
+        // Used, but past its expiry.
+        $this->wpdb->nextRows[] = self::tokenRow('2000-01-01 00:00:00', '2000-01-01 00:00:00');
+        $this->wpdb->nextRows[] = $verified;
+        self::assertFalse($this->controller()->alreadyConfirmed('rawtoken'));
+        array_shift($this->wpdb->nextRows);
+
+        // Never used: verify() is the one that handles it.
+        $this->wpdb->nextRows[] = self::tokenRow('2999-01-01 00:00:00', null);
+        $this->wpdb->nextRows[] = $verified;
+        self::assertFalse($this->controller()->alreadyConfirmed('rawtoken'));
+        array_shift($this->wpdb->nextRows);
+
+        // Used, but the person's email is not confirmed.
+        $this->wpdb->nextRows[] = self::tokenRow('2999-01-01 00:00:00', '2026-11-05 10:00:00');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => null];
+        self::assertFalse($this->controller()->alreadyConfirmed('rawtoken'));
+
+        self::assertStringContainsString('invalid or has expired', $this->controller()->renderPage(false, false));
+    }
+
     public function testRenderPageReflectsSuccessAndFailure(): void
     {
         $ok = $this->controller()->renderPage(true);

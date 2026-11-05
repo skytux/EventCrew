@@ -6754,3 +6754,9 @@ msgstr "Roolin nimi: %s"
 #, php-format
 msgid "Role description: %s"
 msgstr "Roolin kuvaus: %s"
+
+msgid "Your email is already confirmed."
+msgstr "Sähköpostisi on jo vahvistettu."
+
+msgid "Press the button to finish signing in."
+msgstr "Viimeistele kirjautuminen painamalla painiketta."
