@@ -368,7 +368,8 @@ final class OpenTaskCall
     }
 
     /**
-     * The digest as text, a heading per date. The heading is always shown, even
+     * The digest as text, a heading per date (Dates::dayLabel(), like
+     * "Sat 1 Aug", in the reader's language). The heading is always shown, even
      * for a single date: the list now reaches past whatever made the send due,
      * so "when" is no longer implied by the message around it.
      *
@@ -379,7 +380,7 @@ final class OpenTaskCall
         $rendered = [];
 
         foreach ($blocks as $date => $lines) {
-            $rendered[] = $date . "\n" . implode("\n", $lines);
+            $rendered[] = Dates::dayLabel((string) $date) . "\n" . implode("\n", $lines);
         }
 
         return implode("\n\n", $rendered);
@@ -480,7 +481,7 @@ final class OpenTaskCall
         foreach ($recent as $entry) {
             $lines[] = sprintf(
                 '- %s: %s',
-                $entry['task_date'],
+                Dates::dayLabel((string) $entry['task_date']),
                 AssignmentStatus::label($entry['assignment']->status)
             );
         }

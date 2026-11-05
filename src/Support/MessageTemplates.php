@@ -467,7 +467,7 @@ final class MessageTemplates
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::when($c['task']) : ''
         );
         $standingTask = self::placeholder(
-            __('The task, the event and the date, like Door at Dance Night, 2026-11-14 18:00–20:00.', 'eventcrew'),
+            __('The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::standingTask($c['task']) : ''
         );
         $credits = self::placeholder(
@@ -1723,17 +1723,10 @@ final class MessageTemplates
         return '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
     }
 
-    /** "Door at Dance Night, 2026-11-14 18:00–20:00": as StandingNotice writes it. */
+    /** "Door at Dance Night, Sat 14 Nov 18:00–20:00", the day as in when(). */
     private static function standingTask(Task $task): string
     {
-        $time = $task->timeRange();
-
-        return sprintf(
-            '%s at %s, %s',
-            $task->roleLabel(),
-            $task->eventName(),
-            '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time
-        );
+        return sprintf('%s at %s, %s', $task->roleLabel(), $task->eventName(), self::when($task));
     }
 
     /**

@@ -6816,8 +6816,8 @@ msgstr "Tapahtuman nimi."
 msgid "The day of the task and its time, like Fri 14 Nov 18:00–20:00."
 msgstr "Tehtävän päivä ja kellonaika, esimerkiksi pe 14.11. 18:00–20:00."
 
-msgid "The task, the event and the date, like Door at Dance Night, 2026-11-14 18:00–20:00."
-msgstr "Tehtävä, tapahtuma ja päivä, esimerkiksi Ovi, Dance Night, 2026-11-14 18:00–20:00."
+msgid "The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00."
+msgstr "Tehtävä, tapahtuma ja päivä, esimerkiksi Ovi, Dance Night, la 14.11. 18:00–20:00."
 
 msgid "How many free-entry credits were given."
 msgstr "Kuinka monta vapaalippua annettiin."
