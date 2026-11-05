@@ -17,11 +17,16 @@ use EventCrew\Support\Dates;
  * message text, the arguments, names, emails, codes or the full callback data.
  *
  * Recording never breaks the handling of an update: every database error is
- * caught and ignored. Rows older than KEEP_DAYS are deleted by the heartbeat.
+ * caught and ignored. Rows older than KEEP_DAYS are deleted once a day by the
+ * heartbeat (purgeIfDue()).
  */
 final class BotLog
 {
-    public const KEEP_DAYS = 60;
+    /** Rows older than this are deleted (Lou, Q212: 90 days). */
+    public const KEEP_DAYS = 90;
+
+    /** When purgeIfDue() last deleted old rows, as a Unix time. */
+    public const PURGED_OPTION = 'eventcrew_bot_log_purged_at';
 
     public const SOURCE_TYPED = 'typed';
     public const SOURCE_BUTTON = 'button';
@@ -94,6 +99,26 @@ final class BotLog
         } catch (\Throwable) {
             // The log never breaks handling.
         }
+    }
+
+    /**
+     * Deletes the rows older than KEEP_DAYS, at most once a day: the
+     * heartbeat runs every hour and calls this each time. Returns how many
+     * rows were deleted, or -1 when it was not due.
+     */
+    public static function purgeIfDue(
+        BotLogRepository $repository = new BotLogRepository(),
+        ?int $now = null
+    ): int {
+        $now ??= time();
+
+        if (($now - (int) get_option(self::PURGED_OPTION, 0)) < DAY_IN_SECONDS) {
+            return -1;
+        }
+
+        update_option(self::PURGED_OPTION, $now, false);
+
+        return $repository->deleteBefore(self::cutoff($now));
     }
 
     /** The UTC time before which rows are deleted: KEEP_DAYS ago. */

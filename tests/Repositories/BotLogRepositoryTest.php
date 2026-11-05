@@ -12,7 +12,7 @@ use EventCrew\Telegram\BotLog;
 use EventCrew\Tests\TestCase;
 
 /**
- * The command log's storage: the insert, the 60-day retention and the queries
+ * The command log's storage: the insert, the 90-day retention and the queries
  * behind the wp-admin Bot log page.
  */
 final class BotLogRepositoryTest extends TestCase
@@ -67,7 +67,7 @@ final class BotLogRepositoryTest extends TestCase
         self::assertStringContainsString("'group', '', 'button', 'rm:', '2026-08-08', 'ok')", $this->wpdb->lastQuery());
     }
 
-    public function testRetentionDeletesRowsOlderThanSixtyDays(): void
+    public function testRetentionDeletesRowsOlderThanNinetyDays(): void
     {
         $this->wpdb->nextQueryResults[] = 4;
         $now = (int) strtotime('2026-11-03 12:00:00 UTC');
@@ -76,16 +76,44 @@ final class BotLogRepositoryTest extends TestCase
 
         self::assertSame(4, $deleted);
         self::assertSame(
-            "DELETE FROM wp_eventcrew_bot_log WHERE created_at < '2026-09-04 12:00:00'",
+            "DELETE FROM wp_eventcrew_bot_log WHERE created_at < '2026-08-05 12:00:00'",
             $this->wpdb->lastQuery()
         );
+    }
+
+    /** The old rows are deleted once a day, not on every hourly heartbeat (Q212). */
+    public function testRetentionRunsOnceADay(): void
+    {
+        $now = (int) strtotime('2026-11-03 12:00:00 UTC');
+        $saved = [];
+        Functions\when('update_option')->alias(static function (string $name, mixed $value) use (&$saved): bool {
+            $saved[$name] = $value;
+
+            return true;
+        });
+
+        // Last run 23 hours ago: not due, nothing deleted.
+        Functions\when('get_option')->justReturn($now - 23 * HOUR_IN_SECONDS);
+        self::assertSame(-1, BotLog::purgeIfDue(new BotLogRepository(), $now));
+        self::assertSame([], $this->wpdb->queries);
+        self::assertSame([], $saved);
+
+        // Last run a day ago: due; deletes and remembers when.
+        $this->wpdb->nextQueryResults[] = 2;
+        Functions\when('get_option')->justReturn($now - DAY_IN_SECONDS);
+        self::assertSame(2, BotLog::purgeIfDue(new BotLogRepository(), $now));
+        self::assertSame(
+            "DELETE FROM wp_eventcrew_bot_log WHERE created_at < '2026-08-05 12:00:00'",
+            $this->wpdb->lastQuery()
+        );
+        self::assertSame([BotLog::PURGED_OPTION => $now], $saved);
     }
 
     public function testTheHeartbeatRunsTheRetention(): void
     {
         $source = (string) file_get_contents(dirname(__DIR__, 2) . '/src/Support/Scheduler.php');
 
-        self::assertStringContainsString('(new BotLogRepository())->deleteBefore(BotLog::cutoff());', $source);
+        self::assertStringContainsString('BotLog::purgeIfDue();', $source);
     }
 
     public function testTheDayIsTheSiteTimeZoneDayInUtc(): void
