@@ -406,6 +406,63 @@ final class SettingsPageTest extends TelegramTestCase
         }
     }
 
+    /**
+     * Q333: a new role's name and description are not translated while the
+     * page waits. The role is stored with its source, and the translation is
+     * a background job for its Translations page row.
+     */
+    public function testANewRoleIsTranslatedInTheBackground(): void
+    {
+        $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[\EventCrew\Support\AssistantSettings::MODEL_OPTION] = 'test-model';
+        $this->options[\EventCrew\Support\Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'description' => '', 'capacity' => 2],
+        ];
+        $asked = 0;
+        \Brain\Monkey\Functions\when('wp_remote_post')->alias(static function () use (&$asked): array {
+            $asked++;
+
+            return [];
+        });
+
+        $this->saveUntil([
+            'role_slug' => ['decorate', '', ''],
+            'role_label' => [
+                ['source' => 'Decorate'],
+                // saveUntil() leaves sanitize_key() as it is, so the name is
+                // written as its own slug here.
+                ['source' => 'soundcheck'],
+                // A name that gives the slug of a role already there is
+                // dropped on save, so it gets no job of its own.
+                ['source' => 'decorate'],
+            ],
+            'role_description' => [['source' => ''], ['source' => 'Test the speakers.'], ['source' => '']],
+        ], \EventCrew\Support\Roles::GUIDE_URL_OPTION);
+
+        self::assertSame(0, $asked, 'the model is not asked while the page waits');
+
+        $role = \EventCrew\Support\Roles::find('soundcheck');
+        self::assertNotNull($role);
+        self::assertSame('soundcheck', $role['label_text']['source']);
+        self::assertSame('', $role['label_text']['texts']['fi'] ?? '');
+
+        $label = \EventCrew\Support\BackgroundJobs::latest(
+            \EventCrew\Support\TranslatedText::jobTarget('role.soundcheck.label')
+        );
+        $description = \EventCrew\Support\BackgroundJobs::latest(
+            \EventCrew\Support\TranslatedText::jobTarget('role.soundcheck.description')
+        );
+        self::assertSame(\EventCrew\Support\BackgroundJobs::QUEUED, $label['status'] ?? null);
+        self::assertSame('soundcheck', $label['args']['source'] ?? null);
+        self::assertSame(\EventCrew\Support\BackgroundJobs::QUEUED, $description['status'] ?? null);
+        // The role saved before (no translation yet) is queued as before;
+        // the dropped name gets nothing.
+        self::assertSame(
+            ['row:role.decorate.label', 'row:role.soundcheck.label', 'row:role.soundcheck.description'],
+            array_column(\EventCrew\Support\BackgroundJobs::withPrefix('row:role.'), 'target')
+        );
+    }
+
     public function testASecretIsShownOnlyByItsLastFourCharacters(): void
     {
         self::assertSame('', \EventCrew\Support\SecretMask::mask(''));

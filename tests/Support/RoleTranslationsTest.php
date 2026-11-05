@@ -162,6 +162,21 @@ final class RoleTranslationsTest extends TestCase
         });
     }
 
+    /** Q333: a role text whose translation is a queued background job is left to that job. */
+    public function testATextWithAQueuedTranslationIsLeftToItsJob(): void
+    {
+        \EventCrew\Support\BackgroundJobs::enqueue(
+            TranslatedText::JOB,
+            TranslatedText::jobTarget('role.decorate.label'),
+            ['row' => 'role.decorate.label', 'source' => 'Decorate', 'texts' => []]
+        );
+
+        $done = $this->translations()->run();
+
+        self::assertSame(['Hang the lights.'], array_column($this->sent[0], 'text'));
+        self::assertSame(['role.decorate.description'], $done);
+    }
+
     public function testSavingTheRolesAsksForARunSoon(): void
     {
         $this->translations()->soon();
