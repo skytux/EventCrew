@@ -2745,15 +2745,19 @@ msgstr ""
 msgid "Mark attendance"
 msgstr ""
 
-#: src/Telegram/RosterService.php:207
+#: src/Telegram/RosterService.php:228
 msgid "Marked arrived late."
 msgstr ""
 
-#: src/Telegram/RosterService.php:206
+#: src/Telegram/RosterService.php:226
+msgid "Marked arrived."
+msgstr ""
+
+#: src/Telegram/RosterService.php:227
 msgid "Marked completed."
 msgstr ""
 
-#: src/Telegram/RosterService.php:208
+#: src/Telegram/RosterService.php:229
 msgid "Marked no-show."
 msgstr ""
 
@@ -3052,7 +3056,7 @@ msgstr ""
 msgid "No task tonight has a free place."
 msgstr ""
 
-#: src/Telegram/DoorListService.php:66 src/Telegram/RosterService.php:90
+#: src/Telegram/DoorListService.php:66 src/Telegram/RosterService.php:91
 msgid "No tasks are scheduled yet."
 msgstr ""
 
@@ -3297,7 +3301,7 @@ msgstr ""
 msgid "Only on events"
 msgstr ""
 
-#: src/Telegram/RosterService.php:222
+#: src/Telegram/RosterService.php:243
 msgid "Only organizers and that night’s welcome crew can mark attendance."
 msgstr ""
 
@@ -3357,7 +3361,7 @@ msgstr ""
 msgid "Only organizers can use /say."
 msgstr ""
 
-#: src/Telegram/RosterService.php:217
+#: src/Telegram/RosterService.php:238
 msgid "Only organizers or people rostered on the day can see the roster."
 msgstr ""
 
@@ -5021,7 +5025,7 @@ msgstr ""
 msgid "That sign-in link is invalid or has expired."
 msgstr ""
 
-#: src/Telegram/RosterService.php:178
+#: src/Telegram/RosterService.php:181
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
@@ -5645,6 +5649,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1886
 msgid "The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included."
+msgstr ""
+
+#: src/Telegram/RosterService.php:214
+msgid "The welcome crew can only mark people as arrived."
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:290
@@ -7229,7 +7237,7 @@ msgstr ""
 msgid "signed out by %1$s at %2$s"
 msgstr ""
 
-#: src/Telegram/RosterService.php:486 templates/public/signup.php:986
+#: src/Telegram/RosterService.php:529 templates/public/signup.php:986
 msgid "signed up %s"
 msgstr ""
 
@@ -7286,7 +7294,7 @@ msgstr ""
 msgid "— None —"
 msgstr ""
 
-#: src/Telegram/PermissionService.php:116 src/Telegram/RosterService.php:402
+#: src/Telegram/PermissionService.php:116 src/Telegram/RosterService.php:426
 msgid "— nobody yet"
 msgstr ""
 
@@ -7304,7 +7312,7 @@ msgstr ""
 msgid "‹ Back"
 msgstr ""
 
-#: src/Telegram/RosterService.php:462
+#: src/Telegram/RosterService.php:490
 msgid "⏰ %s"
 msgstr ""
 
@@ -7353,7 +7361,7 @@ msgstr ""
 msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Settings > Email. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into Finnish and English. After that email is sent, or when that night is stopped, the text in Settings is used again. Send /followup alone to see both texts."
 msgstr ""
 
-#: src/Telegram/RosterService.php:457
+#: src/Telegram/RosterService.php:485
 msgid "✓ %s"
 msgstr ""
 
@@ -7361,11 +7369,11 @@ msgstr ""
 msgid "✓ Signed up"
 msgstr ""
 
-#: src/Telegram/RosterService.php:434
+#: src/Telegram/RosterService.php:461
 msgid "✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/RosterService.php:467
+#: src/Telegram/RosterService.php:495
 msgid "✗ %s"
 msgstr ""
 
@@ -7405,8 +7413,16 @@ msgstr ""
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 
+#: src/Telegram/RosterService.php:511
+msgid "👋 %s"
+msgstr ""
+
 #: src/Telegram/BoardRenderer.php:386
 msgid "👋 New here? Sign up →"
+msgstr ""
+
+#: src/Telegram/RosterService.php:462
+msgid "👋 arrived"
 msgstr ""
 
 #: src/Telegram/BoardRenderer.php:387

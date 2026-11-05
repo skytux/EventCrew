@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.30
+Stable tag: 1.140.31
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.31 =
+Bot /roster: the sales desk (when not an organizer) can only mark someone still signed up as arrived (👋, no credit). Done, late and no-show stay organizer-only, checked on the server (Q267).
 
 = 1.140.30 =
 Tests: the sign-up page is rendered for a signed-in person; a long line in SalesDeskGate is wrapped (Q272).
@@ -1304,6 +1307,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.31 =
+No settings change.
 
 = 1.140.30 =
 No settings change.

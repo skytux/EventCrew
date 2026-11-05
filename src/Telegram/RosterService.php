@@ -23,9 +23,10 @@ use EventCrew\Support\RosterAssembler;
  * sender being either a linked organizer - a person marked is_organizer on the
  * People page whose Telegram is connected - or someone rostered on that day
  * themselves, so a bystander cannot pull the whole crew's attendance out of the
- * bot. Organizers additionally get a pair of one-tap buttons per person to mark
- * them completed or no-show on the running event, the same write the wp-admin
- * roster offers.
+ * bot. Organizers additionally get one-tap buttons per person to mark them
+ * completed, arrived late or no-show on the running event, the same write the
+ * wp-admin roster offers. Someone on that night's sales-desk task who is not an
+ * organizer gets one button per person instead: arrived, which earns no credit.
  *
  * Under the roster, a row of buttons for the next event days switches the same
  * message to another day's roster (rd:<Y-m-d>), the way /door switches nights.
@@ -34,7 +35,7 @@ final class RosterService
 {
     use GroupBreadcrumb;
 
-    /** Callback data prefix for a marking tap: rm:<assignment_id>:<c|n>. */
+    /** Callback data prefix for a marking tap: rm:<assignment_id>:<a|c|l|n>. */
     private const MARK_PREFIX = 'rm:';
 
     /** Callback data prefix for a day button under the roster: rd:<Y-m-d>. */
@@ -144,8 +145,10 @@ final class RosterService
     }
 
     /**
-     * Handles a marking button tap: an organizer setting one person completed
-     * or no-show. Anyone else is refused, and the roster message is edited in
+     * Handles a marking button tap: an organizer setting one person completed,
+     * arrived late or no-show, or that night's sales desk setting someone
+     * still signed up to arrived. Anyone else, and any other mark by the sales
+     * desk, is refused, and the roster message is edited in
      * place so the buttons and counts reflect the change without a new post.
      *
      * @param array<string, mixed> $callbackQuery
@@ -198,11 +201,29 @@ final class RosterService
             return;
         }
 
+        // The sales desk may only mark someone still signed up as arrived: no
+        // completed or arrived late (both earn a credit), no no-show, and no
+        // changing a mark already made. Checked here, not only by which
+        // buttons are shown, so a crafted tap cannot get past it.
+        if (
+            ! $person->isOrganizer
+            && (AssignmentStatus::ARRIVED !== $status || AssignmentStatus::SIGNED_UP !== $assignment->status)
+        ) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('The welcome crew can only mark people as arrived.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
         $this->assignments->setStatus($assignmentId, $status, $person->id, MarkedBy::PERSON);
 
         $this->telegram->answerCallbackQuery(
             $callbackId,
             match ($status) {
+                AssignmentStatus::ARRIVED => __('Marked arrived.', 'eventcrew'),
                 AssignmentStatus::COMPLETED => __('Marked completed.', 'eventcrew'),
                 AssignmentStatus::ARRIVED_LATE => __('Marked arrived late.', 'eventcrew'),
                 default => __('Marked no-show.', 'eventcrew'),
@@ -280,20 +301,21 @@ final class RosterService
     }
 
     /**
-     * Splits "rm:<id>:<c|l|n>" into the assignment id and the status it maps
+     * Splits "rm:<id>:<a|c|l|n>" into the assignment id and the status it maps
      * to, or [0, ''] when the data is not a marking tap.
      *
      * @return array{int, string}
      */
     private function parseMark(string $data): array
     {
-        if (1 !== preg_match('#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([cln])$#', $data, $matches)) {
+        if (1 !== preg_match('#^' . preg_quote(self::MARK_PREFIX, '#') . '(\d+):([acln])$#', $data, $matches)) {
             return [0, ''];
         }
 
         return [
             (int) $matches[1],
             match ($matches[2]) {
+                'a' => AssignmentStatus::ARRIVED,
                 'c' => AssignmentStatus::COMPLETED,
                 'l' => AssignmentStatus::ARRIVED_LATE,
                 default => AssignmentStatus::NO_SHOW,
@@ -370,9 +392,11 @@ final class RosterService
     }
 
     /**
-     * The roster as a message: the text everyone rostered sees, and - for an
-     * organizer ($canMark) - a keyboard of per-person mark buttons. Organizers-
-     * only tasks are left out unless the viewer is an organizer ($isOrganizer).
+     * The roster as a message: the text everyone rostered sees, and - for
+     * someone who may mark ($canMark) - a keyboard of per-person mark buttons:
+     * done, late and no-show for an organizer, only arrived for the sales desk.
+     * Organizers-only tasks are left out unless the viewer is an organizer
+     * ($isOrganizer).
      *
      * @param array<int, array{task: \EventCrew\Models\Task, people: array<int, array{
      *     assignment_id: int, name: string, status: string,
@@ -421,8 +445,10 @@ final class RosterService
                     $lines[] = '    ' . $person['marked_by'];
                 }
 
-                if ($canMark && $this->isMarkable($person['status'])) {
+                if ($canMark && $isOrganizer && $this->isMarkable($person['status'])) {
                     $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);
+                } elseif ($canMark && ! $isOrganizer && AssignmentStatus::SIGNED_UP === $person['status']) {
+                    $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
                 }
             }
         }
@@ -431,7 +457,9 @@ final class RosterService
         // symbol means whenever there are buttons to tap.
         if ([] !== $keyboard) {
             $lines[] = '';
-            $lines[] = __('✓ done · ⏰ late · ✗ no-show', 'eventcrew');
+            $lines[] = $isOrganizer
+                ? __('✓ done · ⏰ late · ✗ no-show', 'eventcrew')
+                : __('👋 arrived', 'eventcrew');
         }
 
         return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
@@ -467,6 +495,21 @@ final class RosterService
                 'text' => sprintf(__('✗ %s', 'eventcrew'), $name),
                 'callback_data' => self::MARK_PREFIX . $assignmentId . ':n',
             ],
+        ];
+    }
+
+    /**
+     * The one button the sales desk gets per person still signed up: mark
+     * them arrived, which earns no credit.
+     *
+     * @return array{text: string, callback_data: string}
+     */
+    private function arrivedButton(int $assignmentId, string $name): array
+    {
+        return [
+            /* translators: %s: person's name */
+            'text' => sprintf(__('👋 %s', 'eventcrew'), $name),
+            'callback_data' => self::MARK_PREFIX . $assignmentId . ':a',
         ];
     }
 

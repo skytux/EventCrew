@@ -6450,3 +6450,16 @@ msgstr "Jatka vain, jos näytölläsi oleva crew-sovellus näyttää koodin %s."
 #, php-format
 msgid "Your code is %s. The bot shows the same code."
 msgstr "Koodisi on %s. Botti näyttää saman koodin."
+
+msgid "The welcome crew can only mark people as arrived."
+msgstr "Tervetulotiimi voi merkitä vain saapuneeksi."
+
+msgid "Marked arrived."
+msgstr "Merkitty saapuneeksi."
+
+msgid "👋 arrived"
+msgstr "👋 saapui"
+
+#, php-format
+msgid "👋 %s"
+msgstr "👋 %s"
