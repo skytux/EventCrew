@@ -106,7 +106,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
     // ---- Asking the organizers -----------------------------------------
 
-    public function testAWaitingNewcomerAsksTelegramOrganizersByTelegramAndTheOthersByEmail(): void
+    public function testAWaitingNewcomerAsksOrganizersByTelegramAndByEmail(): void
     {
         $this->wpdb->nextRows[] = self::sam(); // find
         $this->wpdb->nextRows[] = self::sam(); // markRoleNotice find
@@ -127,12 +127,13 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertSame('❌ No', $buttons[1]['text']);
         self::assertSame('nco:no:8', $buttons[1]['callback_data']);
 
-        // Only the organizer without Telegram gets the email.
-        self::assertCount(1, $this->mails);
-        self::assertSame('alex@example.com', $this->mails[0]['to']);
-        self::assertSame('New: Sam Lee wants to join', $this->mails[0]['subject']);
-        self::assertStringContainsString('Press OK or No in the Admin tab of the crew page.', $this->mails[0]['body']);
-        self::assertStringContainsString('https://site.test/crew/#', $this->mails[0]['body']);
+        // Both organizers get the email, Kim's on top of her Telegram DM.
+        self::assertSame(['kim@example.com', 'alex@example.com'], array_column($this->mails, 'to'));
+        foreach ($this->mails as $mail) {
+            self::assertSame('New: Sam Lee wants to join', $mail['subject']);
+            self::assertStringContainsString('Press OK or No in the Admin tab of the crew page.', $mail['body']);
+            self::assertStringContainsString('https://site.test/crew/#', $mail['body']);
+        }
 
         // Recorded, so the next sign-in does not ask again.
         $notice = array_values(array_filter(
@@ -163,7 +164,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertSame([], $this->mails);
     }
 
-    public function testAnOrganizerWhoTurnedTheRowOffIsNotAsked(): void
+    public function testAnOrganizerWhoTurnedTheDmOffStillGetsTheEmail(): void
     {
         $this->wpdb->nextRows[] = self::sam();
         $this->wpdb->nextRows[] = self::sam();
@@ -173,7 +174,49 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
         $this->approval()->onEmailVerified(8);
 
-        // Kim has Telegram, so no email goes to her instead.
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+    }
+
+    public function testAStoredDmOffWithoutAnEmailChoiceStillGetsTheEmail(): void
+    {
+        // A preference saved before Q324 that only says the DM is off.
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [
+            self::kim() + ['notify_prefs' => json_encode(['newcomer' => ['dm' => false]])],
+        ];
+
+        $this->approval()->onEmailVerified(8);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+    }
+
+    public function testAnOrganizerWhoTurnedTheEmailOffGetsOnlyTheDm(): void
+    {
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [
+            self::kim() + ['notify_prefs' => json_encode(['newcomer' => ['dm' => true, 'email' => false]])],
+        ];
+
+        $this->approval()->onEmailVerified(8);
+
+        self::assertNotNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAnOrganizerWhoTurnedBothOffIsNotAsked(): void
+    {
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [
+            self::kim() + ['notify_prefs' => json_encode(['newcomer' => ['dm' => false, 'email' => false]])],
+        ];
+
+        $this->approval()->onEmailVerified(8);
+
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertSame([], $this->mails);
     }
