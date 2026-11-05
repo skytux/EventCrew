@@ -21,13 +21,17 @@ namespace EventCrew\Support;
  *    way as the newsletter's own text (a NewsletterText with its own option):
  *    translated when it is saved, and removed by FollowupMail after the next
  *    night's emails have gone out, or when that night is stopped or too late.
- * 2. The text in wp-admin Settings > Email, a written-once text
- *    (TranslatedText): written in any language and translated into every site
- *    language by the language model, or edited by hand per language.
+ * 2. The text saved on the Messages page for the kinds followup_came and
+ *    followup_missed (MessageTemplates). That text is the whole email text,
+ *    with the greeting and the sign-off.
  * 3. The built-in text (defaultText()), in the language of the email part.
  *
- * Until someone saves another text in Settings, the email is exactly what it
- * was before these texts could be changed.
+ * Until someone saves a text on the Messages page, the email is exactly what
+ * it was before these texts could be changed.
+ *
+ * The text used to be edited in wp-admin Settings > Email. moveSettingsText()
+ * moves a text saved there to the Messages page once, and keeps the old
+ * option as a backup.
  */
 final class FollowupText
 {
@@ -37,10 +41,22 @@ final class FollowupText
     /** Both texts, in the order they are shown. */
     public const VARIANTS = [self::CAME, self::MISSED];
 
-    /** The wp-admin texts (TranslatedText values), by variant. */
+    /**
+     * The old wp-admin Settings texts (TranslatedText values), by variant.
+     * Read only by moveSettingsText(), and kept as a backup.
+     */
     public const SETTINGS_OPTIONS = [
         self::CAME => 'eventcrew_followup_text_came',
         self::MISSED => 'eventcrew_followup_text_missed',
+    ];
+
+    /** Set once moveSettingsText() has run, so it runs one time only. */
+    public const MOVED_OPTION = 'eventcrew_followup_text_moved';
+
+    /** The Messages page kind (MessageTemplates) of each variant. */
+    public const TEMPLATES = [
+        self::CAME => 'followup_came',
+        self::MISSED => 'followup_missed',
     ];
 
     /** The one-time texts for the next post-event email (NewsletterText values), by variant. */
@@ -52,9 +68,6 @@ final class FollowupText
     /** The longest text kept, in characters. */
     public const MAX_LENGTH = NewsletterText::MAX_LENGTH;
 
-    /** The posted name of the settings fields: followup_text[came], followup_text[missed]. */
-    public const POST_NAME = 'followup_text';
-
     /** Replaced with the event's name. */
     public const EVENT_TAG = '{event}';
 
@@ -64,15 +77,11 @@ final class FollowupText
     /** @var array<string, NewsletterText> The one-time texts, by variant. */
     private array $next = [];
 
-    private readonly TranslatedText $translator;
-
     public function __construct(LlmClient $llm, Logger $logger)
     {
         foreach (self::NEXT_OPTIONS as $variant => $option) {
             $this->next[$variant] = new NewsletterText($llm, $logger, $option, '');
         }
-
-        $this->translator = new TranslatedText($llm, $logger);
     }
 
     public static function isVariant(string $variant): bool
@@ -107,50 +116,58 @@ final class FollowupText
     }
 
     /**
-     * The built-in text as a settings value: the English text as the source
-     * and each site language's own text, none of them edited by hand. A site
-     * language the plugin has no translation file for gets an empty text, so
-     * the language model fills it ("Translate missing"); until then the
-     * English text is used.
-     *
-     * @return array<string, mixed> A TranslatedText value.
+     * One time only: moves each text saved in the old wp-admin Settings
+     * fields to the Messages page, as the text of the kind's template. The
+     * greeting and the sign-off are added around it in each language, as the
+     * email did. A kind that already has a text on the Messages page keeps
+     * it. The old options are not deleted; they stay as a backup.
      */
-    public static function defaultValue(string $variant): array
+    public static function moveSettingsText(): void
     {
-        $value = TranslatedText::blank();
-        $value['source'] = (string) Language::run(
-            Language::ENGLISH,
-            static fn (): string => self::defaultText($variant)
-        );
-        $value['lang'] = Language::ENGLISH;
-
-        foreach (TranslatedText::languages() as $lang) {
-            $value['texts'][$lang] = SiteLanguages::hasCatalog($lang)
-                ? (string) Language::run($lang, static fn (): string => self::defaultText($variant))
-                : '';
+        if (get_option(self::MOVED_OPTION, false)) {
+            return;
         }
 
-        return $value;
+        foreach (self::SETTINGS_OPTIONS as $variant => $option) {
+            $old = get_option($option, null);
+            $id = self::TEMPLATES[$variant];
+
+            if (! is_array($old) || null !== MessageTemplates::stored($id)[MessageTemplates::BODY]) {
+                continue;
+            }
+
+            $old = TranslatedText::normalize($old);
+
+            if ('' === trim($old['source'] . implode('', $old['texts']))) {
+                continue;
+            }
+
+            $wrap = static fn (string $text, string $lang): string => '' === trim($text)
+                ? ''
+                : (string) Language::run($lang, static fn (): string => MessageTemplates::followupBody($text));
+            $body = $old;
+            // The source is wrapped in its own language when it is known.
+            $body['source'] = $wrap($old['source'], '' !== $old['lang'] ? $old['lang'] : Language::ENGLISH);
+
+            foreach ($old['texts'] as $lang => $text) {
+                $body['texts'][$lang] = $wrap($text, $lang);
+            }
+
+            $stored = get_option(MessageTemplates::OPTION_PREFIX . $id, []);
+            $stored = is_array($stored) ? $stored : [];
+            $stored[MessageTemplates::BODY] = $body;
+            update_option(MessageTemplates::OPTION_PREFIX . $id, $stored, false);
+        }
+
+        update_option(self::MOVED_OPTION, 1);
     }
 
-    /**
-     * The wp-admin text of $variant: the stored value, or the built-in one
-     * when nothing (or only empty fields) is stored.
-     *
-     * @return array<string, mixed> A TranslatedText value.
-     */
-    public static function settings(string $variant): array
+    /** Whether a text for $variant is saved on the Messages page. */
+    public static function hasTemplateText(string $variant): bool
     {
-        $option = self::SETTINGS_OPTIONS[$variant] ?? '';
-        $stored = '' === $option ? null : get_option($option, null);
+        $id = self::TEMPLATES[$variant] ?? '';
 
-        if (! is_array($stored)) {
-            return self::defaultValue($variant);
-        }
-
-        $value = TranslatedText::normalize($stored);
-
-        return '' === $value['source'] . implode('', $value['texts']) ? self::defaultValue($variant) : $value;
+        return '' !== $id && null !== MessageTemplates::stored($id)[MessageTemplates::BODY];
     }
 
     /**
@@ -165,9 +182,11 @@ final class FollowupText
 
     /**
      * The text of $variant the next email uses in $lang, with {event} and
-     * {date} still in it, and whether it is the one-time text.
+     * {date} still in it, whether it is the one-time text, and whether it is
+     * the Messages page text (template: the whole email text, with the
+     * greeting, the sign-off and {first_name} in it).
      *
-     * @return array{text: string, next: bool}
+     * @return array{text: string, next: bool, template: bool}
      */
     public function text(string $variant, string $lang): array
     {
@@ -176,16 +195,22 @@ final class FollowupText
         if (null !== $next) {
             $text = Language::FINNISH === $lang ? $next['fi'] : $next['en'];
 
-            return ['text' => $text, 'next' => true];
+            return ['text' => $text, 'next' => true, 'template' => false];
         }
 
-        $text = TranslatedText::text(self::settings($variant), $lang);
+        if (self::hasTemplateText($variant)) {
+            $id = self::TEMPLATES[$variant];
+            $text = (string) Language::run(
+                $lang,
+                static fn (): string => MessageTemplates::raw($id, MessageTemplates::BODY)
+            );
 
-        if ('' === trim($text)) {
-            $text = (string) Language::run($lang, static fn (): string => self::defaultText($variant));
+            return ['text' => $text, 'next' => false, 'template' => true];
         }
 
-        return ['text' => $text, 'next' => false];
+        $text = (string) Language::run($lang, static fn (): string => self::defaultText($variant));
+
+        return ['text' => $text, 'next' => false, 'template' => false];
     }
 
     /** Whether the next email uses a one-time text for $variant. */
@@ -252,99 +277,6 @@ final class FollowupText
                 $text->clearIfRevision($rev);
             }
         }
-    }
-
-    /**
-     * Saves both wp-admin texts from the posted form, translating where
-     * needed. A text that is the built-in one again, or empty, is not stored,
-     * so the built-in text (in every language) applies. A field that was not
-     * posted is left as it is.
-     *
-     * @param mixed $posted The raw $_POST[POST_NAME].
-     * @return string The translation error kind ('' when none), for TranslatedText::errorNotice().
-     */
-    public function saveSettings(mixed $posted): string
-    {
-        $posted = is_array($posted) ? $posted : [];
-        $error = '';
-
-        foreach (array_keys(self::SETTINGS_OPTIONS) as $variant) {
-            $result = $this->translator->save(
-                self::settings($variant),
-                $posted[$variant] ?? null,
-                self::MAX_LENGTH,
-                true
-            );
-
-            if (null === $result) {
-                continue;
-            }
-
-            self::store($variant, $result['value']);
-
-            if ('' === $error && '' !== $result['error']) {
-                $error = $result['error'];
-            }
-        }
-
-        return $error;
-    }
-
-    /**
-     * Stores the wp-admin text of $variant. A text that is the built-in one,
-     * or empty, is not stored, so the built-in text (in every language)
-     * applies.
-     *
-     * @param array<string, mixed> $value A TranslatedText value.
-     */
-    public static function store(string $variant, array $value): void
-    {
-        $option = self::SETTINGS_OPTIONS[$variant] ?? '';
-
-        if ('' === $option) {
-            return;
-        }
-
-        $value = TranslatedText::normalize($value);
-
-        if (
-            $value === self::defaultValue($variant)
-            || '' === $value['source'] . implode('', $value['texts'])
-        ) {
-            delete_option($option);
-        } else {
-            update_option($option, $value);
-        }
-    }
-
-    /**
-     * Both texts as rows of the wp-admin Translations page (TranslationRegistry).
-     *
-     * @return list<TranslationRow>
-     */
-    public static function translationRows(): array
-    {
-        $labels = [
-            self::CAME => __('Post-event email: the text for people who came', 'eventcrew'),
-            self::MISSED => __('Post-event email: the text for people who did not come', 'eventcrew'),
-        ];
-        $rows = [];
-
-        foreach (self::VARIANTS as $variant) {
-            $rows[] = new TranslationRow(
-                'email.followup.' . $variant,
-                $labels[$variant],
-                TranslationRow::GROUP_EMAILS,
-                self::settings($variant),
-                static function (array $value) use ($variant): void {
-                    self::store($variant, $value);
-                },
-                self::MAX_LENGTH,
-                true
-            );
-        }
-
-        return $rows;
     }
 
     /** $text with {event} and {date} replaced. */

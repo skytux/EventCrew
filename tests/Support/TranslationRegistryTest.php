@@ -9,6 +9,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRegistry;
@@ -232,10 +233,15 @@ final class TranslationRegistryTest extends TestCase
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
         $this->withModel('{"lang": "en", "fi": "MODEL-FI", "sv": "MODEL-SV"}');
         $registry = $this->sample();
-        $registry->add([FollowupText::class, 'translationRows']);
+        // The post-event email's two texts, as the Messages page rows.
+        $registry->add(static fn (): array => array_values(array_filter(
+            MessageTemplates::translationRows(),
+            static fn (TranslationRow $row): bool => str_starts_with($row->id, 'message.followup_')
+                && str_ends_with($row->id, '.body')
+        )));
 
         self::assertSame(
-            ['a', 'b', 'email.followup.came', 'email.followup.missed'],
+            ['a', 'b', 'message.followup_came.body', 'message.followup_missed.body'],
             self::ids(TranslationRegistry::filter($registry->rows(), '', TranslationRegistry::SHOW_MISSING))
         );
 
@@ -245,7 +251,7 @@ final class TranslationRegistryTest extends TestCase
         self::assertSame(['fi' => 'Hei', 'en' => 'Hello', 'sv' => 'MODEL-SV'], $this->stored('a')['texts']);
         self::assertSame(['fi' => 'MODEL-FI', 'en' => 'Thank you', 'sv' => 'MODEL-SV'], $this->stored('b')['texts']);
 
-        $came = FollowupText::settings(FollowupText::CAME);
+        $came = MessageTemplates::value(FollowupText::TEMPLATES[FollowupText::CAME], MessageTemplates::BODY);
         self::assertSame('MODEL-SV', $came['texts']['sv']);
         self::assertNotSame('MODEL-FI', $came['texts']['fi'], 'the shipped Finnish text was not empty');
         self::assertSame([], TranslationRegistry::filter($registry->rows(), '', TranslationRegistry::SHOW_MISSING));

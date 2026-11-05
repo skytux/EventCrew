@@ -412,8 +412,8 @@ final class MessageTemplates
      * could be changed, made from the same gettext strings.
      *
      * Not every message the plugin sends is here yet: see the Messages page
-     * list in the 2026-11-05 report. TicketMail, FollowupMail and the
-     * newsletter are listed but do not read their template yet (wired false).
+     * list in the 2026-11-05 report. TicketMail and the newsletter are
+     * listed but do not read their template yet (wired false).
      *
      * @return list<MessageTemplate>
      */
@@ -683,19 +683,16 @@ final class MessageTemplates
                 ['event' => $event, 'date' => $date],
                 false
             ),
-            // TODO(messages): FollowupMail does not read these two templates
-            // yet. Its main text is FollowupText (Settings > Email and the
-            // one-time text); when FollowupMail::words() is wired, FollowupText
-            // should become the body of these templates.
+            // FollowupMail reads these two. A one-time text for the next
+            // post-event email (FollowupText) still comes first.
             new MessageTemplate(
                 'followup_came',
                 __('After the event: thank you (email)', 'eventcrew'),
                 $email,
                 __('Sent the day after an event to the people who came. Sent in Finnish and English.', 'eventcrew'),
                 static fn (): string => __('Thank you for dancing with us', 'eventcrew'),
-                static fn (): string => self::followupBody(FollowupText::CAME),
-                ['first_name' => $firstName, 'event' => $event, 'date' => $date],
-                false
+                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::CAME)),
+                ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             new MessageTemplate(
                 'followup_missed',
@@ -703,9 +700,8 @@ final class MessageTemplates
                 $email,
                 __('Sent the day after an event to the people who had a ticket but did not come. Sent in Finnish and English.', 'eventcrew'),
                 static fn (): string => __('We missed you this time', 'eventcrew'),
-                static fn (): string => self::followupBody(FollowupText::MISSED),
-                ['first_name' => $firstName, 'event' => $event, 'date' => $date],
-                false
+                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::MISSED)),
+                ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             // TODO(messages): the newsletter (Newsletter::compose() and
             // NewsletterWriter) does not read this template yet. It has its
@@ -759,12 +755,15 @@ final class MessageTemplates
         );
     }
 
-    /** The post-event email's text as FollowupMail::words() builds it. */
-    private static function followupBody(string $variant): string
+    /**
+     * The post-event email's text as FollowupMail::words() builds it, in the
+     * current language: the greeting, $main and the sign-off.
+     */
+    public static function followupBody(string $main): string
     {
         /* translators: %s: the person's first name */
         return self::tag(__('Hi %s,', 'eventcrew'), ['%s' => '{first_name}']) . "\n\n"
-            . FollowupText::defaultText($variant) . "\n\n"
+            . trim($main) . "\n\n"
             . __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
     }
 }

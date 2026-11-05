@@ -1567,7 +1567,6 @@ final class Kernel
                     $container->get(TranslatedText::class)
                 );
                 $registry->add([$botProfile, 'translationRows']);
-                $registry->add([FollowupText::class, 'translationRows']);
                 $registry->add([TicketText::class, 'translationRows']);
                 $registry->add([BotTexts::class, 'translationRows']);
                 $registry->add([SiteTexts::class, 'translationRows']);

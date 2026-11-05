@@ -6001,17 +6001,14 @@ msgstr "Kiitosteksti (tulleet)"
 msgid "Sorry text (missed)"
 msgstr "Harmiteksti (poissa olleet)"
 
-msgid "The text between “Hi Alex,” and the sign-off. {event} becomes the event’s name and {date} its date. Empty, or the same as the built-in text, means the built-in text. An organizer can replace it for the next email only, in the crew app’s Admin tab or with /followup in the bot."
-msgstr "Teksti tervehdyksen “Hei Alex,” ja lopputervehdyksen välissä. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Tyhjä teksti tai sama kuin valmis teksti tarkoittaa valmista tekstiä. Järjestäjä voi vaihtaa sen vain seuraavaan viestiin Crew-sovelluksen Admin-välilehdellä tai botin komennolla /followup."
-
 msgid "Text for the next post-event email"
 msgstr "Teksti seuraavaan tapahtuman jälkeiseen viestiin"
 
-msgid "Text: a one-time text an organizer set for this email. After this send, the text in Settings is used again."
-msgstr "Teksti: kertateksti, jonka järjestäjä asetti tähän viestiin. Tämän lähetyksen jälkeen käytetään taas asetusten tekstiä."
+msgid "Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again."
+msgstr "Teksti: kertateksti, jonka järjestäjä asetti tähän viestiin. Tämän lähetyksen jälkeen käytetään taas Viestit-sivun tekstiä."
 
-msgid "Text: the one in Settings. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
-msgstr "Teksti: asetusten teksti. Järjestäjä voi asettaa tähän viestiin kertatekstin botin komennolla /followup tai Crew-sovelluksen Admin-välilehdellä."
+msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
+msgstr "Teksti: Viestit-sivun teksti. Järjestäjä voi asettaa tähän viestiin kertatekstin botin komennolla /followup tai Crew-sovelluksen Admin-välilehdellä."
 
 msgid "Use /followup in a private chat with me."
 msgstr "Käytä komentoa /followup yksityiskeskustelussa kanssani."

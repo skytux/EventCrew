@@ -17,7 +17,6 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
-use EventCrew\Support\FollowupText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -171,10 +170,6 @@ final class SettingsPage
                 'welcome_enabled' => WelcomeSender::enabled(),
                 'newsletter_enabled' => Newsletter::enabled(),
                 'followup_enabled' => FollowupMail::enabled(),
-                'followup_texts' => [
-                    FollowupText::CAME => FollowupText::settings(FollowupText::CAME),
-                    FollowupText::MISSED => FollowupText::settings(FollowupText::MISSED),
-                ],
                 'ticket_text' => TicketText::settings(),
                 'newsletter_days' => Newsletter::days(),
                 'newsletter_crew' => NewsletterCrew::enabled(),
@@ -804,16 +799,15 @@ final class SettingsPage
         $assistantError = $this->saveAssistant();
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         $profile = $this->saveBotProfile();
-        $followupError = $this->saveFollowupTexts();
         $ticketError = $this->saveTicketText();
         $siteError = $this->saveSiteTexts();
-        $followupNotice = TranslatedText::errorNotice(
-            current(array_filter([$followupError, $ticketError, $siteError, $this->rolesError])) ?: ''
+        $textsNotice = TranslatedText::errorNotice(
+            current(array_filter([$ticketError, $siteError, $this->rolesError])) ?: ''
         );
 
         // Both use the same notice; it is said once.
-        if ('' !== $followupNotice && ! str_contains($profile['message'], $followupNotice)) {
-            $profile = ['ok' => false, 'message' => trim($followupNotice . ' ' . $profile['message'])];
+        if ('' !== $textsNotice && ! str_contains($profile['message'], $textsNotice)) {
+            $profile = ['ok' => false, 'message' => trim($textsNotice . ' ' . $profile['message'])];
         }
 
         $profileSuffix = '' === $profile['message'] ? '' : ' ' . $profile['message'];
@@ -865,18 +859,6 @@ final class SettingsPage
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $profile->save($_POST[BotProfileSettings::POST_NAME] ?? null);
-    }
-
-    /**
-     * Saves the post-event email's two texts (FollowupText). Returns the
-     * translation error kind, '' when none.
-     */
-    private function saveFollowupTexts(): string
-    {
-        $texts = new FollowupText($this->llm ?? new LlmClient(new Logger()), new Logger());
-
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
-        return $texts->saveSettings($_POST[FollowupText::POST_NAME] ?? null);
     }
 
     /**

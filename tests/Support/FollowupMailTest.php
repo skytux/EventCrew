@@ -14,6 +14,7 @@ use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SignedLink;
@@ -1099,29 +1100,62 @@ final class FollowupMailTest extends TestCase
         );
     }
 
-    public function testTheTextInSettingsIsUsedWithTheEventAndTheDate(): void
+    /** The Messages page text is the whole text, with its own greeting; its subject is used too. */
+    public function testTheMessagesPageTextIsUsedWithTheEventAndTheDate(): void
     {
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
-            'source' => 'Sorry about {event} on {date}.',
-            'texts' => ['fi' => 'Harmi, {event} {date}.', 'en' => 'Sorry about {event} on {date}.'],
-            'manual' => ['fi' => false, 'en' => false],
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_missed'] = [
+            'subject' => [
+                'source' => 'Missed you',
+                'texts' => ['fi' => 'Kaipasimme', 'en' => 'Missed you'],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+            'body' => [
+                'source' => 'Dear {first_name}, sorry about {event} on {date}.',
+                'texts' => [
+                    'fi' => 'Hyvä {first_name}, harmi, {event} {date}.',
+                    'en' => 'Dear {first_name}, sorry about {event} on {date}.',
+                ],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
         ];
 
         $mail = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 1);
 
-        self::assertStringContainsString("Hei Anna,\n\nHarmi, Test Site 14.11.2026.\n\n", $mail['text']);
-        self::assertStringContainsString("Hi Anna,\n\nSorry about Test Site on 14.11.2026.\n\nWarmly,", $mail['text']);
+        self::assertStringStartsWith("Hyvä Anna, harmi, Test Site 14.11.2026.\n\n", $mail['text']);
+        self::assertStringContainsString("\n\nDear Anna, sorry about Test Site on 14.11.2026.", $mail['text']);
+        self::assertStringNotContainsString('Warmly,', $mail['text'], 'the sign-off is part of the saved text');
         self::assertStringNotContainsString('We are sorry you could not make it', $mail['text']);
-        self::assertLessThan(strpos($mail['text'], 'Sorry about'), strpos($mail['text'], 'Harmi'), 'Finnish first');
+        self::assertSame('Kaipasimme / Missed you – 14.11.2026', $mail['subject']);
 
         $came = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
         self::assertStringContainsString('Thank you for coming to Test Site', $came['text'], 'the other is unchanged');
+        self::assertStringContainsString('Thank you for dancing with us – 14.11.2026', $came['subject']);
+    }
+
+    /** A one-time text still wins over the Messages page text, for the next send only. */
+    public function testTheOneTimeTextWinsOverTheMessagesPageText(): void
+    {
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = [
+            'body' => [
+                'source' => 'Page text for {first_name}.',
+                'texts' => ['fi' => 'Sivun teksti, {first_name}.', 'en' => 'Page text for {first_name}.'],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+        ];
+        $this->nextText(FollowupText::CAME, 'Only this time at {event}.', 'Vain tällä kertaa.', 2);
+
+        $text = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+
+        self::assertStringContainsString("Hi Anna,\n\nOnly this time at Test Site.\n\nWarmly,\nTest Site", $text);
+        self::assertStringContainsString("Hei Anna,\n\nVain tällä kertaa.", $text);
+        self::assertStringNotContainsString('Page text', $text);
+        self::assertStringNotContainsString('Sivun teksti', $text);
     }
 
     /** The one-time text goes out with the next night's emails, and is removed once they are all sent. */
     public function testTheOneTimeTextIsUsedForTheNextSendOnly(): void
     {
-        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]] = ['source' => 'The usual text.'];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = ['body' => ['source' => 'The usual text.']];
         $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 4);
         $this->buyer(1, 'Anna Example', 'anna@example.test');
         $this->db->checkins = [['kind' => FollowupRepository::KIND_BUYER, 'ref_id' => 1]];
@@ -1136,7 +1170,7 @@ final class FollowupMailTest extends TestCase
         self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
 
         $after = $this->followup()->compose('2026-11-21', true, 'Bo', 'b', 2)['text'];
-        self::assertStringContainsString('The usual text.', $after, 'the next night has the Settings text again');
+        self::assertStringContainsString('The usual text.', $after, 'the next night has the Messages page text again');
     }
 
     /** A one-time text saved while a night is still sending is kept for the next night. */
@@ -1201,7 +1235,7 @@ final class FollowupMailTest extends TestCase
         self::assertCount(1, $this->mails);
         $body = $this->mails[0]['body'];
         $next = strpos($body, 'Text: a one-time text an organizer set for this email.');
-        $settings = strpos($body, 'Text: the one in Settings.');
+        $settings = strpos($body, 'Text: the one on the Messages page.');
         self::assertNotFalse($next);
         self::assertNotFalse($settings);
         self::assertLessThan($settings, $next, 'the thank-you comes first, with its one-time text');
