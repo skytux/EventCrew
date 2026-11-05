@@ -322,6 +322,7 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('we email you a thank-you message with your ticket', $text);
         self::assertStringContainsString('guest list with your email address', $text);
         self::assertStringContainsString('A guest\'s email address is deleted 60 days after the event too', $text);
+        self::assertStringContainsString('we keep your email address on a do-not-send list, so that we send you no more of these messages', $text);
         // Not the crew notice: nothing about tasks or the crew record.
         self::assertStringNotContainsString('crew records', $text);
         self::assertStringNotContainsString('claim a task', $text);
@@ -342,6 +343,7 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('viivan ("-")', $text);
         self::assertStringContainsString('Poistamme sähköpostiosoitteesi, nimesi ja lippukoodisi 60 päivän kuluttua tapahtumasta', $text);
         self::assertStringContainsString('lipunostajien tietojen rekisterinpitäjä on Dance Club', $text);
+        self::assertStringContainsString('säilytämme sähköpostiosoitteesi ei-lähetetä-listalla', $text);
     }
 
     public function testTheTicketBuyerNoticeUrlUsesItsOwnPageThenCore(): void
