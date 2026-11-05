@@ -664,16 +664,28 @@ final class MessageTemplates
                 __('Sent when an organizer gives a person free-entry credits.', 'eventcrew'),
                 static fn (): string => __('You’ve been given free entry', 'eventcrew'),
                 static fn (array $c): string => self::tag(
-                    /* translators: 1: the person's name, 2: number of credits */
+                    /* translators: 1: the person's name, 2: number of credits, 3: how to get the free ticket */
                     _n(
-                        "Hi %1\$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.",
-                        "Hi %1\$s,\n\nAn organizer has given you %2\$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.",
+                        "Hi %1\$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — %3\$s",
+                        "Hi %1\$s,\n\nAn organizer has given you %2\$d free-entry credits. You can spend them on upcoming events — %3\$s",
                         $count($c),
                         'eventcrew'
                     ),
-                    ['%1$s' => '{name}', '%2$d' => '{credits}']
+                    ['%1$s' => '{name}', '%2$d' => '{credits}', '%3$s' => '{credit_help}']
                 ),
-                ['name' => $name, 'credits' => $credits]
+                [
+                    'name' => $name,
+                    'credits' => $credits,
+                    'credit_help' => self::botOrWeb(
+                        __('How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                        static fn (): string => __('open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.', 'eventcrew'),
+                        static fn (string $url): string => sprintf(
+                            /* translators: %s: link to the crew page */
+                            __('open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket.', 'eventcrew'),
+                            $url
+                        )
+                    ),
+                ]
             ),
             new MessageTemplate(
                 'credit_granted_dm',
@@ -1004,14 +1016,23 @@ final class MessageTemplates
                 __('Sent when an organizer gives a person a role. The email about it repeats this text.', 'eventcrew'),
                 null,
                 static fn (): string => self::tag(
-                    /* translators: %s: role name, such as DJ */
-                    __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
-                    ['%s' => '{role}']
+                    /* translators: 1: role name, such as DJ, 2: where its tasks are shown */
+                    __('You now have the role %1$s. %2$s', 'eventcrew'),
+                    ['%1$s' => '{role}', '%2$s' => '{role_tasks_help}']
                 ),
                 [
                     'role' => self::placeholder(
                         __('The name of the role, like DJ.', 'eventcrew'),
                         static fn (array $c): string => (string) ($c['role'] ?? '')
+                    ),
+                    'role_tasks_help' => self::botOrWeb(
+                        __('Where the role’s tasks are shown: in the bot and the Crew app, or, for a person with no Telegram chat (in the email), on the crew page, with its link.', 'eventcrew'),
+                        static fn (): string => __('Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
+                        static fn (string $url): string => sprintf(
+                            /* translators: %s: link to the crew page */
+                            __('Its tasks are shown to you in the Board tab of the crew page (%s), and you can sign up for them.', 'eventcrew'),
+                            $url
+                        )
                     ),
                 ]
             ),
@@ -1401,6 +1422,15 @@ final class MessageTemplates
                 static fn (string $url): string => sprintf(
                     /* translators: %s: link to the crew page */
                     __('You can see your own numbers any time in the Me tab of the crew page (%s).', 'eventcrew'),
+                    $url
+                )
+            ),
+            'credit_help' => self::botOrWeb(
+                __('How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                static fn (): string => WelcomeSender::creditBotLine(),
+                static fn (string $url): string => sprintf(
+                    /* translators: %s: link to the crew page */
+                    __('To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s).', 'eventcrew'),
                     $url
                 )
             ),

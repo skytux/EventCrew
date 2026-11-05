@@ -378,7 +378,56 @@ final class PermissionServiceTest extends TelegramTestCase
 
         $this->giveTheDjRole();
 
+        self::assertStringStartsWith(
+            "Hi Sam,\n\nYou now have the role DJ. Its tasks are shown to you with /board in a private chat with the"
+                . ' bot and in the Crew app, and you can sign up for them.',
+            $this->mails[0]['body'],
+            'a person with a Telegram chat keeps the bot text'
+        );
         self::assertStringContainsString("\n\nSee open tasks: https://site.test/crew/\n", $this->mails[0]['body']);
+    }
+
+    /**
+     * A person with no Telegram chat gets the Board tab of the crew page in
+     * the role email instead of /board, and keeps the See open tasks button;
+     * the Finnish bot text recombines to the old one.
+     */
+    public function testTheRoleEmailGivesAWebOnlyPersonTheCrewPage(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->options['eventcrew_signup_page_id'] = 897;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = [
+            'id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => null,
+            'role_slugs' => '',
+        ];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:dj:8']);
+
+        self::assertCount(1, $this->mails);
+        self::assertStringStartsWith(
+            "Hi Sam,\n\nYou now have the role DJ. Its tasks are shown to you in the Board tab of the crew page"
+                . ' (https://site.test/crew/), and you can sign up for them.',
+            $this->mails[0]['body']
+        );
+        self::assertStringContainsString("\n\nSee open tasks: https://site.test/crew/\n", $this->mails[0]['body']);
+        self::assertStringNotContainsString('/board', $this->mails[0]['body']);
+    }
+
+    public function testTheRoleDmIsUnchangedInFinnish(): void
+    {
+        $text = \EventCrew\Support\Language::run(
+            \EventCrew\Support\Language::FINNISH,
+            static fn (): string => MessageTemplates::body('access_role_dm', ['role' => 'DJ'])
+        );
+
+        self::assertSame(
+            'Sinulla on nyt rooli DJ. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja'
+                . ' Crew-sovelluksessa, ja voit ilmoittautua niihin.',
+            $text
+        );
     }
 
     /** A pass or organizer email does not name the Crew app, so it gets no button. */

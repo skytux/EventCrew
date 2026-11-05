@@ -426,10 +426,23 @@ final class WelcomeSender
     }
 
     /**
-     * The {tickets_help} of the welcome message and the web Help tab for a
+     * The {credit_help} of the welcome message and the web Help tab for a
+     * person with a Telegram chat: how to spend a credit. A person without one
+     * gets the crew page in the welcome email (MessageTemplates, CrewPageHelp).
+     */
+    public static function creditBotLine(): string
+    {
+        return __(
+            'To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page.',
+            'eventcrew'
+        );
+    }
+
+    /**
+     * The {tickets_help} of the welcome message for a
      * person with a Telegram chat: where their tickets are. A person without
      * one gets the crew page in the welcome email (MessageTemplates,
-     * CrewPageHelp).
+     * CrewPageHelp), and the web Help tab names the Me tab (helpText()).
      */
     public static function ticketsBotLine(): string
     {
@@ -451,20 +464,29 @@ final class WelcomeSender
                 __('How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 trim((string) get_bloginfo('name'))
             ),
-            ...self::sections(),
+            ...self::sections([
+                // On the crew page itself the tickets are in the Me tab, for
+                // everyone.
+                'tickets_help' => __(
+                    'It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.',
+                    'eventcrew'
+                ),
+            ]),
         ]);
     }
 
     /**
      * The sections both texts share: tasks, tickets, credits, standing.
+     * $values replaces some of the sectionValues().
      *
+     * @param array<string, string> $values
      * @return array<int, string>
      */
-    private static function sections(): array
+    private static function sections(array $values = []): array
     {
         $pairs = [];
 
-        foreach (self::sectionValues() as $name => $value) {
+        foreach ($values + self::sectionValues() as $name => $value) {
             $pairs['{' . $name . '}'] = $value;
         }
 
@@ -493,9 +515,9 @@ final class WelcomeSender
             ),
             '## 🎁 ' . __('Credits', 'eventcrew'),
             MessageTemplates::tag(
-                /* translators: %d: completed tasks needed for one credit */
-                __('You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                ['%d' => '{tasks_per_credit}']
+                /* translators: 1: completed tasks needed for one credit, 2: how to spend a credit */
+                __('You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                ['%1$d' => '{tasks_per_credit}', '%2$s' => '{credit_help}']
             ),
             '## 📈 ' . __('Standing', 'eventcrew'),
             __('Your standing comes from how your past tasks went:', 'eventcrew'),
@@ -521,6 +543,7 @@ final class WelcomeSender
         $threshold = (int) round($settings->threshold() * 100);
 
         return [
+            'credit_help' => self::creditBotLine(),
             'tickets_help' => self::ticketsBotLine(),
             'roles' => implode("\n", self::roleLines()),
             'tasks_per_credit' => (string) $settings->tasksPerCredit(),

@@ -8,7 +8,7 @@ How the Test Crew crew works. Your own numbers are in the Me tab, and /me sends 
 
 ## 🎟️ Tickets
 
-When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.
+When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.
 
 ## 🎁 Credits
 

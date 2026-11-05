@@ -250,6 +250,27 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $this->assertFixture('help_text', \EventCrew\Support\WelcomeSender::helpText());
     }
 
+    /** On the crew page the Help tab names the Me tab for the tickets, not /me tickets. */
+    public function testTheHelpTabNamesTheMeTabForTickets(): void
+    {
+        $text = \EventCrew\Support\WelcomeSender::helpText();
+
+        self::assertStringContainsString(
+            'It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.',
+            $text
+        );
+        self::assertStringNotContainsString('/me tickets', $text);
+
+        $finnish = \EventCrew\Support\Language::run(
+            \EventCrew\Support\Language::FINNISH,
+            static fn (): string => \EventCrew\Support\WelcomeSender::helpText()
+        );
+        self::assertStringContainsString(
+            'Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Minä-välilehti listaa kaikki lippusi.',
+            $finnish
+        );
+    }
+
     public function testTheDoorNewMemberEmailIsUnchanged(): void
     {
         $this->addAtTheDoor(true);
@@ -423,8 +444,14 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
                 . ' (https://site.test/crew/) lists all your tickets.',
             $sent[0]
         );
+        self::assertStringContainsString(
+            'tasks you complete. To spend a credit, pick a night under Tickets in the Me tab of the crew page'
+                . ' (https://site.test/crew/). You then get a ticket for the night you choose.',
+            $sent[0]
+        );
         self::assertStringNotContainsString('send /me to the bot in a private chat', $sent[0]);
         self::assertStringNotContainsString('/me tickets', $sent[0]);
+        self::assertStringNotContainsString('send /me', $sent[0]);
     }
 
     public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPageInFinnish(): void
@@ -437,7 +464,13 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
             'Omat lukusi näet milloin vain crew-sivun Minä-välilehdellä (https://site.test/crew/).',
             $sent[0]
         );
+        self::assertStringContainsString(
+            'Käytä vapaalippu valitsemalla ilta kohdasta Liput crew-sivun Minä-välilehdellä (https://site.test/crew/).'
+                . ' Saat silloin lipun',
+            $sent[0]
+        );
         self::assertStringNotContainsString('/me tickets', $sent[0]);
+        self::assertStringNotContainsString('botille /me', $sent[0]);
     }
 
     public function testAWebOnlyPersonsSalesDeskLinkPointsToTheCrewPage(): void
