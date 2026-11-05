@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
-use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\CalendarController;
@@ -52,43 +51,27 @@ final class ClaimNotifier
             return;
         }
 
-        $standingLine = $this->standingLine($person);
         $about = RoleGuide::aboutLine($task);
-        $aboutBlock = '' === $about ? '' : "\n\n" . $about;
-        $freeCancel = self::freeCancelLine();
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = [
+            'person' => $person,
+            'task' => $task,
+            'standing' => $this->standingLine($person),
+            'free_cancel' => self::freeCancelLine(),
+            'about' => '' === $about ? '' : "\n\n" . $about,
+        ];
 
         $this->dm(
             $person,
-            sprintf(
-                /* translators: 1: role, 2: event, 3: date/time */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.", 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName(),
-                $this->whenText($task)
-            ) . $freeCancel . $aboutBlock . "\n\n" . $standingLine,
+            MessageTemplates::body('signup_confirmed_dm', $context),
             ['inline_keyboard' => $this->signupKeyboard($task->id, $assignment->id)]
         );
 
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            sprintf(
-                /* translators: 1: role, 2: event */
-                __('You’re signed up: %1$s for %2$s', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
-                $person->name(),
-                $task->roleLabel(),
-                $task->eventName(),
-                $this->whenText($task),
-                $standingLine
-            ) . $freeCancel . $aboutBlock,
+            MessageTemplates::subject('signup_confirmed', $context),
+            MessageTemplates::body('signup_confirmed', $context),
             // The ticket first: it is the thing this email exists to hand over.
             // The calendar hold second, since a task in someone's own calendar,
             // with its own alarm, is the strongest nudge there is against a
@@ -186,41 +169,24 @@ final class ClaimNotifier
             ? __("This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time.", 'eventcrew')
             : __('Thanks for the notice.', 'eventcrew');
 
-        $standingLine = $this->standingLine($person);
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = [
+            'person' => $person,
+            'task' => $task,
+            'cancelled' => AssignmentStatus::LATE_CANCEL === $status
+                ? __('⚠️ Late cancellation', 'eventcrew')
+                : __('❌ Cancelled', 'eventcrew'),
+            'note' => $note,
+            'standing' => $this->standingLine($person),
+        ];
 
-        $this->dm(
-            $person,
-            sprintf(
-                /* translators: 1: cancellation kind, 2: role, 3: event, 4: standing note */
-                __('%1$s: %2$s at %3$s. %4$s', 'eventcrew'),
-                AssignmentStatus::LATE_CANCEL === $status
-                    ? __('⚠️ Late cancellation', 'eventcrew')
-                    : __('❌ Cancelled', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName(),
-                $note
-            ) . "\n\n" . $standingLine
-        );
+        $this->dm($person, MessageTemplates::body('cancel_confirmed_dm', $context));
 
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            sprintf(
-                /* translators: 1: role, 2: event */
-                __('Cancelled: %1$s for %2$s', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s\n\n%5\$s", 'eventcrew'),
-                $person->name(),
-                $task->roleLabel(),
-                $task->eventName(),
-                $note,
-                $standingLine
-            ),
+            MessageTemplates::subject('cancel_confirmed', $context),
+            MessageTemplates::body('cancel_confirmed', $context),
             // A cancellation is the moment someone is most likely to pick up a
             // different slot, so the board is one tap away.
             [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
@@ -275,13 +241,5 @@ final class ClaimNotifier
             $standing->ratedSummary(),
             $standing->creditBalance
         );
-    }
-
-    private function whenText(Task $task): string
-    {
-        $time = $task->timeRange();
-        $day = Dates::dayLabel($task->taskDate);
-
-        return '' === $time ? $day : $day . ' ' . $time;
     }
 }

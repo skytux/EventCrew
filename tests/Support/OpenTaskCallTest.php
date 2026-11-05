@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -339,5 +340,104 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame(0, $sent);
         self::assertSame([], $this->mails);
+    }
+
+    // ---- The Messages page templates (Q297) -------------------------------
+
+    /**
+     * Sends for 2026-08-01 to Sam, who has an email and a Telegram chat, with
+     * a bot token, a group link, plain-text email and $options. Returns the
+     * DMs sent.
+     *
+     * @param array<string, mixed> $options
+     * @return list<array<string, mixed>>
+     */
+    private function sendToSam(array $options = []): array
+    {
+        $dms = [];
+        $options += [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            'eventcrew_telegram_group_link' => 'https://t.me/+abc',
+            'eventcrew_email_html' => false,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(static function (string $url, array $args) use (&$dms): string {
+            $dms[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [[
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 4242,
+        ]];
+        $this->wpdb->nextVars[] = null;            // ledger.hasSent
+        $this->wpdb->nextCols[] = ['2026-08-01'];  // upcomingDates (digest)
+        $this->queueRecap();
+
+        $this->call()->sendForDate('2026-08-01');
+
+        return $dms;
+    }
+
+    /** With nothing stored, the email and the DM are what they were before the templates. */
+    public function testTheOpenTaskMessagesAreTheSameAsBeforeTheTemplates(): void
+    {
+        $dms = $this->sendToSam();
+
+        self::assertSame('Some tasks still need people', $this->mails[0]['subject']);
+        self::assertSame(
+            "Hi Sam,\n\nSome tasks still need people:\n\n2026-08-01\n- Decorate at Party (0/2)\n\nSign up on the"
+                . " board.\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.\n\n"
+                . "Open the group in Telegram: https://t.me/+abc\n\n—\nManage your account or stop these emails: "
+                . 'https://example.test/wp-json/eventcrew/v1/manage?token='
+                . 'Nw.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
+            $this->mails[0]['body']
+        );
+        self::assertSame(
+            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\n2026-08-01\n- Decorate at Party (0/2)"
+                . "\n\nSign up on the board in the group.",
+            (string) $dms[0]['text']
+        );
+    }
+
+    /** A text saved on the Messages page is what is sent, with its placeholders filled. */
+    public function testAStoredOpenTaskTextIsSent(): void
+    {
+        $stored = static fn (string $text): array => [
+            'source' => $text,
+            'texts' => ['fi' => $text, 'en' => $text],
+            'manual' => ['fi' => false, 'en' => false],
+        ];
+
+        $dms = $this->sendToSam([
+            MessageTemplates::OPTION_PREFIX . 'open_task_call' => [
+                MessageTemplates::SUBJECT => $stored('Help, {name}'),
+                MessageTemplates::BODY => $stored("Open:\n{open_tasks}\n{recap}"),
+            ],
+            MessageTemplates::OPTION_PREFIX . 'open_task_call_dm' => [
+                MessageTemplates::BODY => $stored('Open: {open_tasks}'),
+            ],
+        ]);
+
+        self::assertSame('Help, Sam', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            "Open:\n2026-08-01\n- Decorate at Party (0/2)\nThis will be your first task — welcome!",
+            $this->mails[0]['body']
+        );
+        self::assertSame(
+            "📣 Test Site\n\nHi Sam,\n\nOpen: 2026-08-01\n- Decorate at Party (0/2)",
+            (string) $dms[0]['text']
+        );
     }
 }

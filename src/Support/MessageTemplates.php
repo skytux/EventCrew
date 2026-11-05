@@ -458,6 +458,32 @@ final class MessageTemplates
         );
         $count = static fn (array $c): int => max(1, (int) ($c['credits'] ?? 2));
 
+        // Q297 group A placeholders (the kinds are further down).
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $claimPlaceholders = [
+            'standing' => self::placeholder(
+                __('The person\'s standing and free-entry credits, like: Your standing: Beginner · 0 free-entry credits.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['standing'] ?? '')
+            ),
+            'free_cancel' => self::placeholder(
+                __('A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['free_cancel'] ?? '')
+            ),
+            'about' => self::placeholder(
+                __('An empty line and the "About the task" text of the task\'s role. Empty when the role has none.', 'eventcrew'),
+                static fn (array $c): string => (string) ($c['about'] ?? '')
+            ),
+        ];
+        $cancelNote = self::placeholder(
+            __('"Thanks for the notice.", or for a late cancellation the sentence saying it counts against the standing.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['note'] ?? '')
+        );
+        $openTasks = self::placeholder(
+            __('The next open tasks, under a line with each date.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['open_tasks'] ?? '')
+        );
+        // phpcs:enable Generic.Files.LineLength.TooLong
+
         $spot = static fn (): string => self::tag(
             /* translators: 1: role, 2: event, 3: date/time */
             __('A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board.', 'eventcrew'),
@@ -639,6 +665,126 @@ final class MessageTemplates
                     ),
                 ]
             ),
+            // Q297 group A: the sign-up and cancel confirmations
+            // (ClaimNotifier), the open-task call (OpenTaskCall) and the
+            // email confirmation (OnboardingService).
+            new MessageTemplate(
+                'signup_confirmed',
+                __('Signed up for a task (email)', 'eventcrew'),
+                $email,
+                __('Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: role, 2: event */
+                    __('You’re signed up: %1$s for %2$s', 'eventcrew'),
+                    ['%1$s' => '{role}', '%2$s' => '{event}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
+                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}']
+                ) . '{free_cancel}{about}',
+                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
+            ),
+            new MessageTemplate(
+                'signup_confirmed_dm',
+                __('Signed up for a task (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: 1: role, 2: event, 3: date/time */
+                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.", 'eventcrew'),
+                    ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
+                ) . "{free_cancel}{about}\n\n{standing}",
+                ['role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
+            ),
+            new MessageTemplate(
+                'cancel_confirmed',
+                __('Cancelled a task (email)', 'eventcrew'),
+                $email,
+                __('Sent when a person cancels their own task, in the bot or on the web page.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: role, 2: event */
+                    __('Cancelled: %1$s for %2$s', 'eventcrew'),
+                    ['%1$s' => '{role}', '%2$s' => '{event}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line */
+                    __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s\n\n%5\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}', '%5$s' => '{standing}']
+                ),
+                ['name' => $name, 'role' => $role, 'event' => $event, 'note' => $cancelNote, 'standing' => $claimPlaceholders['standing']]
+            ),
+            new MessageTemplate(
+                'cancel_confirmed_dm',
+                __('Cancelled a task (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent when a person cancels their own task, in the bot or on the web page.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: 1: cancellation kind, 2: role, 3: event, 4: standing note */
+                    __('%1$s: %2$s at %3$s. %4$s', 'eventcrew'),
+                    ['%1$s' => '{cancelled}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}']
+                ) . "\n\n{standing}",
+                [
+                    'cancelled' => self::placeholder(
+                        __('"❌ Cancelled", or "⚠️ Late cancellation" when the cancellation was late.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['cancelled'] ?? '')
+                    ),
+                    'role' => $role,
+                    'event' => $event,
+                    'note' => $cancelNote,
+                    'standing' => $claimPlaceholders['standing'],
+                ]
+            ),
+            new MessageTemplate(
+                'open_task_call',
+                __('Tasks still need people (email)', 'eventcrew'),
+                $email,
+                __('Sent to the crew before an event that still has open tasks (the times are in Settings), or when an organizer sends it by hand.', 'eventcrew'),
+                static fn (): string => __('Some tasks still need people', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: name, 2: open-task list grouped by date, 3: personal recap */
+                    __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\nSign up on the board.\n\n%3\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{open_tasks}', '%3$s' => '{recap}']
+                ),
+                ['name' => $name, 'open_tasks' => $openTasks, 'recap' => self::placeholder(
+                    __('The person\'s last three tasks and how many tasks they have completed in total.', 'eventcrew'),
+                    static fn (array $c): string => (string) ($c['recap'] ?? '')
+                )]
+            ),
+            new MessageTemplate(
+                'open_task_call_dm',
+                __('Tasks still need people (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the crew before an event that still has open tasks (the times are in Settings), or when an organizer sends it by hand.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: %s: the open-task list, already grouped by date */
+                    __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
+                    ['%s' => '{open_tasks}']
+                ),
+                ['open_tasks' => $openTasks]
+            ),
+            new MessageTemplate(
+                'email_confirm',
+                __('Confirm your email (email)', 'eventcrew'),
+                $email,
+                __('Sent when a person types their email in the Telegram bot. The confirmation link is a button below the text and is always added.', 'eventcrew'),
+                static fn (): string => __('Confirm your email for EventCrew', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: person's name */
+                    __("Hi %1\$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
+                    ['%1$s' => '{name}']
+                ) . "\n\n" . PrivacyPolicy::noticeLine(),
+                [
+                    'name' => self::placeholder(
+                        __('The name the person has in Telegram, or their email address when there is none.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['name'] ?? '')
+                    ),
+                ]
+            ),
+            // End of Q297 group A.
             // TODO(messages): TicketMail does not read this template yet. It is
             // being rewritten (2026-11-05); its compose()/words() should call
             // MessageTemplates::subject('ticket', $context) and body() with
