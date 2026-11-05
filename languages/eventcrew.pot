@@ -3313,7 +3313,7 @@ msgstr ""
 msgid "Only organizers and the welcome crew of a coming night can use /door."
 msgstr ""
 
-#: src/Support/SalesDeskGate.php:312
+#: src/Support/SalesDeskGate.php:313
 msgid "Only organizers and tonight’s welcome crew can open it."
 msgstr ""
 
@@ -5482,7 +5482,7 @@ msgstr ""
 msgid "The requested EventCrew admin view could not be loaded."
 msgstr ""
 
-#: src/Support/SalesDeskGate.php:310
+#: src/Support/SalesDeskGate.php:311
 msgid "The sales desk for this night has closed."
 msgstr ""
 
@@ -5494,7 +5494,7 @@ msgstr ""
 msgid "The sales desk link on the night."
 msgstr ""
 
-#: src/Support/SalesDeskGate.php:307
+#: src/Support/SalesDeskGate.php:308
 #. translators: %d: minutes
 msgid "The sales desk link opens %d minutes before your task, once you are marked arrived."
 msgstr ""
@@ -5692,7 +5692,7 @@ msgstr ""
 msgid "There is no text for the next announcement."
 msgstr ""
 
-#: src/Support/SalesDeskGate.php:311
+#: src/Support/SalesDeskGate.php:312
 msgid "There is no upcoming event night yet."
 msgstr ""
 
