@@ -56,11 +56,18 @@ namespace EventCrew\Support;
  * finds their part in the same card. All styles are inline, because email
  * clients drop stylesheets.
  *
- * That is the two-language email, for a subscriber whose language is not
- * known. Given a language ('fi' or 'en'), html(), text() and greeting() make
- * a one-language email instead (Lou, 2026-11-03): the heading, every label
- * pair, button and door block in that language only, and the organizers'
- * text in that language with no FI / EN label.
+ * That is the every-language email, for a subscriber whose language is not
+ * known. Finnish and English are the example above; the languages are the
+ * site's languages (HybridPolicy::siteLanguages()), main language first, so
+ * with 3 languages each pair above has 3 parts and each labelled block comes
+ * 3 times. When hybrid is not allowed (4 or more site languages), the
+ * every-language email is the main language only. Given a site language,
+ * html(), text() and greeting() make a one-language email instead (Lou,
+ * 2026-11-03): the heading, every label pair, button and door block in that
+ * language only, and the organizers' text in that language with no label.
+ *
+ * Texts in several languages ($text, a card's text_fi, text_en, …) are keyed
+ * by the language code.
  */
 final class NewsletterLayout
 {
@@ -90,11 +97,11 @@ final class NewsletterLayout
      *        page) and EventSource::card()'s fields.
      * @param array<int, array<string, mixed>> $later The other coming events,
      *        with the same keys.
-     * @param array{fi?: string, en?: string}|null $text The organizers' text.
-     * @param string $lang 'fi' or 'en' for a one-language email; '' for both languages.
+     * @param array<string, string>|null $text The organizers' text, keyed by language.
+     * @param string $lang A site language for a one-language email; '' for every language.
      * @param bool $band True for the heading in the confirmation card's look
      *        (NewsletterConfirmMail::headingBand()), as the thank-you email
-     *        shows it; two-language only.
+     *        shows it; every-language only.
      */
     public static function html(
         array $cards,
@@ -104,37 +111,42 @@ final class NewsletterLayout
         string $lang = '',
         bool $band = false
     ): string {
-        $lang = self::lang($lang);
-        $words = self::words($lang);
+        $langs = self::languages($lang);
+        $words = self::words($langs);
+        $headings = array_column($words, 'heading');
         $font = EmailBody::FONT;
 
-        if ('' === $lang && $band) {
-            $html = NewsletterConfirmMail::headingBand($words['fi']['heading'], $words['en']['heading']);
-        } elseif ('' === $lang) {
+        if (count($langs) > 1 && $band) {
+            // The main language big, the others on one line under it.
+            $others = array_values(array_unique(array_diff(array_slice($headings, 1), [$headings[0]])));
+            $html = NewsletterConfirmMail::headingBand(
+                $headings[0],
+                [] === $others ? $headings[0] : implode(' · ', $others)
+            );
+        } elseif (count($langs) > 1) {
             $html = sprintf(
                 '<h1 style="margin:0;font-family:%s;font-size:26px;line-height:1.25;color:%s">%s</h1>'
                     . '<p style="margin:2px 0 24px;font-family:%s;font-size:16px;line-height:1.4;color:%s">%s</p>',
                 $font,
                 self::TEXT_COLOR,
-                esc_html($words['fi']['heading']),
+                esc_html($headings[0]),
                 $font,
                 self::MUTED_COLOR,
-                esc_html($words['en']['heading'])
+                implode('<br>', array_map('esc_html', array_unique(array_slice($headings, 1))))
             );
         } else {
             $html = sprintf(
                 '<h1 style="margin:0 0 24px;font-family:%s;font-size:26px;line-height:1.25;color:%s">%s</h1>',
                 $font,
                 self::TEXT_COLOR,
-                esc_html($words[$lang]['heading'])
+                esc_html($headings[0])
             );
         }
 
-        [$fi, $en, $plain] = self::inLanguage((string) ($text['fi'] ?? ''), (string) ($text['en'] ?? ''), $lang);
-        $html .= self::bilingual($fi, $en, $plain, '0 0 24px');
+        $html .= self::bilingual(self::inLanguage(self::byLanguage($text ?? [], ''), $langs), '0 0 24px');
 
         foreach ($cards as $card) {
-            $html .= self::cardHtml($card, $words, $accent, $lang);
+            $html .= self::cardHtml($card, $words, $accent, $langs);
         }
 
         if ([] !== $later) {
@@ -164,7 +176,7 @@ final class NewsletterLayout
     /**
      * The greeting line at the top of one recipient's announcement, HTML and
      * plain text: "Hei Anna! · Hi Anna!", or "Hei! · Hi!" without a name. In
-     * a one-language email ($lang 'fi' or 'en') only that language: "Hei
+     * a one-language email ($lang a site language) only that language: "Hei
      * Anna!" or "Hi Anna!". The name is escaped in the HTML. The HTML line is
      * EmailBody::greeting(): its own line, in italics.
      *
@@ -173,18 +185,11 @@ final class NewsletterLayout
     public static function greeting(?string $name, string $lang = ''): array
     {
         $name = null === $name ? '' : trim($name);
-        $lang = self::lang($lang);
         $words = static fn (): string => '' === $name
             ? __('Hi!', 'eventcrew')
             /* translators: %s: the name the subscriber wants to be greeted with */
             : sprintf(__('Hi %s!', 'eventcrew'), $name);
-        $fi = (string) Language::run(Language::FINNISH, $words);
-        $en = (string) Language::run(Language::ENGLISH, $words);
-        $line = match ($lang) {
-            'fi' => $fi,
-            'en' => $en,
-            default => self::joinPair($fi, $en),
-        };
+        $line = self::joinAll(array_map('strval', HybridPolicy::inEach(self::languages($lang), $words)));
 
         return [
             'html' => EmailBody::greeting(self::pairHtml($line)),
@@ -197,25 +202,23 @@ final class NewsletterLayout
      *
      * @param array<int, array<string, mixed>> $cards
      * @param array<int, array<string, mixed>> $later
-     * @param array{fi?: string, en?: string}|null $text
-     * @param string $lang 'fi' or 'en' for a one-language email; '' for both languages.
+     * @param array<string, string>|null $text Keyed by language.
+     * @param string $lang A site language for a one-language email; '' for every language.
      */
     public static function text(array $cards, array $later, ?array $text, string $lang = ''): string
     {
-        $lang = self::lang($lang);
-        $words = self::words($lang);
+        $langs = self::languages($lang);
+        $words = self::words($langs);
         $parts = [mb_strtoupper(self::pair($words, 'heading'))];
 
-        $intro = self::bilingualText(
-            ...self::inLanguage((string) ($text['fi'] ?? ''), (string) ($text['en'] ?? ''), $lang)
-        );
+        $intro = self::bilingualText(self::inLanguage(self::byLanguage($text ?? [], ''), $langs));
 
         if ('' !== $intro) {
             $parts[] = $intro;
         }
 
         foreach ($cards as $card) {
-            $parts[] = self::cardText($card, $words, $lang);
+            $parts[] = self::cardText($card, $words, $langs);
         }
 
         if ([] !== $later) {
@@ -242,16 +245,16 @@ final class NewsletterLayout
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
+     * @param list<string> $langs
      */
-    private static function cardText(array $card, array $words, string $lang = ''): string
+    private static function cardText(array $card, array $words, array $langs): string
     {
-        $text = self::bilingualText(
-            ...self::inLanguage((string) ($card['text_fi'] ?? ''), (string) ($card['text_en'] ?? ''), $lang)
-        );
+        $text = self::bilingualText(self::inLanguage(self::byLanguage($card, 'text_'), $langs));
         $practical = self::practicalLines($card, $words);
-        $times = self::bilingualText(
-            ...self::inLanguage(implode("\n", $practical['fi']), implode("\n", $practical['en']), $lang)
-        );
+        $times = self::bilingualText(self::inLanguage(
+            array_map(static fn (array $lines): string => implode("\n", $lines), $practical['times']),
+            $langs
+        ));
         $lines = array_merge(
             [self::when($card), self::name($card)],
             '' === self::dj($card) ? [] : [self::dj($card)],
@@ -295,8 +298,9 @@ final class NewsletterLayout
     /**
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
+     * @param list<string> $langs
      */
-    private static function cardHtml(array $card, array $words, string $accent, string $lang = ''): string
+    private static function cardHtml(array $card, array $words, string $accent, array $langs): string
     {
         $font = EmailBody::FONT;
         $ticket = (string) ($card['ticket_url'] ?? '');
@@ -372,23 +376,20 @@ final class NewsletterLayout
 
         // A text written for this card alone (the post-event email's first
         // event); the newsletter's cards have none.
-        [$fi, $en, $plain] = self::inLanguage(
-            (string) ($card['text_fi'] ?? ''),
-            (string) ($card['text_en'] ?? ''),
-            $lang
-        );
-        $body .= self::bilingual($fi, $en, $plain, '0 0 14px');
+        $body .= self::bilingual(self::inLanguage(self::byLanguage($card, 'text_'), $langs), '0 0 14px');
 
         $practical = self::practicalLines($card, $words);
 
         // A one-language email has one block of door times, with no label.
-        $timeBlocks = '' === $lang
-            ? ['FI' => $practical['fi'], 'EN' => $practical['en']]
-            : ['' => $practical[$lang]];
+        $timeBlocks = [];
+
+        foreach ($practical['times'] as $language => $lines) {
+            $timeBlocks[count($langs) > 1 ? HybridPolicy::tag($language) : ''] = $lines;
+        }
 
         // The venue and the address, then, after an empty line, the door
-        // times as one Finnish block and one English block, each with its
-        // FI / EN label, aligned left (Lou, 2026-11-03).
+        // times as one block per language, each with its FI / EN label,
+        // aligned left (Lou, 2026-11-03).
         $blocks = [];
 
         if ([] !== $practical['plain']) {
@@ -462,9 +463,7 @@ final class NewsletterLayout
                 esc_url($listen),
                 $font,
                 esc_attr($accent),
-                $words['fi']['listen'] === $words['en']['listen']
-                    ? esc_html($words['en']['listen'])
-                    : esc_html($words['fi']['listen']) . '<br>' . esc_html($words['en']['listen'])
+                implode('<br>', array_map('esc_html', array_unique(array_column($words, 'listen'))))
             );
         }
 
@@ -565,15 +564,21 @@ final class NewsletterLayout
     }
 
     /**
-     * The Finnish and the English text, each with its label, or $plain alone
-     * with no label when the language is not known. A blank line in a text
-     * starts a new paragraph, and the label goes on its first paragraph only.
+     * Each language's text with its label ("FI", "EN"), or one text with no
+     * label (the '' key) in a one-language email; see inLanguage(). A blank
+     * line in a text starts a new paragraph, and the label goes on its first
+     * paragraph only.
+     *
+     * @param array<string, string> $texts label => text
      */
-    private static function bilingual(string $fi, string $en, string $plain, string $margin): string
+    private static function bilingual(array $texts, string $margin): string
     {
         $html = '';
 
-        foreach (['FI' => trim($fi), 'EN' => trim($en), '' => trim($plain)] as $label => $text) {
+        foreach ($texts as $label => $text) {
+            $label = (string) $label;
+            $text = trim($text);
+
             if ('' === $text) {
                 continue;
             }
@@ -602,18 +607,24 @@ final class NewsletterLayout
     }
 
     /**
-     * "FI: …" then "EN: …", the label on the first line of each. When a text
-     * has more than one line, a blank line goes between the languages so
-     * the English does not run on from the last Finnish line.
+     * "FI: …" then "EN: …", the label on the first line of each, or one text
+     * with no label (the '' key). When a text has more than one line, a blank
+     * line goes between the languages so the English does not run on from
+     * the last Finnish line.
+     *
+     * @param array<string, string> $texts label => text
      */
-    private static function bilingualText(string $fi, string $en, string $plain): string
+    private static function bilingualText(array $texts): string
     {
         $lines = [];
         $multiline = false;
 
-        foreach (['FI: ' => trim($fi), 'EN: ' => trim($en), '' => trim($plain)] as $label => $text) {
+        foreach ($texts as $label => $text) {
+            $label = (string) $label;
+            $text = trim($text);
+
             if ('' !== $text) {
-                $lines[] = $label . $text;
+                $lines[] = ('' === $label ? '' : $label . ': ') . $text;
                 $multiline = $multiline || str_contains($text, "\n");
             }
         }
@@ -624,19 +635,20 @@ final class NewsletterLayout
     /**
      * A card's practical information (NewsletterWriter::apply()) as short
      * lines: 'plain' holds the venue and the street address, which need no
-     * translation; 'fi' and 'en' hold the door times in each language
+     * translation; 'times' holds the door times in each language of $words
      * ("Ovet aukeavat 18:30", "Doors open 18:30"). A line that is not known
      * is left out.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
-     * @return array{plain: list<string>, fi: list<string>, en: list<string>}
+     * @return array{plain: list<string>, times: array<string, list<string>>}
      */
     private static function practicalLines(array $card, array $words): array
     {
         $info = NewsletterWriter::practicalOf($card['practical'] ?? null);
 
-        $lines = ['plain' => [], 'fi' => [], 'en' => []];
+        $lines = ['plain' => [], 'times' => array_fill_keys(array_keys($words), [])];
+        $first = reset($words);
 
         if (null === $info) {
             return $lines;
@@ -648,9 +660,10 @@ final class NewsletterLayout
             }
 
             // The venue and the address need no label; the times do.
-            if (isset($words['en'][$key])) {
-                $lines['fi'][] = sprintf($words['fi'][$key], $info[$key]);
-                $lines['en'][] = sprintf($words['en'][$key], $info[$key]);
+            if (isset($first[$key])) {
+                foreach ($words as $language => $each) {
+                    $lines['times'][$language][] = sprintf($each[$key], $info[$key]);
+                }
             } else {
                 $lines['plain'][] = $info[$key];
             }
@@ -715,18 +728,21 @@ final class NewsletterLayout
     /** @param array<string, array<string, string>> $words */
     private static function pair(array $words, string $key): string
     {
-        return self::joinPair($words['fi'][$key], $words['en'][$key]);
+        return self::joinAll(array_column($words, $key));
     }
 
     /**
-     * The words under $key with $value in place of their %s, in both
-     * languages: "Ovet aukeavat 18:30", new line, "Doors open 18:30".
+     * The words under $key with $value in place of their %s, in each
+     * language: "Ovet aukeavat 18:30", new line, "Doors open 18:30".
      *
      * @param array<string, array<string, string>> $words
      */
     private static function pairWith(array $words, string $key, string $value): string
     {
-        return self::joinPair(sprintf($words['fi'][$key], $value), sprintf($words['en'][$key], $value));
+        return self::joinAll(array_map(
+            static fn (array $each): string => sprintf($each[$key], $value),
+            array_values($words)
+        ));
     }
 
     /**
@@ -740,13 +756,22 @@ final class NewsletterLayout
      */
     public static function joinPair(string $fi, string $en): string
     {
-        if ($fi === $en) {
-            return $en;
-        }
+        return self::joinAll([$fi, $en]);
+    }
 
-        $line = $fi . ' · ' . $en;
+    /**
+     * joinPair() for any number of languages, main language first: one line
+     * with " · " between the texts when it fits in PAIR_MAX characters, else
+     * one line per text. A text the same as an earlier one is left out.
+     *
+     * @param array<string> $texts
+     */
+    public static function joinAll(array $texts): string
+    {
+        $texts = array_values(array_unique(array_map('strval', $texts)));
+        $line = implode(' · ', $texts);
 
-        return mb_strlen($line) <= self::PAIR_MAX ? $line : $fi . "\n" . $en;
+        return mb_strlen($line) <= self::PAIR_MAX ? $line : implode("\n", $texts);
     }
 
     /** A text from joinPair() for the email's HTML: escaped, its new line a line break. */
@@ -780,39 +805,88 @@ final class NewsletterLayout
         ];
     }
 
-    /** 'fi' or 'en' for a one-language email, '' for both languages. */
-    private static function lang(string $lang): string
-    {
-        return in_array($lang, ['fi', 'en'], true) ? $lang : '';
-    }
-
     /**
-     * The [fi, en, plain] arguments for bilingual() and bilingualText(): both
-     * texts with their labels in a two-language email, or the one language's
-     * text with no label in a one-language email. When that language's text
-     * is empty, the other language's text is shown instead of nothing.
+     * The languages the email is written in, main language first: $lang
+     * alone when it is a site language; for any other $lang ('' = every
+     * language) the newsletter's every-language version, which is every site
+     * language while hybrid is allowed and ticked (HybridPolicy), else the
+     * main language alone.
      *
-     * @return array{0: string, 1: string, 2: string}
+     * @return list<string>
      */
-    private static function inLanguage(string $fi, string $en, string $lang): array
+    private static function languages(string $lang): array
     {
-        $fi = trim($fi);
-        $en = trim($en);
-
-        return match ($lang) {
-            'fi' => ['', '', '' !== $fi ? $fi : $en],
-            'en' => ['', '', '' !== $en ? $en : $fi],
-            default => [$fi, $en, ''],
-        };
+        return in_array($lang, HybridPolicy::siteLanguages(), true)
+            ? [$lang]
+            : HybridPolicy::languagesFor(HybridPolicy::NEWSLETTER);
     }
 
     /**
-     * Every fixed word, in Finnish and in English. In a one-language email
-     * both entries hold that language, so every pair is written once.
+     * The texts in $source, keyed by language: $source[$prefix . $language]
+     * for every key that has the form, like a card's text_fi and text_en.
      *
+     * @param array<string, mixed> $source
+     * @return array<string, string>
+     */
+    private static function byLanguage(array $source, string $prefix): array
+    {
+        $texts = [];
+
+        foreach ($source as $key => $value) {
+            $key = (string) $key;
+
+            if (
+                ('' === $prefix || str_starts_with($key, $prefix))
+                && 1 === preg_match('/^[a-z]{2,3}$/', substr($key, strlen($prefix)))
+                && is_scalar($value)
+            ) {
+                $texts[substr($key, strlen($prefix))] = trim((string) $value);
+            }
+        }
+
+        return $texts;
+    }
+
+    /**
+     * The label => text argument for bilingual() and bilingualText(): each
+     * language's text with its label ("FI", "EN") in an email in several
+     * languages, or the one language's text with no label ('') in a
+     * one-language email. When that language's text is empty, the first
+     * other site language's text that is not empty is shown instead of
+     * nothing.
+     *
+     * @param array<string, string> $texts language => text
+     * @param list<string> $langs
+     * @return array<string, string>
+     */
+    private static function inLanguage(array $texts, array $langs): array
+    {
+        if (1 === count($langs)) {
+            foreach (array_unique([$langs[0], ...HybridPolicy::siteLanguages()]) as $language) {
+                if ('' !== trim($texts[$language] ?? '')) {
+                    return ['' => trim($texts[$language])];
+                }
+            }
+
+            return ['' => ''];
+        }
+
+        $labelled = [];
+
+        foreach ($langs as $language) {
+            $labelled[HybridPolicy::tag($language)] = trim($texts[$language] ?? '');
+        }
+
+        return $labelled;
+    }
+
+    /**
+     * Every fixed word, in each of $langs, keyed by language.
+     *
+     * @param list<string> $langs
      * @return array<string, array<string, string>>
      */
-    private static function words(string $lang = ''): array
+    private static function words(array $langs): array
     {
         $words = static fn (): array => [
             'heading' => __('Coming events', 'eventcrew'),
@@ -827,14 +901,7 @@ final class NewsletterLayout
             'doors_close' => __('Doors close %s', 'eventcrew'),
         ];
 
-        $fi = Language::run(Language::FINNISH, $words);
-        $en = Language::run(Language::ENGLISH, $words);
-
-        return match ($lang) {
-            'fi' => ['fi' => $fi, 'en' => $fi],
-            'en' => ['fi' => $en, 'en' => $en],
-            default => ['fi' => $fi, 'en' => $en],
-        };
+        return HybridPolicy::inEach($langs, $words);
     }
 
     /**

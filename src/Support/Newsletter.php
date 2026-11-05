@@ -710,10 +710,12 @@ final class Newsletter
         $mails = [];
 
         foreach ($rows as $row) {
-            // The subscriber's language: 'fi' or 'en' gets that language
-            // only, anything else both (Lou, 2026-11-03), or the main
-            // language alone when the Hybrid tick is off (HybridPolicy).
-            $lang = in_array($row['language'] ?? '', ['fi', 'en'], true) ? $row['language'] : self::unknownLanguage();
+            // The subscriber's language: a site language gets that language
+            // only, anything else every language (Lou, 2026-11-03), or the
+            // main language alone when the Hybrid tick is off (HybridPolicy).
+            $lang = in_array($row['language'] ?? '', HybridPolicy::siteLanguages(), true)
+                ? $row['language']
+                : self::unknownLanguage();
             // Composed once per batch and language; only the greeting is the recipient's own.
             $mails[$lang] ??= $this->compose(
                 $plan['events'],
