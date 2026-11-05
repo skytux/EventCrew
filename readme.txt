@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.11
+Stable tag: 1.140.12
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.12 =
+Door desk: the Holvi step now says the buyer gets the ticket by email in about 10 minutes when an email is given (Q241).
 
 = 1.140.11 =
 ROADMAP.md brought up to date with the releases 1.129.0 to 1.140.10 (Q239).
@@ -1247,6 +1250,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.12 =
+No settings change.
 
 = 1.140.11 =
 No settings change.

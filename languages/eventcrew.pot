@@ -5216,10 +5216,6 @@ msgstr ""
 msgid "The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer."
 msgstr ""
 
-#: templates/public/door.php:269
-msgid "The email is only shown on the list. Nothing is sent to it."
-msgstr ""
-
 #: src/Admin/SettingsPage.php:1369
 msgid "The email template could not be reset."
 msgstr ""
@@ -6473,6 +6469,10 @@ msgstr ""
 
 #: src/Support/PrivacyPolicy.php:220 src/Support/PrivacyPolicy.php:284
 msgid "Why we hold it"
+msgstr ""
+
+#: templates/public/door.php:269
+msgid "With an email, the buyer gets their ticket by email in about 10 minutes."
 msgstr ""
 
 #: templates/public/door.php:287

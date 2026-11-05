@@ -266,7 +266,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             <input type="text" id="ec-holvi-name" autocomplete="off"></label>
         <label><?php esc_html_e('Email (optional)', 'eventcrew'); ?>
             <input type="email" id="ec-holvi-email" autocomplete="off"></label>
-        <p class="ec-muted"><?php esc_html_e('The email is only shown on the list. Nothing is sent to it.', 'eventcrew'); ?></p>
+        <p class="ec-muted"><?php esc_html_e('With an email, the buyer gets their ticket by email in about 10 minutes.', 'eventcrew'); ?></p>
         <div class="ec-stack">
             <button type="button" class="ec-primary" id="ec-holvi-add"><?php esc_html_e('Add and check in', 'eventcrew'); ?></button>
         </div>
