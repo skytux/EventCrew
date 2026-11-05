@@ -1992,14 +1992,6 @@ if (! defined('ABSPATH')) {
         <?php endif; ?>
 
         <?php if ('' !== $telegram['test_url']) : ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:1em 0">
-                <input type="hidden" name="action" value="eventcrew_test_webhook">
-                <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
-                <?php submit_button(__('Test the webhook', 'eventcrew'), 'secondary', 'submit', false); ?>
-                <span class="description">
-                    <?php esc_html_e('The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message.', 'eventcrew'); ?>
-                </span>
-            </form>
             <details style="margin:1em 0">
                 <summary><?php esc_html_e('Test the endpoint by hand', 'eventcrew'); ?></summary>
                 <p class="description">
@@ -2541,6 +2533,16 @@ if (! defined('ABSPATH')) {
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
             <?php submit_button(__('Rotate the webhook secret', 'eventcrew'), 'secondary', 'submit', false); ?>
         </form>
+        <?php if ('' !== $telegram['test_url']) : ?>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:.6em 0 0">
+            <input type="hidden" name="action" value="eventcrew_test_webhook">
+            <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+            <?php submit_button(__('Test the webhook', 'eventcrew'), 'secondary', 'submit', false); ?>
+            <span class="description">
+                <?php esc_html_e('The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message.', 'eventcrew'); ?>
+            </span>
+        </form>
+        <?php endif; ?>
         <p class="description" style="margin-top:.6em">
             <?php esc_html_e('The secret is what proves an incoming update really came from Telegram — it is the bot’s only authentication. Rotate it if it may have been seen: in a server log, a screenshot, or a support ticket. The bot keeps working; only the old secret stops.', 'eventcrew'); ?>
         </p>
