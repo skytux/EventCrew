@@ -57,6 +57,19 @@ if (false === $eventcrew_here) {
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of a redirect-carried status.
 $eventcrew_notice_code = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unslash($_GET['eventcrew_notice'])) : '';
 $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_notice_code);
+
+/*
+ * A used or expired sign-in link lands here signed out. The card then says so
+ * in a line above the form instead of the toast, and the form sends the new
+ * link back to the page the old one opened (this address without the notice;
+ * same-site only, else this page).
+ */
+$eventcrew_link_expired = null === $eventcrew_person && 'bad_link' === $eventcrew_notice_code;
+$eventcrew_signin_return = $eventcrew_here;
+if ($eventcrew_link_expired) {
+    $eventcrew_notice_text = '';
+    $eventcrew_signin_return = wp_validate_redirect(remove_query_arg('eventcrew_notice'), $eventcrew_here);
+}
 ?>
 <?php
 // The stylesheet is registered and enqueued by SignupController; see
@@ -115,6 +128,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in or sign up', 'eventcrew'); ?></h2>
             </header>
             <div class="eventcrew-card-body">
+            <?php if ($eventcrew_link_expired) : ?>
+                <p class="eventcrew-signin-expired" role="status"><?php echo esc_html(\EventCrew\Web\SignupController::noticeText('bad_link')); ?></p>
+            <?php endif; ?>
             <?php
             /*
              * The choice between email and Telegram, when the sign-in through
@@ -193,7 +209,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             <?php endif; ?>
             <form class="eventcrew-action eventcrew-signin" data-eventcrew-signin method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['login_action']); ?>">
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_signin_return); ?>">
                 <?php
                 /*
                  * The captcha lives inside the row, between the field and the

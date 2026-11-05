@@ -969,6 +969,7 @@
 .eventcrew-signup .eventcrew-tg-wait [hidden] { display: none; }
 .eventcrew-signup .eventcrew-signin-back { margin: 0 0 .75em; font-size: 1rem; font-weight: 600; }
 .eventcrew-signup .eventcrew-signin-back a { color: var(--eventcrew-accent); }
+.eventcrew-signup .eventcrew-signin-expired { margin: 0 0 .75em; font-weight: 600; }
 
 .eventcrew-signin-row .wp-element-input {
     background-color: var(--eventcrew-surface);

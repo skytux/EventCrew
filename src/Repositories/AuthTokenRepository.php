@@ -133,6 +133,42 @@ final class AuthTokenRepository
     }
 
     /**
+     * The person id of a token that can still be spent (known, unused and
+     * unexpired), or null. Read-only: it never spends or changes a token. Lets
+     * a sign-in link opened on a device that is already signed in tell a live
+     * link for someone else from a used or expired one.
+     */
+    public function validFor(string $rawToken, string $purpose): ?int
+    {
+        global $wpdb;
+
+        $rawToken = trim($rawToken);
+
+        if ('' === $rawToken) {
+            return null;
+        }
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT person_id, expires_at, used_at
+                FROM {$this->table()}
+                WHERE token_hash = %s AND purpose = %s",
+                $this->hash($rawToken),
+                $purpose
+            ),
+            ARRAY_A
+        );
+
+        $now = (string) current_time('mysql');
+
+        if (! is_array($row) || null !== $row['used_at'] || (string) $row['expires_at'] < $now) {
+            return null;
+        }
+
+        return (int) $row['person_id'];
+    }
+
+    /**
      * Deletes tokens past their expiry, used or not, so the table stays small
      * now that a fresh sign-in token is issued for every email's account-link
      * footer. A used token is kept until it expires: usedBy() needs it so a
