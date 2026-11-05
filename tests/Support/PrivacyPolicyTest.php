@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Support\Language;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Turnstile;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 
@@ -191,6 +192,49 @@ final class PrivacyPolicyTest extends TestCase
 
         $this->withOptions($base + [PrivacyPolicy::PURGE_OPTION => '1']);
         self::assertStringContainsString('anonymised automatically', $this->flatten(PrivacyPolicy::sections()));
+    }
+
+    /**
+     * Names are shown to other crew (the bot's /roster on the same night, the
+     * group's takeover message and, with the card format on, the group
+     * board), while standing stays with the organizers and the sales desk.
+     * The notice has to say exactly that, and nothing about Telegram when the
+     * bot is not set up.
+     */
+    public function testTheNoticeSaysWhoSeesNamesAndStanding(): void
+    {
+        $base = [
+            PrivacyPolicy::CONTROLLER_OPTION => 'Dance Club',
+            PrivacyPolicy::CONTACT_OPTION => 'privacy@example.test',
+        ];
+        $standing = 'No other crew member sees your standing or your cancel and no-show marks.';
+        $covers = 'when someone covers a task for you, or you cover one for someone else';
+
+        $this->withOptions($base);
+        $text = $this->flatten(PrivacyPolicy::sections());
+        self::assertStringContainsString($standing, $text);
+        self::assertStringNotContainsString('never by whom', $text);
+        self::assertStringNotContainsString('/roster', $text);
+
+        $this->withOptions($base + [TelegramClient::TOKEN_OPTION => '123:abc']);
+        $text = $this->flatten(PrivacyPolicy::sections());
+        self::assertStringContainsString($standing, $text);
+        self::assertStringContainsString(
+            'Other crew members on the same night can see your name and the tasks you are on, in the bot’s /roster.',
+            $text
+        );
+        self::assertStringContainsString($covers, $text);
+        self::assertStringNotContainsString('first name', $text);
+
+        $this->withOptions($base + [TelegramClient::TOKEN_OPTION => '123:abc', BoardService::CARDS_OPTION => '1']);
+        $text = $this->flatten(PrivacyPolicy::sections());
+        self::assertStringContainsString('Other crew members can see your name and the tasks you are on.', $text);
+        self::assertStringContainsString(
+            'shows the first name of each person on a task for the next three events',
+            $text
+        );
+        self::assertStringContainsString($covers, $text);
+        self::assertStringNotContainsString('never by whom', $text);
     }
 
     /**
