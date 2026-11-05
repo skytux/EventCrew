@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.26
+Stable tag: 1.140.27
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.27 =
+A door desk session ends when the person is blocked, erased, or no longer on that night's sales-desk task (Q251, S-W5).
 
 = 1.140.26 =
 Telegram sign-in: the page and the bot show the same 4-digit code, and the bot asks to go on only when they match (Q251, S-W6).
@@ -1292,6 +1295,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.27 =
+No settings change.
 
 = 1.140.26 =
 No settings change.

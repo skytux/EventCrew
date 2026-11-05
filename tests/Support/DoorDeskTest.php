@@ -264,6 +264,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         $organizer = $this->desk()->session(DoorSession::mint(1, self::NIGHT));
 
         $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueWelcomeNight('arrived');
         $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '10:00', '11:00'), $this->taskRow(7, 'clean', '11:30')];
         $welcome = $this->desk()->session(DoorSession::mint(8, self::NIGHT));
 
@@ -271,6 +272,47 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertTrue($organizer['open']);
         self::assertNotNull($welcome);
         self::assertFalse($welcome['open']);
+    }
+
+    /** The night's tasks and person 8's assignment on the Welcome task (id 6), for stillOnDoor(). */
+    private function queueWelcomeNight(string $status): void
+    {
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(6, 'welcome', '10:00', '11:00'),
+            $this->taskRow(7, 'clean', '11:30'),
+        ];
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 8, $status);
+    }
+
+    public function testABlockedPersonsSessionEndsAtOnce(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(1, true) + ['banned_at' => '2026-07-20 11:00:00'];
+
+        self::assertNull($this->desk()->session(DoorSession::mint(1, self::NIGHT)));
+    }
+
+    public function testAnErasedPersonsSessionEndsAtOnce(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(1, true) + ['anonymized_at' => '2026-07-20 11:00:00'];
+
+        self::assertNull($this->desk()->session(DoorSession::mint(1, self::NIGHT)));
+    }
+
+    public function testCrewTakenOffTheirSalesDeskTaskLoseTheSessionAtOnce(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->queueWelcomeNight('cancelled');
+
+        self::assertNull($this->desk()->session(DoorSession::mint(8, self::NIGHT)));
+    }
+
+    public function testCrewWithNoPlaceOnTheNightsSalesDeskTaskHaveNoSession(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '10:00', '11:00')];
+        $this->wpdb->nextRows[] = null;
+
+        self::assertNull($this->desk()->session(DoorSession::mint(8, self::NIGHT)));
     }
 
     public function testMarkingAGuestInWritesACheckin(): void
