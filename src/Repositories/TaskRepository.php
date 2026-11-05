@@ -37,6 +37,19 @@ final class TaskRepository
         return is_array($row) ? Task::fromRow($row) : null;
     }
 
+    /** Like find(), but null for a deleted task. */
+    public function findLive(int $id): ?Task
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id = %d AND deleted_at IS NULL", $id),
+            ARRAY_A
+        );
+
+        return is_array($row) ? Task::fromRow($row) : null;
+    }
+
     /**
      * @param array<string, mixed> $data
      */

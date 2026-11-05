@@ -713,7 +713,8 @@ final class Kernel
                 $container->get(CommandMenu::class),
                 $container->get(Newsletter::class),
                 $container->get(FollowupMail::class),
-                $container->get(TakeoverService::class)
+                $container->get(TakeoverService::class),
+                $container->get(SlotFreedNotice::class)
             )
         );
 

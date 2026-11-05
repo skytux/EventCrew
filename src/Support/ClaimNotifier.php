@@ -174,7 +174,8 @@ final class ClaimNotifier
         }
 
         // A late cancellation frees a slot close to the event, when it most needs
-        // filling; a listener broadcasts the opening to the crew. Fired here, at
+        // filling; a listener queues a notice to the crew, which the hourly
+        // run sends inside the send window. Fired here, at
         // the one place both channels' cancellations converge.
         if (AssignmentStatus::LATE_CANCEL === $status) {
             do_action('eventcrew/slot_freed', $taskId, $person->id);
