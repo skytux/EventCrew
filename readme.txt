@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.101
+Stable tag: 1.140.102
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.102 =
+An expired sign-in link (for example the Manage my tasks button in an old reminder) now says This sign-in link has expired above the sign-in form, and after signing in opens the page the link was for. Someone already signed in goes straight there.
 
 = 1.140.101 =
 Role names and descriptions are translated in the background by the AI, like the event texts; hand edits are kept, and the board shows the visitors language.
@@ -1517,6 +1520,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.102 =
+No settings change.
 
 = 1.140.101 =
 No settings change.
