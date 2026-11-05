@@ -52,14 +52,37 @@ final class VerificationController
 
     public function handle(WP_REST_Request $request): void
     {
-        $confirmed = $this->verify((string) $request->get_param('token'));
+        $token = (string) $request->get_param('token');
+        $confirmed = $this->verify($token);
+        // A link already spent - by a mail scanner that opened it first, or an
+        // earlier click - for a person whose email is confirmed.
+        $already = ! $confirmed && $this->alreadyConfirmed($token);
 
-        status_header($confirmed ? 200 : 400);
+        status_header($confirmed || $already ? 200 : 400);
         header('Content-Type: text/html; charset=utf-8');
         // Assembled from literal markup and esc_html()'d text in renderPage().
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo Language::run($this->pageLanguage, fn (): string => $this->renderPage($confirmed));
+        echo Language::run($this->pageLanguage, fn (): string => $this->renderPage($confirmed, $already));
         exit;
+    }
+
+    /**
+     * True when this link was already used, has not expired, and the person it
+     * was issued for has a confirmed email. Reads only: nothing is marked,
+     * linked or sent again. An unknown or expired link stays false.
+     */
+    public function alreadyConfirmed(string $token): bool
+    {
+        $personId = $this->tokens->usedBy($token, OnboardingService::VERIFY_PURPOSE);
+        $person = null === $personId ? null : $this->people->find($personId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            return false;
+        }
+
+        $this->pageLanguage = $person->language;
+
+        return true;
     }
 
     /**
@@ -152,13 +175,17 @@ final class VerificationController
         return true;
     }
 
-    public function renderPage(bool $confirmed): string
+    public function renderPage(bool $confirmed, bool $alreadyConfirmed = false): string
     {
         $heading = $confirmed
             ? __('Email confirmed', 'eventcrew')
             : __('This link is invalid or has expired', 'eventcrew');
 
-        $detail = $confirmed
+        if ($alreadyConfirmed) {
+            $heading = __('Your email is already confirmed.', 'eventcrew');
+        }
+
+        $detail = $confirmed || $alreadyConfirmed
             ? __('You can return to Telegram and sign up for tasks.', 'eventcrew')
             : __('Ask the bot for a fresh one by sending it /start.', 'eventcrew');
 
