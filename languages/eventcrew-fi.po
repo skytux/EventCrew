@@ -6712,12 +6712,6 @@ msgstr "Sähköpostit"
 msgid "Messages"
 msgstr "Viestit"
 
-msgid "Post-event email: the text for people who came"
-msgstr "Tapahtuman jälkeinen sähköposti: teksti paikalle tulleille"
-
-msgid "Post-event email: the text for people who did not come"
-msgstr "Tapahtuman jälkeinen sähköposti: teksti poissa olleille"
-
 msgid "Telegram bot: About"
 msgstr "Telegram-botti: Tietoja"
 
