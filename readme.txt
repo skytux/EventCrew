@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.88
+Stable tag: 1.140.89
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.89 =
+Settings: Save changes and Translate again on the settings page ran the Test the webhook button instead of saving, because that button's form sat inside the settings form (since 1.140.34). The test button now sits under the webhook buttons, outside it. A test checks that no template nests forms.
 
 = 1.140.88 =
 Finnish: the ticket and guest import messages and two door guest list messages no longer end with a double full stop after the day (la 14.11.).
@@ -1478,6 +1481,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.89 =
+No settings change.
 
 = 1.140.88 =
 No settings change.
