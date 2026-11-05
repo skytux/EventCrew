@@ -229,10 +229,13 @@ final class AssignmentRepository
      * CANCEL_LOCKED comes back and nothing is written. A task without a start
      * time is never locked.
      *
+     * With `$free`, the cancel is a plain `cancelled` however close the task
+     * is: the person took it inside the second thoughts window.
+     *
      * @return string The status recorded, CANCEL_LOCKED, or '' when there was
      *                no live slot to cancel.
      */
-    public function cancel(int $taskId, int $personId, int $noticeHours, int $lockMinutes = 0): string
+    public function cancel(int $taskId, int $personId, int $noticeHours, int $lockMinutes = 0, bool $free = false): string
     {
         $assignment = $this->findFor($taskId, $personId);
 
@@ -249,7 +252,7 @@ final class AssignmentRepository
             return self::CANCEL_LOCKED;
         }
 
-        $status = $this->cancellationStatus($start, $noticeHours);
+        $status = $free ? AssignmentStatus::CANCELLED : $this->cancellationStatus($start, $noticeHours);
         $this->setStatus($assignment->id, $status);
 
         return $status;

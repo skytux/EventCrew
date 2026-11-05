@@ -11,6 +11,7 @@
  * @var bool $auto_create_tasks Whether a newly-synced event auto-creates its tasks.
  * @var int $notice_hours Hours before a task's start inside which a cancel counts as late.
  * @var int $signout_lock_minutes Minutes before a task's start from which crew can no longer sign out (0 = off).
+ * @var int $second_thoughts_minutes Minutes after a take or cancel before its messages and tickets are sent (0 = off).
  * @var array<int, array{name: string, option: string, value: int, min: int, label: string, help: string}> $takeover_rows Takeover request settings.
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
@@ -498,6 +499,24 @@ if (! defined('ABSPATH')) {
                         style="width:6em">
                     <p class="description">
                         <?php esc_html_e('From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-second-thoughts"><?php esc_html_e('Second thoughts window (minutes)', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-second-thoughts"
+                        name="second_thoughts_minutes"
+                        value="<?php echo esc_attr((string) $second_thoughts_minutes); ?>"
+                        min="0"
+                        step="1"
+                        style="width:6em">
+                    <p class="description">
+                        <?php esc_html_e('Taking or cancelling a task shows at once everywhere. The messages and tickets it causes wait this many minutes, and then only what is still true is sent. A cancel within these minutes after taking the task is never a late cancellation. The wait runs on WP-Cron, so it can be a few minutes longer. 0 turns this off. Default 5.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

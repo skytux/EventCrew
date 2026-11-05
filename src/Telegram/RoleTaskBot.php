@@ -397,7 +397,7 @@ final class RoleTaskBot
         $this->telegram->answerCallbackQuery($callbackId, $message, true);
 
         if ($joined) {
-            $this->notifier->confirmSignup($person, $taskId);
+            $this->notifier->signedUp($person, $taskId);
             $this->refreshList($person, $chatId, $listMessageId, $taskId);
         }
     }
@@ -417,7 +417,7 @@ final class RoleTaskBot
         $this->telegram->answerCallbackQuery($callbackId, $message, AssignmentRepository::CANCEL_LOCKED === $status);
 
         if ('' !== $status && AssignmentRepository::CANCEL_LOCKED !== $status) {
-            $this->notifier->confirmCancellation($person, $taskId, $status);
+            $this->notifier->cancelled($person, $taskId, $status);
             $this->refreshList($person, $chatId, $listMessageId, $taskId);
         }
     }

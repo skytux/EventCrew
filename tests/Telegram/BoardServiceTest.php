@@ -14,6 +14,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
+use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignupService;
 use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Telegram\BoardRenderer;
@@ -570,6 +571,8 @@ final class BoardServiceTest extends TelegramTestCase
     public function testSignupSendsAConfirmationEmailWithATicketLink(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        // The second thoughts window off: the email goes at once.
+        $this->options[SecondThoughts::OPTION] = 0;
         $this->verifiedPerson(555);
         $this->wpdb->nextVars[] = 2; // taskCapacity
         // claim(): tasks->find for the role check (not a role task)
@@ -590,6 +593,30 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
     }
 
+
+    public function testASignupInsideTheSecondThoughtsWindowSendsNothingYet(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $scheduled = [];
+        Functions\when('wp_schedule_single_event')->alias(
+            static function (int $time, string $hook, array $args) use (&$scheduled): bool {
+                $scheduled[] = [$hook, $args];
+
+                return true;
+            }
+        );
+        $this->wpdb->nextVars[] = 2;
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->board()->onJoinLeave($this->callbackQuery('j:5'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame([[SecondThoughts::HOOK, [7, 5, 0]]], $scheduled);
+    }
 
     public function testToggleJoinsWhenNotYetSignedUp(): void
     {

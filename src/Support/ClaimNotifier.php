@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TelegramClient;
@@ -30,8 +31,65 @@ final class ClaimNotifier
         private readonly Mailer $mailer,
         private readonly TelegramClient $telegram,
         private readonly StandingCalculator $standing,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?PersonRepository $people = null
     ) {
+    }
+
+    public function boot(): void
+    {
+        add_action(SecondThoughts::HOOK, [$this, 'afterSecondThoughts'], 10, 3);
+    }
+
+    /**
+     * A person took a task themselves (the board, the bot, the web page). The
+     * confirmation waits for the second thoughts window (SecondThoughts), and
+     * is sent now only when the window is off.
+     */
+    public function signedUp(Person $person, int $taskId): void
+    {
+        if (! SecondThoughts::hold($person->id, $taskId, false)) {
+            $this->confirmSignup($person, $taskId);
+        }
+    }
+
+    /**
+     * A person cancelled a task themselves. Like signedUp(): the confirmation,
+     * the "a spot opened" call and the ticket email wait for the window.
+     */
+    public function cancelled(Person $person, int $taskId, string $status): void
+    {
+        if (! SecondThoughts::hold($person->id, $taskId, true)) {
+            $this->confirmCancellation($person, $taskId, $status);
+        }
+    }
+
+    /**
+     * The WP-Cron event at the end of a second thoughts window. Sends only what
+     * is still true: nothing when the person is back where they started (took
+     * and cancelled, or cancelled and took again), else the confirmation of
+     * where they are now.
+     */
+    public function afterSecondThoughts(int $personId, int $taskId, int $heldBefore): void
+    {
+        $person = ($this->people ?? new PersonRepository())->find($personId);
+        $assignment = $this->assignments->findFor($taskId, $personId);
+
+        if (null === $person || null === $assignment || $assignment->isOccupying() === (1 === $heldBefore)) {
+            return;
+        }
+
+        if ($assignment->isOccupying()) {
+            $this->confirmSignup($person, $taskId);
+
+            return;
+        }
+
+        // Only a cancellation of their own; anything an organizer set since
+        // has its own messages.
+        if (in_array($assignment->status, [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL], true)) {
+            $this->confirmCancellation($person, $taskId, $assignment->status);
+        }
     }
 
     /**

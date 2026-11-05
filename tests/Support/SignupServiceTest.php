@@ -361,6 +361,28 @@ final class SignupServiceTest extends TestCase
         self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
     }
 
+    /** Taken inside the second thoughts window: the cancel is never late. */
+    public function testACancelInsideTheSecondThoughtsWindowAfterATakeIsNotLate(): void
+    {
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [9, 5, 0] === $args ? 1784548800 : false
+        );
+        $this->queueDrop('2026-07-20 12:06:00');
+
+        self::assertSame(AssignmentStatus::CANCELLED, $this->service()->drop(9, 5));
+    }
+
+    /** A window opened by a cancel (then a take again) does not make the next cancel free. */
+    public function testAWindowOpenedByACancelKeepsTheLateCancel(): void
+    {
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [9, 5, 1] === $args ? 1784548800 : false
+        );
+        $this->queueDrop('2026-07-20 12:06:00');
+
+        self::assertSame(AssignmentStatus::LATE_CANCEL, $this->service()->drop(9, 5));
+    }
+
     /** Someone not on the task is told so, not that sign-out is closed. */
     public function testSomeoneNotSignedUpGetsNothingEvenInsideTheLock(): void
     {

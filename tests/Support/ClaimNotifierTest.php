@@ -12,6 +12,7 @@ use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
@@ -19,6 +20,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Roles;
+use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
@@ -668,5 +670,106 @@ final class ClaimNotifierTest extends TestCase
             'so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.',
             $this->mails[0]['body']
         );
+    }
+
+    // --- the second thoughts window -------------------------------------------
+
+    /** @return array<string, mixed> */
+    private function personRow(): array
+    {
+        return ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam', 'email_verified_at' => '2026-07-01 00:00:00'];
+    }
+
+    public function testATakeInsideTheWindowOpensItAndSendsNothingYet(): void
+    {
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $scheduled = [];
+        Functions\when('wp_schedule_single_event')->alias(
+            static function (int $time, string $hook, array $args) use (&$scheduled): bool {
+                $scheduled[] = [$hook, $args];
+
+                return true;
+            }
+        );
+
+        $this->notifier()->signedUp($this->person(), 5);
+
+        self::assertSame([], $this->mails);
+        // The default is 5 minutes; the event remembers they did not hold the task.
+        self::assertSame([[SecondThoughts::HOOK, [7, 5, 0]]], $scheduled);
+    }
+
+    public function testACancelWhileTheWindowIsOpenAddsNoSecondEvent(): void
+    {
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        Functions\when('wp_next_scheduled')->alias(
+            static fn (string $hook, array $args): int|false => [7, 5, 0] === $args ? 1784548800 : false
+        );
+        Functions\expect('wp_schedule_single_event')->never();
+
+        $this->notifier()->cancelled($this->person(), 5, AssignmentStatus::LATE_CANCEL);
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testWithTheWindowOffTheConfirmationGoesAtOnce(): void
+    {
+        // get_option answers false: 0 minutes.
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifier()->signedUp($this->person(), 5);
+
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testTakeThenCancelInsideTheWindowSendsNothing(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::CANCELLED];
+
+        $this->notifier()->afterSecondThoughts(7, 5, 0);
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testCancelThenTakeAgainInsideTheWindowSendsNothing(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
+
+        $this->notifier()->afterSecondThoughts(7, 5, 1);
+
+        self::assertSame([], $this->mails);
+    }
+
+    public function testATakeThatStandsIsConfirmedWhenTheWindowEnds(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
+
+        $this->notifier()->afterSecondThoughts(7, 5, 0);
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $this->mails[0]['body']);
+    }
+
+    public function testACancelThatStandsIsConfirmedWhenTheWindowEnds(): void
+    {
+        $freed = [];
+        Functions\when('do_action')->alias(static function (string $hook) use (&$freed): void {
+            $freed[] = $hook;
+        });
+        $this->wpdb->nextRows[] = $this->personRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::LATE_CANCEL];
+        $this->wpdb->nextRows[] = $this->taskRow();
+
+        $this->notifier()->afterSecondThoughts(7, 5, 1);
+
+        self::assertCount(1, $this->mails);
+        // The "a spot opened" call waited for the window too.
+        self::assertSame(['eventcrew/slot_freed'], $freed);
     }
 }
