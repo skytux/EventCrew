@@ -104,9 +104,6 @@ final class DoorControllerTest extends SalesDeskTestCase
             new DoorNewMember(new PersonRepository(), new AuthTokenRepository(), $mailer, $this->client()),
             new DoorHandoff(
                 $desk,
-                new TaskRepository(),
-                new AssignmentRepository(),
-                new PersonRepository(),
                 new AuthTokenRepository(),
                 $this->salesDeskGate()
             )

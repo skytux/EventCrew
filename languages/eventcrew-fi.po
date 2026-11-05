@@ -637,15 +637,6 @@ msgstr "Linkki kopioitu."
 msgid "Link expired"
 msgstr "Linkki vanhentui"
 
-#: templates/public/door.php:250 templates/public/door.php:254
-msgid "Login as"
-msgstr "Kirjaudu"
-
-#: templates/public/door.php:63
-#, php-format
-msgid "Login as %s"
-msgstr "Kirjaudu: %s"
-
 #: templates/public/door.php:263
 msgid "Login link"
 msgstr "Kirjautumislinkki"
@@ -769,10 +760,6 @@ msgstr "Juuri nyt ei ole tulevia tapahtumia, joihin vapaalipun voisi käyttää 
 #: src/Support/AssignmentStatus.php:110 src/Support/Reputation.php:71 templates/public/signup.php:558
 msgid "No-show"
 msgstr "Ei saapunut"
-
-#: templates/public/door.php:72
-msgid "Nobody else can run the sales desk tonight yet."
-msgstr "Kukaan muu ei voi vielä hoitaa myyntipistettä tänä iltana."
 
 #: src/Telegram/DoorListService.php:130
 msgid "Nobody has a ticket yet."
@@ -1016,10 +1003,6 @@ msgstr "Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynt
 msgid "Settings"
 msgstr "Asetukset"
 
-#: templates/public/door.php:73
-msgid "Show QR code"
-msgstr "Näytä QR-koodi"
-
 #: src/Support/ClaimNotifier.php:96 src/Support/ReminderCall.php:155 src/Telegram/TicketRedemptionService.php:264
 msgid "Show your ticket"
 msgstr "Näytä lippusi"
@@ -1219,11 +1202,6 @@ msgstr "Linkki on valittu. Kopioi se puhelimesi kopiointitoiminnolla."
 #: src/Support/DoorNewMember.php:92
 msgid "The member could not be added. Try again."
 msgstr "Jäsentä ei voitu lisätä. Yritä uudelleen."
-
-#: templates/public/door.php:67
-#, php-format
-msgid "The other phone opens the sales desk as %s."
-msgstr "Toinen puhelin avaa myyntipisteen henkilönä %s."
 
 #: src/Support/SalesDeskGate.php:211
 msgid "The sales desk for this night has closed."
@@ -2943,10 +2921,6 @@ msgstr "Vain järjestäjät ja tämän illan tervetulotiimi voivat avata sen."
 #: src/Telegram/HelpService.php:131
 msgid "Organizers"
 msgstr "Järjestäjät"
-
-#: templates/public/door.php:284
-msgid "Organizers, and tonight’s welcome crew once marked arrived."
-msgstr "Järjestäjät sekä tämän illan tervetulotiimi, kun se on merkitty saapuneeksi."
 
 #: src/Telegram/PermissionService.php:161
 #. translators: %s: person's name

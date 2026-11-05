@@ -42,7 +42,6 @@ final class DoorController
     public const NEW_MEMBER_ACTION = 'eventcrew_door_new_member';
     public const HOLVI_ACTION = 'eventcrew_door_holvi';
     public const COUNT_ACTION = 'eventcrew_door_count';
-    public const PEOPLE_ACTION = 'eventcrew_door_people';
     public const HANDOFF_ACTION = 'eventcrew_door_handoff';
     public const SCAN_ACTION = 'eventcrew_door_scan';
     public const TICKET_CODE_ACTION = 'eventcrew_door_ticket_code';
@@ -89,7 +88,6 @@ final class DoorController
             self::NEW_MEMBER_ACTION,
             self::HOLVI_ACTION,
             self::COUNT_ACTION,
-            self::PEOPLE_ACTION,
             self::HANDOFF_ACTION,
             self::SCAN_ACTION,
             self::TICKET_CODE_ACTION,
@@ -329,12 +327,8 @@ final class DoorController
                 ]);
                 // No break: json() exits.
 
-            case self::PEOPLE_ACTION:
-                $this->json(['people' => $this->handoff->people($cookie) ?? []]);
-                // No break: json() exits.
-
             case self::HANDOFF_ACTION:
-                $link = $this->handoff->link($cookie, $personId);
+                $link = $this->handoff->link($cookie);
                 $ok = DoorHandoff::OK === $link['code'];
                 $this->json([
                     'ok' => $ok,
@@ -431,7 +425,6 @@ final class DoorController
                 'newMember' => self::NEW_MEMBER_ACTION,
                 'holvi' => self::HOLVI_ACTION,
                 'count' => self::COUNT_ACTION,
-                'people' => self::PEOPLE_ACTION,
                 'handoff' => self::HANDOFF_ACTION,
                 'scan' => self::SCAN_ACTION,
                 'ticketCode' => self::TICKET_CODE_ACTION,

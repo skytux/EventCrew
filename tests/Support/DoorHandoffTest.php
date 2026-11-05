@@ -24,8 +24,8 @@ use EventCrew\Support\Mailer;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
- * The sales desk's "Other device" links: who "Login as" offers, who it
- * refuses, and that a link made on the page works once and for 15 minutes.
+ * The sales desk's "Other device" links: made only for the person holding
+ * the session, and a link made on the page works once and for 15 minutes.
  * The clock reads 2026-07-20 12:00.
  */
 final class DoorHandoffTest extends SalesDeskTestCase
@@ -60,32 +60,9 @@ final class DoorHandoffTest extends SalesDeskTestCase
     {
         return new DoorHandoff(
             $this->desk(),
-            new TaskRepository(),
-            new AssignmentRepository(),
-            new PersonRepository(),
             new AuthTokenRepository(),
             $this->salesDeskGate()
         );
-    }
-
-    /**
-     * Queues the reads of the allowed list for tonight: organizers 1 and 2,
-     * a Welcome task with person 8 marked arrived and person 9 only signed
-     * up, then SalesDeskGate's check of person 8.
-     */
-    private function queueAllowedList(): void
-    {
-        $welcome = $this->taskRow(5, 'welcome', '11:00', '23:00');
-
-        $this->wpdb->nextResults[] = [$this->personRow(1, true), $this->personRow(2, true)]; // organizers
-        $this->wpdb->nextResults[] = [$welcome];                                              // tasks->forDate
-        $this->wpdb->nextResults[] = [
-            $this->assignmentRow(10, 5, 8, 'arrived'),
-            $this->assignmentRow(11, 5, 9, 'signed_up'),
-        ];                                                                                    // forTask(5)
-        $this->wpdb->nextRows[] = $this->personRow(8);                                        // find(8)
-        $this->wpdb->nextResults[] = [$welcome];                                              // check(8): forDate
-        $this->wpdb->nextRows[] = $this->assignmentRow(10, 5, 8, 'arrived');                 // check(8): findFor
     }
 
     /**
@@ -117,16 +94,6 @@ final class DoorHandoffTest extends SalesDeskTestCase
         return $this->desk()->login($raw, self::NIGHT, DoorSession::linkSignature($raw, self::NIGHT));
     }
 
-    public function testLoginAsListsOrganizersAndArrivedDoorCrewButNotTheSessionHolder(): void
-    {
-        $this->wpdb->nextRows[] = $this->personRow(1, true); // the session
-        $this->queueAllowedList();
-
-        $people = $this->handoff()->people(DoorSession::mint(1, self::NIGHT));
-
-        self::assertSame([['id' => 2, 'name' => 'Person 2'], ['id' => 8, 'name' => 'Person 8']], $people);
-    }
-
     public function testALinkForTheSessionHolderLastsFifteenMinutes(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(1, true);
@@ -141,41 +108,26 @@ final class DoorHandoffTest extends SalesDeskTestCase
         self::assertSame('2026-07-20 12:15:00', $this->wpdb->inserts[0]['data']['expires_at']);
     }
 
-    public function testALoginAsLinkIsMadeForAnArrivedWelcomeCrewMember(): void
+    public function testThereIsNoWayToAskForALinkForSomeoneElse(): void
     {
-        $this->wpdb->nextRows[] = $this->personRow(1, true);
-        $this->queueAllowedList();
+        $link = new \ReflectionMethod(DoorHandoff::class, 'link');
 
-        $link = $this->handoff()->link(DoorSession::mint(1, self::NIGHT), 8);
-
-        self::assertSame(DoorHandoff::OK, $link['code']);
-        self::assertSame('Person 8', $link['name']);
-        self::assertSame(8, $this->wpdb->inserts[0]['data']['person_id']);
+        self::assertSame(['cookie'], array_map(
+            static fn (\ReflectionParameter $p): string => $p->getName(),
+            $link->getParameters()
+        ));
+        self::assertFalse(method_exists(DoorHandoff::class, 'people'));
     }
 
-    public function testLoginAsIsRefusedForAPersonNotAllowedTonight(): void
-    {
-        $this->wpdb->nextRows[] = $this->personRow(1, true);
-        $this->queueAllowedList();
-
-        // Person 9 is on the Welcome task but not marked arrived.
-        $link = $this->handoff()->link(DoorSession::mint(1, self::NIGHT), 9);
-
-        self::assertSame(DoorHandoff::NOT_ALLOWED, $link['code']);
-        self::assertSame('', $link['url']);
-        self::assertSame([], $this->wpdb->inserts);
-    }
-
-    public function testNoLinkAndNoListWithoutAValidDeskSession(): void
+    public function testNoLinkWithoutAValidDeskSession(): void
     {
         $cookie = DoorSession::mint(1, self::NIGHT);
         $forged = substr($cookie, 0, -1) . ('0' === substr($cookie, -1) ? '1' : '0');
 
         self::assertSame(DoorHandoff::NO_SESSION, $this->handoff()->link('')['code']);
-        self::assertSame(DoorHandoff::NO_SESSION, $this->handoff()->link($forged, 2)['code']);
+        self::assertSame(DoorHandoff::NO_SESSION, $this->handoff()->link($forged)['code']);
         // Yesterday's session ended at 06:00 this morning.
         self::assertSame(DoorHandoff::NO_SESSION, $this->handoff()->link(DoorSession::mint(1, '2026-07-19'))['code']);
-        self::assertNull($this->handoff()->people($forged));
         self::assertSame([], $this->wpdb->inserts);
         self::assertSame([], $this->wpdb->queries);
     }
@@ -256,7 +208,7 @@ final class DoorHandoffTest extends SalesDeskTestCase
         self::assertSame([], $this->updatesOfTokens());
     }
 
-    public function testALoginAsLinkIsRefusedWhenThePersonIsNoLongerAllowedAtUse(): void
+    public function testALinkIsRefusedWhenThePersonIsNoLongerAllowedAtUse(): void
     {
         // Person 8 was unmarked arrived after the link was made.
         $this->wpdb->nextRows[] = null;

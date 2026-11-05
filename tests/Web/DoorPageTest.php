@@ -57,15 +57,17 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString('.ec-tile span{font-size:11px;line-height:1.1;white-space:nowrap}', $html);
     }
 
-    public function testTheSwitchPopupOffersLoginAsFirst(): void
+    public function testTheSwitchPopupShowsOnlyThisPersonsOwnLink(): void
     {
         $html = $this->page();
-        $as = strpos($html, 'id="ec-pick-as"');
-        $own = strpos($html, 'id="ec-pick-own"');
 
-        self::assertNotFalse($as);
-        self::assertNotFalse($own);
-        self::assertLessThan($own, $as);
+        self::assertStringNotContainsString('Login as', $html);
+        self::assertStringNotContainsString('ec-pick-as', $html);
+        self::assertStringNotContainsString('ec-people', $html);
+        self::assertStringNotContainsString("'people'", $html);
+        // Opening the popup asks for the link at once, with no person in it.
+        self::assertStringContainsString("el('ec-other').showModal();\n        showLink();", $html);
+        self::assertStringContainsString("post('handoff', {})", $html);
     }
 
     public function testAScanErrorIsRedAndTheNameIsBigOnOneLine(): void

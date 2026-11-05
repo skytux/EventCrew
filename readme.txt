@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.21
+Stable tag: 1.140.22
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.22 =
+Door desk: "Login as" is removed; the Other device popup shows a QR code and link only for the person signed in on this device (Q247).
 
 = 1.140.21 =
 The bot refuses a blocked person everywhere: buttons and private messages get "Your account is blocked. Talk to an organizer.", group messages are ignored (Q246).
@@ -1277,6 +1280,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.22 =
+No settings change.
 
 = 1.140.21 =
 No settings change.
