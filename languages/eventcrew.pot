@@ -5185,7 +5185,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/AccessNotifier.php:122 src/Support/ClaimNotifier.php:258 src/Support/NewcomerApproval.php:249 src/Support/OpenTaskCall.php:269
+#: src/Support/AccessNotifier.php:122 src/Support/ClaimNotifier.php:258 src/Support/NewcomerApproval.php:248 src/Support/OpenTaskCall.php:269
 #: src/Support/SlotFreedNotice.php:198 src/Support/TaskCancelledNotice.php:97
 msgid "See open tasks"
 msgstr ""
