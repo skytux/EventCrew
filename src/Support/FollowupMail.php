@@ -633,6 +633,8 @@ final class FollowupMail
         // Ticket holders have no stored language: every site language when
         // the Hybrid tick is on, else the main language (HybridPolicy).
         $languages = HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP);
+        $coming = $this->comingEvents($date);
+        $hasEvents = [] !== $coming;
         $parts = [];
 
         foreach ($languages as $lang) {
@@ -640,7 +642,7 @@ final class FollowupMail
             $event = $this->eventName($date, $lang);
             $parts[$lang] = Language::run(
                 $lang,
-                static fn (): array => self::words($variant, $name, $text, $event, $shortDate)
+                static fn (): array => self::words($variant, $name, $text, $event, $shortDate, $hasEvents)
             );
         }
 
@@ -664,7 +666,7 @@ final class FollowupMail
                 'ticket_url' => $link((string) ($card['ticket_url'] ?? '')),
                 'listen' => $link((string) ($card['listen'] ?? '')),
             ]),
-            $this->comingEvents($date)
+            $coming
         );
 
         // No coming events, no events part: the newsletter is not sent then.
@@ -1093,8 +1095,14 @@ final class FollowupMail
      * @param array{text: string, next: bool, template: bool} $text
      * @return array{body: string, subject: string, join: string, invite: string}
      */
-    private static function words(string $variant, string $name, array $text, string $event, string $date): array
-    {
+    private static function words(
+        string $variant,
+        string $name,
+        array $text,
+        string $event,
+        string $date,
+        bool $hasEvents = true
+    ): array {
         $id = FollowupText::TEMPLATES[$variant];
         $first = DoorDesk::firstName($name);
         $context = ['first_name' => $first, 'event' => $event, 'date' => $date];
@@ -1117,12 +1125,27 @@ final class FollowupMail
             $body = implode("\n\n", $lines);
         }
 
+        if (! $hasEvents) {
+            $body = self::withoutBelow($body);
+        }
+
         return [
             'body' => $body,
             'subject' => MessageTemplates::subject($id, $context),
             'join' => __('Join the announcement', 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         ];
+    }
+
+    /**
+     * $body without the sentence that points to the coming events below it,
+     * for an email that has no coming events (in the current language).
+     */
+    private static function withoutBelow(string $body): string
+    {
+        $below = __('The next ones are below.', 'eventcrew');
+
+        return str_replace([' ' . $below, $below . ' ', $below], '', $body);
     }
 
     /**
