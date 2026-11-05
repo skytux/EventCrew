@@ -89,7 +89,7 @@ final class PrivacyController
      * The [eventcrew_privacy] shortcode, in the language of the page it is on
      * (Polylang): a /fi/ translation of the notice page shows the notice in
      * Finnish, from the plugin's own translations, with a line saying the
-     * English original applies where they differ.
+     * English original applies where they differ, linked to the English page.
      */
     public function renderShortcode(): string
     {
@@ -138,7 +138,7 @@ final class PrivacyController
         $eventcrew_configured = PrivacyPolicy::isConfigured();
         $eventcrew_can_edit = current_user_can('manage_options');
         $eventcrew_sections = $sections;
-        $eventcrew_translation_note = PrivacyPolicy::translationNote();
+        $eventcrew_translation_note = PrivacyPolicy::translationNote(PrivacyPolicy::originalUrl((int) get_the_ID()));
 
         ob_start();
         include EVENTCREW_PLUGIN_DIR . 'templates/public/privacy.php';
