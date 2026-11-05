@@ -19,10 +19,15 @@ namespace EventCrew\Support;
  * (practical()), so nothing is invented; a DJ name is never the venue. The
  * card shows these as short lines under the title.
  *
- * Each announcement text is written in Finnish first and then translated into
- * English with a second request, because Finnish to English translates better
- * (Lou, 2026-11-03). The post-event email's text (writeFollowup()) is still
- * written in English first and translated into Finnish. The model gets the
+ * Each announcement text is written in Finnish first (WRITES_IN), because
+ * Finnish translates into English better than the other way round (Lou,
+ * 2026-11-03), and then translated with a second request into every other
+ * site language (SiteLanguages) at once: one JSON answer keyed by the
+ * language codes. The post-event email's text (writeFollowup()) is written
+ * in English first (FOLLOWUP_WRITES_IN) and translated the same way. A
+ * written text is stored as language code => text: the language it was
+ * written in and every other site language. A text stored before, with only
+ * 'fi' and 'en', reads the same way. The model gets the
  * event (titles, date, time, the whole description), its DJs from EventMesh
  * (the DJ_FILTER filter), the site's own words (WORDS_OPTION) and the Finnish
  * texts it wrote for the last MEMORY_SIZE
@@ -75,6 +80,12 @@ final class NewsletterWriter
 
     /** The longest English text accepted for the post-event email, in characters ("about 300"). */
     public const MAX_FOLLOWUP_TEXT = 360;
+
+    /** The language the announcement texts are written in before they are translated. */
+    public const WRITES_IN = Language::FINNISH;
+
+    /** The language the post-event email's text is written in before it is translated. */
+    public const FOLLOWUP_WRITES_IN = Language::ENGLISH;
 
     /** The keys of an event's practical information, in the order the card shows them. */
     public const PRACTICAL_KEYS = ['venue', 'address', 'doors_open', 'doors_close'];
@@ -197,8 +208,8 @@ final class NewsletterWriter
 
     /**
      * The post-event email's text about $event (the first coming event) in
-     * both languages, and its practical information: ['text' => {fi, en} or
-     * [] when it failed, 'practical' => the four values or [] when that
+     * every site language, and its practical information: ['text' =>
+     * language code => text, or [] when it failed, 'practical' => the four values or [] when that
      * failed]. Null when nothing may be written now: the switch is off, the
      * model is not set up, or this is not a background run. The text is 2
      * short sentences in the style of the event's DJs, with what is useful
@@ -226,7 +237,7 @@ final class NewsletterWriter
                 $en = null;
             }
 
-            return null === $en ? null : $this->withFinnish($en);
+            return null === $en ? null : $this->translated($en, self::FOLLOWUP_WRITES_IN);
         });
 
         return [
@@ -236,12 +247,14 @@ final class NewsletterWriter
     }
 
     /**
-     * The post-event email's stored text ({fi, en}), or null when there is
-     * none or the switch is off.
+     * The post-event email's stored text (language code => text), or null
+     * when there is none or the switch is off.
+     *
+     * @return array<string, string>|null
      */
     public static function followupText(mixed $text): ?array
     {
-        return self::enabled() ? self::pair($text) : null;
+        return self::enabled() ? self::texts($text) : null;
     }
 
     /**
@@ -276,7 +289,7 @@ final class NewsletterWriter
      * preview (Newsletter::runLocked()).
      *
      * @param array<string, mixed> $plan
-     * @return array{events: array<int, array{fi: string, en: string}>, opening: array{fi: string, en: string}|null}
+     * @return array{events: array<int, array<string, string>>, opening: array<string, string>|null}
      */
     public static function shown(array $plan): array
     {
@@ -284,19 +297,19 @@ final class NewsletterWriter
         $events = [];
 
         foreach ($written['events'] as $id => $text) {
-            $pair = self::pair($text);
+            $texts = self::texts($text);
 
-            if (null !== $pair) {
-                $events[(int) $id] = $pair;
+            if (null !== $texts) {
+                $events[(int) $id] = $texts;
             }
         }
 
-        return ['events' => $events, 'opening' => self::pair($written['opening'])];
+        return ['events' => $events, 'opening' => self::texts($written['opening'])];
     }
 
     /**
-     * $cards with each written text as written_fi and written_en (the layout
-     * does not show them), and each event's practical information as
+     * $cards with each written text as written_{language code}, such as
+     * written_fi and written_en (the layout does not show them), and each event's practical information as
      * 'practical' (venue, address, doors_open, doors_close; '' when not
      * known), which the layout shows. Unchanged when the switch is off.
      *
@@ -315,11 +328,8 @@ final class NewsletterWriter
 
         foreach ($cards as $index => $card) {
             $id = (int) ($card['id'] ?? 0);
-            $text = self::pair($texts[$id] ?? null);
-
-            if (null !== $text) {
-                $cards[$index]['written_fi'] = $text['fi'];
-                $cards[$index]['written_en'] = $text['en'];
+            foreach (self::texts($texts[$id] ?? null) ?? [] as $lang => $text) {
+                $cards[$index]['written_' . $lang] = $text;
             }
 
             $info = self::practicalOf($practical[$id] ?? null);
@@ -336,16 +346,16 @@ final class NewsletterWriter
      * The written opening text, or null when there is none or the switch is off.
      *
      * @param array<string, mixed>|null $written A plan's 'written'.
-     * @return array{fi: string, en: string}|null
+     * @return array<string, string>|null Language code => text.
      */
     public static function opening(?array $written): ?array
     {
-        return null === $written || ! self::enabled() ? null : self::pair($written['opening'] ?? null);
+        return null === $written || ! self::enabled() ? null : self::texts($written['opening'] ?? null);
     }
 
     /**
-     * After $plan was sent: keeps its Finnish texts, the language the model
-     * writes them in, in the memory of the last MEMORY_SIZE announcements.
+     * After $plan was sent: keeps its texts in the language the model writes
+     * them in (WRITES_IN), in the memory of the last MEMORY_SIZE announcements.
      * The opening counts only when it was shown (the plan carried no
      * organizers' text).
      *
@@ -361,21 +371,21 @@ final class NewsletterWriter
         $texts = [];
 
         foreach (is_array($plan['events'] ?? null) ? $plan['events'] : [] as $event) {
-            $text = self::pair($written['events'][(int) ($event['id'] ?? 0)] ?? null);
+            $text = self::texts($written['events'][(int) ($event['id'] ?? 0)] ?? null);
 
             if (null !== $text) {
-                $texts[] = $text['fi'];
+                $texts[] = self::writtenIn($text);
             }
         }
 
-        $opening = null === ($plan['text'] ?? null) ? self::pair($written['opening']) : null;
+        $opening = null === ($plan['text'] ?? null) ? self::texts($written['opening']) : null;
 
         if ([] === $texts && null === $opening) {
             return;
         }
 
         $memory = self::memory();
-        $memory[] = ['opening' => null === $opening ? '' : $opening['fi'], 'events' => $texts];
+        $memory[] = ['opening' => null === $opening ? '' : self::writtenIn($opening), 'events' => $texts];
 
         update_option(self::MEMORY_OPTION, array_slice($memory, -self::MEMORY_SIZE), false);
     }
@@ -449,10 +459,10 @@ final class NewsletterWriter
     }
 
     /**
-     * The event's text in both languages, or null.
+     * The event's text in every site language, or null.
      *
      * @param array<string, mixed> $event A plan event.
-     * @return array{fi: string, en: string}|null
+     * @return array<string, string>|null Language code => text.
      */
     private function writeEvent(array $event): ?array
     {
@@ -462,18 +472,18 @@ final class NewsletterWriter
             'text'
         );
 
-        return null === $fi ? null : $this->withEnglish($fi);
+        return null === $fi ? null : $this->translated($fi, self::WRITES_IN);
     }
 
     /**
-     * The opening text in both languages, or null.
+     * The opening text in every site language, or null.
      *
      * Each event's own written text goes with it, so the model takes the
      * place from there and not from a DJ name in the title (Lou, 2026-11-03).
      *
      * @param array<int, array<string, mixed>> $events The plan's events.
      * @param array<int, array<string, string>> $texts Event id => its written text ([] = failed).
-     * @return array{fi: string, en: string}|null
+     * @return array<string, string>|null Language code => text.
      */
     private function writeOpening(array $events, array $texts = []): ?array
     {
@@ -484,7 +494,7 @@ final class NewsletterWriter
             $names = array_column(self::djs($id), 'name');
             $lines[] = '- ' . self::when($event) . ': ' . self::titles($event)
                 . ([] === $names ? '' : '. DJs (people who play the music, not places): ' . implode(', ', $names));
-            $text = trim((string) ($texts[$id]['fi'] ?? ''));
+            $text = trim((string) ($texts[$id][self::WRITES_IN] ?? ''));
 
             if ('' !== $text) {
                 $lines[] = '  Text about this event: ' . $text;
@@ -497,7 +507,7 @@ final class NewsletterWriter
             'text'
         );
 
-        return null === $fi ? null : $this->withEnglish($fi);
+        return null === $fi ? null : $this->translated($fi, self::WRITES_IN);
     }
 
     /**
@@ -534,31 +544,70 @@ final class NewsletterWriter
     }
 
     /**
-     * $en with its Finnish translation, or null.
+     * $text (written in $lang) with its translation into every other site
+     * language, from one request whose JSON answer is keyed by the language
+     * codes; null when that answer cannot be used. $text is kept under $lang
+     * even when $lang is not a site language, because the memory of earlier
+     * texts is kept in that language. With no other site language, nothing
+     * is asked.
      *
-     * @return array{fi: string, en: string}|null
+     * @return array<string, string>|null Language code => text.
      */
-    private function withFinnish(string $en): ?array
+    private function translated(string $text, string $lang): ?array
     {
-        $fi = $this->ask(self::system(AiPrompts::get(AiPrompts::TRANSLATE_FI), false, '{"fi": "the Finnish text"}'), $en, 'fi');
+        $targets = array_values(array_diff(SiteLanguages::codes(), [$lang]));
 
-        return null === $fi ? null : ['fi' => $fi, 'en' => $en];
-    }
+        if ([] === $targets) {
+            return [$lang => $text];
+        }
 
-    /**
-     * $fi with its English translation, or null.
-     *
-     * @return array{fi: string, en: string}|null
-     */
-    private function withEnglish(string $fi): ?array
-    {
-        $en = $this->ask(
-            self::system(AiPrompts::get(AiPrompts::TRANSLATE_EN), false, '{"en": "the English text"}'),
-            $fi,
-            'en'
+        $names = [];
+        $shape = [];
+
+        foreach ($targets as $code) {
+            $name = SiteLanguages::name($code);
+            $names[] = $name . ' (' . $code . ')';
+            $shape[] = '"' . $code . '": "the text in ' . $name . '"';
+        }
+
+        $prompt = strtr(AiPrompts::get(AiPrompts::TRANSLATE), [
+            '{from}' => SiteLanguages::name($lang),
+            '{to}' => implode(', ', $names),
+        ]);
+        $content = $this->answer(
+            self::system($prompt, false, '{' . implode(', ', $shape) . '}'),
+            $text,
+            self::MAX_TOKENS * count($targets)
         );
 
-        return null === $en ? null : ['fi' => $fi, 'en' => $en];
+        if (null === $content) {
+            return null;
+        }
+
+        $texts = [$lang => $text];
+
+        foreach ($targets as $code) {
+            $translation = self::parse($content, $code);
+
+            if (null === $translation) {
+                $this->logger->warning('Newsletter texts: the language model answer could not be used.');
+
+                return null;
+            }
+
+            $texts[$code] = $translation;
+        }
+
+        // In the site's language order (main language first), as stored before.
+        $ordered = [];
+
+        foreach (SiteLanguages::codes() as $code) {
+            if (isset($texts[$code])) {
+                $ordered[$code] = $texts[$code];
+            }
+        }
+
+        return $ordered + $texts;
     }
 
     /** One request; the text under $key of its answer, or null. */
@@ -580,14 +629,14 @@ final class NewsletterWriter
     }
 
     /** One request; its answer as it came, or null when the request failed. */
-    private function answer(string $system, string $input): ?string
+    private function answer(string $system, string $input, int $maxTokens = self::MAX_TOKENS): ?string
     {
         $answer = $this->llm->chat(
             [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' => $input],
             ],
-            self::MAX_TOKENS,
+            $maxTokens,
             LlmClient::TIMEOUT
         );
 
@@ -783,20 +832,38 @@ final class NewsletterWriter
     }
 
     /**
-     * A stored text when both languages are there, else null.
+     * A stored text as language code => text, each text trimmed and not
+     * empty; null when it has none ([] is a text that failed). A text stored
+     * with only 'fi' and 'en' reads the same way.
      *
-     * @return array{fi: string, en: string}|null
+     * @return array<string, string>|null
      */
-    private static function pair(mixed $text): ?array
+    public static function texts(mixed $text): ?array
     {
         if (! is_array($text)) {
             return null;
         }
 
-        $fi = trim((string) ($text['fi'] ?? ''));
-        $en = trim((string) ($text['en'] ?? ''));
+        $texts = [];
 
-        return '' === $fi || '' === $en ? null : ['fi' => $fi, 'en' => $en];
+        foreach ($text as $lang => $value) {
+            if (is_string($lang) && SiteLanguages::isKnown($lang) && is_string($value) && '' !== trim($value)) {
+                $texts[$lang] = trim($value);
+            }
+        }
+
+        return [] === $texts ? null : $texts;
+    }
+
+    /**
+     * The text of $texts in the language the announcement texts are written
+     * in (WRITES_IN), else its first text.
+     *
+     * @param array<string, string> $texts
+     */
+    private static function writtenIn(array $texts): string
+    {
+        return $texts[self::WRITES_IN] ?? (string) reset($texts);
     }
 
     /** A JSON answer as an array, or null; a code fence or a sentence around it is allowed. */

@@ -53,10 +53,12 @@ use EventCrew\Repositories\PersonRepository;
  * (for example, the setting was switched on the day before it) is marked
  * missed and gets no newsletter.
  *
- * Every email carries Finnish and English: the Finnish part first, then a
- * line, then the English part. The fixed strings come from gettext, rendered
- * once inside Language::run('fi') and once inside Language::run('en'). In the
- * Finnish part an event's title is EventMesh's Finnish translation when there
+ * With the Hybrid tick on, every email carries every site language, the main
+ * language first, each part after a line; with it off, only the subscriber's
+ * language (HybridPolicy). The fixed strings come from gettext, rendered once
+ * inside Language::run() per language, and the organizers' text and the
+ * written texts are the ones stored for that language. In the Finnish part
+ * an event's title is EventMesh's Finnish translation when there
  * is a current one, otherwise the title as written.
  *
  * Everything the newsletter remembers is in one option (STATE_OPTION):
@@ -345,7 +347,7 @@ final class Newsletter
      * the "Automatically translated" note, in that language.
      *
      * @param array<int, array<string, mixed>> $events Plan events.
-     * @param array{fi: string, en: string, source?: string, translated?: bool}|null $text
+     * @param array<string, mixed>|null $text The organizers' text: language code => text, with source and translated.
      * @param array<int, array<string, mixed>> $later Other coming events, in the plan events' shape.
      * @param array<string, mixed>|null $written The plan's 'written'.
      * @return array{subject: string, html: string, text: string}
@@ -385,18 +387,18 @@ final class Newsletter
      * Whether the $lang text above the cards was translated by the language
      * model: the organizers' text when it was written in another language
      * than $lang and has a $lang text, or the language model's opening,
-     * which is written in Finnish and translated. An organizers' text kept
-     * from before the source was stored counts as translated when its $lang
-     * text differs from its Finnish one.
+     * which is written in Finnish (NewsletterWriter::WRITES_IN) and
+     * translated. An organizers' text kept from before the source was stored
+     * counts as translated when its $lang text differs from its Finnish one.
      *
      * @param array<string, mixed>|null $text
-     * @param array{fi: string, en: string}|null $opening
+     * @param array<string, string>|null $opening Language code => text.
      */
     private static function translatedInto(string $lang, ?array $text, ?array $opening): bool
     {
         if (null === $text) {
             return null !== $opening
-                && Language::FINNISH !== $lang
+                && NewsletterWriter::WRITES_IN !== $lang
                 && '' !== trim((string) ($opening[$lang] ?? ''));
         }
 
@@ -692,9 +694,7 @@ final class Newsletter
         $plan['status'] = self::PLAN_SENDING;
         // The source language too, so an English-only email knows whether
         // its English was translated by the language model.
-        $plan['text'] = null === $text ? null : [
-            'fi' => $text['fi'],
-            'en' => $text['en'],
+        $plan['text'] = null === $text ? null : $text['texts'] + [
             'rev' => $text['rev'],
             'source' => (string) ($text['source'] ?? ''),
             'translated' => (bool) ($text['translated'] ?? false),

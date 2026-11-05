@@ -12,6 +12,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -296,6 +297,35 @@ final class FollowupTextTest extends TestCase
             ['text' => 'Kiitos, nähdään pian!', 'next' => true, 'template' => false],
             $this->text()->text(FollowupText::CAME, Language::FINNISH)
         );
+    }
+
+    /**
+     * With a third site language (sv), the one-time text gets a Swedish text
+     * of its own. A one-time text stored when the site had only Finnish and
+     * English gives Swedish the main language's (Finnish) text.
+     */
+    public function testAThirdSiteLanguageGetsItsOwnOneTimeText(): void
+    {
+        $this->withModel();
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->answer = '{"lang": "fi", "en": "Thanks, see you soon!", "sv": "Tack, vi ses snart!"}';
+
+        $this->text()->setNext(FollowupText::CAME, 'Kiitos, nähdään pian!', 9);
+
+        self::assertSame('Tack, vi ses snart!', $this->text()->text(FollowupText::CAME, 'sv')['text']);
+        self::assertSame('Thanks, see you soon!', $this->text()->text(FollowupText::CAME, Language::ENGLISH)['text']);
+
+        $this->options[FollowupText::NEXT_OPTIONS[FollowupText::MISSED]] = [
+            'fi' => 'Harmi',
+            'en' => 'Sorry',
+            'source' => 'en',
+            'translated' => true,
+            'rev' => 2,
+        ];
+
+        self::assertSame('Harmi', $this->text()->text(FollowupText::MISSED, Language::FINNISH)['text']);
+        self::assertSame('Sorry', $this->text()->text(FollowupText::MISSED, Language::ENGLISH)['text']);
+        self::assertSame('Harmi', $this->text()->text(FollowupText::MISSED, 'sv')['text']);
     }
 
     public function testAnUnknownVariantIsNotSaved(): void

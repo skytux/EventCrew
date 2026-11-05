@@ -1653,7 +1653,7 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('Let the language model write the event texts and, when you wrote none, the opening text', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('On by default. When it is on, each event in the announcement gets 2–3 sentences in Finnish and English, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        <?php esc_html_e('On by default. When it is on, each event in the announcement gets 2–3 sentences in each site language, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                     <?php if (! $llm_configured) : ?>
                         <p class="description">

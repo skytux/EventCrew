@@ -1889,7 +1889,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 maxlength="<?php
                                 echo (int) \EventCrew\Support\NewsletterText::MAX_LENGTH;
                                 ?>"></textarea>
-                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                         </p>
                         <button type="submit" name="op" value="save" class="wp-element-button">
                             <?php esc_html_e('Save', 'eventcrew'); ?>
@@ -1901,13 +1901,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <?php endif; ?>
                     </form>
                     <?php if (null !== $eventcrew_news['text']) : ?>
-                        <p><strong><?php esc_html_e('In Finnish:', 'eventcrew'); ?></strong></p>
-                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_news['text']['fi']); ?></p>
-                        <p><strong><?php esc_html_e('In English:', 'eventcrew'); ?></strong></p>
-                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_news['text']['en']); ?></p>
+                        <?php foreach ($eventcrew_news['text']['texts'] as $eventcrew_news_lang => $eventcrew_news_words) : ?>
+                            <p><strong><?php echo esc_html(\EventCrew\Support\SiteLanguages::label((string) $eventcrew_news_lang) . ':'); ?></strong></p>
+                            <p style="white-space:pre-line"><?php echo esc_html($eventcrew_news_words); ?></p>
+                        <?php endforeach; ?>
                         <?php if (! $eventcrew_news['text']['translated']) : ?>
                             <p class="eventcrew-muted">
-                                <?php esc_html_e('This text is not translated: both languages show it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                                <?php esc_html_e('This text is not translated: every language shows it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                             </p>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -1949,13 +1949,13 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             }
                             ?>
                         </p>
-                        <p><strong><?php esc_html_e('In Finnish:', 'eventcrew'); ?></strong></p>
-                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_text['fi']); ?></p>
-                        <p><strong><?php esc_html_e('In English:', 'eventcrew'); ?></strong></p>
-                        <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_text['en']); ?></p>
+                        <?php foreach ($eventcrew_follow_text['texts'] as $eventcrew_follow_lang => $eventcrew_follow_words) : ?>
+                            <p><strong><?php echo esc_html(\EventCrew\Support\SiteLanguages::label((string) $eventcrew_follow_lang) . ':'); ?></strong></p>
+                            <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_words); ?></p>
+                        <?php endforeach; ?>
                         <?php if (! $eventcrew_follow_text['translated']) : ?>
                             <p class="eventcrew-muted">
-                                <?php esc_html_e('This text is not translated: both languages show it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                                <?php esc_html_e('This text is not translated: every language shows it as it was written.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                             </p>
                         <?php endif; ?>
                         <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
@@ -1972,7 +1972,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                     maxlength="<?php
                                     echo (int) \EventCrew\Support\FollowupText::MAX_LENGTH;
                                     ?>"></textarea>
-                                <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in Finnish or in English. It is translated into the other language when you save.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
+                                <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in any language. It is translated into every site language when you save.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                             </p>
                             <button type="submit" name="op" value="save" class="wp-element-button">
                                 <?php esc_html_e('Save', 'eventcrew'); ?>

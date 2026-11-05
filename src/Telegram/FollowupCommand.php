@@ -6,18 +6,20 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\FollowupText;
-use EventCrew\Support\Language;
+use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SiteLanguages;
 
 /**
  * /followup: an organizer sets a one-time text for the next post-event email
  * (FollowupMail), in a private chat with the bot. It works like /newsletter.
  *
  * - "/followup" alone shows both texts the next email uses (the thank-you to
- *   those who came, the sorry text to those who did not), in both languages,
- *   and whether each is a one-time text or the one on the Messages page.
+ *   those who came, the sorry text to those who did not), in every site
+ *   language, and whether each is a one-time text or the one on the Messages
+ *   page.
  * - "/followup came <text>" or "/followup missed <text>" saves a one-time text
  *   for that version. It is translated (FollowupText, the same way as the
- *   newsletter's text) and the answer shows both languages.
+ *   newsletter's text) and the answer shows every site language.
  * - "/followup came clear" or "/followup missed clear" removes that one-time
  *   text; "/followup clear" removes both.
  *
@@ -100,11 +102,11 @@ final class FollowupCommand
         $result = $this->text->setNext($variant, $text, $person->id);
         $reply = self::label($variant) . "\n"
             . __('Saved for the next post-event email only:', 'eventcrew')
-            . "\n\n" . self::both($result['fi'], $result['en']);
+            . "\n\n" . NewsletterText::listed($result['texts']);
 
         if (! $result['translated']) {
             $reply .= "\n\n"
-                . __('The text could not be translated, so both languages show it as you wrote it.', 'eventcrew');
+                . __('The text could not be translated, so every language shows it as you wrote it.', 'eventcrew');
         }
 
         $this->telegram->sendMessage($chatId, $reply);
@@ -121,14 +123,11 @@ final class FollowupCommand
                 . (null === $next
                     ? __('The next email uses the text on the Messages page.', 'eventcrew')
                     : __('The next email uses a one-time text.', 'eventcrew'))
-                . "\n\n" . self::both(
-                    $this->text->text($variant, Language::FINNISH)['text'],
-                    $this->text->text($variant, Language::ENGLISH)['text']
-                );
+                . "\n\n" . NewsletterText::listed($this->texts($variant));
 
             if (null !== $next && ! $next['translated']) {
                 $part .= "\n\n"
-                    . __('This text is not translated: both languages show it as it was written.', 'eventcrew');
+                    . __('This text is not translated: every language shows it as it was written.', 'eventcrew');
             }
 
             $parts[] = $part;
@@ -149,8 +148,19 @@ final class FollowupCommand
             : __('Sorry text (missed)', 'eventcrew');
     }
 
-    private static function both(string $fi, string $en): string
+    /**
+     * The text of $variant the next email uses, in every site language.
+     *
+     * @return array<string, string>
+     */
+    private function texts(string $variant): array
     {
-        return __('In Finnish:', 'eventcrew') . "\n" . $fi . "\n\n" . __('In English:', 'eventcrew') . "\n" . $en;
+        $texts = [];
+
+        foreach (SiteLanguages::codes() as $lang) {
+            $texts[$lang] = $this->text->text($variant, $lang)['text'];
+        }
+
+        return $texts;
     }
 }

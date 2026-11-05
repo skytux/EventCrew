@@ -9,11 +9,12 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Telegram\NewsletterCommand;
 
 /**
  * /newsletter. The language model is not set up here, so a saved text is
- * stored as written in both languages and the answer says so.
+ * stored as written in every language and the answer says so.
  */
 final class NewsletterCommandTest extends TelegramTestCase
 {
@@ -95,9 +96,25 @@ final class NewsletterCommandTest extends TelegramTestCase
         $this->command()->onCommand(555, 555, true, '');
 
         $reply = $this->lastReply();
-        self::assertStringContainsString("In Finnish:\nMoi", $reply);
-        self::assertStringContainsString("In English:\nHi", $reply);
+        self::assertStringContainsString("Finnish:\nMoi", $reply);
+        self::assertStringContainsString("English:\nHi", $reply);
         self::assertStringContainsString('/newsletter clear', $reply);
+    }
+
+    /**
+     * A third site language is listed with its own name. A text stored when
+     * the site had only Finnish and English shows the main language's text
+     * for it.
+     */
+    public function testTheCommandAloneListsEverySiteLanguage(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'translated' => true, 'rev' => 1];
+        $this->queuePerson(true);
+
+        $this->command()->onCommand(555, 555, true, '');
+
+        self::assertStringContainsString("Finnish:\nMoi\n\nEnglish:\nHi\n\nSvenska:\nMoi", $this->lastReply());
     }
 
     public function testClearRemovesTheText(): void

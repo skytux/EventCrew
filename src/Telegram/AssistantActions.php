@@ -111,7 +111,7 @@ final class AssistantActions
             $list[] = self::entry(
                 '/newsletter <text>',
                 "set the organizers' own text for the next newsletter, replacing any earlier one; it is translated"
-                    . ' so the mail carries it in Finnish and English; <text> is the text itself, as the person'
+                    . ' so the mail carries it in every site language; <text> is the text itself, as the person'
                     . ' wants it sent (line breaks allowed)',
                 true
             );
@@ -142,7 +142,7 @@ final class AssistantActions
                 '/followup <came|missed> <text>',
                 'set a one-time text for the next post-event email only: came = the thank-you text, missed = the'
                     . ' sorry text; it replaces the main text between the greeting and the sign-off, is translated'
-                    . ' into Finnish and English, and is removed after that email is sent; {event} and {date} in it'
+                    . ' into every site language, and is removed after that email is sent; {event} and {date} in it'
                     . ' become the event\'s name and date; <text> is the text itself (line breaks allowed)',
                 true
             );

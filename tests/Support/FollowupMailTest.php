@@ -18,6 +18,7 @@ use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -1326,6 +1327,69 @@ final class FollowupMailTest extends TestCase
         foreach (array_slice($this->mails, 1) as $sent) {
             self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $sent['body']);
         }
+    }
+
+    /**
+     * With a third site language (sv), the card's text is written in English
+     * and translated into Finnish and Swedish in one request, which asks for
+     * both by their codes. The email shows the Swedish text too.
+     */
+    public function testAThirdSiteLanguageGetsItsOwnCardText(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->cardNight();
+        $this->model([
+            '{"text": "Spin with DJ Kai at Old Hall."}',
+            '{"fi": "Pyöri DJ Kain kanssa Old Hallissa.", "sv": "Snurra med DJ Kai i Old Hall."}',
+            '{"venue": "Old Hall", "address": "", "doors_open": "", "doors_close": ""}',
+        ]);
+        $followup = $this->followup();
+
+        $followup->run($this->at('2026-11-13 12:00'));
+
+        self::assertCount(3, $this->requests, 'the text, one translation into both languages, the practical information');
+        $system = $this->requests[1]['messages'][0]['content'];
+        self::assertStringContainsString('from English into each of these languages: Finnish (fi), Swedish (sv).', $system);
+        self::assertStringContainsString('{"fi": "the text in Finnish", "sv": "the text in Swedish"}', $system);
+        self::assertSame(
+            [
+                'fi' => 'Pyöri DJ Kain kanssa Old Hallissa.',
+                'en' => 'Spin with DJ Kai at Old Hall.',
+                'sv' => 'Snurra med DJ Kai i Old Hall.',
+            ],
+            $this->state()['written'][self::NIGHT]['text']
+        );
+
+        $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('Snurra med DJ Kai i Old Hall.', $mail['html']);
+        self::assertStringContainsString('Snurra med DJ Kai i Old Hall.', $mail['text']);
+        self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $mail['html']);
+    }
+
+    /**
+     * A card text stored when the site had only Finnish and English still
+     * shows in both after a third language (sv) is added. The email has every
+     * language, so the Swedish part, which has no text of its own, does not
+     * repeat the Finnish one.
+     */
+    public function testAnOldFinnishAndEnglishCardTextStillShows(): void
+    {
+        $this->cardNight();
+        $this->model([
+            '{"text": "Spin with DJ Kai at Old Hall."}',
+            '{"fi": "Pyöri DJ Kain kanssa Old Hallissa."}',
+            '{"venue": "Old Hall", "address": "", "doors_open": "", "doors_close": ""}',
+        ]);
+        $followup = $this->followup();
+        $followup->run($this->at('2026-11-13 12:00'));
+
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $mail = $followup->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('Spin with DJ Kai at Old Hall.', $mail['html']);
+        self::assertStringContainsString('Pyöri DJ Kain kanssa Old Hallissa.', $mail['html']);
+        self::assertSame(1, substr_count($mail['text'], 'Pyöri DJ Kain kanssa Old Hallissa.'), 'not repeated');
     }
 
     /**

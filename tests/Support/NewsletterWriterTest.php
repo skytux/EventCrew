@@ -18,6 +18,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\NewsletterWriter;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -289,10 +290,13 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringNotContainsString(str_repeat('x', 1200 - 23 + 1), $user);
         self::assertStringContainsString(str_repeat('x', 1200 - 23), $user);
 
-        self::assertStringContainsString('from Finnish into English', self::system($translation));
+        self::assertStringContainsString(
+            'from Finnish into each of these languages: English (en).',
+            self::system($translation)
+        );
         self::assertStringContainsString('Say "dance floor"', self::system($translation));
         self::assertStringContainsString('Do not use the word "vol' . 'unteer"', self::system($translation));
-        self::assertStringContainsString('{"en": "the English text"}', self::system($translation));
+        self::assertStringContainsString('{"en": "the text in English"}', self::system($translation));
         self::assertSame('Tule tanssimaan DJ Auroran lämpimiin grooveihin.', self::user($translation));
 
         self::assertStringContainsString('opening text', self::system($opening));
@@ -304,7 +308,7 @@ final class NewsletterWriterTest extends TestCase
             . "DJ Aurora, DJ Kuu\n  Text about this event: Tule tanssimaan DJ Auroran lämpimiin grooveihin.",
             self::user($opening)
         );
-        self::assertStringContainsString('from Finnish into English', self::system($openingEn));
+        self::assertStringContainsString('from Finnish into each of these languages', self::system($openingEn));
         self::assertSame('Kesä on täällä, ja niin on tanssilattiakin.', self::user($openingEn));
 
         self::assertStringContainsString('Copy the venue and the address exactly', self::system($practical));
@@ -340,6 +344,85 @@ final class NewsletterWriterTest extends TestCase
     }
 
     /**
+     * With a third site language (sv), each Finnish text is translated into
+     * English and Swedish in one request, which asks for both by their codes.
+     * The plan keeps a text per language, and a Swedish subscriber's email
+     * opens with the Swedish opening.
+     */
+    public function testAThirdSiteLanguageGetsItsOwnTexts(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->answers = [
+            self::answer('text', 'Tule tanssimaan.'),
+            (string) json_encode(['en' => 'Come and dance.', 'sv' => 'Kom och dansa.']),
+            self::answer('text', 'Kesä on täällä.'),
+            (string) json_encode(['en' => 'Summer is here.', 'sv' => 'Sommaren är här.']),
+            self::practicalAnswer(''),
+        ];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertCount(5, $this->requests, 'one translation request per text, not one per language');
+        $system = self::system($this->requests[1]);
+        self::assertStringContainsString(
+            'from Finnish into each of these languages: English (en), Swedish (sv).',
+            $system
+        );
+        self::assertStringContainsString('{"en": "the text in English", "sv": "the text in Swedish"}', $system);
+        self::assertSame(
+            ['fi' => 'Tule tanssimaan.', 'en' => 'Come and dance.', 'sv' => 'Kom och dansa.'],
+            $this->plan()['written']['events'][1]
+        );
+        self::assertSame(
+            ['fi' => 'Kesä on täällä.', 'en' => 'Summer is here.', 'sv' => 'Sommaren är här.'],
+            $this->plan()['written']['opening']
+        );
+        self::assertStringContainsString('Sommaren är här.', $this->mails[0]['body']);
+
+        $events = [self::planEvent(1, '2026-07-27', 'Summer Social')];
+        $swedish = $this->newsletter()->compose($events, null, [], $this->plan()['written'], 'sv');
+        self::assertStringContainsString('Sommaren är här.', $swedish['text']);
+        self::assertStringNotContainsString('Kesä on täällä.', $swedish['text']);
+    }
+
+    /** A Swedish answer missing from the one translation request is a failure, as before. */
+    public function testATranslationMissingALanguageIsAFailure(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1];
+        $this->answers = [self::answer('text', 'Tule tanssimaan.'), self::answer('en', 'Come and dance.')];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertSame([], $this->plan()['written']['events'][1]);
+    }
+
+    /**
+     * An opening stored when the site had only Finnish and English still
+     * shows in both after a third language (sv) is added, and a Swedish
+     * subscriber gets the main language's (Finnish) text.
+     */
+    public function testAnOldFinnishAndEnglishOpeningStillShows(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $events = [self::planEvent(1, '2026-07-27', 'Summer Social')];
+        $written = [
+            'events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']],
+            'opening' => ['fi' => 'Tervetuloa.', 'en' => 'Welcome.'],
+            'practical' => [1 => []],
+        ];
+        $newsletter = $this->newsletter();
+
+        self::assertStringContainsString('Tervetuloa.', $newsletter->compose($events, null, [], $written, 'fi')['text']);
+        self::assertStringContainsString('Welcome.', $newsletter->compose($events, null, [], $written, 'en')['text']);
+        self::assertStringContainsString('Tervetuloa.', $newsletter->compose($events, null, [], $written, 'sv')['text']);
+    }
+
+    /**
      * EventMesh missing or older: the filter answers with its default, and the
      * request simply has no DJs.
      */
@@ -367,7 +450,7 @@ final class NewsletterWriterTest extends TestCase
         $this->options[AiPrompts::OPTION] = [
             AiPrompts::NEWSLETTER_EVENT => 'Write about the event. {rules}',
             AiPrompts::RULES => 'Only facts.',
-            AiPrompts::TRANSLATE_EN => 'Translate it.',
+            AiPrompts::TRANSLATE => 'Translate it.',
         ];
         $this->answers = [self::answer('text', 'Tule tanssimaan.'), self::answer('en', 'Come and dance.')];
         $this->queueOrganizer();

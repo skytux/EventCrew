@@ -14,7 +14,9 @@ use EventCrew\Tests\TestCase;
  * The editable prompts. The built-in texts must give exactly the instructions
  * the code had before they became editable: fixtures/ai-prompts-before.json
  * holds those old texts, copied from NewsletterWriter and BoardDjText before
- * the change. Options live in an array.
+ * the change. The two old translation prompts (into Finnish, into English)
+ * were replaced by one prompt that translates into every site language, so
+ * they are no longer in the fixture. Options live in an array.
  */
 final class AiPromptsTest extends TestCase
 {
@@ -43,7 +45,7 @@ final class AiPromptsTest extends TestCase
         $before = json_decode((string) file_get_contents(__DIR__ . '/fixtures/ai-prompts-before.json'), true);
 
         self::assertIsArray($before);
-        self::assertCount(7, $before);
+        self::assertCount(5, $before);
 
         foreach ($before as $key => $text) {
             self::assertSame($text, AiPrompts::get($key), $key);

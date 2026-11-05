@@ -44,11 +44,13 @@ final class AiPrompts
     /** Picking an event's venue, address and door times out of its description. */
     public const PRACTICAL = 'practical';
 
-    /** The translation from English into Finnish. */
-    public const TRANSLATE_FI = 'translate_fi';
-
-    /** The translation from Finnish into English. */
-    public const TRANSLATE_EN = 'translate_en';
+    /**
+     * The translation of a written text into every other site language, in
+     * one request. {from} becomes the language it is written in and {to} the
+     * languages it is translated into. It replaced the two prompts
+     * 'translate_fi' and 'translate_en', which only knew Finnish and English.
+     */
+    public const TRANSLATE = 'translate';
 
     /** The text about the DJ or host under the picture on the group board. */
     public const BOARD_DJ = 'board_dj';
@@ -96,15 +98,12 @@ final class AiPrompts
             . 'A DJ name is a person, never a place: the venue is never one of the DJ names. '
             . 'The event title is not the venue unless the description says so. '
             . 'Never include door codes, entry codes or any other codes.',
-        self::TRANSLATE_FI => 'You translate a short newsletter text from English into Finnish. '
-            . 'Write natural, warm Finnish, about as long as the English text and under 500 characters. '
-            . 'Keep names, dates, times and emoji exactly as they are. '
-            . 'Do not add anything and do not leave anything out.',
-        self::TRANSLATE_EN => 'You translate a short newsletter text from Finnish into English. '
-            . 'Write natural, warm English, about as long as the Finnish text and under 500 characters. '
+        self::TRANSLATE => 'You translate a short newsletter text from {from} into each of these languages: {to}. '
+            . 'Write each translation naturally and warmly, about as long as the original text '
+            . 'and under 500 characters. '
             . 'Keep names, dates, times and emoji exactly as they are. '
             . 'Do not add anything and do not leave anything out. '
-            . 'Do not use the word "vol' . 'unteer".',
+            . 'Do not use the word "vol' . 'unteer". {rules_fi}',
         self::BOARD_DJ => 'You write a short text about the DJ or the host of one event of a dance event. '
             . 'It goes under the picture of the event in the Telegram group of the event\'s crew. '
             . 'Write exactly 2 sentences in English about who the DJ or host is and their style or their work. '
@@ -207,7 +206,7 @@ final class AiPrompts
             ],
             self::NEWSLETTER_EVENT => [
                 'label' => __('Announcement: the text of one event', 'eventcrew'),
-                'help' => __('Written in Finnish, then translated into English.', 'eventcrew'),
+                'help' => __('Written in Finnish, then translated into the other site languages.', 'eventcrew'),
             ],
             self::NEWSLETTER_OPENING => [
                 'label' => __('Announcement: the opening text', 'eventcrew'),
@@ -215,19 +214,15 @@ final class AiPrompts
             ],
             self::FOLLOWUP => [
                 'label' => __('Post-event email: the text about the next event', 'eventcrew'),
-                'help' => __('Written in English, then translated into Finnish.', 'eventcrew'),
+                'help' => __('Written in English, then translated into the other site languages.', 'eventcrew'),
             ],
             self::PRACTICAL => [
                 'label' => __('Venue, address and door times', 'eventcrew'),
                 'help' => __('Picks these out of the event description. A value is kept only when the description has it.', 'eventcrew'),
             ],
-            self::TRANSLATE_FI => [
-                'label' => __('Translation into Finnish', 'eventcrew'),
-                'help' => __('Translates the post-event email text.', 'eventcrew'),
-            ],
-            self::TRANSLATE_EN => [
-                'label' => __('Translation into English', 'eventcrew'),
-                'help' => __('Translates the announcement texts.', 'eventcrew'),
+            self::TRANSLATE => [
+                'label' => __('Translation into the site languages', 'eventcrew'),
+                'help' => __('Translates the announcement texts and the post-event email text into every other site language at once. {from} becomes the language the text is written in, {to} the other languages.', 'eventcrew'),
             ],
             self::BOARD_DJ => [
                 'label' => __('Telegram board: the text about the DJ', 'eventcrew'),
