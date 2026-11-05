@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -228,6 +229,68 @@ final class TranslationRegistryTest extends TestCase
         self::assertSame(['a'], self::ids(TranslationRegistry::filter($rows, '', TranslationRegistry::SHOW_MANUAL)));
         self::assertSame(['b'], self::ids(TranslationRegistry::filter($rows, '', TranslationRegistry::SHOW_EMAILS)));
         self::assertSame([], self::ids(TranslationRegistry::filter($rows, 'hello', TranslationRegistry::SHOW_EMAILS)));
+    }
+
+    /**
+     * Saved from the page, the translation is a background job: the row keeps
+     * its old text (what is sent) until the job ran, and the job stores what
+     * the inline save stores.
+     */
+    public function testABackgroundSaveKeepsTheOldTextUntilTheJobRan(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Kiitos paljon"}');
+        $this->sample();
+        $before = $this->stored('b');
+
+        $result = $this->sample()->saveRow('b', 'Thank you very much', [], true);
+
+        self::assertSame(['found' => true, 'error' => '', 'missing' => [], 'queued' => true], $result);
+        self::assertSame([], $this->requests, 'the model is not asked while the page waits');
+        self::assertSame($before['texts'], TranslatedText::normalize($this->stored('b'))['texts']);
+
+        $job = BackgroundJobs::latest(TranslatedText::jobTarget('b'));
+        self::assertSame(BackgroundJobs::QUEUED, $job['status'] ?? null);
+
+        $pending = TranslatedText::withPending($this->stored('b'), 'b');
+        self::assertSame('Thank you very much', $pending['source'], 'the page shows the input that waits');
+
+        $jobs = new BackgroundJobs();
+        $registry = $this->sample();
+        $jobs->handle(TranslatedText::JOB, [$registry, 'runJob']);
+
+        self::assertSame(BackgroundJobs::DONE, $jobs->runOne()['status'] ?? null);
+        $background = $this->stored('b');
+
+        // The same save, inline, from the same starting point.
+        $this->options['row.b'] = $before;
+        $this->sample()->saveRow('b', 'Thank you very much', []);
+
+        self::assertSame($this->stored('b'), $background);
+        self::assertSame('Kiitos paljon', $background['texts']['fi']);
+    }
+
+    /** A background translation the model fails is a failed job; the row keeps the fallback of today. */
+    public function testAFailedBackgroundTranslationCanBeTriedAgain(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Kiitos paljon"}');
+        $this->status = 500;
+        $this->sample()->saveRow('b', 'Thank you very much', [], true);
+        $jobs = new BackgroundJobs();
+        $jobs->handle(TranslatedText::JOB, [$this->sample(), 'runJob']);
+
+        $failed = $jobs->runOne();
+
+        self::assertSame(BackgroundJobs::FAILED, $failed['status'] ?? null);
+        self::assertNotSame('', $failed['error']);
+        self::assertContains('fi', $failed['args']['refill']);
+
+        $this->status = 200;
+        self::assertTrue(BackgroundJobs::retry((string) $failed['id']));
+        $jobs->handle(TranslatedText::JOB, [$this->sample(), 'runJob']);
+
+        self::assertSame(BackgroundJobs::DONE, $jobs->runOne()['status'] ?? null);
+        self::assertSame('Kiitos paljon', $this->stored('b')['texts']['fi']);
+        self::assertFalse($this->stored('b')['manual']['fi'] ?? false, 'the retried text is not marked as edited by hand');
     }
 
     /** A text changed on the page is edited by hand; the model is not asked when nothing is empty. */

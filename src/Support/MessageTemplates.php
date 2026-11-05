@@ -323,6 +323,12 @@ final class MessageTemplates
      * A text that lacks a required placeholder, as written or as translated,
      * is refused: nothing is saved and ERROR_MISSING_PLACEHOLDER is answered.
      *
+     * With a translator in the background (TranslatedText::inBackground()),
+     * a part to translate keeps its stored text and its translation is
+     * queued as the Translations page row 'message.{id}.{part}'; the job
+     * stores it (TranslationRegistry::runJob(), which checks the
+     * placeholders of the translation).
+     *
      * @param mixed $posted The raw $_POST[POST_NAME].
      * @return string The translation error kind ('' when none), for TranslatedText::errorNotice(),
      *                or ERROR_MISSING_PLACEHOLDER.
@@ -365,7 +371,9 @@ final class MessageTemplates
                 $input['again'],
                 $multiline ? self::BODY_MAX_LENGTH : self::SUBJECT_MAX_LENGTH,
                 $multiline,
-                $input['lang']
+                $input['lang'],
+                [],
+                'message.' . $id . '.' . $part
             );
             $value = $result['value'];
 

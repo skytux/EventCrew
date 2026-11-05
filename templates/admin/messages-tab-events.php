@@ -20,6 +20,7 @@ if (! defined('ABSPATH')) {
 }
 
 use EventCrew\Admin\AiPromptsPage;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\NewsletterText;
@@ -58,8 +59,14 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                 <?php
                 $eventcrew_follow_text = $followup['texts'][$eventcrew_follow_variant];
                 $eventcrew_follow_id = 'eventcrew-followup-text-' . $eventcrew_follow_variant;
+                // A saved text that is still being translated stays in the box.
+                $eventcrew_follow_job = BackgroundJobs::latest(AiPromptsPage::followupTarget((string) $eventcrew_follow_variant));
+                $eventcrew_follow_pending = BackgroundJobs::isActive($eventcrew_follow_job)
+                    ? (string) ($eventcrew_follow_job['args']['text'] ?? '')
+                    : '';
                 ?>
                 <h3><?php echo esc_html($eventcrew_follow_label); ?></h3>
+                <?php echo BackgroundJobs::badge($eventcrew_follow_job); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge(). ?>
                 <p class="description">
                     <?php
                     if ($eventcrew_follow_text['next']) {
@@ -85,7 +92,7 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                             <?php esc_html_e('One-time text for the next email', 'eventcrew'); ?>
                         </label>
                         <textarea class="large-text" rows="4" name="followup_text" id="<?php echo esc_attr($eventcrew_follow_id); ?>"
-                            maxlength="<?php echo (int) FollowupText::MAX_LENGTH; ?>"></textarea>
+                            maxlength="<?php echo (int) FollowupText::MAX_LENGTH; ?>"><?php echo esc_textarea($eventcrew_follow_pending); ?></textarea>
                         <span class="description"><?php esc_html_e('Write it in any language. It is translated into every site language when you save.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                     </p>
                     <p>
@@ -104,6 +111,13 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
     <?php if (null !== $newsletter) : ?>
         <div style="<?php echo esc_attr($eventcrew_card_style); ?>">
             <h2><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h2>
+            <?php
+            $eventcrew_news_job = BackgroundJobs::latest(AiPromptsPage::NEWSLETTER_TARGET);
+            $eventcrew_news_pending = BackgroundJobs::isActive($eventcrew_news_job)
+                ? (string) ($eventcrew_news_job['args']['text'] ?? '')
+                : '';
+            echo BackgroundJobs::badge($eventcrew_news_job); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
+            ?>
             <?php if (! $newsletter['enabled']) : ?>
                 <p class="description"><?php esc_html_e('The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
             <?php elseif (null !== $newsletter['plan']) : ?>
@@ -135,7 +149,7 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                 <p>
                     <label for="eventcrew-newsletter-text"><?php esc_html_e('Text for the next announcement', 'eventcrew'); ?></label>
                     <textarea class="large-text" rows="4" name="newsletter_text" id="eventcrew-newsletter-text"
-                        maxlength="<?php echo (int) NewsletterText::MAX_LENGTH; ?>"></textarea>
+                        maxlength="<?php echo (int) NewsletterText::MAX_LENGTH; ?>"><?php echo esc_textarea($eventcrew_news_pending); ?></textarea>
                     <span class="description"><?php esc_html_e('Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                 </p>
                 <p>
@@ -196,6 +210,25 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                 </form>
             <?php endif; ?>
 
+            <?php
+            // Texts the AI is writing that the event has none of yet.
+            $eventcrew_item_keys = array_column($eventcrew_event['items'], 'key');
+            foreach (BackgroundJobs::withPrefix(EventAiText::jobPrefix($eventcrew_event_id)) as $eventcrew_new_job) {
+                $eventcrew_new_key = substr((string) $eventcrew_new_job['target'], strlen(EventAiText::jobPrefix($eventcrew_event_id)));
+                $eventcrew_new_badge = in_array($eventcrew_new_key, $eventcrew_item_keys, true)
+                    ? ''
+                    : BackgroundJobs::badge($eventcrew_new_job);
+
+                if ('' !== $eventcrew_new_badge) {
+                    printf(
+                        '<p>%s: %s</p>',
+                        esc_html('' === (string) $eventcrew_new_job['label'] ? $eventcrew_new_key : (string) $eventcrew_new_job['label']),
+                        $eventcrew_new_badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
+                    );
+                }
+            }
+            ?>
+
             <?php if ([] === $eventcrew_event['items']) : ?>
                 <p class="description"><?php esc_html_e('No texts are written yet for this event.', 'eventcrew'); ?></p>
             <?php endif; ?>
@@ -221,6 +254,7 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                     <input type="hidden" name="key" value="<?php echo esc_attr($eventcrew_item['key']); ?>">
                     <?php wp_nonce_field(AiPromptsPage::NONCE_ACTION); ?>
                     <h4><?php echo esc_html($eventcrew_item['label']); ?></h4>
+                    <?php echo BackgroundJobs::badge(BackgroundJobs::latest(EventAiText::jobTarget($eventcrew_event_id, (string) $eventcrew_item['key']))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped,Generic.Files.LineLength.TooLong -- escaped in badge(). ?>
                     <?php if ($eventcrew_item['failed']) : ?>
                         <p class="description"><?php esc_html_e('The AI could not write this text. The normal message text is used, unless you write one here.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                     <?php endif; ?>

@@ -28,7 +28,9 @@ if (! defined('ABSPATH')) {
 }
 
 use EventCrew\Admin\TranslationsPage;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\SiteLanguages;
+use EventCrew\Support\TranslatedText;
 
 $eventcrew_tr_list_fields = static function () use ($search, $show): void {
     printf('<input type="hidden" name="s" value="%s">', esc_attr($search));
@@ -239,18 +241,26 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
                         );
                     };
                     $eventcrew_tr_lang = $eventcrew_tr_row->value['lang'];
+                    // While its translation runs in the background, the row
+                    // shows what was last saved.
+                    $eventcrew_tr_value = TranslatedText::withPending($eventcrew_tr_row->value, $eventcrew_tr_row->id);
+                    $eventcrew_tr_job = BackgroundJobs::latest(TranslatedText::jobTarget($eventcrew_tr_row->id));
                     ?>
                     <tr id="<?php echo esc_attr('ec-tr-' . $eventcrew_tr_row->id); ?>">
                         <td>
                             <strong><?php echo esc_html($eventcrew_tr_row->label); ?></strong><br>
                             <span class="description"><?php echo esc_html($eventcrew_tr_row->groupLabel()); ?></span>
+                            <?php $eventcrew_tr_badge = BackgroundJobs::badge($eventcrew_tr_job); ?>
+                            <?php if ('' !== $eventcrew_tr_badge) : ?>
+                                <br><?php echo $eventcrew_tr_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge(). ?>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php if ($eventcrew_tr_row->fixedSource) : ?>
                                 <p><?php echo nl2br(esc_html($eventcrew_tr_row->value['source'])); ?></p>
                                 <input type="hidden" form="<?php echo esc_attr($eventcrew_tr_form); ?>" name="row[source]" value="<?php echo esc_attr($eventcrew_tr_row->value['source']); ?>">
                             <?php else : ?>
-                                <?php $eventcrew_tr_input('row[source]', $eventcrew_tr_form . '-source', $eventcrew_tr_row->value['source']); ?>
+                                <?php $eventcrew_tr_input('row[source]', $eventcrew_tr_form . '-source', $eventcrew_tr_value['source']); ?>
                             <?php endif; ?>
                             <p class="description">
                                 <?php
@@ -266,7 +276,7 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
                         </td>
                         <?php foreach ($languages as $eventcrew_tr_code) : ?>
                             <?php
-                            $eventcrew_tr_text = $eventcrew_tr_row->value['texts'][$eventcrew_tr_code] ?? '';
+                            $eventcrew_tr_text = $eventcrew_tr_value['texts'][$eventcrew_tr_code] ?? '';
                             $eventcrew_tr_manual = $eventcrew_tr_row->value['manual'][$eventcrew_tr_code] ?? false;
                             ?>
                             <td>

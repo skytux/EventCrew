@@ -25,6 +25,9 @@ abstract class TestCase extends PHPUnitTestCase
         $GLOBALS['wpdb'] = $this->wpdb;
 
         $this->stubCommonFunctions();
+
+        // The count of jobs a request queued lives for one request.
+        \EventCrew\Support\BackgroundJobs::resetAdded();
     }
 
     protected function tearDown(): void

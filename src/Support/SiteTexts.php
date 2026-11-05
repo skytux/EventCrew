@@ -95,7 +95,7 @@ final class SiteTexts
         $error = '';
 
         foreach (self::FIELDS as $field => [$option, $max, $multiline]) {
-            $result = $translator->save(self::value($field), $posted[$field] ?? null, $max, $multiline);
+            $result = $translator->save(self::value($field), $posted[$field] ?? null, $max, $multiline, 'text.' . $field);
 
             if (null === $result) {
                 continue;

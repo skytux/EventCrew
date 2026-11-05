@@ -37,9 +37,13 @@ final class TicketReasons
 
     private readonly TranslatedText $translator;
 
-    public function __construct(LlmClient $llm, Logger $logger)
+    /**
+     * @param bool $background Queue the translations of saveSettings() in
+     *        the background (TranslatedText::inBackground()).
+     */
+    public function __construct(LlmClient $llm, Logger $logger, bool $background = false)
     {
-        $this->translator = new TranslatedText($llm, $logger);
+        $this->translator = new TranslatedText($llm, $logger, $background);
     }
 
     public static function option(string $kind): string
@@ -156,7 +160,13 @@ final class TicketReasons
         $error = '';
 
         foreach (self::KINDS as $kind) {
-            $result = $this->translator->save(self::settings($kind), $posted[$kind] ?? null, self::MAX_LENGTH, false);
+            $result = $this->translator->save(
+                self::settings($kind),
+                $posted[$kind] ?? null,
+                self::MAX_LENGTH,
+                false,
+                'email.ticket_reason.' . $kind
+            );
 
             if (null === $result) {
                 continue;

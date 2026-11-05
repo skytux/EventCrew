@@ -60,9 +60,13 @@ final class TicketText
 
     private readonly TranslatedText $translator;
 
-    public function __construct(LlmClient $llm, Logger $logger)
+    /**
+     * @param bool $background Queue the translations of saveSettings() in
+     *        the background (TranslatedText::inBackground()).
+     */
+    public function __construct(LlmClient $llm, Logger $logger, bool $background = false)
     {
-        $this->translator = new TranslatedText($llm, $logger);
+        $this->translator = new TranslatedText($llm, $logger, $background);
     }
 
     /**
@@ -150,7 +154,7 @@ final class TicketText
      */
     public function saveSettings(mixed $posted): string
     {
-        $result = $this->translator->save(self::settings(), $posted, self::MAX_LENGTH, true);
+        $result = $this->translator->save(self::settings(), $posted, self::MAX_LENGTH, true, 'email.ticket');
 
         if (null === $result) {
             return '';

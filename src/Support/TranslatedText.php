@@ -68,10 +68,52 @@ final class TranslatedText
     /** Answer tokens allowed per language asked for. */
     private const TOKENS_PER_LANGUAGE = 1500;
 
+    /** The BackgroundJobs kind of a queued translation (run by TranslationRegistry::runJob()). */
+    public const JOB = 'translate_row';
+
+    /**
+     * @param bool $background When true, update() with a row id does not wait
+     *        for the language model: it queues the translation as a
+     *        background job (BackgroundJobs) and leaves the stored value as
+     *        it is until the job is done. See inBackground().
+     */
     public function __construct(
         private readonly LlmClient $llm,
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly bool $background = false
     ) {
+    }
+
+    /**
+     * The same translator, but one whose update() queues the translation
+     * instead of waiting for it (the wp-admin save handlers use it, so the
+     * page answers at once).
+     */
+    public function inBackground(): self
+    {
+        return new self($this->llm, $this->logger, true);
+    }
+
+    /** Whether update() queues translations (inBackground()). */
+    public function isBackground(): bool
+    {
+        return $this->background;
+    }
+
+    /**
+     * Whether a translation would be sent to the language model now: the
+     * switch is on and a model is set up. When it is not, nothing is queued,
+     * since the answer comes at once without the model.
+     */
+    public static function modelReady(): bool
+    {
+        return self::autoEnabled() && AssistantSettings::isConfigured();
+    }
+
+    /** The BackgroundJobs target of the translation of row $row. */
+    public static function jobTarget(string $row): string
+    {
+        return 'row:' . $row;
     }
 
     /**
@@ -261,6 +303,22 @@ final class TranslatedText
      *     error: string
      * } error is '' when nothing had to be translated or the translation
      *     worked, else ERROR_OFF, ERROR_BAD_ANSWER, or an LlmClient error kind.
+     *     queued is there, true, when the translation was queued (see below).
+     *
+     * $refill: languages to translate even when nothing else asks for it
+     * (not the source's language, nor a text edited by hand). "Try again" of
+     * a failed background job uses it: the failed run already stored the
+     * source in the empty language texts.
+     *
+     * In the background (inBackground()) with a $row id, when there is
+     * something to translate and the model is ready, the translation is
+     * queued as a BackgroundJobs job (target jobTarget($row)) and value is
+     * $previous as it was: the old text stays in use until the job is done,
+     * and the job then stores what this call would have stored. A value
+     * that had no source yet gets the new source at once (its language
+     * texts follow it, as text() falls back to the source).
+     *
+     * @param list<string> $refill
      */
     public function update(
         array|string $previous,
@@ -269,15 +327,69 @@ final class TranslatedText
         bool $again = false,
         int $maxLength = 0,
         bool $multiline = true,
-        ?string $sourceLang = null
+        ?string $sourceLang = null,
+        array $refill = [],
+        ?string $row = null
     ): array {
-        $plan = self::plan($previous, $source, $texts, $again, $maxLength, $multiline, $sourceLang);
+        $plan = self::plan($previous, $source, $texts, $again, $maxLength, $multiline, $sourceLang, $refill);
 
         if ([] === $plan['fill']) {
             return ['value' => $plan['value'], 'error' => ''];
         }
 
+        if ($this->background && null !== $row && '' !== $row && self::modelReady()) {
+            BackgroundJobs::enqueue(self::JOB, self::jobTarget($row), [
+                'row' => $row,
+                'source' => $source,
+                'texts' => $texts,
+                'again' => $again,
+                'lang' => $sourceLang,
+                'refill' => $refill,
+            ]);
+            $before = self::normalize($previous);
+
+            return [
+                'value' => '' === $before['source'] ? $plan['value'] : $before,
+                'error' => '',
+                'queued' => true,
+            ];
+        }
+
         return self::apply($plan, $this->translate($plan['value']['source'], $maxLength, $multiline, $plan['lang']));
+    }
+
+    /**
+     * $value with the input of the translation of row $row still waiting in
+     * the background, if there is one: what the organizer last saved, for
+     * the settings field. The stored value itself is not changed.
+     *
+     * @param array<string, mixed>|string $value
+     * @return array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>}
+     */
+    public static function withPending(array|string $value, string $row): array
+    {
+        $value = self::normalize($value);
+        $job = BackgroundJobs::latest(self::jobTarget($row));
+
+        if (! BackgroundJobs::isActive($job)) {
+            return $value;
+        }
+
+        $args = $job['args'];
+        $value['source'] = is_string($args['source'] ?? null) ? $args['source'] : $value['source'];
+
+        foreach (is_array($args['texts'] ?? null) ? $args['texts'] : [] as $lang => $text) {
+            if (is_string($lang) && isset($value['texts'][$lang]) && is_string($text)) {
+                $value['texts'][$lang] = $text;
+            }
+        }
+
+        if (is_string($args['lang'] ?? null)) {
+            $value['lang'] = $args['lang'];
+            $value['detected'] = false;
+        }
+
+        return $value;
     }
 
     /**
@@ -366,7 +478,8 @@ final class TranslatedText
         bool $again,
         int $maxLength,
         bool $multiline,
-        ?string $sourceLang
+        ?string $sourceLang,
+        array $refill = []
     ): array {
         $before = self::normalize($previous);
         // Texts of languages that are not site languages (any more) stay.
@@ -429,7 +542,13 @@ final class TranslatedText
             if (
                 $code !== $lang
                 && ! $value['manual'][$code]
-                && ($again || $sourceChanged || $langChanged || '' === $value['texts'][$code])
+                && (
+                    $again
+                    || $sourceChanged
+                    || $langChanged
+                    || '' === $value['texts'][$code]
+                    || in_array($code, $refill, true)
+                )
             ) {
                 $fill[] = $code;
             }
@@ -445,6 +564,28 @@ final class TranslatedText
         }
 
         return ['value' => $value, 'lang' => $lang, 'detected' => $detected, 'fill' => $fill];
+    }
+
+    /**
+     * The languages update() would translate for this input ([] when it
+     * would ask the model nothing).
+     *
+     * @param array<string, mixed>|string $previous
+     * @param array<string, string> $texts
+     * @param list<string> $refill
+     * @return list<string>
+     */
+    public static function fillFor(
+        array|string $previous,
+        string $source,
+        array $texts,
+        bool $again,
+        int $maxLength,
+        bool $multiline,
+        ?string $sourceLang,
+        array $refill = []
+    ): array {
+        return self::plan($previous, $source, $texts, $again, $maxLength, $multiline, $sourceLang, $refill)['fill'];
     }
 
     /**
@@ -823,11 +964,19 @@ final class TranslatedText
      * Saves one posted field drawn by field(): reads it (fromPost()) and
      * applies it to $previous (update()).
      *
+     * $row is the TranslationRegistry row id of the text, so that in the
+     * background the translation is queued (see update()).
+     *
      * @param array<string, mixed>|string $previous
      * @return array{value: array<string, mixed>, error: string}|null null when the field was not posted.
      */
-    public function save(array|string $previous, mixed $raw, int $maxLength = 0, bool $multiline = true): ?array
-    {
+    public function save(
+        array|string $previous,
+        mixed $raw,
+        int $maxLength = 0,
+        bool $multiline = true,
+        ?string $row = null
+    ): ?array {
         $input = self::fromPost($raw, $multiline);
 
         if (null === $input) {
@@ -841,7 +990,9 @@ final class TranslatedText
             $input['again'],
             $maxLength,
             $multiline,
-            $input['lang']
+            $input['lang'],
+            [],
+            $row
         );
     }
 
@@ -883,6 +1034,10 @@ final class TranslatedText
      * {$name}[again]. $maxLength 0 means no limit. $placeholder, when not
      * '', is shown in the empty source field.
      *
+     * $row, the TranslationRegistry row id of the text, shows the state of
+     * its background translation: while it waits, the field holds what was
+     * last saved, with "Translating…"; a failed one says so, with "Try again".
+     *
      * @param array<string, mixed>|string $value
      */
     public static function field(
@@ -891,9 +1046,12 @@ final class TranslatedText
         array|string $value,
         int $maxLength,
         bool $multiline,
-        string $placeholder = ''
+        string $placeholder = '',
+        string $row = ''
     ): void {
-        $value = self::normalize($value);
+        $job = '' === $row ? null : BackgroundJobs::latest(self::jobTarget($row));
+        $value = '' === $row ? self::normalize($value) : self::withPending($value, $row);
+        $again = BackgroundJobs::isActive($job) && true === ($job['args']['again'] ?? false) ? '1' : '';
         $limit = $maxLength > 0 ? sprintf(' maxlength="%d"', $maxLength) : '';
         $input = static function (
             string $fieldName,
@@ -933,9 +1091,10 @@ final class TranslatedText
 
         echo '<div class="ec-translated" style="max-width:48em">';
         printf(
-            '<p><label for="%s"><strong>%s</strong></label></p>',
+            '<p><label for="%s"><strong>%s</strong></label> %s</p>',
             esc_attr($id),
-            esc_html__('Write in any language', 'eventcrew')
+            esc_html__('Write in any language', 'eventcrew'),
+            BackgroundJobs::badge($job) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
         );
         $input($name . '[source]', $id, $value['source'], $placeholder);
         printf('<p class="description"><span class="ec-char-count" data-ec-for="%s"></span></p>', esc_attr($id));
@@ -991,7 +1150,7 @@ final class TranslatedText
             echo '</div>';
         }
 
-        printf('<input type="hidden" name="%s" value="">', esc_attr($name . '[again]'));
+        printf('<input type="hidden" name="%s" value="%s">', esc_attr($name . '[again]'), esc_attr($again));
         printf(
             '<p><button type="button" class="button ec-translate-again" data-ec-again="%s">%s</button></p>',
             esc_attr($name . '[again]'),
