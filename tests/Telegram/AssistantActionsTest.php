@@ -171,7 +171,7 @@ final class AssistantActionsTest extends TestCase
             AssistantActions::catalogue(self::organizer()),
             static fn (array $entry): bool => '/roster [date]' === $entry['usage']
         ));
-        self::assertStringContainsString('an organizer marks done, late or no-show', $roster[0]['what']);
+        self::assertStringContainsString('an organizer marks arrived (only people still signed up), done, late or no-show', $roster[0]['what']);
         self::assertStringContainsString('marks only arrived, for people still signed up', $roster[0]['what']);
 
         $confirm = array_column(

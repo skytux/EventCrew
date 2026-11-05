@@ -2867,8 +2867,8 @@ msgid "/me – your tasks, credits and standing"
 msgstr "/me – tehtäväsi, vapaalippusi ja luotettavuutesi"
 
 #: src/Telegram/HelpService.php:121
-msgid "/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers ✓ done, ⏰ late, ✗ no-show"
-msgstr "/roster [päivä] – kuka on töissä sinä iltana; myyntipiste merkitsee 👋 saapui, järjestäjät ✓ tehty, ⏰ myöhässä, ✗ ei saapunut"
+msgid "/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers 👋 arrived, ✓ done, ⏰ late, ✗ no-show"
+msgstr "/roster [päivä] – kuka on töissä sinä iltana; myyntipiste merkitsee 👋 saapui, järjestäjät 👋 saapui, ✓ tehty, ⏰ myöhässä, ✗ ei saapunut"
 
 #: src/Telegram/TicketRedemptionService.php:160
 msgid "Credit spent — send /me tickets to see your ticket."
@@ -2975,8 +2975,8 @@ msgid "Your recent attendance means sign-ups are paused for now — please messa
 msgstr "Viimeaikaisen läsnäolosi vuoksi ilmoittautumisesi on toistaiseksi keskeytetty — lähetä viesti jollekin järjestäjälle."
 
 #: src/Telegram/RosterService.php:350
-msgid "✓ done · ⏰ late · ✗ no-show"
-msgstr "✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
+msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
+msgstr "👋 saapui · ✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
 
 #: src/Telegram/NotificationSettingsService.php:101
 msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."

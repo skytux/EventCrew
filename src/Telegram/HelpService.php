@@ -210,7 +210,7 @@ final class HelpService
         return implode("\n", [
             __('Welcome crew  (date: 1.8. or 2026-08-01; default: next night)', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers ✓ done, ⏰ late, ✗ no-show', 'eventcrew'),
+            __('/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers 👋 arrived, ✓ done, ⏰ late, ✗ no-show', 'eventcrew'),
             __('/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk', 'eventcrew'),
         ]);
     }
