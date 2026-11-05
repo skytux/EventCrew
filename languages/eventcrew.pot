@@ -3109,11 +3109,11 @@ msgstr ""
 msgid "Mark attendance"
 msgstr ""
 
-#: src/Telegram/RosterService.php:229
+#: src/Telegram/RosterService.php:249
 msgid "Marked arrived late."
 msgstr ""
 
-#: src/Telegram/RosterService.php:227
+#: src/Telegram/RosterService.php:247
 msgid "Marked arrived."
 msgstr ""
 
@@ -3125,11 +3125,11 @@ msgstr ""
 msgid "Marked as a no-show (email)"
 msgstr ""
 
-#: src/Telegram/RosterService.php:228
+#: src/Telegram/RosterService.php:248
 msgid "Marked completed."
 msgstr ""
 
-#: src/Telegram/RosterService.php:230
+#: src/Telegram/RosterService.php:250
 msgid "Marked no-show."
 msgstr ""
 
@@ -3321,6 +3321,10 @@ msgstr ""
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr ""
 
+#: src/Telegram/RosterService.php:646
+msgid "Next »"
+msgstr ""
+
 #: src/Support/PrivacyExporter.php:142 src/Telegram/RoleTaskBot.php:336 templates/admin/people.php:146 templates/public/door.php:72
 #: templates/public/signup-board.php:231 templates/public/signup.php:843 templates/public/signup.php:1068
 msgid "No"
@@ -3473,7 +3477,7 @@ msgstr ""
 msgid "No task tonight has a free place."
 msgstr ""
 
-#: src/Telegram/DoorListService.php:66 src/Telegram/RosterService.php:92
+#: src/Telegram/DoorListService.php:66 src/Telegram/RosterService.php:108
 msgid "No tasks are scheduled yet."
 msgstr ""
 
@@ -3757,7 +3761,7 @@ msgstr ""
 msgid "Only on events"
 msgstr ""
 
-#: src/Telegram/RosterService.php:244
+#: src/Telegram/RosterService.php:264
 msgid "Only organizers and that night’s welcome crew can mark attendance."
 msgstr ""
 
@@ -3817,7 +3821,7 @@ msgstr ""
 msgid "Only organizers can use /say."
 msgstr ""
 
-#: src/Telegram/RosterService.php:239
+#: src/Telegram/RosterService.php:259
 msgid "Only organizers or people rostered on the day can see the roster."
 msgstr ""
 
@@ -5943,7 +5947,7 @@ msgstr ""
 msgid "That sign-in link is invalid or has expired."
 msgstr ""
 
-#: src/Telegram/RosterService.php:182
+#: src/Telegram/RosterService.php:202
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
@@ -6818,7 +6822,7 @@ msgstr ""
 msgid "The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included."
 msgstr ""
 
-#: src/Telegram/RosterService.php:215
+#: src/Telegram/RosterService.php:235
 msgid "The welcome crew can only mark people as arrived."
 msgstr ""
 
@@ -8569,6 +8573,10 @@ msgstr ""
 msgid "organizer email"
 msgstr ""
 
+#: src/Telegram/RosterService.php:450
+msgid "page %1$d of %2$d"
+msgstr ""
+
 #: src/Admin/BotLogPage.php:157
 msgid "person #%d"
 msgstr ""
@@ -8589,7 +8597,7 @@ msgstr ""
 msgid "signed out by %1$s at %2$s"
 msgstr ""
 
-#: src/Telegram/RosterService.php:536 templates/public/signup.php:998
+#: src/Telegram/RosterService.php:715 templates/public/signup.php:998
 msgid "signed up %s"
 msgstr ""
 
@@ -8649,6 +8657,10 @@ msgstr ""
 msgid "years after someone’s last activity"
 msgstr ""
 
+#: src/Telegram/RosterService.php:639
+msgid "« Previous"
+msgstr ""
+
 #: src/Support/Mailer.php:511
 #. translators: %s: the manage-account link
 msgid "—\nManage your account or stop these emails: %s"
@@ -8662,7 +8674,7 @@ msgstr ""
 msgid "— None —"
 msgstr ""
 
-#: src/Telegram/PermissionService.php:117 src/Telegram/RosterService.php:429
+#: src/Telegram/PermissionService.php:117 src/Telegram/RosterService.php:515
 msgid "— nobody yet"
 msgstr ""
 
@@ -8680,7 +8692,7 @@ msgstr ""
 msgid "‹ Back"
 msgstr ""
 
-#: src/Telegram/RosterService.php:497
+#: src/Telegram/RosterService.php:676
 msgid "⏰ %s"
 msgstr ""
 
@@ -8730,7 +8742,7 @@ msgstr ""
 msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
 msgstr ""
 
-#: src/Telegram/RosterService.php:492
+#: src/Telegram/RosterService.php:671
 msgid "✓ %s"
 msgstr ""
 
@@ -8738,7 +8750,7 @@ msgstr ""
 msgid "✓ Signed up"
 msgstr ""
 
-#: src/Telegram/RosterService.php:502
+#: src/Telegram/RosterService.php:681
 msgid "✗ %s"
 msgstr ""
 
@@ -8778,7 +8790,7 @@ msgstr ""
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
 msgstr ""
 
-#: src/Telegram/RosterService.php:518
+#: src/Telegram/RosterService.php:697
 msgid "👋 %s"
 msgstr ""
 
@@ -8786,11 +8798,11 @@ msgstr ""
 msgid "👋 New here? Sign up →"
 msgstr ""
 
-#: src/Telegram/RosterService.php:469
+#: src/Telegram/RosterService.php:474
 msgid "👋 arrived"
 msgstr ""
 
-#: src/Telegram/RosterService.php:468
+#: src/Telegram/RosterService.php:473
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
