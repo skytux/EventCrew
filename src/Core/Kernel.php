@@ -1540,6 +1540,7 @@ final class Kernel
                 $registry->add([BotTexts::class, 'translationRows']);
                 $registry->add([SiteTexts::class, 'translationRows']);
                 $registry->add([Roles::class, 'translationRows']);
+                $registry->add([MessageTemplates::class, 'translationRows']);
 
                 return $registry;
             }
