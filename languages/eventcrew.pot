@@ -1816,7 +1816,7 @@ msgstr ""
 msgid "EventCrew profile"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:182
+#: src/Support/EventTaskMover.php:52 src/Support/PrivacyExporter.php:182
 msgid "EventCrew tasks"
 msgstr ""
 
@@ -2819,6 +2819,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1170
 msgid "Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful."
+msgstr ""
+
+#: src/Support/EventTaskMover.php:67
+msgid "Move the tasks too"
 msgstr ""
 
 #: templates/public/signup.php:383
@@ -6346,6 +6350,10 @@ msgstr ""
 
 #: templates/admin/settings.php:498
 msgid "When someone asks to take over another person’s task, the holder decides. If the holder does not answer by the deadline, they keep the task. These numbers set the deadline."
+msgstr ""
+
+#: src/Support/EventTaskMover.php:70
+msgid "When the start time changes, every task of this event moves by the same amount."
 msgstr ""
 
 #: templates/admin/settings.php:1906

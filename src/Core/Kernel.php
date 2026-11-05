@@ -47,6 +47,7 @@ use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventMeshSyncListener;
+use EventCrew\Support\EventTaskMover;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
@@ -174,6 +175,9 @@ final class Kernel
         // the case this exists to handle: a new event's tasks appearing
         // with nobody watching.
         $this->container->get(EventMeshSyncListener::class)->boot();
+
+        // "Move the tasks too" on an EventMesh event's edit screen.
+        $this->container->get(EventTaskMover::class)->boot();
 
         // The email template's post type. Registered unconditionally, and not
         // only in wp-admin, because the notification cron renders the template
@@ -1411,6 +1415,13 @@ final class Kernel
             EventMeshSyncListener::class,
             fn (Container $container) => new EventMeshSyncListener(
                 $container->get(TaskTemplateApplier::class)
+            )
+        );
+
+        $this->container->singleton(
+            EventTaskMover::class,
+            fn (Container $container) => new EventTaskMover(
+                $container->get(TaskRepository::class)
             )
         );
 
