@@ -517,6 +517,25 @@ final class MessageTemplates
         );
 
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $cancelHelp = self::botOrWeb(
+            __('How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+            static fn (): string => __("Can't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
+            static fn (string $url): string => sprintf(
+                /* translators: %s: link to the crew page */
+                __("Can't make it? Cancel the task under My tasks in the Me tab of the crew page (%s).", 'eventcrew'),
+                $url
+            )
+        );
+        $lateHelp = self::botOrWeb(
+            __('What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page.', 'eventcrew'),
+            static fn (): string => __('More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.', 'eventcrew'),
+            static fn (string $url): string => sprintf(
+                /* translators: %s: link to the crew page */
+                __('More notice next time keeps it clear. Your tasks are under My tasks in the Me tab of the crew page (%s).', 'eventcrew'),
+                $url
+            )
+        );
+
         return [
             new MessageTemplate(
                 'reminder',
@@ -529,11 +548,11 @@ final class MessageTemplates
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
                 static fn (): string => self::tag(
-                    /* translators: 1: name, 2: role, 3: event, 4: date/time */
-                    __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
-                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}']
+                    /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel */
+                    __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{cancel_help}']
                 ),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when]
+                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when, 'cancel_help' => $cancelHelp]
             ),
             new MessageTemplate(
                 'reminder_dm',
@@ -619,10 +638,11 @@ final class MessageTemplates
                 __('Sent a day after a late cancellation is recorded.', 'eventcrew'),
                 static fn (): string => __('Your late cancellation was recorded', 'eventcrew'),
                 static fn (): string => "Hi {name},\n\n" . self::tag(
-                    __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
-                    ['%2$s' => '{task}']
+                    /* translators: 2: role at event, date, 3: what keeps it clear next time */
+                    __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. %3\$s", 'eventcrew'),
+                    ['%2$s' => '{task}', '%3$s' => '{late_help}']
                 ),
-                ['name' => $name, 'task' => $standingTask]
+                ['name' => $name, 'task' => $standingTask, 'late_help' => $lateHelp]
             ),
             new MessageTemplate(
                 'late_cancel_dm',
@@ -705,11 +725,11 @@ final class MessageTemplates
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
                 static fn (): string => self::tag(
-                    /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
-                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
-                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}']
+                    /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel */
+                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\n%6\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}', '%6$s' => '{cancel_help}']
                 ) . '{free_cancel}{about}',
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
+                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when, 'cancel_help' => $cancelHelp] + $claimPlaceholders
             ),
             new MessageTemplate(
                 'signup_confirmed_dm',
@@ -1375,6 +1395,24 @@ final class MessageTemplates
         );
         $welcome = [
             'crew' => $crew,
+            'me_help' => self::botOrWeb(
+                __('Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                static fn (): string => WelcomeSender::meBotLine(),
+                static fn (string $url): string => sprintf(
+                    /* translators: %s: link to the crew page */
+                    __('You can see your own numbers any time in the Me tab of the crew page (%s).', 'eventcrew'),
+                    $url
+                )
+            ),
+            'tickets_help' => self::botOrWeb(
+                __('Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                static fn (): string => WelcomeSender::ticketsBotLine(),
+                static fn (string $url): string => sprintf(
+                    /* translators: %s: link to the crew page */
+                    __('It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets.', 'eventcrew'),
+                    $url
+                )
+            ),
             'roles' => self::placeholder(
                 __('The tasks on offer, one line each, with what each one involves.', 'eventcrew'),
                 $setting('roles')
@@ -1412,14 +1450,23 @@ final class MessageTemplates
         $day = self::placeholder(__('The day of the event, like Sat 1 Aug.', 'eventcrew'), $given('day'));
 
         $salesDesk = static fn (): string => self::tag(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
-            ['%s' => '{day}']
+            /* translators: 1: event day, e.g. "Sat 1 Aug", 2: how to get another link */
+            __('Door list for %1$s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? %2$s', 'eventcrew'),
+            ['%1$s' => '{day}', '%2$s' => '{door_help}']
         );
         $organizing = static fn (): string => self::tag(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
-            ['%s' => '{day}']
+            /* translators: 1: event day, e.g. "Sat 1 Aug", 2: how to get another link */
+            __('You are organizing on %1$s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? %2$s', 'eventcrew'),
+            ['%1$s' => '{day}', '%2$s' => '{door_help}']
+        );
+        $doorHelp = self::botOrWeb(
+            __('How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+            static fn (): string => __('Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
+            static fn (string $url): string => sprintf(
+                /* translators: %s: link to the crew page */
+                __('Tap Sales desk in the Me tab of the crew page (%s).', 'eventcrew'),
+                $url
+            )
         );
 
         return [
@@ -1503,7 +1550,7 @@ final class MessageTemplates
                     ['%s' => '{day}']
                 ),
                 $salesDesk,
-                ['day' => $day]
+                ['day' => $day, 'door_help' => $doorHelp]
             ),
             new MessageTemplate(
                 'sales_desk_link_dm',
@@ -1512,7 +1559,7 @@ final class MessageTemplates
                 __('Sent on an event night to the people on a sales desk task, once they are marked arrived, and to anyone who asks with /door. The button under the text opens the sales desk.', 'eventcrew'),
                 null,
                 $salesDesk,
-                ['day' => $day]
+                ['day' => $day, 'door_help' => $doorHelp]
             ),
             new MessageTemplate(
                 'organizer_notice',
@@ -1525,7 +1572,7 @@ final class MessageTemplates
                     ['%s' => '{day}']
                 ),
                 $organizing,
-                ['day' => $day]
+                ['day' => $day, 'door_help' => $doorHelp]
             ),
             new MessageTemplate(
                 'organizer_notice_dm',
@@ -1534,7 +1581,7 @@ final class MessageTemplates
                 __('Sent on an event night to the organizers signed up on the Organize task, before the first task starts. The buttons under the text open the sales desk and the Admin tab.', 'eventcrew'),
                 null,
                 $organizing,
-                ['day' => $day]
+                ['day' => $day, 'door_help' => $doorHelp]
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
@@ -1713,6 +1760,25 @@ final class MessageTemplates
     private static function placeholder(string $description, Closure $resolve, bool $required = false): array
     {
         return ['description' => $description, 'resolve' => $resolve, 'required' => $required];
+    }
+
+    /**
+     * A placeholder with two texts: $bot for a person with a Telegram chat, $web,
+     * given the crew page link, for a person with none (CrewPageHelp). A site
+     * with no crew page gives everyone the bot text.
+     *
+     * @param Closure(array<string, mixed>): string $bot
+     * @param Closure(string, array<string, mixed>): string $web
+     * @return array{description: string, resolve: Closure(array<string, mixed>): string, required: bool}
+     */
+    private static function botOrWeb(string $description, Closure $bot, Closure $web): array
+    {
+        return self::placeholder(
+            $description,
+            static fn (array $c): string => CrewPageHelp::webOnly($c['person'] ?? null)
+                ? $web(CrewPageHelp::pageUrl(), $c)
+                : $bot($c)
+        );
     }
 
     /** "Fri 14 Nov 18:00–20:00": the task's day label and time, as the crew messages write it. */

@@ -133,9 +133,11 @@ final class ReminderCall
             MessageTemplates::subject('reminder', $context),
             MessageAiText::body('reminder', $context, $task->eventPostId) . $aboutBlock,
             // The ticket again, a day out: the reminder is the message people
-            // still have open when they arrive at the door.
+            // still have open when they arrive at the door. A person with no
+            // Telegram chat cancels on the crew page (CrewPageHelp).
             array_values(array_filter([
                 ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)],
+                CrewPageHelp::manageAction($this->mailer, $person),
                 RoleGuide::emailAction(),
             ]))
         );

@@ -405,14 +405,38 @@ final class WelcomeSender
     {
         return implode("\n\n", [
             MessageTemplates::tag(
-                /* translators: %s: the crew's name (the site name) */
-                __('Welcome to the %s crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                ['%s' => '{crew}']
+                /* translators: 1: the crew's name (the site name), 2: where to see your own numbers */
+                __('Welcome to the %1$s crew. This message explains how it works. %2$s', 'eventcrew'),
+                ['%1$s' => '{crew}', '%2$s' => '{me_help}']
             ),
             ...self::sectionsTemplate(),
             '## 📋 ' . __('Open tasks', 'eventcrew'),
             '{open_tasks}',
         ]) . '{help_line}';
+    }
+
+    /**
+     * The {me_help} of the welcome message for a person with a Telegram chat:
+     * where to see their own numbers. A person without one gets the crew page
+     * (MessageTemplates, CrewPageHelp).
+     */
+    public static function meBotLine(): string
+    {
+        return __('You can see your own numbers any time: send /me to the bot in a private chat.', 'eventcrew');
+    }
+
+    /**
+     * The {tickets_help} of the welcome message and the web Help tab for a
+     * person with a Telegram chat: where their tickets are. A person without
+     * one gets the crew page in the welcome email (MessageTemplates,
+     * CrewPageHelp).
+     */
+    public static function ticketsBotLine(): string
+    {
+        return __(
+            'It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.',
+            'eventcrew'
+        );
     }
 
     /**
@@ -459,7 +483,14 @@ final class WelcomeSender
             '## 🧩 ' . __('The tasks', 'eventcrew'),
             '{roles}',
             '## 🎟️ ' . __('Tickets', 'eventcrew'),
-            __('When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            MessageTemplates::tag(
+                /* translators: %s: where all your tickets are listed */
+                __(
+                    'When you sign up for a task, you get a free ticket for that night. Show it at the door. %s',
+                    'eventcrew'
+                ),
+                ['%s' => '{tickets_help}']
+            ),
             '## 🎁 ' . __('Credits', 'eventcrew'),
             MessageTemplates::tag(
                 /* translators: %d: completed tasks needed for one credit */
@@ -490,6 +521,7 @@ final class WelcomeSender
         $threshold = (int) round($settings->threshold() * 100);
 
         return [
+            'tickets_help' => self::ticketsBotLine(),
             'roles' => implode("\n", self::roleLines()),
             'tasks_per_credit' => (string) $settings->tasksPerCredit(),
             'outcomes' => implode("\n", self::weightLines($settings, $noticeHours)),

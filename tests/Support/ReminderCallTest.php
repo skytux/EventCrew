@@ -261,4 +261,48 @@ final class ReminderCallTest extends TelegramTestCase
         self::assertStringContainsString('Just a reminder that', $bodies[1]);
         self::assertStringNotContainsString('AI ', $bodies[1]);
     }
+
+    /**
+     * E2: with a crew page, a person with no Telegram chat is told to cancel
+     * there, with its link and a Manage my tasks button; a person with a chat
+     * keeps the bot text and gets no such button.
+     */
+    public function testAWebOnlyPersonIsRemindedWithTheCrewPageInsteadOfTheBot(): void
+    {
+        $bodies = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body) use (&$bodies): bool {
+            $bodies[] = $body;
+
+            return true;
+        });
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string|false => 7 === $id ? 'https://example.test/crew/' : false
+        );
+        $this->options['eventcrew_signup_page_id'] = 7;
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow(null);
+
+        $this->call()->run(25);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertStringContainsString(
+            "Can't make it? Cancel the task under My tasks in the Me tab of the crew page"
+                . ' (https://example.test/crew/).',
+            $bodies[0]
+        );
+        self::assertStringContainsString("\nManage my tasks: https://example.test/crew/?eventcrew_login=", $bodies[0]);
+        self::assertStringNotContainsString('bot', $bodies[0]);
+
+        $this->wpdb->nextResults[] = [$this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(4)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        self::assertStringContainsString("Can't make it? Open the bot and tap the task to cancel", $bodies[1]);
+        self::assertStringNotContainsString('Manage my tasks', $bodies[1]);
+    }
 }

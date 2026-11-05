@@ -76,10 +76,13 @@ final class ClaimNotifier
             // The calendar hold second, since a task in someone's own calendar,
             // with its own alarm, is the strongest nudge there is against a
             // no-show.
+            // A person with no Telegram chat cancels on the crew page
+            // (CrewPageHelp).
             // The crew guide last, for anyone who wants the full detail.
             array_values(array_filter([
                 ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignment->id)],
                 ['label' => __('Add to calendar', 'eventcrew'), 'url' => CalendarController::url($task->id)],
+                CrewPageHelp::manageAction($this->mailer, $person),
                 RoleGuide::emailAction(),
             ]))
         );
@@ -164,10 +167,15 @@ final class ClaimNotifier
             do_action('eventcrew/slot_freed', $taskId, $person->id);
         }
 
-        $note = AssignmentStatus::LATE_CANCEL === $status
+        // A person with no Telegram chat cannot use 🔁 Take over a task, which
+        // is only in the bot (CrewPageHelp); they get no DM, so the note is
+        // only in their email.
+        $lateNote = CrewPageHelp::webOnly($person)
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __("This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew')
-            : __('Thanks for the notice.', 'eventcrew');
+            ? __('This was a late cancellation, which counts against your standing. More notice keeps it clear next time.', 'eventcrew')
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            : __("This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew');
+        $note = AssignmentStatus::LATE_CANCEL === $status ? $lateNote : __('Thanks for the notice.', 'eventcrew');
 
         // The texts are the Messages page templates (MessageTemplates).
         $context = [

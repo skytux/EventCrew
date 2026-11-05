@@ -580,4 +580,93 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame('Out: Decorate', $this->mails[0]['subject']);
         self::assertStringStartsWith('Sam: This was a late cancellation', $this->mails[0]['body']);
     }
+
+    // ---- Web-only crew (E2) ----------------------------------------------
+
+    /** A crew page (id 7) at https://site.test/crew/; the DMs are captured. */
+    private function captureWithCrewPage(): stdClass
+    {
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string|false => 7 === $id ? 'https://site.test/crew/' : false
+        );
+
+        return $this->captureWithOptions(['eventcrew_signup_page_id' => 7, Roles::GUIDE_URL_OPTION => '']);
+    }
+
+    private function webOnlyPerson(?string $language = null): Person
+    {
+        return Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'language' => $language,
+        ]);
+    }
+
+    /** A person with no Telegram chat gets the crew page link and a Manage my tasks button, not the bot. */
+    public function testAWebOnlyPersonGetsTheCrewPageInsteadOfTheBot(): void
+    {
+        $sends = $this->captureWithCrewPage();
+
+        $this->signUp($this->webOnlyPerson());
+
+        self::assertSame([], $sends->items);
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString(
+            "Can't make it? Cancel the task under My tasks in the Me tab of the crew page (https://site.test/crew/).",
+            $body
+        );
+        self::assertStringContainsString("\nManage my tasks: https://site.test/crew/?eventcrew_login=", $body);
+        self::assertStringNotContainsString('bot', $body);
+        self::assertStringNotContainsString('/me', $body);
+
+        $this->mails = [];
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+        $this->notifier()->confirmCancellation($this->webOnlyPerson(), 5, 'late_cancel');
+
+        self::assertStringContainsString(
+            'This was a late cancellation, which counts against your standing. More notice keeps it clear next time.',
+            $this->mails[0]['body']
+        );
+        self::assertStringNotContainsString('/me', $this->mails[0]['body']);
+    }
+
+    /** The same in Finnish. */
+    public function testAFinnishWebOnlyPersonGetsTheCrewPageInFinnish(): void
+    {
+        $this->captureWithCrewPage();
+
+        $this->signUp($this->webOnlyPerson('fi'));
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString(
+            'Etkö pääsekään? Peru tehtävä kohdassa Tehtäväni crew-sivun Minä-välilehdellä (https://site.test/crew/).',
+            $body
+        );
+        self::assertStringContainsString("\nHallitse tehtäviäni: https://site.test/crew/?eventcrew_login=", $body);
+        self::assertStringNotContainsString('botti', $body);
+    }
+
+    /** A person with a Telegram chat keeps the bot text, and gets no Manage my tasks button. */
+    public function testAPersonWithATelegramChatKeepsTheBotTextWhenThereIsACrewPage(): void
+    {
+        $this->captureWithCrewPage();
+
+        $this->signUp($this->personInLanguage(null));
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString("Can't make it? Open the bot and tap the task to cancel", $body);
+        self::assertStringNotContainsString('Manage my tasks', $body);
+        self::assertStringNotContainsString('crew page', $body);
+
+        $this->mails = [];
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+        $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, 'late_cancel');
+
+        self::assertStringContainsString(
+            'so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.',
+            $this->mails[0]['body']
+        );
+    }
 }

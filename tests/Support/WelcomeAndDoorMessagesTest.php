@@ -29,11 +29,15 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
     /** @var array<int, array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
+    /** memberRow() gives a person with no Telegram chat (E2). */
+    private bool $webOnly = false;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mails = [];
+        $this->webOnly = false;
         $this->options['eventcrew_email_html'] = '0';
         $this->options['eventcrew_signup_page_id'] = 7;
 
@@ -110,6 +114,11 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $row = $this->personRow($id, $organizer);
         $row['email_verified_at'] = '2026-07-01 10:00:00';
         $row['language'] = $language;
+
+        if ($this->webOnly) {
+            $row['telegram_user_id'] = null;
+            $row['telegram_chat_id'] = null;
+        }
 
         return $row;
     }
@@ -393,5 +402,72 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         self::assertMatchesRegularExpression('/^EMAIL Organizing \S+ \d+ \S+\n\n/', $sent[0]);
         self::assertStringContainsString('Organizer email.', $sent[0]);
         self::assertStringContainsString('Organizer DM.', $sent[1]);
+    }
+
+    // ---- A person with no Telegram chat gets the crew page (E2) -----------
+
+    public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPage(): void
+    {
+        $this->webOnly = true;
+        $this->welcomeTest('en');
+
+        $sent = $this->sent();
+        self::assertCount(2, $sent);
+        self::assertStringContainsString(
+            'This message explains how it works. You can see your own numbers any time in the Me tab of the crew'
+                . ' page (https://site.test/crew/).',
+            $sent[0]
+        );
+        self::assertStringContainsString(
+            'It is the first button in your sign-up confirmation, and the Me tab of the crew page'
+                . ' (https://site.test/crew/) lists all your tickets.',
+            $sent[0]
+        );
+        self::assertStringNotContainsString('send /me to the bot in a private chat', $sent[0]);
+        self::assertStringNotContainsString('/me tickets', $sent[0]);
+    }
+
+    public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPageInFinnish(): void
+    {
+        $this->webOnly = true;
+        $this->welcomeTest('fi');
+
+        $sent = $this->sent();
+        self::assertStringContainsString(
+            'Omat lukusi näet milloin vain crew-sivun Minä-välilehdellä (https://site.test/crew/).',
+            $sent[0]
+        );
+        self::assertStringNotContainsString('/me tickets', $sent[0]);
+    }
+
+    public function testAWebOnlyPersonsSalesDeskLinkPointsToTheCrewPage(): void
+    {
+        $this->webOnly = true;
+        $this->queueCrewRun();
+        $this->doorLinkSender()->run();
+
+        $sent = $this->sent();
+        self::assertCount(1, $sent);
+        self::assertStringContainsString(
+            'Need another one? Tap Sales desk in the Me tab of the crew page (https://site.test/crew/).',
+            $sent[0]
+        );
+        self::assertStringNotContainsString('/door', $sent[0]);
+    }
+
+    public function testAWebOnlyOrganizersNoticePointsToTheCrewPageInFinnish(): void
+    {
+        $this->webOnly = true;
+        $this->queueOrganizerRun('fi');
+        $this->doorLinkSender()->run();
+
+        $sent = $this->sent();
+        self::assertCount(1, $sent);
+        self::assertStringContainsString(
+            'Tarvitsetko uuden myyntipisteen linkin? Napauta Myyntipiste crew-sivun Minä-välilehdellä'
+                . ' (https://site.test/crew/).',
+            $sent[0]
+        );
+        self::assertStringNotContainsString('/door', $sent[0]);
     }
 }
