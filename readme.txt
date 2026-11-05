@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.38
+Stable tag: 1.140.39
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.39 =
+Removed the old VPS mail poller (tools/mail-import); the site reads the import mailbox itself (Q275).
 
 = 1.140.38 =
 Tests: the whole crew app page is rendered for an organizer, Admin tab included, so a PHP error there fails the tests (Q279).
@@ -1328,6 +1331,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.39 =
+No settings change.
 
 = 1.140.38 =
 No settings change.
