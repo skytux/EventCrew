@@ -149,6 +149,15 @@ final class TasksPage
         $start = $this->normalizeDateTime($startsAt, $taskDate);
         $end = $this->normalizeDateTime($endsAt, $taskDate);
 
+        // A task must have a start time: without one it would read as 00:00.
+        if (null === $start) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('Set a start time. A task cannot be saved without one.', 'eventcrew'),
+                'error'
+            );
+        }
+
         // A task ending before it starts is almost always a crossing of
         // midnight typed without changing the date, so it is corrected rather
         // than rejected - refusing it would just teach the organizer to type

@@ -1504,12 +1504,12 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     </p>
                     <p>
                         <label for="eventcrew-admin-task-starts"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
-                        <input type="datetime-local" name="starts_at" id="eventcrew-admin-task-starts" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->startsAt : ($eventcrew_task_new_event['starts_at'] ?? null))); ?>">
+                        <input type="datetime-local" name="starts_at" id="eventcrew-admin-task-starts" required value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->startsAt : ($eventcrew_task_new_event['starts_at'] ?? null))); ?>">
                     </p>
                     <p>
                         <label for="eventcrew-admin-task-ends"><?php esc_html_e('Ends', 'eventcrew'); ?></label>
                         <input type="datetime-local" name="ends_at" id="eventcrew-admin-task-ends" value="<?php echo esc_attr($eventcrew_task_local($eventcrew_task_is_edit ? $eventcrew_task_editing->endsAt : null)); ?>">
-                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning.', 'eventcrew'); ?></span>
+                        <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning.', 'eventcrew'); ?></span>
                     </p>
                     <p>
                         <label for="eventcrew-admin-task-notes"><?php esc_html_e('Notes', 'eventcrew'); ?></label>

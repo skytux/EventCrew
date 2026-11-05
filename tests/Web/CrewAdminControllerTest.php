@@ -2257,7 +2257,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
      */
     public static function tasksScreenRequests(): array
     {
-        $task = ['task_date' => self::NIGHT, 'role_slug' => 'decorate', 'capacity' => '2'];
+        $task = ['task_date' => self::NIGHT, 'role_slug' => 'decorate', 'capacity' => '2', 'starts_at' => '20:00'];
 
         return [
             'add task' => [CrewAdminController::TASK_ACTION, $task],
@@ -2385,6 +2385,35 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Pick a role that still exists in Settings.', CrewAdminController::noticeText('admin_task_bad_role'));
     }
 
+    /** Q229: a task without a start time, or with one that cannot be read, is not saved. */
+    public function testATaskWithoutAStartTimeIsNotSaved(): void
+    {
+        foreach (['', '25:00', 'soon'] as $start) {
+            $this->signIn($this->organizerRow(1));
+
+            $result = $this->post(CrewAdminController::TASK_ACTION, [
+                'task_date' => self::NIGHT,
+                'role_slug' => 'decorate',
+                'starts_at' => $start,
+                'ends_at' => '23:00',
+            ]);
+
+            self::assertSame('admin_task_no_start', $result['notice'], $start);
+        }
+
+        // An existing task is not saved without one either.
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->taskRow(6, 'decorate');
+        $edit = $this->post(CrewAdminController::TASK_ACTION, ['task_id' => '6', 'task_date' => self::NIGHT, 'role_slug' => 'decorate']);
+
+        self::assertSame('admin_task_no_start', $edit['notice']);
+        self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+        self::assertSame(
+            'Set a start time. A task cannot be saved without one.',
+            CrewAdminController::noticeText('admin_task_no_start')
+        );
+    }
+
     public function testEditingOrDeletingATaskThatIsGoneChangesNothing(): void
     {
         $hooks = $this->recordHooks();
@@ -2468,6 +2497,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'task_id' => '6',
             'task_date' => self::NIGHT,
             'role_slug' => 'clean',
+            'starts_at' => '23:00',
             'plus_ones' => '99',
         ]);
 
@@ -2742,7 +2772,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertMatchesRegularExpression('/<option value="70"[^>]* selected>/', $html);
         self::assertStringContainsString(
-            'id="eventcrew-admin-task-starts" value="2026-08-01T21:00"',
+            'id="eventcrew-admin-task-starts" required value="2026-08-01T21:00"',
             $html
         );
     }

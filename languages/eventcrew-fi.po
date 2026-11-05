@@ -2715,10 +2715,6 @@ msgstr "Montako vierasta kukin tämän tehtävän henkilö saa tuoda ilmaiseksi.
 msgid "Label"
 msgstr "Nimi"
 
-#: templates/admin/tasks.php:247 templates/public/signup.php:1427
-msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
-msgstr "Jätä molemmat tyhjiksi, jos aikoja ei ole päätetty. Päällekkäiset tehtävät voidaan havaita vain, kun ajat on asetettu. Alkua aiempi loppu tulkitaan seuraavaksi aamuksi."
-
 #: templates/admin/settings.php:214 templates/public/signup.php:1649
 msgid "Measured from"
 msgstr "Laskettu alkaen"
@@ -6416,3 +6412,9 @@ msgstr "Siirrä myös tehtävät"
 
 msgid "When the start time changes, every task of this event moves by the same amount."
 msgstr "Kun alkamisaika muuttuu, jokainen tämän tapahtuman tehtävä siirtyy saman verran."
+
+msgid "Set a start time. A task cannot be saved without one."
+msgstr "Aseta alkamisaika. Tehtävää ei voi tallentaa ilman sitä."
+
+msgid "The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning."
+msgstr "Alkamisaika on pakollinen. Jätä loppu tyhjäksi, jos sitä ei ole päätetty. Alkua aiempi loppu tulkitaan seuraavaksi aamuksi."

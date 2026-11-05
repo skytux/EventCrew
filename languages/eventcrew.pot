@@ -35,7 +35,7 @@ msgstr ""
 msgid "%1$d of %2$d events were posted in the group. The others could not be posted."
 msgstr ""
 
-#: src/Admin/TasksPage.php:248 src/Web/CrewAdminTasks.php:326
+#: src/Admin/TasksPage.php:257 src/Web/CrewAdminTasks.php:332
 #. translators: 1: number of tasks created, 2: how many of them have no times
 msgid "%1$d task created, %2$d without times - the role has no offsets, or the event has no end recorded."
 msgid_plural "%1$d tasks created, %2$d without times - those roles have no offsets, or the event has no end recorded."
@@ -171,11 +171,11 @@ msgstr ""
 msgid "%1$s: this ticket is for %2$s, not tonight."
 msgstr ""
 
-#: src/Admin/TasksListTable.php:189 src/Web/CrewAdminTasks.php:362
+#: src/Admin/TasksListTable.php:189 src/Web/CrewAdminTasks.php:368
 msgid "%d / no limit"
 msgstr ""
 
-#: templates/admin/tasks.php:332 templates/public/signup.php:1660
+#: templates/admin/tasks.php:333 templates/public/signup.php:1660
 #. translators: %d: number of active accounts
 msgid "%d active account(s) would receive the open-task email."
 msgstr ""
@@ -243,7 +243,7 @@ msgid_plural "%d subscribers."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/TasksPage.php:240 src/Web/CrewAdminTasks.php:318
+#: src/Admin/TasksPage.php:249 src/Web/CrewAdminTasks.php:324
 #. translators: %d: number of tasks created
 msgid "%d task created."
 msgid_plural "%d tasks created."
@@ -327,9 +327,9 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:399 src/Support/DoorDesk.php:1402
+#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:408 src/Support/DoorDesk.php:1402
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:273
-#: src/Web/CrewAdminTasks.php:385
+#: src/Web/CrewAdminTasks.php:391
 msgid "(deleted person)"
 msgstr ""
 
@@ -663,7 +663,7 @@ msgstr ""
 msgid "Add someone"
 msgstr ""
 
-#: templates/admin/tasks.php:285 templates/public/signup.php:1519
+#: templates/admin/tasks.php:286 templates/public/signup.php:1519
 msgid "Add task"
 msgstr ""
 
@@ -1033,7 +1033,7 @@ msgid "Buy a ticket"
 msgstr ""
 
 #: src/Telegram/AssistantService.php:517 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:92 src/Telegram/SayCommand.php:95
-#: templates/admin/people.php:120 templates/admin/tasks.php:292 templates/public/signup-board.php:214 templates/public/signup.php:813
+#: templates/admin/people.php:120 templates/admin/tasks.php:293 templates/public/signup-board.php:214 templates/public/signup.php:813
 #: templates/public/signup.php:1521
 msgid "Cancel"
 msgstr ""
@@ -1716,7 +1716,7 @@ msgstr ""
 msgid "Endpoint"
 msgstr ""
 
-#: templates/admin/settings.php:261 templates/admin/tasks.php:264 templates/public/signup.php:1510 templates/public/signup.php:1749
+#: templates/admin/settings.php:261 templates/admin/tasks.php:265 templates/public/signup.php:1510 templates/public/signup.php:1749
 msgid "Ends"
 msgstr ""
 
@@ -1848,7 +1848,7 @@ msgstr ""
 msgid "EventMesh is not active, so there is nothing to sync tasks from."
 msgstr ""
 
-#: src/Admin/TasksPage.php:228 src/Web/CrewAdminTasks.php:281
+#: src/Admin/TasksPage.php:237 src/Web/CrewAdminTasks.php:287
 msgid "Every active role already has a task for that event."
 msgstr ""
 
@@ -2633,10 +2633,6 @@ msgstr ""
 msgid "Later"
 msgstr ""
 
-#: templates/admin/tasks.php:270 templates/public/signup.php:1512
-msgid "Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning."
-msgstr ""
-
 #: templates/admin/settings.php:1240
 msgid "Leave it off and the period is a promise you keep by hand — which is a perfectly good answer, and the one to pick if you are unsure."
 msgstr ""
@@ -3135,7 +3131,7 @@ msgstr ""
 msgid "Note"
 msgstr ""
 
-#: templates/admin/people.php:102 templates/admin/tasks.php:274 templates/public/signup.php:807 templates/public/signup.php:1515
+#: templates/admin/people.php:102 templates/admin/tasks.php:275 templates/public/signup.php:807 templates/public/signup.php:1515
 msgid "Notes"
 msgstr ""
 
@@ -3151,7 +3147,7 @@ msgstr ""
 msgid "Nothing to do."
 msgstr ""
 
-#: src/Admin/TasksPage.php:296 src/Web/CrewAdminTasks.php:282
+#: src/Admin/TasksPage.php:305 src/Web/CrewAdminTasks.php:288
 msgid "Nothing to send: no open tasks, or everyone eligible already has it."
 msgstr ""
 
@@ -3451,11 +3447,11 @@ msgstr ""
 msgid "Open-task call"
 msgstr ""
 
-#: templates/admin/tasks.php:327 templates/public/signup.php:1666
+#: templates/admin/tasks.php:328 templates/public/signup.php:1666
 msgid "Open-task email"
 msgstr ""
 
-#: src/Admin/TasksPage.php:299 src/Web/CrewAdminTasks.php:299
+#: src/Admin/TasksPage.php:308 src/Web/CrewAdminTasks.php:305
 #. translators: %d: number of people emailed
 msgid "Open-task email sent to %d person."
 msgid_plural "Open-task email sent to %d people."
@@ -3668,7 +3664,7 @@ msgstr ""
 msgid "Pick a role"
 msgstr ""
 
-#: src/Admin/TasksPage.php:144 src/Web/CrewAdminTasks.php:275
+#: src/Admin/TasksPage.php:144 src/Web/CrewAdminTasks.php:280
 msgid "Pick a role that still exists in Settings."
 msgstr ""
 
@@ -4209,7 +4205,7 @@ msgstr ""
 msgid "Send notifications as HTML"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:183 templates/admin/tasks.php:343 templates/public/signup.php:1676
+#: src/Web/CrewAdminController.php:183 templates/admin/tasks.php:344 templates/public/signup.php:1676
 msgid "Send open-task email now"
 msgstr ""
 
@@ -4259,7 +4255,7 @@ msgstr ""
 msgid "Sends every welcome message to the member with your address, %s, by email and Telegram, with the live settings and open tasks. It works while the welcome message is off, and nobody else gets anything."
 msgstr ""
 
-#: templates/admin/tasks.php:338 templates/public/signup.php:1670
+#: templates/admin/tasks.php:339 templates/public/signup.php:1670
 msgid "Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email)."
 msgstr ""
 
@@ -4301,6 +4297,10 @@ msgstr ""
 msgid "Server"
 msgstr ""
 
+#: src/Admin/TasksPage.php:156 src/Web/CrewAdminTasks.php:281
+msgid "Set a start time. A task cannot be saved without one."
+msgstr ""
+
 #: src/Telegram/OnboardingService.php:159
 msgid "Set me up →"
 msgstr ""
@@ -4335,7 +4335,7 @@ msgstr ""
 msgid "Settings saved, except the LLM API URL: it must start with http:// or https://."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:836 src/Web/CrewAdminTasks.php:283
+#: src/Admin/SettingsPage.php:836 src/Web/CrewAdminTasks.php:289
 msgid "Settings saved."
 msgstr ""
 
@@ -4479,7 +4479,7 @@ msgstr ""
 msgid "Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
 msgstr ""
 
-#: src/Support/AssignmentStatus.php:104 src/Support/PrivacyExporter.php:194 src/Support/PrivacyExporter.php:274 templates/admin/tasks.php:299
+#: src/Support/AssignmentStatus.php:104 src/Support/PrivacyExporter.php:194 src/Support/PrivacyExporter.php:274 templates/admin/tasks.php:300
 #: templates/public/signup.php:1526
 msgid "Signed up"
 msgstr ""
@@ -4669,7 +4669,7 @@ msgstr ""
 msgid "Task"
 msgstr ""
 
-#: src/Admin/TasksPage.php:195 src/Web/CrewAdminTasks.php:276
+#: src/Admin/TasksPage.php:204 src/Web/CrewAdminTasks.php:282
 msgid "Task added."
 msgstr ""
 
@@ -4682,7 +4682,7 @@ msgstr ""
 msgid "Task date"
 msgstr ""
 
-#: src/Admin/TasksPage.php:278 src/Web/CrewAdminTasks.php:278
+#: src/Admin/TasksPage.php:287 src/Web/CrewAdminTasks.php:284
 msgid "Task deleted."
 msgstr ""
 
@@ -4690,7 +4690,7 @@ msgstr ""
 msgid "Task reminders (24h before) and the open-task email (48h before) are sent by an hourly background job."
 msgstr ""
 
-#: src/Admin/TasksPage.php:188 src/Web/CrewAdminTasks.php:277
+#: src/Admin/TasksPage.php:197 src/Web/CrewAdminTasks.php:283
 msgid "Task updated."
 msgstr ""
 
@@ -4909,7 +4909,7 @@ msgstr ""
 msgid "That credit could not be redeemed."
 msgstr ""
 
-#: src/Admin/TasksPage.php:136 src/Web/CrewAdminTasks.php:274
+#: src/Admin/TasksPage.php:136 src/Web/CrewAdminTasks.php:279
 msgid "That date could not be read. Use the date picker and try again."
 msgstr ""
 
@@ -4946,7 +4946,7 @@ msgstr ""
 msgid "That email change link is invalid or has expired."
 msgstr ""
 
-#: src/Admin/TasksPage.php:220 src/Web/CrewAdminTasks.php:280
+#: src/Admin/TasksPage.php:229 src/Web/CrewAdminTasks.php:286
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
@@ -4986,7 +4986,7 @@ msgstr ""
 msgid "That role is no longer offered."
 msgstr ""
 
-#: src/Web/CrewAdminTasks.php:284
+#: src/Web/CrewAdminTasks.php:290
 msgid "That role was not found."
 msgstr ""
 
@@ -5019,7 +5019,7 @@ msgstr ""
 msgid "That task is no longer available."
 msgstr ""
 
-#: src/Web/CrewAdminTasks.php:279
+#: src/Web/CrewAdminTasks.php:285
 msgid "That task was not found."
 msgstr ""
 
@@ -5533,6 +5533,10 @@ msgstr ""
 
 #: templates/public/signup.php:2338
 msgid "The spam check hasn’t finished yet — give it a moment, then try again."
+msgstr ""
+
+#: templates/admin/tasks.php:271 templates/public/signup.php:1512
+msgid "The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning."
 msgstr ""
 
 #: templates/admin/settings.php:1914
@@ -6106,7 +6110,7 @@ msgstr ""
 msgid "Update person"
 msgstr ""
 
-#: templates/admin/tasks.php:284 templates/public/signup.php:1519
+#: templates/admin/tasks.php:285 templates/public/signup.php:1519
 msgid "Update task"
 msgstr ""
 
@@ -6651,7 +6655,7 @@ msgstr ""
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
-#: src/Admin/Admin.php:392 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:263
+#: src/Admin/Admin.php:392 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:272
 msgid "You do not have permission to do this."
 msgstr ""
 
