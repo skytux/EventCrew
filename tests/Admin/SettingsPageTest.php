@@ -771,4 +771,160 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertSame('eventcrew_telegram_setup', $nonceAction);
         self::assertSame(0, $sent, 'nothing was sent');
     }
+
+    /**
+     * The whole Settings page renders, and the Telegram part comes out with
+     * its key elements. Any PHP error, warning or notice while rendering
+     * fails the test instead of reaching wp-admin. Without a bot token: the
+     * token field is empty and the webhook part says to add a token first.
+     */
+    public function testTheTelegramPartRendersWithoutABotToken(): void
+    {
+        unset($this->options[TelegramClient::TOKEN_OPTION]);
+
+        $telegram = $this->telegramPanels($this->renderSettingsPage());
+
+        self::assertStringContainsString('name="telegram_bot_token"', $telegram);
+        self::assertStringContainsString('placeholder=""', $telegram);
+        self::assertStringNotContainsString('telegram_bot_token_remove', $telegram);
+        self::assertStringContainsString('Add a bot token above and save before installing the webhook.', $telegram);
+        // No webhook secret yet, so no webhook test.
+        self::assertStringNotContainsString('eventcrew_test_webhook', $telegram);
+        self::assertStringNotContainsString('Test the webhook', $telegram);
+        self::assertSame([], $this->telegramCalls, 'no token, no Telegram call');
+    }
+
+    /**
+     * With a bot token and an installed webhook: the token and the secret are
+     * shown only by their last 4 characters, the "Test the webhook" button and
+     * the by-hand example with its {} body are there, and so are the webhook
+     * status and the install button.
+     */
+    public function testTheTelegramPartRendersWithABotTokenAndAWebhook(): void
+    {
+        $token = '123456789:AAsecretTokenWXYZ';
+        $this->options[TelegramClient::TOKEN_OPTION] = $token;
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crew_test_bot';
+        $this->telegramResults['getWebhookInfo'] = [
+            'url' => 'https://site.test/wp-json/eventcrew/v1/telegram/webhook',
+            'pending_update_count' => 0,
+        ];
+
+        $html = $this->renderSettingsPage();
+        $telegram = $this->telegramPanels($html);
+
+        self::assertStringContainsString('name="telegram_bot_token"', $telegram);
+        self::assertStringContainsString('placeholder="••••WXYZ"', $telegram);
+        self::assertStringContainsString('telegram_bot_token_remove', $telegram);
+        self::assertStringNotContainsString($token, $html, 'the token is never printed');
+        self::assertStringNotContainsString(self::WEBHOOK_SECRET, $html, 'the secret is never printed');
+
+        self::assertStringContainsString('value="eventcrew_test_webhook"', $telegram);
+        self::assertStringContainsString('Test the webhook', $telegram);
+        self::assertStringContainsString('Test the endpoint by hand', $telegram);
+        self::assertStringContainsString('X-Telegram-Bot-Api-Secret-Token: ••••WXYZ', $telegram);
+        self::assertStringContainsString('<code style="word-break:break-all">{}</code>', $telegram);
+
+        self::assertStringContainsString('Installed', $telegram);
+        self::assertStringContainsString('@crew_test_bot', $telegram);
+        self::assertStringContainsString('value="eventcrew_telegram_setup"', $telegram);
+        self::assertStringContainsString('Install / refresh webhook', $telegram);
+        self::assertSame(['getWebhookInfo'], array_column($this->telegramCalls, 'method'));
+    }
+
+    /** Everything inside the page's Telegram tab panels, joined. */
+    private function telegramPanels(string $html): string
+    {
+        $parts = explode('<div class="ec-tab-panel" data-ec-tab="telegram">', $html);
+        self::assertGreaterThan(1, count($parts), 'the page has a Telegram tab panel');
+        array_shift($parts);
+
+        return implode("\n", array_map(
+            static fn (string $part): string => preg_split('/<div class="ec-tab-panel" data-ec-tab="/', $part)[0],
+            $parts
+        ));
+    }
+
+    /**
+     * Runs SettingsPage::render() with the WordPress functions it touches
+     * stubbed, and returns the page. Every PHP error, warning or notice
+     * raised while it renders is turned into an exception.
+     */
+    private function renderSettingsPage(): string
+    {
+        $esc = static fn (mixed $text): string => htmlspecialchars((string) $text, ENT_QUOTES);
+        \Brain\Monkey\Functions\when('esc_html')->alias($esc);
+        \Brain\Monkey\Functions\when('esc_attr')->alias($esc);
+        \Brain\Monkey\Functions\when('esc_textarea')->alias($esc);
+        \Brain\Monkey\Functions\when('esc_js')->alias($esc);
+        \Brain\Monkey\Functions\when('esc_url')->returnArg(1);
+        \Brain\Monkey\Functions\when('esc_html_e')->alias(static function (string $text) use ($esc): void {
+            echo $esc(__($text));
+        });
+        \Brain\Monkey\Functions\when('esc_attr_e')->alias(static function (string $text) use ($esc): void {
+            echo $esc(__($text));
+        });
+        \Brain\Monkey\Functions\when('checked')->alias(static function (mixed $a, mixed $b = true): void {
+            echo (string) $a === (string) $b ? " checked='checked'" : '';
+        });
+        \Brain\Monkey\Functions\when('selected')->alias(static function (mixed $a, mixed $b = true): void {
+            echo (string) $a === (string) $b ? " selected='selected'" : '';
+        });
+        \Brain\Monkey\Functions\when('disabled')->alias(static function (mixed $a, mixed $b = true): void {
+            echo (string) $a === (string) $b ? " disabled='disabled'" : '';
+        });
+        \Brain\Monkey\Functions\when('wp_nonce_field')->alias(static function (string $action): void {
+            echo '<input type="hidden" name="_wpnonce" value="' . md5($action) . '">';
+        });
+        \Brain\Monkey\Functions\when('submit_button')->alias(static function (string $text = 'Save') use ($esc): void {
+            echo '<button type="submit" class="button">' . $esc($text) . '</button>';
+        });
+        \Brain\Monkey\Functions\when('admin_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path
+        );
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path
+        );
+        // Both forms: add_query_arg(['k' => 'v'], $url) and add_query_arg('k', 'v', $url).
+        \Brain\Monkey\Functions\when('add_query_arg')->alias(static function (mixed ...$args): string {
+            $query = is_array($args[0]) ? $args[0] : [(string) $args[0] => (string) ($args[1] ?? '')];
+            $url = (string) (is_array($args[0]) ? ($args[1] ?? '') : ($args[2] ?? ''));
+
+            return $url . (str_contains($url, '?') ? '&' : '?') . http_build_query($query);
+        });
+        \Brain\Monkey\Functions\when('wp_nonce_url')->alias(
+            static fn (string $url): string => $url . '&_wpnonce=nonce'
+        );
+        \Brain\Monkey\Functions\when('post_type_exists')->justReturn(false);
+        // wp_date and wp_enqueue_media stay undefined: code elsewhere asks
+        // function_exists() for them, and a stub here would leak into later tests.
+        \Brain\Monkey\Functions\when('get_pages')->justReturn([]);
+        \Brain\Monkey\Functions\when('get_posts')->justReturn([]);
+        \Brain\Monkey\Functions\when('wp_generate_password')->justReturn('importsecret0123456789');
+        \Brain\Monkey\Functions\when('get_transient')->justReturn(false);
+        \Brain\Monkey\Functions\when('delete_transient')->justReturn(true);
+        \Brain\Monkey\Functions\when('human_time_diff')->justReturn('2 hours');
+        \Brain\Monkey\Functions\when('wp_timezone_string')->justReturn('Europe/Helsinki');
+        \Brain\Monkey\Functions\when('wp_dropdown_pages')->alias(static function (array $args): void {
+            echo '<select name="' . $args['name'] . '"></select>';
+        });
+        \Brain\Monkey\Functions\when('wp_get_current_user')->justReturn(
+            (object) ['ID' => 3, 'user_email' => 'organizer@example.com']
+        );
+
+        set_error_handler(static function (int $errno, string $message, string $file, int $line): bool {
+            throw new \ErrorException($message, 0, $errno, $file, $line);
+        });
+        ob_start();
+
+        try {
+            $this->page()->render();
+        } finally {
+            $html = (string) ob_get_clean();
+            restore_error_handler();
+        }
+
+        return $html;
+    }
 }
