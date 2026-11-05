@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.8
+Stable tag: 1.140.9
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.9 =
+A new role starts at the event start (offset 0), and a new task form is filled with the event and its start time (Q209).
 
 = 1.140.8 =
 Event edit screen: a "Move the tasks too" checkbox. When ticked and the event start changes, every task of that event moves by the same amount (Q207).
@@ -1238,6 +1241,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.9 =
+No settings change.
 
 = 1.140.8 =
 No settings change.

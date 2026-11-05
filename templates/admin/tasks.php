@@ -8,6 +8,8 @@
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null}> $roles
  * @var array<int, array{id: int, title: string, starts_at: string, ends_at: string, date: string}> $events Linkable EventMesh events.
  * @var bool $events_available Whether EventMesh is installed at all.
+ * @var array{id: int, title: string, starts_at: string, ends_at: string, date: string}|null $new_task_event
+ *      The event a new task starts on.
  * @var array<int, array{name: string, status: string, marked_by: string}> $roster Signed-up people for the edited task.
  * @var string $nonce_action Nonce action for the save form.
  * @var string $template_nonce_action Nonce action for the apply-template form.
@@ -39,6 +41,15 @@ $eventcrew_local = static function (?string $stored): string {
 $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
     ? (string) $editing->eventPostId
     : $event_other;
+
+// A new task starts on the next event, and its start time is that event's.
+if (! $eventcrew_is_edit && null !== $new_task_event) {
+    $eventcrew_selected_event = (string) $new_task_event['id'];
+}
+
+$eventcrew_start_value = $eventcrew_is_edit
+    ? $eventcrew_local($editing->startsAt)
+    : $eventcrew_local($new_task_event['starts_at'] ?? null);
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Tasks', 'eventcrew'); ?></h1>
@@ -246,7 +257,7 @@ $eventcrew_selected_event = $eventcrew_is_edit && null !== $editing->eventPostId
                             name="starts_at"
                             id="eventcrew-starts-at"
                             type="datetime-local"
-                            value="<?php echo esc_attr($eventcrew_local($editing->startsAt ?? null)); ?>">
+                            value="<?php echo esc_attr($eventcrew_start_value); ?>">
                     </div>
 
                     <div class="form-field">

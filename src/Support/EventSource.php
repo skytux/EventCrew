@@ -119,6 +119,31 @@ final class EventSource
         ];
     }
 
+    /**
+     * The event a new task's form starts on, so the task's start is filled in
+     * with that event's start. With $date: the event on that date. Without
+     * it: the first event on $today or later. Null when there is none; the
+     * form then starts on "Other" with the times empty.
+     *
+     * @param array<int, array{id: int, title: string, starts_at: string, ends_at: string, date: string}> $events
+     *        As upcoming() returns them, earliest first.
+     * @return array{id: int, title: string, starts_at: string, ends_at: string, date: string}|null
+     */
+    public static function forNewTask(array $events, string $today, string $date = ''): ?array
+    {
+        foreach ($events as $event) {
+            if ('' === $event['starts_at']) {
+                continue;
+            }
+
+            if ('' !== $date ? $event['date'] === $date : $event['date'] >= $today) {
+                return $event;
+            }
+        }
+
+        return null;
+    }
+
     public static function title(int $postId): string
     {
         return self::describe($postId)['title'] ?? '';
