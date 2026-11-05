@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.107
+Stable tag: 1.140.108
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.108 =
+New setting Organization name (Settings, Web page; blank means the site name), with the placeholder {organization}. Members now see it instead of EventCrew in the ticket title, sign-in and confirm messages, bot help and email sign-offs (Q314).
 
 = 1.140.107 =
 The ticket page, ticket and other emails, the bot and the boards show the clean event name (without the date) from EventMesh, in each language (Q312).
@@ -1535,6 +1538,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.108 =
+No settings change.
 
 = 1.140.107 =
 No settings change.
