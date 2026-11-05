@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\AiPrompts;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
@@ -61,16 +62,8 @@ final class BoardDjText
     /** Tokens for one answer. */
     private const MAX_TOKENS = 300;
 
-    /** The instruction. The banned words are spelled in two parts to keep them out of the source. */
-    private const PROMPT = 'You write a short text about the DJ or the host of one event of a dance event. '
-        . 'It goes under the picture of the event in the Telegram group of the event\'s crew. '
-        . 'Write exactly 2 sentences in English about who the DJ or host is and their style or their work. '
-        . 'Write only about the DJ or host: not about the date, the place, the price or the tickets. '
-        . 'Use only facts that are in the input. Do not invent names, places or anything else. '
-        . 'A DJ name is a person, never a place. '
-        . 'Do not write hashtags or links. Do not use emoji. '
-        . 'Do not use the words "vol' . 'unteer", "sh' . 'ift", "vu' . 'oro" or "vapaa' . 'ehtoinen". '
-        . 'Keep the text under 300 characters.';
+    // The instruction is AiPrompts::BOARD_DJ: editable in wp-admin, with the
+    // former text built in.
 
     public function __construct(
         private readonly LlmClient $llm,
@@ -176,7 +169,7 @@ final class BoardDjText
                 [
                     [
                         'role' => 'system',
-                        'content' => self::PROMPT . "\n\nAnswer with JSON only, with no other text: "
+                        'content' => AiPrompts::get(AiPrompts::BOARD_DJ) . "\n\nAnswer with JSON only, with no other text: "
                             . '{"text": "the English text"}',
                     ],
                     ['role' => 'user', 'content' => $source],

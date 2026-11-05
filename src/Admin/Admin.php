@@ -267,6 +267,21 @@ final class Admin
             'admin_post_' . MessagesPage::RESET_ACTION,
             [$this->container->get(MessagesPage::class), 'reset']
         );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::PROMPTS_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'savePrompts']
+        );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::PLACEHOLDERS_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'savePlaceholders']
+        );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::EVENT_TEXT_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'saveEventText']
+        );
     }
 
     /**
@@ -376,6 +391,15 @@ final class Admin
             self::CAPABILITY,
             TranslationsPage::PAGE_SLUG,
             [$this->container->get(TranslationsPage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('AI prompts', 'eventcrew'),
+            __('AI prompts', 'eventcrew'),
+            self::CAPABILITY,
+            AiPromptsPage::PAGE_SLUG,
+            [$this->container->get(AiPromptsPage::class), 'render']
         );
 
         add_submenu_page(

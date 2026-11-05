@@ -6939,3 +6939,138 @@ msgstr "%s: aihe"
 #. translators: %s: the name of a message on the Messages page
 msgid "%s: text"
 msgstr "%s: teksti"
+
+msgid "AI prompts"
+msgstr "Tekoälyn kehotteet"
+
+msgid "Rules for the newsletter texts"
+msgstr "Uutiskirjeen tekstien säännöt"
+
+msgid "Put into the prompts below where they say {rules}."
+msgstr "Lisätään alla oleviin kehotteisiin kohtaan {rules}."
+
+msgid "Extra rule for Finnish texts"
+msgstr "Lisäsääntö suomenkielisille teksteille"
+
+msgid "Put into the prompts below where they say {rules_fi}."
+msgstr "Lisätään alla oleviin kehotteisiin kohtaan {rules_fi}."
+
+msgid "Announcement: the text of one event"
+msgstr "Tiedote: yhden tapahtuman teksti"
+
+msgid "Written in Finnish, then translated into English."
+msgstr "Kirjoitetaan suomeksi ja käännetään sitten englanniksi."
+
+msgid "Announcement: the opening text"
+msgstr "Tiedote: aloitusteksti"
+
+msgid "Used when the organizers wrote no text for the announcement."
+msgstr "Käytetään, kun järjestäjät eivät kirjoittaneet tiedotteelle tekstiä."
+
+msgid "Post-event email: the text about the next event"
+msgstr "Tapahtuman jälkeinen sähköposti: teksti seuraavasta tapahtumasta"
+
+msgid "Written in English, then translated into Finnish."
+msgstr "Kirjoitetaan englanniksi ja käännetään sitten suomeksi."
+
+msgid "Venue, address and door times"
+msgstr "Paikka, osoite ja ovien ajat"
+
+msgid "Picks these out of the event description. A value is kept only when the description has it."
+msgstr "Poimii nämä tapahtuman kuvauksesta. Arvo säilytetään vain, kun kuvauksessa on se."
+
+msgid "Translation into Finnish"
+msgstr "Käännös suomeksi"
+
+msgid "Translates the post-event email text."
+msgstr "Kääntää tapahtuman jälkeisen sähköpostin tekstin."
+
+msgid "Translation into English"
+msgstr "Käännös englanniksi"
+
+msgid "Translates the announcement texts."
+msgstr "Kääntää tiedotteen tekstit."
+
+msgid "Telegram board: the text about the DJ"
+msgstr "Telegram-taulu: teksti DJ:stä"
+
+msgid "Shown under the picture of the next event on the group board."
+msgstr "Näytetään ryhmän taululla seuraavan tapahtuman kuvan alla."
+
+msgid "The prompt is back to the built-in text."
+msgstr "Kehote on palautettu valmiiseen tekstiin."
+
+msgid "The prompts are saved."
+msgstr "Kehotteet on tallennettu."
+
+msgid "Saved. Some placeholders were left out: a name uses only small letters a-z, digits and _, starts with a letter, is used once, and has a prompt."
+msgstr "Tallennettu. Osa paikkamerkeistä jätettiin pois: nimessä on vain pieniä kirjaimia a-z, numeroita ja _, se alkaa kirjaimella, sitä käytetään kerran, ja sillä on kehote."
+
+msgid "The placeholders are saved."
+msgstr "Paikkamerkit on tallennettu."
+
+msgid "Saved. This text is sent as you wrote it."
+msgstr "Tallennettu. Tämä teksti lähetetään niin kuin kirjoitit sen."
+
+msgid "The AI text is used again."
+msgstr "Tekoälyn tekstiä käytetään taas."
+
+msgid "Nothing was saved: that text was not found."
+msgstr "Mitään ei tallennettu: tekstiä ei löytynyt."
+
+msgid "Change an AI text for an event"
+msgstr "Muuta tapahtuman tekoälytekstiä"
+
+msgid "What the AI is asked to write. Change a prompt and save, or press \"Reset to built-in\" to use the text that comes with the plugin."
+msgstr "Mitä tekoälyä pyydetään kirjoittamaan. Muuta kehotetta ja tallenna, tai paina \"Palauta valmis teksti\", niin lisäosan oma teksti on käytössä."
+
+msgid "Built-in prompts"
+msgstr "Valmiit kehotteet"
+
+msgid "Changed from the built-in text."
+msgstr "Muutettu valmiista tekstistä."
+
+msgid "Reset to built-in"
+msgstr "Palauta valmis teksti"
+
+msgid "Save the prompts"
+msgstr "Tallenna kehotteet"
+
+msgid "Your own placeholders"
+msgstr "Omat paikkamerkit"
+
+msgid "A placeholder such as {dj_intro} in a message text is replaced by a text the AI writes for each event, the day before the event. Write what the AI should write in the prompt. The fallback text is used when the AI fails. To remove a placeholder, empty its name."
+msgstr "Paikkamerkki, kuten {dj_intro}, korvataan viestin tekstissä tekstillä, jonka tekoäly kirjoittaa jokaiselle tapahtumalle tapahtumaa edeltävänä päivänä. Kirjoita kehotteeseen, mitä tekoälyn pitää kirjoittaa. Varatekstiä käytetään, kun tekoäly epäonnistuu. Poista paikkamerkki tyhjentämällä sen nimi."
+
+msgid "Prompt"
+msgstr "Kehote"
+
+msgid "Fallback text"
+msgstr "Varateksti"
+
+msgid "Save the placeholders"
+msgstr "Tallenna paikkamerkit"
+
+msgid "Texts for the coming events"
+msgstr "Tekstit tuleville tapahtumille"
+
+msgid "The AI writes these the day before each event. A text nobody changes is sent as the AI wrote it. A text you change is sent as you wrote it. When the AI failed, the normal message text is used."
+msgstr "Tekoäly kirjoittaa nämä jokaista tapahtumaa edeltävänä päivänä. Teksti, jota kukaan ei muuta, lähetetään niin kuin tekoäly sen kirjoitti. Muuttamasi teksti lähetetään niin kuin kirjoitit sen. Kun tekoäly epäonnistui, käytetään viestin tavallista tekstiä."
+
+msgid "No message template has the AI tick on, and there are no placeholders, so the AI writes nothing."
+msgstr "Missään viestipohjassa ei ole tekoälyruksia päällä, eikä paikkamerkkejä ole, joten tekoäly ei kirjoita mitään."
+
+msgid "No texts are written yet for the coming events."
+msgstr "Tuleville tapahtumille ei ole vielä kirjoitettu tekstejä."
+
+msgid "The AI could not write this text. The normal message text is used, unless you write one here."
+msgstr "Tekoäly ei pystynyt kirjoittamaan tätä tekstiä. Käytetään viestin tavallista tekstiä, ellet kirjoita tekstiä tähän."
+
+msgid "(changed by hand)"
+msgstr "(muutettu käsin)"
+
+msgid "Use the AI text again"
+msgstr "Käytä taas tekoälyn tekstiä"
+
+msgid "AI texts"
+msgstr "Tekoälytekstit"

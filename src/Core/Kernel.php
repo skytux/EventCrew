@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Core;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
@@ -48,6 +49,7 @@ use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HealthReport;
+use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventTaskMover;
 use EventCrew\Support\LlmClient;
@@ -126,6 +128,7 @@ use EventCrew\Telegram\WebhookController;
 use EventCrew\Telegram\WebLoginBot;
 use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
+use EventCrew\Web\CrewAdminAiText;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminNewsletter;
@@ -247,6 +250,11 @@ final class Kernel
         // The short DJ or host text under the group board's picture: written
         // by the language model in a single WP-Cron run the board asks for.
         $this->container->get(BoardDjText::class)->boot();
+
+        // The AI texts for each event (message templates with the AI tick,
+        // and the organizers' own placeholders): written the day before, on
+        // the hourly notifications run.
+        $this->container->get(EventAiText::class)->boot();
 
         // Takeover requests: closed when the holder's place goes away, and
         // answered from an email link that logged-out people open.
@@ -490,6 +498,19 @@ final class Kernel
         $this->container->singleton(
             CrewAdminFollowup::class,
             fn (Container $container) => new CrewAdminFollowup($container->get(FollowupText::class))
+        );
+
+        $this->container->singleton(
+            EventAiText::class,
+            fn (Container $container) => new EventAiText(
+                $container->get(LlmClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        $this->container->singleton(
+            CrewAdminAiText::class,
+            fn () => new CrewAdminAiText()
         );
 
         $this->container->singleton(
@@ -803,7 +824,8 @@ final class Kernel
                 $container->get(CrewAdminPeople::class),
                 $container->get(CrewAdminTasks::class),
                 $container->get(CrewAdminNewsletter::class),
-                $container->get(CrewAdminFollowup::class)
+                $container->get(CrewAdminFollowup::class),
+                $container->get(CrewAdminAiText::class)
             )
         );
 
@@ -1560,6 +1582,11 @@ final class Kernel
                 $container->get(View::class),
                 new MessageTemplates($container->get(TranslatedText::class))
             )
+        );
+
+        $this->container->singleton(
+            AiPromptsPage::class,
+            fn (Container $container) => new AiPromptsPage($container->get(View::class))
         );
 
         $this->container->singleton(
