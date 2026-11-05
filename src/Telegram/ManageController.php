@@ -13,6 +13,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\Organization;
 use WP_REST_Request;
 
 /**
@@ -198,7 +199,7 @@ final class ManageController
             $message = __('The email could not be sent. Try again later.', 'eventcrew');
         }
 
-        return $this->document(__('Manage your EventCrew account', 'eventcrew'), '<p>' . esc_html($message) . '</p>');
+        return $this->document(self::title(), '<p>' . esc_html($message) . '</p>');
     }
 
     private function accountPage(Person $person, string $token): string
@@ -207,7 +208,7 @@ final class ManageController
             . '<p>' . esc_html__('Deleting erases your account and history for good. This cannot be undone.', 'eventcrew') . '</p>'
             . $this->form('token', $token, __('Delete my data', 'eventcrew'));
 
-        return $this->document(__('Manage your EventCrew account', 'eventcrew'), $body);
+        return $this->document(self::title(), $body);
     }
 
     /**
@@ -221,7 +222,7 @@ final class ManageController
         $body = '<p>' . esc_html($warning) . '</p>'
             . $this->form(self::DELETE_PARAM, $deleteToken, __('Delete my data', 'eventcrew'));
 
-        return $this->document(__('Manage your EventCrew account', 'eventcrew'), $body);
+        return $this->document(self::title(), $body);
     }
 
     /** A red "delete" button that POSTs $value as the $field parameter. */
@@ -244,7 +245,14 @@ final class ManageController
             default => __('Nothing to do.', 'eventcrew'),
         };
 
-        return $this->document(__('EventCrew', 'eventcrew'), '<p>' . esc_html($message) . '</p>');
+        return $this->document(Organization::name(), '<p>' . esc_html($message) . '</p>');
+    }
+
+    /** The page title: "Manage your <organization> account". */
+    private static function title(): string
+    {
+        /* translators: %s: the organization's name, like Ecstatic Dance Helsinki */
+        return sprintf(__('Manage your %s account', 'eventcrew'), Organization::name());
     }
 
     private function document(string $title, string $inner): string

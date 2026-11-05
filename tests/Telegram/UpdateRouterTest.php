@@ -328,7 +328,7 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertCount(count($old), $answers);
 
         foreach ($answers as $call) {
-            self::assertStringStartsWith('EventCrew bot – commands', $call['body']['text']);
+            self::assertStringStartsWith('Test Site bot – commands', $call['body']['text']);
         }
     }
 

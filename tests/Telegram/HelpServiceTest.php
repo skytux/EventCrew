@@ -93,7 +93,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->send('/help');
 
         $text = $this->lastText();
-        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n/board – the open tasks", $text);
+        self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n/board – the open tasks", $text);
         self::assertStringContainsString('buttons: 🎟 free-entry ticket, 🔁 take over a task', $text);
         self::assertStringNotContainsString('Welcome crew', $text);
         self::assertStringNotContainsString('Organizers', $text);
@@ -139,7 +139,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $this->send('/shifts');
 
-        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n/board", $this->lastText());
+        self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n/board", $this->lastText());
     }
 
     public function testAGroupCommandForAnotherBotIsLeftAlone(): void
@@ -159,7 +159,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(-100, $sent['chat_id']);
-        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n", $sent['text']);
+        self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n", $sent['text']);
     }
 
     public function testInTheGroupHelpIsTheEveryoneSectionInEnglish(): void
@@ -170,7 +170,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(-100, $sent['chat_id']);
-        self::assertStringStartsWith("EventCrew bot – commands\n\nEveryone\n", $sent['text']);
+        self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n", $sent['text']);
         self::assertStringEndsWith("\n\nSend me /help in a private chat for more.", $sent['text']);
         self::assertStringNotContainsString('Organizers', $sent['text']);
     }
@@ -193,7 +193,7 @@ final class HelpServiceTest extends TelegramTestCase
             $this->help()->onHelp(555, 555, true);
         });
 
-        self::assertStringStartsWith("EventCrew-botti – komennot\n\nKaikki\n", $this->lastText());
+        self::assertStringStartsWith("Test Site -botti – komennot\n\nKaikki\n", $this->lastText());
     }
 
     public function testCancelDropsEveryWaitingQuestion(): void

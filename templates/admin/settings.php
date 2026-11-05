@@ -64,6 +64,7 @@
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $email_background The picture behind every email; blank draws the purple fade alone.
  * @var array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>} $hybrid The Hybrid tick of each message kind (HybridPolicy).
+ * @var string $organization_name The organization's name as typed in Settings; blank uses the site name.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows nothing.
  * @var array<string, mixed> $infrastructure_note How the site is run, a TranslatedText value, shown to organizers in the crew page's Help tab; blank shows nothing.
@@ -953,6 +954,25 @@ if (! defined('ABSPATH')) {
 
         </div>
         <div class="ec-tab-panel" data-ec-tab="web">
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-organization-name"><?php esc_html_e('Organization name', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        id="eventcrew-organization-name"
+                        name="organization_name"
+                        value="<?php echo esc_attr($organization_name); ?>"
+                        class="regular-text"
+                        maxlength="<?php echo (int) \EventCrew\Support\Organization::MAX_LENGTH; ?>"
+                        placeholder="<?php echo esc_attr((string) get_bloginfo('name')); ?>">
+                    <p class="description"><?php esc_html_e('The name members see on the ticket, in emails and Telegram messages, in the bot and on the public pages. In message texts and the ticket note it is {organization}. Leave it blank to use the site name. wp-admin keeps saying EventCrew.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                </td>
+            </tr>
+        </table>
+
         <h2><?php esc_html_e('Public signup page', 'eventcrew'); ?></h2>
         <p class="description">
             <?php
@@ -1150,6 +1170,15 @@ if (! defined('ABSPATH')) {
                     );
                     ?>
                     <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: the placeholders, like {organization}, {start_time} */
+                            esc_html__('Placeholders: %s. A line with an empty placeholder is left out.', 'eventcrew'),
+                            '<code>' . esc_html(implode(', ', \EventCrew\Support\TicketNote::TAGS)) . '</code>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped here.
+                        );
+                        ?>
+                    </p>
                 </td>
             </tr>
             <tr>
@@ -1527,6 +1556,7 @@ if (! defined('ABSPATH')) {
                         <li><code>{reason}</code> <?php esc_html_e('why the person has a ticket: one of the four lines below, chosen by the kind of ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{tasks}</code> <?php esc_html_e('a crew member’s tasks on the night, as a list. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{plus_ones}</code> <?php esc_html_e('how many people a guest may bring, like “2 people”. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
+                        <li><code>{organization}</code> <?php esc_html_e('the organization’s name (Web page tab, else the site name).', 'eventcrew'); ?></li>
                     </ul>
                     <p class="description">
                         <?php esc_html_e('When a placeholder other than {first_name} is empty, its whole paragraph is left out, so no empty line or half sentence is left.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>

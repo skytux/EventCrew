@@ -8,6 +8,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\Organization;
 
 /**
  * 🎁 Give credits (a button under /people) - an organizer hands someone a free-entry credit at their discretion,
@@ -167,7 +168,11 @@ final class GiftService
         if (null === $recipient) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('That person is no longer in EventCrew. Send /people to pick someone else.', 'eventcrew'),
+                sprintf(
+                    /* translators: %s: the organization's name */
+                    __('That person is no longer in %s. Send /people to pick someone else.', 'eventcrew'),
+                    Organization::name()
+                ),
                 true
             );
 

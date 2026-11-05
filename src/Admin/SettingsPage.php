@@ -26,6 +26,7 @@ use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\Organization;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
@@ -205,6 +206,7 @@ final class SettingsPage
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'email_background' => (string) get_option(EmailTemplate::BACKGROUND_OPTION, ''),
                 'hybrid' => self::hybridView(),
+                'organization_name' => Organization::stored(),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_note' => SiteTexts::value('ticket_note'),
                 'infrastructure_note' => SiteTexts::value('infrastructure_note'),
@@ -800,6 +802,10 @@ final class SettingsPage
             EmailTemplate::BACKGROUND_OPTION,
             isset($_POST['email_background']) ? esc_url_raw(wp_unslash($_POST['email_background'])) : ''
         );
+        if (isset($_POST['organization_name'])) {
+            Organization::save(wp_unslash((string) $_POST['organization_name']));
+        }
+
         update_option(
             TicketController::BACKGROUND_OPTION,
             isset($_POST['ticket_background']) ? esc_url_raw(wp_unslash($_POST['ticket_background'])) : ''

@@ -1256,8 +1256,9 @@ final class TicketMail
         // The same ticket note as the web ticket (door code, address), in
         // the languages of the rest of this email.
         $noteValue = SiteTexts::value('ticket_note');
+        $noteTags = TicketNote::values();
         $note = implode("\n\n", array_unique(array_filter(array_map(
-            static fn (string $lang): string => TranslatedText::forReader($noteValue, $lang),
+            static fn (string $lang): string => TicketNote::fill(TranslatedText::forReader($noteValue, $lang), $noteTags),
             array_keys($parts)
         ))));
 
@@ -1411,6 +1412,7 @@ final class TicketMail
             TicketText::REASON_TAG => $reason,
             TicketText::TASKS_TAG => $tasks,
             TicketText::PLUS_ONES_TAG => $plusOnes,
+            TicketText::ORGANIZATION_TAG => Organization::name(),
         ]);
 
         // A first paragraph that is one line in *stars* is the greeting.

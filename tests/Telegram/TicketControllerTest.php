@@ -9,13 +9,17 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\Organization;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketController;
+use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Tests\TestCase;
 
 final class TicketControllerTest extends TestCase
 {
+    use FakeEventNames;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -254,6 +258,38 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($this->sampleTicket());
 
         self::assertStringContainsString('<header class="t-head"><p class="t-kicker">', $html);
+    }
+
+    public function testRenderPageNamesTheOrganizationInTheHeaderAndTheNote(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => match ($name) {
+                Organization::OPTION => 'Ecstatic Dance Helsinki',
+                TicketController::NOTE_OPTION => 'Welcome to {organization}.',
+                default => $default,
+            }
+        );
+        Functions\when('get_site_icon_url')->justReturn('');
+
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('<p class="t-kicker">Your Ecstatic Dance Helsinki ticket</p>', $html);
+        self::assertStringContainsString('<title>Your Ecstatic Dance Helsinki ticket', $html);
+        self::assertStringContainsString('Welcome to Ecstatic Dance Helsinki.', $html);
+        self::assertStringNotContainsString('EventCrew', $html);
+    }
+
+    public function testRenderPageShowsTheCleanEventName(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+        $this->fakeEventNames([41 => ['en' => 'Ecstatic Dance']]);
+        $ticket = $this->sampleTicket();
+        $ticket['event'] = 'ECSTATIC DANCE 14.11.2026 / DJ X';
+        $ticket['event_id'] = 41;
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('<h1 class="t-event">Ecstatic Dance</h1>', $html);
     }
 
     public function testRenderPageWritesTheDateOutInFull(): void
