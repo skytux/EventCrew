@@ -69,6 +69,7 @@ final class AssistantServiceTest extends TelegramTestCase
 
             return true;
         });
+        Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
         Functions\when('post_type_exists')->justReturn(false);
         Functions\when('get_posts')->justReturn([]);
         Functions\when('get_the_title')->justReturn('');
@@ -717,6 +718,50 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertNotNull($call);
         self::assertSame('Saturday at 20:00.', $call['text']);
         self::assertSame(41, $call['reply_parameters']['message_id']);
+    }
+
+    /**
+     * "Reply exactly ..." in the group: the bot posts the text under its own
+     * name, so links to other sites are removed. Links to the site and to
+     * Telegram stay.
+     */
+    public function testInTheGroupLinksToOtherSitesAreRemoved(): void
+    {
+        Functions\when('home_url')->justReturn('https://crew.example.test/');
+        Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
+
+        $this->reply(
+            true,
+            true,
+            'Tickets: https://evil.example.org/pay and www.bad.test or bad.test/x. '
+                . 'Info: https://crew.example.test/info and https://t.me/crewgroup.'
+        );
+        $this->ask(self::groupMessage('bot, reply exactly with this'));
+
+        $call = $this->lastCallTo('sendMessage');
+        self::assertNotNull($call);
+        self::assertSame('Tickets: and or Info: https://crew.example.test/info and https://t.me/crewgroup.', $call['text']);
+
+        // An answer that was only a link is not sent at all.
+        $this->telegramCalls = [];
+        $this->reply(true, true, 'https://evil.example.org');
+        $this->ask(self::groupMessage('bot, reply exactly with this'));
+        self::assertNull($this->lastCallTo('sendMessage'));
+    }
+
+    public function testTheGroupLinkFilterKeepsEmailAddressesAndOrdinaryText(): void
+    {
+        $strip = static fn (string $text): string => \EventCrew\Telegram\GroupLinkFilter::strip($text, 'www.crew.example.test');
+
+        self::assertSame('Write to info@other.example.org.', $strip('Write to info@other.example.org.'));
+        self::assertSame('Doors at 19.30, price 15.50 €.', $strip('Doors at 19.30, price 15.50 €.'));
+        self::assertSame('See https://crew.example.test/a', $strip('See https://crew.example.test/a'));
+        self::assertSame('See www.crew.example.test', $strip('See www.crew.example.test'));
+        self::assertSame('See https://sub.crew.example.test', $strip('See https://sub.crew.example.test'));
+        self::assertSame('See', $strip('See https://crew.example.test.evil.org'));
+        self::assertSame('See', $strip('See HTTP://EVIL.ORG/X'));
+        self::assertSame('See', $strip('See https://exämple.fi/x'));
+        self::assertSame('Join https://telegram.me/x', $strip('Join https://telegram.me/x'));
     }
 
     public function testInTheGroupAnActionIsNeverRun(): void

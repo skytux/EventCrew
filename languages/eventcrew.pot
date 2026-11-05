@@ -1032,7 +1032,7 @@ msgstr ""
 msgid "Buy a ticket"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:517 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:92 src/Telegram/SayCommand.php:95
+#: src/Telegram/AssistantService.php:524 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:92 src/Telegram/SayCommand.php:95
 #: templates/admin/people.php:120 templates/admin/tasks.php:293 templates/public/signup-board.php:214 templates/public/signup.php:813
 #: templates/public/signup.php:1521
 msgid "Cancel"
@@ -1223,7 +1223,7 @@ msgstr ""
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:50 src/Telegram/AssistantService.php:516 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
+#: src/Support/NewsletterConfirmMail.php:50 src/Telegram/AssistantService.php:523 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
 msgid "Confirm"
 msgstr ""
 
@@ -1925,7 +1925,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:775
+#: src/Telegram/AssistantService.php:782
 msgid "First sign up with /start."
 msgstr ""
 
@@ -2361,7 +2361,7 @@ msgstr ""
 msgid "I am not in the crew group yet."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:774
+#: src/Telegram/AssistantService.php:781
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -2381,7 +2381,7 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:773
+#: src/Telegram/AssistantService.php:780
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
@@ -2390,7 +2390,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:776
+#: src/Telegram/AssistantService.php:783
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -3971,7 +3971,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:777
+#: src/Telegram/AssistantService.php:784
 msgid "Right now I only understand commands: /help"
 msgstr ""
 

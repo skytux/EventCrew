@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.17
+Stable tag: 1.140.18
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.18 =
+The bot removes links to other sites from its answers in the group; links to this site and to Telegram stay (Q254).
 
 = 1.140.17 =
 Settings: the bot token, Turnstile secret, webhook secret and import secret are shown only by their last 4 characters; an empty field keeps the saved value and a Remove box clears it; a new import secret is shown in full once. The webhook secret travels in the URL only when that box is ticked (Q252).
@@ -1265,6 +1268,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.18 =
+No settings change.
 
 = 1.140.17 =
 No settings change.
