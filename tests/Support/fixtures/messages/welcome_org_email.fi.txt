@@ -44,7 +44,7 @@ Uusi jäsen lähettää botille /start yksityisviestinä ja vahvistaa sähköpos
 
 Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista, sivuston sivuista ja virallisesta sähköpostiosoitteesta (yhteystieto kohdassa Asetukset > Tietosuoja), ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Se muistaa yksityisen keskustelun 24 tuntia ja ryhmässä sen, mitä kukin on sille kirjoittanut, erikseen, myös 24 tuntia. Se tietää kunkin roolit ja jättää pois sen, mikä on tarkoitettu vain muille. Kun järjestäjä kirjoittaa sille yksityisesti, se tuntee myös tämän oppaan ja infrastruktuurimuistiinpanon. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen. Kun joku antaa yksityisessä keskustelussa palautetta, on tyytymätön tai hyvin tyytyväinen tai pyytää ihmistä, jokainen järjestäjä saa keskustelun sähköpostilla ja lyhyen Telegram-viestin, enintään kerran tunnissa samalta henkilöltä (pois päältä kohdassa Asetukset > Telegram-botti).
 
-Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi pyytää jotakuta muuta ottamaan tehtävän napilla 🔁 Ota tehtävä komennon /me alla.
+Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /me, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy.
 
 🌙 Illan aikana: läsnäolo ja myyntipiste
 

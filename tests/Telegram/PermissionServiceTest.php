@@ -368,4 +368,28 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertSame('News, Sam', $this->mails[0]['subject']);
         self::assertStringStartsWith('Dear Sam: You now have the role DJ. Its tasks', $this->mails[0]['body']);
     }
+
+    /** The role email names the Crew app: with a crew page set, it has a button to it (C4). */
+    public function testTheRoleEmailLinksTheCrewPageWhenOneIsSet(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->options['eventcrew_signup_page_id'] = 897;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+
+        $this->giveTheDjRole();
+
+        self::assertStringContainsString("\n\nSee open tasks: https://site.test/crew/\n", $this->mails[0]['body']);
+    }
+
+    /** A pass or organizer email does not name the Crew app, so it gets no button. */
+    public function testThePassEmailHasNoCrewPageButton(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = false;
+        $this->options['eventcrew_signup_page_id'] = 897;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+
+        $this->dmAfter('perm:pass:8');
+
+        self::assertStringNotContainsString('See open tasks', $this->mails[0]['body']);
+    }
 }

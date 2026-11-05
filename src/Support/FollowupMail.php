@@ -897,6 +897,7 @@ final class FollowupMail
         )));
         $sendAt = self::sendAt($date);
         $sentTo = 0;
+        $adminUrl = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
 
         foreach ($this->people->organizers() as $person) {
             $words = Language::forPerson($person, static fn (): array => [
@@ -917,33 +918,45 @@ final class FollowupMail
                 'missed' => __('To those who did not come', 'eventcrew'),
                 'subject_line' => __('Subject', 'eventcrew'),
                 'stop' => __('Do not send the post-event email', 'eventcrew'),
+                'admin' => DoorLinkSender::adminButtonLabel(),
                 'text_next' => __('Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 'text_settings' => __('Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ]);
 
+            // The Messages-page sentence names the crew page's Admin tab: a
+            // link to it follows, as a link rather than a second button. No
+            // crew page, no link.
+            $adminLink = static fn (string $which): bool => '' !== $adminUrl && $which === $words['text_settings'];
             $heading = static fn (string $label, string $subject, string $which): string => sprintf(
                 '<p style="margin:0 0 16px;font-family:%s;font-size:13px;font-weight:700;letter-spacing:.04em;'
                     . 'text-transform:uppercase;color:#5b6470">%s</p>'
                     . '<p style="margin:0 0 8px;font-family:%s;font-size:15px;color:#1f2328">%s: %s</p>'
-                    . '<p style="margin:0 0 20px;font-family:%s;font-size:13px;color:#5b6470">%s</p>',
+                    . '<p style="margin:0 0 20px;font-family:%s;font-size:13px;color:#5b6470">%s%s</p>',
                 EmailBody::FONT,
                 esc_html($label),
                 EmailBody::FONT,
                 esc_html($words['subject_line']),
                 esc_html($subject),
                 EmailBody::FONT,
-                esc_html($which)
+                esc_html($which),
+                $adminLink($which)
+                    ? ' <a href="' . esc_url($adminUrl) . '" style="color:inherit;text-decoration:underline">'
+                        . esc_html($words['admin']) . '</a>'
+                    : ''
             );
+            $whichText = static fn (string $which): string => $adminLink($which)
+                ? $which . "\n" . $words['admin'] . ': ' . $adminUrl
+                : $which;
             $cameWhich = $cameNext ? $words['text_next'] : $words['text_settings'];
             $missedWhich = $missedNext ? $words['text_next'] : $words['text_settings'];
             $html = $heading($words['came'], $came['subject'], $cameWhich) . $came['html']
                 . '<hr style="border:0;border-top:3px solid #e3e3e8;margin:32px 0">'
                 . $heading($words['missed'], $missed['subject'], $missedWhich) . $missed['html'];
             $text = mb_strtoupper($words['came']) . "\n" . $words['subject_line'] . ': ' . $came['subject'] . "\n"
-                . $cameWhich . "\n\n"
+                . $whichText($cameWhich) . "\n\n"
                 . $came['text'] . "\n\n————————\n\n"
                 . mb_strtoupper($words['missed']) . "\n" . $words['subject_line'] . ': ' . $missed['subject'] . "\n"
-                . $missedWhich . "\n\n"
+                . $whichText($missedWhich) . "\n\n"
                 . $missed['text'];
 
             if (

@@ -530,7 +530,7 @@ final class MessageTemplates
                 ),
                 static fn (): string => self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time */
-                    __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
+                    __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}']
                 ),
                 ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when]
@@ -619,7 +619,7 @@ final class MessageTemplates
                 __('Sent a day after a late cancellation is recorded.', 'eventcrew'),
                 static fn (): string => __('Your late cancellation was recorded', 'eventcrew'),
                 static fn (): string => "Hi {name},\n\n" . self::tag(
-                    __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear.", 'eventcrew'),
+                    __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
                     ['%2$s' => '{task}']
                 ),
                 ['name' => $name, 'task' => $standingTask]
@@ -706,7 +706,7 @@ final class MessageTemplates
                 ),
                 static fn (): string => self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line */
-                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
+                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\nCan't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}']
                 ) . '{free_cancel}{about}',
                 ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
@@ -719,7 +719,7 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
-                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me.", 'eventcrew'),
+                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
                 ) . "{free_cancel}{about}\n\n{standing}",
                 ['role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
