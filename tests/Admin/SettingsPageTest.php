@@ -68,27 +68,27 @@ final class SettingsPageTest extends TelegramTestCase
     {
         $this->save(['import_mailbox' => ' lists@example.org ']);
 
-        self::assertSame('lists@example.org', $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION]);
-        self::assertSame('lists@example.org', \EventCrew\Web\BuyerImportController::mailbox());
+        self::assertSame('lists@example.org', $this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION]);
+        self::assertSame('lists@example.org', \EventCrew\MailImport\MailedListImport::mailbox());
     }
 
     public function testAnEmptyImportMailboxRemovesIt(): void
     {
-        $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION] = 'lists@example.org';
+        $this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION] = 'lists@example.org';
 
         $this->save(['import_mailbox' => '']);
 
-        self::assertArrayNotHasKey(\EventCrew\Web\BuyerImportController::MAILBOX_OPTION, $this->options);
-        self::assertSame('', \EventCrew\Web\BuyerImportController::mailbox());
+        self::assertArrayNotHasKey(\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION, $this->options);
+        self::assertSame('', \EventCrew\MailImport\MailedListImport::mailbox());
     }
 
     public function testANonAddressLeavesTheImportMailboxAsItWas(): void
     {
-        $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION] = 'lists@example.org';
+        $this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION] = 'lists@example.org';
 
         $notice = $this->save(['import_mailbox' => 'not an address']);
 
-        self::assertSame('lists@example.org', $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION]);
+        self::assertSame('lists@example.org', $this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION]);
         self::assertStringContainsString('not an email address', $notice);
     }
 
@@ -101,7 +101,7 @@ final class SettingsPageTest extends TelegramTestCase
 
         self::assertSame(
             ['shop@example.com', 'other@example.net'],
-            $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION]
+            $this->options[\EventCrew\MailImport\MailedListImport::SENDERS_OPTION]
         );
     }
 
@@ -136,11 +136,11 @@ final class SettingsPageTest extends TelegramTestCase
 
     public function testAFormWithoutTheNewFieldsLeavesThemAsTheyWere(): void
     {
-        $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+        $this->options[\EventCrew\MailImport\MailedListImport::SENDERS_OPTION] = ['shop@example.com'];
 
         $this->save(['import_mailbox' => 'lists@example.org']);
 
-        self::assertSame(['shop@example.com'], $this->options[\EventCrew\Web\BuyerImportController::SENDERS_OPTION]);
+        self::assertSame(['shop@example.com'], $this->options[\EventCrew\MailImport\MailedListImport::SENDERS_OPTION]);
         self::assertArrayNotHasKey(\EventCrew\Support\TicketFormats::OPTION, $this->options);
     }
 
@@ -422,54 +422,6 @@ final class SettingsPageTest extends TelegramTestCase
 
         $this->saveUntil(['turnstile_secret' => '', 'turnstile_secret_remove' => '1'], $stop);
         self::assertSame('', $this->options[$secret]);
-    }
-
-    /**
-     * A new import secret is shown in full once, to the administrator who
-     * made it; the next page load shows it masked.
-     */
-    public function testANewImportSecretIsShownInFullOnlyOnce(): void
-    {
-        $transients = [];
-        \Brain\Monkey\Functions\when('wp_generate_password')->justReturn('abcdefghijklmnopqrstuvwxyz0123456789WXYZ');
-        \Brain\Monkey\Functions\when('set_transient')->alias(static function (string $key, $value) use (&$transients): bool {
-            $transients[$key] = $value;
-            return true;
-        });
-        \Brain\Monkey\Functions\when('get_transient')->alias(static function (string $key) use (&$transients) {
-            return $transients[$key] ?? false;
-        });
-        \Brain\Monkey\Functions\when('delete_transient')->alias(static function (string $key) use (&$transients): bool {
-            unset($transients[$key]);
-            return true;
-        });
-        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
-        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
-        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(3);
-        \Brain\Monkey\Functions\when('admin_url')->alias(static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path);
-        \Brain\Monkey\Functions\when('add_query_arg')->justReturn('https://site.test/wp-admin/admin.php');
-        \Brain\Monkey\Functions\when('wp_safe_redirect')->alias(static function (): void {
-            throw new \RuntimeException('redirected');
-        });
-
-        $page = $this->page();
-
-        try {
-            $page->rotateImportSecret();
-            self::fail('Expected the redirect.');
-        } catch (\RuntimeException $e) {
-            self::assertSame('redirected', $e->getMessage());
-        }
-
-        $take = new \ReflectionMethod($page, 'takeNewImportSecret');
-
-        self::assertSame('abcdefghijklmnopqrstuvwxyz0123456789WXYZ', $take->invoke($page));
-        self::assertSame('', $take->invoke($page));
-
-        // Another administrator never sees it.
-        $transients['eventcrew_new_import_secret_3'] = 'abc';
-        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(4);
-        self::assertSame('', $take->invoke($page));
     }
 
     /**

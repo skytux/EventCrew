@@ -3352,9 +3352,6 @@ msgstr "Henkilö poistettu."
 msgid "The mailbox settings were saved."
 msgstr "Postilaatikon asetukset tallennettiin."
 
-msgid "A new import secret was generated. Copy it into the mail poller’s settings."
-msgstr "Uusi tuontisalaisuus luotiin. Kopioi se postinhakijan asetuksiin."
-
 msgid "Add a bot token and save before installing the webhook."
 msgstr "Lisää botin token ja tallenna ennen webhookin asentamista."
 
@@ -4191,8 +4188,8 @@ msgstr "Palauta pohja"
 msgid "Ticket buyer import by email"
 msgstr "Lipunostajien tuonti sähköpostilla"
 
-msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
-msgstr "Järjestäjät voivat lähettää Holvin lipputiedoston (.xlsx tai .csv) tuontipostilaatikkoon; sen liput menevät ovilistalle. Viestiin kirjoitetut nimet, yksi per rivi, menevät vieraslistalle, ja \"+2\" nimen perässä lisää kaksi aveca. Tämä sivusto lukee postilaatikkoa itse, tai sähköpostipalvelimella toimiva noutaja lähettää jokaisen listan tänne alla olevalla salaisuudella allekirjoitettuna. Lista menee seuraavaan tapahtumaan. Niin kauan kuin postilaatikkoa ei ole asetettu, järjestäjän ohje ja Läsnäolo-sivu eivät mainitse sähköpostituontia."
+msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself; set it up below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
+msgstr "Järjestäjät voivat lähettää Holvin lipputiedoston (.xlsx tai .csv) tuontipostilaatikkoon; sen liput menevät ovilistalle. Viestiin kirjoitetut nimet, yksi per rivi, menevät vieraslistalle, ja \"+2\" nimen perässä lisää kaksi aveca. Tämä sivusto lukee postilaatikkoa itse; määritä se alla. Lista menee seuraavaan tapahtumaan. Niin kauan kuin postilaatikkoa ei ole asetettu, järjestäjän ohje ja Läsnäolo-sivu eivät mainitse sähköpostituontia."
 
 msgid "Import mailbox"
 msgstr "Tuontipostilaatikko"
@@ -4203,8 +4200,8 @@ msgstr "Osoite, johon järjestäjät lähettävät listansa. Jätä tyhjäksi, j
 msgid "Read the mailbox from this site"
 msgstr "Lue postilaatikkoa tältä sivustolta"
 
-msgid "The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
-msgstr "Sivusto voi lukea tuontipostilaatikkoa itse viiden minuutin välein sähköpostipalvelimella toimivan noutajan sijaan. Käytä JMAP:ia, jos palveluntarjoajasi estää IMAP-portit; monet jaetut palveluntarjoajat estävät. Kun viesti on käsitelty, se merkitään luetuksi ja siirretään kansioon Imported tai Rejected."
+msgid "The site can read the import mailbox itself every five minutes. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
+msgstr "Sivusto voi lukea tuontipostilaatikkoa itse viiden minuutin välein. Käytä JMAP:ia, jos palveluntarjoajasi estää IMAP-portit; monet jaetut palveluntarjoajat estävät. Kun viesti on käsitelty, se merkitään luetuksi ja siirretään kansioon Imported tai Rejected."
 
 msgid "Read the mailbox"
 msgstr "Lue postilaatikko"
@@ -4274,21 +4271,6 @@ msgstr "Oman sähköpostipalvelimesi lisäämän Authentication-Results-otsakkee
 
 msgid "Save the mailbox settings"
 msgstr "Tallenna postilaatikon asetukset"
-
-msgid "Or: a mail poller on the mail server"
-msgstr "Tai: postinhakija sähköpostipalvelimella"
-
-msgid "Endpoint"
-msgstr "Päätepiste"
-
-msgid "Secret"
-msgstr "Salaisuus"
-
-msgid "Generate a new import secret? The mail poller stops working until it is given the new one."
-msgstr "Luodaanko uusi tuontisalaisuus? Postinhakija lakkaa toimimasta, kunnes sille annetaan uusi salaisuus."
-
-msgid "Generate a new secret"
-msgstr "Luo uusi salaisuus"
 
 msgid "Publish it"
 msgstr "Julkaise se"
@@ -6400,12 +6382,6 @@ msgstr "Poista tallennettu salainen avain"
 
 msgid "The webhook secret below is shown only by its last 4 characters. Put the full secret in its place to send the request."
 msgstr "Alla olevasta webhook-salaisuudesta näytetään vain 4 viimeistä merkkiä. Lähetä pyyntö koko salaisuuden kanssa."
-
-msgid "Put this in the mail poller’s settings as IMPORT_SECRET. It is shown in full only now; after a reload only its last 4 characters are shown."
-msgstr "Laita tämä postinhakijan asetuksiin nimellä IMPORT_SECRET. Se näkyy kokonaan vain nyt; uudelleenlatauksen jälkeen vain 4 viimeistä merkkiä."
-
-msgid "Only the last 4 characters are shown. To see a secret in full, generate a new one: it is shown once."
-msgstr "Vain 4 viimeistä merkkiä näytetään. Nähdäksesi salaisuuden kokonaan luo uusi: se näytetään kerran."
 
 msgid "Too many sign-in links were asked for. Wait an hour and try again."
 msgstr "Kirjautumislinkkejä pyydettiin liian monta. Odota tunti ja yritä uudelleen."

@@ -11,6 +11,7 @@ use EventCrew\MailImport\Mailbox;
 use EventCrew\MailImport\MailboxException;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\MailImport\MailImporter;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
@@ -49,7 +50,6 @@ use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
-use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminPeople;
@@ -191,7 +191,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $buyers,
             $buyerImport,
             new MailImporter(
-                new BuyerImportController(new PersonRepository(), $buyerImport, $this->mailer(), new GuestRepository()),
+                new MailedListImport(new PersonRepository(), $buyerImport, $this->mailer(), new GuestRepository()),
                 new Logger(),
                 static fn (): Mailbox => $mailbox
             )

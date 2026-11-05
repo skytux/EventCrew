@@ -52,9 +52,9 @@ use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
-use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\JmapMailbox;
 use EventCrew\MailImport\MailFetchSettings;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\PwaController;
 
 /**
@@ -84,9 +84,6 @@ final class SettingsPage
 
     /** The plugin version the webhook was last (re)installed for; see maybeInstallOnUpdate(). */
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
-
-    /** Holds a just-generated import secret for one page load; the user id is appended. */
-    private const NEW_IMPORT_SECRET_TRANSIENT = 'eventcrew_new_import_secret_';
 
     /** When the last automatic install failed; installOnUpdate() waits WEBHOOK_RETRY_GAP after it. */
     private const WEBHOOK_FAILED_OPTION = 'eventcrew_webhook_failed_at';
@@ -213,11 +210,8 @@ final class SettingsPage
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
                 'email_test_to' => (string) wp_get_current_user()->user_email,
-                'import_secret' => SecretMask::mask(BuyerImportController::ensureSecret()),
-                'import_secret_new' => $this->takeNewImportSecret(),
-                'import_url' => BuyerImportController::endpointUrl(),
-                'import_mailbox' => BuyerImportController::mailbox(),
-                'import_senders' => BuyerImportController::extraSenders(),
+                'import_mailbox' => MailedListImport::mailbox(),
+                'import_senders' => MailedListImport::extraSenders(),
                 'ticket_formats' => TicketFormats::all(),
                 'mail_fetch' => MailFetchSettings::get(),
                 'mail_fetch_status' => MailFetchSettings::status(),
@@ -1630,7 +1624,7 @@ final class SettingsPage
         $address = trim(sanitize_text_field($posted));
 
         if ('' === $address) {
-            delete_option(BuyerImportController::MAILBOX_OPTION);
+            delete_option(MailedListImport::MAILBOX_OPTION);
             Admin::redirectTo(
                 self::PAGE_SLUG,
                 __('The import settings were saved. There is no import mailbox.', 'eventcrew')
@@ -1650,7 +1644,7 @@ final class SettingsPage
             return;
         }
 
-        update_option(BuyerImportController::MAILBOX_OPTION, $address, false);
+        update_option(MailedListImport::MAILBOX_OPTION, $address, false);
         Admin::redirectTo(self::PAGE_SLUG, __('The import settings were saved.', 'eventcrew'));
     }
 
@@ -1675,7 +1669,7 @@ final class SettingsPage
             }
         }
 
-        update_option(BuyerImportController::SENDERS_OPTION, $senders, false);
+        update_option(MailedListImport::SENDERS_OPTION, $senders, false);
     }
 
     /**
@@ -1768,44 +1762,6 @@ final class SettingsPage
                 : __('The mailbox settings were saved.', 'eventcrew'),
             $insecure ? 'warning' : 'success'
         );
-    }
-
-    /**
-     * The "Generate a new secret" button for the ticket buyer import. The mail
-     * poller's copy stops working until it is given the new one.
-     */
-    public function rotateImportSecret(): void
-    {
-        Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
-
-        $secret = BuyerImportController::rotateSecret();
-
-        // The page shows the secret only masked, so the new one is shown in
-        // full once, to the administrator who made it, on the next page load.
-        set_transient(self::NEW_IMPORT_SECRET_TRANSIENT . get_current_user_id(), $secret, 10 * MINUTE_IN_SECONDS);
-
-        Admin::redirectTo(
-            self::PAGE_SLUG,
-            __('A new import secret was generated. Copy it into the mail poller’s settings.', 'eventcrew')
-        );
-    }
-
-    /**
-     * The import secret this administrator has just generated, in full, or ''.
-     * It is read once and then deleted, so a reload shows it masked.
-     */
-    private function takeNewImportSecret(): string
-    {
-        $key = self::NEW_IMPORT_SECRET_TRANSIENT . get_current_user_id();
-        $secret = get_transient($key);
-
-        if (! is_string($secret) || '' === $secret) {
-            return '';
-        }
-
-        delete_transient($key);
-
-        return $secret;
     }
 
     /**

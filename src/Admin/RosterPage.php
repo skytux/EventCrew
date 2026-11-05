@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Models\TicketBuyer;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
@@ -20,7 +21,6 @@ use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
-use EventCrew\Web\BuyerImportController;
 use EventCrew\Web\CrewAdminRoster;
 
 /**
@@ -84,7 +84,7 @@ final class RosterPage
                     $this->ticketBuyers->forDate($selected),
                     static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()
                 )),
-                'import_mailbox' => BuyerImportController::mailbox(),
+                'import_mailbox' => MailedListImport::mailbox(),
                 'ticket_mail_buyers' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
                     $this->ticketMail->counts($selected, TicketMail::KIND_BUYERS)
                 ),

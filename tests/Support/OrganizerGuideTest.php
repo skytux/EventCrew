@@ -50,7 +50,7 @@ final class OrganizerGuideTest extends TelegramTestCase
 
     public function testTheGuideExplainsTheTicketBuyerImportByEmail(): void
     {
-        $this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION] = 'import.edh@haissous.name';
+        $this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION] = 'import.edh@haissous.name';
 
         self::assertStringContainsString('email the ticket file to import.edh@haissous.name', OrganizerGuide::short());
         self::assertStringContainsString('Or email the Holvi ticket file (.xlsx or .csv) to import.edh@haissous.name', OrganizerGuide::full());
@@ -70,7 +70,7 @@ final class OrganizerGuideTest extends TelegramTestCase
 
     public function testWithoutAnImportMailboxTheGuideLeavesTheEmailImportOut(): void
     {
-        unset($this->options[\EventCrew\Web\BuyerImportController::MAILBOX_OPTION]);
+        unset($this->options[\EventCrew\MailImport\MailedListImport::MAILBOX_OPTION]);
 
         self::assertStringNotContainsString('📧', OrganizerGuide::short());
         self::assertStringNotContainsString('Or email the Holvi ticket file', OrganizerGuide::full());

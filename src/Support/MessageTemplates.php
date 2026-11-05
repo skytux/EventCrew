@@ -1020,7 +1020,7 @@ final class MessageTemplates
      * The notices to the organizers: a person meets the conditions of a role,
      * is given a role or is made an organizer (RoleNotifier); a member is
      * blocked after a forged admin request (CrewAdminController); a mailed
-     * list was imported or could not be (BuyerImportController); a bot chat
+     * list was imported or could not be (MailedListImport); a bot chat
      * is sent to the organizers (ChatForwarder).
      *
      * @return list<MessageTemplate>

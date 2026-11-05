@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EventCrew\Web;
+namespace EventCrew\MailImport;
 
 use EventCrew\Admin\RosterPage;
 use EventCrew\Repositories\GuestRepository;
@@ -14,30 +14,19 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TicketFileException;
 use EventCrew\Support\TicketMail;
-use WP_REST_Request;
-use WP_REST_Response;
 
 /**
- * The import-by-email endpoint: a mail poller on another server reads the
- * lists organizers mail in and posts each one here.
+ * Takes the lists organizers mail to the import mailbox, which the site reads
+ * itself (MailImporter).
  *
- * The poller cannot send a WordPress nonce or log in, so the request is
- * authenticated by an HMAC of its raw body under a secret shared with the
- * poller (shown in Settings → Email), and the body carries the time it was
- * sent, so a copied request stops working after a few minutes. A list that
- * still arrives twice adds nothing twice: a ticket file is recognised by its
- * Message-ID (BuyerImport::batchFor), and a plain list skips the names already
- * on that night's guest list. The sender is checked again here: the
- * list is only taken from an organizer's address or one of the extra sender
- * addresses. It always goes to the next event night.
+ * A list that arrives twice adds nothing twice: a ticket file is recognised by
+ * its Message-ID (BuyerImport::batchFor), and a plain list skips the names
+ * already on that night's guest list. The list is only taken from an
+ * organizer's address or one of the extra sender addresses. It always goes to
+ * the next event night.
  */
-final class BuyerImportController
+final class MailedListImport
 {
-    public const SECRET_OPTION = 'eventcrew_import_secret';
-
-    public const ROUTE_NAMESPACE = 'eventcrew/v1';
-    public const ROUTE = '/buyers-import';
-
     /** The address organizers mail their lists to, set in Settings → Email. */
     public const MAILBOX_OPTION = 'eventcrew_import_mailbox';
 
@@ -47,12 +36,6 @@ final class BuyerImportController
      */
     public const SENDERS_OPTION = 'eventcrew_import_senders';
 
-    /** Carries "sha256=<hex HMAC-SHA256 of the raw body>". */
-    private const SIGNATURE_HEADER = 'X-EventCrew-Signature';
-
-    /** How far the signed "sent_at" may be from this server's clock, either way. */
-    public const MAX_AGE_SECONDS = 300;
-
     public function __construct(
         private readonly PersonRepository $people,
         private readonly BuyerImport $import,
@@ -61,13 +44,8 @@ final class BuyerImportController
     ) {
     }
 
-    public function boot(): void
-    {
-        add_action('rest_api_init', [$this, 'registerRoutes']);
-    }
-
     /**
-     * The address organizers mail their lists to; the poller reads it. Empty
+     * The address organizers mail their lists to; the site reads it. Empty
      * when the site has no import mailbox, and then nothing mentions it.
      */
     public static function mailbox(): string
@@ -75,95 +53,6 @@ final class BuyerImportController
         $address = trim((string) get_option(self::MAILBOX_OPTION, ''));
 
         return false === filter_var($address, FILTER_VALIDATE_EMAIL) ? '' : $address;
-    }
-
-    /**
-     * The stored secret, generated the first time Settings shows it.
-     */
-    public static function ensureSecret(): string
-    {
-        $secret = trim((string) get_option(self::SECRET_OPTION, ''));
-
-        return '' !== $secret ? $secret : self::rotateSecret();
-    }
-
-    /**
-     * Replaces the secret. The poller's copy stops working until it is
-     * given the new one.
-     */
-    public static function rotateSecret(): string
-    {
-        $secret = wp_generate_password(40, false);
-        update_option(self::SECRET_OPTION, $secret, false);
-
-        return $secret;
-    }
-
-    public static function endpointUrl(): string
-    {
-        return rest_url(self::ROUTE_NAMESPACE . self::ROUTE);
-    }
-
-    public function registerRoutes(): void
-    {
-        register_rest_route(
-            self::ROUTE_NAMESPACE,
-            self::ROUTE,
-            [
-                'methods' => 'POST',
-                'callback' => [$this, 'handle'],
-                'permission_callback' => [$this, 'authorize'],
-            ]
-        );
-    }
-
-    /**
-     * The signature must be the HMAC of the exact bytes received, compared in
-     * constant time. With no secret stored everything is refused, and
-     * WordPress answers a refused anonymous request with 401.
-     *
-     * The signed body must also carry "sent_at", the Unix time the poller
-     * sent it, no more than MAX_AGE_SECONDS from this server's clock either
-     * way. A request copied off the wire is refused once that time is past.
-     * The 401 makes the poller leave the mail unread and try again next run,
-     * so a wrong clock delays a list but does not lose it.
-     */
-    public function authorize(WP_REST_Request $request, ?int $now = null): bool
-    {
-        $secret = trim((string) get_option(self::SECRET_OPTION, ''));
-
-        if ('' === $secret) {
-            return false;
-        }
-
-        $body = (string) $request->get_body();
-        $expected = 'sha256=' . hash_hmac('sha256', $body, $secret);
-
-        if (! hash_equals($expected, trim((string) $request->get_header(self::SIGNATURE_HEADER)))) {
-            return false;
-        }
-
-        $data = json_decode($body, true);
-        $sentAt = is_array($data) && is_int($data['sent_at'] ?? null) ? $data['sent_at'] : null;
-
-        return null !== $sentAt && abs(($now ?? time()) - $sentAt) <= self::MAX_AGE_SECONDS;
-    }
-
-    public function handle(WP_REST_Request $request): WP_REST_Response
-    {
-        $data = json_decode((string) $request->get_body(), true);
-
-        if (! is_array($data)) {
-            return new WP_REST_Response(['ok' => false, 'error' => 'bad_request'], 400);
-        }
-
-        $answer = $this->importList(
-            (string) ($data['from'] ?? ''),
-            (string) ($data['text'] ?? ''),
-            (string) ($data['message_id'] ?? '')
-        );
-
-        return new WP_REST_Response($answer['body'], $answer['status']);
     }
 
     /**
@@ -191,8 +80,8 @@ final class BuyerImportController
     /**
      * Takes one mailed list: checks the sender is an organizer or one of the
      * extra sender addresses, adds the list to the next event and mails every
-     * organizer a notice. Shared by the signed endpoint and the site's own
-     * mailbox reader (MailImporter).
+     * organizer a notice. Called by the site's own mailbox reader
+     * (MailImporter).
      *
      * With $file (an .xlsx or .csv attachment) the ticket buyers come from the
      * file and $text is not read; without it, $text is one guest per line,

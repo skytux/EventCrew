@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace EventCrew\Tests\Web;
+namespace EventCrew\Tests\MailImport;
 
 use Brain\Monkey\Functions;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -18,16 +19,12 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
-use EventCrew\Web\BuyerImportController;
-use WP_REST_Request;
 
 /**
- * The import-by-email endpoint. "Today" is 2026-07-20 (the stubbed current_time).
+ * A list mailed to the import mailbox. "Today" is 2026-07-20 (the stubbed current_time).
  */
-final class BuyerImportControllerTest extends TestCase
+final class MailedListImportTest extends TestCase
 {
-    private const SECRET = 'test-import-secret';
-
     /** @var array<string, mixed> */
     private array $options = [];
 
@@ -39,7 +36,6 @@ final class BuyerImportControllerTest extends TestCase
         parent::setUp();
 
         $this->options = [
-            BuyerImportController::SECRET_OPTION => self::SECRET,
             EmailTemplate::HTML_OPTION => false,
         ];
         $this->mails = [];
@@ -54,7 +50,6 @@ final class BuyerImportControllerTest extends TestCase
                 return true;
             }
         );
-        Functions\when('wp_generate_password')->justReturn('a-new-generated-secret');
         Functions\when('admin_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-admin/' . $p);
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
         Functions\when('get_permalink')->justReturn(false);
@@ -68,9 +63,9 @@ final class BuyerImportControllerTest extends TestCase
         });
     }
 
-    private function controller(): BuyerImportController
+    private function controller(): MailedListImport
     {
-        return new BuyerImportController(
+        return new MailedListImport(
             new PersonRepository(),
             new BuyerImport(
                 new TicketBuyerRepository(),
@@ -82,27 +77,13 @@ final class BuyerImportControllerTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * The plain list "Anna" and "Bo" mailed from $from.
+     *
+     * @return array{status: int, body: array<string, mixed>}
      */
-    private function request(array $payload, ?string $signature = null): WP_REST_Request
+    private function importPlainList(string $from = 'lou@example.com'): array
     {
-        $request = new WP_REST_Request();
-        $request->method = 'POST';
-        $request->body = (string) json_encode($payload);
-        $request->set_header(
-            'X-EventCrew-Signature',
-            $signature ?? 'sha256=' . hash_hmac('sha256', $request->body, self::SECRET)
-        );
-
-        return $request;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function payload(string $from = 'lou@example.com'): array
-    {
-        return ['from' => $from, 'text' => "Anna\nBo", 'message_id' => '<m1@example.com>', 'sent_at' => time()];
+        return $this->controller()->importList($from, "Anna\nBo", '<m1@example.com>');
     }
 
     private function queueOrganizer(bool $isOrganizer = true): void
@@ -137,81 +118,6 @@ final class BuyerImportControllerTest extends TestCase
         ));
     }
 
-    // --- signature ---------------------------------------------------------
-
-    public function testAcceptsTheRightSignature(): void
-    {
-        self::assertTrue($this->controller()->authorize($this->request($this->payload())));
-    }
-
-    public function testRefusesAWrongSignature(): void
-    {
-        $bad = 'sha256=' . hash_hmac('sha256', (string) json_encode($this->payload()), 'wrong-secret');
-
-        self::assertFalse($this->controller()->authorize($this->request($this->payload(), $bad)));
-    }
-
-    public function testRefusesASignatureOfADifferentBody(): void
-    {
-        $request = $this->request($this->payload());
-        // Same header, body changed in transit.
-        $request->body = (string) json_encode($this->payload('someone@else.com'));
-
-        self::assertFalse($this->controller()->authorize($request));
-    }
-
-    public function testRefusesAMissingSignature(): void
-    {
-        self::assertFalse($this->controller()->authorize($this->request($this->payload(), '')));
-    }
-
-    /** S-W11: a correctly signed request copied off the wire stops working after five minutes. */
-    public function testRefusesASignedRequestThatIsTooOldOrHasNoTime(): void
-    {
-        $now = 1_800_000_000;
-        $at = function (?int $sentAt) use ($now): bool {
-            $payload = $this->payload();
-            unset($payload['sent_at']);
-
-            if (null !== $sentAt) {
-                $payload['sent_at'] = $sentAt;
-            }
-
-            return $this->controller()->authorize($this->request($payload), $now);
-        };
-
-        self::assertTrue($at($now));
-        self::assertTrue($at($now - BuyerImportController::MAX_AGE_SECONDS));
-        self::assertTrue($at($now + BuyerImportController::MAX_AGE_SECONDS), 'A poller clock a little ahead is fine.');
-        self::assertFalse($at($now - BuyerImportController::MAX_AGE_SECONDS - 1), 'A replay later is refused.');
-        self::assertFalse($at($now + BuyerImportController::MAX_AGE_SECONDS + 1));
-        self::assertFalse($at(null), 'A body without the time is refused.');
-
-        $payload = $this->payload();
-        $payload['sent_at'] = (string) $now;
-        self::assertFalse($this->controller()->authorize($this->request($payload), $now), 'The time is a number.');
-    }
-
-    public function testRefusesEverythingWhenNoSecretIsStored(): void
-    {
-        $this->options[BuyerImportController::SECRET_OPTION] = '';
-        // The signature an attacker could make with an empty key.
-        $request = $this->request($this->payload());
-        $request->set_header('X-EventCrew-Signature', 'sha256=' . hash_hmac('sha256', $request->body, ''));
-
-        self::assertFalse($this->controller()->authorize($request));
-    }
-
-    public function testEnsureSecretGeneratesOneOnlyWhenNoneIsStored(): void
-    {
-        self::assertSame(self::SECRET, BuyerImportController::ensureSecret());
-
-        $this->options[BuyerImportController::SECRET_OPTION] = '';
-
-        self::assertSame('a-new-generated-secret', BuyerImportController::ensureSecret());
-        self::assertSame('a-new-generated-secret', $this->options[BuyerImportController::SECRET_OPTION]);
-    }
-
     // --- handling ----------------------------------------------------------
 
     public function testAnOrganizersPlainListGoesToTheNextNightsGuestListAndIsConfirmed(): void
@@ -220,12 +126,12 @@ final class BuyerImportControllerTest extends TestCase
         $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-10']; // datesWithTasks
         $this->wpdb->nextResults[] = []; // nobody on the guest list yet
 
-        $response = $this->controller()->handle($this->request($this->payload()));
+        $answer = $this->importPlainList();
 
-        self::assertSame(200, $response->get_status());
+        self::assertSame(200, $answer['status']);
         self::assertSame(
             ['ok' => true, 'added' => 2, 'skipped' => 0, 'date' => '2026-08-01', 'duplicate' => false],
-            $response->data
+            $answer['body']
         );
 
         self::assertSame([], $this->buyerInserts());
@@ -326,7 +232,7 @@ final class BuyerImportControllerTest extends TestCase
 
     public function testAnExtraSendersPlainListHasNoAddedBy(): void
     {
-        $this->options[BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+        $this->options[MailedListImport::SENDERS_OPTION] = ['shop@example.com'];
         $this->wpdb->nextCols[] = ['2026-08-01'];
         $this->wpdb->nextResults[] = [];
 
@@ -346,7 +252,7 @@ final class BuyerImportControllerTest extends TestCase
         $this->wpdb->nextCols[] = ['2026-08-01']; // datesWithTasks
         $this->wpdb->nextResults[] = []; // nobody on the guest list yet
 
-        $this->controller()->handle($this->request($this->payload()));
+        $this->importPlainList();
 
         self::assertCount(1, $this->mails);
         self::assertStringContainsString('https://site.test/crew/#eventcrew-admin-roster', $this->mails[0]['body']);
@@ -357,10 +263,10 @@ final class BuyerImportControllerTest extends TestCase
     {
         $this->queueOrganizer(false);
 
-        $response = $this->controller()->handle($this->request($this->payload()));
+        $answer = $this->importPlainList();
 
-        self::assertSame(403, $response->get_status());
-        self::assertSame('not_organizer', $response->data['error']);
+        self::assertSame(403, $answer['status']);
+        self::assertSame('not_organizer', $answer['body']['error']);
         self::assertSame([], $this->buyerInserts());
         self::assertSame([], $this->mails);
     }
@@ -368,9 +274,9 @@ final class BuyerImportControllerTest extends TestCase
     public function testAnUnknownSenderIsRefused(): void
     {
         // No person row queued: the address is not in the crew.
-        $response = $this->controller()->handle($this->request($this->payload('stranger@example.com')));
+        $answer = $this->importPlainList('stranger@example.com');
 
-        self::assertSame(403, $response->get_status());
+        self::assertSame(403, $answer['status']);
         self::assertSame([], $this->buyerInserts());
     }
 
@@ -399,11 +305,11 @@ final class BuyerImportControllerTest extends TestCase
         $this->queueOrganizer();
         $this->wpdb->nextCols[] = ['2026-07-19'];
 
-        $response = $this->controller()->handle($this->request($this->payload()));
+        $answer = $this->importPlainList();
 
-        self::assertSame(409, $response->get_status());
-        self::assertSame('no_upcoming_event', $response->data['error']);
-        self::assertStringContainsString('no upcoming event', $response->data['message']);
+        self::assertSame(409, $answer['status']);
+        self::assertSame('no_upcoming_event', $answer['body']['error']);
+        self::assertStringContainsString('no upcoming event', $answer['body']['message']);
         self::assertSame([], $this->buyerInserts());
     }
 
@@ -463,7 +369,7 @@ final class BuyerImportControllerTest extends TestCase
 
     public function testAnExtraSenderAddressMayMailAListAndIsToldToo(): void
     {
-        $this->options[BuyerImportController::SENDERS_OPTION] = ['Shop@Example.com'];
+        $this->options[MailedListImport::SENDERS_OPTION] = ['Shop@Example.com'];
         // No person row: the shop's address is not in the crew.
         $this->wpdb->nextCols[] = ['2026-08-01'];
         $this->wpdb->nextVars[] = '0';
@@ -487,7 +393,7 @@ final class BuyerImportControllerTest extends TestCase
 
     public function testAnAddressThatIsNeitherAnOrganizerNorAnExtraSenderIsRefused(): void
     {
-        $this->options[BuyerImportController::SENDERS_OPTION] = ['shop@example.com'];
+        $this->options[MailedListImport::SENDERS_OPTION] = ['shop@example.com'];
 
         $answer = $this->controller()->importList(
             'other@example.com',
@@ -615,13 +521,5 @@ final class BuyerImportControllerTest extends TestCase
 
         self::assertSame('Import failed', $this->mails[0]['subject']);
         self::assertStringStartsWith('No luck: The columns of the attached file', $this->mails[0]['body']);
-    }
-
-    public function testABodyThatIsNotJsonIsABadRequest(): void
-    {
-        $request = new WP_REST_Request();
-        $request->body = 'not json';
-
-        self::assertSame(400, $this->controller()->handle($request)->get_status());
     }
 }
