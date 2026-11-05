@@ -18,6 +18,8 @@ use EventCrew\Tests\TestCase;
 
 final class SlotFreedNoticeTest extends TestCase
 {
+    use AiTextOptions;
+
     /** @var array<int, array{to: string, body: string}> */
     private array $mails = [];
 
@@ -254,5 +256,24 @@ final class SlotFreedNoticeTest extends TestCase
 
         self::assertSame([], $this->wpdb->queries);
         self::assertSame([], $this->mails);
+    }
+
+    /** MessageAiText: the event's AI text when there is one, else the template's text. */
+    public function testTheEmailUsesTheEventsAiTextWhenThereIsOne(): void
+    {
+        $recipients = [$this->person(8, 'bo@example.com')];
+
+        foreach ([['slot_freed' => ['en' => 'AI: {role} is free.', 'fi' => 'AI FI']], []] as $texts) {
+            $this->options = self::aiTextOptions(['slot_freed'], 42, $texts);
+            $this->queueAndPrepare($this->taskRow(['event_post_id' => 42]), 0, $recipients);
+
+            $this->notice()->sendDue(25);
+        }
+
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString('AI: Clean is free.', $this->mails[0]['body']);
+        // The tick is on but nothing was written for the event: the template's text.
+        self::assertStringContainsString('A spot just opened', $this->mails[1]['body']);
+        self::assertStringNotContainsString('AI:', $this->mails[1]['body']);
     }
 }

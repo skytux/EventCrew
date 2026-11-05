@@ -21,6 +21,8 @@ use EventCrew\Tests\Telegram\TelegramTestCase;
  */
 final class ReminderCallTest extends TelegramTestCase
 {
+    use AiTextOptions;
+
     /** @var array<int, array{to: string, subject: string}> */
     private array $mails = [];
 
@@ -220,5 +222,43 @@ final class ReminderCallTest extends TelegramTestCase
         $rows = ((array) $this->lastCallTo('sendMessage'))['reply_markup']['inline_keyboard'];
         self::assertCount(1, $rows);
         self::assertSame('l:5', $rows[0][0]['callback_data']);
+    }
+
+    /** MessageAiText: the event's AI text when there is one, else the template's text. */
+    public function testTheReminderUsesTheEventsAiTextWhenThereIsOne(): void
+    {
+        $bodies = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body) use (&$bodies): bool {
+            $bodies[] = $body;
+
+            return true;
+        });
+        $base = $this->options;
+        $task = ['event_post_id' => 42] + $this->taskRow(5);
+
+        $this->options = self::aiTextOptions(['reminder', 'reminder_dm'], 42, [
+            'reminder' => ['en' => 'AI mail for {name}.', 'fi' => 'AI FI'],
+            'reminder_dm' => ['en' => 'AI DM about {role}.', 'fi' => 'AI FI'],
+        ]) + $base;
+        $this->wpdb->nextResults[] = [$task];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        self::assertStringContainsString('AI DM about Decorate.', (string) $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString('AI mail for Sam.', $bodies[0]);
+
+        // The tick is on but nothing was written for the event: the template's text.
+        $this->options = self::aiTextOptions(['reminder', 'reminder_dm'], 42, []) + $base;
+        $this->wpdb->nextResults[] = [$task];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(4)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        self::assertStringContainsString('Reminder: you’re on', (string) $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString('Just a reminder that', $bodies[1]);
+        self::assertStringNotContainsString('AI ', $bodies[1]);
     }
 }

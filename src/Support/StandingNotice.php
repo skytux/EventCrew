@@ -100,14 +100,14 @@ final class StandingNotice
             $person->id,
             $person->email,
             MessageTemplates::subject($kind, ['person' => $person, 'task' => $task]),
-            MessageTemplates::body($kind, ['person' => $person, 'task' => $task])
+            MessageAiText::body($kind, ['person' => $person, 'task' => $task], $task->eventPostId)
         );
     }
 
     /** The DM text: the Messages page template (MessageTemplates). */
     private function dmText(Task $task, bool $isNoShow): string
     {
-        return MessageTemplates::body($isNoShow ? 'no_show_dm' : 'late_cancel_dm', ['task' => $task]);
+        return MessageAiText::body($isNoShow ? 'no_show_dm' : 'late_cancel_dm', ['task' => $task], $task->eventPostId);
     }
 
     /**

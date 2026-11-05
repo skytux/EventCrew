@@ -22,6 +22,8 @@ use EventCrew\Tests\TestCase;
 /** The test clock is 2026-07-20 12:00. */
 final class TaskCancelledNoticeTest extends TestCase
 {
+    use AiTextOptions;
+
     /** @var array<int, array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
@@ -80,6 +82,30 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertStringContainsString('Järjestäjät ovat peruneet tehtävän', $mail['body']);
         self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
         self::assertStringContainsString('Party', $mail['body']);
+    }
+
+    /** MessageAiText: the event's AI text in each language when there is one, else the template's text. */
+    public function testTheEmailUsesTheEventsAiTextWhenThereIsOne(): void
+    {
+        $task = ['event_post_id' => 42] + $this->task('2026-08-01');
+
+        foreach ([['task_cancelled' => ['en' => 'AI EN for {name}.', 'fi' => 'AI FI for {name}.']], []] as $texts) {
+            $options = self::aiTextOptions(['task_cancelled'], 42, $texts);
+            Functions\when('get_option')->alias(
+                static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+            );
+            $this->wpdb->nextRows[] = $task;
+            $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+
+            $this->notice()->notify(5, [7]);
+        }
+
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString('AI FI for Anna.', $this->mails[0]['body']);
+        self::assertStringContainsString('AI EN for Anna.', $this->mails[0]['body']);
+        // The tick is on but nothing was written for the event: the template's text.
+        self::assertStringContainsString('The organizers have cancelled the task', $this->mails[1]['body']);
+        self::assertStringNotContainsString('AI EN', $this->mails[1]['body']);
     }
 
     private function noticeWithTickets(): TaskCancelledNotice

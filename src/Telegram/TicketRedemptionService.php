@@ -10,7 +10,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
-use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\MessageAiText;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SignedLink;
@@ -229,7 +229,7 @@ final class TicketRedemptionService
         // The ticket link goes to both of the person's channels here, in the one
         // place a credit is spent, so a claim from the bot and a claim from the
         // web profile both leave the same email and DM record to fall back on.
-        $this->deliverTicket($personId, $date, $redemptionId);
+        $this->deliverTicket($personId, $date, $redemptionId, $eventPostId);
 
         return ['code' => self::TICKET_READY, 'url' => $url];
     }
@@ -241,8 +241,9 @@ final class TicketRedemptionService
      * Only without TicketMail does a plain email carry the link instead. All
      * sends are best-effort: TicketRedemptionService already recorded the
      * redemption, and a missed confirmation must never undo a spent credit.
+     * $eventPostId is the night's event, for its AI text (MessageAiText).
      */
-    private function deliverTicket(int $personId, string $date, int $redemptionId): void
+    private function deliverTicket(int $personId, string $date, int $redemptionId, ?int $eventPostId): void
     {
         $url = $this->ticketUrl($redemptionId);
         $person = $this->people->find($personId);
@@ -258,7 +259,7 @@ final class TicketRedemptionService
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 // The Messages page template (MessageTemplates).
-                MessageTemplates::body('free_ticket_dm', ['person' => $person, 'date' => $when]),
+                MessageAiText::body('free_ticket_dm', ['person' => $person, 'date' => $when], $eventPostId),
                 ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
             );
         }
@@ -340,11 +341,12 @@ final class TicketRedemptionService
      * Sends the ticket link for an already-recorded redemption to the person, on
      * both channels they allow. Used when an organizer redeems a credit at the
      * door list, so the person gets the same DM + email the self-service flow
-     * delivers.
+     * delivers. $eventPostId is the event the redemption was recorded
+     * against, for its AI text (MessageAiText).
      */
-    public function notifyRedemption(int $personId, string $date, int $redemptionId): void
+    public function notifyRedemption(int $personId, string $date, int $redemptionId, ?int $eventPostId = null): void
     {
-        $this->deliverTicket($personId, $date, $redemptionId);
+        $this->deliverTicket($personId, $date, $redemptionId, $eventPostId);
     }
 
     /**
