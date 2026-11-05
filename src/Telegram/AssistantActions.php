@@ -84,7 +84,8 @@ final class AssistantActions
         if ($audience['organizer'] || $audience['welcomeCrew']) {
             $list[] = self::entry(
                 '/roster [date]',
-                "who works that night, with buttons to mark them: an organizer marks done, late or no-show;"
+                'who works that night, with buttons to mark them:'
+                . ' an organizer marks arrived (only people still signed up), done, late or no-show;'
                 . " someone on that night's sales-desk task who is not an organizer marks only arrived,"
                 . ' for people still signed up'
             );

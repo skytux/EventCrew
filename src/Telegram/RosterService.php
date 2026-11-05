@@ -25,8 +25,9 @@ use EventCrew\Support\RosterAssembler;
  * themselves, so a bystander cannot pull the whole crew's attendance out of the
  * bot. Organizers additionally get one-tap buttons per person to mark them
  * completed, arrived late or no-show on the running event, the same write the
- * wp-admin roster offers. Someone on that night's sales-desk task who is not an
- * organizer gets one button per person instead: arrived, which earns no credit.
+ * wp-admin roster offers, plus arrived (no credit) for someone still signed
+ * up. Someone on that night's sales-desk task who is not an organizer gets
+ * only the arrived button.
  *
  * Under the roster, a row of buttons for the next event days switches the same
  * message to another day's roster (rd:<Y-m-d>), the way /door switches nights.
@@ -145,8 +146,8 @@ final class RosterService
     }
 
     /**
-     * Handles a marking button tap: an organizer setting one person completed,
-     * arrived late or no-show, or that night's sales desk setting someone
+     * Handles a marking button tap: an organizer setting one person arrived,
+     * completed, arrived late or no-show, or that night's sales desk setting someone
      * still signed up to arrived. Anyone else, and any other mark by the sales
      * desk, is refused, and the roster message is edited in
      * place so the buttons and counts reflect the change without a new post.
@@ -394,7 +395,9 @@ final class RosterService
     /**
      * The roster as a message: the text everyone rostered sees, and - for
      * someone who may mark ($canMark) - a keyboard of per-person mark buttons:
-     * done, late and no-show for an organizer, only arrived for the sales desk.
+     * done, late and no-show for an organizer, plus arrived on a row of its own
+     * above them for someone still signed up (four buttons on one row cut the
+     * names short on a phone), and only arrived for the sales desk.
      * Organizers-only tasks are left out unless the viewer is an organizer
      * ($isOrganizer).
      *
@@ -446,6 +449,10 @@ final class RosterService
                 }
 
                 if ($canMark && $isOrganizer && $this->isMarkable($person['status'])) {
+                    if (AssignmentStatus::SIGNED_UP === $person['status']) {
+                        $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
+                    }
+
                     $keyboard[] = $this->markButtons($person['assignment_id'], $person['name']);
                 } elseif ($canMark && ! $isOrganizer && AssignmentStatus::SIGNED_UP === $person['status']) {
                     $keyboard[] = [$this->arrivedButton($person['assignment_id'], $person['name'])];
@@ -458,7 +465,7 @@ final class RosterService
         if ([] !== $keyboard) {
             $lines[] = '';
             $lines[] = $isOrganizer
-                ? __('✓ done · ⏰ late · ✗ no-show', 'eventcrew')
+                ? __('👋 arrived · ✓ done · ⏰ late · ✗ no-show', 'eventcrew')
                 : __('👋 arrived', 'eventcrew');
         }
 
@@ -499,8 +506,8 @@ final class RosterService
     }
 
     /**
-     * The one button the sales desk gets per person still signed up: mark
-     * them arrived, which earns no credit.
+     * The arrived button for a person still signed up - the only one the
+     * sales desk gets, and one more for an organizer. It earns no credit.
      *
      * @return array{text: string, callback_data: string}
      */

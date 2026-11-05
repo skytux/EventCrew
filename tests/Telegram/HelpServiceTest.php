@@ -112,7 +112,7 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertStringContainsString("Welcome crew  (date: 1.8. or 2026-08-01; default: next night)\n/roster [date]", $text);
         self::assertStringContainsString(
             '/roster [date] – who works that night; the sales desk marks 👋 arrived,'
-            . ' organizers ✓ done, ⏰ late, ✗ no-show',
+            . ' organizers 👋 arrived, ✓ done, ⏰ late, ✗ no-show',
             $text
         );
         self::assertStringContainsString('/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk', $text);
@@ -339,7 +339,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $text = $this->lastText();
         self::assertStringStartsWith('📋 Sat 1 Aug', $text);
-        self::assertStringEndsWith("\n\n✓ done · ⏰ late · ✗ no-show", $text);
+        self::assertStringEndsWith("\n\n👋 arrived · ✓ done · ⏰ late · ✗ no-show", $text);
     }
 
     public function testRosterWithAnUnreadableDateSaysHowToWriteIt(): void

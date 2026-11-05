@@ -278,7 +278,8 @@ final class RosterServiceTest extends TelegramTestCase
 
         $this->service()->onRosterCommand(555, 555);
 
-        $row = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0];
+        // Row 0 is the arrived button; the done/late/no-show row follows it.
+        $row = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][1];
         self::assertSame(['rm:11:c', 'rm:11:l', 'rm:11:n'], array_column($row, 'callback_data'));
     }
 
@@ -430,26 +431,75 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertStringNotContainsString('✓ done', $sent['text']);
     }
 
-    public function testAnOrganizerStillGetsDoneLateAndNoShowButtons(): void
+    public function testAnOrganizerGetsArrivedAboveDoneLateAndNoShow(): void
     {
         $this->organizer(true);
         $this->wpdb->nextCols[] = ['2026-07-20'];
         $this->wpdb->nextResults[] = [
             ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
         ];
+        // Sam is still signed up, Kim has already arrived.
         $this->wpdb->nextResults[] = [
             ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'],
+            ['id' => 12, 'task_id' => 5, 'person_id' => 9, 'status' => 'arrived'],
         ];
         $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
 
         $this->service()->onRosterCommand(555, 555);
 
         $sent = $this->lastCallTo('sendMessage');
+        // Sam gets 👋 on a row of its own, then ✓ ⏰ ✗; Kim, already arrived,
+        // gets no 👋 (arrived only from signed up), only ✓ ⏰ ✗.
+        self::assertSame(
+            [
+                [['text' => '👋 Sam', 'callback_data' => 'rm:11:a']],
+                [
+                    ['text' => '✓ Sam', 'callback_data' => 'rm:11:c'],
+                    ['text' => '⏰ Sam', 'callback_data' => 'rm:11:l'],
+                    ['text' => '✗ Sam', 'callback_data' => 'rm:11:n'],
+                ],
+                [
+                    ['text' => '✓ Kim', 'callback_data' => 'rm:12:c'],
+                    ['text' => '⏰ Kim', 'callback_data' => 'rm:12:l'],
+                    ['text' => '✗ Kim', 'callback_data' => 'rm:12:n'],
+                ],
+            ],
+            $sent['reply_markup']['inline_keyboard']
+        );
+        self::assertStringContainsString('👋 arrived · ✓ done · ⏰ late · ✗ no-show', $sent['text']);
+    }
+
+    public function testOrganizerCanMarkSomeoneArrived(): void
+    {
+        $this->organizer(true);
+        $this->wpdb->nextRows[] = ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3];
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-07-20', 'role_slug' => 'clean', 'capacity' => 3],
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'task_id' => 5, 'person_id' => 8, 'status' => 'arrived'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $this->service()->onMark([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'rm:11:a',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+        ]);
+
+        self::assertSame('arrived', $this->wpdb->updates[0]['data']['status']);
+        self::assertSame(7, $this->wpdb->updates[0]['data']['changed_by']);
+        self::assertSame('Marked arrived.', $this->lastCallTo('answerCallbackQuery')['text']);
+
+        // The edited roster drops Sam's 👋 (now arrived) and keeps ✓ ⏰ ✗.
+        $edit = $this->lastCallTo('editMessageText');
         self::assertSame(
             ['rm:11:c', 'rm:11:l', 'rm:11:n'],
-            array_column($sent['reply_markup']['inline_keyboard'][0], 'callback_data')
+            array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data')
         );
-        self::assertStringContainsString('✓ done · ⏰ late · ✗ no-show', $sent['text']);
     }
 
     // --- day buttons and sign-up time ------------------------------------------
