@@ -587,6 +587,8 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('new@example.com');
 
         self::assertSame('Create your crew account', $this->sent[0]['subject']);
+        // Someone signing themselves up waits for the team's OK.
+        self::assertSame('waiting', $this->wpdb->inserts[0]['data']['approval']);
         self::assertStringContainsString('There is no crew account for this email address yet.', $this->mails[0]);
         self::assertStringContainsString('Create my account', $this->mails[0]);
     }

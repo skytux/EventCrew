@@ -38,6 +38,7 @@ final class NotificationPreferences
     public const ROLE_MET = 'role_met';
     public const CHAT_FORWARD = 'chat_forward';
     public const LIST_IMPORT = 'list_import';
+    public const NEWCOMER = 'newcomer';
 
     /**
      * Locked commitment types the confirmation and reminder notifiers use: never
@@ -89,6 +90,7 @@ final class NotificationPreferences
             self::ROLE_MET => __('Someone meets a role’s conditions', 'eventcrew'),
             self::CHAT_FORWARD => __('Bot chats sent to organizers', 'eventcrew'),
             self::LIST_IMPORT => __('Ticket and guest list imports', 'eventcrew'),
+            self::NEWCOMER => __('Newcomers waiting for an OK', 'eventcrew'),
         ];
     }
 

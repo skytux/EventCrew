@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TelegramLogin;
 
@@ -60,7 +61,8 @@ final class UpdateRouter
         private readonly ?FollowupCommand $followup = null,
         private readonly ?PersonRepository $people = null,
         private readonly ?TelegramClient $telegram = null,
-        private readonly ?BuyerListReset $buyerListReset = null
+        private readonly ?BuyerListReset $buyerListReset = null,
+        private readonly ?NewcomerApproval $newcomers = null
     ) {
     }
 
@@ -165,6 +167,8 @@ final class UpdateRouter
                 $this->webLogin->onConfirm($callbackQuery);
             } elseif (null !== $this->buyerListReset && str_starts_with($data, BuyerListReset::PREFIX)) {
                 $this->buyerListReset->onTap($callbackQuery);
+            } elseif (null !== $this->newcomers && str_starts_with($data, NewcomerApproval::PREFIX)) {
+                $this->newcomers->onTap($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {

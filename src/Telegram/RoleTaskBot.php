@@ -388,6 +388,8 @@ final class RoleTaskBot
         $message = match ($outcome) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message an organizer.', 'eventcrew'),
+            SignupService::WAITING => SignupService::waitingText(),
+            SignupService::TURNED_DOWN => SignupService::turnedDownText(),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),

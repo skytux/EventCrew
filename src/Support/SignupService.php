@@ -55,6 +55,12 @@ final class SignupService
      */
     public const CREDIT_QUESTION = 'credit_question';
 
+    /** Refused: a newcomer still waiting for the team's OK. */
+    public const WAITING = 'waiting_ok';
+
+    /** Refused: the team said No to this newcomer. */
+    public const TURNED_DOWN = 'not_ok';
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly StandingCalculator $standing,
@@ -65,7 +71,7 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
+     * self::WAITING, self::TURNED_DOWN, self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
      * AssignmentRepository::JOIN_* outcome.
      *
      * $countsCredit is the answer to "Count toward free-entry credit?". It is
@@ -132,7 +138,8 @@ final class SignupService
      * someone holding an at-risk pass, because the pass would wave them
      * through; a refusal shown to them would simply be wrong.
      *
-     * Returns self::GATED, self::ORGANIZERS_ONLY or ''.
+     * Returns self::GATED, self::WAITING, self::TURNED_DOWN,
+     * self::ORGANIZERS_ONLY or ''.
      */
     public function refusalFor(int $personId, int $taskId): string
     {
@@ -159,6 +166,12 @@ final class SignupService
 
         if (null !== $person && $person->isBanned()) {
             return ['refusal' => self::GATED, 'pass' => false, 'task' => $task];
+        }
+
+        $approval = self::approvalRefusal($person);
+
+        if ('' !== $approval) {
+            return ['refusal' => $approval, 'pass' => false, 'task' => $task];
         }
 
         if (self::blocksRestrictedSlot($task, $person)) {
@@ -212,7 +225,30 @@ final class SignupService
             return self::GATED;
         }
 
+        $approval = self::approvalRefusal($person);
+
+        if ('' !== $approval) {
+            return $approval;
+        }
+
         return $this->gateRefusal($personId, $person)['refusal'];
+    }
+
+    /**
+     * self::WAITING while a newcomer waits for the team's OK, self::TURNED_DOWN
+     * after a No, '' otherwise.
+     */
+    public static function approvalRefusal(?Person $person): string
+    {
+        if (null === $person) {
+            return '';
+        }
+
+        if ($person->isWaitingForOk()) {
+            return self::WAITING;
+        }
+
+        return $person->isTurnedDown() ? self::TURNED_DOWN : '';
     }
 
     /**
@@ -254,6 +290,18 @@ final class SignupService
     public static function signoutLockMinutes(): int
     {
         return max(0, (int) get_option(self::SIGNOUT_LOCK_OPTION, self::SIGNOUT_LOCK_DEFAULT));
+    }
+
+    /** The answer every channel gives a newcomer who waits for the team's OK. */
+    public static function waitingText(): string
+    {
+        return __('Waiting for the team’s OK. We will message you when it comes.', 'eventcrew');
+    }
+
+    /** The answer every channel gives after the team said No: neutral, and where to go. */
+    public static function turnedDownText(): string
+    {
+        return __('To take tasks, talk to the team at an event.', 'eventcrew');
     }
 
     /** The answer every channel gives when the sign-out lock refuses a sign-out. */

@@ -85,6 +85,49 @@ final class PersonRepositoryTest extends TestCase
     }
 
     /**
+     * Only a newcomer who signs themselves up waits for the team's OK; any
+     * other create leaves approval out, so the column default '' (OK) holds.
+     */
+    public function testOnlyAWaitingApprovalIsWrittenOnCreate(): void
+    {
+        $repo = new PersonRepository();
+        $repo->create(['email' => 'sam@example.test']);
+        $repo->create(['email' => 'new@example.test', 'approval' => 'waiting']);
+        $repo->create(['email' => 'odd@example.test', 'approval' => 'no']);
+
+        self::assertArrayNotHasKey('approval', $this->wpdb->inserts[0]['data']);
+        self::assertSame('waiting', $this->wpdb->inserts[1]['data']['approval']);
+        self::assertArrayNotHasKey('approval', $this->wpdb->inserts[2]['data']);
+    }
+
+    /** The conditional update is what makes the first organizer's press the one that counts. */
+    public function testDecidingANewcomerOnlyChangesSomeoneStillWaiting(): void
+    {
+        $repo = new PersonRepository();
+
+        $this->wpdb->nextQueryResults[] = 1;
+        self::assertTrue($repo->decideNewcomer(8, true, 'Kim'));
+        self::assertStringContainsString("WHERE id = 8 AND approval = 'waiting'", $this->wpdb->lastQuery());
+
+        $this->wpdb->nextQueryResults[] = 0;
+        self::assertFalse($repo->decideNewcomer(8, false, 'Alex'));
+    }
+
+    public function testTheWaitingListHasOnlyConfirmedNewcomers(): void
+    {
+        $this->wpdb->nextResults[] = [['id' => 8, 'email' => 'sam@example.test', 'approval' => 'waiting']];
+
+        $list = (new PersonRepository())->waitingNewcomers();
+
+        self::assertCount(1, $list);
+        self::assertTrue($list[0]->isWaitingForOk());
+        self::assertStringContainsString(
+            "approval = 'waiting' AND email_verified_at IS NOT NULL AND anonymized_at IS NULL",
+            $this->wpdb->lastQuery()
+        );
+    }
+
+    /**
      * Revoking is one write moving one line: every cookie issued before this
      * moment stops being accepted. There is no session list to delete from -
      * that is the point of a stateless cookie - so the stamp is the whole

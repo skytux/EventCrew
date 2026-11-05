@@ -35,6 +35,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PersonEraser;
@@ -132,7 +133,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing()),
             $this->tasksScreen(),
             null,
-            new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()))
+            new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())),
+            null,
+            new NewcomerApproval(new PersonRepository(), $this->mailer(), $this->client())
         );
     }
 
@@ -471,6 +474,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'edit a person' => [CrewAdminController::PERSON_ACTION, ['person_id' => '9'] + $person],
             'grant a pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
             'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
+            'newcomer' => [CrewAdminController::NEWCOMER_ACTION, ['person_id' => '9', 'decision' => 'ok']],
         ];
     }
 
@@ -698,6 +702,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'edit' => [CrewAdminController::PERSON_ACTION, ['person_id' => '9', 'email' => 'p9@example.com']],
             'pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
             'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
+            'newcomer' => [CrewAdminController::NEWCOMER_ACTION, ['person_id' => '9', 'decision' => 'ok']],
         ];
     }
 
@@ -753,6 +758,49 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('One-time sign-up pass granted.', CrewAdminController::noticeText('admin_pass_granted'));
         // The person is told (AccessNotifier listens).
         self::assertContains([\EventCrew\Support\AccessNotifier::PASS_HOOK, [8]], (array) $fired);
+    }
+
+    public function testAnOrganizerSaysOkToANewcomer(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['approval' => Person::APPROVAL_WAITING] + $this->personRow(8);
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $result = $this->post(CrewAdminController::NEWCOMER_ACTION, ['person_id' => '8', 'decision' => 'ok']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_newcomer_ok'], $result);
+        $update = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_starts_with(ltrim($sql), 'UPDATE') && str_contains($sql, 'approval')
+        ));
+        self::assertCount(1, $update);
+        self::assertStringContainsString("SET approval = 'ok'", $update[0]);
+        self::assertSame(
+            'OK given. They can take tasks now, and they are told.',
+            CrewAdminController::noticeText('admin_newcomer_ok')
+        );
+    }
+
+    public function testALaterAnswerForANewcomerSaysSomeoneAlreadyAnswered(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['approval' => Person::APPROVAL_OK] + $this->personRow(8);
+        $this->wpdb->nextQueryResults[] = 0;
+
+        $result = $this->post(CrewAdminController::NEWCOMER_ACTION, ['person_id' => '8', 'decision' => 'no']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_newcomer_already'], $result);
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testAnUnknownNewcomerDecisionChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::NEWCOMER_ACTION, ['person_id' => '8', 'decision' => 'maybe']);
+
+        self::assertSame('admin_no_person', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
     }
 
     public function testAnOrganizerUnbansAPerson(): void

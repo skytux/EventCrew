@@ -80,6 +80,17 @@ final class TakeoverService
             return ['ok' => false, 'text' => __('That task is no longer available.', 'eventcrew')];
         }
 
+        // A newcomer without the team's OK cannot take a task this way either.
+        $approval = SignupService::approvalRefusal($cover);
+
+        if ('' !== $approval) {
+            $text = SignupService::WAITING === $approval
+                ? SignupService::waitingText()
+                : SignupService::turnedDownText();
+
+            return ['ok' => false, 'text' => $text];
+        }
+
         $deadline = TakeoverDeadline::deadline(TakeoverDeadline::now(), TakeoverDeadline::startOf($task));
 
         if (null === $deadline) {

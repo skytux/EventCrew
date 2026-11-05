@@ -181,6 +181,20 @@ endif; ?>
                     // board says so once.
                     ?>
                     <?php
+                elseif (! $eventcrew_row['mine'] && 'waiting_ok' === $eventcrew_blocked) :
+                    // SignupService::WAITING: a newcomer before the team's OK.
+                    ?>
+                    <button type="button" class="wp-element-button eventcrew-btn-full" disabled>
+                        <?php esc_html_e('Waiting for the team’s OK', 'eventcrew'); ?>
+                    </button>
+                    <?php
+                elseif (! $eventcrew_row['mine'] && 'not_ok' === $eventcrew_blocked) :
+                    // SignupService::TURNED_DOWN: neutral, and where to go.
+                    ?>
+                    <span class="eventcrew-blocked">
+                        <?php esc_html_e('Talk to the team at an event', 'eventcrew'); ?>
+                    </span>
+                    <?php
                 elseif (! $eventcrew_row['mine'] && '' !== $eventcrew_blocked) :
                     /*
                      * Say so here rather than after the press. The rule is

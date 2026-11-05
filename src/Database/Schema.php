@@ -19,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '32';
+    public const DB_VERSION = '33';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -115,6 +115,10 @@ final class Schema
 
         // Schema 31: the joins from before the history began.
         self::backfillNewsletterJoins((string) get_option(self::VERSION_OPTION, ''));
+
+        // Schema 33: the people columns approval and approval_by. dbDelta adds
+        // them with their default '', so everyone already in the people list
+        // is OK; only a newcomer who signs in after the update waits.
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -452,6 +456,13 @@ final class Schema
             // role's conditions, "given:<slug>" for being given the role), each
             // with when. NULL until the first one, so each is sent only once.
             //
+            // approval is the team's OK for a newcomer (schema 33): 'waiting'
+            // for a person who signed in by themselves for the first time,
+            // 'ok' or 'no' once an organizer decided, and '' for everyone
+            // else - every person from before schema 33, and everyone an
+            // organizer added - who is OK. approval_by is the name of the
+            // organizer who decided.
+            //
             // email is varchar(191) rather than 255 so it still fits a unique
             // index under utf8mb4 on MySQL 5.7, which shared hosts still run.
             // telegram_user_id is uniquely indexed but nullable, which MySQL
@@ -475,6 +486,8 @@ final class Schema
                 language varchar(5) DEFAULT NULL,
                 role_slugs varchar(255) NOT NULL DEFAULT '',
                 role_notices text DEFAULT NULL,
+                approval varchar(10) NOT NULL DEFAULT '',
+                approval_by varchar(191) NOT NULL DEFAULT '',
                 notes text NOT NULL,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,
