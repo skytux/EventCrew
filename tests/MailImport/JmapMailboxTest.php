@@ -160,6 +160,61 @@ final class JmapMailboxTest extends TestCase
         $this->mailbox()->moveToImported('e1');
     }
 
+    /** The login goes with every request, so plain http to another machine is never sent. */
+    public function testAPlainHttpAddressIsRefusedBeforeAnythingIsSent(): void
+    {
+        try {
+            $this->mailbox('http://mail.example.org/jmap/session')->unread(5);
+            self::fail('Expected the http address to be refused.');
+        } catch (MailboxException $e) {
+            self::assertStringContainsString('must start with https://', $e->getMessage());
+        }
+
+        self::assertSame([], $this->requests);
+    }
+
+    public function testPlainHttpToThisMachineIsAllowed(): void
+    {
+        foreach (['http://localhost:8080/jmap/session', 'http://127.0.0.1/jmap/session'] as $url) {
+            $sent = [];
+            $mailbox = new JmapMailbox(
+                $url,
+                'import@example.org',
+                'secret',
+                'INBOX',
+                'Imported',
+                'Rejected',
+                static function (string $method, string $to) use (&$sent): array {
+                    $sent[] = $to;
+
+                    return ['status' => 404, 'body' => ''];
+                }
+            );
+
+            try {
+                $mailbox->unread(5);
+            } catch (MailboxException $e) {
+                // Only that the request was sent matters here.
+                self::assertStringNotContainsString('must start with https://', $e->getMessage());
+            }
+
+            self::assertSame([$url], $sent);
+        }
+    }
+
+    public function testTheSecureUrlRule(): void
+    {
+        self::assertTrue(\EventCrew\Support\SecureUrl::isAllowed('https://llm.example.org/v1'));
+        self::assertTrue(\EventCrew\Support\SecureUrl::isAllowed('HTTPS://LLM.EXAMPLE.ORG'));
+        self::assertTrue(\EventCrew\Support\SecureUrl::isAllowed('http://localhost:11434/v1'));
+        self::assertTrue(\EventCrew\Support\SecureUrl::isAllowed('http://127.0.0.1/v1'));
+        self::assertFalse(\EventCrew\Support\SecureUrl::isAllowed('http://llm.example.org/v1'));
+        self::assertFalse(\EventCrew\Support\SecureUrl::isAllowed('http://localhost.example.org/v1'));
+        self::assertFalse(\EventCrew\Support\SecureUrl::isAllowed('http://127.0.0.2/v1'));
+        self::assertFalse(\EventCrew\Support\SecureUrl::isAllowed('ftp://llm.example.org'));
+        self::assertFalse(\EventCrew\Support\SecureUrl::isAllowed(''));
+    }
+
     public function testARefusedLoginSaysSo(): void
     {
         $this->sessionStatus = 401;

@@ -32,6 +32,7 @@ use EventCrew\Support\Reputation;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SecretMask;
+use EventCrew\Support\SecureUrl;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
@@ -51,6 +52,7 @@ use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Web\BuyerImportController;
+use EventCrew\MailImport\JmapMailbox;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\Web\PwaController;
 
@@ -999,7 +1001,7 @@ final class SettingsPage
         $url = AssistantSettings::normalizeUrl($rawUrl);
 
         if ('' !== $rawUrl && '' === $url) {
-            return __('Settings saved, except the LLM API URL: it must start with http:// or https://.', 'eventcrew');
+            return __('Settings saved, except the LLM API URL: it must start with https:// (http:// only to localhost or 127.0.0.1).', 'eventcrew');
         }
 
         update_option(AssistantSettings::URL_OPTION, $url, false);
@@ -1645,9 +1647,25 @@ final class SettingsPage
             $settings['password'] = $password;
         }
 
+        // The JMAP login travels to this address, so plain http is refused
+        // (except to this same machine) and the saved address is kept.
+        $insecure = MailFetchSettings::JMAP === $settings['protocol']
+            && '' !== $settings['server']
+            && ! SecureUrl::isAllowed(JmapMailbox::sessionUrlFor($settings['server']));
+
+        if ($insecure) {
+            $settings['server'] = MailFetchSettings::get()['server'];
+        }
+
         MailFetchSettings::save($settings);
 
-        Admin::redirectTo(self::PAGE_SLUG, __('The mailbox settings were saved.', 'eventcrew'));
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            $insecure
+                ? __('The mailbox settings were saved, except the server: a JMAP address must start with https:// (http:// only to localhost or 127.0.0.1).', 'eventcrew')
+                : __('The mailbox settings were saved.', 'eventcrew'),
+            $insecure ? 'warning' : 'success'
+        );
     }
 
     /**
