@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Telegram\EventCard;
-use EventCrew\Web\BuyerImportController;
+use EventCrew\MailImport\MailedListImport;
 
 /**
  * The organizer welcome text: how the whole plugin works, first in short and
@@ -170,7 +170,7 @@ final class OrganizerGuide
      */
     private static function mailImportShort(): array
     {
-        $mailbox = BuyerImportController::mailbox();
+        $mailbox = MailedListImport::mailbox();
 
         if ('' === $mailbox) {
             return [];
@@ -191,7 +191,7 @@ final class OrganizerGuide
      */
     private static function mailImportDetails(): array
     {
-        $mailbox = BuyerImportController::mailbox();
+        $mailbox = MailedListImport::mailbox();
 
         if ('' === $mailbox) {
             return [];

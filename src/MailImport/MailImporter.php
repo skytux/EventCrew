@@ -9,11 +9,10 @@ use EventCrew\Admin\Admin;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\Logger;
-use EventCrew\Web\BuyerImportController;
 
 /**
  * Reads the import mailbox from the site itself, every five minutes, and
- * feeds each list to the same code the signed endpoint uses. Does nothing
+ * feeds each list to MailedListImport. Does nothing
  * while the mail fetch is switched off in Settings.
  *
  * One run:
@@ -43,7 +42,7 @@ final class MailImporter
      * @param Closure(): Mailbox|null $mailboxFactory Tests pass a fake; defaults to the settings' mailbox.
      */
     public function __construct(
-        private readonly BuyerImportController $import,
+        private readonly MailedListImport $import,
         private readonly Logger $logger,
         private readonly ?Closure $mailboxFactory = null
     ) {

@@ -13,8 +13,7 @@ use EventCrew\Support\SecretBox;
  * The password is stored encrypted ('enc1:' + SecretBox) under a key derived
  * from this site's auth salt. get() returns it decrypted.
  *
- * This replaced the separate mail poller, which posted to the signed
- * endpoint instead. A message is not imported twice, because it is filed
+ * A message is not imported twice, because it is filed
  * away and the site remembers its Message-ID.
  */
 final class MailFetchSettings

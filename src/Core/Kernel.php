@@ -129,8 +129,8 @@ use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Telegram\WebLoginBot;
-use EventCrew\Web\BuyerImportController;
 use EventCrew\MailImport\MailImporter;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\CrewAdminAiText;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminFollowup;
@@ -219,10 +219,6 @@ final class Kernel
         $this->container->get(BoardRefreshListener::class)->boot();
         $this->container->get(SlotFreedNotice::class)->boot();
         $this->container->get(TaskCancelledNotice::class)->boot();
-
-        // The import-by-email endpoint: the mail poller posts to it with nobody
-        // logged in, so it boots on the front path with the bot's endpoints.
-        $this->container->get(BuyerImportController::class)->boot();
 
         // The site's own reader for the import mailbox (IMAP or JMAP): a
         // five-minute cron event, a no-op while switched off in Settings.
@@ -1101,14 +1097,14 @@ final class Kernel
         $this->container->singleton(
             MailImporter::class,
             fn (Container $container) => new MailImporter(
-                $container->get(BuyerImportController::class),
+                $container->get(MailedListImport::class),
                 $container->get(Logger::class)
             )
         );
 
         $this->container->singleton(
-            BuyerImportController::class,
-            fn (Container $container) => new BuyerImportController(
+            MailedListImport::class,
+            fn (Container $container) => new MailedListImport(
                 $container->get(PersonRepository::class),
                 $container->get(BuyerImport::class),
                 $container->get(Mailer::class),

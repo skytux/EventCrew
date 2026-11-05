@@ -69,9 +69,6 @@
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
- * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with, masked to its last 4 characters.
- * @var string $import_secret_new The secret in full, only on the page load right after it was generated; else ''.
- * @var string $import_url The REST URL the mail poller posts mailed lists to.
  * @var string $import_mailbox The address organizers mail ticket files and guest lists to; '' when none is set.
  * @var array<int, string> $import_senders Addresses besides the organizers' that may mail a list in.
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
@@ -2226,7 +2223,7 @@ if (! defined('ABSPATH')) {
 
     <h2><?php esc_html_e('Ticket buyer import by email', 'eventcrew'); ?></h2>
     <p class="description">
-        <?php esc_html_e('Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and "+2" after a name adds two plus-ones. This site reads that mailbox itself, or a mail poller on the mail server sends each list here, signed with the secret below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        <?php esc_html_e('Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and "+2" after a name adds two plus-ones. This site reads that mailbox itself; set it up below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
     </p>
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="eventcrew_save_import_mailbox">
@@ -2303,7 +2300,7 @@ if (! defined('ABSPATH')) {
 
     <h3><?php esc_html_e('Read the mailbox from this site', 'eventcrew'); ?></h3>
     <p class="description">
-        <?php esc_html_e('The site can read the import mailbox itself every five minutes, instead of a mail poller on the mail server. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        <?php esc_html_e('The site can read the import mailbox itself every five minutes. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
     </p>
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="eventcrew_save_mail_fetch">
@@ -2391,34 +2388,6 @@ if (! defined('ABSPATH')) {
         <input type="hidden" name="action" value="eventcrew_fetch_mail_now">
         <?php wp_nonce_field($email_nonce_action); ?>
         <?php submit_button(__('Check the mailbox now', 'eventcrew'), 'secondary', 'submit', false); ?>
-    </form>
-
-    <h3><?php esc_html_e('Or: a mail poller on the mail server', 'eventcrew'); ?></h3>
-    <table class="form-table" role="presentation">
-        <tr>
-            <th scope="row"><?php esc_html_e('Endpoint', 'eventcrew'); ?></th>
-            <td><code><?php echo esc_html($import_url); ?></code></td>
-        </tr>
-        <tr>
-            <th scope="row"><label for="eventcrew-import-secret"><?php esc_html_e('Secret', 'eventcrew'); ?></label></th>
-            <td>
-                <?php if ('' !== $import_secret_new) : ?>
-                    <input type="text" id="eventcrew-import-secret" class="large-text code" readonly value="<?php echo esc_attr($import_secret_new); ?>" onfocus="this.select()">
-                    <p class="description"><?php esc_html_e('Put this in the mail poller’s settings as IMPORT_SECRET. It is shown in full only now; after a reload only its last 4 characters are shown.', 'eventcrew'); ?></p>
-                <?php else : ?>
-                    <code id="eventcrew-import-secret"><?php echo esc_html($import_secret); ?></code>
-                    <p class="description"><?php esc_html_e('Only the last 4 characters are shown. To see a secret in full, generate a new one: it is shown once.', 'eventcrew'); ?></p>
-                <?php endif; ?>
-            </td>
-        </tr>
-    </table>
-    <form
-        method="post"
-        action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
-        onsubmit="return confirm('<?php echo esc_js(__('Generate a new import secret? The mail poller stops working until it is given the new one.', 'eventcrew')); ?>');">
-        <input type="hidden" name="action" value="eventcrew_rotate_import_secret">
-        <?php wp_nonce_field($email_nonce_action); ?>
-        <?php submit_button(__('Generate a new secret', 'eventcrew'), 'secondary', 'submit', false); ?>
     </form>
     </div>
 

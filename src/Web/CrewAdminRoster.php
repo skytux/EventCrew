@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Admin\RosterPage;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Models\Guest;
@@ -135,7 +136,7 @@ final class CrewAdminRoster
             'ticket_mail_pending' => '',
             'followup_mail' => '',
             'followup_can_stop' => false,
-            'mailbox' => BuyerImportController::mailbox(),
+            'mailbox' => MailedListImport::mailbox(),
             'mail_last' => self::lastMailCheck(),
         ];
 

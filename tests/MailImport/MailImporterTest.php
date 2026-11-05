@@ -9,6 +9,7 @@ use EventCrew\MailImport\Mailbox;
 use EventCrew\MailImport\MailboxException;
 use EventCrew\MailImport\MailFetchSettings;
 use EventCrew\MailImport\MailImporter;
+use EventCrew\MailImport\MailedListImport;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -21,7 +22,6 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
-use EventCrew\Web\BuyerImportController;
 
 /**
  * One run of the site's own mailbox reader, against a fake mailbox. "Today"
@@ -123,7 +123,7 @@ final class MailImporterTest extends TestCase
 
     private function importer(Mailbox $mailbox): MailImporter
     {
-        $controller = new BuyerImportController(
+        $controller = new MailedListImport(
             new PersonRepository(),
             new BuyerImport(
                 new TicketBuyerRepository(),

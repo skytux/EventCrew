@@ -9,8 +9,8 @@ use EventCrew\Repositories\TicketBuyerRepository;
 /**
  * Imports a list of Holvi ticket buyers onto a night's door list - shared by
  * the paste boxes (wp-admin and the crew page) and, for a mailed ticket file,
- * the import-by-email endpoint. A mail with no ticket file goes to the guest
- * list instead (BuyerImportController).
+ * the site's mailbox reader (MailedListImport). A mail with no ticket file
+ * goes to the guest list instead.
  */
 final class BuyerImport
 {
