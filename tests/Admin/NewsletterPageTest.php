@@ -251,7 +251,8 @@ final class NewsletterPageTest extends TestCase
 
     /**
      * The joins and leaves are read for the range only, and a newsletter sent
-     * before the range has no marker; the list below still has every one.
+     * before the range has no marker and is not in the list (Q234); the one
+     * in the range keeps its number from the whole history.
      */
     public function testTheChartFollowsTheRange(): void
     {
@@ -274,10 +275,70 @@ final class NewsletterPageTest extends TestCase
         self::assertSame(1, substr_count($data['chart'], 'stroke-dasharray'));
         self::assertStringContainsString('Newsletter 2, 3.7.2026: July.', $data['chart']);
         self::assertStringNotContainsString('June', $data['chart']);
-        self::assertSame([1, 2], array_column($data['sends'], 'number'));
+        self::assertSame([2], array_column($data['sends'], 'number'));
+        self::assertTrue($data['any_sent']);
+        self::assertSame(['joins' => 2, 'leaves' => 0, 'newsletters' => 1], $data['totals']);
     }
 
-    /** A range with nothing in it has no chart, but the history before it is still listed. */
+    /** The totals count the joins, leaves and newsletters in the range; two versions are one newsletter (Q233). */
+    public function testTheTotalsCoverTheRange(): void
+    {
+        $this->queue(
+            [
+                ['day' => '2026-07-02', 'kind' => 'subscribed', 'n' => '2'],
+                ['day' => '2026-07-05', 'kind' => 'subscribed', 'n' => '3'],
+                ['day' => '2026-07-05', 'kind' => 'unsubscribed', 'n' => '1'],
+            ],
+            [
+                ['id' => '1', 'plan_id' => '6', 'lang' => '', 'sent_at' => '2026-06-30 18:00:00',
+                    'subject' => 'June', 'sent' => '5', 'failed' => '0'],
+                ['id' => '2', 'plan_id' => '7', 'lang' => 'fi', 'sent_at' => '2026-07-03 18:00:00',
+                    'subject' => 'Heinäkuu', 'sent' => '6', 'failed' => '0'],
+                ['id' => '3', 'plan_id' => '7', 'lang' => 'en', 'sent_at' => '2026-07-03 18:00:00',
+                    'subject' => 'July', 'sent' => '2', 'failed' => '0'],
+                ['id' => '4', 'plan_id' => '8', 'lang' => '', 'sent_at' => '2026-07-08 18:00:00',
+                    'subject' => 'Later in July', 'sent' => '8', 'failed' => '0'],
+            ]
+        );
+
+        $data = $this->page()->data('custom', '2026-07-01', '2026-07-10');
+
+        self::assertSame(['joins' => 5, 'leaves' => 1, 'newsletters' => 2], $data['totals']);
+        self::assertSame([2, 2, 3], array_column($data['sends'], 'number'));
+    }
+
+    /**
+     * Two newsletters in one bar get one marker labelled with their first and
+     * last number, and its title lists both (Q235). A bar with one newsletter
+     * keeps the round marker with its number.
+     */
+    public function testSeveralNewslettersInOneBarShareOneMarker(): void
+    {
+        $buckets = NewsletterPage::buckets('2026-05-21', '2026-07-20', NewsletterPage::PER_MONTH, []);
+        $svg = NewsletterPage::chart(
+            $buckets,
+            [
+                ['number' => 1, 'at' => '2026-06-03 18:00:00', 'subject' => 'Early June', 'sent' => 4],
+                ['number' => 2, 'at' => '2026-06-24 18:00:00', 'subject' => 'Midsummer', 'sent' => 5],
+                ['number' => 2, 'at' => '2026-06-24 18:00:00', 'subject' => 'Juhannus', 'sent' => 1],
+                ['number' => 3, 'at' => '2026-07-08 18:00:00', 'subject' => 'July', 'sent' => 7],
+            ],
+            NewsletterPage::PER_MONTH
+        );
+
+        self::assertSame(2, substr_count($svg, 'stroke-dasharray'), 'one marker per bar');
+        self::assertStringContainsString('>1–2</text>', $svg);
+        self::assertStringContainsString(
+            "<title>Newsletter 1, 3.6.2026: Early June. Sent to 4 addresses.\n"
+                . 'Newsletter 2, 24.6.2026: Midsummer / Juhannus. Sent to 6 addresses.</title>',
+            $svg
+        );
+        self::assertSame(1, substr_count($svg, '<circle '), 'the July bar keeps the round marker');
+        self::assertStringContainsString('>3</text></g>', $svg);
+        self::assertSame(1, substr_count($svg, 'rx="9"'), 'the June bar has the wider marker');
+    }
+
+    /** A range with nothing in it has no chart and no sent newsletters listed. */
     public function testAnEmptyRangeHasNoChart(): void
     {
         $this->queue(
@@ -290,7 +351,22 @@ final class NewsletterPageTest extends TestCase
 
         self::assertFalse($data['has_history']);
         self::assertSame('', $data['chart']);
-        self::assertCount(1, $data['sends']);
+        self::assertSame([], $data['sends']);
+        self::assertTrue($data['any_sent']);
+        self::assertSame(['joins' => 0, 'leaves' => 0, 'newsletters' => 0], $data['totals']);
+        self::assertStringContainsString('No newsletter was sent in this time range.', $this->renderedAgain());
+    }
+
+    /** The same data as the last data() call, rendered: queues the January newsletter again. */
+    private function renderedAgain(): string
+    {
+        $this->queue(
+            [],
+            [['id' => '1', 'plan_id' => '6', 'lang' => '', 'sent_at' => '2026-01-30 18:00:00',
+                'subject' => 'January', 'sent' => '5', 'failed' => '0']]
+        );
+
+        return $this->rendered(['range' => '1m']);
     }
 
     /** The rendered page, with $get as the query string. */
@@ -367,6 +443,7 @@ final class NewsletterPageTest extends TestCase
         self::assertMatchesRegularExpression('~<td>\s*17\.7\.2026 18:05\s*</td>~', $html);
         self::assertStringContainsString('Both languages', $html);
         self::assertStringContainsString('target="_blank"', $html);
+        self::assertStringContainsString('In this time range: joins 4, leaves 0, sent newsletters 1.', $html);
     }
 
     /** Dates chosen in the second form are kept in both forms, and the list shows "Custom dates". */

@@ -80,8 +80,9 @@ final class NewsletterPage
     /**
      * Everything the page shows. $range is a key of RANGES, or RANGE_CUSTOM
      * with $from and $to (Y-m-d); anything else is the default range. The
-     * chart and its newsletter markers cover the range only; the list of
-     * sent newsletters is always complete.
+     * chart, its newsletter markers, the totals and the list of sent
+     * newsletters cover the range only; each newsletter keeps its number from
+     * the whole history. any_sent is whether any newsletter was ever sent.
      *
      * @return array{
      *     counts: array{confirmed: int, pending: int, unsubscribed: int},
@@ -94,8 +95,10 @@ final class NewsletterPage
      *     per: string,
      *     has_history: bool,
      *     chart: string,
+     *     totals: array{joins: int, leaves: int, newsletters: int},
      *     sends: list<array{number: int, id: int, at: string, lang: string, subject: string,
-     *         sent: int, failed: int, url: string}>
+     *         sent: int, failed: int, url: string}>,
+     *     any_sent: bool
      * }
      */
     public function data(string $range, string $from = '', string $to = ''): array
@@ -125,12 +128,18 @@ final class NewsletterPage
             ];
         }
 
-        // The markers: only the newsletters sent within the range.
+        // The markers and the list: only the newsletters sent within the range.
+        // The numbers stay those of the whole history.
         $inRange = array_values(array_filter(
             $sends,
             static fn (array $send): bool => substr($send['at'], 0, 10) >= $from && substr($send['at'], 0, 10) <= $to
         ));
         $hasHistory = [] !== $changes || [] !== $inRange;
+        $totals = [
+            'joins' => array_sum(array_column($changes, 'subscribed')),
+            'leaves' => array_sum(array_column($changes, 'unsubscribed')),
+            'newsletters' => count(array_unique(array_column($inRange, 'number'))),
+        ];
 
         return [
             'counts' => $this->subscribers->countByStatus(),
@@ -143,7 +152,9 @@ final class NewsletterPage
             'per' => $per,
             'has_history' => $hasHistory,
             'chart' => $hasHistory ? self::chart(self::buckets($from, $to, $per, $changes), $inRange, $per) : '',
-            'sends' => $sends,
+            'totals' => $totals,
+            'sends' => $inRange,
+            'any_sent' => [] !== $sends,
         ];
     }
 
@@ -306,8 +317,8 @@ final class NewsletterPage
 
     /**
      * The chart as inline SVG: for each bucket a bar of joins and a bar of
-     * leaves side by side, and for each sent newsletter a dashed vertical line
-     * with its number at the top. Hovering a bar or a line shows its numbers
+     * leaves side by side, and for each bar with sent newsletters one dashed
+     * vertical line with their number (or first and last number) at the top. Hovering a bar or a line shows its numbers
      * (an SVG title).
      *
      * @param list<array{start: string, subscribed: int, unsubscribed: int}> $buckets
@@ -406,7 +417,8 @@ final class NewsletterPage
             $index[$bucket['start']] = $i;
         }
 
-        // One marker per sent newsletter, in the bucket of the day it went.
+        // Each sent newsletter (both language versions together) in the bucket
+        // of the day it went: bucket index => newsletter number => mark.
         $marks = [];
 
         foreach ($sends as $send) {
@@ -417,42 +429,74 @@ final class NewsletterPage
                 continue;
             }
 
-            $mark = &$marks[$send['number']];
-            $mark ??= ['i' => $index[$key], 'day' => $day, 'subjects' => [], 'sent' => 0];
+            $mark = &$marks[$index[$key]][$send['number']];
+            $mark ??= ['day' => $day, 'subjects' => [], 'sent' => 0];
             $mark['subjects'][] = $send['subject'];
             $mark['sent'] += $send['sent'];
             unset($mark);
         }
 
-        foreach ($marks as $number => $mark) {
-            $x = self::LEFT + $slot * ($mark['i'] + 0.5);
-            $title = sprintf(
-                /* translators: 1: newsletter number, 2: date, like 3.11.2026, 3: subject(s), 4: number of emails */
-                _n(
-                    'Newsletter %1$d, %2$s: %3$s. Sent to %4$d address.',
-                    'Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses.',
-                    $mark['sent'],
-                    'eventcrew'
-                ),
-                $number,
-                self::longDay($mark['day']),
-                implode(' / ', array_unique($mark['subjects'])),
-                $mark['sent']
-            );
+        ksort($marks);
+
+        // One marker per bar (Lou, Q235): the newsletter's number, or for
+        // several newsletters in one bar the first and last number, like
+        // "1–2". The title lists each newsletter on its own line.
+        foreach ($marks as $i => $group) {
+            ksort($group);
+            $x = self::LEFT + $slot * ($i + 0.5);
+            $titles = [];
+
+            foreach ($group as $number => $mark) {
+                $titles[] = sprintf(
+                    /* translators: 1: newsletter number, 2: date, like 3.11.2026, 3: subject(s), 4: number of emails */
+                    _n(
+                        'Newsletter %1$d, %2$s: %3$s. Sent to %4$d address.',
+                        'Newsletter %1$d, %2$s: %3$s. Sent to %4$d addresses.',
+                        $mark['sent'],
+                        'eventcrew'
+                    ),
+                    $number,
+                    self::longDay($mark['day']),
+                    implode(' / ', array_unique($mark['subjects'])),
+                    $mark['sent']
+                );
+            }
+
+            $numbers = array_keys($group);
+
+            if (1 === count($numbers)) {
+                $badge = sprintf('<circle cx="%.1f" cy="%d" r="9" fill="%s"/>', $x, self::TOP - 10, self::COLOR_SEND);
+                $label = (string) $numbers[0];
+                $labelX = $x;
+            } else {
+                $label = min($numbers) . '–' . max($numbers);
+                $width = 7 * mb_strlen($label) + 8;
+                // Kept inside the chart at its left and right ends.
+                $labelX = min(max($x, self::LEFT + $width / 2), self::WIDTH - $width / 2);
+                $badge = sprintf(
+                    '<rect x="%.1f" y="%d" width="%d" height="18" rx="9" fill="%s"/>',
+                    $labelX - $width / 2,
+                    self::TOP - 19,
+                    $width,
+                    self::COLOR_SEND
+                );
+            }
+
             $out .= sprintf(
                 '<g><title>%1$s</title>'
                     . '<line x1="%2$.1f" x2="%2$.1f" y1="%3$d" y2="%4$.1f" stroke="%5$s" stroke-width="2"'
                     . ' stroke-dasharray="4 3"/>'
-                    . '<circle cx="%2$.1f" cy="%6$d" r="9" fill="%5$s"/>'
-                    . '<text x="%2$.1f" y="%7$d" font-size="11" text-anchor="middle" fill="#fff">%8$d</text></g>',
-                esc_html($title),
+                    . '%6$s'
+                    . '<text x="%7$.1f" y="%8$d" font-size="11" text-anchor="middle" fill="#fff">%9$s</text></g>',
+                esc_html(implode("\n", $titles)),
                 $x,
                 self::TOP,
                 $bottom,
                 self::COLOR_SEND,
-                self::TOP - 10,
+                $badge,
+                $labelX,
                 self::TOP - 6,
-                $number
+                esc_html($label)
             );
         }
 
