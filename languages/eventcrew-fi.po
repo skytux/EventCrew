@@ -7828,3 +7828,12 @@ msgstr "Avaa Telegram"
 
 msgid "Waiting for Telegram…"
 msgstr "Odotetaan Telegramia…"
+
+msgid "Email address changed (Telegram)"
+msgstr "Sähköpostiosoite vaihdettu (Telegram)"
+
+msgid "Sent to the linked Telegram chat when a person has confirmed their new email address. Always sent, even when the person turned other messages off."
+msgstr "Lähetetään linkitettyyn Telegram-keskusteluun, kun henkilö on vahvistanut uuden sähköpostiosoitteensa. Lähtee aina, vaikka henkilö olisi ottanut muut viestit pois päältä."
+
+msgid "📧 Your crew account email is now %s. If you did not do this, tell an organizer."
+msgstr "📧 Crew-tilisi sähköpostiosoite on nyt %s. Jos et tehnyt tätä itse, kerro järjestäjälle."

@@ -15,6 +15,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SiteLanguages;
@@ -111,7 +112,10 @@ final class SignupControllerTest extends TestCase
         self::assertTrue(defined('DONOTCACHEPAGE'));
     }
 
-    private function controller(?TelegramLogin $telegramLogin = null): SignupController
+    private function controller(
+        ?TelegramLogin $telegramLogin = null,
+        ?TelegramClient $telegram = null
+    ): SignupController
     {
         $people = new PersonRepository();
         $assignments = new AssignmentRepository();
@@ -144,7 +148,8 @@ final class SignupControllerTest extends TestCase
             null,
             null,
             null,
-            $telegramLogin
+            $telegramLogin,
+            $telegram
         );
     }
 
@@ -609,6 +614,75 @@ final class SignupControllerTest extends TestCase
         self::assertSame([], $this->transients);
         self::assertSame('sam@example.com', $this->sent[0]['to']);
         self::assertStringContainsString('sam2@example.com', $this->mails[0]);
+    }
+
+    /**
+     * The Telegram twin of the email-changed notice: a security message, so it
+     * reaches the linked chat even with every DM type and the bot muted.
+     *
+     * @return array<int, array<string, mixed>> the Telegram sends
+     */
+    private function confirmEmailChangeWithTelegram(array $personRow): array
+    {
+        $sends = [];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed
+                => TelegramClient::TOKEN_OPTION === $name ? 'BOT:TOKEN' : $default
+        );
+        Functions\when('get_bloginfo')->justReturn('');
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(static function (string $url, array $args) use (&$sends): string {
+            $sends[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+
+        $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'sam2@example.com';
+        $token = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextRows[] = $token;
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = $personRow;
+        $this->wpdb->nextRows[] = null;
+
+        $telegram = new TelegramClient(new Logger(), new DohResolver(new Logger()));
+        self::assertSame('email_changed', $this->controller(null, $telegram)->confirmEmailChange('raw1'));
+
+        return $sends;
+    }
+
+    public function testTheEmailChangedNoticeAlsoGoesToTheLinkedTelegramChatEvenWhenMuted(): void
+    {
+        $sends = $this->confirmEmailChangeWithTelegram([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'telegram_chat_id' => 4242,
+            'notify_muted' => 1,
+            'notify_prefs' => (string) json_encode(
+                array_fill_keys(array_keys(NotificationPreferences::labels()), ['dm' => false, 'email' => false])
+            ),
+        ]);
+
+        self::assertCount(1, $sends);
+        self::assertSame(4242, $sends[0]['chat_id']);
+        self::assertSame(
+            "Hi Sam,\n\n📧 Your crew account email is now sam2@example.com. If you did not do this, tell an organizer.",
+            $sends[0]['text']
+        );
+        // The email to the old address still goes too.
+        self::assertSame('sam@example.com', $this->sent[0]['to']);
+    }
+
+    public function testTheEmailChangedNoticeSendsNoTelegramMessageWithoutALinkedChat(): void
+    {
+        $sends = $this->confirmEmailChangeWithTelegram(
+            ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam']
+        );
+
+        self::assertSame([], $sends);
+        self::assertSame('sam@example.com', $this->sent[0]['to']);
     }
 
     public function testAnEmailChangeLinkOpenedTwiceAtOnceChangesTheAddressOnlyOnce(): void

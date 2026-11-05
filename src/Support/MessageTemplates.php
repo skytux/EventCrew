@@ -983,6 +983,25 @@ final class MessageTemplates
                 ]
             ),
             new MessageTemplate(
+                'email_changed_dm',
+                __('Email address changed (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the linked Telegram chat when a person has confirmed their new email address. Always sent, even when the person turned other messages off.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: %s: the new email address */
+                    __('📧 Your crew account email is now %s. If you did not do this, tell an organizer.', 'eventcrew'),
+                    ['%s' => '{email}']
+                ),
+                [
+                    'email' => self::placeholder(
+                        __('The new email address.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['email'] ?? ''),
+                        true
+                    ),
+                ]
+            ),
+            new MessageTemplate(
                 'delete_data_confirm',
                 __('Confirm deleting data (email)', 'eventcrew'),
                 $email,
