@@ -1737,7 +1737,7 @@ msgctxt "date format"
 msgid "D j M H:i"
 msgstr ""
 
-#: src/Telegram/TicketController.php:338
+#: src/Telegram/TicketController.php:347
 msgid "DISABLED"
 msgstr ""
 
@@ -2360,7 +2360,7 @@ msgstr ""
 msgid "Found a replacement"
 msgstr ""
 
-#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:293 templates/admin/roster.php:131
+#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:298 templates/admin/roster.php:131
 msgid "Free entry"
 msgstr ""
 
@@ -2544,7 +2544,7 @@ msgstr ""
 msgid "Guest added."
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:66 src/Telegram/TicketController.php:179 src/Web/CrewAdminController.php:182 templates/admin/roster.php:183
+#: src/Telegram/MenuButtons.php:66 src/Telegram/TicketController.php:181 src/Web/CrewAdminController.php:182 templates/admin/roster.php:183
 #: templates/public/signup.php:1278
 msgid "Guest list"
 msgstr ""
@@ -2562,7 +2562,7 @@ msgstr ""
 msgid "Guest list — %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:176
+#: src/Telegram/TicketController.php:178
 #. translators: %d: how many people the guest may bring
 msgid "Guest list, +%d person"
 msgid_plural "Guest list, +%d people"
@@ -2598,7 +2598,7 @@ msgstr ""
 msgid "Guests added for %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:484
+#: src/Telegram/TicketController.php:497
 msgctxt "date format"
 msgid "H:i, D j M"
 msgstr ""
@@ -2998,7 +2998,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:461
+#: src/Telegram/TicketController.php:474
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -3836,7 +3836,7 @@ msgstr ""
 msgid "Not installed"
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:244
+#: src/Admin/AiPromptsPage.php:245
 #. translators: %s: the placeholder names, like {name}, {event}
 msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
 msgstr ""
@@ -3911,7 +3911,7 @@ msgstr ""
 msgid "Nothing was saved: choose the thank-you text or the sorry text."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:322 src/Web/CrewAdminAiText.php:63
+#: src/Admin/AiPromptsPage.php:323 src/Web/CrewAdminAiText.php:63
 msgid "Nothing was saved: that text was not found."
 msgstr ""
 
@@ -3919,11 +3919,11 @@ msgstr ""
 msgid "Nothing was waiting for an answer."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:362 src/Admin/AiPromptsPage.php:410 src/Admin/AiPromptsPage.php:427 src/Support/EventAiText.php:273
+#: src/Admin/AiPromptsPage.php:363 src/Admin/AiPromptsPage.php:411 src/Admin/AiPromptsPage.php:428 src/Support/EventAiText.php:273
 msgid "Nothing was written: that event or text was not found."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:431 src/Support/EventAiText.php:279
+#: src/Admin/AiPromptsPage.php:432 src/Support/EventAiText.php:279
 msgid "Nothing was written: the AI is not set up. Set it up in EventCrew > Settings."
 msgstr ""
 
@@ -5043,7 +5043,7 @@ msgstr ""
 msgid "Saved for the next post-event email only:"
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:121
+#: src/Web/CrewAdminNewsletter.php:122
 msgid "Saved, but the text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
@@ -5051,7 +5051,7 @@ msgstr ""
 msgid "Saved."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:254
+#: src/Admin/AiPromptsPage.php:255
 msgid "Saved. Some placeholders were left out: a name uses only small letters a-z, digits and _, starts with a letter, is used once, and has a prompt."
 msgstr ""
 
@@ -5059,11 +5059,11 @@ msgstr ""
 msgid "Saved. The next announcement carries this text:"
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:120
+#: src/Web/CrewAdminNewsletter.php:121
 msgid "Saved. The text is translated; every language’s version is shown below."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:320 src/Web/CrewAdminAiText.php:61
+#: src/Admin/AiPromptsPage.php:321 src/Web/CrewAdminAiText.php:61
 msgid "Saved. This text is sent as you wrote it."
 msgstr ""
 
@@ -6474,7 +6474,7 @@ msgid_plural "The %d events above go to the group when you tap Confirm."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/AiPromptsPage.php:447 src/Support/EventAiText.php:285
+#: src/Admin/AiPromptsPage.php:448 src/Support/EventAiText.php:285
 #. translators: %d: how many texts the AI could not write
 msgid "The AI could not write %d text; it keeps its old text."
 msgid_plural "The AI could not write %d texts; they keep their old texts."
@@ -6485,14 +6485,14 @@ msgstr[1] ""
 msgid "The AI could not write this text. The normal message text is used, unless you write one here."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:391
+#: src/Admin/AiPromptsPage.php:392
 #. translators: %d: how many texts the AI is asked for
 msgid "The AI is writing %d text."
 msgid_plural "The AI is writing %d texts."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/AiPromptsPage.php:321 src/Web/CrewAdminAiText.php:62
+#: src/Admin/AiPromptsPage.php:322 src/Web/CrewAdminAiText.php:62
 msgid "The AI text is used again."
 msgstr ""
 
@@ -6500,7 +6500,7 @@ msgstr ""
 msgid "The AI writes these the day before each event. A text nobody changes is sent as the AI wrote it. A text you change is sent as you wrote it. When the AI failed, the normal message text is used."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:439
+#: src/Admin/AiPromptsPage.php:440
 #. translators: %d: how many texts the AI wrote
 msgid "The AI wrote %d new text."
 msgid_plural "The AI wrote %d new texts."
@@ -6568,7 +6568,7 @@ msgstr[1] ""
 msgid "The announcement is being sent now: %d emails so far."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:123 src/Web/NewsletterController.php:1139
+#: src/Web/CrewAdminNewsletter.php:124 src/Web/NewsletterController.php:1139
 msgid "The announcement is stopped. It will not be sent."
 msgstr ""
 
@@ -6652,7 +6652,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:471
+#: src/Telegram/TicketController.php:484
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -7079,7 +7079,7 @@ msgstr ""
 msgid "The picture behind the whole email, around the card. Use a JPEG that is already darkened, so the light logo and writing on it stay readable. Leave this blank for the purple fade alone; the fade is also what shows when a mail client does not load the picture."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:255
+#: src/Admin/AiPromptsPage.php:256
 msgid "The placeholders are saved."
 msgstr ""
 
@@ -7108,11 +7108,11 @@ msgstr ""
 msgid "The privacy page could not be created."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:178
+#: src/Admin/AiPromptsPage.php:179
 msgid "The prompt is back to the built-in text."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:189
+#: src/Admin/AiPromptsPage.php:190
 msgid "The prompts are saved."
 msgstr ""
 
@@ -7306,7 +7306,7 @@ msgstr ""
 msgid "The text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
-#: src/Telegram/NewsletterCommand.php:61 src/Web/CrewAdminNewsletter.php:122
+#: src/Telegram/NewsletterCommand.php:61 src/Web/CrewAdminNewsletter.php:123
 msgid "The text for the next announcement is removed."
 msgstr ""
 
@@ -7505,7 +7505,7 @@ msgstr ""
 msgid "This address already gets the next events announcement of %s, so nothing more is needed."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:1141
+#: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:1141
 msgid "This announcement was already stopped or sent."
 msgstr ""
 
@@ -7546,7 +7546,7 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Admin/AiPromptsPage.php:525 src/Admin/AiPromptsPage.php:595 src/Support/BackgroundJobs.php:338
+#: src/Admin/AiPromptsPage.php:526 src/Admin/AiPromptsPage.php:596 src/Support/BackgroundJobs.php:338
 msgid "This job can no longer be run."
 msgstr ""
 
@@ -7629,7 +7629,7 @@ msgstr ""
 msgid "This ticket"
 msgstr ""
 
-#: src/Telegram/TicketController.php:330
+#: src/Telegram/TicketController.php:339
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -7667,7 +7667,7 @@ msgstr ""
 msgid "Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max."
 msgstr ""
 
-#: src/Telegram/TicketController.php:142 templates/public/door.php:241 templates/public/signup.php:449
+#: src/Telegram/TicketController.php:144 templates/public/door.php:241 templates/public/signup.php:449
 msgid "Ticket"
 msgstr ""
 
@@ -7771,7 +7771,7 @@ msgstr ""
 msgid "Ticket list not imported (email)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:325
+#: src/Telegram/TicketController.php:334
 msgid "Ticket not found"
 msgstr ""
 
@@ -7892,7 +7892,7 @@ msgstr ""
 msgid "Token set, but the webhook is not installed — install it from the Settings page."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:124 src/Web/NewsletterController.php:1140
+#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:1140
 msgid "Too late: the announcement is already being sent."
 msgstr ""
 
@@ -8087,7 +8087,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:366
+#: src/Telegram/TicketController.php:379
 msgid "VALID"
 msgstr ""
 
@@ -8882,7 +8882,7 @@ msgstr ""
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:334
+#: src/Telegram/TicketController.php:343
 msgid "Your EventCrew ticket"
 msgstr ""
 
