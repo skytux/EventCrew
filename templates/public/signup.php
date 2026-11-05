@@ -158,6 +158,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 </div>
                 <div class="eventcrew-tg-wait" data-eventcrew-tg-wait hidden>
                     <p class="eventcrew-tg-wait-text"><?php echo esc_html(\EventCrew\Web\SignupController::noticeText('tg_started')); ?></p>
+                    <p class="eventcrew-tg-match" data-eventcrew-tg-match></p>
                     <p>
                         <a href="#" target="_blank" rel="noopener" data-eventcrew-tg-again><?php esc_html_e('Open Telegram again', 'eventcrew'); ?></a>
                     </p>
@@ -2825,6 +2826,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     var ajax = choice.getAttribute('data-ajax');
     var failedText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_failed')); ?>;
     var expiredText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_expired')); ?>;
+    var matchBox = wait ? wait.querySelector('[data-eventcrew-tg-match]') : null;
+    var matchText = <?php echo wp_json_encode(/* translators: %s: a 4-digit code that the bot shows too */
+        __('Your code is %s. The bot shows the same code.', 'eventcrew')); ?>;
     var POLL_MS = 3000;
     var login = '';       // the code being waited on; '' when not waiting
     var deadline = 0;     // when the code expires, in ms since the epoch
@@ -2871,8 +2875,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (back) { back.hidden = false; }
     }
 
-    function showWaiting(url) {
+    function showWaiting(url, match) {
         choice.hidden = true;
+        if (matchBox) { matchBox.textContent = matchText.replace('%s', match); }
         if (note) { note.hidden = true; }
         if (again) { again.href = url; }
         if (wait) { wait.hidden = false; }
@@ -2968,7 +2973,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             starting = false;
             var code = data && data.code ? data.code : 'tg_failed';
 
-            if (code !== 'tg_started' || !data.login || !data.url) {
+            if (code !== 'tg_started' || !data.login || !data.url || !data.match) {
                 if (tab) { tab.close(); }
                 toast((data && data.notice) || failedText);
                 return;
@@ -2976,7 +2981,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
             login = String(data.login);
             deadline = Date.now() + (parseInt(data.expires_in, 10) || 1800) * 1000;
-            showWaiting(data.url);
+            showWaiting(data.url, String(data.match));
 
             if (tab) {
                 try { tab.opener = null; } catch (err) { /* nothing to do */ }

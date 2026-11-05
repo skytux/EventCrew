@@ -917,6 +917,9 @@ final class SignupControllerTest extends TestCase
         self::assertSame('https://t.me/crewbot?start=login-' . $started['code'], $started['url']);
         self::assertSame(30 * 60, $started['expires_in']);
         self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $started['secret']);
+        // The 4-digit code the page shows; the bot shows the same one.
+        self::assertMatchesRegularExpression('/^[0-9]{4}$/', $started['match']);
+        self::assertSame($started['match'], $this->telegramLogin()->matchCode($started['code']));
 
         $stored = serialize($this->transients);
         self::assertStringNotContainsString($started['secret'], $stored, 'only a hash of the secret is stored');

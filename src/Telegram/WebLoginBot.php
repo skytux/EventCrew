@@ -16,7 +16,10 @@ use EventCrew\Support\TelegramLogin;
  * private chat that arrives here as "/start login-<code>":
  * - a code that is unknown, expired or used gets a short "expired" message;
  * - a Telegram account linked to a crew member with a confirmed email gets a
- *   "Sign in to the crew app" button, and pressing it approves the code;
+ *   "Sign in to the crew app" button, and pressing it approves the code. The
+ *   message shows the code's 4-digit match code and says to press only if
+ *   the crew app on their screen shows the same code: a bot link someone
+ *   else sent them would sign in that other person's browser;
  * - a blocked crew member is refused;
  * - anyone else goes through the normal sign-up (the bot asks for an email
  *   and mails a confirmation link). The code is remembered against their
@@ -47,7 +50,9 @@ final class WebLoginBot
     {
         $code = substr($payload, strlen(TelegramLogin::PAYLOAD_PREFIX));
 
-        if (! TelegramLogin::isAvailable() || ! $this->login->claimForTelegramUser($code, $telegramUserId)) {
+        $match = TelegramLogin::isAvailable() ? $this->login->matchCode($code) : '';
+
+        if ('' === $match || ! $this->login->claimForTelegramUser($code, $telegramUserId)) {
             $this->telegram->sendMessage($chatId, self::expiredText());
 
             return;
@@ -65,8 +70,13 @@ final class WebLoginBot
         if (null !== $person && self::canSignIn($person)) {
             $this->telegram->sendMessage(
                 $chatId,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('Do you want to sign in to the crew app? Press the button only if you just pressed Telegram on the crew app yourself.', 'eventcrew'),
+                sprintf(
+                    // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    /* translators: %s: a 4-digit code, also shown on the crew app's page */
+                    __('Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s.', 'eventcrew'),
+                    // phpcs:enable Generic.Files.LineLength.TooLong
+                    $match
+                ),
                 ['inline_keyboard' => [[[
                     'text' => __('Sign in to the crew app', 'eventcrew'),
                     'callback_data' => TelegramLogin::CALLBACK_PREFIX . $code,
@@ -77,7 +87,16 @@ final class WebLoginBot
         }
 
         // No crew account for this Telegram account yet: the normal sign-up.
-        // The browser signs in when the confirmation link links the account.
+        // The browser signs in when the confirmation link links the account,
+        // so the match code is shown here too.
+        $this->telegram->sendMessage(
+            $chatId,
+            sprintf(
+                /* translators: %s: a 4-digit code, also shown on the crew app's page */
+                __('Go on only if the crew app on your screen shows the code %s.', 'eventcrew'),
+                $match
+            )
+        );
         $this->login->rememberForSignUp($code, $telegramUserId);
         $this->onboarding->start($telegramUserId, $chatId, $displayName, true);
     }

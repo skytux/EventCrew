@@ -98,7 +98,7 @@ final class WebLoginBotTest extends TelegramTestCase
     /**
      * A code the page made, and its browser secret.
      *
-     * @return array{code: string, secret: string}
+     * @return array{code: string, secret: string, match: string}
      */
     private function pageCode(): array
     {
@@ -153,9 +153,9 @@ final class WebLoginBotTest extends TelegramTestCase
         return (string) ($this->lastCallTo('sendMessage')['text'] ?? '');
     }
 
-    public function testALinkedPersonGetsTheSignInButton(): void
+    public function testALinkedPersonGetsTheSignInButtonWithThePagesMatchCode(): void
     {
-        ['code' => $code] = $this->pageCode();
+        ['code' => $code, 'match' => $match] = $this->pageCode();
         $this->wpdb->nextRows[] = $this->person();
 
         $this->sendStart(4242, 'login-' . $code);
@@ -163,7 +163,11 @@ final class WebLoginBotTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertNotNull($sent);
         self::assertSame(4242, $sent['chat_id']);
-        self::assertStringContainsString('Press the button only if you just pressed Telegram on the crew app yourself.', $sent['text']);
+        self::assertSame(
+            'Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows'
+            . ' the code ' . $match . '.',
+            $sent['text']
+        );
         self::assertSame(
             [[['text' => 'Sign in to the crew app', 'callback_data' => 'tgl:' . $code]]],
             $sent['reply_markup']['inline_keyboard']
@@ -334,8 +338,18 @@ final class WebLoginBotTest extends TelegramTestCase
     {
         ['code' => $code, 'secret' => $secret] = $this->pageCode();
 
-        // No crew account for Telegram user 4242: the normal sign-up starts.
+        // No crew account for Telegram user 4242: the bot shows the page's
+        // match code, then the normal sign-up starts.
         $this->sendStart(4242, 'login-' . $code);
+
+        $texts = array_values(array_map(
+            static fn (array $call): string => (string) ($call['body']['text'] ?? ''),
+            array_filter($this->telegramCalls, static fn (array $call): bool => 'sendMessage' === $call['method'])
+        ));
+        self::assertSame(
+            'Go on only if the crew app on your screen shows the code ' . $this->storedCode($code)['match'] . '.',
+            $texts[0]
+        );
 
         self::assertArrayHasKey('eventcrew_tg_await_email_4242', $this->transients);
         self::assertStringContainsString("What's your email address?", $this->lastText());

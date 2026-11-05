@@ -5614,10 +5614,6 @@ msgstr "Linkki vanheni. Paina Telegram-painiketta uudelleen."
 msgid "Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email."
 msgstr "Liian monta kirjautumisyritystä tästä osoitteesta. Odota muutama minuutti ja yritä uudelleen, tai kirjaudu sähköpostilla."
 
-#: src/Telegram/WebLoginBot.php:69
-msgid "Do you want to sign in to the crew app? Press the button only if you just pressed Telegram on the crew app yourself."
-msgstr "Haluatko kirjautua Crew-sovellukseen? Paina painiketta vain, jos painoit juuri itse Telegram-painiketta Crew-sovelluksessa."
-
 #: src/Telegram/WebLoginBot.php:71
 msgid "Sign in to the crew app"
 msgstr "Kirjaudu Crew-sovellukseen"
@@ -6442,3 +6438,15 @@ msgstr "Lähetimme linkin osoitteeseen %s. Avaa se 30 minuutin kuluessa poistaak
 
 msgid "The email could not be sent. Try again later."
 msgstr "Sähköpostia ei voitu lähettää. Yritä myöhemmin uudelleen."
+
+#, php-format
+msgid "Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s."
+msgstr "Haluatko kirjautua crew-sovellukseen? Paina painiketta vain, jos näytölläsi oleva crew-sovellus näyttää koodin %s."
+
+#, php-format
+msgid "Go on only if the crew app on your screen shows the code %s."
+msgstr "Jatka vain, jos näytölläsi oleva crew-sovellus näyttää koodin %s."
+
+#, php-format
+msgid "Your code is %s. The bot shows the same code."
+msgstr "Koodisi on %s. Botti näyttää saman koodin."

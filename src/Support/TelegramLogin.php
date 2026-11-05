@@ -21,7 +21,11 @@ use EventCrew\Telegram\TelegramClient;
  *   cookie, so a code seen by someone else cannot sign in their browser;
  * - when it was made (a code lives 30 minutes);
  * - the Telegram user who opened it in the bot (only that user can approve);
- * - its state: pending, approved (with the person id) or used.
+ * - its state: pending, approved (with the person id) or used;
+ * - a 4-digit match code. The page shows it and the bot shows it next to the
+ *   sign-in button. A person who got the bot link from someone else sees no
+ *   such code on their own screen, so they know not to press the button
+ *   (that would sign in the other person's browser as them).
  *
  * A code is approved once and used once.
  */
@@ -113,11 +117,11 @@ final class TelegramLogin
     }
 
     /**
-     * A new pending code for the browser at $clientIp. Returns the code and
-     * the browser's secret (for the cookie), or null when this address asked
-     * for too many codes recently.
+     * A new pending code for the browser at $clientIp. Returns the code, the
+     * browser's secret (for the cookie) and the 4-digit match code (for the
+     * page), or null when this address asked for too many codes recently.
      *
-     * @return array{code: string, secret: string}|null
+     * @return array{code: string, secret: string, match: string}|null
      */
     public function create(string $clientIp): ?array
     {
@@ -127,6 +131,7 @@ final class TelegramLogin
 
         $code = rtrim(strtr(base64_encode(random_bytes(self::CODE_BYTES)), '+/', '-_'), '=');
         $secret = bin2hex(random_bytes(32));
+        $match = (string) random_int(1000, 9999);
 
         $this->save($code, [
             'secret_hash' => hash('sha256', $secret),
@@ -134,9 +139,21 @@ final class TelegramLogin
             'state' => self::STATE_PENDING,
             'person_id' => 0,
             'telegram_user_id' => 0,
+            'match' => $match,
         ]);
 
-        return ['code' => $code, 'secret' => $secret];
+        return ['code' => $code, 'secret' => $secret, 'match' => $match];
+    }
+
+    /**
+     * The 4-digit match code the page shows for this code, for the bot to show
+     * next to its button. '' for a code that is unknown or expired.
+     */
+    public function matchCode(string $code): string
+    {
+        $record = $this->load($code);
+
+        return null === $record ? '' : $record['match'];
     }
 
     /**
@@ -290,7 +307,9 @@ final class TelegramLogin
      * The stored record for a code, or null when the code is malformed,
      * unknown or older than TTL. One transient read.
      *
-     * @return array{secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int}|null
+     * @return array{
+     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string
+     * }|null
      */
     private function load(string $code): ?array
     {
@@ -310,6 +329,7 @@ final class TelegramLogin
             'state' => (string) ($record['state'] ?? ''),
             'person_id' => (int) ($record['person_id'] ?? 0),
             'telegram_user_id' => (int) ($record['telegram_user_id'] ?? 0),
+            'match' => (string) ($record['match'] ?? ''),
         ];
 
         // Checked here too: an object cache may keep a transient past its expiry.
@@ -317,7 +337,9 @@ final class TelegramLogin
     }
 
     /**
-     * @param array{secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int} $record
+     * @param array{
+     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string
+     * } $record
      */
     private function save(string $code, array $record): void
     {
