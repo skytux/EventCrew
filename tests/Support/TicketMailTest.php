@@ -316,7 +316,7 @@ final class TicketMailTest extends TestCase
 
         $order = [
             'Lippusi · Your ticket</p>',
-            '<h1 class="ec-shimmer-light"',
+            '<h1 class="ec-shimmer"',
             'Test Site — 14.11.2026</h1>',
             '>FI<',
             'font-style:italic;line-height:1.4;color:#2a2233">Hei Anna,</p>',

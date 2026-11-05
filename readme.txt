@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.54
+Stable tag: 1.140.55
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.55 =
+The event name at the top of the ticket email can be read again: it was pale cream text on the cream card, now it is the gold heading the other emails use.
 
 = 1.140.54 =
 The plugin in Japanese (ja), Owner's Q294: every text of the plugin (bot, web pages, emails, wp-admin), machine-drafted; a Japanese speaker should proofread it. Shown to anyone whose language is Japanese once that language is switched on.
@@ -1376,6 +1379,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.55 =
+No settings change.
 
 = 1.140.54 =
 No settings change.
