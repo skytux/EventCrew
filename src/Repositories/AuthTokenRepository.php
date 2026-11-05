@@ -94,7 +94,8 @@ final class AuthTokenRepository
      * that only matches a row that is still unused and unexpired. Two requests
      * spending the same token at the same moment cannot both get the person:
      * only the one whose UPDATE changed the row does. Used for the sales
-     * desk's short-lived links shown as a QR code on a screen.
+     * desk's short-lived links shown as a QR code on a screen, and for the
+     * emailed sign-in links.
      */
     public function consumeOnce(string $rawToken, string $purpose): ?int
     {

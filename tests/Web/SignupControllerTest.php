@@ -591,19 +591,39 @@ final class SignupControllerTest extends TestCase
 
     public function testConsumeMagicLinkVerifiesAndReturnsThePersonId(): void
     {
-        // AuthTokenRepository::consume -> a live, unused token for person 7.
+        // AuthTokenRepository::consumeOnce -> a live, unused token for person 7,
+        // and the conditional UPDATE that spends it changes one row.
         $this->wpdb->nextRows[] = [
             'id' => 1,
             'person_id' => 7,
             'expires_at' => '2026-12-31 00:00:00',
             'used_at' => null,
         ];
+        $this->wpdb->nextQueryResults[] = 1;
 
         $personId = $this->controller()->consumeMagicLink('rawtoken');
 
         self::assertSame(7, $personId);
-        // used_at burned, and the person marked verified: two updates.
-        self::assertGreaterThanOrEqual(2, count($this->wpdb->updates));
+        // used_at burned by the conditional UPDATE, and the person marked verified.
+        self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
+        self::assertGreaterThanOrEqual(1, count($this->wpdb->updates));
+    }
+
+    public function testASignInLinkOpenedTwiceAtOnceSignsInOnlyOnce(): void
+    {
+        $row = ['id' => 1, 'person_id' => 7, 'expires_at' => '2026-12-31 00:00:00', 'used_at' => null];
+
+        // Both requests read the row while it is still unused.
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextQueryResults[] = 1;  // the first one's UPDATE changes the row
+        $first = $this->controller()->magicLinkSignIn('rawtoken');
+
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextQueryResults[] = 0;  // the second one's UPDATE changes nothing
+        $second = $this->controller()->magicLinkSignIn('rawtoken');
+
+        self::assertSame(7, $first['person_id']);
+        self::assertSame(['person_id' => null, 'notice' => 'bad_link'], $second);
     }
 
     public function testConsumeMagicLinkReturnsNullForABadToken(): void

@@ -729,7 +729,10 @@ final class SignupController
      */
     public function magicLinkSignIn(string $token): array
     {
-        $personId = $this->tokens->consume($token, self::LOGIN_PURPOSE);
+        // One conditional UPDATE spends the link, so the same link opened twice
+        // at the same moment (two tabs, or a mail scanner and the person) signs
+        // in only one of them.
+        $personId = $this->tokens->consumeOnce($token, self::LOGIN_PURPOSE);
 
         if (null === $personId) {
             return ['person_id' => null, 'notice' => 'bad_link'];
