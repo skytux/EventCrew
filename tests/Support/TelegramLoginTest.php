@@ -76,7 +76,7 @@ final class TelegramLoginTest extends TestCase
     /**
      * A fresh code and its browser secret.
      *
-     * @return array{code: string, secret: string}
+     * @return array{code: string, secret: string, match: string}
      */
     private function created(): array
     {
@@ -143,6 +143,23 @@ final class TelegramLoginTest extends TestCase
         self::assertSame(hash('sha256', $secret), $record['secret_hash']);
         self::assertSame(TelegramLogin::STATE_PENDING, $record['state']);
         self::assertEqualsWithDelta(time(), $record['created'], 2);
+    }
+
+    public function testANewCodeHasAFourDigitMatchCodeForThePageAndTheBot(): void
+    {
+        ['code' => $code, 'match' => $match] = $this->created();
+
+        self::assertMatchesRegularExpression('/^[1-9][0-9]{3}$/', $match);
+        self::assertSame($match, $this->login()->matchCode($code));
+    }
+
+    public function testAnExpiredOrUnknownCodeHasNoMatchCode(): void
+    {
+        ['code' => $code] = $this->created();
+        $this->age(TelegramLogin::TTL + 1);
+
+        self::assertSame('', $this->login()->matchCode($code));
+        self::assertSame('', $this->login()->matchCode('nope'));
     }
 
     public function testANewCodeIsPending(): void

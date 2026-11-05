@@ -392,10 +392,11 @@ final class SignupController
     /**
      * The Telegram button was pressed: a new login code for this browser.
      * 'notice' is 'tg_started' with the code, the bot link, the seconds the
-     * code lives and the browser's secret (for the cookie, never for the
-     * page); or 'tg_busy' (too many codes from this address) or 'tg_failed'.
+     * code lives, the browser's secret (for the cookie, never for the page)
+     * and the 4-digit match code the bot also shows; or 'tg_busy' (too many
+     * codes from this address) or 'tg_failed'.
      *
-     * @return array{notice: string, code?: string, url?: string, expires_in?: int, secret?: string}
+     * @return array{notice: string, code?: string, url?: string, expires_in?: int, secret?: string, match?: string}
      */
     public function startTelegramSignIn(string $clientIp): array
     {
@@ -415,6 +416,7 @@ final class SignupController
             'url' => TelegramLogin::startUrl($created['code']),
             'expires_in' => TelegramLogin::TTL,
             'secret' => $created['secret'],
+            'match' => $created['match'],
         ];
     }
 
@@ -880,6 +882,7 @@ final class SignupController
                 'login' => $started['code'] ?? '',
                 'url' => $started['url'] ?? '',
                 'expires_in' => $started['expires_in'] ?? 0,
+                'match' => $started['match'] ?? '',
             ]);
         }
 
