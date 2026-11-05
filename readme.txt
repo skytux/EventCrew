@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.75
+Stable tag: 1.140.76
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.76 =
+Tests only: the Telegram part of the Settings page is now rendered in the test suite, so a PHP error there fails the tests.
 
 = 1.140.75 =
 The take-over advice in emails and DMs now says what really happens: the other person sends /me to the bot, taps Take over a task, and you accept. The role-given email links to the crew page and the post-event preview links to the Admin tab.
@@ -1439,6 +1442,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.76 =
+No settings change.
 
 = 1.140.75 =
 No settings change.
