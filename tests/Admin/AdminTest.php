@@ -10,6 +10,7 @@ use EventCrew\Admin\PeoplePage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
+use EventCrew\Admin\TranslationsPage;
 use EventCrew\Core\Container;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Support\Scheduler;
@@ -25,7 +26,14 @@ final class AdminTest extends TestCase
         $container = new Container();
         $container->singleton(SettingsPage::class, static fn (): object => $settings);
 
-        $pages = [PeoplePage::class, RosterPage::class, TasksPage::class, MailImporter::class, NewsletterPage::class];
+        $pages = [
+            PeoplePage::class,
+            RosterPage::class,
+            TasksPage::class,
+            MailImporter::class,
+            NewsletterPage::class,
+            TranslationsPage::class,
+        ];
 
         foreach ($pages as $id) {
             $container->singleton($id, static fn (): object => self::anyPage());

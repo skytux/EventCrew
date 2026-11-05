@@ -6572,3 +6572,156 @@ msgid ""
 msgstr ""
 "Kun jokin muu paikkamerkki kuin {first_name} on tyhjä, sen koko kappale "
 "jätetään pois, joten tyhjää riviä tai puolikasta lausetta ei jää."
+
+# The Translations page (wp-admin).
+msgid "Translations"
+msgstr "Käännökset"
+
+msgid "All texts"
+msgstr "Kaikki tekstit"
+
+msgid "Not translated yet"
+msgstr "Kääntämättä"
+
+msgid "Edited by hand"
+msgstr "Muokattu käsin"
+
+msgid "Emails only"
+msgstr "Vain sähköpostit"
+
+#, php-format
+msgid "The settings were saved, but these language codes are not known and were left out: %s."
+msgstr "Asetukset tallennettiin, mutta näitä kielikoodeja ei tunneta, joten ne jätettiin pois: %s."
+
+msgid "The language settings were saved."
+msgstr "Kieliasetukset tallennettiin."
+
+msgid "This text was not found. Nothing was saved."
+msgstr "Tekstiä ei löytynyt. Mitään ei tallennettu."
+
+msgid "Nothing was saved."
+msgstr "Mitään ei tallennettu."
+
+#, php-format
+msgid "Saved: %s."
+msgstr "Tallennettu: %s."
+
+msgid "AI translation is off, so nothing was translated. Switch it on above first."
+msgstr "Tekoälykäännös on pois päältä, joten mitään ei käännetty. Laita se ensin päälle yllä."
+
+#, php-format
+msgid "Translated texts: %1$d. Not translated: %2$d."
+msgstr "Käännetyt tekstit: %1$d. Kääntämättä: %2$d."
+
+msgid "Every text is already in every language."
+msgstr "Jokainen teksti on jo jokaisella kielellä."
+
+#, php-format
+msgid "%d text was translated."
+msgid_plural "%d texts were translated."
+msgstr[0] "%d teksti käännettiin."
+msgstr[1] "%d tekstiä käännettiin."
+
+msgid "Languages"
+msgstr "Kielet"
+
+msgid "Site languages"
+msgstr "Sivuston kielet"
+
+msgid "Two-letter language codes, separated by commas. The first one is the main language. Every text below is kept in each of these languages."
+msgstr "Kaksikirjaimiset kielikoodit pilkuilla erotettuina. Ensimmäinen on pääkieli. Jokainen alla oleva teksti pidetään näillä kielillä."
+
+#, php-format
+msgid "Now: %s."
+msgstr "Nyt: %s."
+
+#, php-format
+msgid "The plugin’s own texts (buttons, menus, built-in messages) are not translated into %s. People who choose it read them in English. The texts in the table below are translated."
+msgstr "Lisäosan omia tekstejä (painikkeet, valikot, valmiit viestit) ei ole käännetty kielelle %s. Sen valitsevat näkevät ne englanniksi. Alla olevan taulukon tekstit käännetään."
+
+msgid "Language codes"
+msgstr "Kielikoodit"
+
+msgid "AI translation"
+msgstr "Tekoälykäännös"
+
+msgid "When this is off, nothing is sent to the language model, and an empty language text gets the text as it was written."
+msgstr "Kun tämä on pois päältä, kielimallille ei lähetetä mitään, ja tyhjä kieliteksti saa tekstin sellaisena kuin se kirjoitettiin."
+
+msgid "AI language detection"
+msgstr "Tekoälyn kielentunnistus"
+
+msgid "Let the language model find out which language a text is written in"
+msgstr "Anna kielimallin selvittää, millä kielellä teksti on kirjoitettu"
+
+#, php-format
+msgid "When this is off, every text is taken to be written in the main language (%s)."
+msgstr "Kun tämä on pois päältä, jokaisen tekstin oletetaan olevan pääkielellä (%s)."
+
+msgid "Save language settings"
+msgstr "Tallenna kieliasetukset"
+
+msgid "Texts"
+msgstr "Tekstit"
+
+msgid "Translate missing"
+msgstr "Käännä puuttuvat"
+
+msgid "Fills every empty language text with the language model. Texts edited by hand are not changed."
+msgstr "Täyttää jokaisen tyhjän kielitekstin kielimallilla. Käsin muokattuja tekstejä ei muuteta."
+
+msgid "AI translation is off."
+msgstr "Tekoälykäännös on pois päältä."
+
+msgid "Search texts"
+msgstr "Hae tekstejä"
+
+msgid "Filter"
+msgstr "Suodata"
+
+#, php-format
+msgid "Showing %1$d of %2$d texts."
+msgstr "Näytetään %1$d / %2$d tekstiä."
+
+msgid "No text matches."
+msgstr "Mikään teksti ei vastaa hakua."
+
+msgid "Text"
+msgstr "Teksti"
+
+msgid "As written"
+msgstr "Kirjoitettuna"
+
+msgid "Language: not known yet"
+msgstr "Kieli: ei vielä tiedossa"
+
+#, php-format
+msgid "Language: %s"
+msgstr "Kieli: %s"
+
+msgid "edited by hand"
+msgstr "muokattu käsin"
+
+msgid "not translated yet"
+msgstr "kääntämättä"
+
+msgid "A language text you change is marked “edited by hand”, and the language model does not change it again. Empty it to let the language model fill it. When you change the text as written, the texts not edited by hand are translated again."
+msgstr "Muuttamasi kieliteksti merkitään ”muokattu käsin”, eikä kielimalli muuta sitä enää. Tyhjennä se, niin kielimalli täyttää sen. Kun muutat kirjoitettua tekstiä, käsin muokkaamattomat tekstit käännetään uudelleen."
+
+msgid "Emails"
+msgstr "Sähköpostit"
+
+msgid "Messages"
+msgstr "Viestit"
+
+msgid "Post-event email: the text for people who came"
+msgstr "Tapahtuman jälkeinen sähköposti: teksti paikalle tulleille"
+
+msgid "Post-event email: the text for people who did not come"
+msgstr "Tapahtuman jälkeinen sähköposti: teksti poissa olleille"
+
+msgid "Telegram bot: About"
+msgstr "Telegram-botti: Tietoja"
+
+msgid "Telegram bot: Description"
+msgstr "Telegram-botti: Kuvaus"

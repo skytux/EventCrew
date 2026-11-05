@@ -8,9 +8,9 @@ use EventCrew\Models\Person;
 use WP_Translation_Controller;
 
 /**
- * The language crew-facing text is written in: English or Finnish, chosen per
- * person and stored on their record (NULL until they choose, which reads as
- * English).
+ * The language crew-facing text is written in: one of the site's languages
+ * (SiteLanguages), chosen per person and stored on their record (NULL until
+ * they choose, which reads as English).
  *
  * Everything a person reads - a bot DM, a popup, an email, the crew page - is
  * composed inside run() or forPerson(), so the plugin's own strings come out in
@@ -25,18 +25,13 @@ use WP_Translation_Controller;
  * languages/eventcrew-fi.mo. It does that through the same public pieces the
  * core switcher uses: a determine_locale filter and a reloadable unload, after
  * which WordPress's just-in-time loader reads the domain again in the new
- * locale on the next __() call.
+ * locale on the next __() call. A language whose languages/eventcrew-*.mo is
+ * missing finds no translations, so its strings stay in English.
  */
 final class Language
 {
     public const ENGLISH = 'en';
     public const FINNISH = 'fi';
-
-    /** WordPress locale codes. Finnish is plain 'fi' in WordPress, not fi_FI. */
-    private const LOCALES = [
-        self::ENGLISH => 'en_US',
-        self::FINNISH => 'fi',
-    ];
 
     private const DOMAIN = 'eventcrew';
 
@@ -52,8 +47,9 @@ final class Language
     private static array $stack = [];
 
     /**
-     * 'en' or 'fi' for a stored or posted value, null for anything else - which
-     * includes NULL, the "not chosen yet" state.
+     * The language code for a stored or posted value: one of the site's
+     * languages, or English (the language the plugin is written in). Null for
+     * anything else - which includes NULL, the "not chosen yet" state.
      */
     public static function normalize(mixed $value): ?string
     {
@@ -63,39 +59,26 @@ final class Language
 
         $value = strtolower(trim($value));
 
-        return isset(self::LOCALES[$value]) ? $value : null;
+        return self::ENGLISH === $value || SiteLanguages::isSiteLanguage($value) ? $value : null;
     }
 
     /**
-     * The language a browser asks for in its Accept-Language header: 'fi' when
-     * it ranks Finnish above English, null (English) in every other case -
-     * no header, neither language listed, or English first.
+     * The language a browser asks for in its Accept-Language header: the
+     * site language it ranks first, when that is not English; null (English)
+     * in every other case - no header, no site language listed, or English
+     * first.
      */
     public static function fromBrowser(?string $header): ?string
     {
-        $rank = self::browserRanks($header);
-        $finnish = $rank[self::FINNISH] ?? null;
-        $english = $rank[self::ENGLISH] ?? null;
+        $preferred = self::preferredInBrowser($header);
 
-        if (null === $finnish || $finnish['q'] <= 0.0) {
-            return null;
-        }
-
-        if (
-            null === $english
-            || $finnish['q'] > $english['q']
-            || ($finnish['q'] === $english['q'] && $finnish['at'] < $english['at'])
-        ) {
-            return self::FINNISH;
-        }
-
-        return null;
+        return '' === $preferred || self::ENGLISH === $preferred ? null : $preferred;
     }
 
     /**
-     * Which of Finnish and English the browser lists first in its
+     * Which site language (or English) the browser lists first in its
      * Accept-Language preference order (highest q value, then the earlier
-     * one): 'fi', 'en', or '' when it lists neither, or has no header.
+     * one): its code, or '' when it lists none of them, or has no header.
      * Unlike fromBrowser(), "no answer" stays distinct from English, so a
      * stored value can tell "not known" apart.
      */
@@ -134,7 +117,7 @@ final class Language
             $pieces = explode(';', $part);
             $primary = strtolower(trim(explode('-', $pieces[0])[0]));
 
-            if (! isset(self::LOCALES[$primary])) {
+            if (null === self::normalize($primary)) {
                 continue;
             }
 
@@ -260,7 +243,7 @@ final class Language
     {
         $current = self::current();
 
-        return null === $current ? $locale : self::LOCALES[$current];
+        return null === $current ? $locale : SiteLanguages::locale($current);
     }
 
     /**

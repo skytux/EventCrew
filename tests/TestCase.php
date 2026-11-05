@@ -86,6 +86,10 @@ abstract class TestCase extends PHPUnitTestCase
         // (e.g. eventcrew/board_stale) that most tests do not care about. A
         // test that does care re-stubs this with a capturing alias.
         Functions\when('do_action')->justReturn(null);
+        // Language reads the site's languages (SiteLanguages) from an option,
+        // so nearly every unit reads one. Nothing stored: the defaults. A test
+        // with options of its own re-stubs this.
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
         // The webhook claim writes its option in SQL and then drops the cached
         // copy; there is no cache in the tests to drop.
         Functions\when('wp_cache_delete')->justReturn(true);

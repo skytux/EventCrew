@@ -108,9 +108,12 @@ final class FollowupText
 
     /**
      * The built-in text as a settings value: the English text as the source
-     * and each site language's own text, none of them edited by hand.
+     * and each site language's own text, none of them edited by hand. A site
+     * language the plugin has no translation file for gets an empty text, so
+     * the language model fills it ("Translate missing"); until then the
+     * English text is used.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
      */
     public static function defaultValue(string $variant): array
     {
@@ -119,9 +122,12 @@ final class FollowupText
             Language::ENGLISH,
             static fn (): string => self::defaultText($variant)
         );
+        $value['lang'] = Language::ENGLISH;
 
-        foreach (TranslatedText::LANGUAGES as $lang) {
-            $value['texts'][$lang] = (string) Language::run($lang, static fn (): string => self::defaultText($variant));
+        foreach (TranslatedText::languages() as $lang) {
+            $value['texts'][$lang] = SiteLanguages::hasCatalog($lang)
+                ? (string) Language::run($lang, static fn (): string => self::defaultText($variant))
+                : '';
         }
 
         return $value;
@@ -131,7 +137,7 @@ final class FollowupText
      * The wp-admin text of $variant: the stored value, or the built-in one
      * when nothing (or only empty fields) is stored.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
      */
     public static function settings(string $variant): array
     {
@@ -262,7 +268,7 @@ final class FollowupText
         $posted = is_array($posted) ? $posted : [];
         $error = '';
 
-        foreach (self::SETTINGS_OPTIONS as $variant => $option) {
+        foreach (array_keys(self::SETTINGS_OPTIONS) as $variant) {
             $input = TranslatedText::fromPost($posted[$variant] ?? null, true);
 
             if (null === $input) {
@@ -277,16 +283,7 @@ final class FollowupText
                 self::MAX_LENGTH,
                 true
             );
-            $value = $result['value'];
-
-            if (
-                $value === self::defaultValue($variant)
-                || '' === $value['source'] . implode('', $value['texts'])
-            ) {
-                delete_option($option);
-            } else {
-                update_option($option, $value);
-            }
+            self::store($variant, $result['value']);
 
             if ('' === $error && '' !== $result['error']) {
                 $error = $result['error'];
@@ -294,6 +291,63 @@ final class FollowupText
         }
 
         return $error;
+    }
+
+    /**
+     * Stores the wp-admin text of $variant. A text that is the built-in one,
+     * or empty, is not stored, so the built-in text (in every language)
+     * applies.
+     *
+     * @param array<string, mixed> $value A TranslatedText value.
+     */
+    public static function store(string $variant, array $value): void
+    {
+        $option = self::SETTINGS_OPTIONS[$variant] ?? '';
+
+        if ('' === $option) {
+            return;
+        }
+
+        $value = TranslatedText::normalize($value);
+
+        if (
+            $value === self::defaultValue($variant)
+            || '' === $value['source'] . implode('', $value['texts'])
+        ) {
+            delete_option($option);
+        } else {
+            update_option($option, $value);
+        }
+    }
+
+    /**
+     * Both texts as rows of the wp-admin Translations page (TranslationRegistry).
+     *
+     * @return list<TranslationRow>
+     */
+    public static function translationRows(): array
+    {
+        $labels = [
+            self::CAME => __('Post-event email: the text for people who came', 'eventcrew'),
+            self::MISSED => __('Post-event email: the text for people who did not come', 'eventcrew'),
+        ];
+        $rows = [];
+
+        foreach (self::VARIANTS as $variant) {
+            $rows[] = new TranslationRow(
+                'email.followup.' . $variant,
+                $labels[$variant],
+                TranslationRow::GROUP_EMAILS,
+                self::settings($variant),
+                static function (array $value) use ($variant): void {
+                    self::store($variant, $value);
+                },
+                self::MAX_LENGTH,
+                true
+            );
+        }
+
+        return $rows;
     }
 
     /** $text with {event} and {date} replaced. */
