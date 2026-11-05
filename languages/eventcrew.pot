@@ -265,13 +265,6 @@ msgid_plural "%d tasks created."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Admin/TranslationsPage.php:233
-#. translators: %d: how many texts were translated
-msgid "%d text was translated."
-msgid_plural "%d texts were translated."
-msgstr[0] ""
-msgstr[1] ""
-
 #: src/Admin/RosterPage.php:581 src/Web/CrewAdminRoster.php:663
 #. translators: %d: number of ticket buyers deleted
 msgid "%d ticket buyer deleted."
@@ -334,7 +327,7 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: src/Support/TranslatedText.php:703
+#: src/Support/TranslatedText.php:956
 #. translators: %s: a language name, e.g. Finnish
 msgid "%s, detected"
 msgstr ""
@@ -477,7 +470,7 @@ msgstr ""
 msgid "A key is stored (encrypted). Leave the field empty to keep it."
 msgstr ""
 
-#: templates/admin/translations.php:266
+#: templates/admin/translations.php:298
 msgid "A language text you change is marked “edited by hand”, and the language model does not change it again. Empty it to let the language model fill it. When you change the text as written, the texts not edited by hand are translated again."
 msgstr ""
 
@@ -641,11 +634,11 @@ msgstr ""
 msgid "A welcome message to each new member when they confirm their email, and this guide to each organizer."
 msgstr ""
 
-#: templates/admin/translations.php:101
+#: templates/admin/translations.php:104
 msgid "AI language detection"
 msgstr ""
 
-#: src/Admin/Admin.php:400 src/Admin/Admin.php:401 templates/admin/ai-prompts.php:30
+#: src/Admin/Admin.php:405 src/Admin/Admin.php:406 templates/admin/ai-prompts.php:30
 msgid "AI prompts"
 msgstr ""
 
@@ -657,16 +650,20 @@ msgstr ""
 msgid "AI texts"
 msgstr ""
 
-#: templates/admin/translations.php:89
+#: templates/admin/translations.php:92
 msgid "AI translation"
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:206
+#: src/Admin/TranslationsPage.php:220
 msgid "AI translation is off, so nothing was translated. Switch it on above first."
 msgstr ""
 
-#: templates/admin/translations.php:137
+#: templates/admin/translations.php:140
 msgid "AI translation is off."
+msgstr ""
+
+#: src/Admin/TranslationsPage.php:291
+msgid "AI translation was switched off."
 msgstr ""
 
 #: templates/admin/settings.php:2105
@@ -878,7 +875,7 @@ msgstr ""
 msgid "All tables present at schema version %s."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:53
+#: src/Admin/TranslationsPage.php:58
 msgid "All texts"
 msgstr ""
 
@@ -1027,7 +1024,7 @@ msgstr ""
 msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
 msgstr ""
 
-#: templates/admin/translations.php:175
+#: templates/admin/translations.php:207
 msgid "As written"
 msgstr ""
 
@@ -1182,7 +1179,7 @@ msgstr ""
 msgid "Bot chat: feedback from %s"
 msgstr ""
 
-#: src/Admin/Admin.php:409 src/Admin/Admin.php:410 templates/admin/bot-log.php:32
+#: src/Admin/Admin.php:414 src/Admin/Admin.php:415 templates/admin/bot-log.php:32
 msgid "Bot log"
 msgstr ""
 
@@ -1787,11 +1784,11 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-#: src/Support/TranslatedText.php:706
+#: src/Support/TranslatedText.php:959
 msgid "Detect automatically"
 msgstr ""
 
-#: src/Admin/Admin.php:418 src/Admin/Admin.php:419
+#: src/Admin/Admin.php:423 src/Admin/Admin.php:424
 msgid "Diagnostics"
 msgstr ""
 
@@ -1868,7 +1865,7 @@ msgstr ""
 msgid "Edit the email template"
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:55
+#: src/Admin/TranslationsPage.php:60
 msgid "Edited by hand"
 msgstr ""
 
@@ -1912,7 +1909,7 @@ msgstr ""
 msgid "Email me a sign-in link"
 msgstr ""
 
-#: src/Admin/Admin.php:365 src/Admin/Admin.php:366 src/Support/EmailTemplate.php:95 src/Support/EmailTemplate.php:98
+#: src/Admin/Admin.php:370 src/Admin/Admin.php:371 src/Support/EmailTemplate.php:95 src/Support/EmailTemplate.php:98
 msgid "Email template"
 msgstr ""
 
@@ -1948,7 +1945,7 @@ msgstr ""
 msgid "Emails"
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:56
+#: src/Admin/TranslationsPage.php:61
 msgid "Emails only"
 msgstr ""
 
@@ -2013,7 +2010,7 @@ msgstr ""
 msgid "Event start"
 msgstr ""
 
-#: src/Admin/Admin.php:314 src/Admin/Admin.php:315 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
+#: src/Admin/Admin.php:319 src/Admin/Admin.php:320 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
 #: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224 src/Telegram/ManageController.php:247
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
@@ -2129,7 +2126,7 @@ msgstr ""
 msgid "Every task you signed up for, when you signed up, and how it turned out: completed, covered by someone else, cancelled late, or not turned up to. Free-entry credits you have earned, been given or spent, and the events they were spent on."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:226
+#: src/Admin/TranslationsPage.php:224
 msgid "Every text is already in every language."
 msgstr ""
 
@@ -2182,11 +2179,11 @@ msgstr ""
 msgid "Filled"
 msgstr ""
 
-#: templates/admin/translations.php:136
+#: templates/admin/translations.php:139
 msgid "Fills every empty language text with the language model. Texts edited by hand are not changed."
 msgstr ""
 
-#: templates/admin/translations.php:155
+#: templates/admin/translations.php:187
 msgid "Filter"
 msgstr ""
 
@@ -2924,7 +2921,7 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: templates/admin/translations.php:75
+#: templates/admin/translations.php:78
 msgid "Language codes"
 msgstr ""
 
@@ -2932,20 +2929,20 @@ msgstr ""
 msgid "Language model"
 msgstr ""
 
-#: src/Support/TranslatedText.php:693
+#: src/Support/TranslatedText.php:946
 msgid "Language of this text"
 msgstr ""
 
-#: templates/admin/translations.php:229
+#: templates/admin/translations.php:261
 #. translators: %s: a language name, e.g. Finnish
 msgid "Language: %s"
 msgstr ""
 
-#: templates/admin/translations.php:226
+#: templates/admin/translations.php:258
 msgid "Language: not known yet"
 msgstr ""
 
-#: templates/admin/translations.php:38
+#: templates/admin/translations.php:41
 msgid "Languages"
 msgstr ""
 
@@ -2979,6 +2976,11 @@ msgstr ""
 #: src/Support/HealthReport.php:177
 #. translators: %s: human-readable time span, e.g. "5 hours"
 msgid "Last run %s ago; WP-Cron may not be firing. Consider the on-request fallback."
+msgstr ""
+
+#: src/Admin/TranslationsPage.php:279
+#. translators: 1: texts done, 2: texts in all, 3: texts that could not be translated
+msgid "Last translation: %1$d of %2$d done. Not translated: %3$d."
 msgstr ""
 
 #: src/Support/AssignmentStatus.php:109
@@ -3022,7 +3024,7 @@ msgstr ""
 msgid "Left blank, EventCrew asks Telegram for one. That works for a public group, or a private one where the bot is an administrator; otherwise paste your own here."
 msgstr ""
 
-#: templates/admin/translations.php:105
+#: templates/admin/translations.php:108
 msgid "Let the language model find out which language a text is written in"
 msgstr ""
 
@@ -3192,7 +3194,7 @@ msgstr ""
 msgid "Message saved."
 msgstr ""
 
-#: src/Admin/Admin.php:373 src/Admin/Admin.php:374 src/Support/TranslationRow.php:67 templates/admin/messages.php:25
+#: src/Admin/Admin.php:378 src/Admin/Admin.php:379 src/Support/TranslationRow.php:67 templates/admin/messages.php:25
 msgid "Messages"
 msgstr ""
 
@@ -3289,7 +3291,7 @@ msgstr ""
 msgid "Newer"
 msgstr ""
 
-#: src/Admin/Admin.php:382 src/Admin/Admin.php:383 templates/admin/newsletter.php:51
+#: src/Admin/Admin.php:387 src/Admin/Admin.php:388 templates/admin/newsletter.php:51
 msgid "Newsletter"
 msgstr ""
 
@@ -3401,6 +3403,10 @@ msgstr ""
 msgid "No key is stored. Leave it empty if your server does not ask for one."
 msgstr ""
 
+#: src/Admin/TranslationsPage.php:290
+msgid "No language model is set up."
+msgstr ""
+
 #: templates/admin/tasks.php:178 templates/public/signup.php:1482
 msgid "No linkable events found. Type a name below instead."
 msgstr ""
@@ -3499,7 +3505,7 @@ msgstr ""
 msgid "No tasks yet. Add one to get started."
 msgstr ""
 
-#: templates/admin/translations.php:169
+#: templates/admin/translations.php:201
 msgid "No text matches."
 msgstr ""
 
@@ -3556,7 +3562,7 @@ msgstr ""
 msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:103 src/Admin/TranslationsPage.php:166
+#: src/Admin/MessagesPage.php:103 src/Admin/TranslationsPage.php:179
 #. translators: %s: the placeholders, like {email}
 msgid "Not saved: the text must contain %s, in every language. The message keeps the text it had."
 msgstr ""
@@ -3565,7 +3571,7 @@ msgstr ""
 msgid "Not set yet - run /board in the group once."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:54
+#: src/Admin/TranslationsPage.php:59
 msgid "Not translated yet"
 msgstr ""
 
@@ -3618,7 +3624,7 @@ msgstr ""
 msgid "Nothing was recorded in this time range."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:156
+#: src/Admin/TranslationsPage.php:169
 msgid "Nothing was saved."
 msgstr ""
 
@@ -3650,7 +3656,7 @@ msgstr ""
 msgid "Notifications"
 msgstr ""
 
-#: templates/admin/translations.php:55
+#: templates/admin/translations.php:58
 #. translators: %s: the languages, e.g. "Suomi (fi), English (en)"
 msgid "Now: %s."
 msgstr ""
@@ -4097,7 +4103,7 @@ msgstr ""
 msgid "Pending updates"
 msgstr ""
 
-#: src/Admin/Admin.php:343 src/Admin/Admin.php:344 templates/admin/people.php:24 templates/admin/people.php:27
+#: src/Admin/Admin.php:348 src/Admin/Admin.php:349 templates/admin/people.php:24 templates/admin/people.php:27
 #: templates/admin/settings.php:216 templates/public/signup.php:724 templates/public/signup.php:1740
 msgid "People"
 msgstr ""
@@ -4562,7 +4568,7 @@ msgstr ""
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr ""
 
-#: src/Admin/Admin.php:334 src/Admin/Admin.php:335 templates/admin/roster.php:59
+#: src/Admin/Admin.php:339 src/Admin/Admin.php:340 templates/admin/roster.php:59
 msgid "Roster"
 msgstr ""
 
@@ -4618,7 +4624,7 @@ msgid "Sales desk link, welcome crew (minutes before)"
 msgstr ""
 
 #: src/Web/NewsletterController.php:668 src/Web/NewsletterController.php:1236 templates/admin/ai-prompts.php:138 templates/admin/roster.php:214
-#: templates/admin/translations.php:179 templates/admin/translations.php:258 templates/public/signup.php:1016 templates/public/signup.php:1231
+#: templates/admin/translations.php:211 templates/admin/translations.php:290 templates/public/signup.php:1016 templates/public/signup.php:1231
 #: templates/public/signup.php:1811 templates/public/signup.php:1903 templates/public/signup.php:1986 templates/public/signup.php:2039
 msgid "Save"
 msgstr ""
@@ -4631,7 +4637,7 @@ msgstr ""
 msgid "Save first. The test sends one tiny request with the saved settings."
 msgstr ""
 
-#: templates/admin/translations.php:119
+#: templates/admin/translations.php:122
 msgid "Save language settings"
 msgstr ""
 
@@ -4699,7 +4705,7 @@ msgstr ""
 msgid "Saved. This text is sent as you wrote it."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:179
+#: src/Admin/TranslationsPage.php:192
 #. translators: %s: the text's name, e.g. "Telegram bot: About"
 msgid "Saved: %s."
 msgstr ""
@@ -4741,7 +4747,7 @@ msgstr ""
 msgid "Search people"
 msgstr ""
 
-#: templates/admin/translations.php:144 templates/admin/translations.php:146
+#: templates/admin/translations.php:176 templates/admin/translations.php:178
 msgid "Search texts"
 msgstr ""
 
@@ -5142,7 +5148,7 @@ msgstr ""
 msgid "Set yourself up first: send /start to the bot."
 msgstr ""
 
-#: src/Admin/Admin.php:352 src/Admin/Admin.php:353 templates/public/signup.php:86 templates/public/signup.php:492
+#: src/Admin/Admin.php:357 src/Admin/Admin.php:358 templates/public/signup.php:86 templates/public/signup.php:492
 msgid "Settings"
 msgstr ""
 
@@ -5176,7 +5182,7 @@ msgid "Short notice (hours before the start)"
 msgstr ""
 
 #: templates/admin/bot-log.php:51 templates/admin/newsletter.php:106 templates/admin/newsletter.php:119 templates/admin/roster.php:87
-#: templates/admin/translations.php:147 templates/public/signup-admin-datebar.php:63 templates/public/signup.php:1590 templates/public/signup.php:1597
+#: templates/admin/translations.php:179 templates/public/signup-admin-datebar.php:63 templates/public/signup.php:1590 templates/public/signup.php:1597
 #: templates/public/signup.php:1715
 msgid "Show"
 msgstr ""
@@ -5197,7 +5203,7 @@ msgstr ""
 msgid "Show your ticket"
 msgstr ""
 
-#: templates/admin/translations.php:160
+#: templates/admin/translations.php:192
 #. translators: 1: how many texts are shown, 2: how many there are
 msgid "Showing %1$d of %2$d texts."
 msgstr ""
@@ -5350,7 +5356,7 @@ msgstr ""
 msgid "Site key"
 msgstr ""
 
-#: templates/admin/translations.php:44
+#: templates/admin/translations.php:47
 msgid "Site languages"
 msgstr ""
 
@@ -5608,7 +5614,7 @@ msgstr ""
 msgid "Task updated."
 msgstr ""
 
-#: src/Admin/Admin.php:325 src/Admin/Admin.php:326 templates/admin/tasks.php:55 templates/public/signup.php:657
+#: src/Admin/Admin.php:330 src/Admin/Admin.php:331 templates/admin/tasks.php:55 templates/public/signup.php:657
 #: templates/public/signup.php:1564
 msgid "Tasks"
 msgstr ""
@@ -5774,7 +5780,7 @@ msgstr ""
 msgid "Test the webhook"
 msgstr ""
 
-#: templates/admin/translations.php:174
+#: templates/admin/translations.php:206
 msgid "Text"
 msgstr ""
 
@@ -5798,7 +5804,7 @@ msgstr ""
 msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
 msgstr ""
 
-#: src/Support/TranslationRow.php:66 templates/admin/translations.php:124
+#: src/Support/TranslationRow.php:66 templates/admin/translations.php:127
 msgid "Texts"
 msgstr ""
 
@@ -6355,16 +6361,21 @@ msgstr ""
 msgid "The language model answered. The connection is OK."
 msgstr ""
 
-#: src/Support/TranslatedText.php:619
+#: src/Support/TranslatedText.php:872
 #. translators: %s: the kind of error, e.g. timeout or http_401
 msgid "The language model could not translate the texts (%s). The language fields keep what they had, and empty ones now hold the text as you wrote it."
+msgstr ""
+
+#: src/Admin/TranslationsPage.php:294
+#. translators: %s: the kind of error, e.g. timeout or http_401
+msgid "The language model gave the error %s."
 msgstr ""
 
 #: templates/admin/settings.php:1682
 msgid "The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:123
+#: src/Admin/TranslationsPage.php:136
 msgid "The language settings were saved."
 msgstr ""
 
@@ -6561,7 +6572,7 @@ msgstr ""
 msgid "The placeholders are saved."
 msgstr ""
 
-#: templates/admin/translations.php:68
+#: templates/admin/translations.php:71
 #. translators: %s: a language name, e.g. Svenska
 msgid "The plugin’s own texts (buttons, menus, built-in messages) are not translated into %s. People who choose it read them in English. The texts in the table below are translated."
 msgstr ""
@@ -6681,7 +6692,7 @@ msgstr ""
 msgid "The server of the language model, which writes the texts of the next events announcement — the events’ descriptions and their DJs’ descriptions, both public information, are sent there."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:117
+#: src/Admin/TranslationsPage.php:130
 #. translators: %s: the language codes that were typed but are not known, e.g. "xx, yy"
 msgid "The settings were saved, but these language codes are not known and were left out: %s."
 msgstr ""
@@ -6780,7 +6791,7 @@ msgstr ""
 msgid "The text of every ticket email: a bought ticket, a guest-list ticket, a crew ticket and a free-entry ticket. The heading, the ticket note, the “Open my ticket” button, the sign-off and the QR code are added around it. A first line written in *stars* is the greeting, shown in italics on its own line. Empty, or the same as the built-in text, means the built-in text."
 msgstr ""
 
-#: src/Support/TranslatedText.php:614
+#: src/Support/TranslatedText.php:867
 msgid "The texts were not translated because no language model is set up. Empty language fields now hold the text as you wrote it."
 msgstr ""
 
@@ -7052,7 +7063,7 @@ msgstr ""
 msgid "This text is not translated: every language shows it as it was written."
 msgstr ""
 
-#: src/Admin/TranslationsPage.php:150
+#: src/Admin/TranslationsPage.php:163
 msgid "This text was not found. Nothing was saved."
 msgstr ""
 
@@ -7308,32 +7319,40 @@ msgstr ""
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: src/Support/TranslatedText.php:745
+#: src/Support/TranslatedText.php:998
 msgid "Translate again"
 msgstr ""
 
-#: templates/admin/translations.php:131
+#: templates/admin/translations.php:134
 msgid "Translate missing"
 msgstr ""
 
-#: templates/admin/translations.php:93
+#: templates/admin/translations.php:96
 msgid "Translate texts automatically with the language model"
-msgstr ""
-
-#: src/Admin/TranslationsPage.php:218
-#. translators: 1: how many texts were translated, 2: how many were not
-msgid "Translated texts: %1$d. Not translated: %2$d."
 msgstr ""
 
 #: src/Support/AiPrompts.php:225
 msgid "Translates the announcement texts and the post-event email text into every other site language at once. {from} becomes the language the text is written in, {to} the other languages."
 msgstr ""
 
+#: src/Admin/TranslationsPage.php:270
+#. translators: 1: texts done, 2: texts in all, 3: texts that could not be translated
+msgid "Translating: %1$d of %2$d done. Not translated: %3$d."
+msgstr ""
+
 #: src/Support/AiPrompts.php:224
 msgid "Translation into the site languages"
 msgstr ""
 
-#: src/Admin/Admin.php:391 src/Admin/Admin.php:392 templates/admin/translations.php:36
+#: src/Admin/TranslationsPage.php:228
+msgid "Translation is already running. Nothing new was started."
+msgstr ""
+
+#: src/Admin/TranslationsPage.php:232
+msgid "Translation started. It runs in the background, so you can close this page."
+msgstr ""
+
+#: src/Admin/Admin.php:396 src/Admin/Admin.php:397 templates/admin/translations.php:39
 msgid "Translations"
 msgstr ""
 
@@ -7361,7 +7380,7 @@ msgstr ""
 msgid "Two of those you can do yourself, immediately and without asking anyone: your Crew app has a Delete button that erases your record and its history for good, and every email we send you links to it. Your notification settings on the same page stop any optional message."
 msgstr ""
 
-#: templates/admin/translations.php:49
+#: templates/admin/translations.php:52
 msgid "Two-letter language codes, separated by commas. The first one is the main language. Every text below is kept in each of these languages."
 msgstr ""
 
@@ -7695,12 +7714,12 @@ msgstr ""
 msgid "When the start time changes, every task of this event moves by the same amount."
 msgstr ""
 
-#: templates/admin/translations.php:111
+#: templates/admin/translations.php:114
 #. translators: %s: the main language, e.g. Finnish
 msgid "When this is off, every text is taken to be written in the main language (%s)."
 msgstr ""
 
-#: templates/admin/translations.php:96
+#: templates/admin/translations.php:99
 msgid "When this is off, nothing is sent to the language model, and an empty language text gets the text as it was written."
 msgstr ""
 
@@ -7899,7 +7918,7 @@ msgstr ""
 msgid "Write a new text with the AI for each event"
 msgstr ""
 
-#: src/Support/TranslatedText.php:685
+#: src/Support/TranslatedText.php:938
 msgid "Write in any language"
 msgstr ""
 
@@ -8024,7 +8043,7 @@ msgstr ""
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
-#: src/Admin/Admin.php:495 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:272
+#: src/Admin/Admin.php:500 src/Admin/PeoplePage.php:329 src/Admin/TasksPage.php:272
 msgid "You do not have permission to do this."
 msgstr ""
 
@@ -8431,11 +8450,11 @@ msgstr ""
 msgid "e.g. covered a cleaning task"
 msgstr ""
 
-#: templates/admin/translations.php:247
+#: templates/admin/translations.php:279
 msgid "edited by hand"
 msgstr ""
 
-#: src/Support/TranslatedText.php:730
+#: src/Support/TranslatedText.php:983
 msgid "edited by hand, not translated again"
 msgstr ""
 
@@ -8539,7 +8558,7 @@ msgstr ""
 msgid "not scheduled"
 msgstr ""
 
-#: templates/admin/translations.php:251
+#: templates/admin/translations.php:283
 msgid "not translated yet"
 msgstr ""
 
