@@ -6,6 +6,7 @@ namespace EventCrew\Admin;
 
 use EventCrew\Support\AiPrompts;
 use EventCrew\Support\EventAiText;
+use EventCrew\Support\MessageTemplates;
 
 /**
  * The AI prompts page (EventCrew > AI prompts), the one place for what the
@@ -107,30 +108,57 @@ final class AiPromptsPage
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
+        $type = 'success';
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        Admin::redirectTo(self::PAGE_SLUG, $this->applyPlaceholders(wp_unslash($_POST)));
+        $notice = $this->applyPlaceholders(wp_unslash($_POST), $type);
+
+        Admin::redirectTo(self::PAGE_SLUG, $notice, $type);
     }
 
     /**
-     * The placeholders form. A row with an empty name is removed. Returns the
-     * notice.
+     * The placeholders form. A row with an empty name is removed. A row whose
+     * name is a built-in placeholder of a message kind ({name}, {event}, ...)
+     * is not saved; the notice names it and $type becomes 'error'. Returns
+     * the notice.
      *
      * @param array<string, mixed> $post
      */
-    public function applyPlaceholders(array $post): string
+    public function applyPlaceholders(array $post, string &$type = 'success'): string
     {
         $rows = [];
+        $builtIn = self::builtInNames();
+        $clashes = [];
 
         foreach (is_array($post['placeholders'] ?? null) ? $post['placeholders'] : [] as $row) {
             if (! is_array($row)) {
                 continue;
             }
 
+            $name = sanitize_text_field((string) ($row['name'] ?? ''));
+
+            // The name as EventAiText keeps it: small letters, no { }.
+            if (isset($builtIn[strtolower(trim($name, " \t{}"))])) {
+                $clashes[] = '{' . strtolower(trim($name, " \t{}")) . '}';
+
+                continue;
+            }
+
             $rows[] = [
-                'name' => sanitize_text_field((string) ($row['name'] ?? '')),
+                'name' => $name,
                 'prompt' => sanitize_textarea_field((string) ($row['prompt'] ?? '')),
                 'fallback' => sanitize_textarea_field((string) ($row['fallback'] ?? '')),
             ];
+        }
+
+        if ([] !== $clashes) {
+            EventAiText::savePlaceholders($rows);
+            $type = 'error';
+
+            return sprintf(
+                /* translators: %s: the placeholder names, like {name}, {event} */
+                __('Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                implode(', ', array_unique($clashes))
+            );
         }
 
         $given = count(array_filter($rows, static fn (array $row): bool => '' !== trim($row['name'])));
@@ -140,6 +168,24 @@ final class AiPromptsPage
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ? __('Saved. Some placeholders were left out: a name uses only small letters a-z, digits and _, starts with a letter, is used once, and has a prompt.', 'eventcrew')
             : __('The placeholders are saved.', 'eventcrew');
+    }
+
+    /**
+     * The built-in placeholder names of every message kind, as keys.
+     *
+     * @return array<string, true>
+     */
+    private static function builtInNames(): array
+    {
+        $names = [];
+
+        foreach (MessageTemplates::all() as $template) {
+            foreach (array_keys($template->placeholders) as $name) {
+                $names[(string) $name] = true;
+            }
+        }
+
+        return $names;
     }
 
     public function saveEventText(): void

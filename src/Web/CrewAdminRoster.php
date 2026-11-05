@@ -321,7 +321,7 @@ final class CrewAdminRoster
             return 'admin_door_already';
         }
 
-        $this->tickets->notifyRedemption($personId, $date, $redemptionId);
+        $this->tickets->notifyRedemption($personId, $date, $redemptionId, $eventPostId);
 
         return 'admin_door_redeemed';
     }

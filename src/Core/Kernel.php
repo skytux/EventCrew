@@ -56,6 +56,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageAiText;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
@@ -255,6 +256,10 @@ final class Kernel
         // and the organizers' own placeholders): written the day before, on
         // the hourly notifications run.
         $this->container->get(EventAiText::class)->boot();
+
+        // The Messages page's AI tick and prompt per kind, and the AI texts
+        // they give to EventAiText.
+        $this->container->get(MessageAiText::class)->boot();
 
         // Takeover requests: closed when the holder's place goes away, and
         // answered from an email link that logged-out people open.
@@ -506,6 +511,11 @@ final class Kernel
                 $container->get(LlmClient::class),
                 $container->get(Logger::class)
             )
+        );
+
+        $this->container->singleton(
+            MessageAiText::class,
+            fn () => new MessageAiText()
         );
 
         $this->container->singleton(

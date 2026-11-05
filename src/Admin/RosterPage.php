@@ -166,7 +166,7 @@ final class RosterPage
 
         // Transactional: hand the person their door-ticket link on both channels,
         // the same as the self-service 🎟 ticket flow does.
-        $this->tickets->notifyRedemption($personId, $date, $redemptionId);
+        $this->tickets->notifyRedemption($personId, $date, $redemptionId, $eventPostId);
 
         Admin::redirectTo(
             self::PAGE_SLUG,

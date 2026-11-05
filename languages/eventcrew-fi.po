@@ -7074,3 +7074,19 @@ msgstr "Käytä taas tekoälyn tekstiä"
 
 msgid "AI texts"
 msgstr "Tekoälytekstit"
+
+msgid "AI text for each event"
+msgstr "Tekoälyteksti jokaiseen tapahtumaan"
+
+msgid "Write a new text with the AI for each event"
+msgstr "Kirjoita tekoälyllä uusi teksti jokaiseen tapahtumaan"
+
+msgid "What the AI is asked to write"
+msgstr "Mitä tekoälyä pyydetään kirjoittamaan"
+
+msgid "With the tick on, the AI writes this message's text the day before each event, from this prompt. You can read and change the text on the AI prompts page and in the crew app before it is sent. When the AI fails, the text above is sent. The subject stays the one above."
+msgstr "Kun ruksi on päällä, tekoäly kirjoittaa tämän viestin tekstin tästä kehotteesta tapahtumaa edeltävänä päivänä. Voit lukea ja muuttaa tekstiä Tekoälyn kehotteet -sivulla ja Crew-sovelluksessa ennen lähetystä. Jos tekoäly epäonnistuu, lähetetään yllä oleva teksti. Aihe pysyy yllä olevana."
+
+#, php-format
+msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
+msgstr "Ei tallennettu: %s. Jokin viesti käyttää jo tätä nimeä omana paikkamerkkinään. Valitse toinen nimi. Muut paikkamerkit tallennettiin."

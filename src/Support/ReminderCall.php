@@ -114,7 +114,7 @@ final class ReminderCall
                 $person->telegramChatId,
                 DmBody::frame(
                     $person,
-                    MessageTemplates::body('reminder_dm', $context) . $aboutBlock,
+                    MessageAiText::body('reminder_dm', $context, $task->eventPostId) . $aboutBlock,
                     true
                 ),
                 // A one-tap out, so a "can't make it" turns into an early cancel
@@ -131,7 +131,7 @@ final class ReminderCall
             $person->id,
             $person->email,
             MessageTemplates::subject('reminder', $context),
-            MessageTemplates::body('reminder', $context) . $aboutBlock,
+            MessageAiText::body('reminder', $context, $task->eventPostId) . $aboutBlock,
             // The ticket again, a day out: the reminder is the message people
             // still have open when they arrive at the door.
             array_values(array_filter([

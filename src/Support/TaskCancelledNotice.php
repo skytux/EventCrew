@@ -92,7 +92,7 @@ final class TaskCancelledNotice
 
             return [
                 'subject' => MessageTemplates::subject('task_cancelled', $context),
-                'body' => MessageTemplates::body('task_cancelled', $context),
+                'body' => MessageAiText::body('task_cancelled', $context, $task->eventPostId),
                 'button' => __('See open tasks', 'eventcrew'),
             ];
         };

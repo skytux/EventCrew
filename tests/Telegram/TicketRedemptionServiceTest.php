@@ -18,6 +18,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Tests\Support\AiTextOptions;
 
 /**
  * The self-service credit spend, shared by the bot and the web profile. The
@@ -26,6 +27,8 @@ use EventCrew\Telegram\TicketRedemptionService;
  */
 final class TicketRedemptionServiceTest extends TelegramTestCase
 {
+    use AiTextOptions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -135,6 +138,44 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         // ...and in an email carrying the same link.
         self::assertNotEmpty($mails);
         self::assertStringContainsString($result['url'], $mails[0]['body']);
+    }
+
+    /** MessageAiText: the event's AI text when there is one, else the template's text. */
+    public function testTheTicketDmUsesTheEventsAiTextWhenThereIsOne(): void
+    {
+        Functions\when('wp_mail')->justReturn(true);
+        $base = $this->options;
+        $dms = [];
+
+        foreach ([['free_ticket_dm' => ['en' => 'AI ticket for {date}.', 'fi' => 'AI FI']], []] as $texts) {
+            $this->options = self::aiTextOptions(['free_ticket_dm'], 42, $texts) + $base;
+            $this->wpdb->nextCols[] = ['2026-08-01'];
+            $this->wpdb->nextResults[] = [];
+            $this->wpdb->nextResults[] = [
+                ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-01'],
+                ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-01'],
+            ];
+            $this->wpdb->nextVars[] = 0;
+            $this->wpdb->nextVars[] = 0;
+            $this->wpdb->nextResults[] = [
+                [
+                    'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3,
+                    'event_post_id' => 42, 'event_label' => 'Party',
+                ],
+            ];
+            $this->wpdb->nextQueryResults[] = 1;
+            $this->wpdb->nextRows[] = [
+                'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 999,
+            ];
+
+            $this->service()->redeem(7, '2026-08-01');
+            $dms[] = (string) $this->lastCallTo('sendMessage')['text'];
+        }
+
+        self::assertStringContainsString('AI ticket for Sat 1 Aug.', $dms[0]);
+        // The tick is on but nothing was written for the event: the template's text.
+        self::assertStringContainsString('Your free-entry ticket for', $dms[1]);
     }
 
     private function serviceWithTicketMail(): TicketRedemptionService

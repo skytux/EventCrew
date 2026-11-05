@@ -23,6 +23,8 @@ use EventCrew\Tests\TestCase;
  */
 final class StandingNoticeTest extends TestCase
 {
+    use AiTextOptions;
+
     /** @var array<int, string> */
     private array $mails = [];
 
@@ -113,5 +115,47 @@ final class StandingNoticeTest extends TestCase
         self::assertCount(1, $this->mails);
         // The ledger row that stops the next run repeating it.
         self::assertStringContainsString('standing_hit', $this->wpdb->lastQuery());
+    }
+
+    /** MessageAiText: the event's AI text when there is one, else the template's text. */
+    public function testTheNoticeUsesTheEventsAiTextWhenThereIsOne(): void
+    {
+        $texts = [
+            'no_show' => ['en' => 'AI mail for {name}.', 'fi' => 'AI FI'],
+            'no_show_dm' => ['en' => 'AI DM about {task}.', 'fi' => 'AI FI'],
+        ];
+
+        foreach ([$texts, []] as $stored) {
+            $options = self::aiTextOptions(['no_show', 'no_show_dm'], 42, $stored) + [
+                TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+                'eventcrew_link_secret' => 'test-secret',
+            ];
+            Functions\when('get_option')->alias(
+                static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+            );
+            $this->wpdb->nextResults[] = [[
+                'id' => 11, 'task_id' => 5, 'person_id' => 7, 'status' => 'no_show',
+                'status_changed_at' => '2026-07-18 09:00:00', 'task_date' => '2026-07-17',
+            ]];
+            $this->wpdb->nextRows[] = [
+                'id' => 5, 'task_date' => '2026-07-17', 'role_slug' => 'decorate', 'capacity' => 2,
+                'event_post_id' => 42, 'event_label' => 'Party',
+            ];
+            $this->wpdb->nextRows[] = [
+                'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 4242,
+            ];
+
+            $this->service()->sendDue(25);
+        }
+
+        self::assertCount(2, $this->sends);
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString('AI DM about Decorate at Party', (string) $this->sends[0]['text']);
+        self::assertStringContainsString('AI mail for Sam.', $this->mails[0]);
+        // The tick is on but nothing was written for the event: the template's text.
+        self::assertStringContainsString('You were marked as a no-show', (string) $this->sends[1]['text']);
+        self::assertStringContainsString('You were marked as a no-show', $this->mails[1]);
+        self::assertStringNotContainsString('AI ', $this->mails[1]);
     }
 }
