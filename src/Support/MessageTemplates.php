@@ -185,7 +185,7 @@ final class MessageTemplates
      * built-in text as a value (English as the source, each site language's
      * own text, nothing edited by hand).
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>}
      */
     public static function value(string $id, string $part): array
     {
@@ -193,9 +193,13 @@ final class MessageTemplates
     }
 
     /**
-     * The built-in text of $part of $id as a TranslatedText value.
+     * The built-in text of $part of $id as a TranslatedText value: English
+     * as the source, and each site language's own built-in text. A site
+     * language the plugin has no translation file for gets '', so it shows
+     * as "not translated yet" on the Translations page and is translated
+     * there or on the next save.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>}
      */
     public static function defaultValue(string $id, string $part): array
     {
@@ -211,12 +215,77 @@ final class MessageTemplates
         };
 
         $value['source'] = (string) Language::run(Language::ENGLISH, $text);
+        $value['lang'] = Language::ENGLISH;
 
-        foreach (array_keys($value['texts']) as $lang) {
-            $value['texts'][$lang] = (string) Language::run($lang, $text);
+        foreach (TranslatedText::languages() as $lang) {
+            $value['texts'][$lang] = SiteLanguages::hasCatalog($lang) ? (string) Language::run($lang, $text) : '';
         }
 
         return $value;
+    }
+
+    /**
+     * Stores $value as $part of $id, keeping the other part and the
+     * settings. A value that is the built-in text again, or empty, is not
+     * stored, so the built-in text applies in every language.
+     *
+     * @param array<string, mixed> $value A TranslatedText value.
+     */
+    public static function storePart(string $id, string $part, array $value): void
+    {
+        if (null === self::find($id) || ! in_array($part, [self::SUBJECT, self::BODY], true)) {
+            return;
+        }
+
+        $value = TranslatedText::normalize($value);
+        $stored = self::stored($id);
+        $stored[$part] = $value === self::defaultValue($id, $part)
+            || '' === $value['source'] . implode('', $value['texts'])
+            ? null
+            : $value;
+        self::write($id, $stored);
+    }
+
+    /**
+     * The subject (emails) and the text of every kind as rows of the
+     * wp-admin Translations page (TranslationRegistry), so they are
+     * translated into every site language like the other texts.
+     *
+     * @return list<TranslationRow>
+     */
+    public static function translationRows(): array
+    {
+        $rows = [];
+
+        foreach (self::all() as $id => $template) {
+            $group = MessageTemplate::CHANNEL_EMAIL === $template->channel
+                ? TranslationRow::GROUP_EMAILS
+                : TranslationRow::GROUP_TELEGRAM;
+            $parts = $template->hasSubject() ? [self::SUBJECT, self::BODY] : [self::BODY];
+
+            foreach ($parts as $part) {
+                $rows[] = new TranslationRow(
+                    'message.' . $id . '.' . $part,
+                    sprintf(
+                        self::SUBJECT === $part
+                            /* translators: %s: the name of a message on the Messages page */
+                            ? __('%s: subject', 'eventcrew')
+                            /* translators: %s: the name of a message on the Messages page */
+                            : __('%s: text', 'eventcrew'),
+                        $template->label
+                    ),
+                    $group,
+                    self::value($id, $part),
+                    static function (array $value) use ($id, $part): void {
+                        self::storePart($id, $part, $value);
+                    },
+                    self::SUBJECT === $part ? self::SUBJECT_MAX_LENGTH : self::BODY_MAX_LENGTH,
+                    self::BODY === $part
+                );
+            }
+        }
+
+        return $rows;
     }
 
     /** The per-template settings of $id (the AI tick, the hybrid tick, ...). */
@@ -274,7 +343,8 @@ final class MessageTemplates
                 $input['texts'],
                 $input['again'],
                 $multiline ? self::BODY_MAX_LENGTH : self::SUBJECT_MAX_LENGTH,
-                $multiline
+                $multiline,
+                $input['lang']
             );
             $value = $result['value'];
 

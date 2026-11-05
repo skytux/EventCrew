@@ -11,7 +11,10 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRegistry;
+use EventCrew\Support\TranslationRow;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -252,6 +255,77 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertNotContains(true, $value['manual']);
         self::assertSame($value, MessageTemplates::value('credit_granted', MessageTemplates::SUBJECT));
+    }
+
+    public function testTheBuiltInValueCoversEverySiteLanguage(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+
+        $value = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
+
+        self::assertSame(Language::ENGLISH, $value['lang']);
+        self::assertSame(['fi', 'en', 'sv'], array_keys($value['texts']));
+        self::assertSame('', $value['texts']['sv'], 'no Swedish translation file: left for the Translations page');
+        self::assertNotSame('', $value['texts'][Language::FINNISH]);
+    }
+
+    public function testATextStoredInAThirdLanguageIsSentInIt(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[$this->option('credit_granted')] = [
+            MessageTemplates::SUBJECT => [
+                'source' => 'Free entry for {name}',
+                'lang' => 'en',
+                'texts' => ['en' => 'Free entry for {name}', 'fi' => 'Vapaa sisäänpääsy: {name}', 'sv' => 'Fritt inträde: {name}'],
+            ],
+        ];
+
+        self::assertSame(
+            'Fritt inträde: Anna',
+            Language::run('sv', fn (): string => MessageTemplates::subject('credit_granted', ['person' => $this->person()]))
+        );
+    }
+
+    // ---- The Translations page --------------------------------------------
+
+    public function testEveryKindHasItsRowsOnTheTranslationsPage(): void
+    {
+        $rows = [];
+
+        foreach (MessageTemplates::translationRows() as $row) {
+            $rows[$row->id] = $row;
+        }
+
+        self::assertArrayHasKey('message.credit_granted.subject', $rows);
+        self::assertArrayHasKey('message.credit_granted.body', $rows);
+        self::assertArrayHasKey('message.reminder_dm.body', $rows);
+        self::assertArrayNotHasKey('message.reminder_dm.subject', $rows, 'a Telegram message has no subject');
+        self::assertSame(TranslationRow::GROUP_EMAILS, $rows['message.credit_granted.subject']->group);
+        self::assertSame(TranslationRow::GROUP_TELEGRAM, $rows['message.reminder_dm.body']->group);
+        self::assertSame(
+            MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT),
+            $rows['message.credit_granted.subject']->value
+        );
+    }
+
+    public function testARowSavedOnTheTranslationsPageIsTheMessagesPageText(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $registry = new TranslationRegistry(new TranslatedText(new LlmClient(new Logger()), new Logger()));
+        $registry->add([MessageTemplates::class, 'translationRows']);
+        $default = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
+
+        $result = $registry->saveRow('message.credit_granted.subject', $default['source'], ['sv' => 'Fritt inträde']);
+
+        self::assertTrue($result['found']);
+        $stored = MessageTemplates::stored('credit_granted')[MessageTemplates::SUBJECT];
+        self::assertSame('Fritt inträde', $stored['texts']['sv']);
+        self::assertTrue($stored['manual']['sv']);
+        self::assertSame($stored, MessageTemplates::value('credit_granted', MessageTemplates::SUBJECT));
+
+        // The built-in value stored again: nothing is kept.
+        MessageTemplates::storePart('credit_granted', MessageTemplates::SUBJECT, $default);
+        self::assertArrayNotHasKey($this->option('credit_granted'), $this->options);
     }
 
     // ---- Saving and resetting ---------------------------------------------
