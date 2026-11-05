@@ -17,6 +17,8 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
 
@@ -31,14 +33,30 @@ final class MailedListImportTest extends TestCase
     /** @var array<int, array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
+    /** @var array<int, array<string, mixed>> The bot's sendMessage calls. */
+    private array $dms = [];
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->options = [
             EmailTemplate::HTML_OPTION => false,
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
         ];
         $this->mails = [];
+        $this->dms = [];
+
+        Functions\when('wp_json_encode')->alias(static fn (mixed $data): string => (string) json_encode($data));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args): string {
+            if (str_ends_with($url, '/sendMessage')) {
+                $this->dms[] = (array) json_decode((string) $args['body'], true);
+            }
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
 
         Functions\when('get_option')->alias(
             fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
@@ -72,7 +90,8 @@ final class MailedListImportTest extends TestCase
                 new DoorAccess(new TaskRepository(), new AssignmentRepository())
             ),
             new Mailer(new Logger(), new EmailTemplate(new Logger())),
-            new GuestRepository()
+            new GuestRepository(),
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
         );
     }
 
@@ -521,5 +540,163 @@ final class MailedListImportTest extends TestCase
 
         self::assertSame('Import failed', $this->mails[0]['subject']);
         self::assertStringStartsWith('No luck: The columns of the attached file', $this->mails[0]['body']);
+    }
+
+    // --- the bot messages --------------------------------------------------
+
+    /**
+     * Owner with a chat with the bot, Kim without one, and Mia (Finnish) with one.
+     *
+     * @param array<int, string> $prefs notify_prefs JSON by person id
+     * @return array<int, array<string, mixed>>
+     */
+    private static function organizersWithChats(array $prefs = []): array
+    {
+        $rows = [
+            [
+                'id' => 9,
+                'email' => 'owner@example.com',
+                'display_name' => 'Owner',
+                'is_organizer' => 1,
+                'telegram_chat_id' => 501,
+            ],
+            ['id' => 10, 'email' => 'kim@example.com', 'display_name' => 'Kim', 'is_organizer' => 1],
+            [
+                'id' => 11,
+                'email' => 'mia@example.com',
+                'display_name' => 'Mia',
+                'is_organizer' => 1,
+                'telegram_chat_id' => 503,
+                'language' => 'fi',
+            ],
+        ];
+
+        foreach ($rows as $i => $row) {
+            if (isset($prefs[$row['id']])) {
+                $rows[$i]['notify_prefs'] = $prefs[$row['id']];
+            }
+        }
+
+        return $rows;
+    }
+
+    /** @param array<int, array<string, mixed>> $organizers */
+    private function importTicketFile(array $organizers, string $from = 'owner@example.com'): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextVars[] = '0';
+        $this->wpdb->nextResults[] = [];
+        $this->queueOrganizers($organizers);
+
+        $this->controller()->importList(
+            $from,
+            '',
+            '<d1@example.com>',
+            ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]
+        );
+    }
+
+    public function testEveryOrganizerWithAChatGetsTheTicketsMessageWithAResetButton(): void
+    {
+        $this->importTicketFile(self::organizersWithChats());
+
+        self::assertSame(['owner@example.com', 'kim@example.com', 'mia@example.com'], array_column($this->mails, 'to'));
+        self::assertSame([501, 503], array_column($this->dms, 'chat_id'));
+
+        $owner = $this->dms[0];
+        self::assertStringContainsString('Hi Owner,', $owner['text']);
+        self::assertMatchesRegularExpression(
+            '/🎟 3 tickets were imported for Sat 1 Aug\.\n\nThe ticket emails go out at \d\d:\d\d\. .*\n\n'
+                . 'The list was sent from owner@example\.com\.$/',
+            $owner['text']
+        );
+        $button = $owner['reply_markup']['inline_keyboard'][0][0];
+        self::assertSame('🗑 Reset the list', $button['text']);
+        self::assertSame('tbr:ask:2026-08-01', $button['callback_data']);
+        self::assertLessThanOrEqual(64, strlen($button['callback_data']));
+    }
+
+    public function testTheMessageIsInTheOrganizersLanguage(): void
+    {
+        $this->importTicketFile(self::organizersWithChats());
+
+        $mia = $this->dms[1];
+        self::assertStringContainsString("🎟 3 lippua tuotiin päivälle la 1.8.\n", $mia['text']);
+        self::assertStringNotContainsString('1.8..', $mia['text']);
+        self::assertSame('🗑 Nollaa lista', $mia['reply_markup']['inline_keyboard'][0][0]['text']);
+        // The email stays in the site's language, as before.
+        self::assertSame('Ticket buyers imported for Sat 1 Aug', $this->mails[2]['subject']);
+    }
+
+    public function testTheGuestListAndFailureMessagesHaveNoResetButton(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->queueOrganizers([self::organizersWithChats()[0]]);
+        $this->controller()->importList('owner@example.com', "Anna +2\nBo\n", '<d2@example.com>');
+
+        self::assertCount(1, $this->dms);
+        self::assertStringEndsWith(
+            '🎟 2 guests were added to the guest list for Sat 1 Aug. They bring 2 plus-ones in total.'
+                . "\n\nThe list was sent from owner@example.com.",
+            $this->dms[0]['text']
+        );
+        self::assertArrayNotHasKey('reply_markup', $this->dms[0]);
+
+        $this->dms = [];
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueOrganizers([self::organizersWithChats()[0]]);
+        $this->controller()->importList(
+            'owner@example.com',
+            '',
+            '<d3@example.com>',
+            ['filename' => 'list.csv', 'bytes' => "Tilaus;Maa\n1;FI\n"]
+        );
+
+        self::assertCount(1, $this->dms);
+        self::assertStringContainsString(
+            "⚠️ The ticket list could not be imported\n\nThe columns of the attached file",
+            $this->dms[0]['text']
+        );
+        self::assertStringContainsString('Nothing was added to the door list.', $this->dms[0]['text']);
+        self::assertArrayNotHasKey('reply_markup', $this->dms[0]);
+    }
+
+    public function testTheListImportRowTurnsTheEmailAndTheMessageOffPerOrganizer(): void
+    {
+        $this->importTicketFile(self::organizersWithChats([
+            9 => '{"list_import":{"dm":false,"email":true}}',
+            10 => '{"list_import":{"dm":true,"email":false}}',
+            11 => '{"list_import":{"dm":true,"email":false}}',
+        ]));
+
+        self::assertSame(['owner@example.com'], array_column($this->mails, 'to'));
+        self::assertSame([503], array_column($this->dms, 'chat_id'));
+    }
+
+    public function testAnOrganizerWithTheEmailOffGetsNoCopyAsTheSender(): void
+    {
+        $this->importTicketFile(
+            self::organizersWithChats([11 => '{"list_import":{"dm":false,"email":false}}']),
+            'mia@example.com'
+        );
+
+        self::assertSame(['owner@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame([501], array_column($this->dms, 'chat_id'));
+    }
+
+    public function testTheBotMessagesUseAStoredText(): void
+    {
+        $this->options[MessageTemplates::OPTION_PREFIX . 'import_tickets_dm'] = [
+            MessageTemplates::BODY => ['source' => "{added} in for {day}.\n\n{skipped}\n\nFrom {from}."],
+        ];
+
+        $this->importTicketFile([self::organizersWithChats()[0]]);
+
+        // The empty {skipped} leaves no empty lines behind.
+        self::assertStringEndsWith("3 in for Sat 1 Aug.\n\nFrom owner@example.com.", $this->dms[0]['text']);
     }
 }

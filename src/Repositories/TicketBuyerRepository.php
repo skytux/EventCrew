@@ -282,6 +282,21 @@ final class TicketBuyerRepository
         return false === $deleted ? 0 : (int) $deleted;
     }
 
+    /** How many rows clearForDate($date) would delete now: the imported buyers on $date. */
+    public function countImportedForDate(string $date): int
+    {
+        global $wpdb;
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$this->table()} WHERE event_date = %s AND source NOT IN (%s, %s)",
+                $date,
+                self::SOURCE_DOOR,
+                self::SOURCE_DESK
+            )
+        );
+    }
+
     public function countForDate(string $date): int
     {
         global $wpdb;
