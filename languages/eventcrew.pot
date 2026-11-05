@@ -913,7 +913,7 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:148
+#: src/Telegram/WebLoginBot.php:174
 msgid "Back to the crew app"
 msgstr ""
 
@@ -1579,11 +1579,6 @@ msgstr ""
 msgid "Do not send this announcement"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:76
-#. translators: %s: a 4-digit code, also shown on the crew app's page
-msgid "Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s."
-msgstr ""
-
 #: src/Support/DoorDesk.php:1261 templates/public/signup.php:650
 msgid "Door"
 msgstr ""
@@ -2084,11 +2079,6 @@ msgstr ""
 
 #: src/Support/DoorNewMember.php:90 src/Support/RoleTaskService.php:217
 msgid "Give their name."
-msgstr ""
-
-#: src/Telegram/WebLoginBot.php:96
-#. translators: %s: a 4-digit code, also shown on the crew app's page
-msgid "Go on only if the crew app on your screen shows the code %s."
 msgstr ""
 
 #: src/Support/Newsletter.php:881
@@ -4411,10 +4401,6 @@ msgstr ""
 msgid "Sign in or sign up"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:81
-msgid "Sign in to the crew app"
-msgstr ""
-
 #: templates/admin/settings-telegram-login.php:13 templates/public/signup.php:153 templates/public/signup.php:154
 msgid "Sign in with Telegram"
 msgstr ""
@@ -4490,7 +4476,7 @@ msgstr ""
 msgid "Signed in as %s."
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:146
+#: src/Telegram/WebLoginBot.php:172
 msgid "Signed in. You can go back to the crew app."
 msgstr ""
 
@@ -4985,6 +4971,10 @@ msgstr ""
 msgid "That is all I can answer this hour. Commands still work: /help"
 msgstr ""
 
+#: src/Telegram/WebLoginBot.php:212
+msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
+msgstr ""
+
 #: src/Admin/RosterPage.php:499 src/Web/CrewAdminRoster.php:589
 msgid "That list could not be imported."
 msgstr ""
@@ -5191,6 +5181,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1156
 msgid "The club, association or person answerable for these records. Required."
+msgstr ""
+
+#: src/Telegram/WebLoginBot.php:152
+msgid "The code is right."
 msgstr ""
 
 #: src/Support/TicketFormats.php:197
@@ -5849,7 +5843,7 @@ msgstr ""
 msgid "This request is closed: the task changed or was cancelled."
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:172
+#: src/Telegram/WebLoginBot.php:217
 msgid "This sign-in link has expired. Press Telegram on the crew app again."
 msgstr ""
 
@@ -6031,6 +6025,10 @@ msgstr ""
 
 #: src/Telegram/FollowupCommand.php:142
 msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
+msgstr ""
+
+#: src/Telegram/WebLoginBot.php:85
+msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr ""
 
 #: templates/public/signup.php:579
@@ -6816,13 +6814,13 @@ msgstr ""
 msgid "Your EventCrew ticket"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:177 src/Web/SignupController.php:1121
+#: src/Telegram/WebLoginBot.php:222 src/Web/SignupController.php:1121
 msgid "Your account is blocked. Talk to an organizer."
 msgstr ""
 
 #: templates/public/signup.php:2831
-#. translators: %s: a 4-digit code that the bot shows too
-msgid "Your code is %s. The bot shows the same code."
+#. translators: %s: a 4-digit code, one of the bot's buttons
+msgid "Your code is %s. In Telegram, press this code."
 msgstr ""
 
 #: src/Web/SignupController.php:700

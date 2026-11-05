@@ -5614,10 +5614,6 @@ msgstr "Linkki vanheni. Paina Telegram-painiketta uudelleen."
 msgid "Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email."
 msgstr "Liian monta kirjautumisyritystä tästä osoitteesta. Odota muutama minuutti ja yritä uudelleen, tai kirjaudu sähköpostilla."
 
-#: src/Telegram/WebLoginBot.php:71
-msgid "Sign in to the crew app"
-msgstr "Kirjaudu Crew-sovellukseen"
-
 #: src/Telegram/WebLoginBot.php:122
 msgid "Signed in. You can go back to the crew app."
 msgstr "Kirjauduttu sisään. Voit palata Crew-sovellukseen."
@@ -6440,16 +6436,11 @@ msgid "The email could not be sent. Try again later."
 msgstr "Sähköpostia ei voitu lähettää. Yritä myöhemmin uudelleen."
 
 #, php-format
-msgid "Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s."
-msgstr "Haluatko kirjautua crew-sovellukseen? Paina painiketta vain, jos näytölläsi oleva crew-sovellus näyttää koodin %s."
+msgid "Your code is %s. In Telegram, press this code."
+msgstr "Koodisi on %s. Paina tätä koodia Telegramissa."
 
-#, php-format
-msgid "Go on only if the crew app on your screen shows the code %s."
-msgstr "Jatka vain, jos näytölläsi oleva crew-sovellus näyttää koodin %s."
-
-#, php-format
-msgid "Your code is %s. The bot shows the same code."
-msgstr "Koodisi on %s. Botti näyttää saman koodin."
+msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
+msgstr "Kirjautuaksesi crew-sovellukseen paina koodia, jonka näytölläsi oleva crew-sovellus näyttää. Jos et juuri itse painanut Telegram-painiketta crew-sovelluksessa, älä paina mitään."
 
 msgid "The welcome crew can only mark people as arrived."
 msgstr "Tervetulotiimi voi merkitä vain saapuneeksi."
@@ -6463,3 +6454,9 @@ msgstr "👋 saapui"
 #, php-format
 msgid "👋 %s"
 msgstr "👋 %s"
+
+msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
+msgstr "Tämä ei ole crew-sovelluksen koodi, joten kirjautuminen peruttiin. Aloita alusta painamalla Telegram-painiketta crew-sovelluksessa."
+
+msgid "The code is right."
+msgstr "Koodi on oikein."

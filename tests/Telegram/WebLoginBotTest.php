@@ -27,6 +27,8 @@ final class WebLoginBotTest extends TelegramTestCase
 {
     private const EXPIRED = 'This sign-in link has expired. Press Telegram on the crew app again.';
     private const SIGNED_IN = 'Signed in. You can go back to the crew app.';
+    private const CANCELLED = 'That is not the code on the crew app, so this sign-in is cancelled.'
+        . ' Press Telegram on the crew app to start again.';
 
     /** @var array<string, mixed> */
     private array $transients = [];
@@ -119,16 +121,41 @@ final class WebLoginBotTest extends TelegramTestCase
         ]);
     }
 
-    private function pressButton(int $telegramUserId, string $code): void
+    /**
+     * Presses a code button. $choice null presses the right code (the one the
+     * page shows); otherwise the given 4 digits.
+     */
+    private function pressButton(int $telegramUserId, string $code, ?string $choice = null): void
     {
+        $choice ??= (string) $this->storedCode($code)['match'];
+
         $this->router()->dispatch([
             'callback_query' => [
                 'id' => 'cbq',
-                'from' => ['id' => $telegramUserId],
+                'from' => ['id' => $telegramUserId, 'first_name' => 'Sam'],
                 'message' => ['message_id' => 31, 'chat' => ['id' => $telegramUserId]],
-                'data' => TelegramLogin::CALLBACK_PREFIX . $code,
+                'data' => TelegramLogin::CALLBACK_PREFIX . $code . ':' . $choice,
             ],
         ]);
+    }
+
+    /** One of the two wrong codes stored with the code. */
+    private function wrongChoice(string $code): string
+    {
+        return (string) $this->storedCode($code)['decoys'][0];
+    }
+
+    /**
+     * The texts of all messages the bot sent.
+     *
+     * @return list<string>
+     */
+    private function sentTexts(): array
+    {
+        return array_values(array_map(
+            static fn (array $call): string => (string) ($call['body']['text'] ?? ''),
+            array_filter($this->telegramCalls, static fn (array $call): bool => 'sendMessage' === $call['method'])
+        ));
     }
 
     /**
@@ -153,7 +180,7 @@ final class WebLoginBotTest extends TelegramTestCase
         return (string) ($this->lastCallTo('sendMessage')['text'] ?? '');
     }
 
-    public function testALinkedPersonGetsTheSignInButtonWithThePagesMatchCode(): void
+    public function testALinkedPersonGetsThreeCodeButtonsOneOfThemThePagesCode(): void
     {
         ['code' => $code, 'match' => $match] = $this->pageCode();
         $this->wpdb->nextRows[] = $this->person();
@@ -164,14 +191,51 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertNotNull($sent);
         self::assertSame(4242, $sent['chat_id']);
         self::assertSame(
-            'Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows'
-            . ' the code ' . $match . '.',
+            'To sign in to the crew app, press the code that the crew app on your screen shows. If you did not'
+            . ' just press Telegram on the crew app yourself, press nothing.',
             $sent['text']
         );
+        self::assertStringNotContainsString($match, $sent['text'], 'the text does not say which code is right');
+
+        $rows = $sent['reply_markup']['inline_keyboard'];
+        self::assertCount(1, $rows);
+        self::assertCount(3, $rows[0]);
+
+        $shown = array_column($rows[0], 'text');
+        self::assertContains($match, $shown);
+        self::assertCount(3, array_unique($shown), 'three different codes');
+        $decoys = $this->storedCode($code)['decoys'];
+        $wrong = array_values(array_diff($shown, [$match]));
+        sort($decoys);
+        sort($wrong);
         self::assertSame(
-            [[['text' => 'Sign in to the crew app', 'callback_data' => 'tgl:' . $code]]],
-            $sent['reply_markup']['inline_keyboard']
+            $decoys,
+            $wrong,
+            'the two wrong codes are the stored ones'
         );
+
+        foreach ($rows[0] as $button) {
+            self::assertMatchesRegularExpression('/^[0-9]{4}$/', $button['text']);
+            self::assertSame('tgl:' . $code . ':' . $button['text'], $button['callback_data']);
+            self::assertLessThanOrEqual(64, strlen($button['callback_data']), 'Telegram allows 64 bytes');
+        }
+    }
+
+    public function testOpeningTheLinkAgainShowsTheSameThreeCodes(): void
+    {
+        ['code' => $code] = $this->pageCode();
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
+        $first = array_column($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0], 'text');
+
+        $this->telegramCalls = [];
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
+        $second = array_column($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0], 'text');
+
+        sort($first);
+        sort($second);
+        self::assertSame($first, $second, 'a second look must not show which code both sets share');
     }
 
     public function testPressingTheButtonApprovesTheCodeAndThePageSignsIn(): void
@@ -225,20 +289,123 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertNull($this->lastCallTo('editMessageText'));
     }
 
-    public function testAButtonPressedTwiceApprovesOnce(): void
+    public function testAPressAfterTheRightCodeDoesNothing(): void
     {
         ['code' => $code, 'secret' => $secret] = $this->pageCode();
         $this->wpdb->nextRows[] = $this->person();
         $this->sendStart(4242, 'login-' . $code);
         $this->wpdb->nextRows[] = $this->person();
         $this->pressButton(4242, $code);
-        self::assertSame(TelegramLogin::STATE_APPROVED, $this->login()->poll($code, $secret)['state']);
+
+        // The right code again, and then a wrong one: neither changes anything.
+        foreach ([null, $this->wrongChoice($code)] as $choice) {
+            $this->telegramCalls = [];
+            $this->wpdb->nextRows[] = $this->person();
+            $this->pressButton(4242, $code, $choice);
+
+            self::assertSame(['answerCallbackQuery'], $this->calledMethods());
+            self::assertSame('', $this->lastCallTo('answerCallbackQuery')['text'], 'no message');
+            self::assertSame(TelegramLogin::STATE_APPROVED, $this->storedCode($code)['state']);
+        }
+
+        self::assertSame(
+            ['state' => TelegramLogin::STATE_APPROVED, 'person_id' => 7],
+            $this->login()->poll($code, $secret)
+        );
+    }
+
+    public function testAWrongCodeCancelsTheSignIn(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->pageCode();
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
 
         $this->telegramCalls = [];
         $this->wpdb->nextRows[] = $this->person();
+        $this->pressButton(4242, $code, $this->wrongChoice($code));
+
+        self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
+        self::assertSame(self::CANCELLED, $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame(self::CANCELLED, $this->lastCallTo('editMessageText')['text']);
+        self::assertNull($this->lastCallTo('editMessageText')['reply_markup'] ?? null, 'the code buttons are gone');
+        self::assertSame(TelegramLogin::STATE_CANCELLED, $this->storedCode($code)['state']);
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $this->login()->poll($code, $secret)['state']);
+    }
+
+    public function testAPressAfterAWrongCodeDoesNothing(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->pageCode();
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
+        $this->wpdb->nextRows[] = $this->person();
+        $this->pressButton(4242, $code, $this->wrongChoice($code));
+
+        // Now the right code, and a wrong one again: the sign-in stays cancelled.
+        foreach ([null, $this->wrongChoice($code)] as $choice) {
+            $this->telegramCalls = [];
+            $this->wpdb->nextRows[] = $this->person();
+            $this->pressButton(4242, $code, $choice);
+
+            self::assertSame(['answerCallbackQuery'], $this->calledMethods());
+            self::assertSame('', $this->lastCallTo('answerCallbackQuery')['text'], 'no message');
+            self::assertSame(TelegramLogin::STATE_CANCELLED, $this->storedCode($code)['state']);
+        }
+
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $this->login()->poll($code, $secret)['state']);
+    }
+
+    public function testAWrongCodeFromSomeoneWithoutAnAccountStartsNoSignUp(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->pageCode();
+        $this->sendStart(4242, 'login-' . $code);
+
+        $this->telegramCalls = [];
+        $this->pressButton(4242, $code, $this->wrongChoice($code));
+
+        self::assertSame(self::CANCELLED, $this->lastCallTo('editMessageText')['text']);
+        self::assertSame([], $this->sentTexts());
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_4242', $this->transients);
+        self::assertArrayNotHasKey('eventcrew_tgl_wait_4242', $this->transients);
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $this->login()->poll($code, $secret)['state']);
+    }
+
+    public function testAnOldSignInButtonWithoutACodeIsExpiredAndChangesNothing(): void
+    {
+        ['code' => $code, 'secret' => $secret] = $this->pageCode();
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
+
+        $this->telegramCalls = [];
+        $this->wpdb->nextRows[] = $this->person();
+        $this->router()->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 4242],
+                'message' => ['message_id' => 31, 'chat' => ['id' => 4242]],
+                'data' => TelegramLogin::CALLBACK_PREFIX . $code,
+            ],
+        ]);
+
+        self::assertSame(self::EXPIRED, $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame(TelegramLogin::STATE_PENDING, $this->login()->poll($code, $secret)['state']);
+    }
+
+    public function testTheCodesNeverReachTheLog(): void
+    {
+        ['code' => $code] = $this->pageCode();
+        $stored = $this->storedCode($code);
+        $this->wpdb->nextRows[] = $this->person();
+        $this->sendStart(4242, 'login-' . $code);
+        $this->wpdb->nextRows[] = $this->person();
+        $this->pressButton(4242, $code, $this->wrongChoice($code));
+        $this->wpdb->nextRows[] = $this->person();
         $this->pressButton(4242, $code);
 
-        self::assertSame(self::EXPIRED, $this->lastCallTo('editMessageText')['text']);
+        $log = serialize($this->options['eventcrew_recent_logs'] ?? []);
+        self::assertStringContainsString('wrong code', $log, 'the wrong press is logged');
+        self::assertStringNotContainsString($code, $log);
+        self::assertStringNotContainsString((string) $stored['match'], $log);
+        self::assertStringNotContainsString((string) $stored['decoys'][0], $log);
     }
 
     /**
@@ -338,19 +505,18 @@ final class WebLoginBotTest extends TelegramTestCase
     {
         ['code' => $code, 'secret' => $secret] = $this->pageCode();
 
-        // No crew account for Telegram user 4242: the bot shows the page's
-        // match code, then the normal sign-up starts.
+        // No crew account for Telegram user 4242: the bot shows the three
+        // code buttons first; the sign-up starts only after the right press.
         $this->sendStart(4242, 'login-' . $code);
 
-        $texts = array_values(array_map(
-            static fn (array $call): string => (string) ($call['body']['text'] ?? ''),
-            array_filter($this->telegramCalls, static fn (array $call): bool => 'sendMessage' === $call['method'])
-        ));
-        self::assertSame(
-            'Go on only if the crew app on your screen shows the code ' . $this->storedCode($code)['match'] . '.',
-            $texts[0]
-        );
+        self::assertCount(1, $this->sentTexts());
+        self::assertCount(3, $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0]);
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_4242', $this->transients);
 
+        $this->telegramCalls = [];
+        $this->pressButton(4242, $code);
+
+        self::assertSame('The code is right.', $this->lastCallTo('editMessageText')['text']);
         self::assertArrayHasKey('eventcrew_tg_await_email_4242', $this->transients);
         self::assertStringContainsString("What's your email address?", $this->lastText());
         self::assertSame(TelegramLogin::STATE_PENDING, $this->login()->poll($code, $secret)['state']);
@@ -389,6 +555,7 @@ final class WebLoginBotTest extends TelegramTestCase
     {
         ['code' => $code, 'secret' => $secret] = $this->pageCode();
         $this->sendStart(4242, 'login-' . $code);
+        $this->pressButton(4242, $code);
         $this->router()->dispatch([
             'message' => [
                 'text' => 'sam@example.com',

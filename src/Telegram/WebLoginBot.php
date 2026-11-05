@@ -15,16 +15,19 @@ use EventCrew\Support\TelegramLogin;
  * The page's Telegram button opens t.me/<bot>?start=login-<code>. In the
  * private chat that arrives here as "/start login-<code>":
  * - a code that is unknown, expired or used gets a short "expired" message;
- * - a Telegram account linked to a crew member with a confirmed email gets a
- *   "Sign in to the crew app" button, and pressing it approves the code. The
- *   message shows the code's 4-digit match code and says to press only if
- *   the crew app on their screen shows the same code: a bot link someone
- *   else sent them would sign in that other person's browser;
  * - a blocked crew member is refused;
- * - anyone else goes through the normal sign-up (the bot asks for an email
- *   and mails a confirmation link). The code is remembered against their
- *   Telegram account, and VerificationController approves it when the link
- *   is clicked and links the account.
+ * - otherwise the bot shows three 4-digit codes as buttons: the code the
+ *   page shows and two wrong ones, in random order. A bot link someone else
+ *   sent them would sign in that other person's browser, and they cannot
+ *   know which button is right. A wrong press cancels the code;
+ * - after the right press, a Telegram account linked to a crew member with a
+ *   confirmed email is signed in (the code is approved);
+ * - after the right press, anyone else goes through the normal sign-up (the
+ *   bot asks for an email and mails a confirmation link). The code is
+ *   remembered against their Telegram account, and VerificationController
+ *   approves it when the link is clicked and links the account.
+ *
+ * The 4-digit codes go in the buttons and on the page only, never in the log.
  */
 final class WebLoginBot
 {
@@ -50,9 +53,9 @@ final class WebLoginBot
     {
         $code = substr($payload, strlen(TelegramLogin::PAYLOAD_PREFIX));
 
-        $match = TelegramLogin::isAvailable() ? $this->login->matchCode($code) : '';
+        $choices = TelegramLogin::isAvailable() ? $this->login->choices($code) : [];
 
-        if ('' === $match || ! $this->login->claimForTelegramUser($code, $telegramUserId)) {
+        if ([] === $choices || ! $this->login->claimForTelegramUser($code, $telegramUserId)) {
             $this->telegram->sendMessage($chatId, self::expiredText());
 
             return;
@@ -67,44 +70,28 @@ final class WebLoginBot
             return;
         }
 
-        if (null !== $person && self::canSignIn($person)) {
-            $this->telegram->sendMessage(
-                $chatId,
-                sprintf(
-                    // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    /* translators: %s: a 4-digit code, also shown on the crew app's page */
-                    __('Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s.', 'eventcrew'),
-                    // phpcs:enable Generic.Files.LineLength.TooLong
-                    $match
-                ),
-                ['inline_keyboard' => [[[
-                    'text' => __('Sign in to the crew app', 'eventcrew'),
-                    'callback_data' => TelegramLogin::CALLBACK_PREFIX . $code,
-                ]]]]
-            );
+        $buttons = [];
 
-            return;
+        foreach ($choices as $choice) {
+            $buttons[] = [
+                'text' => $choice,
+                'callback_data' => TelegramLogin::CALLBACK_PREFIX . $code . ':' . $choice,
+            ];
         }
 
-        // No crew account for this Telegram account yet: the normal sign-up.
-        // The browser signs in when the confirmation link links the account,
-        // so the match code is shown here too.
         $this->telegram->sendMessage(
             $chatId,
-            sprintf(
-                /* translators: %s: a 4-digit code, also shown on the crew app's page */
-                __('Go on only if the crew app on your screen shows the code %s.', 'eventcrew'),
-                $match
-            )
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing.', 'eventcrew'),
+            ['inline_keyboard' => [$buttons]]
         );
-        $this->login->rememberForSignUp($code, $telegramUserId);
-        $this->onboarding->start($telegramUserId, $chatId, $displayName, true);
     }
 
     /**
-     * The "Sign in to the crew app" button. Approves the code only for the
-     * Telegram account that opened it, and only for a crew member who may
-     * sign in.
+     * A code button. Only the Telegram account that opened the code may
+     * press. The right code signs in a crew member who may sign in, or starts
+     * the sign-up for anyone else; a wrong code cancels the sign-in. A press
+     * after the right or a wrong one does nothing.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -112,9 +99,15 @@ final class WebLoginBot
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        $code = substr((string) ($callbackQuery['data'] ?? ''), strlen(TelegramLogin::CALLBACK_PREFIX));
+        $data = substr((string) ($callbackQuery['data'] ?? ''), strlen(TelegramLogin::CALLBACK_PREFIX));
         $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? 0);
         $messageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
+
+        // "<code>:<4 digits>". A button from before the code buttons (no
+        // digits) is treated as expired.
+        $parts = explode(':', $data);
+        $code = $parts[0];
+        $choice = $parts[1] ?? '';
 
         $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
 
@@ -125,12 +118,45 @@ final class WebLoginBot
             return;
         }
 
-        $approved = null !== $person
-            && self::canSignIn($person)
-            && TelegramLogin::isAvailable()
-            && $this->login->approve($code, $telegramUserId, $person->id);
+        $wellFormed = 2 === count($parts) && 1 === preg_match('/^[0-9]{4}$/', $choice);
+        $outcome = $wellFormed && TelegramLogin::isAvailable()
+            ? $this->login->choose($code, $telegramUserId, $choice)
+            : TelegramLogin::CHOICE_GONE;
 
-        if (! $approved) {
+        if (TelegramLogin::CHOICE_DONE === $outcome) {
+            // Answered only to stop the button's spinner; nothing changes.
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        if (TelegramLogin::CHOICE_WRONG === $outcome) {
+            $this->telegram->answerCallbackQuery($callbackId, self::cancelledText(), true);
+            $this->edit($chatId, $messageId, self::cancelledText());
+
+            return;
+        }
+
+        if (TelegramLogin::CHOICE_RIGHT !== $outcome) {
+            $this->telegram->answerCallbackQuery($callbackId, self::expiredText(), true);
+            $this->edit($chatId, $messageId, self::expiredText());
+
+            return;
+        }
+
+        if (null === $person || ! self::canSignIn($person)) {
+            // No crew account for this Telegram account yet: the normal
+            // sign-up. The browser signs in when the confirmation link links
+            // the account.
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->edit($chatId, $messageId, __('The code is right.', 'eventcrew'));
+            $this->login->rememberForSignUp($code, $telegramUserId);
+            $this->onboarding->start($telegramUserId, $chatId, self::displayName($callbackQuery), true);
+
+            return;
+        }
+
+        if (! $this->login->approve($code, $telegramUserId, $person->id)) {
             $this->telegram->answerCallbackQuery($callbackId, self::expiredText(), true);
             $this->edit($chatId, $messageId, self::expiredText());
 
@@ -165,6 +191,25 @@ final class WebLoginBot
         if (0 !== $chatId && 0 !== $messageId) {
             $this->telegram->editMessageText($chatId, $messageId, $text, $replyMarkup);
         }
+    }
+
+    /**
+     * The name of the Telegram account that pressed, built as UpdateRouter
+     * builds it for /start.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private static function displayName(array $callbackQuery): string
+    {
+        $from = is_array($callbackQuery['from'] ?? null) ? $callbackQuery['from'] : [];
+
+        return trim((string) ($from['first_name'] ?? '') . ' ' . (string) ($from['last_name'] ?? ''));
+    }
+
+    private static function cancelledText(): string
+    {
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again.', 'eventcrew');
     }
 
     private static function expiredText(): string

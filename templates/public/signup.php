@@ -2827,8 +2827,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     var failedText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_failed')); ?>;
     var expiredText = <?php echo wp_json_encode(\EventCrew\Web\SignupController::noticeText('tg_expired')); ?>;
     var matchBox = wait ? wait.querySelector('[data-eventcrew-tg-match]') : null;
-    var matchText = <?php echo wp_json_encode(/* translators: %s: a 4-digit code that the bot shows too */
-        __('Your code is %s. The bot shows the same code.', 'eventcrew')); ?>;
+    var matchText = <?php echo wp_json_encode(/* translators: %s: a 4-digit code, one of the bot's buttons */
+        __('Your code is %s. In Telegram, press this code.', 'eventcrew')); ?>;
     var POLL_MS = 3000;
     var login = '';       // the code being waited on; '' when not waiting
     var deadline = 0;     // when the code expires, in ms since the epoch
