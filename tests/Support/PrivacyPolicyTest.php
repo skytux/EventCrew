@@ -276,9 +276,41 @@ final class PrivacyPolicyTest extends TestCase
         self::assertSame('https://site.test/?p=12', Language::run('en', static fn () => PrivacyPolicy::noticeUrl()));
         self::assertSame('', Language::run('en', static fn () => PrivacyPolicy::translationNote()));
         self::assertSame(
-            'Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan englanninkielistä alkuperäistä.',
+            'Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan alkuperäistä.',
             Language::run('fi', static fn () => PrivacyPolicy::translationNote())
         );
+    }
+
+    /**
+     * Q329: the translated notice names the original's language, and that
+     * phrase links to the original page (its Polylang translation in the
+     * source language).
+     */
+    public function testTheTranslationNoteLinksToTheOriginalPage(): void
+    {
+        Functions\when('get_post_status')->justReturn('publish');
+        Functions\when('get_permalink')->alias(static fn (int $id): string => 'https://site.test/?p=' . $id);
+        Functions\when('pll_get_post')->alias(
+            static fn (int $id, string $l): int => 'en' === $l && 40 === $id ? 12 : 0
+        );
+
+        self::assertSame('https://site.test/?p=12', PrivacyPolicy::originalUrl(40));
+        // The original page itself, and a page with no English translation, link nowhere.
+        self::assertSame('', PrivacyPolicy::originalUrl(12));
+        self::assertSame('', PrivacyPolicy::originalUrl(55));
+
+        self::assertSame(
+            'Jos käännös ja <a href="https://site.test/?p=12">englanninkielinen alkuperäinen</a> eroavat,'
+                . ' noudatetaan alkuperäistä.',
+            Language::run('fi', static fn () => PrivacyPolicy::translationNote('https://site.test/?p=12'))
+        );
+        $url = 'https://site.test/?p=12';
+        self::assertSame('', Language::run('en', static fn () => PrivacyPolicy::translationNote($url)));
+        $phrase = static fn (string $in, string $of): string
+            => Language::run($in, static fn () => PrivacyPolicy::originalPhrase($of));
+        self::assertSame('suomenkielinen alkuperäinen', $phrase('fi', 'fi'));
+        self::assertSame('the English original', $phrase('en', 'en'));
+        self::assertSame('the original (Svenska)', $phrase('en', 'sv'));
     }
 
     /**

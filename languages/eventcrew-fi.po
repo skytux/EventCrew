@@ -7996,8 +7996,17 @@ msgstr "Paina painiketta, niin et saa näitä viestejä enää tapahtumien jälk
 msgid "Done. You will not get these emails after our events any more."
 msgstr "Valmis. Et saa näitä viestejä enää tapahtumien jälkeen."
 
-msgid "If the translation and the English original differ, the English original applies."
-msgstr "Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan englanninkielistä alkuperäistä."
+msgid "If the translation and %s differ, the original applies."
+msgstr "Jos käännös ja %s eroavat, noudatetaan alkuperäistä."
+
+msgid "the English original"
+msgstr "englanninkielinen alkuperäinen"
+
+msgid "the Finnish original"
+msgstr "suomenkielinen alkuperäinen"
+
+msgid "the original (%s)"
+msgstr "alkuperäinen (%s)"
 
 #: templates/admin/settings.php
 msgid "Second thoughts window (minutes)"

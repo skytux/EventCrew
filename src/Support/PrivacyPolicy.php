@@ -267,18 +267,69 @@ final class PrivacyPolicy
     }
 
     /**
-     * The line a translated notice starts with: where the translation and
-     * the English original differ, the original applies. '' in English.
+     * The language the notice is written in: the plugin's own text is
+     * English, and every other language is translated from it.
      */
-    public static function translationNote(): string
+    public const SOURCE_LANGUAGE = Language::ENGLISH;
+
+    /**
+     * The line a translated notice starts with, as HTML: where the
+     * translation and the original differ, the original applies. The
+     * original is named by its language ("the English original"), and that
+     * phrase links to $originalUrl when it is given. '' in the source
+     * language.
+     */
+    public static function translationNote(string $originalUrl = ''): string
     {
         $language = Language::current();
 
-        if (null === $language || Language::ENGLISH === $language) {
+        if (null === $language || self::SOURCE_LANGUAGE === $language) {
             return '';
         }
 
-        return __('If the translation and the English original differ, the English original applies.', 'eventcrew');
+        $phrase = esc_html(self::originalPhrase(self::SOURCE_LANGUAGE));
+
+        if ('' !== $originalUrl) {
+            $phrase = '<a href="' . esc_url($originalUrl) . '">' . $phrase . '</a>';
+        }
+
+        return sprintf(
+            /* translators: %s: "the English original" (or another language), a link to the original page */
+            esc_html__('If the translation and %s differ, the original applies.', 'eventcrew'),
+            $phrase
+        );
+    }
+
+    /**
+     * "The English original", in the language in force, for the original
+     * written in $code.
+     */
+    public static function originalPhrase(string $code): string
+    {
+        return match ($code) {
+            Language::ENGLISH => __('the English original', 'eventcrew'),
+            Language::FINNISH => __('the Finnish original', 'eventcrew'),
+            /* translators: %s: a language's name in that language, e.g. "Svenska" */
+            default => sprintf(__('the original (%s)', 'eventcrew'), SiteLanguages::ownName($code)),
+        };
+    }
+
+    /**
+     * The address of $pageId's translation in the source language (Polylang),
+     * the page a translated notice points to; '' when there is none, or
+     * when $pageId is that page itself.
+     */
+    public static function originalUrl(int $pageId): string
+    {
+        $original = PageLanguage::translatedPage($pageId, self::SOURCE_LANGUAGE);
+
+        if ($original <= 0 || $original === $pageId) {
+            return '';
+        }
+
+        $url = get_permalink($original);
+
+        return is_string($url) ? $url : '';
     }
 
     /**
