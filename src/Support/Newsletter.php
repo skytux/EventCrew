@@ -506,13 +506,10 @@ final class Newsletter
         $now = (string) current_time('mysql');
 
         if (null !== $plan) {
-            // A plan from before the preview and send times were settings
-            // was previewed when it was made, and goes at the send time on
-            // its send day.
-            $sendAt = (string) ($plan['send_at'] ?? NewsletterSchedule::at(
-                $plan['send_on'],
-                NewsletterSchedule::sendTime()
-            ));
+            // The same send time the preview names (sendAtOf()). A plan from
+            // before the preview and send times were settings was previewed
+            // when it was made.
+            $sendAt = self::sendAtOf($plan);
 
             if ($now < $sendAt) {
                 // Texts the language model has not written yet (an earlier
