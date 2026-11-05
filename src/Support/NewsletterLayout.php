@@ -647,7 +647,10 @@ final class NewsletterLayout
      * lines: 'plain' holds the venue and the street address, which need no
      * translation; 'times' holds the door times in each language of $words
      * ("Ovet aukeavat 18:30", "Doors open 18:30"). A line that is not known
-     * is left out.
+     * is left out. While the doors close setting is on, the doors close time
+     * is the one the ticket shows (EventTimes::doorsClose()), not the one the
+     * language model read from the event text (Q332); when the ticket has
+     * none (no start time), the model's time is kept.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
@@ -656,6 +659,12 @@ final class NewsletterLayout
     private static function practicalLines(array $card, array $words): array
     {
         $info = NewsletterWriter::practicalOf($card['practical'] ?? null);
+
+        $doors = EventTimes::doorsOn() ? EventTimes::doorsClose((int) ($card['id'] ?? 0)) : '';
+
+        if ('' !== $doors) {
+            $info = ['doors_close' => $doors] + ($info ?? array_fill_keys(NewsletterWriter::PRACTICAL_KEYS, ''));
+        }
 
         $lines = ['plain' => [], 'times' => array_fill_keys(array_keys($words), [])];
         $first = reset($words);
