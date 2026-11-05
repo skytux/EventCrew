@@ -125,6 +125,8 @@ final class WebhookControllerTest extends TelegramTestCase
     public function testWebhookUrlUsesAdminAjaxWithTheSecretWhenToggled(): void
     {
         $this->options[WebhookController::USE_FALLBACK_OPTION] = true;
+        // Off by default since Q252; a saved '1' still puts it in the URL.
+        $this->options[WebhookController::SECRET_IN_URL_OPTION] = '1';
         Functions\when('admin_url')->alias(static fn (string $path): string => 'https://example.test/wp-admin/' . $path);
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)

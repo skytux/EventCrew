@@ -4090,9 +4090,6 @@ msgstr "Luo botti Telegramissa @BotFatherin avulla, liitä sen antama tunnus tä
 msgid "Bot token"
 msgstr "Botin tunnus"
 
-msgid "Kept private on your server. Clearing it disconnects the bot."
-msgstr "Säilytetään yksityisenä palvelimellasi. Tyhjentäminen katkaisee yhteyden bottiin."
-
 msgid "You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field."
 msgstr "Voit sen sijaan määrittää EVENTCREW_TELEGRAM_TOKEN-vakion wp-config.php-tiedostossa, jolloin tunnus ei ole tietokannassa; vakio ohittaa tämän kentän."
 
@@ -4308,9 +4305,6 @@ msgstr "Päätepiste"
 
 msgid "Secret"
 msgstr "Salaisuus"
-
-msgid "Put this in the mail poller’s settings as IMPORT_SECRET."
-msgstr "Laita tämä postinhakijan asetuksiin arvoksi IMPORT_SECRET."
 
 msgid "Generate a new import secret? The mail poller stops working until it is given the new one."
 msgstr "Luodaanko uusi tuontisalaisuus? Postinhakija lakkaa toimimasta, kunnes sille annetaan uusi salaisuus."
@@ -6427,3 +6421,25 @@ msgstr "LIPPU SIIRRETTY"
 
 msgid "Your tasks on this night:"
 msgstr "Tehtäväsi tänä iltana:"
+
+#, php-format
+msgid "Saved: %s. Leave the field empty to keep it."
+msgstr "Tallennettu: %s. Jätä kenttä tyhjäksi, niin se säilyy."
+
+msgid "Remove the saved token (this disconnects the bot)"
+msgstr "Poista tallennettu tunnus (yhteys bottiin katkeaa)"
+
+msgid "Kept private on your server. Only its last 4 characters are shown."
+msgstr "Pysyy vain palvelimellasi. Siitä näytetään vain 4 viimeistä merkkiä."
+
+msgid "Remove the saved secret key"
+msgstr "Poista tallennettu salainen avain"
+
+msgid "The webhook secret below is shown only by its last 4 characters. Put the full secret in its place to send the request."
+msgstr "Alla olevasta webhook-salaisuudesta näytetään vain 4 viimeistä merkkiä. Lähetä pyyntö koko salaisuuden kanssa."
+
+msgid "Put this in the mail poller’s settings as IMPORT_SECRET. It is shown in full only now; after a reload only its last 4 characters are shown."
+msgstr "Laita tämä postinhakijan asetuksiin nimellä IMPORT_SECRET. Se näkyy kokonaan vain nyt; uudelleenlatauksen jälkeen vain 4 viimeistä merkkiä."
+
+msgid "Only the last 4 characters are shown. To see a secret in full, generate a new one: it is shown once."
+msgstr "Vain 4 viimeistä merkkiä näytetään. Nähdäksesi salaisuuden kokonaan luo uusi: se näytetään kerran."

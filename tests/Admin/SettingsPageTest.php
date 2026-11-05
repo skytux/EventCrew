@@ -346,6 +346,150 @@ final class SettingsPageTest extends TelegramTestCase
         }
     }
 
+    /**
+     * The main settings form, run until it has written $stopOption.
+     *
+     * @param array<string, mixed> $post
+     */
+    private function saveUntil(array $post, string $stopOption): void
+    {
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
+        \Brain\Monkey\Functions\when('wp_unslash')->returnArg(1);
+        \Brain\Monkey\Functions\when('sanitize_text_field')->returnArg(1);
+        \Brain\Monkey\Functions\when('sanitize_textarea_field')->returnArg(1);
+        \Brain\Monkey\Functions\when('sanitize_key')->returnArg(1);
+        \Brain\Monkey\Functions\when('esc_url_raw')->returnArg(1);
+        \Brain\Monkey\Functions\when('rest_url')->alias(static fn (string $path = ''): string => 'https://site.test/wp-json/' . $path);
+        \Brain\Monkey\Functions\when('admin_url')->alias(static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path);
+        \Brain\Monkey\Functions\when('add_query_arg')->justReturn('https://site.test/wp-admin/admin-ajax.php');
+        \Brain\Monkey\Functions\when('delete_option')->alias(function (string $key): bool {
+            unset($this->options[$key]);
+            return true;
+        });
+        \Brain\Monkey\Functions\when('update_option')->alias(function (string $name, mixed $value) use ($stopOption): bool {
+            $this->options[$name] = $value;
+
+            if ($stopOption === $name) {
+                throw new \RuntimeException('saved');
+            }
+
+            return true;
+        });
+
+        $_POST = $post;
+
+        try {
+            $this->page()->save();
+            self::fail($stopOption . ' was never saved.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('saved', $e->getMessage());
+        }
+    }
+
+    public function testASecretIsShownOnlyByItsLastFourCharacters(): void
+    {
+        self::assertSame('', \EventCrew\Support\SecretMask::mask(''));
+        self::assertSame('••••', \EventCrew\Support\SecretMask::mask('short'));
+        self::assertSame('••••wxyz', \EventCrew\Support\SecretMask::mask('123456789:AAsecretwxyz'));
+    }
+
+    public function testAnEmptyBotTokenFieldKeepsTheSavedToken(): void
+    {
+        $this->options[TelegramClient::TOKEN_OPTION] = '123456789:AAold';
+
+        $this->saveTelegramSection(['telegram_bot_token' => '']);
+        self::assertSame('123456789:AAold', $this->options[TelegramClient::TOKEN_OPTION]);
+
+        $this->saveTelegramSection(['telegram_bot_token' => '987654321:AAnew']);
+        self::assertSame('987654321:AAnew', $this->options[TelegramClient::TOKEN_OPTION]);
+
+        $this->saveTelegramSection(['telegram_bot_token' => '', 'telegram_bot_token_remove' => '1']);
+        self::assertSame('', $this->options[TelegramClient::TOKEN_OPTION]);
+    }
+
+    public function testAnEmptyTurnstileSecretFieldKeepsTheSavedSecret(): void
+    {
+        $secret = \EventCrew\Support\Turnstile::SECRET_KEY_OPTION;
+        $stop = \EventCrew\Support\CronFallbackTrigger::OPTION;
+        $this->options[$secret] = '0x4AAAold';
+
+        $this->saveUntil(['turnstile_secret' => ''], $stop);
+        self::assertSame('0x4AAAold', $this->options[$secret]);
+
+        $this->saveUntil(['turnstile_secret' => '0x4AAAnew'], $stop);
+        self::assertSame('0x4AAAnew', $this->options[$secret]);
+
+        $this->saveUntil(['turnstile_secret' => '', 'turnstile_secret_remove' => '1'], $stop);
+        self::assertSame('', $this->options[$secret]);
+    }
+
+    /**
+     * A new import secret is shown in full once, to the administrator who
+     * made it; the next page load shows it masked.
+     */
+    public function testANewImportSecretIsShownInFullOnlyOnce(): void
+    {
+        $transients = [];
+        \Brain\Monkey\Functions\when('wp_generate_password')->justReturn('abcdefghijklmnopqrstuvwxyz0123456789WXYZ');
+        \Brain\Monkey\Functions\when('set_transient')->alias(static function (string $key, $value) use (&$transients): bool {
+            $transients[$key] = $value;
+            return true;
+        });
+        \Brain\Monkey\Functions\when('get_transient')->alias(static function (string $key) use (&$transients) {
+            return $transients[$key] ?? false;
+        });
+        \Brain\Monkey\Functions\when('delete_transient')->alias(static function (string $key) use (&$transients): bool {
+            unset($transients[$key]);
+            return true;
+        });
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn(true);
+        \Brain\Monkey\Functions\when('check_admin_referer')->justReturn(1);
+        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(3);
+        \Brain\Monkey\Functions\when('admin_url')->alias(static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path);
+        \Brain\Monkey\Functions\when('add_query_arg')->justReturn('https://site.test/wp-admin/admin.php');
+        \Brain\Monkey\Functions\when('wp_safe_redirect')->alias(static function (): void {
+            throw new \RuntimeException('redirected');
+        });
+
+        $page = $this->page();
+
+        try {
+            $page->rotateImportSecret();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        $take = new \ReflectionMethod($page, 'takeNewImportSecret');
+
+        self::assertSame('abcdefghijklmnopqrstuvwxyz0123456789WXYZ', $take->invoke($page));
+        self::assertSame('', $take->invoke($page));
+
+        // Another administrator never sees it.
+        $transients['eventcrew_new_import_secret_3'] = 'abc';
+        \Brain\Monkey\Functions\when('get_current_user_id')->justReturn(4);
+        self::assertSame('', $take->invoke($page));
+    }
+
+    /**
+     * The URL copy of the webhook secret is off unless it was saved on. A
+     * value saved earlier (live saved '0'; another site may have saved '1')
+     * stays as it is.
+     */
+    public function testTheWebhookSecretIsNotInTheUrlByDefault(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::USE_FALLBACK_OPTION] = true;
+        unset($this->options[\EventCrew\Telegram\WebhookController::SECRET_IN_URL_OPTION]);
+        self::assertFalse(\EventCrew\Telegram\WebhookController::secretTravelsInUrl());
+
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_IN_URL_OPTION] = '1';
+        self::assertTrue(\EventCrew\Telegram\WebhookController::secretTravelsInUrl());
+
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_IN_URL_OPTION] = '0';
+        self::assertFalse(\EventCrew\Telegram\WebhookController::secretTravelsInUrl());
+    }
+
     public function testTheTelegramSignInSwitchSaves(): void
     {
         $this->saveTelegramSection(['telegram_web_login' => '1']);

@@ -48,7 +48,7 @@
  * @var int $door_max_people The most people let in on one night; 0 for no max.
  * @var bool $door_allow_over_max Whether the sales desk may go over the max, with a warning.
  * @var string $turnstile_site_key Cloudflare Turnstile site key for the web sign-in form.
- * @var string $turnstile_secret Cloudflare Turnstile secret key, used to verify submissions.
+ * @var string $turnstile_secret Cloudflare Turnstile secret key, masked to its last 4 characters ('' when none is saved).
  * @var bool $cron_fallback Whether due sends run inline on an ordinary request.
  * @var int|false $cron_next_run Timestamp of the next scheduled notifications run, or false.
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
@@ -66,7 +66,8 @@
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
- * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with.
+ * @var string $import_secret The shared secret the buyer-import mail poller signs its requests with, masked to its last 4 characters.
+ * @var string $import_secret_new The secret in full, only on the page load right after it was generated; else ''.
  * @var string $import_url The REST URL the mail poller posts mailed lists to.
  * @var string $import_mailbox The address organizers mail ticket files and guest lists to; '' when none is set.
  * @var array<int, string> $import_senders Addresses besides the organizers' that may mail a list in.
@@ -966,13 +967,31 @@ if (! defined('ABSPATH')) {
                 </th>
                 <td>
                     <input
-                        type="text"
+                        type="password"
                         id="eventcrew-turnstile-secret"
                         name="turnstile_secret"
-                        value="<?php echo esc_attr($turnstile_secret); ?>"
+                        value=""
+                        placeholder="<?php echo esc_attr($turnstile_secret); ?>"
                         class="regular-text"
-                        autocomplete="off"
+                        autocomplete="new-password"
                         spellcheck="false">
+                    <?php if ('' !== $turnstile_secret) : ?>
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: %s: four dots and the last 4 characters of the saved secret */
+                                esc_html__('Saved: %s. Leave the field empty to keep it.', 'eventcrew'),
+                                '<code>' . esc_html($turnstile_secret) . '</code>'
+                            );
+                            ?>
+                        </p>
+                        <p>
+                            <label>
+                                <input type="checkbox" name="turnstile_secret_remove" value="1">
+                                <?php esc_html_e('Remove the saved secret key', 'eventcrew'); ?>
+                            </label>
+                        </p>
+                    <?php endif; ?>
                     <p class="description"><?php esc_html_e('Kept private on your server; used to verify each submission with Cloudflare.', 'eventcrew'); ?></p>
                 </td>
             </tr>
@@ -1645,15 +1664,33 @@ if (! defined('ABSPATH')) {
                 </th>
                 <td>
                     <input
-                        type="text"
+                        type="password"
                         id="eventcrew-telegram-token"
                         name="telegram_bot_token"
-                        value="<?php echo esc_attr($telegram['token']); ?>"
+                        value=""
+                        placeholder="<?php echo esc_attr($telegram['token']); ?>"
                         class="regular-text"
-                        autocomplete="off"
+                        autocomplete="new-password"
                         spellcheck="false">
+                    <?php if ('' !== $telegram['token']) : ?>
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: %s: four dots and the last 4 characters of the saved secret */
+                                esc_html__('Saved: %s. Leave the field empty to keep it.', 'eventcrew'),
+                                '<code>' . esc_html($telegram['token']) . '</code>'
+                            );
+                            ?>
+                        </p>
+                        <p>
+                            <label>
+                                <input type="checkbox" name="telegram_bot_token_remove" value="1">
+                                <?php esc_html_e('Remove the saved token (this disconnects the bot)', 'eventcrew'); ?>
+                            </label>
+                        </p>
+                    <?php endif; ?>
                     <p class="description">
-                        <?php esc_html_e('Kept private on your server. Clearing it disconnects the bot.', 'eventcrew'); ?>
+                        <?php esc_html_e('Kept private on your server. Only its last 4 characters are shown.', 'eventcrew'); ?>
                         <?php esc_html_e('You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field.', 'eventcrew'); ?>
                     </p>
                 </td>
@@ -1859,6 +1896,9 @@ if (! defined('ABSPATH')) {
                 <summary><?php esc_html_e('Test the endpoint by hand', 'eventcrew'); ?></summary>
                 <p class="description">
                     <?php esc_html_e('Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot.', 'eventcrew'); ?>
+                </p>
+                <p class="description">
+                    <?php esc_html_e('The webhook secret below is shown only by its last 4 characters. Put the full secret in its place to send the request.', 'eventcrew'); ?>
                 </p>
                 <p>
                     <strong><?php esc_html_e('Telegram is posting to:', 'eventcrew'); ?></strong><br>
@@ -2265,8 +2305,13 @@ if (! defined('ABSPATH')) {
         <tr>
             <th scope="row"><label for="eventcrew-import-secret"><?php esc_html_e('Secret', 'eventcrew'); ?></label></th>
             <td>
-                <input type="text" id="eventcrew-import-secret" class="large-text code" readonly value="<?php echo esc_attr($import_secret); ?>" onfocus="this.select()">
-                <p class="description"><?php esc_html_e('Put this in the mail poller’s settings as IMPORT_SECRET.', 'eventcrew'); ?></p>
+                <?php if ('' !== $import_secret_new) : ?>
+                    <input type="text" id="eventcrew-import-secret" class="large-text code" readonly value="<?php echo esc_attr($import_secret_new); ?>" onfocus="this.select()">
+                    <p class="description"><?php esc_html_e('Put this in the mail poller’s settings as IMPORT_SECRET. It is shown in full only now; after a reload only its last 4 characters are shown.', 'eventcrew'); ?></p>
+                <?php else : ?>
+                    <code id="eventcrew-import-secret"><?php echo esc_html($import_secret); ?></code>
+                    <p class="description"><?php esc_html_e('Only the last 4 characters are shown. To see a secret in full, generate a new one: it is shown once.', 'eventcrew'); ?></p>
+                <?php endif; ?>
             </td>
         </tr>
     </table>
