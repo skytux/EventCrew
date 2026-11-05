@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.58
+Stable tag: 1.140.59
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.59 =
+Opening an email link a second time no longer says "invalid". A confirmation link opened again (or first opened by a mail security scanner) now says "Your email is already confirmed." A sign-in link now shows a Sign in button and signs in only when you press it, so a scanner opening the link first no longer uses it up. Used sign-in links are kept until they expire, so this works until the link expires.
 
 = 1.140.58 =
 The "A spot just opened" message after a late cancellation is no longer sent at once, at any hour. It now goes out from the hourly job inside the send window, and is dropped if the place is filled again, the task has started or was deleted. Blocked people are not told.
@@ -1388,6 +1391,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.59 =
+No settings change.
 
 = 1.140.58 =
 No settings change.
