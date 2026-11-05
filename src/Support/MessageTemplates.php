@@ -56,6 +56,12 @@ final class MessageTemplates
      */
     public const FIELDS_ACTION = 'eventcrew/message_template_fields';
 
+    /**
+     * What save() answers when the text lacks a required placeholder
+     * (MessageTemplate::missingRequired()). Nothing was saved then.
+     */
+    public const ERROR_MISSING_PLACEHOLDER = 'missing_placeholder';
+
     public function __construct(
         private readonly TranslatedText $translator
     ) {
@@ -280,7 +286,8 @@ final class MessageTemplates
                         self::storePart($id, $part, $value);
                     },
                     self::SUBJECT === $part ? self::SUBJECT_MAX_LENGTH : self::BODY_MAX_LENGTH,
-                    self::BODY === $part
+                    self::BODY === $part,
+                    required: self::BODY === $part ? $template->requiredPlaceholders() : []
                 );
             }
         }
@@ -313,8 +320,12 @@ final class MessageTemplates
      * again, or empty, is not stored, so the built-in text applies in every
      * language. A part that was not posted is left as it is.
      *
+     * A text that lacks a required placeholder, as written or as translated,
+     * is refused: nothing is saved and ERROR_MISSING_PLACEHOLDER is answered.
+     *
      * @param mixed $posted The raw $_POST[POST_NAME].
-     * @return string The translation error kind ('' when none), for TranslatedText::errorNotice().
+     * @return string The translation error kind ('' when none), for TranslatedText::errorNotice(),
+     *                or ERROR_MISSING_PLACEHOLDER.
      */
     public function save(string $id, mixed $posted): string
     {
@@ -328,6 +339,16 @@ final class MessageTemplates
         $stored = self::stored($id);
         $error = '';
         $parts = $template->hasSubject() ? [self::SUBJECT, self::BODY] : [self::BODY];
+        $lacksRequired = static fn (array $texts): bool => [] !== array_filter(
+            $texts,
+            static fn (string $text): bool => [] !== $template->missingRequired($text)
+        );
+        $body = TranslatedText::fromPost($posted[self::BODY] ?? null, true);
+
+        // Checked before translating, so a refused text costs no translation.
+        if (null !== $body && $lacksRequired([$body['source'], ...array_values($body['texts'])])) {
+            return self::ERROR_MISSING_PLACEHOLDER;
+        }
 
         foreach ($parts as $part) {
             $multiline = self::BODY === $part;
@@ -347,6 +368,11 @@ final class MessageTemplates
                 $input['lang']
             );
             $value = $result['value'];
+
+            // A translation can drop a placeholder too.
+            if ($multiline && $lacksRequired([$value['source'], ...array_values($value['texts'])])) {
+                return self::ERROR_MISSING_PLACEHOLDER;
+            }
 
             $stored[$part] = $value === self::defaultValue($id, $part)
                 || '' === $value['source'] . implode('', $value['texts'])
@@ -868,6 +894,122 @@ final class MessageTemplates
                 ],
                 false
             ),
+            // The account emails. The link in each of these is a
+            // button that Mailer adds under the text, not a placeholder, so no
+            // saved text can remove it.
+            new MessageTemplate(
+                'sign_in_link',
+                __('Sign-in link (email)', 'eventcrew'),
+                $email,
+                __('Sent when a person with an account asks for a sign-in link on the crew page. The Sign in button with the link is added under the text.', 'eventcrew'),
+                static fn (): string => __('Your EventCrew sign-in link', 'eventcrew'),
+                static fn (): string => __(
+                    "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
+                    'eventcrew'
+                )
+            ),
+            new MessageTemplate(
+                'account_create_link',
+                __('New account link (email)', 'eventcrew'),
+                $email,
+                __('Sent when someone without an account asks for a sign-in link on the crew page. The Create my account button with the link is added under the text, and for a new address the privacy line too.', 'eventcrew'),
+                static fn (): string => __('Create your crew account', 'eventcrew'),
+                static fn (): string => __(
+                    "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email.",
+                    'eventcrew'
+                )
+            ),
+            new MessageTemplate(
+                'email_change_confirm',
+                __('Confirm a new email address (email)', 'eventcrew'),
+                $email,
+                __('Sent to the new address when a person changes their email address on the crew page. The Confirm new email button with the link is added under the text.', 'eventcrew'),
+                static fn (): string => __('Confirm your new email address', 'eventcrew'),
+                static fn (): string => __(
+                    "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email.",
+                    'eventcrew'
+                )
+            ),
+            new MessageTemplate(
+                'email_changed',
+                __('Email address changed (email)', 'eventcrew'),
+                $email,
+                __('Sent to the old address when a person has confirmed their new email address.', 'eventcrew'),
+                static fn (): string => __('Your crew account email was changed', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the new email address */
+                    __("The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer.", 'eventcrew'),
+                    ['%s' => '{email}']
+                ),
+                [
+                    'email' => self::placeholder(
+                        __('The new email address.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['email'] ?? ''),
+                        true
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                'delete_data_confirm',
+                __('Confirm deleting data (email)', 'eventcrew'),
+                $email,
+                __('Sent when a person presses Delete my data on the manage-account page. The Delete my data button with the link is added under the text.', 'eventcrew'),
+                static fn (): string => __('Confirm deleting your data', 'eventcrew'),
+                static fn (): string => __('Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'access_changed',
+                __('Access changed (email)', 'eventcrew'),
+                $email,
+                __('Sent when an organizer gives a person a role, a one-time sign-up pass, or organizer rights.', 'eventcrew'),
+                static fn (): string => __('Your EventCrew access changed', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: name, 2: what changed */
+                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{change}']
+                ),
+                [
+                    'name' => $name,
+                    'change' => self::placeholder(
+                        __('What changed, like "You now have the role DJ." with what it means. The same text as the Telegram message.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['change'] ?? '')
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                'access_role_dm',
+                __('Access changed: role (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent when an organizer gives a person a role. The email about it repeats this text.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: %s: role name, such as DJ */
+                    __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
+                    ['%s' => '{role}']
+                ),
+                [
+                    'role' => self::placeholder(
+                        __('The name of the role, like DJ.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['role'] ?? '')
+                    ),
+                ]
+            ),
+            new MessageTemplate(
+                'access_pass_dm',
+                __('Access changed: one-time pass (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent when an organizer gives a person a one-time sign-up pass. The email about it repeats this text.', 'eventcrew'),
+                null,
+                static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'access_organizer_dm',
+                __('Access changed: organizer (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent when an organizer makes a person an organizer. The email about it repeats this text.', 'eventcrew'),
+                null,
+                static fn (): string => __('⭐ You’re now an EventCrew organizer.', 'eventcrew')
+            ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
     }
@@ -1068,11 +1210,12 @@ final class MessageTemplates
 
     /**
      * @param Closure(array<string, mixed>): string $resolve
-     * @return array{description: string, resolve: Closure(array<string, mixed>): string}
+     * @param bool $required The text must keep it (MessageTemplate::missingRequired()).
+     * @return array{description: string, resolve: Closure(array<string, mixed>): string, required: bool}
      */
-    private static function placeholder(string $description, Closure $resolve): array
+    private static function placeholder(string $description, Closure $resolve, bool $required = false): array
     {
-        return ['description' => $description, 'resolve' => $resolve];
+        return ['description' => $description, 'resolve' => $resolve, 'required' => $required];
     }
 
     /** "Fri 14 Nov 18:00–20:00": the task's day label and time, as the crew messages write it. */

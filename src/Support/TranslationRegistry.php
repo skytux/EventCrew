@@ -135,28 +135,46 @@ final class TranslationRegistry
      * source keeps its source whatever is posted. When the source changed,
      * every language text not edited by hand is translated again.
      *
+     * A value that lacks one of the row's required placeholders, as posted
+     * or as translated, is not stored; 'missing' lists those placeholders.
+     *
      * @param array<string, string> $texts
-     * @return array{found: bool, error: string} error is a TranslatedText error kind, '' when none.
+     * @return array{found: bool, error: string, missing: list<string>}
+     *     error is a TranslatedText error kind, '' when none.
      */
     public function saveRow(string $id, string $source, array $texts): array
     {
         $row = $this->find($id);
 
         if (null === $row) {
-            return ['found' => false, 'error' => ''];
+            return ['found' => false, 'error' => '', 'missing' => []];
         }
 
         if ($row->fixedSource) {
             $source = $row->value['source'];
         }
 
+        // Checked before translating, so a refused text costs no translation.
+        $missing = $row->missingRequired(['source' => $source, 'texts' => $texts]);
+
+        if ([] !== $missing) {
+            return ['found' => true, 'error' => '', 'missing' => $missing];
+        }
+
         $result = $this->translator->update($row->value, $source, $texts, false, $row->maxLength, $row->multiline);
+
+        // A translation can drop a placeholder too.
+        $missing = $row->missingRequired($result['value']);
+
+        if ([] !== $missing) {
+            return ['found' => true, 'error' => '', 'missing' => $missing];
+        }
 
         if ($result['value'] !== $row->value) {
             $row->store($result['value']);
         }
 
-        return ['found' => true, 'error' => $result['error']];
+        return ['found' => true, 'error' => $result['error'], 'missing' => []];
     }
 
     /**
@@ -201,6 +219,14 @@ final class TranslationRegistry
                 // update() put the source into the empty texts; keep them
                 // empty instead, so the row stays "not translated yet".
                 $error = $result['error'];
+                $failed++;
+
+                continue;
+            }
+
+            // A translation that dropped a required placeholder is not
+            // stored; the row stays missing that language.
+            if ([] !== $row->missingRequired($result['value'])) {
                 $failed++;
 
                 continue;

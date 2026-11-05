@@ -14,6 +14,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\SignedLink;
 use EventCrew\Telegram\ManageController;
@@ -197,5 +198,61 @@ final class ManageControllerTest extends TestCase
         self::assertSame('', $outcome);
         self::assertSame([], $this->wpdb->updates);
         self::assertSame([], $this->wpdb->deletes);
+    }
+
+    // ---- The Messages page template (delete_data_confirm) ------------------
+
+    /** The sent mail with its one-time token replaced by TOKEN, so it can be compared. */
+    private function sentMail(): string
+    {
+        return $this->mails[0]['subject'] . "\n---\n"
+            . (string) preg_replace('/delete=[A-Za-z0-9_-]+/', 'delete=TOKEN', $this->mails[0]['body']);
+    }
+
+    private function askToDelete(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->controller()->respond($this->request('POST', [
+            'token' => SignedLink::sign('manage', 7),
+            'action' => ManageController::DELETE,
+        ]));
+    }
+
+    public function testTheDeleteConfirmationIsUnchangedWhenNothingIsStored(): void
+    {
+        $this->askToDelete();
+
+        self::assertSame(
+            "Confirm deleting your data\n---\nHi Sam,\n\n"
+                . "Someone asked to delete your crew account and its history. If it was"
+                . ' you, press the button below. The link works once and for 30 minutes. If it was not you, ignore'
+                . " this email.\n\nDelete my data: https://site.test/wp-json/eventcrew/v1/manage?delete=TOKEN"
+                . "\n\n—\nManage your account or stop these emails:"
+                . ' https://site.test/wp-json/eventcrew/v1/manage?token=Nw.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
+            $this->sentMail()
+        );
+    }
+
+    public function testTheDeleteConfirmationUsesTheStoredTextAndKeepsTheButton(): void
+    {
+        $options = [
+            MessageTemplates::OPTION_PREFIX . 'delete_data_confirm' => [
+                MessageTemplates::SUBJECT => ['source' => 'Delete?', 'texts' => ['en' => 'Delete?'], 'manual' => ['en' => false]],
+                MessageTemplates::BODY => ['source' => 'Press the button.', 'texts' => ['en' => 'Press the button.'], 'manual' => ['en' => false]],
+            ],
+            EmailTemplate::HTML_OPTION => false,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+
+        $this->askToDelete();
+
+        self::assertStringStartsWith(
+            "Delete?\n---\nHi Sam,\n\nPress the button.\n\n"
+                . "Delete my data: https://site.test/wp-json/eventcrew/v1/manage?delete=TOKEN",
+            $this->sentMail()
+        );
     }
 }

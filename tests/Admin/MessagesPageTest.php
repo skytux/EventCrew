@@ -169,6 +169,84 @@ final class MessagesPageTest extends TestCase
         self::assertSame([], $this->options);
     }
 
+    public function testAStoredTextWithoutARequiredPlaceholderIsRefusedWithANotice(): void
+    {
+        $notices = [];
+        Functions\when('set_transient')->alias(static function (string $key, mixed $value) use (&$notices): bool {
+            $notices[] = $value;
+
+            return true;
+        });
+        $_POST = [
+            'kind' => 'email_changed',
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::SUBJECT => ['source' => 'Moved', 'texts' => ['en' => 'Moved']],
+                MessageTemplates::BODY => [
+                    'source' => 'Your address changed.',
+                    'texts' => ['en' => 'Your address changed.'],
+                ],
+            ],
+        ];
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->save());
+
+        self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'kind' => 'email_changed'], $this->redirectArgs);
+        self::assertSame(
+            [[
+                'type' => 'error',
+                'message' => 'Not saved: the text must contain {email}, in every language. The message keeps the text it had.',
+            ]],
+            $notices
+        );
+        self::assertSame([], $this->options, 'nothing is stored, not even the subject');
+        self::assertFalse(MessageTemplates::isChanged('email_changed'));
+    }
+
+    public function testATranslationWithoutARequiredPlaceholderIsRefusedToo(): void
+    {
+        $_POST = [
+            'kind' => 'email_changed',
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::BODY => [
+                    'source' => 'Now {email}.',
+                    'texts' => ['en' => 'Now {email}.', 'fi' => 'Osoite vaihtui.'],
+                ],
+            ],
+        ];
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->save());
+
+        self::assertSame([], $this->options);
+    }
+
+    public function testATextWithTheRequiredPlaceholderIsSaved(): void
+    {
+        $_POST = [
+            'kind' => 'email_changed',
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::BODY => [
+                    'source' => 'Now {email}.',
+                    'texts' => ['en' => 'Now {email}.', 'fi' => 'Nyt {email}.'],
+                ],
+            ],
+        ];
+
+        $page = $this->page();
+        $this->submit(static fn () => $page->save());
+
+        self::assertSame('Now {email}.', MessageTemplates::stored('email_changed')[MessageTemplates::BODY]['source']);
+    }
+
+    public function testEntriesNameTheRequiredPlaceholders(): void
+    {
+        $byId = array_column(MessagesPage::entries(), null, 'id');
+
+        self::assertSame(['{email}'], $byId['email_changed']['required']);
+        self::assertSame([], $byId['credit_granted']['required']);
+    }
+
     public function testResetForgetsTheText(): void
     {
         $this->options[MessageTemplates::OPTION_PREFIX . 'reminder'] = [

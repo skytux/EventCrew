@@ -14,6 +14,7 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SalesDeskGate;
@@ -570,20 +571,10 @@ final class SignupController
         bool $hasAccount = true,
         string $name = ''
     ): void {
-        // A comment inside __() hides the string from make-pot, so the
-        // long-line sniff is switched off around the whole statement instead.
-        // phpcs:disable Generic.Files.LineLength.TooLong
-        $body = $hasAccount
-            ? __(
-                "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
-                'eventcrew'
-            )
-            : __(
-                "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email.",
-                'eventcrew'
-            );
-        // phpcs:enable Generic.Files.LineLength.TooLong
-        $body = EmailBody::withGreeting($name, $body);
+        // The text is the Messages page template (MessageTemplates); the
+        // greeting is added here.
+        $kind = $hasAccount ? 'sign_in_link' : 'account_create_link';
+        $body = EmailBody::withGreeting($name, MessageTemplates::body($kind));
 
         $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
         $label = $hasAccount ? __('Sign in', 'eventcrew') : __('Create my account', 'eventcrew');
@@ -601,7 +592,7 @@ final class SignupController
         $this->mailer->toPerson(
             $personId,
             $email,
-            $hasAccount ? __('Your EventCrew sign-in link', 'eventcrew') : __('Create your crew account', 'eventcrew'),
+            MessageTemplates::subject($kind),
             $body,
             $actions
         );
@@ -657,17 +648,12 @@ final class SignupController
             admin_url('admin-ajax.php')
         );
 
-        // phpcs:disable Generic.Files.LineLength.TooLong -- a comment inside __() would hide the string from make-pot.
         $this->mailer->toUnconfirmedAddress(
             $email,
-            __('Confirm your new email address', 'eventcrew'),
-            EmailBody::withGreeting($person->displayName, __(
-                "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email.",
-                'eventcrew'
-            )),
+            MessageTemplates::subject('email_change_confirm'),
+            EmailBody::withGreeting($person->displayName, MessageTemplates::body('email_change_confirm')),
             [['label' => __('Confirm new email', 'eventcrew'), 'url' => $url]]
         );
-        // phpcs:enable Generic.Files.LineLength.TooLong
 
         return $nameChanged ? 'profile_saved_email_sent' : 'email_sent';
     }
@@ -703,15 +689,13 @@ final class SignupController
         $this->people->markEmailVerified($person->id);
 
         Language::forPerson($person, function () use ($person, $email): void {
+            $context = ['person' => $person, 'email' => $email];
+
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                __('Your crew account email was changed', 'eventcrew'),
-                EmailBody::withGreeting($person->displayName, sprintf(
-                    /* translators: %s: the new email address */
-                    __("The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer.", 'eventcrew'),
-                    $email
-                ))
+                MessageTemplates::subject('email_changed', $context),
+                EmailBody::withGreeting($person->displayName, MessageTemplates::body('email_changed', $context))
             );
         });
 

@@ -10,6 +10,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\SignedLink;
 use WP_REST_Request;
@@ -181,11 +182,10 @@ final class ManageController
         $sent = $this->mailer->toPerson(
             $person->id,
             $person->email,
-            __('Confirm deleting your data', 'eventcrew'),
+            MessageTemplates::subject('delete_data_confirm', ['person' => $person]),
             EmailBody::withGreeting(
                 $person->displayName,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email.', 'eventcrew')
+                MessageTemplates::body('delete_data_confirm', ['person' => $person])
             ),
             [['label' => __('Delete my data', 'eventcrew'), 'url' => $url]]
         );

@@ -19,6 +19,9 @@ use Closure;
  * - maxLength, multiline: what TranslatedText::update() cuts the text to;
  * - fixedSource: the source is the code's own text and cannot be changed on
  *   the page (the bot's texts); only the language texts are edited.
+ * - required: placeholders, like '{email}', that the source and every
+ *   language text must keep; a value without one is not stored
+ *   (missingRequired()).
  *
  * Rows come from TranslationRegistry, which asks each provider for its rows
  * every time the page is drawn or saved, so a row always holds the stored
@@ -38,6 +41,7 @@ final class TranslationRow
     /**
      * @param array<string, mixed> $value
      * @param Closure(array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}): void $save
+     * @param list<string> $required
      */
     public function __construct(
         public readonly string $id,
@@ -47,7 +51,8 @@ final class TranslationRow
         public readonly Closure $save,
         public readonly int $maxLength = 0,
         public readonly bool $multiline = true,
-        public readonly bool $fixedSource = false
+        public readonly bool $fixedSource = false,
+        public readonly array $required = []
     ) {
         $this->value = TranslatedText::normalize($value);
     }
@@ -94,6 +99,36 @@ final class TranslationRow
         }
 
         return false;
+    }
+
+    /**
+     * The required placeholders that the source or a language text of $value
+     * does not contain. An empty text is not checked: it means the built-in
+     * text, or a language not translated yet.
+     *
+     * @param array<string, mixed> $value
+     * @return list<string>
+     */
+    public function missingRequired(array $value): array
+    {
+        $value = TranslatedText::normalize($value);
+        $texts = array_filter(
+            [$value['source'], ...array_values($value['texts'])],
+            static fn (string $text): bool => '' !== trim($text)
+        );
+        $missing = [];
+
+        foreach ($this->required as $tag) {
+            foreach ($texts as $text) {
+                if (! str_contains($text, $tag)) {
+                    $missing[] = $tag;
+
+                    break;
+                }
+            }
+        }
+
+        return $missing;
     }
 
     /**
