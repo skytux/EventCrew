@@ -802,6 +802,10 @@ final class PrivacyPolicy
                 'If you join the next events announcement, we keep your email address for the announcement until you leave it. You can leave it at any time with the link in every announcement. When you leave, we keep your address marked as left, and send you no more announcements.',
                 'eventcrew'
             ),
+            __(
+                'If you press "Don\'t send me these" in the message after the event, we keep your email address on a do-not-send list, so that we send you no more of these messages.',
+                'eventcrew'
+            ),
             sprintf(
                 /* translators: %d: number of days */
                 __(

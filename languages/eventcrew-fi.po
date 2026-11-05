@@ -5110,6 +5110,9 @@ msgstr "Kuinka monta päivää ennen kutakin tapahtumaa tulevien tapahtumien tie
 msgid "If you join the next events announcement, we keep your email address for the announcement until you leave it. You can leave it at any time with the link in every announcement. When you leave, we keep your address marked as left, and send you no more announcements."
 msgstr "Jos tilaat tulevien tapahtumien tiedotteen, säilytämme sähköpostiosoitettasi tiedotetta varten, kunnes perut tilauksen. Voit perua sen milloin tahansa jokaisessa tiedotteessa olevalla linkillä. Kun perut, säilytämme osoitteesi merkittynä perutuksi emmekä lähetä sinulle enää tiedotteita."
 
+msgid "If you press \"Don't send me these\" in the message after the event, we keep your email address on a do-not-send list, so that we send you no more of these messages."
+msgstr "Jos painat tapahtuman jälkeisessä viestissä \"Älä lähetä minulle näitä\", säilytämme sähköpostiosoitteesi ei-lähetetä-listalla, jotta emme lähetä sinulle enää näitä viestejä."
+
 #, php-format
 msgid "If you sign up for the next events announcement but do not confirm your address, the sign-up is deleted after %d days."
 msgstr "Jos tilaat tulevien tapahtumien tiedotteen mutta et vahvista osoitettasi, tilaus poistetaan %d päivän kuluttua."
