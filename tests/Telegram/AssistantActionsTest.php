@@ -167,6 +167,13 @@ final class AssistantActionsTest extends TestCase
         self::assertContains('/join <task>', $usages(self::member()));
         self::assertContains('/people', $usages(self::organizer()));
 
+        $roster = array_values(array_filter(
+            AssistantActions::catalogue(self::organizer()),
+            static fn (array $entry): bool => '/roster [date]' === $entry['usage']
+        ));
+        self::assertStringContainsString('an organizer marks done, late or no-show', $roster[0]['what']);
+        self::assertStringContainsString('marks only arrived, for people still signed up', $roster[0]['what']);
+
         $confirm = array_column(
             array_filter(AssistantActions::catalogue(self::organizer()), static fn (array $entry): bool => $entry['confirm']),
             'usage'

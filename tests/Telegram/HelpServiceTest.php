@@ -110,6 +110,11 @@ final class HelpServiceTest extends TelegramTestCase
 
         $text = $this->lastText();
         self::assertStringContainsString("Welcome crew  (date: 1.8. or 2026-08-01; default: next night)\n/roster [date]", $text);
+        self::assertStringContainsString(
+            '/roster [date] – who works that night; the sales desk marks 👋 arrived,'
+            . ' organizers ✓ done, ⏰ late, ✗ no-show',
+            $text
+        );
         self::assertStringContainsString('/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk', $text);
         self::assertStringNotContainsString('Organizers', $text);
     }
