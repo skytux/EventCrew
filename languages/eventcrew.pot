@@ -796,7 +796,7 @@ msgstr ""
 msgid "After that it is anonymised automatically, without anyone having to remember to do it: your email address, name, notes and any Telegram link are erased for good. What remains is an attendance record with nobody attached to it, which is no longer information about you."
 msgstr ""
 
-#: src/Support/FollowupMail.php:908
+#: src/Support/FollowupMail.php:910
 #. translators: 1: event date, 14.11.2026, 2: send date, 3: time, 12:00, 4: number of addresses
 msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
 msgstr ""
@@ -809,7 +809,7 @@ msgstr ""
 msgid "After the event: we missed you (email)"
 msgstr ""
 
-#: src/Support/FollowupMail.php:722
+#: src/Support/FollowupMail.php:724
 msgid "Alex"
 msgstr ""
 
@@ -871,11 +871,11 @@ msgstr ""
 msgid "Announcement confirmation email"
 msgstr ""
 
-#: src/Support/AiPrompts.php:213
+#: src/Support/AiPrompts.php:212
 msgid "Announcement: the opening text"
 msgstr ""
 
-#: src/Support/AiPrompts.php:209
+#: src/Support/AiPrompts.php:208
 msgid "Announcement: the text of one event"
 msgstr ""
 
@@ -1127,7 +1127,7 @@ msgstr ""
 msgid "Both languages"
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:67
+#: src/Telegram/FollowupCommand.php:69
 msgid "Both one-time texts are removed. The next post-event email uses the texts on the Messages page."
 msgstr ""
 
@@ -1306,7 +1306,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:714 src/Support/Newsletter.php:362 src/Support/NewsletterLayout.php:902
+#: src/Support/MessageTemplates.php:714 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:902
 msgid "Coming events"
 msgstr ""
 
@@ -1550,7 +1550,7 @@ msgstr ""
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
 
-#: src/Support/Newsletter.php:467
+#: src/Support/Newsletter.php:469
 msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
 msgstr ""
 
@@ -1707,7 +1707,7 @@ msgstr ""
 msgid "Do Not Send This"
 msgstr ""
 
-#: src/Support/FollowupMail.php:917 src/Web/FollowupController.php:240 templates/admin/roster.php:335 templates/public/signup.php:1341
+#: src/Support/FollowupMail.php:919 src/Web/FollowupController.php:240 templates/admin/roster.php:335 templates/public/signup.php:1341
 msgid "Do not send the post-event email"
 msgstr ""
 
@@ -2057,7 +2057,7 @@ msgstr ""
 msgid "Extra people they may bring (0 = just the guest):"
 msgstr ""
 
-#: src/Support/AiPrompts.php:205
+#: src/Support/AiPrompts.php:204
 msgid "Extra rule for Finnish texts"
 msgstr ""
 
@@ -2446,7 +2446,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1099 src/Support/MessageTemplates.php:653
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1100 src/Support/MessageTemplates.php:653
 #: src/Support/MessageTemplates.php:765 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76 src/Support/WelcomeSender.php:250
 #: src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
@@ -2461,7 +2461,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1097 src/Support/TicketMail.php:1137
+#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1098 src/Support/TicketMail.php:1137
 msgid "Hi,"
 msgstr ""
 
@@ -2688,14 +2688,6 @@ msgstr ""
 msgid "Imported folder"
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:154 src/Telegram/NewsletterCommand.php:105 templates/public/signup.php:1906 templates/public/signup.php:1954
-msgid "In English:"
-msgstr ""
-
-#: src/Telegram/FollowupCommand.php:154 src/Telegram/NewsletterCommand.php:105 templates/public/signup.php:1904 templates/public/signup.php:1952
-msgid "In Finnish:"
-msgstr ""
-
 #: templates/admin/settings.php:1383
 msgid "In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines."
 msgstr ""
@@ -2769,7 +2761,7 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1109
+#: src/Support/FollowupMail.php:1110
 msgid "Join the announcement"
 msgstr ""
 
@@ -3471,7 +3463,7 @@ msgstr ""
 msgid "Nothing was saved."
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:84
+#: src/Web/CrewAdminFollowup.php:90
 msgid "Nothing was saved: choose the thank-you text or the sorry text."
 msgstr ""
 
@@ -3541,7 +3533,7 @@ msgid "On"
 msgstr ""
 
 #: templates/admin/settings.php:1656
-msgid "On by default. When it is on, each event in the announcement gets 2–3 sentences in Finnish and English, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description."
+msgid "On by default. When it is on, each event in the announcement gets 2–3 sentences in each site language, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description."
 msgstr ""
 
 #: templates/admin/settings.php:1841
@@ -3660,7 +3652,7 @@ msgstr ""
 msgid "Only organizers can use /events."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:50
+#: src/Telegram/FollowupCommand.php:52
 msgid "Only organizers can use /followup."
 msgstr ""
 
@@ -3989,7 +3981,7 @@ msgstr ""
 msgid "Picking an event fills in the date and times below. Change them afterwards if this task runs to its own schedule."
 msgstr ""
 
-#: src/Support/AiPrompts.php:222
+#: src/Support/AiPrompts.php:221
 msgid "Picks these out of the event description. A value is kept only when the description has it."
 msgstr ""
 
@@ -4031,34 +4023,34 @@ msgstr ""
 msgid "Post-event email"
 msgstr ""
 
-#: src/Support/FollowupMail.php:903
+#: src/Support/FollowupMail.php:905
 #. translators: %s: the date the post-event email goes out, like 15.11.2026
 msgid "Post-event email preview: it goes out on %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:349
+#: src/Support/FollowupMail.php:351
 #. translators: 1: emails sent, 2: emails that failed, 3: emails with a link opened
 msgid "Post-event email: %1$d sent · %2$d failed · %3$d clicked"
 msgstr ""
 
-#: src/Support/FollowupMail.php:362
+#: src/Support/FollowupMail.php:364
 #. translators: 1: the date it goes out, like 15.11.2026, 2: the time, like 12:00
 msgid "Post-event email: goes out on %1$s at %2$s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:359
+#: src/Support/FollowupMail.php:361
 msgid "Post-event email: not sent for this event (switched on after it)"
 msgstr ""
 
-#: src/Support/FollowupMail.php:357
+#: src/Support/FollowupMail.php:359
 msgid "Post-event email: stopped"
 msgstr ""
 
-#: src/Support/FollowupMail.php:358
+#: src/Support/FollowupMail.php:360
 msgid "Post-event email: switched off"
 msgstr ""
 
-#: src/Support/AiPrompts.php:217
+#: src/Support/AiPrompts.php:216
 msgid "Post-event email: the text about the next event"
 msgstr ""
 
@@ -4134,11 +4126,11 @@ msgstr ""
 msgid "Publish it"
 msgstr ""
 
-#: src/Support/AiPrompts.php:206
+#: src/Support/AiPrompts.php:205
 msgid "Put into the prompts below where they say {rules_fi}."
 msgstr ""
 
-#: src/Support/AiPrompts.php:202
+#: src/Support/AiPrompts.php:201
 msgid "Put into the prompts below where they say {rules}."
 msgstr ""
 
@@ -4408,7 +4400,7 @@ msgstr ""
 msgid "Rotate the webhook secret"
 msgstr ""
 
-#: src/Support/AiPrompts.php:201
+#: src/Support/AiPrompts.php:200
 msgid "Rules for the newsletter texts"
 msgstr ""
 
@@ -4484,20 +4476,20 @@ msgstr ""
 msgid "Save this message"
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:82
-msgid "Saved for the next post-event email only, but the text could not be translated, so both languages show it as you wrote it."
+#: src/Web/CrewAdminFollowup.php:88
+msgid "Saved for the next post-event email only, but the text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:81
-msgid "Saved for the next post-event email only. The text is translated; both versions are shown below."
+#: src/Web/CrewAdminFollowup.php:87
+msgid "Saved for the next post-event email only. The text is translated; every language’s version is shown below."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:102
+#: src/Telegram/FollowupCommand.php:104
 msgid "Saved for the next post-event email only:"
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:123
-msgid "Saved, but the text could not be translated, so both languages show it as you wrote it."
+#: src/Web/CrewAdminNewsletter.php:122
+msgid "Saved, but the text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
 #: src/Telegram/LanguageService.php:123 src/Telegram/NotificationSettingsService.php:86 src/Web/NewsletterController.php:1195
@@ -4512,8 +4504,8 @@ msgstr ""
 msgid "Saved. The next announcement carries this text:"
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:122
-msgid "Saved. The text is translated; both versions are shown below."
+#: src/Web/CrewAdminNewsletter.php:121
+msgid "Saved. The text is translated; every language’s version is shown below."
 msgstr ""
 
 #: src/Admin/AiPromptsPage.php:227 src/Web/CrewAdminAiText.php:61
@@ -4863,7 +4855,7 @@ msgstr ""
 msgid "Shown under the home-screen icon. Blank uses the site name."
 msgstr ""
 
-#: src/Support/AiPrompts.php:234
+#: src/Support/AiPrompts.php:229
 msgid "Shown under the picture of the next event on the group board."
 msgstr ""
 
@@ -5036,7 +5028,7 @@ msgstr ""
 msgid "Someone, probably you, asked for the next events announcement of %s at this email address. To start getting it, press the button below. If it was not you, you can ignore this email: the address is deleted in 7 days."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:149 templates/public/signup.php:1924
+#: src/Telegram/FollowupCommand.php:148 templates/public/signup.php:1924
 msgid "Sorry text (missed)"
 msgstr ""
 
@@ -5104,7 +5096,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:916 templates/admin/messages.php:60 templates/admin/newsletter.php:193
+#: src/Support/FollowupMail.php:918 templates/admin/messages.php:60 templates/admin/newsletter.php:193
 msgid "Subject"
 msgstr ""
 
@@ -5255,7 +5247,7 @@ msgstr ""
 msgid "Telegram board"
 msgstr ""
 
-#: src/Support/AiPrompts.php:233
+#: src/Support/AiPrompts.php:228
 msgid "Telegram board: the text about the DJ"
 msgstr ""
 
@@ -5375,11 +5367,11 @@ msgstr ""
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
 msgstr ""
 
-#: src/Support/FollowupMail.php:918
+#: src/Support/FollowupMail.php:920
 msgid "Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again."
 msgstr ""
 
-#: src/Support/FollowupMail.php:919
+#: src/Support/FollowupMail.php:921
 msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
 msgstr ""
 
@@ -5424,7 +5416,7 @@ msgstr ""
 msgid "Thank you. Now check your inbox: the announcement starts only after you press the link in the email we sent."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:148 templates/public/signup.php:1923
+#: src/Telegram/FollowupCommand.php:147 templates/public/signup.php:1923
 msgid "Thank-you text (came)"
 msgstr ""
 
@@ -5657,7 +5649,7 @@ msgstr[1] ""
 msgid "The announcement is being sent now: %d emails so far."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:1139
+#: src/Web/CrewAdminNewsletter.php:124 src/Web/NewsletterController.php:1139
 msgid "The announcement is stopped. It will not be sent."
 msgstr ""
 
@@ -5991,11 +5983,11 @@ msgstr ""
 msgid "The nearer re-post, closer to the event. Default 48. Set to 0 to skip this one."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:123 templates/public/signup.php:1946
+#: src/Telegram/FollowupCommand.php:125 templates/public/signup.php:1946
 msgid "The next email uses a one-time text."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:122 templates/public/signup.php:1948
+#: src/Telegram/FollowupCommand.php:124 templates/public/signup.php:1948
 msgid "The next email uses the text on the Messages page."
 msgstr ""
 
@@ -6007,7 +5999,7 @@ msgstr ""
 msgid "The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:91 src/Web/CrewAdminFollowup.php:83
+#: src/Telegram/FollowupCommand.php:93 src/Web/CrewAdminFollowup.php:89
 msgid "The one-time text is removed. The next post-event email uses the text on the Messages page."
 msgstr ""
 
@@ -6155,7 +6147,7 @@ msgid "The server of the language model that helps the bot answer, if you write 
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:513
-msgid "The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other language of the announcement."
+msgid "The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other site languages."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:520
@@ -6237,11 +6229,11 @@ msgstr ""
 msgid "The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text on the Messages page is used again. {event} becomes the event’s name and {date} its date."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:107 src/Telegram/NewsletterCommand.php:72
-msgid "The text could not be translated, so both languages show it as you wrote it."
+#: src/Telegram/FollowupCommand.php:109 src/Telegram/NewsletterCommand.php:72
+msgid "The text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
-#: src/Telegram/NewsletterCommand.php:61 src/Web/CrewAdminNewsletter.php:124
+#: src/Telegram/NewsletterCommand.php:61 src/Web/CrewAdminNewsletter.php:123
 msgid "The text for the next announcement is removed."
 msgstr ""
 
@@ -6414,7 +6406,7 @@ msgstr ""
 msgid "This address already gets the next events announcement of %1$s, so nothing more is needed. If the announcements do not reach you and you want them, write to %2$s with the button below, and someone will look into it."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:127 src/Web/NewsletterController.php:1141
+#: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:1141
 msgid "This announcement was already stopped or sent."
 msgstr ""
 
@@ -6513,8 +6505,8 @@ msgstr ""
 msgid "This sign-in link has expired. Press Telegram on the crew app again."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:131 src/Telegram/NewsletterCommand.php:94 templates/public/signup.php:1910 templates/public/signup.php:1958
-msgid "This text is not translated: both languages show it as it was written."
+#: src/Telegram/FollowupCommand.php:130 src/Telegram/NewsletterCommand.php:94 templates/public/signup.php:1910 templates/public/signup.php:1958
+msgid "This text is not translated: every language shows it as it was written."
 msgstr ""
 
 #: src/Admin/TranslationsPage.php:150
@@ -6713,7 +6705,7 @@ msgstr ""
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:142
+#: src/Telegram/FollowupCommand.php:141
 msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
 msgstr ""
 
@@ -6725,11 +6717,11 @@ msgstr ""
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
 msgstr ""
 
-#: src/Support/FollowupMail.php:914
+#: src/Support/FollowupMail.php:916
 msgid "To those who came"
 msgstr ""
 
-#: src/Support/FollowupMail.php:915
+#: src/Support/FollowupMail.php:917
 msgid "To those who did not come"
 msgstr ""
 
@@ -6741,7 +6733,7 @@ msgstr ""
 msgid "Token set, but the webhook is not installed — install it from the Settings page."
 msgstr ""
 
-#: src/Web/CrewAdminNewsletter.php:126 src/Web/NewsletterController.php:1140
+#: src/Web/CrewAdminNewsletter.php:125 src/Web/NewsletterController.php:1140
 msgid "Too late: the announcement is already being sent."
 msgstr ""
 
@@ -6782,24 +6774,16 @@ msgstr ""
 msgid "Translated texts: %1$d. Not translated: %2$d."
 msgstr ""
 
-#: src/Support/AiPrompts.php:230
-msgid "Translates the announcement texts."
-msgstr ""
-
-#: src/Support/AiPrompts.php:226
-msgid "Translates the post-event email text."
+#: src/Support/AiPrompts.php:225
+msgid "Translates the announcement texts and the post-event email text into every other site language at once. {from} becomes the language the text is written in, {to} the other languages."
 msgstr ""
 
 #: templates/admin/settings.php:2156
 msgid "Translation"
 msgstr ""
 
-#: src/Support/AiPrompts.php:229
-msgid "Translation into English"
-msgstr ""
-
-#: src/Support/AiPrompts.php:225
-msgid "Translation into Finnish"
+#: src/Support/AiPrompts.php:224
+msgid "Translation into the site languages"
 msgstr ""
 
 #: src/Admin/Admin.php:391 src/Admin/Admin.php:392 templates/admin/translations.php:36
@@ -6878,7 +6862,7 @@ msgstr ""
 msgid "Use /events in a private chat with me."
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:42
+#: src/Telegram/FollowupCommand.php:44
 msgid "Use /followup in a private chat with me."
 msgstr ""
 
@@ -6906,7 +6890,7 @@ msgstr ""
 msgid "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once."
 msgstr ""
 
-#: src/Support/AiPrompts.php:214
+#: src/Support/AiPrompts.php:213
 msgid "Used when the organizers wrote no text for the announcement."
 msgstr ""
 
@@ -6926,7 +6910,7 @@ msgstr ""
 msgid "VALID"
 msgstr ""
 
-#: src/Support/AiPrompts.php:221
+#: src/Support/AiPrompts.php:220
 msgid "Venue, address and door times"
 msgstr ""
 
@@ -6958,7 +6942,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1102 src/Support/MessageTemplates.php:767
+#: src/Support/FollowupMail.php:1103 src/Support/MessageTemplates.php:767
 msgid "Warmly,"
 msgstr ""
 
@@ -7344,7 +7328,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1110
+#: src/Support/FollowupMail.php:1111
 msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
 msgstr ""
 
@@ -7357,19 +7341,19 @@ msgid "Write in any language"
 msgstr ""
 
 #: templates/public/signup.php:1892
-msgid "Write it in Finnish or in English. It is translated into the other language when you save, and removed after the announcement is sent."
+msgid "Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent."
 msgstr ""
 
 #: templates/public/signup.php:1975
-msgid "Write it in Finnish or in English. It is translated into the other language when you save."
+msgid "Write it in any language. It is translated into every site language when you save."
 msgstr ""
 
-#: src/Support/AiPrompts.php:218
-msgid "Written in English, then translated into Finnish."
+#: src/Support/AiPrompts.php:217
+msgid "Written in English, then translated into the other site languages."
 msgstr ""
 
-#: src/Support/AiPrompts.php:210
-msgid "Written in Finnish, then translated into English."
+#: src/Support/AiPrompts.php:209
+msgid "Written in Finnish, then translated into the other site languages."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:141 src/Telegram/RoleTaskBot.php:335 templates/admin/people.php:145 templates/public/door.php:71
@@ -7496,7 +7480,7 @@ msgstr ""
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
 
-#: src/Support/FollowupMail.php:714 src/Support/TicketMail.php:1049
+#: src/Support/FollowupMail.php:716 src/Support/TicketMail.php:1049
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
@@ -7504,7 +7488,7 @@ msgstr ""
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
-#: src/Support/Newsletter.php:450
+#: src/Support/Newsletter.php:452
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
@@ -8178,7 +8162,7 @@ msgid "✏️ Changed %s."
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:277
-msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into Finnish and English. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
+msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
 msgstr ""
 
 #: src/Telegram/RosterService.php:492
@@ -8283,7 +8267,7 @@ msgid "📬 Sent you a DM."
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:275
-msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into Finnish and English."
+msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into every site language."
 msgstr ""
 
 #: src/Support/OrganizerGuide.php:280

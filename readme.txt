@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.63
+Stable tag: 1.140.64
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.64 =
+The AI newsletter and post-event writers now write one text per site language in one request, not only Finnish and English; texts saved before still work. The two translation prompts (to Finnish, to English) are replaced by one translate prompt: if you had changed them, copy your change to the new prompt on the AI prompts page. The privacy policy now says the text is translated into the other site languages.
 
 = 1.140.63 =
 Two help texts said Finnish and English where the plugin now uses every site language: the ticket email in the organizer guide, and the language model setting.
@@ -1403,6 +1406,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.64 =
+No settings change.
 
 = 1.140.63 =
 No settings change.
