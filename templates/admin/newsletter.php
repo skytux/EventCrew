@@ -16,8 +16,10 @@
  * @var string $per
  * @var bool $has_history
  * @var string $chart
+ * @var array{joins: int, leaves: int, newsletters: int} $totals
  * @var list<array{number: int, id: int, at: string, lang: string, subject: string,
- *     sent: int, failed: int, url: string}> $sends
+ *     sent: int, failed: int, url: string}> $sends The ones sent in the range.
+ * @var bool $any_sent
  */
 
 declare(strict_types=1);
@@ -160,13 +162,27 @@ if (NewsletterPage::RANGE_CUSTOM === $range) {
                 <?php esc_html_e('Newsletter sent (the number is its row below; point at it for the subject)', 'eventcrew'); ?>
             </span>
         </p>
+
+        <p>
+            <?php
+            printf(
+                /* translators: 1: number of joins, 2: number of leaves, 3: number of newsletters sent */
+                esc_html__('In this time range: joins %1$d, leaves %2$d, sent newsletters %3$d.', 'eventcrew'),
+                (int) $totals['joins'],
+                (int) $totals['leaves'],
+                (int) $totals['newsletters']
+            );
+            ?>
+        </p>
     <?php endif; ?>
     <?php // phpcs:enable Generic.Files.LineLength.TooLong ?>
 
     <h2 style="margin-top:1.5em"><?php esc_html_e('Sent newsletters', 'eventcrew'); ?></h2>
 
-    <?php if ([] === $sends) : ?>
+    <?php if (! $any_sent) : ?>
         <p><?php esc_html_e('No newsletter has been sent since the history started.', 'eventcrew'); ?></p>
+    <?php elseif ([] === $sends) : ?>
+        <p><?php esc_html_e('No newsletter was sent in this time range.', 'eventcrew'); ?></p>
     <?php else : ?>
         <table class="widefat striped">
             <thead>

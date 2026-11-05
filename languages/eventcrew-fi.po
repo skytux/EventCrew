@@ -6401,3 +6401,9 @@ msgstr "Perutaanko odottavat lippuviestit? Yhtäkään ei lähetetä, ei myösk�
 
 msgid "Stop this announcement"
 msgstr "Lopeta tämä ilmoitus"
+
+msgid "In this time range: joins %1$d, leaves %2$d, sent newsletters %3$d."
+msgstr "Tällä aikavälillä: liittyneet %1$d, eronneet %2$d, lähetetyt tiedotteet %3$d."
+
+msgid "No newsletter was sent in this time range."
+msgstr "Tällä aikavälillä ei lähetetty tiedotteita."
