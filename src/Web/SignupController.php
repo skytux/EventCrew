@@ -561,14 +561,22 @@ final class SignupController
             ? $this->people->create(['email' => $email, 'approval' => Person::APPROVAL_WAITING])
             : $person->id;
 
+        // A new person gets the language the crew page was shown in (Q330):
+        // signing up from a Finnish page means Finnish messages, until they
+        // change it. English is left unset, as for anyone who has not chosen.
+        $language = $isNew ? $this->pageLanguage() : $person->language;
+
+        if ($isNew && null !== $language && Language::ENGLISH !== $language) {
+            $this->people->setLanguage($personId, $language);
+        }
+
         // No account yet: nobody has ever confirmed this address, by a link or
         // through the bot. The mail then says the link creates the account.
         $hasAccount = null !== $person && ($person->isEmailVerified() || null !== $person->telegramUserId);
 
-        // The link mail is in the language the person chose; a new one is
-        // English until they choose.
-        Language::forPerson(
-            $person,
+        // The link mail is in the person's language.
+        Language::run(
+            $language,
             fn () => $this->sendLoginLink($personId, $email, $isNew, $hasAccount, $person?->displayName ?? '')
         );
 
