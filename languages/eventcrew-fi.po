@@ -271,8 +271,9 @@ msgid "Confirm your email"
 msgstr "Vahvista sähköpostisi"
 
 #: src/Telegram/OnboardingService.php:235
-msgid "Confirm your email for EventCrew"
-msgstr "Vahvista sähköpostisi EventCrew-palveluun"
+#, php-format
+msgid "Confirm your email for %s"
+msgstr "Vahvista sähköpostisi – %s"
 
 #: templates/public/door.php:265
 msgid "Copy link"
@@ -499,13 +500,13 @@ msgstr ""
 msgid ""
 "Hi %1$s,\n"
 "\n"
-"Confirm your email to finish signing up for EventCrew tasks.\n"
+"Confirm your email to finish signing up for %2$s tasks.\n"
 "\n"
 "The link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 "Hei %1$s,\n"
 "\n"
-"vahvista sähköpostisi, niin ilmoittautumisesi EventCrew-tehtäviin on valmis.\n"
+"vahvista sähköpostisi, niin ilmoittautumisesi %2$s -tehtäviin on valmis.\n"
 "\n"
 "Linkki toimii kerran ja vanhenee vuorokaudessa. Jos et pyytänyt tätä, voit jättää viestin huomiotta."
 
@@ -642,8 +643,9 @@ msgid "Login link"
 msgstr "Kirjautumislinkki"
 
 #: src/Telegram/ManageController.php:109
-msgid "Manage your EventCrew account"
-msgstr "Hallitse EventCrew-tiliäsi"
+#, php-format
+msgid "Manage your %s account"
+msgstr "Hallitse %s -tiliäsi"
 
 #: src/Support/Mailer.php:177
 msgid "Manage your account or stop these emails"
@@ -1471,16 +1473,19 @@ msgid "You weren’t signed up for that one."
 msgstr "Et ollut ilmoittautunut siihen."
 
 #: src/Telegram/VerificationController.php:137
-msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
-msgstr "EventCrew-tilisi on nyt liitetty toiseen Telegram-tiliin. Ota yhteyttä järjestäjään, jos se et ollut sinä."
+#, php-format
+msgid "Your %s account is now linked to another Telegram account. Contact an organizer if that wasn't you."
+msgstr "%s -tilisi on nyt liitetty toiseen Telegram-tiliin. Ota yhteyttä järjestäjään, jos se et ollut sinä."
 
 #: src/Web/SignupController.php:413
-msgid "Your EventCrew sign-in link"
-msgstr "EventCrew-kirjautumislinkkisi"
+#, php-format
+msgid "Your %s sign-in link"
+msgstr "%s -kirjautumislinkkisi"
 
 #: src/Telegram/TicketController.php:205
-msgid "Your EventCrew ticket"
-msgstr "EventCrew-lippusi"
+#, php-format
+msgid "Your %s ticket"
+msgstr "%s -lippusi"
 
 #: src/Web/SignupController.php:711
 msgid "Your account is blocked. Talk to an organizer."
@@ -1737,8 +1742,9 @@ msgid "❌ Cancelled"
 msgstr "❌ Peruttu"
 
 #: src/Telegram/PermissionService.php:245
-msgid "⭐ You’re now an EventCrew organizer."
-msgstr "⭐ Olet nyt EventCrew-järjestäjä."
+#, php-format
+msgid "⭐ You’re now an %s organizer."
+msgstr "⭐ Olet nyt %s -järjestäjä."
 
 #: src/Support/ClaimNotifier.php:114 src/Telegram/TicketRedemptionService.php:246
 msgid "🎟 Show your ticket"
@@ -2876,8 +2882,9 @@ msgid "Credit spent — your ticket is in the next message."
 msgstr "Vapaalippu käytetty — lippusi on seuraavassa viestissä."
 
 #: src/Telegram/HelpService.php:96
-msgid "EventCrew bot – commands"
-msgstr "EventCrew-botti – komennot"
+#, php-format
+msgid "%s bot – commands"
+msgstr "%s -botti – komennot"
 
 #: src/Telegram/HelpService.php:102
 msgid "Everyone"
@@ -3098,8 +3105,9 @@ msgstr "Ota tehtävä"
 msgid "That button no longer works. Send /people again."
 msgstr "Tämä painike ei enää toimi. Lähetä /people uudelleen."
 
-msgid "That person is no longer in EventCrew. Send /people to pick someone else."
-msgstr "Tämä henkilö ei ole enää EventCrew’ssa. Lähetä /people ja valitse joku muu."
+#, php-format
+msgid "That person is no longer in %s. Send /people to pick someone else."
+msgstr "Tämä henkilö ei ole enää %s -tiimissä. Lähetä /people ja valitse joku muu."
 
 msgid "The door list, guest list and sales desk"
 msgstr "Ovilista, vieraslista ja myyntipiste"
@@ -7118,8 +7126,8 @@ msgstr "Lähetetään, kun henkilö kirjoittaa sähköpostinsa Telegram-bottiin.
 msgid "The name the person has in Telegram, or their email address when there is none."
 msgstr "Henkilön nimi Telegramissa, tai hänen sähköpostiosoitteensa, jos nimeä ei ole."
 
-msgid "The crew’s name (the site name)."
-msgstr "Tiimin nimi (sivuston nimi)."
+msgid "The organization’s name (Settings > Web page, else the site name)."
+msgstr "Organisaation nimi (Asetukset > Verkkosivu, muuten sivuston nimi)."
 
 msgid "An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set."
 msgstr "Tyhjä rivi ja sen jälkeen rivi, jossa on linkki Crew-sovelluksen Ohje-välilehdelle. Tyhjä, kun tiimisivua ei ole asetettu."
@@ -7551,8 +7559,9 @@ msgstr[1] "Hei %1$s,\n\njärjestäjä antoi sinulle %2$d vapaalippua. Voit käyt
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Miten ilmainen lippu saadaan: botissa tai Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
 
-msgid "open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
-msgstr "avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
+#, php-format
+msgid "open the %s bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
+msgstr "avaa %s -botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
 
 msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
 msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
@@ -7847,8 +7856,9 @@ msgstr "Sinusta tehtiin järjestäjä (sähköposti)"
 msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it."
 msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja painike crew-sivun Ylläpito-välilehdelle sen alle."
 
-msgid "You are now an EventCrew organizer"
-msgstr "Olet nyt EventCrew-järjestäjä"
+#, php-format
+msgid "You are now an %s organizer"
+msgstr "Olet nyt %s -järjestäjä"
 
 msgid "You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people."
 msgstr "Olet nyt järjestäjä. Crew-sivulla on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."
@@ -8144,3 +8154,16 @@ msgstr "Lähetetään uudelle henkilölle ilman Telegramia, kun järjestäjä hy
 
 msgid "Sent to a new person who uses the bot when an organizer presses OK for them."
 msgstr "Lähetetään bottia käyttävälle uudelle henkilölle, kun järjestäjä hyväksyy hänet."
+
+msgid "Organization name"
+msgstr "Organisaation nimi"
+
+msgid "The name members see on the ticket, in emails and Telegram messages, in the bot and on the public pages. In message texts and the ticket note it is {organization}. Leave it blank to use the site name. wp-admin keeps saying EventCrew."
+msgstr "Nimi, jonka jäsenet näkevät lipussa, sähköposteissa ja Telegram-viesteissä, botissa ja julkisilla sivuilla. Viestiteksteissä ja lipun tekstissä se on {organization}. Jätä tyhjäksi, niin käytetään sivuston nimeä. wp-adminissa lukee yhä EventCrew."
+
+#, php-format
+msgid "Placeholders: %s. A line with an empty placeholder is left out."
+msgstr "Paikkamerkit: %s. Rivi, jonka paikkamerkki on tyhjä, jätetään pois."
+
+msgid "the organization’s name (Web page tab, else the site name)."
+msgstr "organisaation nimi (Verkkosivu-välilehti, muuten sivuston nimi)."

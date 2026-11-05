@@ -462,7 +462,7 @@ final class WelcomeSender
             sprintf(
                 /* translators: %s: the crew's name (the site name) */
                 __('How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                trim((string) get_bloginfo('name'))
+                Organization::name()
             ),
             ...self::sections([
                 // On the crew page itself the tickets are in the Me tab, for

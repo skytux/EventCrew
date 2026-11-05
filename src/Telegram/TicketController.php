@@ -14,6 +14,8 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\EventName;
+use EventCrew\Support\Organization;
+use EventCrew\Support\TicketNote;
 use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
@@ -340,7 +342,8 @@ final class TicketController
             );
         }
 
-        $title = __('Your EventCrew ticket', 'eventcrew');
+        /* translators: %s: the organization's name, like Ecstatic Dance Helsinki */
+        $title = sprintf(__('Your %s ticket', 'eventcrew'), Organization::name());
 
         $band = $ticket['valid']
             ? $this->validBand($ticket['used'] ?? null)
@@ -449,7 +452,7 @@ final class TicketController
      */
     private function noteBlock(): string
     {
-        $note = SiteTexts::text('ticket_note');
+        $note = TicketNote::fill(SiteTexts::text('ticket_note'), TicketNote::values());
 
         if ('' === $note) {
             return '';

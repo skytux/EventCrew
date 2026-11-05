@@ -8,6 +8,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Language;
 use EventCrew\Support\TelegramLogin;
+use EventCrew\Support\Organization;
 use WP_REST_Request;
 
 /**
@@ -167,8 +168,11 @@ final class VerificationController
         if (null !== $person->telegramUserId && null !== $oldChatId) {
             Language::forPerson($person, fn () => $this->telegram->sendMessage(
                 $oldChatId,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you.", 'eventcrew')
+                sprintf(
+                    /* translators: %s: the organization's name */
+                    __("Your %s account is now linked to another Telegram account. Contact an organizer if that wasn't you.", 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    Organization::name()
+                )
             ));
         }
 

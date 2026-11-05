@@ -12,6 +12,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\Organization;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRegistry;
@@ -118,8 +119,27 @@ final class MessageTemplatesTest extends TestCase
     {
         $list = MessageTemplates::find('credit_granted')->placeholderList();
 
-        self::assertSame(['{name}', '{credits}', '{credit_help}'], array_keys($list));
+        self::assertSame(['{name}', '{credits}', '{credit_help}', '{organization}'], array_keys($list));
         self::assertSame('How many free-entry credits were given.', $list['{credits}']);
+    }
+
+    public function testEveryKindNamesTheOrganization(): void
+    {
+        foreach (MessageTemplates::all() as $template) {
+            self::assertArrayHasKey('{organization}', $template->placeholderList(), $template->id);
+        }
+
+        self::assertSame('You are now an {organization} organizer', MessageTemplates::find('access_organizer')->defaultSubject());
+        self::assertSame('You are now an Test Site organizer', MessageTemplates::subject('access_organizer'));
+
+        $this->options[Organization::OPTION] = 'Ecstatic Dance Helsinki';
+
+        self::assertSame('You are now an Ecstatic Dance Helsinki organizer', MessageTemplates::subject('access_organizer'));
+        self::assertSame('⭐ You’re now an Ecstatic Dance Helsinki organizer.', MessageTemplates::body('access_organizer_dm'));
+        self::assertSame(
+            'Olet nyt Ecstatic Dance Helsinki -järjestäjä',
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('access_organizer'))
+        );
     }
 
     public function testTheBuiltInTextKeepsTheOldWording(): void
@@ -131,7 +151,7 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you 2 free-entry credits. You can spend them on upcoming"
-                . ' events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app,'
+                . ' events — open the Test Site bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app,'
                 . ' to get your free ticket.',
             MessageTemplates::body('credit_granted', ['person' => $this->person(), 'credits' => 2])
         );
@@ -166,13 +186,13 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
-                . ' open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your'
+                . ' open the Test Site bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your'
                 . ' free ticket.',
             MessageTemplates::body('credit_granted', $bot)
         );
         self::assertSame(
             "Hei Anna,\n\njärjestäjä antoi sinulle 3 vapaalippua. Voit käyttää ne tuleviin tapahtumiin — avaa"
-                . ' EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat'
+                . ' Test Site -botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat'
                 . ' ilmaisen lippusi.',
             Language::run(
                 Language::FINNISH,

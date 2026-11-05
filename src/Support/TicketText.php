@@ -21,7 +21,8 @@ namespace EventCrew\Support;
  * - {date}: the event's date, like 14.11.2026;
  * - {reason}: why they have a ticket, one of four lines (TicketReasons);
  * - {tasks}: a crew member's tasks on the night, as a list;
- * - {plus_ones}: how many people a guest may bring, like "2 people".
+ * - {plus_ones}: how many people a guest may bring, like "2 people";
+ * - {organization}: the organization's name (Organization).
  *
  * An empty {first_name} is taken out with the space in front of it ("Hi
  * {first_name}," becomes "Hi,"). Any other empty placeholder leaves out its
@@ -47,6 +48,7 @@ final class TicketText
     public const REASON_TAG = '{reason}';
     public const TASKS_TAG = '{tasks}';
     public const PLUS_ONES_TAG = '{plus_ones}';
+    public const ORGANIZATION_TAG = Organization::TAG;
 
     /** Every placeholder, in the order they are listed under the field. */
     public const TAGS = [
@@ -56,6 +58,7 @@ final class TicketText
         self::REASON_TAG,
         self::TASKS_TAG,
         self::PLUS_ONES_TAG,
+        self::ORGANIZATION_TAG,
     ];
 
     private readonly TranslatedText $translator;

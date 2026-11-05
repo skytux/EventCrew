@@ -1282,7 +1282,7 @@ final class FollowupMail
                 : sprintf(__('Hi %s,', 'eventcrew'), $first);
 
             $lines = [$hello, trim(FollowupText::fill($text['text'], $event, $date))];
-            $lines[] = __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
+            $lines[] = __('Warmly,', 'eventcrew') . "\n" . Organization::name();
             $body = implode("\n\n", $lines);
         }
 

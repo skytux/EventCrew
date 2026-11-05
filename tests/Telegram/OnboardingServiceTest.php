@@ -17,7 +17,7 @@ use EventCrew\Telegram\VerificationController;
 final class OnboardingServiceTest extends TelegramTestCase
 {
     private const CONFIRMED = 'Your email is confirmed. Tap a task on the board to sign up.';
-    private const MOVED_AWAY = 'Your EventCrew account is now linked to another Telegram account.'
+    private const MOVED_AWAY = 'Your Test Site account is now linked to another Telegram account.'
         . " Contact an organizer if that wasn't you.";
 
     /** @var array<string, mixed> */
@@ -478,9 +478,9 @@ final class OnboardingServiceTest extends TelegramTestCase
     {
         $mail = $this->confirmationEmail('Sam');
 
-        self::assertSame('Confirm your email for EventCrew', $mail['subject']);
+        self::assertSame('Confirm your email for Test Site', $mail['subject']);
         self::assertSame(
-            "Hi Sam,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and"
+            "Hi Sam,\n\nConfirm your email to finish signing up for Test Site tasks.\n\nThe link works once and"
                 . " expires in a day. If you didn't ask for this, you can ignore this email.\n\n"
                 . "We store your email to run the crew.\n\n"
                 . "Confirm your email: https://example.test/wp-json/eventcrew/v1/verify?token=TOKEN\n\n"

@@ -848,7 +848,7 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('sam@example.com');
 
         self::assertSame(
-            "Your EventCrew sign-in link\n---\nHi Sam,\n\n"
+            "Your Test Site sign-in link\n---\nHi Sam,\n\n"
                 . "Use the button below to sign in and manage your tasks.\n\n"
                 . "The link is good for 30 minutes, and works once.\n\n"
                 . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'

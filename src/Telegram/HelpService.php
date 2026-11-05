@@ -9,6 +9,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\Language;
 use EventCrew\Support\Roles;
+use EventCrew\Support\Organization;
 
 /**
  * /help, /door, /people and the answer to the Cancel button.
@@ -178,7 +179,8 @@ final class HelpService
 
     private function title(): string
     {
-        return __('EventCrew bot – commands', 'eventcrew');
+        /* translators: %s: the organization's name */
+        return sprintf(__('%s bot – commands', 'eventcrew'), Organization::name());
     }
 
     /** Shown while the language-model helper is on. */

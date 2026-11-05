@@ -77,11 +77,37 @@ final class MessageTemplates
     {
         $list = [];
 
+        $shared = self::sharedPlaceholders();
+
         foreach (self::definitions() as $template) {
-            $list[$template->id] = $template;
+            $list[$template->id] = new MessageTemplate(
+                $template->id,
+                $template->label,
+                $template->channel,
+                $template->description,
+                $template->subject,
+                $template->body,
+                $template->placeholders + $shared,
+                $template->wired
+            );
         }
 
         return $list;
+    }
+
+    /**
+     * The placeholders every kind has, listed after its own.
+     *
+     * @return array<string, array{description: string, resolve: Closure, required: bool}>
+     */
+    private static function sharedPlaceholders(): array
+    {
+        return [
+            'organization' => self::placeholder(
+                __('The organization’s name (Settings > Web page, else the site name).', 'eventcrew'),
+                static fn (): string => Organization::name()
+            ),
+        ];
     }
 
     public static function find(string $id): ?MessageTemplate
@@ -686,7 +712,11 @@ final class MessageTemplates
                     'credits' => $credits,
                     'credit_help' => self::botOrWeb(
                         __('How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-                        static fn (): string => __('open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.', 'eventcrew'),
+                        static fn (): string => sprintf(
+                            /* translators: %s: the organization's name */
+                            __('open the %s bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.', 'eventcrew'),
+                            Organization::name()
+                        ),
                         static fn (string $url): string => sprintf(
                             /* translators: %s: link to the crew page */
                             __('open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket.', 'eventcrew'),
@@ -837,11 +867,15 @@ final class MessageTemplates
                 __('Confirm your email (email)', 'eventcrew'),
                 $email,
                 __('Sent when a person types their email in the Telegram bot. The confirmation link is a button below the text and is always added.', 'eventcrew'),
-                static fn (): string => __('Confirm your email for EventCrew', 'eventcrew'),
                 static fn (): string => self::tag(
-                    /* translators: 1: person's name */
-                    __("Hi %1\$s,\n\nConfirm your email to finish signing up for EventCrew tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
-                    ['%1$s' => '{name}']
+                    /* translators: %s: the organization's name */
+                    __('Confirm your email for %s', 'eventcrew'),
+                    ['%s' => Organization::TAG]
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: person's name, 2: the organization's name */
+                    __("Hi %1\$s,\n\nConfirm your email to finish signing up for %2\$s tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email.", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => Organization::TAG]
                 ) . "\n\n" . PrivacyPolicy::noticeLine(),
                 [
                     'name' => self::placeholder(
@@ -943,7 +977,11 @@ final class MessageTemplates
                 __('Sign-in link (email)', 'eventcrew'),
                 $email,
                 __('Sent when a person with an account asks for a sign-in link on the crew page. The Sign in button with the link is added under the text.', 'eventcrew'),
-                static fn (): string => __('Your EventCrew sign-in link', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the organization's name */
+                    __('Your %s sign-in link', 'eventcrew'),
+                    ['%s' => Organization::TAG]
+                ),
                 static fn (): string => __(
                     "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once.",
                     'eventcrew'
@@ -1111,7 +1149,11 @@ final class MessageTemplates
                 __('You were made an organizer (email)', 'eventcrew'),
                 $email,
                 __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it.', 'eventcrew'),
-                static fn (): string => __('You are now an EventCrew organizer', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the organization's name */
+                    __('You are now an %s organizer', 'eventcrew'),
+                    ['%s' => Organization::TAG]
+                ),
                 static fn (): string => __('You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people.', 'eventcrew')
             ),
             new MessageTemplate(
@@ -1120,7 +1162,11 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
-                static fn (): string => __('⭐ You’re now an EventCrew organizer.', 'eventcrew')
+                static fn (): string => self::tag(
+                    /* translators: %s: the organization's name */
+                    __('⭐ You’re now an %s organizer.', 'eventcrew'),
+                    ['%s' => Organization::TAG]
+                )
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
@@ -1540,8 +1586,8 @@ final class MessageTemplates
 
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         $crew = self::placeholder(
-            __('The crew’s name (the site name).', 'eventcrew'),
-            static fn (): string => trim((string) get_bloginfo('name'))
+            __('The organization’s name (Settings > Web page, else the site name).', 'eventcrew'),
+            static fn (): string => Organization::name()
         );
         $helpLine = self::placeholder(
             __('An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set.', 'eventcrew'),
@@ -1981,6 +2027,6 @@ final class MessageTemplates
         /* translators: %s: the person's first name */
         return self::tag(__('Hi %s,', 'eventcrew'), ['%s' => '{first_name}']) . "\n\n"
             . trim($main) . "\n\n"
-            . __('Warmly,', 'eventcrew') . "\n" . (string) get_bloginfo('name');
+            . __('Warmly,', 'eventcrew') . "\n" . Organization::name();
     }
 }

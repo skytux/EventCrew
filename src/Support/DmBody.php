@@ -51,11 +51,12 @@ final class DmBody
     }
 
     /**
-     * Who the message is from. The site's name, which is what the crew calls
-     * itself everywhere else the plugin shows a name.
+     * Who the message is from: the organization's name (Organization),
+     * which is what the crew calls itself everywhere else the plugin shows a
+     * name.
      */
     private static function crewName(): string
     {
-        return trim((string) get_bloginfo('name'));
+        return Organization::name();
     }
 }

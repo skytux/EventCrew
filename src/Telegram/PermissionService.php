@@ -10,6 +10,7 @@ use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
+use EventCrew\Support\Organization;
 
 /**
  * The organizer's permission tools from Telegram, the 🏷 and ✅ buttons under /people.
@@ -232,7 +233,11 @@ final class PermissionService
         if (null === $person) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('That person is no longer in EventCrew. Send /people to pick someone else.', 'eventcrew'),
+                sprintf(
+                    /* translators: %s: the organization's name */
+                    __('That person is no longer in %s. Send /people to pick someone else.', 'eventcrew'),
+                    Organization::name()
+                ),
                 true
             );
 
