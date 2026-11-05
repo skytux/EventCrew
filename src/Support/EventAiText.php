@@ -102,6 +102,9 @@ final class EventAiText
     /** saveForm(): no such event or text. */
     public const NOT_FOUND = 'not_found';
 
+    /** The BackgroundJobs kind of "Write again" (rewriteJob()). */
+    public const JOB = 'event_ai_rewrite';
+
     /** Tokens for one answer. */
     private const MAX_TOKENS = 1500;
 
@@ -203,11 +206,13 @@ final class EventAiText
      * Writes $eventId's texts again now, when an organizer asks for it
      * (wp-admin, Messages > Coming events): every text of the templates with
      * the AI tick on and of the placeholders, or only $key. Each goes
-     * through the same request as the day-before run and counts as a try.
-     * A new text replaces the stored AI text and removes the change by hand
-     * (the organizer confirmed that first), so it is the text that is sent;
-     * the day-before run then finds it written and leaves it. When the model
-     * fails, the stored text and the change by hand stay as they were.
+     * through the same request as the day-before run, but does not count as
+     * a try (MAX_TRIES is for the runs nobody asked for). A new text
+     * replaces the stored AI text and removes the change by hand (the
+     * organizer confirmed that first), so it is the text that is sent; the
+     * day-before run then finds it written and leaves it. When the model
+     * fails, nothing is stored: the text, the change by hand and the tries
+     * stay as they were.
      *
      * @return array{found: bool, configured: bool, written: int, failed: int}
      *     found is false when the event or $key is not known, or there is
@@ -251,6 +256,66 @@ final class EventAiText
     }
 
     /**
+     * "Write again" of one text, run as a background job (BackgroundJobs,
+     * kind JOB): rewrite() for $eventId and $key alone.
+     *
+     * @return array{ok: bool, error: string}
+     */
+    public function rewriteJob(int $eventId, string $key): array
+    {
+        $result = $this->rewrite($eventId, $key);
+
+        if ($result['written'] > 0) {
+            return ['ok' => true, 'error' => ''];
+        }
+
+        if (! $result['found']) {
+            return ['ok' => false, 'error' => __('Nothing was written: that event or text was not found.', 'eventcrew')];
+        }
+
+        if (! $result['configured']) {
+            return [
+                'ok' => false,
+                'error' => __('Nothing was written: the AI is not set up. Set it up in EventCrew > Settings.', 'eventcrew'),
+            ];
+        }
+
+        return ['ok' => false, 'error' => sprintf(
+            /* translators: %d: how many texts the AI could not write */
+            _n(
+                'The AI could not write %d text; it keeps its old text.',
+                'The AI could not write %d texts; they keep their old texts.',
+                1,
+                'eventcrew'
+            ),
+            1
+        )];
+    }
+
+    /** The BackgroundJobs target of $key's text of $eventId. */
+    public static function jobTarget(int $eventId, string $key): string
+    {
+        return self::jobPrefix($eventId) . $key;
+    }
+
+    /** The start of the BackgroundJobs targets of $eventId's texts. */
+    public static function jobPrefix(int $eventId): string
+    {
+        return 'event:' . $eventId . ':';
+    }
+
+    /**
+     * The keys of the texts written for each event (rewrite() writes these):
+     * template kinds and PLACEHOLDER_PREFIX plus a placeholder's name.
+     *
+     * @return list<string>
+     */
+    public static function keys(): array
+    {
+        return array_map('strval', array_keys(self::jobs()));
+    }
+
+    /**
      * What is written for each event: the prompt of every template with the
      * AI tick on and of every placeholder, by key.
      *
@@ -273,8 +338,10 @@ final class EventAiText
 
     /**
      * Asks the model for $key's text of $event and stores the outcome: one
-     * more try and, when it worked, the AI's text (with $replace, the change
-     * by hand is removed too). Returns whether a text was written.
+     * more try and, when it worked, the AI's text. With $replace (asked for
+     * by an organizer) it is not a try: the change by hand is removed when
+     * it worked, and nothing is stored when it failed. Returns whether a
+     * text was written.
      *
      * @param array{id: int, title: string, starts_at: string, ends_at: string, date: string} $event
      */
@@ -282,7 +349,14 @@ final class EventAiText
     {
         $entry = self::entry($event['id'], $key);
         $texts = $this->ask($prompt, $event);
-        $entry['tries']++;
+
+        if ($replace && null === $texts) {
+            return false;
+        }
+
+        if (! $replace) {
+            $entry['tries']++;
+        }
 
         if (null !== $texts) {
             $entry['ai'] = $texts;

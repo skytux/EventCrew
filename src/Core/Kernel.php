@@ -9,6 +9,7 @@ use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
+use EventCrew\Admin\JobsStatus;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\RosterPage;
@@ -34,6 +35,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\AssistantKnowledge;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
@@ -262,6 +264,11 @@ final class Kernel
         // The role names and descriptions in every site language: filled by
         // the language model on the hourly run and right after a save.
         $this->container->get(RoleTranslations::class)->boot();
+
+        // The slow part of a wp-admin save (translations, AI texts, the bot
+        // profile on Telegram): queued, then run by the open page's poll or
+        // by a WP-Cron run each minute.
+        $this->container->get(BackgroundJobs::class)->boot();
 
         // The AI texts for each event (message templates with the AI tick,
         // and the organizers' own placeholders): written the day before, on
@@ -1633,6 +1640,44 @@ final class Kernel
             fn (Container $container) => new TranslationJob($container->get(TranslationRegistry::class))
         );
 
+        // The background jobs and what runs each kind.
+        $this->container->singleton(
+            BackgroundJobs::class,
+            function (Container $container): BackgroundJobs {
+                $jobs = new BackgroundJobs();
+                $jobs->handle(
+                    TranslatedText::JOB,
+                    fn (array $args): array => $container->get(TranslationRegistry::class)->runJob($args)
+                );
+                $jobs->handle(
+                    EventAiText::JOB,
+                    fn (array $args): array => $container->get(AiPromptsPage::class)->rewriteJob($args)
+                );
+                $jobs->handle(
+                    AiPromptsPage::FOLLOWUP_JOB,
+                    fn (array $args): array => $container->get(AiPromptsPage::class)->followupJob($args)
+                );
+                $jobs->handle(
+                    AiPromptsPage::NEWSLETTER_JOB,
+                    fn (array $args): array => $container->get(AiPromptsPage::class)->newsletterJob($args)
+                );
+                $jobs->handle(
+                    BotProfileSettings::JOB,
+                    fn (array $args): array => (new BotProfileSettings(
+                        $container->get(TelegramClient::class),
+                        $container->get(TranslatedText::class)
+                    ))->pushJob($args)
+                );
+
+                return $jobs;
+            }
+        );
+
+        $this->container->singleton(
+            JobsStatus::class,
+            fn (Container $container) => new JobsStatus($container->get(BackgroundJobs::class))
+        );
+
         $this->container->singleton(
             RoleTranslations::class,
             fn (Container $container) => new RoleTranslations($container->get(TranslationRegistry::class))
@@ -1651,7 +1696,7 @@ final class Kernel
             MessagesPage::class,
             fn (Container $container) => new MessagesPage(
                 $container->get(View::class),
-                new MessageTemplates($container->get(TranslatedText::class)),
+                new MessageTemplates($container->get(TranslatedText::class)->inBackground()),
                 $container->get(AiPromptsPage::class),
                 $container->get(EmailTemplate::class)
             )

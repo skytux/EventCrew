@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Support\AiPrompts;
+use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupText;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TranslatedText;
 use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminNewsletter;
 
@@ -54,6 +58,16 @@ final class AiPromptsPage
 
     /** The anchor of the one-time texts on the Coming events tab. */
     public const ONE_TIME_ANCHOR = 'ec-one-time';
+
+    /** The BackgroundJobs kinds of the one-time texts, saved after their translation. */
+    public const FOLLOWUP_JOB = 'followup_text';
+    public const NEWSLETTER_JOB = 'newsletter_text';
+
+    /** The BackgroundJobs target of the announcement text. */
+    public const NEWSLETTER_TARGET = 'newsletter:text';
+
+    /** The notice code of a one-time text queued for translation. */
+    public const QUEUED = 'queued';
 
     public function __construct(
         private readonly ?EventAiText $eventAiText = null,
@@ -323,7 +337,7 @@ final class AiPromptsPage
 
         $type = 'success';
         $eventId = (int) ($request['event_id'] ?? 0);
-        $notice = $this->applyRewrite($request, $type);
+        $notice = $this->applyRewrite($request, $type, true);
 
         self::back(MessagesPage::TAB_EVENTS, $notice, $type, self::eventAnchor($eventId));
     }
@@ -333,9 +347,14 @@ final class AiPromptsPage
      * text) again. Returns the notice; $type becomes 'error' when a text
      * could not be written.
      *
+     * With $background, each text is a background job (BackgroundJobs, kind
+     * EventAiText::JOB) and the page answers at once; the stored texts stay
+     * until each job is done. An unknown event or text, or an AI that is not
+     * set up, is answered at once as before.
+     *
      * @param array<string, mixed> $request
      */
-    public function applyRewrite(array $request, string &$type = 'success'): string
+    public function applyRewrite(array $request, string &$type = 'success', bool $background = false): string
     {
         if (null === $this->eventAiText) {
             $type = 'error';
@@ -343,12 +362,55 @@ final class AiPromptsPage
             return __('Nothing was written: that event or text was not found.', 'eventcrew');
         }
 
-        $result = $this->eventAiText->rewrite(
-            (int) ($request['event_id'] ?? 0),
-            sanitize_text_field((string) ($request['key'] ?? ''))
-        );
+        $eventId = (int) ($request['event_id'] ?? 0);
+        $key = sanitize_text_field((string) ($request['key'] ?? ''));
+        $keys = EventAiText::keys();
+        $keys = '' === $key ? $keys : array_values(array_intersect($keys, [$key]));
+
+        if (
+            $background
+            && [] !== $keys
+            && AssistantSettings::isConfigured()
+            && null !== EventSource::describe($eventId)
+        ) {
+            $labels = EventAiText::labels();
+
+            foreach ($keys as $one) {
+                BackgroundJobs::enqueue(
+                    EventAiText::JOB,
+                    EventAiText::jobTarget($eventId, $one),
+                    ['event_id' => $eventId, 'key' => $one],
+                    $labels[$one] ?? $one
+                );
+            }
+
+            $type = 'success';
+
+            return sprintf(
+                /* translators: %d: how many texts the AI is asked for */
+                _n('The AI is writing %d text.', 'The AI is writing %d texts.', count($keys), 'eventcrew'),
+                count($keys)
+            );
+        }
+
+        $result = $this->eventAiText->rewrite($eventId, $key);
 
         return self::rewriteNotice($result, $type);
+    }
+
+    /**
+     * The background job of "Write again" (EventAiText::JOB).
+     *
+     * @param array<string, mixed> $args event_id and key.
+     * @return array{ok: bool, error: string}
+     */
+    public function rewriteJob(array $args): array
+    {
+        if (null === $this->eventAiText) {
+            return ['ok' => false, 'error' => __('Nothing was written: that event or text was not found.', 'eventcrew')];
+        }
+
+        return $this->eventAiText->rewriteJob((int) ($args['event_id'] ?? 0), (string) ($args['key'] ?? ''));
     }
 
     /**
@@ -401,11 +463,11 @@ final class AiPromptsPage
         Admin::assertCanSave(self::NONCE_ACTION);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        $code = $this->applyFollowupText(wp_unslash($_POST));
+        $code = $this->applyFollowupText(wp_unslash($_POST), true);
 
         self::back(
             MessagesPage::TAB_EVENTS,
-            CrewAdminFollowup::noticeText($code),
+            self::QUEUED === $code ? BackgroundJobs::queuedNotice() : CrewAdminFollowup::noticeText($code),
             'admin_followup_unknown' === $code ? 'error' : 'success',
             self::ONE_TIME_ANCHOR
         );
@@ -416,20 +478,64 @@ final class AiPromptsPage
      * and followup_text, saved the way the crew app saves it. Returns the
      * notice code of CrewAdminFollowup::saveText().
      *
+     * With $background, a text to translate is saved by a background job
+     * (FOLLOWUP_JOB, followupJob()) and QUEUED is answered; until then the
+     * email keeps the text it had.
+     *
      * @param array<string, mixed> $post
      */
-    public function applyFollowupText(array $post): string
+    public function applyFollowupText(array $post, bool $background = false): string
     {
         if (null === $this->followup) {
             return 'admin_followup_unknown';
         }
 
-        return $this->followup->saveText(
-            0,
-            sanitize_key((string) ($post['variant'] ?? '')),
-            sanitize_key((string) ($post['op'] ?? '')),
-            sanitize_textarea_field((string) ($post['followup_text'] ?? ''))
-        );
+        $variant = sanitize_key((string) ($post['variant'] ?? ''));
+        $op = sanitize_key((string) ($post['op'] ?? ''));
+        $text = sanitize_textarea_field((string) ($post['followup_text'] ?? ''));
+
+        if (
+            $background
+            && 'save' === $op
+            && '' !== trim($text)
+            && FollowupText::isVariant($variant)
+            && TranslatedText::modelReady()
+        ) {
+            BackgroundJobs::enqueue(
+                self::FOLLOWUP_JOB,
+                self::followupTarget($variant),
+                ['variant' => $variant, 'text' => $text]
+            );
+
+            return self::QUEUED;
+        }
+
+        return $this->followup->saveText(0, $variant, $op, $text);
+    }
+
+    /**
+     * The background job that saves a one-time text of the post-event email.
+     *
+     * @param array<string, mixed> $args variant and text.
+     * @return array{ok: bool, error: string}
+     */
+    public function followupJob(array $args): array
+    {
+        if (null === $this->followup) {
+            return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
+        }
+
+        $code = $this->followup->saveText(0, (string) ($args['variant'] ?? ''), 'save', (string) ($args['text'] ?? ''));
+
+        return 'admin_followup_saved' === $code
+            ? ['ok' => true, 'error' => '']
+            : ['ok' => false, 'error' => CrewAdminFollowup::noticeText($code)];
+    }
+
+    /** The BackgroundJobs target of the one-time text of $variant. */
+    public static function followupTarget(string $variant): string
+    {
+        return 'followup:' . $variant;
     }
 
     /** admin-post: the text for the next announcement, from the Coming events tab. */
@@ -438,9 +544,14 @@ final class AiPromptsPage
         Admin::assertCanSave(self::NONCE_ACTION);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        $code = $this->applyNewsletterText(wp_unslash($_POST));
+        $code = $this->applyNewsletterText(wp_unslash($_POST), true);
 
-        self::back(MessagesPage::TAB_EVENTS, CrewAdminNewsletter::noticeText($code), 'success', self::ONE_TIME_ANCHOR);
+        self::back(
+            MessagesPage::TAB_EVENTS,
+            self::QUEUED === $code ? BackgroundJobs::queuedNotice() : CrewAdminNewsletter::noticeText($code),
+            'success',
+            self::ONE_TIME_ANCHOR
+        );
     }
 
     /**
@@ -448,19 +559,47 @@ final class AiPromptsPage
      * saved the way the crew app saves it. Returns the notice code of
      * CrewAdminNewsletter::saveText().
      *
+     * With $background, a text to translate is saved by a background job
+     * (NEWSLETTER_JOB, newsletterJob()) and QUEUED is answered; until then
+     * the announcement keeps the text it had.
+     *
      * @param array<string, mixed> $post
      */
-    public function applyNewsletterText(array $post): string
+    public function applyNewsletterText(array $post, bool $background = false): string
     {
         if (null === $this->newsletter) {
             return '';
         }
 
-        return $this->newsletter->saveText(
-            0,
-            sanitize_key((string) ($post['op'] ?? '')),
-            sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''))
-        );
+        $op = sanitize_key((string) ($post['op'] ?? ''));
+        $text = sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''));
+
+        if ($background && 'save' === $op && '' !== trim($text) && TranslatedText::modelReady()) {
+            BackgroundJobs::enqueue(self::NEWSLETTER_JOB, self::NEWSLETTER_TARGET, ['text' => $text]);
+
+            return self::QUEUED;
+        }
+
+        return $this->newsletter->saveText(0, $op, $text);
+    }
+
+    /**
+     * The background job that saves the announcement's text.
+     *
+     * @param array<string, mixed> $args text.
+     * @return array{ok: bool, error: string}
+     */
+    public function newsletterJob(array $args): array
+    {
+        if (null === $this->newsletter) {
+            return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
+        }
+
+        $code = $this->newsletter->saveText(0, 'save', (string) ($args['text'] ?? ''));
+
+        return 'admin_newsletter_saved' === $code
+            ? ['ok' => true, 'error' => '']
+            : ['ok' => false, 'error' => CrewAdminNewsletter::noticeText($code)];
     }
 
     /**

@@ -7993,3 +7993,54 @@ msgstr "Katumisaika (minuuttia)"
 #: templates/admin/settings.php
 msgid "Taking or cancelling a task shows at once everywhere. The messages and tickets it causes wait this many minutes, and then only what is still true is sent. A cancel within these minutes after taking the task is never a late cancellation. The wait runs on WP-Cron, so it can be a few minutes longer. 0 turns this off. Default 5."
 msgstr "Tehtävän ottaminen tai peruminen näkyy heti kaikkialla. Sen viestit ja liput odottavat näin monta minuuttia, ja sitten lähetetään vain se, mikä yhä pitää paikkansa. Näiden minuuttien aikana ottamisen jälkeen tehty peruutus ei ole koskaan myöhäinen peruutus. Odotus kulkee WP-Cronilla, joten se voi venyä muutaman minuutin. 0 poistaa tämän käytöstä. Oletus 5."
+
+#. translators: %d: how many background jobs are queued or running
+msgid "%d background job is running."
+msgid_plural "%d background jobs are running."
+msgstr[0] "%d taustatyö on käynnissä."
+msgstr[1] "%d taustatyötä on käynnissä."
+
+msgid "All background jobs are done. Reload the page to see the new texts."
+msgstr "Kaikki taustatyöt ovat valmiita. Lataa sivu uudelleen, niin näet uudet tekstit."
+
+msgid "Done ✓"
+msgstr "Valmis ✓"
+
+msgid "Reload"
+msgstr "Lataa uudelleen"
+
+msgid "Reload to see the new text."
+msgstr "Lataa uudelleen, niin näet uuden tekstin."
+
+msgid "Saving to Telegram…"
+msgstr "Tallennetaan Telegramiin…"
+
+msgid "That job was not found."
+msgstr "Tätä työtä ei löytynyt."
+
+#. translators: %d: how many texts the AI is asked for
+msgid "The AI is writing %d text."
+msgid_plural "The AI is writing %d texts."
+msgstr[0] "Tekoäly kirjoittaa %d tekstin."
+msgstr[1] "Tekoäly kirjoittaa %d tekstiä."
+
+msgid "The job is queued again."
+msgstr "Työ on taas jonossa."
+
+msgid "The job took too long and was stopped."
+msgstr "Työ kesti liian kauan, ja se keskeytettiin."
+
+msgid "The translations and other slow steps run in the background. This page shows when they are done."
+msgstr "Käännökset ja muut hitaat vaiheet tehdään taustalla. Tämä sivu näyttää, kun ne ovat valmiita."
+
+msgid "This job can no longer be run."
+msgstr "Tätä työtä ei voi enää tehdä."
+
+msgid "Translating…"
+msgstr "Käännetään…"
+
+msgid "Try again"
+msgstr "Yritä uudelleen"
+
+msgid "Writing…"
+msgstr "Kirjoitetaan…"

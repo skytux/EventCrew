@@ -6,6 +6,7 @@ namespace EventCrew\Admin;
 
 use EventCrew\Core\Container;
 use EventCrew\MailImport\MailImporter;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Scheduler;
@@ -34,6 +35,12 @@ final class Admin
         add_action('admin_notices', [$this, 'renderNotice']);
         add_action('admin_notices', [self::class, 'hybridOffNotice']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueStyles']);
+
+        // The background jobs of a save: the bar at the top, the poll that
+        // runs them while the page is open, and "Try again".
+        add_action('admin_notices', [$this->container->get(JobsStatus::class), 'topBar']);
+        add_action('wp_ajax_' . JobsStatus::ACTION, [$this->container->get(JobsStatus::class), 'poll']);
+        add_action('admin_post_' . JobsStatus::RETRY_ACTION, [$this->container->get(JobsStatus::class), 'retry']);
 
         // Re-publish the webhook and command menu once after a plugin update, so
         // a release that changes a bot command takes effect on its own: on the
@@ -349,6 +356,21 @@ final class Admin
             [],
             EVENTCREW_VERSION
         );
+
+        wp_enqueue_script(
+            'eventcrew-jobs',
+            EVENTCREW_PLUGIN_URL . 'assets/eventcrew-jobs.js',
+            [],
+            EVENTCREW_VERSION,
+            true
+        );
+        wp_localize_script('eventcrew-jobs', 'eventcrewJobs', [
+            'url' => admin_url('admin-ajax.php'),
+            'action' => JobsStatus::ACTION,
+            'nonce' => wp_create_nonce(JobsStatus::ACTION),
+            'done' => JobsStatus::barText(0),
+            'reload' => __('Reload', 'eventcrew'),
+        ]);
     }
 
     public function registerMenus(): void
@@ -542,6 +564,9 @@ final class Admin
      *        the roster's selected date, so a POST handler returns to the same
      *        view it was submitted from.
      * @param string $anchor A part of the page to land on (#ec-event-12), or ''.
+     *
+     * When this request left work for the background (BackgroundJobs), the
+     * notice says so.
      */
     public static function redirectTo(
         string $page,
@@ -550,6 +575,14 @@ final class Admin
         array $args = [],
         string $anchor = ''
     ): never {
+        if (
+            '' !== $message
+            && BackgroundJobs::addedNow() > 0
+            && ! str_contains($message, BackgroundJobs::queuedNotice())
+        ) {
+            $message .= ' ' . BackgroundJobs::queuedNotice();
+        }
+
         if ('' !== $message) {
             self::notice($type, $message);
         }

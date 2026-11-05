@@ -139,11 +139,15 @@ final class TranslationRegistry
      * A value that lacks one of the row's required placeholders, as posted
      * or as translated, is not stored; 'missing' lists those placeholders.
      *
+     * With $background, a translation is queued (TranslatedText::update()):
+     * the row keeps its text until runJob() has stored the new one.
+     *
      * @param array<string, string> $texts
-     * @return array{found: bool, error: string, missing: list<string>}
-     *     error is a TranslatedText error kind, '' when none.
+     * @return array{found: bool, error: string, missing: list<string>, queued?: bool}
+     *     error is a TranslatedText error kind, '' when none. queued (only
+     *     there when true) says the translation runs in the background.
      */
-    public function saveRow(string $id, string $source, array $texts): array
+    public function saveRow(string $id, string $source, array $texts, bool $background = false): array
     {
         $row = $this->find($id);
 
@@ -162,7 +166,18 @@ final class TranslationRegistry
             return ['found' => true, 'error' => '', 'missing' => $missing];
         }
 
-        $result = $this->translator->update($row->value, $source, $texts, false, $row->maxLength, $row->multiline);
+        $translator = $background ? $this->translator->inBackground() : $this->translator;
+        $result = $translator->update(
+            $row->value,
+            $source,
+            $texts,
+            false,
+            $row->maxLength,
+            $row->multiline,
+            null,
+            [],
+            $id
+        );
 
         // A translation can drop a placeholder too.
         $missing = $row->missingRequired($result['value']);
@@ -175,7 +190,86 @@ final class TranslationRegistry
             $row->store($result['value']);
         }
 
-        return ['found' => true, 'error' => $result['error'], 'missing' => []];
+        $answer = ['found' => true, 'error' => $result['error'], 'missing' => []];
+
+        return true === ($result['queued'] ?? false) ? $answer + ['queued' => true] : $answer;
+    }
+
+    /**
+     * Runs a queued translation (a BackgroundJobs job of the kind
+     * TranslatedText::JOB): the saved input, applied to the row as it is
+     * stored now, the same as the save would have done without the
+     * background. A translation that drops a required placeholder is not
+     * stored. When the model failed, the result is stored as without the
+     * background (empty language texts hold the source), and the job fails
+     * with the languages to translate on "Try again".
+     *
+     * @param array<string, mixed> $args The job's arguments: row, source,
+     *        texts, again, lang, refill.
+     * @return array{ok: bool, error: string, args?: array<string, mixed>}
+     */
+    public function runJob(array $args): array
+    {
+        $row = $this->find((string) ($args['row'] ?? ''));
+
+        if (null === $row) {
+            return ['ok' => false, 'error' => __('This text was not found. Nothing was saved.', 'eventcrew')];
+        }
+
+        $source = $row->fixedSource ? $row->value['source'] : (string) ($args['source'] ?? '');
+        $texts = array_map('strval', is_array($args['texts'] ?? null) ? $args['texts'] : []);
+        $again = (bool) ($args['again'] ?? false);
+        $lang = is_string($args['lang'] ?? null) ? $args['lang'] : null;
+        $refill = array_values(array_map('strval', is_array($args['refill'] ?? null) ? $args['refill'] : []));
+        $fill = TranslatedText::fillFor(
+            $row->value,
+            $source,
+            $texts,
+            $again,
+            $row->maxLength,
+            $row->multiline,
+            $lang,
+            $refill
+        );
+        $result = $this->translator->update(
+            $row->value,
+            $source,
+            $texts,
+            $again,
+            $row->maxLength,
+            $row->multiline,
+            $lang,
+            $refill
+        );
+        $missing = $row->missingRequired($result['value']);
+
+        if ([] !== $missing) {
+            return [
+                'ok' => false,
+                'error' => sprintf(
+                    /* translators: %s: the placeholders, like {email} */
+                    __('Not saved: the text must contain %s, in every language. The message keeps the text it had.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    implode(', ', $missing)
+                ),
+            ];
+        }
+
+        if ($result['value'] !== $row->value) {
+            $row->store($result['value']);
+        }
+
+        $error = TranslatedText::errorNotice($result['error']);
+
+        if ('' === $error) {
+            return ['ok' => true, 'error' => ''];
+        }
+
+        // "Try again" posts the texts as now stored (so none counts as edited
+        // by hand) and translates the languages this run could not.
+        $args['texts'] = array_intersect_key($result['value']['texts'], array_flip(TranslatedText::languages()));
+        $args['refill'] = array_values(array_unique(array_merge($refill, $fill)));
+
+        return ['ok' => false, 'error' => $error, 'args' => $args];
     }
 
     /**

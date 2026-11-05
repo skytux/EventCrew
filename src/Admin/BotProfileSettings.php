@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\Language;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRow;
@@ -59,6 +60,10 @@ final class BotProfileSettings
 
     /** The posted name of each field: telegram_profile[about], telegram_profile[description]. */
     public const POST_NAME = 'telegram_profile';
+
+    /** The BackgroundJobs kind and target of sending both texts to Telegram (pushJob()). */
+    public const JOB = 'telegram_profile';
+    public const JOB_TARGET = 'telegram:profile';
 
     public function __construct(
         private readonly TelegramClient $telegram,
@@ -125,6 +130,11 @@ final class BotProfileSettings
      * sends each changed language text to Telegram. A field that was not
      * posted is left as it is.
      *
+     * With a translator in the background (TranslatedText::inBackground()),
+     * nothing waits: a translation is queued as the Translations page row
+     * "telegram.{field}" (its job sends the text when stored), and the texts
+     * to send now are sent by a job of their own (pushJob()).
+     *
      * @param mixed $posted The raw $_POST[POST_NAME].
      * @return array{ok: bool, message: string}
      *     ok is false when Telegram refused a text or the translation
@@ -140,8 +150,17 @@ final class BotProfileSettings
         $failed = [];
         $translateError = '';
 
+        $background = $this->translator->isBackground();
+        $toSend = false;
+
         foreach (self::FIELDS as $field => [$option, , $max, $multiline]) {
-            $result = $this->translator->save(self::value($field), $posted[$field] ?? null, $max, $multiline);
+            $result = $this->translator->save(
+                self::value($field),
+                $posted[$field] ?? null,
+                $max,
+                $multiline,
+                'telegram.' . $field
+            );
 
             if (null === $result) {
                 continue;
@@ -153,7 +172,17 @@ final class BotProfileSettings
                 $translateError = $result['error'];
             }
 
+            if ($background) {
+                $toSend = $toSend || self::unsent($field, $result['value'], $sent);
+
+                continue;
+            }
+
             $changed += $this->push($field, $result['value'], $sent, $failed);
+        }
+
+        if ($toSend) {
+            BackgroundJobs::enqueue(self::JOB, self::JOB_TARGET, []);
         }
 
         update_option(self::SENT_OPTION, $sent, false);
@@ -184,6 +213,48 @@ final class BotProfileSettings
         update_option(self::SENT_OPTION, $sent, false);
 
         return $this->outcome($changed, $failed, '');
+    }
+
+    /**
+     * The background job (JOB) that sends both stored texts to Telegram,
+     * each language text that Telegram has not accepted yet.
+     *
+     * @param array<string, mixed> $args None.
+     * @return array{ok: bool, error: string}
+     */
+    public function pushJob(array $args = []): array
+    {
+        $sent = get_option(self::SENT_OPTION, []);
+        $sent = is_array($sent) ? $sent : [];
+        $failed = [];
+
+        foreach (array_keys(self::FIELDS) as $field) {
+            $this->push($field, self::value($field), $sent, $failed);
+        }
+
+        update_option(self::SENT_OPTION, $sent, false);
+
+        return [] === $failed
+            ? ['ok' => true, 'error' => '']
+            : ['ok' => false, 'error' => $this->outcome(0, $failed, '')['message']];
+    }
+
+    /**
+     * Whether a language text of $field differs from what Telegram last
+     * accepted.
+     *
+     * @param array{texts: array<string, string>} $value
+     * @param array<string, mixed> $sent
+     */
+    private static function unsent(string $field, array $value, array $sent): bool
+    {
+        foreach (TranslatedText::languages() as $lang) {
+            if (($value['texts'][$lang] ?? '') !== (string) ($sent['telegram_' . $field . '_' . $lang] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

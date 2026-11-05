@@ -881,10 +881,7 @@ final class SettingsPage
      */
     private function saveBotProfile(): array
     {
-        $profile = new BotProfileSettings(
-            $this->telegram,
-            new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger())
-        );
+        $profile = new BotProfileSettings($this->telegram, $this->translator());
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $profile->save($_POST[BotProfileSettings::POST_NAME] ?? null);
@@ -896,7 +893,7 @@ final class SettingsPage
      */
     private function saveTicketText(): string
     {
-        $text = new TicketText($this->llm ?? new LlmClient(new Logger()), new Logger());
+        $text = new TicketText($this->llm ?? new LlmClient(new Logger()), new Logger(), true);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $text->saveSettings($_POST[TicketText::POST_NAME] ?? null);
@@ -908,7 +905,7 @@ final class SettingsPage
      */
     private function saveTicketReasons(): string
     {
-        $reasons = new TicketReasons($this->llm ?? new LlmClient(new Logger()), new Logger());
+        $reasons = new TicketReasons($this->llm ?? new LlmClient(new Logger()), new Logger(), true);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $reasons->saveSettings($_POST[TicketReasons::POST_NAME] ?? null);
@@ -924,10 +921,14 @@ final class SettingsPage
         return SiteTexts::save($this->translator(), $_POST);
     }
 
-    /** The translator for the written-once texts on this page. */
+    /**
+     * The translator for the written-once texts on this page. It queues the
+     * translations in the background (BackgroundJobs), so the save answers
+     * at once.
+     */
     private function translator(): TranslatedText
     {
-        return new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger());
+        return new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger(), true);
     }
 
     /**
@@ -2071,12 +2072,23 @@ final class SettingsPage
 
         foreach (array_keys($labels) as $index) {
             $previous = '' === ($slugs[$index] ?? '') ? null : Roles::find($slugs[$index]);
-            $label = $this->roleText($translator, $previous['label_text'] ?? '', $labels[$index] ?? null, false);
+            // A role saved before translates in the background, as its
+            // Translations page row; a new one (its slug is made on save)
+            // is translated now.
+            $row = null === $previous || Roles::ORGANIZE_SLUG === $previous['slug'] ? null : 'role.' . $previous['slug'];
+            $label = $this->roleText(
+                $translator,
+                $previous['label_text'] ?? '',
+                $labels[$index] ?? null,
+                false,
+                null === $row ? null : $row . '.label'
+            );
             $description = $this->roleText(
                 $translator,
                 $previous['description_text'] ?? '',
                 $descriptions[$index] ?? null,
-                true
+                true,
+                null === $row ? null : $row . '.description'
             );
             $types[] = [
                 'slug' => $slugs[$index] ?? '',
@@ -2116,19 +2128,26 @@ final class SettingsPage
      * One posted role name or description applied to its stored value,
      * translating where needed. The field posts as TranslatedText::field()
      * draws it; a plain string (an older form) is taken as the new source.
-     * A translation error is kept in $rolesError for the save notice.
+     * A translation error is kept in $rolesError for the save notice. $row
+     * is the text's Translations page row, so it can be translated in the
+     * background; null translates now.
      *
      * @param array<string, mixed>|string $previous
      * @return array<string, mixed> A TranslatedText value.
      */
-    private function roleText(TranslatedText $translator, array|string $previous, mixed $raw, bool $multiline): array
-    {
+    private function roleText(
+        TranslatedText $translator,
+        array|string $previous,
+        mixed $raw,
+        bool $multiline,
+        ?string $row = null
+    ): array {
         if (is_scalar($raw)) {
             // fromPost() unslashes and sanitizes it.
             $raw = ['source' => (string) $raw];
         }
 
-        $result = $translator->save($previous, $raw, 0, $multiline);
+        $result = $translator->save($previous, $raw, 0, $multiline, $row);
 
         if (null === $result) {
             return TranslatedText::normalize($previous);

@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Admin;
 use Brain\Monkey\Functions;
 use EventCrew\Admin\TranslationsPage;
 use EventCrew\Admin\View;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -139,6 +140,51 @@ final class TranslationsPageTest extends TestCase
 
         $notice = $this->page()->applyRow('nope', ['source' => 'x']);
         self::assertSame('error', $notice['type']);
+    }
+
+    /**
+     * With the model set up, the save handler stores the job and redirects
+     * at once: the model is not asked during the request, and the notice
+     * says the translation runs in the background.
+     */
+    public function testTheSaveHandlerQueuesTheTranslationAndRedirectsAtOnce(): void
+    {
+        $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[\EventCrew\Support\AssistantSettings::MODEL_OPTION] = 'test-model';
+        $notices = [];
+        Functions\when('current_user_can')->justReturn(true);
+        Functions\when('check_admin_referer')->justReturn(1);
+        Functions\when('get_current_user_id')->justReturn(1);
+        Functions\when('set_transient')->alias(static function (string $key, array $value) use (&$notices): bool {
+            $notices[] = $value;
+
+            return true;
+        });
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        Functions\when('wp_safe_redirect')->alias(static function (string $url): never {
+            throw new \RuntimeException('redirect ' . $url);
+        });
+        $before = $this->options['row.thanks'];
+        $_POST = ['row_id' => 'thanks', 'row' => ['source' => 'Thank you so much', 'texts' => ['fi' => '']]];
+
+        try {
+            $this->page()->saveRow();
+            self::fail('The handler redirects.');
+        } catch (\RuntimeException $e) {
+            self::assertStringStartsWith('redirect https://site.test/wp-admin/admin.php', $e->getMessage());
+        } finally {
+            $_POST = [];
+        }
+
+        self::assertSame($before['texts'], $this->options['row.thanks']['texts'], 'the old text is kept');
+        self::assertSame(
+            BackgroundJobs::QUEUED,
+            BackgroundJobs::latest(TranslatedText::jobTarget('thanks'))['status'] ?? null
+        );
+        self::assertSame('success', $notices[0]['type'] ?? null);
+        self::assertStringContainsString('run in the background', (string) ($notices[0]['message'] ?? ''));
     }
 
     /** A text without a required placeholder is not saved, and the notice names the placeholder. */

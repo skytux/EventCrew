@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Admin;
 
 use EventCrew\Admin\Admin;
 use EventCrew\Admin\AiPromptsPage;
+use EventCrew\Admin\JobsStatus;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\PeoplePage;
@@ -37,6 +38,7 @@ final class AdminTest extends TestCase
             TranslationsPage::class,
             MessagesPage::class,
             AiPromptsPage::class,
+            JobsStatus::class,
         ];
 
         foreach ($pages as $id) {

@@ -193,7 +193,9 @@ if (! defined('ABSPATH')) {
                                 $eventcrew_id . '-label',
                                 $eventcrew_role['label_text'] ?? $eventcrew_role['label'],
                                 0,
-                                false
+                                false,
+                                '',
+                                $eventcrew_is_new ? '' : 'role.' . $eventcrew_role['slug'] . '.label'
                             );
                             ?>
                         </td>
@@ -384,7 +386,9 @@ if (! defined('ABSPATH')) {
                                 $eventcrew_id . '-description',
                                 $eventcrew_role['description_text'] ?? $eventcrew_role['description'],
                                 0,
-                                true
+                                true,
+                                '',
+                                $eventcrew_is_new ? '' : 'role.' . $eventcrew_role['slug'] . '.description'
                             );
                             ?>
                         </td>
@@ -1075,7 +1079,8 @@ if (! defined('ABSPATH')) {
                         $app_name,
                         0,
                         false,
-                        get_bloginfo('name')
+                        get_bloginfo('name'),
+                        'text.app_name'
                     );
                     ?>
                     <p class="description"><?php esc_html_e('Shown under the home-screen icon. Blank uses the site name.', 'eventcrew'); ?></p>
@@ -1139,7 +1144,9 @@ if (! defined('ABSPATH')) {
                         'eventcrew-ticket-note',
                         $ticket_note,
                         0,
-                        true
+                        true,
+                        '',
+                        'text.ticket_note'
                     );
                     ?>
                     <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
@@ -1156,7 +1163,9 @@ if (! defined('ABSPATH')) {
                         'eventcrew-infrastructure-note',
                         $infrastructure_note,
                         0,
-                        true
+                        true,
+                        '',
+                        'text.infrastructure_note'
                     );
                     ?>
                     <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
@@ -1393,7 +1402,8 @@ if (! defined('ABSPATH')) {
                         $signature,
                         0,
                         true,
-                        __('Barefoot and with ♥ — the Example crew', 'eventcrew')
+                        __('Barefoot and with ♥ — the Example crew', 'eventcrew'),
+                        'text.signature'
                     );
                     ?>
                     <p class="description">
@@ -1501,7 +1511,9 @@ if (! defined('ABSPATH')) {
                         'eventcrew-ticket-text',
                         $ticket_text,
                         \EventCrew\Support\TicketText::MAX_LENGTH,
-                        true
+                        true,
+                        '',
+                        'email.ticket'
                     );
                     ?>
                     <p class="description">
@@ -1533,7 +1545,9 @@ if (! defined('ABSPATH')) {
                             'eventcrew-ticket-reason-' . $reason_kind,
                             $ticket_reasons[$reason_kind],
                             \EventCrew\Support\TicketReasons::MAX_LENGTH,
-                            false
+                            false,
+                            '',
+                            'email.ticket_reason.' . $reason_kind
                         );
                         ?>
                         <p class="description">
@@ -1918,6 +1932,17 @@ if (! defined('ABSPATH')) {
                         <label for="<?php echo esc_attr($eventcrew_pf_id); ?>">
                             <?php echo esc_html($eventcrew_pf_label); ?>
                         </label>
+                        <?php
+                        // Sending the texts to Telegram runs in the background.
+                        $eventcrew_pf_badge = 'about' === $eventcrew_pf_name
+                            ? \EventCrew\Support\BackgroundJobs::badge(
+                                \EventCrew\Support\BackgroundJobs::latest(\EventCrew\Admin\BotProfileSettings::JOB_TARGET)
+                            )
+                            : '';
+                        if ('' !== $eventcrew_pf_badge) {
+                            echo '<br>' . $eventcrew_pf_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
+                        }
+                        ?>
                     </th>
                     <td>
                         <?php
@@ -1926,7 +1951,9 @@ if (! defined('ABSPATH')) {
                             $eventcrew_pf_id,
                             $telegram['profile'][$eventcrew_pf_name],
                             $eventcrew_pf_max,
-                            $eventcrew_pf_area
+                            $eventcrew_pf_area,
+                            '',
+                            'telegram.' . $eventcrew_pf_name
                         );
                         ?>
                         <p class="description">

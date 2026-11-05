@@ -143,7 +143,7 @@ final class TranslationsPage
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized in applyRow().
         $id = isset($_POST['row_id']) ? sanitize_text_field(wp_unslash((string) $_POST['row_id'])) : '';
-        $notice = $this->applyRow($id, $_POST['row'] ?? null);
+        $notice = $this->applyRow($id, $_POST['row'] ?? null, true);
         // phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput
 
         Admin::redirectTo(self::PAGE_SLUG, $notice['message'], $notice['type'], $this->listArgs());
@@ -151,11 +151,12 @@ final class TranslationsPage
 
     /**
      * Saves the row $id from the posted fields ($raw: source and texts per
-     * language, as TranslatedText::fromPost() reads them).
+     * language, as TranslatedText::fromPost() reads them). With $background
+     * the translation is queued, and the notice says so.
      *
      * @return array{type: string, message: string}
      */
-    public function applyRow(string $id, mixed $raw): array
+    public function applyRow(string $id, mixed $raw, bool $background = false): array
     {
         $row = $this->registry->find($id);
 
@@ -169,7 +170,7 @@ final class TranslationsPage
             return ['type' => 'error', 'message' => __('Nothing was saved.', 'eventcrew')];
         }
 
-        $result = $this->registry->saveRow($id, $input['source'], $input['texts']);
+        $result = $this->registry->saveRow($id, $input['source'], $input['texts'], $background);
 
         if ([] !== $result['missing']) {
             return [

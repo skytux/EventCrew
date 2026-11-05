@@ -8,6 +8,7 @@ use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -270,13 +271,47 @@ final class EventAiTextTest extends TestCase
         self::assertSame('success', $type);
         self::assertSame('The AI wrote 1 new text.', $notice);
         self::assertSame('Later we dance.', EventAiText::text('reminder', 101, 'en'));
-        self::assertSame(1, $this->stored(101, 'reminder')['tries']);
+        // Asked for by hand: not one of the day-before run's tries.
+        self::assertSame(0, $this->stored(101, 'reminder')['tries']);
 
         // The day before, the run finds it written and asks nothing.
         $this->cron = true;
         self::assertSame(0, $this->service()->writeFor(101));
         self::assertCount(1, $this->requests);
         self::assertSame('Later we dance.', EventAiText::text('reminder', 101, 'en'));
+    }
+
+    /**
+     * From wp-admin "Write again" is a background job: the page answers at
+     * once, the old text stays until the job ran, and the job writes what
+     * the inline path wrote.
+     */
+    public function testWriteAgainInTheBackgroundKeepsTheOldTextUntilTheJobRan(): void
+    {
+        $this->events();
+        $this->answers = [self::answer('Huomenna.', 'Tomorrow.'), self::answer('Uusi.', 'New.')];
+        $this->service()->run();
+        $this->cron = false;
+        $page = new AiPromptsPage($this->service());
+        $type = '';
+
+        $notice = $page->applyRewrite(['event_id' => '100', 'key' => 'reminder'], $type, true);
+
+        self::assertSame('success', $type);
+        self::assertSame('The AI is writing 1 text.', $notice);
+        self::assertCount(1, $this->requests, 'the AI is not asked while the page waits');
+        self::assertSame('Tomorrow.', EventAiText::text('reminder', 100, 'en'));
+
+        $job = BackgroundJobs::latest(EventAiText::jobTarget(100, 'reminder'));
+        self::assertSame(BackgroundJobs::QUEUED, $job['status'] ?? null);
+
+        $jobs = new BackgroundJobs();
+        $jobs->handle(EventAiText::JOB, [$page, 'rewriteJob']);
+        $done = $jobs->runOne();
+
+        self::assertSame(BackgroundJobs::DONE, $done['status'] ?? null);
+        self::assertSame('New.', EventAiText::text('reminder', 100, 'en'));
+        self::assertSame(1, $this->stored(100, 'reminder')['tries'], 'the manual rewrite is not a try');
     }
 
     public function testWriteAgainWhenTheAiFailsKeepsTheOldText(): void

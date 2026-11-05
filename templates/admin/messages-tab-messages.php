@@ -62,7 +62,9 @@ use EventCrew\Support\TranslatedText;
                         $eventcrew_field . '-subject',
                         $eventcrew_entry['subject'],
                         MessageTemplates::SUBJECT_MAX_LENGTH,
-                        false
+                        false,
+                        '',
+                        'message.' . $eventcrew_id . '.' . MessageTemplates::SUBJECT
                     );
                     ?>
                 <?php endif; ?>
@@ -80,7 +82,9 @@ use EventCrew\Support\TranslatedText;
                     $eventcrew_field . '-body',
                     $eventcrew_entry['body'],
                     MessageTemplates::BODY_MAX_LENGTH,
-                    true
+                    true,
+                    '',
+                    'message.' . $eventcrew_id . '.' . MessageTemplates::BODY
                 );
                 ?>
                 <p class="description"><?php echo esc_html((string) $eventcrew_entry['formatting']); ?></p>
