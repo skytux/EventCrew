@@ -444,13 +444,38 @@ final class Newsletter
     /**
      * The footer line, in both languages, or in $lang alone: the link to the
      * subscriber's own page, where they change their name or leave the
-     * newsletter.
+     * newsletter. $crew is true for a crew member (they were put on the
+     * announcement as crew, NewsletterCrew), false for anyone else (they
+     * joined it themselves).
      */
-    public static function footer(string $lang = ''): string
+    public static function footer(string $lang = '', bool $crew = false): string
+    {
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        return self::inLanguage(
+            static fn (): string => $crew
+                ? __(
+                    'You get this email because you are in the crew. Change your details or leave the announcement',
+                    'eventcrew'
+                )
+                : __(
+                    'You get this email because you joined the next events announcement. Change your details or leave the announcement',
+                    'eventcrew'
+                ),
+            $lang
+        );
+        // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
+    /**
+     * The line above the footer link of a crew member's announcement, in
+     * both languages, or in $lang alone: leaving the announcement changes no
+     * other crew message. Other subscribers get no such line.
+     */
+    public static function crewNote(string $lang = ''): string
     {
         return self::inLanguage(
             static fn (): string => __(
-                'You get this email because you joined the next events announcement. Change your details or leave the announcement', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                'Leaving the announcement does not stop your other crew messages.',
                 'eventcrew'
             ),
             $lang
@@ -458,21 +483,14 @@ final class Newsletter
     }
 
     /**
-     * The line above the footer link, in both languages, or in $lang alone:
-     * crew members get this announcement too, and leaving it changes no
-     * other crew message.
+     * The footer and the line above it for one kind of subscriber: a crew
+     * member ($crew) or anyone else.
+     *
+     * @return array{footer: string, crew_note: string}
      */
-    public static function crewNote(string $lang = ''): string
+    private static function footerParts(string $lang, bool $crew): array
     {
-        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        return self::inLanguage(
-            static fn (): string => __(
-                'Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected.',
-                'eventcrew'
-            ),
-            $lang
-        );
-        // phpcs:enable Generic.Files.LineLength.TooLong
+        return ['footer' => self::footer($lang, $crew), 'crew_note' => $crew ? self::crewNote($lang) : ''];
     }
 
     private function runLocked(): void
@@ -736,12 +754,13 @@ final class Newsletter
                 $plan['later'] ?? [],
                 $plan['written'] ?? null,
                 $lang
-            ) + ['footer' => self::footer($lang), 'crew_note' => self::crewNote($lang)];
-            $mail = $mails[$lang];
+            ) + self::footerParts($lang, false);
+            // The footer matches the subscriber's kind: crew member or not.
+            $mail = self::footerParts($lang, (bool) ($row['crew'] ?? false)) + $mails[$lang];
 
             if (null !== $this->history && ! isset($plan['copies'][$lang])) {
                 $plan['copies'][$lang] = [
-                    'id' => $this->keepCopy((int) $plan['id'], $lang, $mail),
+                    'id' => $this->keepCopy((int) $plan['id'], $lang, $mails[$lang]),
                     'sent' => 0,
                     'failed' => 0,
                 ];
@@ -824,7 +843,7 @@ final class Newsletter
     /**
      * Keeps a copy of one version of the newsletter for the Newsletter page
      * in wp-admin, as its first email goes, and returns the copy's id (0 when
-     * it could not be kept). The copy is the email the subscribers get, made
+     * it could not be kept). The copy is the email a subscriber who is not crew gets, made
      * the same way, but with the greeting that has no name and with "#" in
      * place of the subscriber's own link, so it holds no personal data.
      *
@@ -943,7 +962,7 @@ final class Newsletter
      * send day is "today". As startSending() does on that day, the events
      * dated on or before the send day and the hidden ones are left out, and
      * the "Later" list is the events after the send day. The organizers'
-     * text is the one there is now.
+     * text is the one there is now. The footer is the one of a subscriber who is not crew.
      *
      * @param array<string, mixed> $plan
      * @return array{subject: string, html: string, text: string, footer: string, crew_note: string}
@@ -963,7 +982,7 @@ final class Newsletter
             $this->laterEvents($events, $today),
             $plan['written'] ?? null,
             $lang
-        ) + ['footer' => self::footer($lang), 'crew_note' => self::crewNote($lang)];
+        ) + self::footerParts($lang, false);
     }
 
     /**

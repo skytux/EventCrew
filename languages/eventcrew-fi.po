@@ -5608,8 +5608,8 @@ msgstr "Tämä kirjautumislinkki on vanhentunut. Paina uudelleen Telegram-painik
 msgid "Add crew members to the newsletter"
 msgstr "Lisää tiimin jäsenet uutiskirjeen tilaajiksi"
 
-msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
-msgstr "Tiimin jäsenet saavat myös tämän tiedotteen ja voivat lopettaa sen alla olevasta linkistä. Muut tiimin viestit eivät muutu."
+msgid "Leaving the announcement does not stop your other crew messages."
+msgstr "Tiedotteen tilauksen peruminen ei lopeta muita tiimin viestejäsi."
 
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr "Tiimin jäsenet, joiden sähköpostiosoite on vahvistettu, saavat tulevien tapahtumien tiedotteen ja voivat perua sen milloin tahansa jokaisen viestin linkistä."
@@ -6057,6 +6057,9 @@ msgstr "Hei %s!"
 
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr "Saat tämän viestin, koska tilasit tulevien tapahtumien tiedotteen. Muuta tietojasi tai peru tiedotteen tilaus"
+
+msgid "You get this email because you are in the crew. Change your details or leave the announcement"
+msgstr "Saat tämän viestin, koska olet tiimissä. Muuta tietojasi tai peru tiedotteen tilaus"
 
 msgid "Thank you. Now check your inbox: the announcement starts only after you press the link in the email we sent."
 msgstr "Kiitos. Katso nyt sähköpostisi: tiedote alkaa vasta, kun painat lähettämämme viestin linkkiä."

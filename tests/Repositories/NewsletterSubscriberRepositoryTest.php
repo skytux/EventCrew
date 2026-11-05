@@ -346,20 +346,25 @@ final class NewsletterSubscriberRepositoryTest extends TestCase
     {
         $this->wpdb->nextResults[] = [
             ['id' => '7', 'email' => 'fan@example.test', 'name' => null, 'language' => ''],
-            ['id' => '8', 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi'],
+            ['id' => '8', 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi', 'crew' => '1'],
         ];
 
         $rows = (new NewsletterSubscriberRepository())->confirmedAfter(6, 20);
 
         self::assertSame(
             [
-                ['id' => 7, 'email' => 'fan@example.test', 'name' => null, 'language' => ''],
-                ['id' => 8, 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi'],
+                ['id' => 7, 'email' => 'fan@example.test', 'name' => null, 'language' => '', 'crew' => false],
+                ['id' => 8, 'email' => 'bo@example.test', 'name' => 'Bo', 'language' => 'fi', 'crew' => true],
             ],
             $rows
         );
         self::assertStringContainsString(
-            "status = 'confirmed' AND id > 6 ORDER BY id ASC LIMIT 20",
+            "s.status = 'confirmed' AND s.id > 6 ORDER BY s.id ASC LIMIT 20",
+            $this->wpdb->lastQuery()
+        );
+        // A crew member is a person with the subscriber's verified address.
+        self::assertStringContainsString(
+            'FROM wp_eventcrew_people p WHERE p.email = s.email AND p.email_verified_at IS NOT NULL',
             $this->wpdb->lastQuery()
         );
     }

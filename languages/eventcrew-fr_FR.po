@@ -1508,8 +1508,8 @@ msgid "Crew members are not WordPress users, so this plugin registers its own ha
 msgstr "Les membres de l’équipe ne sont pas des utilisateurs WordPress, donc cette extension enregistre ses propres gestionnaires pour %1$s et %2$s : saisis-y l’adresse email d’un membre de l’équipe et sa fiche est exportée ou effacée avec tout ce qui y est rattaché. La plupart des gens n’ont jamais besoin de toi — leur appli Crew a un bouton Supprimer, et chaque email y renvoie."
 
 #: src/Support/Newsletter.php:454
-msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
-msgstr "Les membres de l’équipe reçoivent aussi cette annonce et peuvent l’arrêter avec le lien ci-dessous. Les autres messages de l’équipe ne sont pas concernés."
+msgid "Leaving the announcement does not stop your other crew messages."
+msgstr "Quitter l’annonce n’arrête pas tes autres messages de l’équipe."
 
 #: src/Support/PrivacyPolicy.php:466
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
@@ -7002,6 +7002,9 @@ msgstr "Tu reçois cet email parce que tu as un billet pour cet événement."
 #: src/Support/Newsletter.php:437
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr "Tu reçois cet email parce que tu as rejoint l’annonce des prochains événements. Modifier tes informations ou quitter l’annonce"
+
+msgid "You get this email because you are in the crew. Change your details or leave the announcement"
+msgstr "Tu reçois cet email parce que tu fais partie de l’équipe. Modifier tes informations ou quitter l’annonce"
 
 #. translators: %d: number of free-entry credits the person holds
 #: src/Telegram/ProfileService.php:78

@@ -873,7 +873,7 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('Hi there', $fi['body']);
         self::assertStringContainsString('Muuta tietojasi tai peru tiedotteen tilaus', $fi['body']);
         self::assertStringNotContainsString('Change your details', $fi['body']);
-        self::assertStringNotContainsString('Crew members get this', $fi['body']);
+        self::assertStringNotContainsString('does not stop your other crew', $fi['body']);
 
         self::assertStringContainsString('>Hi there</p>', $en['body']);
         self::assertStringNotContainsString('>Moi', $en['body']);
@@ -893,6 +893,72 @@ final class NewsletterTest extends TestCase
 
         foreach ([$fi, $both] as $mail) {
             self::assertStringNotContainsString('Automatically translated', $mail['body']);
+        }
+    }
+
+    /**
+     * The footer matches the subscriber's kind (E6): a crew member is told
+     * they get the email as crew and that leaving it stops no other crew
+     * message; anyone else is told they joined, with no crew line. In every
+     * language version; the kept copy is the one of a subscriber who is not crew.
+     */
+    public function testTheFooterMatchesTheSubscriberKind(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->withPlan([
+            'status' => Newsletter::PLAN_SENDING,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+            'text' => ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 3],
+        ]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'email' => 'crew-en@example.test', 'language' => 'en', 'crew' => '1'],
+            ['id' => 5, 'email' => 'fan-en@example.test', 'language' => 'en', 'crew' => '0'],
+            ['id' => 6, 'email' => 'crew-fi@example.test', 'language' => 'fi', 'crew' => '1'],
+            ['id' => 7, 'email' => 'fan-fi@example.test', 'language' => 'fi', 'crew' => '0'],
+            ['id' => 8, 'email' => 'crew-both@example.test', 'language' => '', 'crew' => '1'],
+            ['id' => 9, 'email' => 'fan-both@example.test', 'language' => ''],
+        ];
+
+        self::assertSame(6, $this->newsletter(new NewsletterHistoryRepository())->sendBatch());
+
+        [$crewEn, $fanEn, $crewFi, $fanFi, $crewBoth, $fanBoth] = array_column($this->mails, 'body');
+
+        self::assertStringContainsString('You get this email because you are in the crew.', $crewEn);
+        self::assertStringContainsString('Leaving the announcement does not stop your other crew messages.', $crewEn);
+        self::assertStringNotContainsString('because you joined', $crewEn);
+
+        self::assertStringContainsString('You get this email because you joined the next events', $fanEn);
+        self::assertStringNotContainsString('in the crew', $fanEn);
+        self::assertStringNotContainsString('crew messages', $fanEn);
+
+        self::assertStringContainsString('Saat tämän viestin, koska olet tiimissä.', $crewFi);
+        self::assertStringContainsString('Tiedotteen tilauksen peruminen ei lopeta muita tiimin viestejäsi.', $crewFi);
+        self::assertStringNotContainsString('koska tilasit', $crewFi);
+
+        self::assertStringContainsString('Saat tämän viestin, koska tilasit tulevien tapahtumien tiedotteen.', $fanFi);
+        self::assertStringNotContainsString('tiimissä', $fanFi);
+        self::assertStringNotContainsString('tiimin viestejäsi', $fanFi);
+
+        self::assertStringContainsString('koska olet tiimissä', $crewBoth);
+        self::assertStringContainsString('because you are in the crew', $crewBoth);
+        self::assertStringContainsString('ei lopeta muita tiimin viestejäsi', $crewBoth);
+        self::assertStringContainsString('does not stop your other crew messages', $crewBoth);
+
+        self::assertStringContainsString('koska tilasit', $fanBoth);
+        self::assertStringContainsString('because you joined', $fanBoth);
+        self::assertStringNotContainsString('tiimissä', $fanBoth);
+        self::assertStringNotContainsString('crew messages', $fanBoth);
+
+        // The copies kept for wp-admin (one per language) have the footer of a subscriber who is not crew.
+        $copies = array_values(array_filter(
+            $this->wpdb->inserts,
+            static fn (array $insert): bool => 'wp_eventcrew_newsletter_sends' === $insert['table']
+        ));
+        self::assertCount(3, $copies);
+
+        foreach ($copies as $copy) {
+            self::assertStringNotContainsString('crew messages', (string) $copy['data']['html']);
+            self::assertStringNotContainsString('tiimin viestejäsi', (string) $copy['data']['html']);
         }
     }
 

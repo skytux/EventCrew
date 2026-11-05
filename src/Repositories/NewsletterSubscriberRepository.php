@@ -433,18 +433,23 @@ final class NewsletterSubscriberRepository
 
     /**
      * The next confirmed subscribers after $afterId, in id order: the batch
-     * the newsletter sends to next.
+     * the newsletter sends to next. 'crew' is true when the address belongs
+     * to a crew member: a person with this verified email address (the same
+     * test as NewsletterCrew).
      *
-     * @return array<int, array{id: int, email: string, name: ?string, language: string}>
+     * @return array<int, array{id: int, email: string, name: ?string, language: string, crew: bool}>
      */
     public function confirmedAfter(int $afterId, int $limit): array
     {
         global $wpdb;
 
+        $people = Schema::table(Schema::PEOPLE);
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, email, name, language FROM {$this->table()}"
-                    . ' WHERE status = %s AND id > %d ORDER BY id ASC LIMIT %d',
+                "SELECT s.id, s.email, s.name, s.language, EXISTS(SELECT 1 FROM {$people} p"
+                    . ' WHERE p.email = s.email AND p.email_verified_at IS NOT NULL) AS crew'
+                    . " FROM {$this->table()} s"
+                    . ' WHERE s.status = %s AND s.id > %d ORDER BY s.id ASC LIMIT %d',
                 self::STATUS_CONFIRMED,
                 $afterId,
                 max(1, $limit)
@@ -462,6 +467,7 @@ final class NewsletterSubscriberRepository
                 'email' => (string) ($row['email'] ?? ''),
                 'name' => null === $name || '' === $name ? null : (string) $name,
                 'language' => (string) ($row['language'] ?? ''),
+                'crew' => (bool) (int) ($row['crew'] ?? 0),
             ];
         }
 

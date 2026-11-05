@@ -1084,8 +1084,8 @@ msgstr "Membro della crew"
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr "I membri della crew non sono utenti WordPress, quindi questo plugin registra i propri gestori per %1$s e %2$s: inserisci lì l’indirizzo email di un membro della crew e i suoi dati vengono esportati o cancellati insieme a tutto ciò che vi è collegato. Quasi nessuno ha bisogno di te per farlo — la sua app Crew ha un pulsante Elimina, e ogni email rimanda lì."
 
-msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
-msgstr "Anche i membri della crew ricevono questo annuncio e possono fermarlo con il link qui sotto. Gli altri messaggi della crew non cambiano."
+msgid "Leaving the announcement does not stop your other crew messages."
+msgstr "Lasciare l’annuncio non ferma gli altri tuoi messaggi della crew."
 
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr "I membri della crew con un indirizzo email verificato ricevono l’annuncio dei prossimi eventi e possono disiscriversi quando vogliono dal link in ogni email."
@@ -5109,6 +5109,9 @@ msgstr "Ricevi questa email perché hai un biglietto per questo evento."
 
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr "Ricevi questa email perché ti sei iscritto all’annuncio dei prossimi eventi. Cambia i tuoi dati o lascia l’annuncio"
+
+msgid "You get this email because you are in the crew. Change your details or leave the announcement"
+msgstr "Ricevi questa email perché sei nella crew. Cambia i tuoi dati o lascia l’annuncio"
 
 #. translators: %d: number of free-entry credits the person holds
 msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
