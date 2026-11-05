@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.32
+Stable tag: 1.140.33
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.33 =
+Telegram sign-in: the bot shows 3 code buttons; only the code shown on the crew app signs in. A wrong press cancels that sign-in, and later presses do nothing (Q268).
 
 = 1.140.32 =
 The door desk link, the email verification link and the email change link now work only once, even when opened twice at the same moment (Q269).
@@ -1310,6 +1313,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.33 =
+No settings change.
 
 = 1.140.32 =
 No settings change.

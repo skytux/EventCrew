@@ -123,7 +123,7 @@ final class TelegramLoginTest extends TestCase
 
             self::assertTrue(TelegramLogin::isCode($code));
             self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{1,64}$/', $payload);
-            self::assertLessThanOrEqual(64, strlen(TelegramLogin::CALLBACK_PREFIX . $code));
+            self::assertLessThanOrEqual(64, strlen(TelegramLogin::CALLBACK_PREFIX . $code . ':0000'));
             $this->transients = []; // past the rate limit is not this test's business
         }
 
@@ -160,6 +160,69 @@ final class TelegramLoginTest extends TestCase
 
         self::assertSame('', $this->login()->matchCode($code));
         self::assertSame('', $this->login()->matchCode('nope'));
+    }
+
+    public function testTheBotsThreeChoicesAreTheMatchCodeAndTwoFixedWrongCodes(): void
+    {
+        ['code' => $code, 'match' => $match] = $this->created();
+        $login = $this->login();
+
+        $choices = $login->choices($code);
+        self::assertCount(3, $choices);
+        self::assertCount(3, array_unique($choices));
+        self::assertContains($match, $choices);
+
+        foreach ($choices as $choice) {
+            self::assertMatchesRegularExpression('/^[1-9][0-9]{3}$/', $choice);
+        }
+
+        $again = $login->choices($code);
+        sort($choices);
+        sort($again);
+        self::assertSame($choices, $again, 'the wrong codes stay the same');
+
+        self::assertSame([], $login->choices('nope'));
+        $this->age(TelegramLogin::TTL + 1);
+        self::assertSame([], $login->choices($code));
+    }
+
+    public function testTheRightChoiceIsAcceptedOnceAndLeavesTheCodePending(): void
+    {
+        ['code' => $code, 'secret' => $secret, 'match' => $match] = $this->created();
+        $login = $this->login();
+        $login->claimForTelegramUser($code, 4242);
+
+        self::assertSame(TelegramLogin::CHOICE_RIGHT, $login->choose($code, 4242, $match));
+        self::assertSame(TelegramLogin::STATE_PENDING, $login->poll($code, $secret)['state']);
+        self::assertSame(TelegramLogin::CHOICE_DONE, $login->choose($code, 4242, $match));
+        self::assertTrue($login->approve($code, 4242, 7));
+    }
+
+    public function testAWrongChoiceCancelsTheCodeForGood(): void
+    {
+        ['code' => $code, 'secret' => $secret, 'match' => $match] = $this->created();
+        $login = $this->login();
+        $wrong = array_values(array_diff($login->choices($code), [$match]))[0];
+        $login->claimForTelegramUser($code, 4242);
+
+        self::assertSame(TelegramLogin::CHOICE_WRONG, $login->choose($code, 4242, $wrong));
+        self::assertSame(TelegramLogin::CHOICE_DONE, $login->choose($code, 4242, $match));
+        self::assertFalse($login->approve($code, 4242, 7));
+        self::assertFalse($login->claimForTelegramUser($code, 4242));
+        self::assertSame(TelegramLogin::STATE_EXPIRED, $login->poll($code, $secret)['state']);
+    }
+
+    public function testOnlyTheTelegramAccountThatOpenedTheCodeMayChoose(): void
+    {
+        ['code' => $code, 'secret' => $secret, 'match' => $match] = $this->created();
+        $login = $this->login();
+
+        self::assertSame(TelegramLogin::CHOICE_GONE, $login->choose($code, 4242, $match), 'nobody opened it yet');
+
+        $login->claimForTelegramUser($code, 4242);
+        self::assertSame(TelegramLogin::CHOICE_GONE, $login->choose($code, 6666, '0000'));
+        self::assertSame(TelegramLogin::STATE_PENDING, $login->poll($code, $secret)['state'], 'not cancelled');
+        self::assertSame(TelegramLogin::CHOICE_GONE, $login->choose('nope', 4242, $match));
     }
 
     public function testANewCodeIsPending(): void
@@ -338,6 +401,9 @@ final class TelegramLoginTest extends TestCase
         $login->approve($code, 98765, 17);
         $login->poll($code, 'wrong-secret');
         $login->poll(str_repeat('z', 24), $secret);
+        $match = $login->matchCode($code);
+        $login->choose($code, 98765, $match);
+        $login->choose($code, 4242, '0000');
 
         for ($i = 0; $i < 11; $i++) {
             $login->create('192.0.2.55');
@@ -349,6 +415,8 @@ final class TelegramLoginTest extends TestCase
             self::assertStringStartsWith('Telegram sign-in refused:', $message);
             self::assertStringNotContainsString($code, $message);
             self::assertStringNotContainsString($secret, $message);
+            self::assertStringNotContainsString($match, $message);
+            self::assertStringNotContainsString('0000', $message);
             self::assertStringNotContainsString('98765', $message);
             self::assertStringNotContainsString('192.0.2.55', $message);
             self::assertStringNotContainsString(self::BOT_TOKEN, $message);

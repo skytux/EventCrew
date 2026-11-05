@@ -22,12 +22,14 @@ use EventCrew\Telegram\TelegramClient;
  * - when it was made (a code lives 30 minutes);
  * - the Telegram user who opened it in the bot (only that user can approve);
  * - its state: pending, approved (with the person id) or used;
- * - a 4-digit match code. The page shows it and the bot shows it next to the
- *   sign-in button. A person who got the bot link from someone else sees no
- *   such code on their own screen, so they know not to press the button
- *   (that would sign in the other person's browser as them).
+ * - a 4-digit match code, and two wrong 4-digit codes. The page shows the
+ *   match code; the bot shows all three as buttons in random order. Only the
+ *   match code goes on: a person who got the bot link from someone else does
+ *   not know which button is right, and a wrong press cancels the code (so
+ *   they cannot sign in the other person's browser as themselves);
+ * - whether the right code was pressed already (a second press does nothing).
  *
- * A code is approved once and used once.
+ * A code is approved once and used once. A cancelled code is dead.
  */
 final class TelegramLogin
 {
@@ -49,6 +51,15 @@ final class TelegramLogin
     public const STATE_PENDING = 'pending';
     public const STATE_APPROVED = 'approved';
     public const STATE_USED = 'used';
+
+    /** A wrong code button was pressed in the bot: the code can no longer sign in. */
+    public const STATE_CANCELLED = 'cancelled';
+
+    /** What choose() answers. */
+    public const CHOICE_RIGHT = 'right';
+    public const CHOICE_WRONG = 'wrong';
+    public const CHOICE_DONE = 'done';
+    public const CHOICE_GONE = 'gone';
 
     /** What a poll answers when the code is gone, used or not this browser's. */
     public const STATE_EXPIRED = 'expired';
@@ -140,6 +151,8 @@ final class TelegramLogin
             'person_id' => 0,
             'telegram_user_id' => 0,
             'match' => $match,
+            'decoys' => self::decoysFor($match),
+            'chosen' => false,
         ]);
 
         return ['code' => $code, 'secret' => $secret, 'match' => $match];
@@ -154,6 +167,82 @@ final class TelegramLogin
         $record = $this->load($code);
 
         return null === $record ? '' : $record['match'];
+    }
+
+    /**
+     * The three codes the bot shows as buttons: the match code and the two
+     * wrong codes stored with it, in random order. The wrong codes stay the
+     * same each time, so opening the link twice does not show which code is
+     * the one both sets share. [] for a code that is unknown or expired.
+     *
+     * @return list<string>
+     */
+    public function choices(string $code): array
+    {
+        $record = $this->load($code);
+
+        if (null === $record || '' === $record['match']) {
+            return [];
+        }
+
+        if (2 !== count($record['decoys'])) {
+            $record['decoys'] = self::decoysFor($record['match']);
+            $this->save($code, $record);
+        }
+
+        $choices = [$record['match'], $record['decoys'][0], $record['decoys'][1]];
+
+        // Fisher-Yates with random_int.
+        for ($i = count($choices) - 1; $i > 0; $i--) {
+            $j = random_int(0, $i);
+            [$choices[$i], $choices[$j]] = [$choices[$j], $choices[$i]];
+        }
+
+        return $choices;
+    }
+
+    /**
+     * A code button was pressed in the bot by $telegramUserId:
+     * - CHOICE_GONE: the code is unknown or expired, or another Telegram
+     *   account opened it (nothing changes);
+     * - CHOICE_DONE: the right code was pressed already, or the code is
+     *   approved, used or cancelled (nothing changes);
+     * - CHOICE_WRONG: $choice is not the match code; the code is cancelled;
+     * - CHOICE_RIGHT: $choice is the match code; it is marked as pressed, and
+     *   the caller approves the code or starts the sign-up.
+     */
+    public function choose(string $code, int $telegramUserId, string $choice): string
+    {
+        $record = $this->load($code);
+
+        if (null === $record || '' === $record['match']) {
+            $this->refuse('the code is unknown or expired');
+
+            return self::CHOICE_GONE;
+        }
+
+        if ($telegramUserId <= 0 || $record['telegram_user_id'] !== $telegramUserId) {
+            $this->refuse('the code button was pressed by another Telegram account');
+
+            return self::CHOICE_GONE;
+        }
+
+        if (self::STATE_PENDING !== $record['state'] || $record['chosen']) {
+            return self::CHOICE_DONE;
+        }
+
+        if (! hash_equals($record['match'], $choice)) {
+            $record['state'] = self::STATE_CANCELLED;
+            $this->save($code, $record);
+            $this->refuse('a wrong code was pressed in the bot, the code is cancelled');
+
+            return self::CHOICE_WRONG;
+        }
+
+        $record['chosen'] = true;
+        $this->save($code, $record);
+
+        return self::CHOICE_RIGHT;
     }
 
     /**
@@ -308,7 +397,8 @@ final class TelegramLogin
      * unknown or older than TTL. One transient read.
      *
      * @return array{
-     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string
+     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string,
+     *     decoys: list<string>, chosen: bool
      * }|null
      */
     private function load(string $code): ?array
@@ -330,6 +420,8 @@ final class TelegramLogin
             'person_id' => (int) ($record['person_id'] ?? 0),
             'telegram_user_id' => (int) ($record['telegram_user_id'] ?? 0),
             'match' => (string) ($record['match'] ?? ''),
+            'decoys' => array_values(array_map('strval', (array) ($record['decoys'] ?? []))),
+            'chosen' => (bool) ($record['chosen'] ?? false),
         ];
 
         // Checked here too: an object cache may keep a transient past its expiry.
@@ -338,7 +430,8 @@ final class TelegramLogin
 
     /**
      * @param array{
-     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string
+     *     secret_hash: string, created: int, state: string, person_id: int, telegram_user_id: int, match: string,
+     *     decoys: list<string>, chosen: bool
      * } $record
      */
     private function save(string $code, array $record): void
@@ -354,6 +447,26 @@ final class TelegramLogin
     private function remaining(array $record): int
     {
         return $record['created'] + self::TTL - time();
+    }
+
+    /**
+     * Two different 4-digit codes, both different from $match.
+     *
+     * @return list<string>
+     */
+    private static function decoysFor(string $match): array
+    {
+        $decoys = [];
+
+        while (count($decoys) < 2) {
+            $decoy = (string) random_int(1000, 9999);
+
+            if ($decoy !== $match && ! in_array($decoy, $decoys, true)) {
+                $decoys[] = $decoy;
+            }
+        }
+
+        return $decoys;
     }
 
     /** Keyed by the code's hash, so the code itself is never written down. */
