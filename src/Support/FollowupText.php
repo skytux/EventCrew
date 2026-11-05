@@ -118,8 +118,8 @@ final class FollowupText
     /**
      * One time only: moves each text saved in the old wp-admin Settings
      * fields to the Messages page, as the text of the kind's template. The
-     * greeting and the sign-off are added around it in each language, as the
-     * email did. A kind that already has a text on the Messages page keeps
+     * greeting and the sign-off are added around it in each text's own
+     * language, as the email did. A kind that already has a text on the Messages page keeps
      * it. The old options are not deleted; they stay as a backup.
      */
     public static function moveSettingsText(): void
@@ -142,12 +142,24 @@ final class FollowupText
                 continue;
             }
 
-            $wrap = static fn (string $text, string $lang): string => '' === trim($text)
+            $wrap = static fn (string $text, ?string $lang): string => '' === trim($text)
                 ? ''
                 : (string) Language::run($lang, static fn (): string => MessageTemplates::followupBody($text));
+            // The source is in the language whose text equals it (the
+            // translation keeps the source as that language's text); when no
+            // text equals it, in the site's own language (null).
+            $sourceLang = null;
+
+            foreach ($old['texts'] as $lang => $text) {
+                if ('' !== trim($text) && trim($text) === trim($old['source'])) {
+                    $sourceLang = $lang;
+                    break;
+                }
+            }
+
             $body = $old;
-            // The source is wrapped in its own language when it is known.
-            $body['source'] = $wrap($old['source'], '' !== $old['lang'] ? $old['lang'] : Language::ENGLISH);
+            // The stored source language wins when it is known.
+            $body['source'] = $wrap($old['source'], '' !== $old['lang'] ? $old['lang'] : $sourceLang);
 
             foreach ($old['texts'] as $lang => $text) {
                 $body['texts'][$lang] = $wrap($text, $lang);

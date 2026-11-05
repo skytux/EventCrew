@@ -80,7 +80,7 @@ final class CrewAdminFollowup
         $map = [
             'admin_followup_saved' => __('Saved for the next post-event email only. The text is translated; both versions are shown below.', 'eventcrew'),
             'admin_followup_saved_untranslated' => __('Saved for the next post-event email only, but the text could not be translated, so both languages show it as you wrote it.', 'eventcrew'),
-            'admin_followup_cleared' => __('The one-time text is removed. The next post-event email uses the text in Settings.', 'eventcrew'),
+            'admin_followup_cleared' => __('The one-time text is removed. The next post-event email uses the text on the Messages page.', 'eventcrew'),
             'admin_followup_unknown' => __('Nothing was saved: choose the thank-you text or the sorry text.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong

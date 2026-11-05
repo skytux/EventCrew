@@ -1081,7 +1081,12 @@ final class FollowupMail
         $context = ['first_name' => $first, 'event' => $event, 'date' => $date];
 
         if ($text['template']) {
-            $body = trim((string) MessageTemplates::find($id)?->fill($text['text'], $context));
+            // No first name: the line with {first_name} (the greeting) is
+            // dropped, with the empty lines after it, so it never reads "Hi ,".
+            $main = '' === $first
+                ? (string) preg_replace('/^[^\n]*\{first_name\}[^\n]*\n?(?:[ \t]*\n)*/m', '', $text['text'])
+                : $text['text'];
+            $body = trim((string) MessageTemplates::find($id)?->fill($main, $context));
         } else {
             $hello = '' === $first
                 ? __('Hi,', 'eventcrew')

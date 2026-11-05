@@ -1132,6 +1132,32 @@ final class FollowupMailTest extends TestCase
         self::assertStringContainsString('Thank you for dancing with us – 14.11.2026', $came['subject']);
     }
 
+    /** With no first name, the greeting line of a Messages page text is dropped, never "Hi ,". */
+    public function testWithNoFirstNameTheGreetingLineIsDropped(): void
+    {
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = [
+            'body' => [
+                'source' => "Hi {first_name},\n\nThanks for {event}.\n\nWarmly,\nTest Site",
+                'texts' => [
+                    'fi' => "Hei {first_name},\n\nKiitos, {event}.\n\nLämpimästi,\nTest Site",
+                    'en' => "Hi {first_name},\n\nThanks for {event}.\n\nWarmly,\nTest Site",
+                ],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+        ];
+
+        $mail = $this->followup()->compose(self::NIGHT, true, '', 'b', 1);
+
+        self::assertStringStartsWith("Kiitos, Test Site.\n\nLämpimästi,\nTest Site", $mail['text']);
+        self::assertStringContainsString("\n\nThanks for Test Site.\n\nWarmly,\nTest Site", $mail['text']);
+        self::assertStringNotContainsString('Hi ,', $mail['text']);
+        self::assertStringNotContainsString('Hei ,', $mail['text']);
+
+        // With a name, the greeting stays.
+        $named = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+        self::assertStringStartsWith("Hei Anna,\n\nKiitos, Test Site.", $named['text']);
+    }
+
     /** A one-time text still wins over the Messages page text, for the next send only. */
     public function testTheOneTimeTextWinsOverTheMessagesPageText(): void
     {

@@ -1933,7 +1933,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                     <?php if (! $eventcrew_follow['enabled']) : ?>
                         <p class="eventcrew-muted"><?php esc_html_e('The post-event email is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                     <?php endif; ?>
-                    <p class="eventcrew-muted"><?php esc_html_e('The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text in Settings is used again. {event} becomes the event’s name and {date} its date.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <p class="eventcrew-muted"><?php esc_html_e('The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text on the Messages page is used again. {event} becomes the event’s name and {date} its date.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
                     <?php foreach ($eventcrew_follow_labels as $eventcrew_follow_variant => $eventcrew_follow_label) : ?>
                         <?php
                         $eventcrew_follow_text = $eventcrew_follow['texts'][$eventcrew_follow_variant];
@@ -1945,7 +1945,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                             if ($eventcrew_follow_text['next']) {
                                 esc_html_e('The next email uses a one-time text.', 'eventcrew');
                             } else {
-                                esc_html_e('The next email uses the text in Settings.', 'eventcrew');
+                                esc_html_e('The next email uses the text on the Messages page.', 'eventcrew');
                             }
                             ?>
                         </p>
