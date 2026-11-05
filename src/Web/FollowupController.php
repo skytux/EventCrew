@@ -23,7 +23,8 @@ use WP_REST_Request;
  * - ?eventcrew_optout=<token> on any page: "Don't send me these". Like the
  *   subscribe button, opening it shows a page that posts the token back at
  *   once; the POST puts the row's address on the do-not-send list and shows
- *   a short confirmation in the post-event email's languages.
+ *   a short confirmation in the post-event email's languages. A POST straight
+ *   to the link (a mail app's one-click unsubscribe, RFC 8058) does the same.
  * - /wp-json/eventcrew/v1/followup?do=stop&token=…: the Stop link in the
  *   organizers' preview. Opening it shows a button (a mail scanner that
  *   opens links must not stop the email); pressing it stops that night's
@@ -169,15 +170,9 @@ final class FollowupController
     {
         $method = isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET';
         $isPost = 'POST' === strtoupper($method);
-        // phpcs:disable WordPress.Security.NonceVerification -- a signed link from an email; the token is the check.
-        $raw = $isPost && isset($_POST[FollowupMail::OPTOUT_ARG])
-            ? $_POST[FollowupMail::OPTOUT_ARG]
-            : ($_GET[FollowupMail::OPTOUT_ARG] ?? '');
-        // phpcs:enable WordPress.Security.NonceVerification
-        $page = $this->respondOptOut(
-            $isPost ? 'POST' : 'GET',
-            preg_replace('/[^A-Za-z0-9_.\-]/', '', (string) wp_unslash($raw)) ?? ''
-        );
+        // phpcs:ignore WordPress.Security.NonceVerification -- a signed link from an email; the token is the check.
+        $token = self::optOutToken($isPost, wp_unslash($_GET), wp_unslash($_POST));
+        $page = $this->respondOptOut($isPost ? 'POST' : 'GET', $token);
 
         nocache_headers();
         header('X-Robots-Tag: noindex, nofollow', true);
@@ -187,6 +182,25 @@ final class FollowupController
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo $page['html'];
         exit;
+    }
+
+    /**
+     * The "Don't send me these" token of a request: the form's posted one,
+     * else the one in the link. The one-click unsubscribe of a mail app
+     * (List-Unsubscribe-Post, RFC 8058) is a POST to the link itself with
+     * only "List-Unsubscribe=One-Click" in the body, so its token is the
+     * link's, and the POST puts the address on the list with no page between.
+     *
+     * @param array<mixed> $get
+     * @param array<mixed> $post
+     */
+    public static function optOutToken(bool $isPost, array $get, array $post): string
+    {
+        $raw = $isPost && isset($post[FollowupMail::OPTOUT_ARG])
+            ? $post[FollowupMail::OPTOUT_ARG]
+            : ($get[FollowupMail::OPTOUT_ARG] ?? '');
+
+        return is_string($raw) ? (preg_replace('/[^A-Za-z0-9_.\-]/', '', $raw) ?? '') : '';
     }
 
     /**

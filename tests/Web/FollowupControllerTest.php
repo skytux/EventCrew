@@ -168,6 +168,39 @@ final class FollowupControllerTest extends TestCase
         self::assertSame(['anna@example.test'], array_keys($this->options[FollowupOptOut::OPTION]));
     }
 
+    /**
+     * A mail app's one-click unsubscribe (RFC 8058) posts only
+     * "List-Unsubscribe=One-Click" to the link itself: the token comes from
+     * the link, and the POST puts the address on the list with no page between.
+     */
+    public function testAOneClickPostToTheLinkPutsTheAddressOnTheList(): void
+    {
+        $token = self::optOutToken('b', 7);
+        parse_str((string) parse_url(FollowupMail::optOutUrl('b', 7), PHP_URL_QUERY), $get);
+
+        $read = FollowupController::optOutToken(true, $get, ['List-Unsubscribe' => 'One-Click']);
+        self::assertSame($token, $read);
+
+        $this->wpdb->nextRows[] = ['name' => 'Anna Virtanen', 'email' => 'anna@example.test']; // holder()
+        $page = $this->controller()->respondOptOut('POST', $read);
+
+        self::assertSame(200, $page['status']);
+        self::assertStringNotContainsString('<form', $page['html']);
+        self::assertSame(['anna@example.test'], array_keys($this->options[FollowupOptOut::OPTION]));
+    }
+
+    public function testTheOptOutTokenIsReadFromTheFormOrTheLink(): void
+    {
+        $get = [FollowupMail::OPTOUT_ARG => 'from-link'];
+        $post = [FollowupMail::OPTOUT_ARG => 'from-form'];
+
+        self::assertSame('from-form', FollowupController::optOutToken(true, $get, $post));
+        self::assertSame('from-link', FollowupController::optOutToken(false, $get, $post), 'a GET ignores the body');
+        self::assertSame('', FollowupController::optOutToken(true, [], []));
+        self::assertSame('', FollowupController::optOutToken(false, [FollowupMail::OPTOUT_ARG => ['x']], []));
+        self::assertSame('ab.c', FollowupController::optOutToken(false, [FollowupMail::OPTOUT_ARG => 'a<b>.c'], []));
+    }
+
     /** The page is in the post-event email's languages: only the main one with the Hybrid tick off. */
     public function testTheOptOutPageIsInTheSiteLanguage(): void
     {

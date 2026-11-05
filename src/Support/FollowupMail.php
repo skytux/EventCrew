@@ -461,7 +461,9 @@ final class FollowupMail
                 $mail['html'],
                 $mail['text'],
                 self::footer(),
-                false
+                false,
+                '',
+                $mail['headers']
             );
 
             if ($one) {
@@ -702,6 +704,26 @@ final class FollowupMail
         return true;
     }
 
+    /**
+     * The List-Unsubscribe headers for the "Don't send me these" link $url
+     * (RFC 2369 and RFC 8058): mail apps show their own unsubscribe button,
+     * and a one-click POST to $url puts the address on the do-not-send list.
+     * None when $url is not https, which one-click requires.
+     *
+     * @return list<string>
+     */
+    public static function unsubscribeHeaders(string $url): array
+    {
+        if (! str_starts_with($url, 'https://')) {
+            return [];
+        }
+
+        return [
+            'List-Unsubscribe: <' . $url . '>',
+            'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+        ];
+    }
+
     /** Whether $token is a "Don't send me these" token this site signed. Changes nothing. */
     public static function isOptOutToken(string $token): bool
     {
@@ -760,10 +782,11 @@ final class FollowupMail
     }
 
     /**
-     * One email: subject, the HTML content for the email template and the
-     * plain-text alternative. $kind and $rowId go into the counted links.
+     * One email: subject, the HTML content for the email template, the
+     * plain-text alternative and the List-Unsubscribe headers of its "Don't
+     * send me these" link. $kind and $rowId go into the counted links.
      *
-     * @return array{subject: string, html: string, text: string}
+     * @return array{subject: string, html: string, text: string, headers: list<string>}
      */
     public function compose(string $date, bool $came, string $name, string $kind, int $rowId): array
     {
@@ -859,6 +882,7 @@ final class FollowupMail
             'subject' => $both('subject') . ' – ' . $shortDate,
             'html' => $html,
             'text' => $text,
+            'headers' => self::unsubscribeHeaders($optOut),
         ];
     }
 
@@ -1013,7 +1037,9 @@ final class FollowupMail
                 $mail['html'],
                 $mail['text'],
                 self::footer(),
-                false
+                false,
+                '',
+                $mail['headers']
             );
             $tried++;
             $failed += $sent ? 0 : 1;

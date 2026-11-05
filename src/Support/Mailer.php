@@ -104,6 +104,11 @@ final class Mailer
      * $corner is HTML put under the template's sign-off, above the footer
      * line: the ticket email's corner with the holder's name and the small
      * QR code (TicketMail::compose()).
+     *
+     * $headers are added to the mail's headers (the post-event email's
+     * List-Unsubscribe).
+     *
+     * @param array<int, string> $headers
      */
     public function toTicketHolder(
         string $to,
@@ -112,7 +117,8 @@ final class Mailer
         string $text,
         string $footer,
         bool $lightOnly = true,
-        string $corner = ''
+        string $corner = '',
+        array $headers = []
     ): bool {
         $board = $this->boardUrl();
         // These emails are Finnish, then English: the closing shows both sign-offs.
@@ -138,7 +144,12 @@ final class Mailer
         add_action('phpmailer_init', $parts);
 
         try {
-            $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+            $sent = (bool) wp_mail(
+                $to,
+                $subject,
+                $html,
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+            );
         } catch (\Throwable $error) {
             $this->logger->error(sprintf(
                 'Email "%s" to a ticket holder failed: %s: %s',
