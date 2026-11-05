@@ -259,6 +259,44 @@ final class SignupControllerTest extends TestCase
         self::assertStringNotContainsString('ECSTATIC DANCE', $html);
     }
 
+    /**
+     * The whole crew page for a signed-in person renders through to its last
+     * line: a fatal error or an exception anywhere in templates/public/signup.php
+     * fails this test instead of reaching the live page.
+     */
+    public function testTheWholePageRendersForASignedInPerson(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        // WordPress's checked() prints the attribute; the template uses only that form.
+        Functions\when('checked')->alias(static function ($checked, $current = true): void {
+            if ((string) $checked === (string) $current) {
+                echo " checked='checked'";
+            }
+        });
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;               // pageLanguage: currentPerson
+        $this->wpdb->nextRows[] = $person;               // viewModel: currentPerson
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('id="eventcrew-board"', $html);
+        self::assertStringContainsString('<nav class="eventcrew-tabs"', $html);
+        self::assertStringContainsString('Sam', $html);
+        // The template's last line came out: nothing stopped it half-way.
+        self::assertStringEndsWith('</script>', rtrim($html));
+    }
+
     /** The WordPress functions a full page render touches. */
     private function stubPageRender(): void
     {
