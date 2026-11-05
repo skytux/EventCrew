@@ -5517,14 +5517,8 @@ msgstr "Tekstejä ei käännetty, koska kielimallia ei ole asetettu. Tyhjissä k
 msgid "The language model could not translate the texts (%s). The language fields keep what they had, and empty ones now hold the text as you wrote it."
 msgstr "Kielimalli ei voinut kääntää tekstejä (%s). Kielikentät pitävät entisen sisältönsä, ja tyhjissä on nyt teksti sellaisena kuin kirjoitit sen."
 
-msgid "Translation"
-msgstr "Käännös"
-
 msgid "Translate texts automatically with the language model"
 msgstr "Käännä tekstit automaattisesti kielimallilla"
-
-msgid "For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each language field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it."
-msgstr "Teksteille, jotka kirjoitat kerran millä kielellä tahansa: botin Tietoja ja Kuvaus sekä järjestäjien teksti tulevien tapahtumien tiedotteessa. Kielimalli täyttää jokaisen kielikentän, jota et ole muokannut käsin. Kun tämä on pois päältä, kielimallille ei lähetetä mitään, ja tyhjä kielikenttä saa tekstin sellaisena kuin kirjoitit sen."
 
 msgid "Send the preview"
 msgstr "Lähetä esikatselu"

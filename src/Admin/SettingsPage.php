@@ -443,7 +443,6 @@ final class SettingsPage
             'default_pages' => $defaults,
             'test_url' => $link('eventcrew_assistant_test'),
             'remove_key_url' => $link('eventcrew_assistant_remove_key'),
-            'translate_auto' => TranslatedText::autoEnabled(),
         ];
     }
 
@@ -535,9 +534,6 @@ final class SettingsPage
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
-        // Before the roles and the other texts, so they are translated (or
-        // not) by the new switch.
-        $this->saveTranslateSwitch();
         Roles::save($this->submittedRoles());
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
@@ -916,22 +912,6 @@ final class SettingsPage
     private function translator(): TranslatedText
     {
         return new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger());
-    }
-
-    /**
-     * The switch "Translate texts automatically with the language model".
-     * Saved only when its form section was posted (the hidden presence
-     * field), so a form without it cannot switch it off.
-     */
-    private function saveTranslateSwitch(): void
-    {
-        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        if (! isset($_POST['translate_auto_present'])) {
-            return;
-        }
-
-        update_option(TranslatedText::AUTO_OPTION, isset($_POST['translate_auto']) ? '1' : '0');
-        // phpcs:enable WordPress.Security.NonceVerification.Missing
     }
 
     /**
