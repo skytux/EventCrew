@@ -627,21 +627,39 @@ final class TranslatedText
      * it reads "Finnish, detected"), then one field per other language, each
      * with its "edited by hand" mark, and the "Translate again" button.
      * Posts as {$name}[source], {$name}[lang], {$name}[texts][lang] and
-     * {$name}[again]. $maxLength 0 means no limit.
+     * {$name}[again]. $maxLength 0 means no limit. $placeholder, when not
+     * '', is shown in the empty source field.
      *
      * @param array<string, mixed>|string $value
      */
-    public static function field(string $name, string $id, array|string $value, int $maxLength, bool $multiline): void
-    {
+    public static function field(
+        string $name,
+        string $id,
+        array|string $value,
+        int $maxLength,
+        bool $multiline,
+        string $placeholder = ''
+    ): void {
         $value = self::normalize($value);
         $limit = $maxLength > 0 ? sprintf(' maxlength="%d"', $maxLength) : '';
-        $input = static function (string $fieldName, string $fieldId, string $text) use ($limit, $multiline): void {
+        $input = static function (
+            string $fieldName,
+            string $fieldId,
+            string $text,
+            string $hint = ''
+        ) use (
+            $limit,
+            $multiline
+        ): void {
+            $hint = '' === $hint ? '' : sprintf(' placeholder="%s"', esc_attr($hint));
+
             if ($multiline) {
                 printf(
-                    '<textarea id="%s" name="%s" rows="4"%s class="large-text">%s</textarea>',
+                    '<textarea id="%s" name="%s" rows="4"%s%s class="large-text">%s</textarea>',
                     esc_attr($fieldId),
                     esc_attr($fieldName),
                     $limit, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from an int above.
+                    $hint, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
                     esc_textarea($text)
                 );
 
@@ -649,10 +667,11 @@ final class TranslatedText
             }
 
             printf(
-                '<input type="text" id="%s" name="%s"%s value="%s" class="large-text">',
+                '<input type="text" id="%s" name="%s"%s%s value="%s" class="large-text">',
                 esc_attr($fieldId),
                 esc_attr($fieldName),
                 $limit, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from an int above.
+                $hint, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
                 esc_attr($text)
             );
         };
@@ -665,7 +684,7 @@ final class TranslatedText
             esc_attr($id),
             esc_html__('Write in any language', 'eventcrew')
         );
-        $input($name . '[source]', $id, $value['source']);
+        $input($name . '[source]', $id, $value['source'], $placeholder);
         printf('<p class="description"><span class="ec-char-count" data-ec-for="%s"></span></p>', esc_attr($id));
 
         printf(
