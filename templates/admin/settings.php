@@ -2528,6 +2528,16 @@ if (! defined('ABSPATH')) {
 
     <div class="ec-tab-panel" data-ec-tab="telegram">
     <h2><?php esc_html_e('Webhook', 'eventcrew'); ?></h2>
+    <?php
+    // Re-installing after the address moved runs in the background.
+    $eventcrew_webhook_badge = \EventCrew\Support\BackgroundJobs::badge(
+        \EventCrew\Support\BackgroundJobs::latest(\EventCrew\Admin\SettingsPage::WEBHOOK_TARGET)
+    );
+    if ('' !== $eventcrew_webhook_badge) {
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
+        echo '<p>' . $eventcrew_webhook_badge . '</p>';
+    }
+    ?>
     <?php if (! $telegram['configured']) : ?>
         <p class="description">
             <?php esc_html_e('Add a bot token above and save before installing the webhook.', 'eventcrew'); ?>

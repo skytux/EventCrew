@@ -582,7 +582,7 @@ final class BackgroundJobs
     {
         return match ($kind) {
             'event_ai_rewrite' => __('Writing…', 'eventcrew'),
-            'telegram_profile' => __('Saving to Telegram…', 'eventcrew'),
+            'telegram_profile', 'telegram_webhook' => __('Saving to Telegram…', 'eventcrew'),
             default => __('Translating…', 'eventcrew'),
         };
     }

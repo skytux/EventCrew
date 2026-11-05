@@ -411,6 +411,41 @@ final class SettingsPageTest extends TelegramTestCase
      * page waits. The role is stored with its source, and the translation is
      * a background job for its Translations page row.
      */
+    public function testAMovedWebhookAddressIsReinstalledInTheBackground(): void
+    {
+        $this->readyToInstall();
+
+        // Switching to the fallback address moves the door; the save stops at
+        // the queue write and has not called Telegram.
+        $this->saveUntil(
+            ['telegram_use_fallback' => '1'],
+            \EventCrew\Support\BackgroundJobs::OPTION
+        );
+
+        self::assertSame([], $this->webhookCalls());
+        $job = \EventCrew\Support\BackgroundJobs::latest(SettingsPage::WEBHOOK_TARGET);
+        self::assertSame(SettingsPage::WEBHOOK_JOB, $job['kind'] ?? null);
+
+        // The job installs the webhook.
+        $this->telegramResults['getMe'] = ['username' => 'crewbot'];
+        self::assertSame(['ok' => true, 'error' => ''], $this->page()->webhookJob([]));
+        self::assertSame(['deleteWebhook', 'setWebhook'], $this->webhookCalls());
+    }
+
+    public function testAFailedWebhookJobSaysWhy(): void
+    {
+        $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = 'secret';
+        \Brain\Monkey\Functions\when('rest_url')->alias(
+            static fn (string $path = ''): string => 'http://site.test/wp-json/' . $path
+        );
+
+        $result = $this->page()->webhookJob([]);
+
+        self::assertFalse($result['ok']);
+        self::assertStringStartsWith('The webhook could not be re-installed: WordPress generated', $result['error']);
+        self::assertSame([], $this->webhookCalls());
+    }
+
     public function testANewRoleIsTranslatedInTheBackground(): void
     {
         $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
