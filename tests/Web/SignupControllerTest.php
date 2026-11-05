@@ -1552,7 +1552,7 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('data-eventcrew-tg-wait hidden', $html);
         self::assertStringContainsString('>Your code<', $html);
         self::assertSame(2, substr_count($html, '<span class="eventcrew-tg-pair" data-eventcrew-tg-pair></span>'));
-        self::assertStringContainsString('Telegram shows three codes. Press this one.', $html);
+        self::assertStringContainsString('In Telegram, press Start. It then shows three codes: press this one.', $html);
         self::assertMatchesRegularExpression(
             '/<a class="tg-auth-button" href="#" target="_blank" rel="noopener" data-eventcrew-tg-open>\s*'
             . 'Open Telegram\s*<\/a>/',

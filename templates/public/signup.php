@@ -172,7 +172,7 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <span class="eventcrew-tg-pair" data-eventcrew-tg-pair></span>
                     </p>
                     <p class="eventcrew-tg-hint">
-                        <?php esc_html_e('Telegram shows three codes. Press this one.', 'eventcrew'); ?>
+                        <?php esc_html_e('In Telegram, press Start. It then shows three codes: press this one.', 'eventcrew'); ?>
                     </p>
                     <p class="eventcrew-tg-open" data-eventcrew-tg-open-row>
                         <a class="tg-auth-button" href="#" target="_blank" rel="noopener" data-eventcrew-tg-open>

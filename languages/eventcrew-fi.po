@@ -7820,8 +7820,8 @@ msgstr "Päivitä muokkaa taulua sen nykyisellä paikalla, joten kukaan ryhmäss
 msgid "Your code"
 msgstr "Koodisi"
 
-msgid "Telegram shows three codes. Press this one."
-msgstr "Telegram näyttää kolme koodia. Paina tätä."
+msgid "In Telegram, press Start. It then shows three codes: press this one."
+msgstr "Paina Telegramissa Start. Se näyttää sitten kolme koodia: paina tätä."
 
 msgid "Open Telegram"
 msgstr "Avaa Telegram"
