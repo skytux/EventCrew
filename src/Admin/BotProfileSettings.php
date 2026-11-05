@@ -6,6 +6,7 @@ namespace EventCrew\Admin;
 
 use EventCrew\Support\Language;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRow;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -110,7 +111,7 @@ final class BotProfileSettings
     /**
      * The stored value of $field.
      *
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
      */
     public static function value(string $field): array
     {
@@ -139,7 +140,7 @@ final class BotProfileSettings
         $failed = [];
         $translateError = '';
 
-        foreach (self::FIELDS as $field => [$option, $method, $max, $multiline]) {
+        foreach (self::FIELDS as $field => [$option, , $max, $multiline]) {
             $input = TranslatedText::fromPost($posted[$field] ?? null, $multiline);
 
             if (null === $input) {
@@ -160,32 +161,118 @@ final class BotProfileSettings
                 $translateError = $result['error'];
             }
 
-            foreach (TranslatedText::LANGUAGES as $lang) {
-                $key = 'telegram_' . $field . '_' . $lang;
-                $text = $result['value']['texts'][$lang];
-
-                if ($text === (string) ($sent[$key] ?? '')) {
-                    continue;
-                }
-
-                $changed++;
-                $code = self::DEFAULT_LANGUAGE === $lang ? '' : $lang;
-                $answer = 'setMyDescription' === $method
-                    ? $this->telegram->setMyDescription($text, $code)
-                    : $this->telegram->setMyShortDescription($text, $code);
-
-                if (null === $answer) {
-                    $failed[] = self::label($field, $lang) . ': ' . $this->telegram->lastError();
-
-                    continue;
-                }
-
-                $sent[$key] = $text;
-            }
+            $changed += $this->push($field, $result['value'], $sent, $failed);
         }
 
         update_option(self::SENT_OPTION, $sent, false);
 
+        return $this->outcome($changed, $failed, $translateError);
+    }
+
+    /**
+     * Stores the value of $field as edited on the Translations page and
+     * sends each changed language text to Telegram.
+     *
+     * @param array<string, mixed> $value A TranslatedText value.
+     * @return array{ok: bool, message: string} As save().
+     */
+    public function store(string $field, array $value): array
+    {
+        if (! isset(self::FIELDS[$field])) {
+            return ['ok' => false, 'message' => ''];
+        }
+
+        $value = TranslatedText::normalize($value);
+        update_option(self::FIELDS[$field][0], $value);
+
+        $sent = get_option(self::SENT_OPTION, []);
+        $sent = is_array($sent) ? $sent : [];
+        $failed = [];
+        $changed = $this->push($field, $value, $sent, $failed);
+        update_option(self::SENT_OPTION, $sent, false);
+
+        return $this->outcome($changed, $failed, '');
+    }
+
+    /**
+     * Both texts as rows of the wp-admin Translations page
+     * (TranslationRegistry). Saving a row also sends it to Telegram.
+     *
+     * @return list<TranslationRow>
+     */
+    public function translationRows(): array
+    {
+        $labels = [
+            'about' => __('Telegram bot: About', 'eventcrew'),
+            'description' => __('Telegram bot: Description', 'eventcrew'),
+        ];
+        $rows = [];
+
+        foreach (self::FIELDS as $field => [, , $max, $multiline]) {
+            $rows[] = new TranslationRow(
+                'telegram.' . $field,
+                $labels[$field],
+                TranslationRow::GROUP_TELEGRAM,
+                self::value($field),
+                function (array $value) use ($field): void {
+                    $this->store($field, $value);
+                },
+                $max,
+                $multiline
+            );
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Sends each language text of $field that differs from what Telegram
+     * last accepted ($sent, updated). Adds each refusal to $failed.
+     *
+     * @param array{texts: array<string, string>} $value
+     * @param array<string, mixed> $sent
+     * @param list<string> $failed
+     * @return int How many texts were sent.
+     */
+    private function push(string $field, array $value, array &$sent, array &$failed): int
+    {
+        $method = self::FIELDS[$field][1];
+        $changed = 0;
+
+        foreach (TranslatedText::languages() as $lang) {
+            $key = 'telegram_' . $field . '_' . $lang;
+            $text = $value['texts'][$lang] ?? '';
+
+            if ($text === (string) ($sent[$key] ?? '')) {
+                continue;
+            }
+
+            $changed++;
+            $code = self::DEFAULT_LANGUAGE === $lang ? '' : $lang;
+            $answer = 'setMyDescription' === $method
+                ? $this->telegram->setMyDescription($text, $code)
+                : $this->telegram->setMyShortDescription($text, $code);
+
+            if (null === $answer) {
+                $failed[] = self::label($field, $lang) . ': ' . $this->telegram->lastError();
+
+                continue;
+            }
+
+            $sent[$key] = $text;
+        }
+
+        return $changed;
+    }
+
+    /**
+     * The result of a save: ok, and the notice text.
+     *
+     * @param list<string> $failed
+     * @return array{ok: bool, message: string}
+     */
+    private function outcome(int $changed, array $failed, string $translateError): array
+    {
         if ([] !== $failed) {
             $message = sprintf(
                 /* translators: %s: each text Telegram refused, with Telegram's reason */
@@ -213,7 +300,9 @@ final class BotProfileSettings
             'about_en' => __('About (English)', 'eventcrew'),
             'about_fi' => __('About (Finnish)', 'eventcrew'),
             'description_en' => __('Description (English)', 'eventcrew'),
-            default => __('Description (Finnish)', 'eventcrew'),
+            'description_fi' => __('Description (Finnish)', 'eventcrew'),
+            default => ('about' === $field ? __('About', 'eventcrew') : __('Description', 'eventcrew'))
+                . ' (' . TranslatedText::label($lang) . ')',
         };
     }
 }

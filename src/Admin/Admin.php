@@ -239,6 +239,21 @@ final class Admin
         );
 
         add_action(
+            'admin_post_' . TranslationsPage::SAVE_SETTINGS_ACTION,
+            [$this->container->get(TranslationsPage::class), 'saveSettings']
+        );
+
+        add_action(
+            'admin_post_' . TranslationsPage::SAVE_ROW_ACTION,
+            [$this->container->get(TranslationsPage::class), 'saveRow']
+        );
+
+        add_action(
+            'admin_post_' . TranslationsPage::TRANSLATE_MISSING_ACTION,
+            [$this->container->get(TranslationsPage::class), 'translateMissing']
+        );
+
+        add_action(
             'admin_post_' . NewsletterPage::COPY_ACTION,
             [$this->container->get(NewsletterPage::class), 'viewCopy']
         );
@@ -333,6 +348,15 @@ final class Admin
             self::CAPABILITY,
             NewsletterPage::PAGE_SLUG,
             [$this->container->get(NewsletterPage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Translations', 'eventcrew'),
+            __('Translations', 'eventcrew'),
+            self::CAPABILITY,
+            TranslationsPage::PAGE_SLUG,
+            [$this->container->get(TranslationsPage::class), 'render']
         );
 
         add_submenu_page(

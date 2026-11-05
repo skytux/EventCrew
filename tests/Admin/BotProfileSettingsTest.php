@@ -91,6 +91,7 @@ final class BotProfileSettingsTest extends TelegramTestCase
         self::assertSame(
             [
                 'source' => 'Crew bot',
+                'lang' => '',
                 'texts' => ['fi' => 'Tiimibotti', 'en' => 'Crew bot'],
                 'manual' => ['fi' => true, 'en' => true],
             ],
@@ -99,6 +100,7 @@ final class BotProfileSettingsTest extends TelegramTestCase
         self::assertSame(
             [
                 'source' => '',
+                'lang' => '',
                 'texts' => ['fi' => "Rivi 1\nRivi 2", 'en' => ''],
                 'manual' => ['fi' => true, 'en' => false],
             ],

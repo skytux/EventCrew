@@ -177,8 +177,8 @@ final class NewsletterText
         }
 
         return [
-            'fi' => $result['texts'][Language::FINNISH],
-            'en' => $result['texts'][Language::ENGLISH],
+            'fi' => $result['texts'][Language::FINNISH] ?? $text,
+            'en' => $result['texts'][Language::ENGLISH] ?? $text,
             'source' => $result['lang'],
             'translated' => true,
             'error' => '',

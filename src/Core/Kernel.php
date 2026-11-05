@@ -12,6 +12,7 @@ use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Admin\TasksPage;
+use EventCrew\Admin\TranslationsPage;
 use EventCrew\Admin\View;
 use EventCrew\Admin\PeoplePage;
 use EventCrew\Database\Schema;
@@ -80,6 +81,8 @@ use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardDjText;
@@ -1499,6 +1502,39 @@ final class Kernel
                 $container->get(View::class),
                 $container->get(NewsletterSubscriberRepository::class),
                 $container->get(NewsletterHistoryRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            TranslatedText::class,
+            fn (Container $container) => new TranslatedText(
+                $container->get(LlmClient::class),
+                $container->get(Logger::class)
+            )
+        );
+
+        // Every text on the Translations page. A part that adds translatable
+        // texts adds its provider here.
+        $this->container->singleton(
+            TranslationRegistry::class,
+            function (Container $container): TranslationRegistry {
+                $registry = new TranslationRegistry($container->get(TranslatedText::class));
+                $botProfile = new BotProfileSettings(
+                    $container->get(TelegramClient::class),
+                    $container->get(TranslatedText::class)
+                );
+                $registry->add([$botProfile, 'translationRows']);
+                $registry->add([FollowupText::class, 'translationRows']);
+
+                return $registry;
+            }
+        );
+
+        $this->container->singleton(
+            TranslationsPage::class,
+            fn (Container $container) => new TranslationsPage(
+                $container->get(View::class),
+                $container->get(TranslationRegistry::class)
             )
         );
 

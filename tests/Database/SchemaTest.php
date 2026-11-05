@@ -179,16 +179,20 @@ final class SchemaTest extends TestCase
 
     public function testSkipsMigrationWhenTheStoredVersionIsCurrent(): void
     {
-        Functions\expect('get_option')
-            ->once()
-            ->with(Schema::VERSION_OPTION, '')
-            ->andReturn(Schema::DB_VERSION);
+        $reads = [];
+        Functions\when('get_option')->alias(
+            static function (string $name, mixed $default = false) use (&$reads): mixed {
+                $reads[] = [$name, $default];
+
+                return Schema::DB_VERSION;
+            }
+        );
 
         // A migration would have to call update_option; never stubbing it
         // means this test fails loudly if maybeMigrate() runs anyway.
         Schema::maybeMigrate();
 
-        self::assertTrue(true);
+        self::assertSame([[Schema::VERSION_OPTION, '']], $reads);
     }
 
     public function testThePeopleTableHasTheRoleNoticesColumn(): void

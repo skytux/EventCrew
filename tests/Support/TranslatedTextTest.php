@@ -68,12 +68,13 @@ final class TranslatedTextTest extends TestCase
     /**
      * @param array<string, string> $texts
      * @param array<string, bool> $manual
-     * @return array{source: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
      */
     private static function value(string $source, array $texts, array $manual = []): array
     {
         return [
             'source' => $source,
+            'lang' => '',
             'texts' => $texts + ['fi' => '', 'en' => ''],
             'manual' => $manual + ['fi' => false, 'en' => false],
         ];
