@@ -126,7 +126,7 @@ final class FollowupCommandTest extends TelegramTestCase
         self::assertStringContainsString("In Finnish:\nMoi", $reply);
         self::assertStringContainsString("In English:\nHi", $reply);
         self::assertStringContainsString('uses a one-time text', $reply);
-        self::assertStringContainsString('uses the text in Settings', $reply, 'the sorry text');
+        self::assertStringContainsString('uses the text on the Messages page', $reply, 'the sorry text');
         self::assertStringContainsString('We missed you at {event}', $reply);
     }
 

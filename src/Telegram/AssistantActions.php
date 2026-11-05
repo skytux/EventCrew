@@ -136,7 +136,7 @@ final class AssistantActions
             $list[] = self::entry(
                 '/followup',
                 'show the two texts the next post-event email uses (thank-you to those who came, sorry text to'
-                    . ' those who did not), and whether each is a one-time text or the one in Settings'
+                    . ' those who did not), and whether each is a one-time text or the one on the Messages page'
             );
             $list[] = self::entry(
                 '/followup <came|missed> <text>',
@@ -149,7 +149,7 @@ final class AssistantActions
             $list[] = self::entry(
                 '/followup [came|missed] clear',
                 'remove the one-time text of the next post-event email (one version, or both when no version'
-                    . ' is given), so it uses the text in Settings',
+                    . ' is given), so it uses the text on the Messages page',
                 true
             );
         }

@@ -14,7 +14,7 @@ use EventCrew\Support\Language;
  *
  * - "/followup" alone shows both texts the next email uses (the thank-you to
  *   those who came, the sorry text to those who did not), in both languages,
- *   and whether each is a one-time text or the one in Settings.
+ *   and whether each is a one-time text or the one on the Messages page.
  * - "/followup came <text>" or "/followup missed <text>" saves a one-time text
  *   for that version. It is translated (FollowupText, the same way as the
  *   newsletter's text) and the answer shows both languages.
@@ -65,7 +65,7 @@ final class FollowupCommand
             $this->telegram->sendMessage(
                 $chatId,
                 __(
-                    'Both one-time texts are removed. The next post-event email uses the texts in Settings.',
+                    'Both one-time texts are removed. The next post-event email uses the texts on the Messages page.',
                     'eventcrew'
                 )
             );
@@ -89,7 +89,7 @@ final class FollowupCommand
                 $chatId,
                 self::label($variant) . "\n"
                     . __(
-                        'The one-time text is removed. The next post-event email uses the text in Settings.',
+                        'The one-time text is removed. The next post-event email uses the text on the Messages page.',
                         'eventcrew'
                     )
             );
@@ -119,7 +119,7 @@ final class FollowupCommand
             $next = $this->text->next($variant);
             $part = self::label($variant) . "\n"
                 . (null === $next
-                    ? __('The next email uses the text in Settings.', 'eventcrew')
+                    ? __('The next email uses the text on the Messages page.', 'eventcrew')
                     : __('The next email uses a one-time text.', 'eventcrew'))
                 . "\n\n" . self::both(
                     $this->text->text($variant, Language::FINNISH)['text'],

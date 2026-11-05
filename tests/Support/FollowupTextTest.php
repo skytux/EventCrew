@@ -182,6 +182,22 @@ final class FollowupTextTest extends TestCase
         );
     }
 
+    /** A source written in Finnish gets the Finnish greeting and sign-off, not the English ones. */
+    public function testTheMovedSourceGetsTheGreetingOfItsOwnLanguage(): void
+    {
+        $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::MISSED]] = [
+            'source' => 'Kaipasimme sinua!',
+            'texts' => ['fi' => 'Kaipasimme sinua!', 'en' => 'We missed you!'],
+        ];
+
+        FollowupText::moveSettingsText();
+
+        $body = $this->options[MessageTemplates::OPTION_PREFIX . 'followup_missed']['body'];
+        self::assertSame("Hei {first_name},\n\nKaipasimme sinua!\n\nLämpimästi,\nTest Site", $body['source']);
+        self::assertSame("Hei {first_name},\n\nKaipasimme sinua!\n\nLämpimästi,\nTest Site", $body['texts']['fi']);
+        self::assertSame("Hi {first_name},\n\nWe missed you!\n\nWarmly,\nTest Site", $body['texts']['en']);
+    }
+
     /** A kind that already has a Messages page text keeps it; settings and subject stay. */
     public function testTheMoveKeepsATextAlreadyOnTheMessagesPage(): void
     {
