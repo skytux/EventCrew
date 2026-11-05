@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.57
+Stable tag: 1.140.58
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.58 =
+The "A spot just opened" message after a late cancellation is no longer sent at once, at any hour. It now goes out from the hourly job inside the send window, and is dropped if the place is filled again, the task has started or was deleted. Blocked people are not told.
 
 = 1.140.57 =
 Saving the roster no longer undoes marks made after you opened the page. Before, Update attendance wrote every row shown, so a door check-in, a cancellation or a takeover made in the meantime went back to the old status. Now only the rows you changed are saved; a row someone else changed since you opened the page is left alone, and the notice says how many and asks you to reload. Applies to the wp-admin Roster page and the crew app.
@@ -1385,6 +1388,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.58 =
+No settings change.
 
 = 1.140.57 =
 No settings change.
