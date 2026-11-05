@@ -17,6 +17,7 @@ use EventCrew\Support\EventName;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
@@ -859,23 +860,11 @@ final class CrewAdminController
             )
         );
 
-        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        $body = sprintf(
-            /*
-             * translators: 1: person's name, 2: their email, 3: date and time,
-             * 4: the admin action's name, 5: IP address
-             */
-            __(
-                "A member who is not an organizer sent an admin request from the Crew app. The request was not carried out and their account is now blocked: they cannot sign up for tasks or sign in on the web.\n\nWho: %1\$s (%2\$s)\nWhen: %3\$s\nAction: %4\$s\nIP address: %5\$s\n\nTo lift the block, open EventCrew > People in wp-admin, edit the person and press Unban.",
-                'eventcrew'
-            ),
-            $offender->name(),
-            $offender->email,
-            $when,
-            $label,
-            '' !== $ip ? $ip : __('unknown', 'eventcrew')
-        );
-        // phpcs:enable Generic.Files.LineLength.TooLong
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['member' => $offender, 'when' => $when, 'action' => $label, 'ip' => $ip];
+        $subject = MessageTemplates::subject('forged_request', $context);
+        $body = MessageTemplates::body('forged_request', $context);
+        $dm = MessageTemplates::body('forged_request_dm', $context);
 
         $this->logger->warning(sprintf(
             'Blocked person %d after a forged admin request (%s) from %s.',
@@ -886,16 +875,11 @@ final class CrewAdminController
 
         foreach ($this->people->organizers() as $organizer) {
             if (null !== $organizer->telegramChatId) {
-                $this->telegram->sendMessage($organizer->telegramChatId, $body);
+                $this->telegram->sendMessage($organizer->telegramChatId, $dm);
             }
 
             if ($organizer->isEmailVerified() && ! $organizer->isAnonymized()) {
-                $this->mailer->toPerson(
-                    $organizer->id,
-                    $organizer->email,
-                    __('Crew app: a member is blocked after a forged admin request', 'eventcrew'),
-                    $body
-                );
+                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body);
             }
         }
     }

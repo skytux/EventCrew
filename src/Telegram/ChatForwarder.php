@@ -11,6 +11,7 @@ use EventCrew\Support\DmBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 
 /**
  * Sends a private chat with the bot's language-model helper to the
@@ -102,41 +103,28 @@ final class ChatForwarder
      */
     private function tell(Person $organizer, Person $person, string $kind, array $entries): bool
     {
-        $name = $person->name();
-        $body = sprintf(
-            /* translators: 1: the person's name, 2: their email address */
-            __('%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first.', 'eventcrew'),
-            $name,
-            $person->email
-        ) . "\n\n" . $this->transcript($entries, $name);
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['member' => $person, 'kind' => $kind, 'transcript' => $this->transcript($entries, $person->name())];
 
-        if (! $this->mailer->toPerson($organizer->id, $organizer->email, $this->subject($kind, $name), $body)) {
+        if (
+            ! $this->mailer->toPerson(
+                $organizer->id,
+                $organizer->email,
+                MessageTemplates::subject('chat_forward', $context),
+                MessageTemplates::body('chat_forward', $context)
+            )
+        ) {
             return false;
         }
 
         if (null !== $organizer->telegramChatId && $organizer->wantsBotDms()) {
-            $this->telegram->sendMessage($organizer->telegramChatId, DmBody::frame($organizer, sprintf(
-                /* translators: %s: the person's name */
-                __('I emailed you a transcript of my private chat with %s.', 'eventcrew'),
-                $name
-            )));
+            $this->telegram->sendMessage(
+                $organizer->telegramChatId,
+                DmBody::frame($organizer, MessageTemplates::body('chat_forward_dm', $context))
+            );
         }
 
         return true;
-    }
-
-    private function subject(string $kind, string $name): string
-    {
-        return match ($kind) {
-            /* translators: %s: the person's name */
-            'unhappy' => sprintf(__('Bot chat: %s is unhappy', 'eventcrew'), $name),
-            /* translators: %s: the person's name */
-            'very_happy' => sprintf(__('Bot chat: %s is very happy', 'eventcrew'), $name),
-            /* translators: %s: the person's name */
-            'human' => sprintf(__('Bot chat: %s wants a human', 'eventcrew'), $name),
-            /* translators: %s: the person's name */
-            default => sprintf(__('Bot chat: feedback from %s', 'eventcrew'), $name),
-        };
     }
 
     /**

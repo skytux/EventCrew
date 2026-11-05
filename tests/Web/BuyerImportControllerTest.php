@@ -15,6 +15,7 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Tests\Support\TinyXlsx;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\BuyerImportController;
@@ -521,6 +522,99 @@ final class BuyerImportControllerTest extends TestCase
         self::assertSame('The ticket list could not be imported', $this->mails[0]['subject']);
         self::assertStringContainsString('Tilaus, Maa', $this->mails[0]['body']);
         self::assertStringContainsString('Nothing was added to the door list.', $this->mails[0]['body']);
+    }
+
+    // --- the texts are the Messages page templates ------------------------
+
+    public function testTheGuestListEmailsAreTheBuiltInTextsWhenNothingIsStored(): void
+    {
+        $roster = "\n\nOpen the Roster page: https://site.test/wp-admin/admin.php?page=eventcrew-roster&roster_date=2026-08-01";
+
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->controller()->importList('lou@example.com', "Anna +2\nBo Virtanen  +1\n- Cy +x\nDee 3\n", '<t1@example.com>');
+
+        self::assertSame('Guests added for Sat 1 Aug', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            "4 guests were added to the guest list for Sat 1 Aug. They bring 3 plus-ones in total.\n\nThe list was sent from lou@example.com." . $roster,
+            $this->mails[0]['body']
+        );
+
+        $this->mails = [];
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'plus_ones' => 2, 'note' => '', 'added_by' => 9],
+        ];
+        $this->controller()->importList('lou@example.com', "anna +2\n Bo \nBO +1\n", '<t2@example.com>');
+
+        self::assertStringStartsWith(
+            "1 guests were added to the guest list for Sat 1 Aug.\n\n2 names were skipped because they were already on the guest list.\n\nThe list was sent from lou@example.com." . $roster,
+            $this->mails[0]['body']
+        );
+    }
+
+    public function testTheTicketEmailsAreTheBuiltInTextsWhenNothingIsStored(): void
+    {
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextVars[] = '0';
+        $this->wpdb->nextResults[] = [];
+        $this->queueOrganizers([self::twoOrganizers()[0]]);
+        $this->controller()->importList('lou@example.com', '', '<t3@example.com>', ['filename' => 'Tickets.xlsx', 'bytes' => TinyXlsx::holvi()]);
+
+        self::assertSame('Ticket buyers imported for Sat 1 Aug', $this->mails[0]['subject']);
+        self::assertMatchesRegularExpression(
+            '/^3 tickets were imported for Sat 1 Aug\.\n\nThe ticket emails go out at \d\d:\d\d\. To stop them, press "Cancel sending" on the Roster page before then\.\n\nThe list was sent from lou@example\.com\.\n\nOpen the Roster page: /',
+            $this->mails[0]['body']
+        );
+
+        $this->mails = [];
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueOrganizers([self::twoOrganizers()[0]]);
+        $this->controller()->importList('lou@example.com', '', '<t4@example.com>', ['filename' => 'list.csv', 'bytes' => "Tilaus;Maa\n1;FI\n"]);
+
+        self::assertSame('The ticket list could not be imported', $this->mails[0]['subject']);
+        self::assertStringStartsWith(
+            "The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: Tilaus, Maa\n\nNothing was added to the door list.\n\nThe list was sent from lou@example.com.\n\n",
+            $this->mails[0]['body']
+        );
+    }
+
+    public function testTheImportEmailsUseAStoredText(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'import_guests'] = [
+            MessageTemplates::SUBJECT => ['source' => '{added} guests on {day}'],
+            MessageTemplates::BODY => ['source' => "Added {added}.\n\n{skipped}\n\n{plus_ones}\n\nFrom {from}."],
+        ];
+        $this->options[$prefix . 'import_failed'] = [
+            MessageTemplates::SUBJECT => ['source' => 'Import failed'],
+            MessageTemplates::BODY => ['source' => 'No luck: {reason}'],
+        ];
+
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->controller()->importList('lou@example.com', "Anna +2\n", '<t5@example.com>');
+
+        self::assertSame('1 guests on Sat 1 Aug', $this->mails[0]['subject']);
+        // The empty {skipped} leaves no empty lines behind.
+        self::assertStringStartsWith(
+            "Added 1.\n\nThey bring 2 plus-ones in total.\n\nFrom lou@example.com.\n\nOpen the Roster page: ",
+            $this->mails[0]['body']
+        );
+
+        $this->mails = [];
+        $this->queueOrganizer();
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueOrganizers([self::twoOrganizers()[0]]);
+        $this->controller()->importList('lou@example.com', '', '<t6@example.com>', ['filename' => 'list.csv', 'bytes' => "Tilaus;Maa\n1;FI\n"]);
+
+        self::assertSame('Import failed', $this->mails[0]['subject']);
+        self::assertStringStartsWith('No luck: The columns of the attached file', $this->mails[0]['body']);
     }
 
     public function testABodyThatIsNotJsonIsABadRequest(): void
