@@ -1123,7 +1123,7 @@ msgstr ""
 msgid "Automatically create tasks when a new event is synced from EventMesh"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:804
+#: src/Support/NewsletterLayout.php:813
 msgid "Automatically translated"
 msgstr ""
 
@@ -1292,7 +1292,7 @@ msgstr ""
 msgid "Button"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:904 src/Telegram/EventCard.php:392
+#: src/Support/NewsletterLayout.php:913 src/Telegram/EventCard.php:392
 msgid "Buy a ticket"
 msgstr ""
 
@@ -1468,7 +1468,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:60 src/Support/MessageTemplates.php:988 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:902
+#: src/Admin/MessagesPage.php:60 src/Support/MessageTemplates.php:988 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:911
 msgid "Coming events"
 msgstr ""
 
@@ -1953,7 +1953,7 @@ msgstr ""
 msgid "Doors close"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:911
+#: src/Support/NewsletterLayout.php:920
 msgid "Doors close %s"
 msgstr ""
 
@@ -1970,7 +1970,7 @@ msgstr ""
 msgid "Doors close at %s."
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:909
+#: src/Support/NewsletterLayout.php:918
 msgid "Doors open %s"
 msgstr ""
 
@@ -3223,7 +3223,7 @@ msgstr ""
 msgid "Late-cancel window (hours)"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:903
+#: src/Support/NewsletterLayout.php:912
 msgid "Later"
 msgstr ""
 
@@ -3304,7 +3304,7 @@ msgstr ""
 msgid "Link to the full guide"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:906 src/Telegram/EventCard.php:393
+#: src/Support/NewsletterLayout.php:915 src/Telegram/EventCard.php:393
 msgid "Listen to the DJ"
 msgstr ""
 
@@ -5837,7 +5837,7 @@ msgstr ""
 msgid "Slug"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:907 src/Telegram/EventCard.php:394
+#: src/Support/NewsletterLayout.php:916 src/Telegram/EventCard.php:394
 msgid "Sold out"
 msgstr ""
 
@@ -7870,7 +7870,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:905 src/Support/WelcomeSender.php:507 templates/public/signup.php:485
+#: src/Support/NewsletterLayout.php:914 src/Support/WelcomeSender.php:507 templates/public/signup.php:485
 msgid "Tickets"
 msgstr ""
 
