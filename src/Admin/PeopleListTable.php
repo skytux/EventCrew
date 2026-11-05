@@ -145,6 +145,12 @@ final class PeopleListTable extends WP_List_Table
                 . esc_html__('Blocked', 'eventcrew') . '</span>';
         }
 
+        if ($item->isWaitingForOk()) {
+            $badge .= ' <span class="eventcrew-badge" style="color:#996800" title="'
+                . esc_attr__('Waiting for the team’s OK', 'eventcrew') . '">'
+                . esc_html__('Waiting', 'eventcrew') . '</span>';
+        }
+
         return sprintf(
             '<strong><a href="%s">%s</a></strong>%s%s',
             esc_url($editUrl),

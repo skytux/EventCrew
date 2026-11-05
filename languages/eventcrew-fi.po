@@ -8104,6 +8104,9 @@ msgstr "Toinen järjestäjä vastasi jo tästä henkilöstä."
 msgid "Waiting for an OK"
 msgstr "Odottaa hyväksyntää"
 
+msgid "Waiting"
+msgstr "Odottaa"
+
 msgid "They signed in for the first time. They can take tasks after an OK."
 msgstr "He kirjautuivat ensimmäistä kertaa. He voivat ottaa tehtäviä hyväksynnän jälkeen."
 
