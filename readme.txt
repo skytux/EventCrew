@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.94
+Stable tag: 1.140.95
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.95 =
+When an organizer gives someone a role, a one-time pass or organizer rights, the person gets their own email (own subject, greeting, crew page button) and a Telegram message, from the bot, the crew page Admin tab and wp-admin People alike. The generic access changed email is gone. Taking access away sends nothing.
 
 = 1.140.94 =
 Crew page: while the site makes the sign-in code, the Sign in with Telegram button shows a spinner and cannot be pressed twice.
@@ -1496,6 +1499,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.95 =
+No settings change.
 
 = 1.140.94 =
 No settings change.
