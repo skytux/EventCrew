@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Support\EventName;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\TicketMail;
@@ -52,7 +53,7 @@ final class CrewAdminNewsletter
             foreach ((array) ($status['plan']['events'] ?? []) as $event) {
                 $events[] = TicketMail::shortDate((string) $event['date'])
                     . ('' === (string) $event['time'] ? '' : ' ' . $event['time'])
-                    . ' · ' . $event['title'];
+                    . ' · ' . EventName::name((int) ($event['id'] ?? 0), EventName::lang(), (string) $event['title']);
             }
 
             $plan = [

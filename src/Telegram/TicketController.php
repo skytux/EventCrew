@@ -13,6 +13,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\EventName;
 use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
@@ -100,12 +101,13 @@ final class TicketController
      * 'qr' is what the QR code holds when it is not the page's own link: a
      * ticket buyer's ticket code. 'code' is written out under the QR code.
      * 'used' is when the door marked the ticket in (site time), null while
-     * it is not in (CheckinRepository::inAt()).
+     * it is not in (CheckinRepository::inAt()). 'event_id' is the linked
+     * event's post, so the page names it in the ticket's language.
      *
      * @return array{
      *     valid: bool, name: string, event: string, date: string, role: string, time: string,
      *     issued: string, language: ?string, image?: string, qr?: string, code?: string,
-     *     used?: string|null
+     *     used?: string|null, event_id?: int|null
      * }|null
      */
     public function ticketFor(string $token): ?array
@@ -206,6 +208,7 @@ final class TicketController
             'valid' => true,
             'name' => $name,
             'event' => null === $task ? (string) get_bloginfo('name') : $task->eventName(),
+            'event_id' => $task?->eventPostId,
             'date' => $date,
             'role' => Language::run($language, $role),
             'time' => '',
@@ -248,6 +251,7 @@ final class TicketController
                 || $this->assignments->holdsTaskOn($assignment->personId, $task->taskDate),
             'name' => $person->name(),
             'event' => $task->eventName(),
+            'event_id' => $task->eventPostId,
             'date' => $task->taskDate,
             'role' => Language::forPerson($person, static fn (): string => $task->roleDisplay()),
             'time' => $task->timeRange(),
@@ -289,6 +293,7 @@ final class TicketController
             'valid' => ! $redemption->isCancelled(),
             'name' => $person->name(),
             'event' => $this->redemptionEvent($redemption),
+            'event_id' => $redemption->eventPostId,
             'date' => $redemption->redeemedFor,
             'role' => Language::forPerson($person, static fn (): string => __('Free entry', 'eventcrew')),
             'time' => '',
@@ -306,7 +311,11 @@ final class TicketController
     private function redemptionEvent(\EventCrew\Models\Redemption $redemption): string
     {
         if (null !== $redemption->eventPostId) {
-            $title = (string) get_the_title($redemption->eventPostId);
+            $title = EventName::name(
+                $redemption->eventPostId,
+                EventName::lang(),
+                (string) get_the_title($redemption->eventPostId)
+            );
 
             if ('' !== $title) {
                 return $title;
@@ -317,7 +326,7 @@ final class TicketController
     }
 
     /**
-     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string, used?: string|null}|null $ticket
+     * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string, used?: string|null, event_id?: int|null}|null $ticket
      */
     public function renderPage(?array $ticket): string
     {
@@ -345,10 +354,14 @@ final class TicketController
         );
 
         $watermark = ltrim($this->watermarkStyle(), ';');
+        // The event's clean name in the page's language (EventName).
+        $event = null === ($ticket['event_id'] ?? null)
+            ? $ticket['event']
+            : EventName::name((int) $ticket['event_id'], EventName::lang(), $ticket['event']);
 
         return $this->document(
             $title,
-            $this->headBlock($title, $ticket['event'], $ticket['date'], (string) ($ticket['image'] ?? ''))
+            $this->headBlock($title, $event, $ticket['date'], (string) ($ticket['image'] ?? ''))
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
             . $body . $band . $this->qrBlock($ticket['qr'] ?? '') . $this->codeBlock($ticket['code'] ?? '')
             . $this->noteBlock() . $this->antiFraudBlock($ticket['issued'])

@@ -129,4 +129,45 @@ final class EventNameTest extends TestCase
 
         self::assertSame(['name' => 'Ecstatic Dance', 'dj' => 'X'], EventName::ofTask($task, 'en'));
     }
+
+    public function testTaskEventNameIsTheCleanNameInTheCurrentLanguage(): void
+    {
+        $this->fakeEventNames([7 => ['en' => 'Ecstatic Dance', 'fi' => 'Ekstaattinen tanssi']]);
+        Functions\when('get_the_title')->justReturn(self::TITLE);
+
+        $task = new Task(1, '2026-11-14', 'door', 2, 7);
+
+        self::assertSame('Ecstatic Dance', $task->eventName());
+        self::assertSame(
+            'Ekstaattinen tanssi',
+            Language::run(Language::FINNISH, static fn (): string => $task->eventName())
+        );
+    }
+
+    public function testTaskEventNameWithoutEventMeshIsTheTitle(): void
+    {
+        Functions\when('get_the_title')->justReturn(self::TITLE);
+
+        self::assertSame(self::TITLE, (new Task(1, '2026-11-14', 'door', 2, 7))->eventName());
+    }
+
+    /**
+     * EventMesh's eventmesh_display_title() stays defined once declared, so
+     * this runs in a process of its own.
+     */
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    public function testTheDisplayTitleWhenTheFiltersGiveNoName(): void
+    {
+        require_once __DIR__ . '/fixtures/eventmesh-display-title.php';
+        $this->fakeEventNames([9 => ['en' => 'From the filter']]);
+
+        self::assertSame('Ecstatic Dance (fi)', EventName::name(7, 'fi', self::TITLE));
+        // An empty display title keeps the title as written.
+        self::assertSame(self::TITLE, EventName::name(8, 'en', self::TITLE));
+        // The filters still come first.
+        self::assertSame('From the filter', EventName::name(9, 'en', self::TITLE));
+        // A display title alone gives no DJ line.
+        self::assertSame('', EventName::djLine(7));
+    }
 }
