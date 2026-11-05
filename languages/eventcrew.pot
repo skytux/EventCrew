@@ -166,7 +166,7 @@ msgstr ""
 msgid "%1$s: already used · %2$s"
 msgstr ""
 
-#: src/Support/DoorDesk.php:519
+#: src/Support/DoorDesk.php:521
 #. translators: 1: the ticket holder's name, 2: the day the ticket is for
 msgid "%1$s: this ticket is for %2$s, not tonight."
 msgstr ""
@@ -289,7 +289,7 @@ msgstr ""
 msgid "%s is no longer an organizer."
 msgstr ""
 
-#: src/Support/DoorDesk.php:530
+#: src/Support/DoorDesk.php:532
 #. translators: %s: the ticket holder's name
 msgid "%s is not on tonight’s list."
 msgstr ""
@@ -312,12 +312,12 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: src/Support/DoorDesk.php:525
+#: src/Support/DoorDesk.php:527
 #. translators: %s: the ticket holder's name
 msgid "%s: this ticket is cancelled."
 msgstr ""
 
-#: src/Support/DoorDesk.php:514
+#: src/Support/DoorDesk.php:516
 #. translators: %s: the ticket holder's name
 msgid "%s: this ticket is not for tonight."
 msgstr ""
@@ -327,7 +327,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:408 src/Support/DoorDesk.php:1408
+#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:408 src/Support/DoorDesk.php:1410
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:273
 #: src/Web/CrewAdminTasks.php:391
 msgid "(deleted person)"
@@ -860,7 +860,7 @@ msgstr ""
 msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:161
+#: src/Telegram/VerificationController.php:163
 msgid "Ask the bot for a fresh one by sending it /start."
 msgstr ""
 
@@ -1130,7 +1130,7 @@ msgstr ""
 msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
 msgstr ""
 
-#: src/Web/SignupController.php:1094
+#: src/Web/SignupController.php:1096
 msgid "Check your email for a sign-in link."
 msgstr ""
 
@@ -1154,7 +1154,7 @@ msgstr ""
 msgid "Choose pages"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1125 src/Web/SignupController.php:1110
+#: src/Support/DoorDesk.php:1127 src/Web/SignupController.php:1112
 msgid "Choose whether this task counts toward free-entry credit."
 msgstr ""
 
@@ -1291,7 +1291,7 @@ msgstr ""
 msgid "Could not read the webhook status from Telegram. Check the token."
 msgstr ""
 
-#: src/Web/SignupController.php:1098
+#: src/Web/SignupController.php:1100
 msgid "Couldn’t verify you’re human — please try again."
 msgstr ""
 
@@ -1348,7 +1348,7 @@ msgstr ""
 msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1213
+#: src/Support/DoorDesk.php:1215
 msgid "Credit"
 msgstr ""
 
@@ -1430,7 +1430,7 @@ msgstr ""
 msgid "Crew privacy notice"
 msgstr ""
 
-#: src/Support/DoorDesk.php:218 src/Support/DoorDesk.php:891
+#: src/Support/DoorDesk.php:220 src/Support/DoorDesk.php:893
 msgid "Crew working"
 msgstr ""
 
@@ -1584,7 +1584,7 @@ msgstr ""
 msgid "Do you want to sign in to the crew app? Press the button only if the crew app on your screen shows the code %s."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1259 templates/public/signup.php:650
+#: src/Support/DoorDesk.php:1261 templates/public/signup.php:650
 msgid "Door"
 msgstr ""
 
@@ -1601,7 +1601,7 @@ msgstr ""
 msgid "Door ticket added and checked in."
 msgstr ""
 
-#: src/Support/DoorDesk.php:222
+#: src/Support/DoorDesk.php:224
 msgid "Door tickets"
 msgstr ""
 
@@ -1669,7 +1669,7 @@ msgstr ""
 msgid "Email column header"
 msgstr ""
 
-#: src/Telegram/VerificationController.php:156
+#: src/Telegram/VerificationController.php:158
 msgid "Email confirmed"
 msgstr ""
 
@@ -1971,7 +1971,7 @@ msgstr ""
 msgid "Free entry closed for this date."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:371 src/Web/SignupController.php:1116
+#: src/Telegram/TicketRedemptionService.php:371 src/Web/SignupController.php:1118
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -1987,7 +1987,7 @@ msgstr ""
 msgid "Free entry reopened for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:219 src/Support/DoorDesk.php:895 src/Support/DoorList.php:78
+#: src/Support/DoorDesk.php:221 src/Support/DoorDesk.php:897 src/Support/DoorList.php:78
 msgid "Free-entry credit"
 msgstr ""
 
@@ -2074,7 +2074,7 @@ msgstr ""
 msgid "Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)"
 msgstr ""
 
-#: src/Support/DoorDesk.php:863 templates/public/door.php:73
+#: src/Support/DoorDesk.php:865 templates/public/door.php:73
 msgid "Give the guest’s name."
 msgstr ""
 
@@ -2130,7 +2130,7 @@ msgstr ""
 msgid "Guest"
 msgstr ""
 
-#: src/Support/DoorDesk.php:862
+#: src/Support/DoorDesk.php:864
 msgid "Guest added and checked in."
 msgstr ""
 
@@ -2175,7 +2175,7 @@ msgstr ""
 msgid "Guest view. Sign in above to take a task and see all tasks."
 msgstr ""
 
-#: src/Support/DoorDesk.php:220 src/Telegram/DoorListService.php:151
+#: src/Support/DoorDesk.php:222 src/Telegram/DoorListService.php:151
 msgid "Guests"
 msgstr ""
 
@@ -2270,15 +2270,15 @@ msgstr ""
 msgid "Hi,"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1265
+#: src/Support/DoorDesk.php:1267
 msgid "Holvi"
 msgstr ""
 
-#: src/Support/DoorDesk.php:355
+#: src/Support/DoorDesk.php:357
 msgid "Holvi buyer (no name)"
 msgstr ""
 
-#: src/Support/DoorDesk.php:380
+#: src/Support/DoorDesk.php:382
 msgid "Holvi buyer added and checked in."
 msgstr ""
 
@@ -2294,7 +2294,7 @@ msgstr ""
 msgid "Holvi ticket buyers: in EventCrew > Roster, pick the date and paste the names, one per line, under \"Holvi ticket buyers\". A name already on the list is skipped."
 msgstr ""
 
-#: src/Support/DoorDesk.php:221
+#: src/Support/DoorDesk.php:223
 msgid "Holvi tickets"
 msgstr ""
 
@@ -2991,7 +2991,7 @@ msgstr ""
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
-#: src/Support/DoorDesk.php:579 src/Support/DoorDesk.php:1258 src/Support/DoorDesk.php:1269 src/Web/CrewAdminRoster.php:175
+#: src/Support/DoorDesk.php:581 src/Support/DoorDesk.php:1260 src/Support/DoorDesk.php:1271 src/Web/CrewAdminRoster.php:175
 #: templates/admin/roster.php:274
 msgid "No name"
 msgstr ""
@@ -3044,7 +3044,7 @@ msgstr ""
 msgid "No role has conditions set. Organizers set them in wp-admin, under Settings, Roles."
 msgstr ""
 
-#: src/Admin/RosterPage.php:732 src/Support/DoorDesk.php:855 src/Telegram/GuestListService.php:191
+#: src/Admin/RosterPage.php:732 src/Support/DoorDesk.php:857 src/Telegram/GuestListService.php:191
 msgid "No send was waiting. It may have gone out already."
 msgstr ""
 
@@ -3072,7 +3072,7 @@ msgstr ""
 msgid "No tasks yet. Add one to get started."
 msgstr ""
 
-#: src/Support/DoorDesk.php:604
+#: src/Support/DoorDesk.php:606
 msgid "No ticket on tonight’s list has this code."
 msgstr ""
 
@@ -3161,7 +3161,7 @@ msgstr ""
 msgid "Nothing was added. Start again with /board."
 msgstr ""
 
-#: src/Web/SignupController.php:1121
+#: src/Web/SignupController.php:1123
 msgid "Nothing was changed."
 msgstr ""
 
@@ -3393,7 +3393,7 @@ msgstr ""
 msgid "Open Telegram again"
 msgstr ""
 
-#: src/Web/SignupController.php:1132
+#: src/Web/SignupController.php:1134
 msgid "Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself."
 msgstr ""
 
@@ -3678,7 +3678,7 @@ msgstr ""
 msgid "Plain messages (language model)"
 msgstr ""
 
-#: src/Web/SignupController.php:1113
+#: src/Web/SignupController.php:1115
 msgid "Please sign in first."
 msgstr ""
 
@@ -4269,7 +4269,7 @@ msgstr ""
 msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
 msgstr ""
 
-#: src/Admin/RosterPage.php:731 src/Support/DoorDesk.php:854 src/Telegram/GuestListService.php:190
+#: src/Admin/RosterPage.php:731 src/Support/DoorDesk.php:856 src/Telegram/GuestListService.php:190
 msgid "Sending cancelled. No ticket email was sent."
 msgstr ""
 
@@ -4477,7 +4477,7 @@ msgstr ""
 msgid "Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group."
 msgstr ""
 
-#: src/Web/SignupController.php:1104
+#: src/Web/SignupController.php:1106
 msgid "Sign-ups are paused on your account — please contact the organizer."
 msgstr ""
 
@@ -4494,7 +4494,7 @@ msgstr ""
 msgid "Signed in. You can go back to the crew app."
 msgstr ""
 
-#: src/Web/SignupController.php:1108
+#: src/Web/SignupController.php:1110
 msgid "Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
 msgstr ""
 
@@ -4503,11 +4503,11 @@ msgstr ""
 msgid "Signed up"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1123
+#: src/Support/DoorDesk.php:1125
 msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1121
+#: src/Support/DoorDesk.php:1123
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr ""
 
@@ -4813,7 +4813,7 @@ msgstr ""
 msgid "Telegram refused the webhook: %s"
 msgstr ""
 
-#: src/Web/SignupController.php:1130
+#: src/Web/SignupController.php:1132
 msgid "Telegram sign-in did not work. Please try again, or sign in with email."
 msgstr ""
 
@@ -4952,11 +4952,11 @@ msgstr ""
 msgid "That doesn't look like an email address. Try again?"
 msgstr ""
 
-#: src/Web/SignupController.php:1095
+#: src/Web/SignupController.php:1097
 msgid "That doesn’t look like a valid email address."
 msgstr ""
 
-#: src/Web/SignupController.php:1127
+#: src/Web/SignupController.php:1129
 msgid "That email address belongs to another crew account."
 msgstr ""
 
@@ -4964,12 +4964,12 @@ msgstr ""
 msgid "That email address does not look right."
 msgstr ""
 
-#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:381 src/Support/DoorDesk.php:864 src/Telegram/GuestListService.php:372
+#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:383 src/Support/DoorDesk.php:866 src/Telegram/GuestListService.php:372
 #: src/Web/CrewAdminRoster.php:577
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
 
-#: src/Web/SignupController.php:1129
+#: src/Web/SignupController.php:1131
 msgid "That email change link is invalid or has expired."
 msgstr ""
 
@@ -4977,7 +4977,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:373 src/Web/SignupController.php:1118
+#: src/Telegram/TicketRedemptionService.php:373 src/Web/SignupController.php:1120
 msgid "That event is no longer available."
 msgstr ""
 
@@ -5021,7 +5021,7 @@ msgstr ""
 msgid "That roster entry was not found."
 msgstr ""
 
-#: src/Web/SignupController.php:1097
+#: src/Web/SignupController.php:1099
 msgid "That sign-in link is invalid or has expired."
 msgstr ""
 
@@ -5029,11 +5029,11 @@ msgstr ""
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
-#: src/Telegram/BoardService.php:984 src/Web/SignupController.php:1103
+#: src/Telegram/BoardService.php:984 src/Web/SignupController.php:1105
 msgid "That slot just filled up."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1124
+#: src/Support/DoorDesk.php:1126
 msgid "That task has just filled up. Pick another one."
 msgstr ""
 
@@ -5042,7 +5042,7 @@ msgid "That task is full."
 msgstr ""
 
 #: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:80 src/Telegram/BoardService.php:985 src/Telegram/ReplacementService.php:167
-#: src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:1109
+#: src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:1111
 msgid "That task is no longer available."
 msgstr ""
 
@@ -5050,7 +5050,7 @@ msgstr ""
 msgid "That task was not found."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1152
+#: src/Support/DoorDesk.php:1154
 msgid "That ticket could not be given."
 msgstr ""
 
@@ -5081,7 +5081,7 @@ msgstr ""
 msgid "The EventCrew record for this address was erased, including its task history, free-entry credits and sign-in links."
 msgstr ""
 
-#: src/Support/DoorDesk.php:382
+#: src/Support/DoorDesk.php:384
 msgid "The Holvi buyer could not be added. Try again."
 msgstr ""
 
@@ -5238,7 +5238,7 @@ msgstr ""
 msgid "The door list, guest list and sales desk"
 msgstr ""
 
-#: src/Web/SignupController.php:701
+#: src/Web/SignupController.php:703
 #. translators: %s: the new email address
 msgid "The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer."
 msgstr ""
@@ -5275,7 +5275,7 @@ msgstr ""
 msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
 msgstr ""
 
-#: src/Support/DoorDesk.php:865
+#: src/Support/DoorDesk.php:867
 msgid "The guest could not be added. Try again."
 msgstr ""
 
@@ -5337,7 +5337,7 @@ msgstr ""
 msgid "The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below."
 msgstr ""
 
-#: src/Web/SignupController.php:1134
+#: src/Web/SignupController.php:1136
 msgid "The link expired. Press Telegram again."
 msgstr ""
 
@@ -5712,7 +5712,7 @@ msgstr ""
 msgid "They already have free entry for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1151
+#: src/Support/DoorDesk.php:1153
 msgid "They already have free entry tonight."
 msgstr ""
 
@@ -5721,7 +5721,7 @@ msgstr ""
 msgid "They bring %d plus-ones in total."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1126
+#: src/Support/DoorDesk.php:1128
 msgid "They could not be signed up for that task."
 msgstr ""
 
@@ -5737,7 +5737,7 @@ msgstr ""
 msgid "They have no credit left to redeem."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1150
+#: src/Support/DoorDesk.php:1152
 msgid "They have no credit left."
 msgstr ""
 
@@ -5745,11 +5745,11 @@ msgstr ""
 msgid "They have no email address here, so nothing was sent."
 msgstr ""
 
-#: src/Support/DoorDesk.php:544
+#: src/Support/DoorDesk.php:546
 msgid "This QR code is not one of our tickets."
 msgstr ""
 
-#: src/Telegram/OnboardingService.php:199 src/Telegram/VerificationController.php:130
+#: src/Telegram/OnboardingService.php:199 src/Telegram/VerificationController.php:132
 msgid "This Telegram account is already linked to another email. Contact an organizer if that is wrong."
 msgstr ""
 
@@ -5799,7 +5799,7 @@ msgstr ""
 msgid "This is how a person is identified across Telegram and the web."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:157
+#: src/Telegram/VerificationController.php:159
 msgid "This link is invalid or has expired"
 msgstr ""
 
@@ -5857,7 +5857,7 @@ msgstr ""
 msgid "This text is not translated: both languages show it as it was written."
 msgstr ""
 
-#: src/Support/DoorDesk.php:508
+#: src/Support/DoorDesk.php:510
 msgid "This ticket"
 msgstr ""
 
@@ -5937,7 +5937,7 @@ msgstr ""
 msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1107
+#: src/Support/DoorDesk.php:1109
 msgid "Ticket exchanged against taking a task"
 msgstr ""
 
@@ -5945,7 +5945,7 @@ msgstr ""
 msgid "Ticket file formats"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1149
+#: src/Support/DoorDesk.php:1151
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
@@ -5961,12 +5961,12 @@ msgstr ""
 msgid "Ticket page"
 msgstr ""
 
-#: src/Support/DoorDesk.php:540
+#: src/Support/DoorDesk.php:542
 #. translators: %s: a clock time, e.g. 02:00
 msgid "Ticket scanning closed at %s."
 msgstr ""
 
-#: src/Support/DoorDesk.php:535
+#: src/Support/DoorDesk.php:537
 #. translators: %s: a clock time, e.g. 19:00
 msgid "Ticket scanning opens at %s."
 msgstr ""
@@ -6061,11 +6061,11 @@ msgstr ""
 msgid "Too late: the post-event email has already gone out."
 msgstr ""
 
-#: src/Web/SignupController.php:1138
+#: src/Web/SignupController.php:1140
 msgid "Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email."
 msgstr ""
 
-#: src/Web/SignupController.php:1139
+#: src/Web/SignupController.php:1141
 msgid "Too many sign-in links were asked for. Wait an hour and try again."
 msgstr ""
 
@@ -6278,7 +6278,7 @@ msgstr ""
 msgid "We sent a link to %s. Open it within 30 minutes to delete your data."
 msgstr ""
 
-#: src/Web/SignupController.php:1124
+#: src/Web/SignupController.php:1126
 msgid "We sent a link to the new address. Your email changes when you open it."
 msgstr ""
 
@@ -6604,7 +6604,7 @@ msgstr ""
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:372 src/Web/SignupController.php:1117
+#: src/Telegram/TicketRedemptionService.php:372 src/Web/SignupController.php:1119
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -6645,7 +6645,7 @@ msgstr ""
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: src/Web/SignupController.php:1136
+#: src/Web/SignupController.php:1138
 msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
 msgstr ""
 
@@ -6698,7 +6698,7 @@ msgstr[1] ""
 msgid "You can instead define EVENTCREW_TELEGRAM_TOKEN in wp-config.php to keep it out of the database; the constant wins over this field."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:160
+#: src/Telegram/VerificationController.php:162
 msgid "You can return to Telegram and sign up for tasks."
 msgstr ""
 
@@ -6751,7 +6751,7 @@ msgstr[1] ""
 msgid "You have left the announcement. You will not get it any more."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:370 src/Web/SignupController.php:1115
+#: src/Telegram/TicketRedemptionService.php:370 src/Web/SignupController.php:1117
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
@@ -6780,7 +6780,7 @@ msgstr ""
 msgid "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours."
 msgstr ""
 
-#: src/Web/SignupController.php:1102
+#: src/Web/SignupController.php:1104
 msgid "You were already signed up for that."
 msgstr ""
 
@@ -6792,7 +6792,7 @@ msgstr ""
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1008 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1111
+#: src/Telegram/BoardService.php:1008 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1113
 msgid "You weren’t signed up for that one."
 msgstr ""
 
@@ -6804,7 +6804,7 @@ msgstr ""
 msgid "Your EventCrew access changed"
 msgstr ""
 
-#: src/Telegram/VerificationController.php:146
+#: src/Telegram/VerificationController.php:148
 msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
 msgstr ""
 
@@ -6816,7 +6816,7 @@ msgstr ""
 msgid "Your EventCrew ticket"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:177 src/Web/SignupController.php:1119
+#: src/Telegram/WebLoginBot.php:177 src/Web/SignupController.php:1121
 msgid "Your account is blocked. Talk to an organizer."
 msgstr ""
 
@@ -6825,7 +6825,7 @@ msgstr ""
 msgid "Your code is %s. The bot shows the same code."
 msgstr ""
 
-#: src/Web/SignupController.php:698
+#: src/Web/SignupController.php:700
 msgid "Your crew account email was changed"
 msgstr ""
 
@@ -6841,7 +6841,7 @@ msgstr ""
 msgid "Your email address"
 msgstr ""
 
-#: src/Web/SignupController.php:1128
+#: src/Web/SignupController.php:1130
 msgid "Your email address is changed."
 msgstr ""
 
@@ -6857,7 +6857,7 @@ msgstr ""
 msgid "Your email address, which is how we know who you are — there is no account and no password. A display name, if you gave one."
 msgstr ""
 
-#: src/Telegram/VerificationController.php:98
+#: src/Telegram/VerificationController.php:100
 msgid "Your email is confirmed. Tap a task on the board to sign up."
 msgstr ""
 
@@ -6869,11 +6869,11 @@ msgstr ""
 msgid "Your free-entry ticket"
 msgstr ""
 
-#: src/Web/SignupController.php:1114 src/Web/SignupController.php:1162
+#: src/Web/SignupController.php:1116 src/Web/SignupController.php:1164
 msgid "Your free-entry ticket is ready."
 msgstr ""
 
-#: src/Web/SignupController.php:1106
+#: src/Web/SignupController.php:1108
 msgid "Your language is saved."
 msgstr ""
 
@@ -6889,19 +6889,19 @@ msgstr ""
 msgid "Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for."
 msgstr ""
 
-#: src/Web/SignupController.php:1122
+#: src/Web/SignupController.php:1124
 msgid "Your name cannot be empty."
 msgstr ""
 
-#: src/Web/SignupController.php:1120
+#: src/Web/SignupController.php:1122
 msgid "Your name is saved."
 msgstr ""
 
-#: src/Web/SignupController.php:1126
+#: src/Web/SignupController.php:1128
 msgid "Your name is saved. We sent a link to the new address. Your email changes when you open it."
 msgstr ""
 
-#: src/Web/SignupController.php:1105
+#: src/Web/SignupController.php:1107
 msgid "Your notification preferences are saved."
 msgstr ""
 
@@ -7018,15 +7018,15 @@ msgstr ""
 msgid "You’re rated after %1$d finished tasks — completions, replacements, late cancels and no-shows all count; %2$d%% or higher is good standing."
 msgstr ""
 
-#: src/Web/SignupController.php:1096
+#: src/Web/SignupController.php:1098
 msgid "You’re signed in."
 msgstr ""
 
-#: src/Web/SignupController.php:1099
+#: src/Web/SignupController.php:1101
 msgid "You’re signed out."
 msgstr ""
 
-#: src/Web/SignupController.php:1100
+#: src/Web/SignupController.php:1102
 msgid "You’re signed up — thanks!"
 msgstr ""
 
@@ -7039,7 +7039,7 @@ msgstr ""
 msgid "You’ve been given free entry"
 msgstr ""
 
-#: src/Web/SignupController.php:1101
+#: src/Web/SignupController.php:1103
 msgid "You’ve cancelled that task."
 msgstr ""
 
@@ -7055,7 +7055,7 @@ msgstr ""
 msgid "add the bot to your Telegram group (the board appears on its own), or share your signup page link."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1190 src/Support/DoorDesk.php:1231
+#: src/Support/DoorDesk.php:1192 src/Support/DoorDesk.php:1233
 msgid "allowed +%d"
 msgstr ""
 

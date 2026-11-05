@@ -217,7 +217,8 @@ final class DoorDeskTest extends SalesDeskTestCase
 
     public function testSpendingTheLinkGivesACookieForThatPersonAndNight(): void
     {
-        $this->wpdb->nextRows[] = $this->tokenRow(1);         // consume
+        $this->wpdb->nextRows[] = $this->tokenRow(1);         // consumeOnce
+        $this->wpdb->nextQueryResults[] = 1;                  // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->personRow(1, true);  // people->find
 
         $login = $this->desk()->login('raw', self::NIGHT, DoorSession::linkSignature('raw', self::NIGHT));
@@ -225,8 +226,29 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertNotNull($login['cookie']);
         self::assertSame(['person_id' => 1, 'date' => self::NIGHT], DoorSession::read($login['cookie']));
         self::assertGreaterThan(0, $login['seconds']);
-        // The token is marked used.
-        self::assertCount(1, $this->wpdb->updates);
+        // The token is marked used, by an UPDATE that only matches an unused row.
+        self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testADoorLinkOpenedTwiceAtOnceGivesOnlyOneCookie(): void
+    {
+        // Both requests read the token row while it is still unused.
+        $this->wpdb->nextRows[] = $this->tokenRow(1);
+        $this->wpdb->nextQueryResults[] = 1;                  // the first one's UPDATE changes the row
+        $this->wpdb->nextRows[] = $this->personRow(1, true);
+        $first = $this->desk()->login('raw', self::NIGHT, DoorSession::linkSignature('raw', self::NIGHT));
+
+        $this->wpdb->nextRows[] = $this->tokenRow(1);
+        $this->wpdb->nextQueryResults[] = 0;                  // the second one's UPDATE changes nothing
+        $this->wpdb->nextRows[] = null;                       // and it is not a handoff link either
+        $second = $this->desk()->login('raw', self::NIGHT, DoorSession::linkSignature('raw', self::NIGHT));
+
+        self::assertNotNull($first['cookie']);
+        self::assertNull($second['cookie']);
+        self::assertStringContainsString('already used', $second['message']);
+        // Neither request stamped the token with a plain UPDATE that ignores
+        // whether the other one got there first.
+        self::assertSame([], $this->wpdb->updates);
     }
 
     public function testALinkWithTheWrongSignatureDoesNotTouchTheToken(): void
@@ -241,6 +263,7 @@ final class DoorDeskTest extends SalesDeskTestCase
     public function testAWelcomeLinkSpentAfterTheEventEndSaysTheNightHasClosed(): void
     {
         $this->wpdb->nextRows[] = $this->tokenRow(8);
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->personRow(8);
         $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '10:00', '11:00'), $this->taskRow(7, 'clean', '11:30')];
 

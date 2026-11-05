@@ -323,6 +323,7 @@ final class OnboardingServiceTest extends TelegramTestCase
             'expires_at' => '2999-01-01 00:00:00',
             'used_at' => null,
         ];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $before;
         $this->wpdb->nextRows[] = $holder;
         $this->wpdb->nextRows[] = $after;

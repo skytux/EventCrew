@@ -369,6 +369,7 @@ final class WebLoginBotTest extends TelegramTestCase
         // The click: token row, the person before linking, nobody else holding
         // the Telegram id, and the person after (confirmed and linked).
         $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 7, 'expires_at' => '2999-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->person(['email_verified_at' => null, 'telegram_user_id' => null, 'telegram_chat_id' => null]);
         $this->wpdb->nextRows[] = null;
         $this->wpdb->nextRows[] = $this->person();
@@ -404,6 +405,7 @@ final class WebLoginBotTest extends TelegramTestCase
         }
 
         $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 7, 'expires_at' => '2999-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->person(['email_verified_at' => null, 'telegram_user_id' => null, 'telegram_chat_id' => null]);
         $this->wpdb->nextRows[] = null;
         $this->wpdb->nextRows[] = $this->person();
@@ -430,6 +432,7 @@ final class WebLoginBotTest extends TelegramTestCase
             'telegram_chat_id' => 4242,
         ];
         $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 7, 'expires_at' => '2999-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = $this->person(['email_verified_at' => null, 'telegram_user_id' => null]);
         $this->wpdb->nextRows[] = null;
         $this->wpdb->nextRows[] = $this->person();

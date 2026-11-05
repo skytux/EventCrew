@@ -672,7 +672,9 @@ final class SignupController
     {
         $key = self::EMAIL_PENDING_PREFIX . $this->pendingKey($token);
         $email = get_transient($key);
-        $personId = is_string($email) && '' !== $email ? $this->tokens->consume($token, self::EMAIL_PURPOSE) : null;
+        // Spent by one conditional UPDATE, so the link opened twice at the same
+        // moment moves the account only once.
+        $personId = is_string($email) && '' !== $email ? $this->tokens->consumeOnce($token, self::EMAIL_PURPOSE) : null;
         $person = null === $personId ? null : $this->people->find($personId);
 
         if (null === $person || ! is_string($email)) {

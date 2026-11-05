@@ -34,13 +34,15 @@ final class VerificationControllerTest extends TelegramTestCase
 
     public function testVerifyConfirmsTheEmailAndNudgesTelegram(): void
     {
-        // consume(): token row, valid and unused.
+        // consumeOnce(): token row, valid and unused, and the conditional
+        // UPDATE that spends it changes one row.
         $this->wpdb->nextRows[] = [
             'id' => 3,
             'person_id' => 7,
             'expires_at' => '2999-01-01 00:00:00',
             'used_at' => null,
         ];
+        $this->wpdb->nextQueryResults[] = 1;
         // find(): the person, with a Telegram chat to message.
         $this->wpdb->nextRows[] = [
             'id' => 7,
@@ -52,9 +54,31 @@ final class VerificationControllerTest extends TelegramTestCase
         $confirmed = $this->controller()->verify('rawtoken');
 
         self::assertTrue($confirmed);
-        // Two updates: the token burned, the email marked verified.
-        self::assertCount(2, $this->wpdb->updates);
+        // The token burned by the conditional UPDATE, and the email marked verified.
+        self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
+        self::assertCount(1, $this->wpdb->updates);
         self::assertContains('sendMessage', $this->calledMethods());
+    }
+
+    public function testAVerificationLinkOpenedTwiceAtOnceConfirmsOnlyOnce(): void
+    {
+        $token = ['id' => 3, 'person_id' => 7, 'expires_at' => '2999-01-01 00:00:00', 'used_at' => null];
+
+        // Both requests read the token row while it is still unused.
+        $this->wpdb->nextRows[] = $token;
+        $this->wpdb->nextQueryResults[] = 1; // the first one's UPDATE changes the row
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => null];
+        $first = $this->controller()->verify('rawtoken');
+        $updatesAfterFirst = count($this->wpdb->updates);
+
+        $this->wpdb->nextRows[] = $token;
+        $this->wpdb->nextQueryResults[] = 0; // the second one's UPDATE changes nothing
+        $second = $this->controller()->verify('rawtoken');
+
+        self::assertTrue($first);
+        self::assertFalse($second);
+        // The second request wrote nothing.
+        self::assertCount($updatesAfterFirst, $this->wpdb->updates);
     }
 
     public function testVerifyRejectsABadToken(): void

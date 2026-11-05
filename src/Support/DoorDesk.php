@@ -116,7 +116,9 @@ final class DoorDesk
             return $used;
         }
 
-        $personId = $this->tokens->consume($rawToken, DoorSession::TOKEN_PURPOSE);
+        // Spent by one conditional UPDATE, so the link opened twice at the same
+        // moment buys only one door cookie.
+        $personId = $this->tokens->consumeOnce($rawToken, DoorSession::TOKEN_PURPOSE);
         $handoff = false;
 
         // Not an ordinary door link: maybe one made on the sales desk page
