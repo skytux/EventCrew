@@ -9,6 +9,7 @@ use EventCrew\Support\EmailBody;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\Signature;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -70,11 +71,11 @@ final class EmailTemplateTest extends TestCase
         self::assertContains('Content-Type: text/html; charset=UTF-8', $this->mails[0]['headers']);
         self::assertStringContainsString('You&#039;re on the door.', $body);
 
-        // Both actions are buttons, and the first is the filled one - the accent
-        // colour appears as its background, not merely as link text.
+        // Both actions are white buttons, and only the first has the gold glow.
         self::assertStringContainsString('href="https://site.test/ticket"', $body);
         self::assertStringContainsString('href="https://site.test/calendar"', $body);
-        self::assertStringContainsString('background:#4a6cf7', $body);
+        self::assertSame(2, substr_count($body, '<td bgcolor="#ffffff" style="border-radius:28px;background:#ffffff'));
+        self::assertSame(1, substr_count($body, 'box-shadow:0 0 18px rgba(255,190,120,.55)'));
     }
 
     public function testAnActionWithNoUrlIsDroppedRatherThanDrawn(): void
@@ -152,14 +153,21 @@ final class EmailTemplateTest extends TestCase
 
         self::assertStringContainsString('src="https://site.test/wp-content/uploads/logo.png"', $html);
         self::assertStringNotContainsString('cid:', $html);
-        // 400x100 fits the 536x140 masthead as it is: never drawn larger.
-        self::assertStringContainsString('width="400" height="100"', $html);
+        // 400x100 is scaled down to the 230px-wide logo space above the card.
+        self::assertStringContainsString('width="230" height="58"', $html);
+
+        Functions\when('wp_get_attachment_image_src')->justReturn(
+            ['https://site.test/wp-content/uploads/small.png', 200, 50]
+        );
+
+        // A smaller picture is never drawn larger than it is.
+        self::assertStringContainsString('width="200" height="50"', EmailTemplate::logoHtml());
     }
 
     /**
-     * The banner at the top fills the masthead: a wide banner is drawn the
-     * full 536px content width, a tall one up to 140px high, with width and
-     * height attributes for Outlook and max-width:100% for a phone.
+     * The logo above the card is up to 230px wide and 140px high and keeps its
+     * proportions, with width and height attributes for Outlook and
+     * max-width:100% for a phone.
      */
     public function testTheBannerIsBigAndKeepsItsProportions(): void
     {
@@ -170,8 +178,8 @@ final class EmailTemplateTest extends TestCase
 
         $html = EmailTemplate::logoHtml();
 
-        self::assertStringContainsString('width="536" height="134"', $html);
-        self::assertStringContainsString('width:536px;max-width:100%;height:auto', $html);
+        self::assertStringContainsString('width="230" height="58"', $html);
+        self::assertStringContainsString('width:230px;max-width:100%;height:auto', $html);
 
         Functions\when('wp_get_attachment_image_src')->justReturn(
             ['https://site.test/wp-content/uploads/tall.png', 600, 600]
@@ -187,22 +195,70 @@ final class EmailTemplateTest extends TestCase
         self::assertStringContainsString('src="https://cdn.example.com/logo.png"', EmailTemplate::logoHtml());
     }
 
-    public function testTheMastheadSitsOnTheAccentColour(): void
+    public function testTheLogoSitsOnTheNightBackgroundAboveTheCreamCard(): void
     {
         // A white logo - what a site usually has ready for a dark header - is
-        // invisible on a white card, and reads as a broken image.
+        // drawn on the dark background, never on the cream card.
+        $html = (new EmailTemplate(new Logger()))->render('Hi', '<p>Body</p>', '<p>Footer</p>');
+
+        self::assertStringContainsString('<body style="margin:0;padding:0;background:#0e091e;">', $html);
+        self::assertStringContainsString('bgcolor="#0e091e"', $html);
+        self::assertStringContainsString('bgcolor="#fbf6ec"', $html);
+        self::assertLessThan(strpos($html, 'bgcolor="#fbf6ec"'), strpos($html, 'Test Site'));
+        self::assertStringNotContainsString('{{', $html);
+    }
+
+    public function testTheBackdropHasThePurpleFadeAndThePictureWhenOneIsSet(): void
+    {
+        $plain = EmailTemplate::backdrop();
+
+        self::assertStringContainsString('bgcolor="#0e091e"', $plain);
+        self::assertStringContainsString('linear-gradient(180deg,#2b1d57 0%,#160f2e 60%,#0e091e 100%)', $plain);
+        self::assertStringNotContainsString('url(', $plain);
+
+        $this->options[EmailTemplate::BACKGROUND_OPTION] = 'https://site.test/crew.jpg';
+        $photo = EmailTemplate::backdrop();
+
+        // The background attribute is for Outlook; the fade is the layer
+        // behind the photo, shown when the photo does not load.
+        self::assertStringContainsString('background="https://site.test/crew.jpg"', $photo);
+        self::assertStringContainsString(
+            'background-image:url(\'https://site.test/crew.jpg\'),linear-gradient(180deg,#2b1d57',
+            $photo
+        );
+    }
+
+    public function testTheTaglineIsTheSiteDescriptionEscaped(): void
+    {
+        Functions\when('get_bloginfo')->alias(
+            static fn (string $what = ''): string => 'description' === $what ? 'Dance <to> express' : 'Test Site'
+        );
+
+        self::assertStringContainsString('Dance &lt;to&gt; express', EmailTemplate::taglineHtml());
+
+        Functions\when('get_bloginfo')->justReturn('');
+
+        self::assertSame('', EmailTemplate::taglineHtml());
+    }
+
+    public function testACustomTemplateStillGetsTheAccent(): void
+    {
         $this->options['eventcrew_app_theme_color'] = '#123456';
+        $post = new \WP_Post();
+        $post->post_status = 'publish';
+        $post->post_content = '<div style="color:{{accent}}">{{content}}</div>';
+        Functions\when('get_post_type')->justReturn(EmailTemplate::POST_TYPE);
+        Functions\when('get_post')->justReturn($post);
 
         $html = (new EmailTemplate(new Logger()))->render('Hi', '<p>Body</p>', '<p>Footer</p>');
 
-        self::assertStringContainsString('background:#123456', $html);
-        self::assertStringNotContainsString('{{accent}}', $html);
+        self::assertStringContainsString('color:#123456', $html);
     }
 
     public function testLabelsFlipToDarkTextOnALightAccent(): void
     {
         // A site branded beige would otherwise get white text on near-white.
-        self::assertSame('#1f2328', EmailBody::readableOn('#f6f0e4'));
+        self::assertSame(EmailBody::TEXT_COLOR, EmailBody::readableOn('#f6f0e4'));
         self::assertSame('#ffffff', EmailBody::readableOn('#111111'));
     }
 
@@ -353,5 +409,126 @@ final class EmailTemplateTest extends TestCase
             "Do Not Send This: https://site.test/stop\nGoes out on 21.7.2026 at 09:00 to 3 subscribers.",
             $altBody
         );
+    }
+
+    /** **Bold** and *italic* in a text become strong and em. */
+    public function testBoldAndItalicMarksBecomeStrongAndEm(): void
+    {
+        $html = EmailBody::toHtml("Bring **your ticket** and *a smile*.\n\n- **Doors** at 19");
+
+        self::assertStringContainsString('Bring <strong>your ticket</strong> and <em>a smile</em>.', $html);
+        self::assertStringContainsString('<strong>Doors</strong> at 19', $html);
+        self::assertStringNotContainsString('*', $html);
+    }
+
+    /**
+     * The marks are applied after escaping, so a mark around markup still
+     * shows the markup as text, and they never touch a link or a command.
+     */
+    public function testBoldAndItalicAreEscapeSafeAndLeaveLinksAndCodeAlone(): void
+    {
+        $html = EmailBody::toHtml('**<script>x</script>** and *<b>*');
+
+        self::assertStringContainsString('<strong>&lt;script&gt;x&lt;/script&gt;</strong>', $html);
+        self::assertStringContainsString('<em>&lt;b&gt;</em>', $html);
+        self::assertStringNotContainsString('<script>', $html);
+
+        $html = EmailBody::toHtml('See https://site.test/a*b*c and `x*y*z` here.');
+
+        self::assertStringContainsString('href="https://site.test/a*b*c"', $html);
+        self::assertStringContainsString('>x*y*z</code>', $html);
+        self::assertStringNotContainsString('<em>', $html);
+    }
+
+    /** A lone star, a sum or a star inside a word is left as it is. */
+    public function testAStarThatIsNotAMarkStays(): void
+    {
+        $html = EmailBody::toHtml('2 * 3 = 6, file*name and ** alone');
+
+        self::assertStringContainsString('2 * 3 = 6, file*name and ** alone', $html);
+        self::assertStringNotContainsString('<em>', $html);
+        self::assertStringNotContainsString('<strong>', $html);
+    }
+
+    /** The plain-text part drops the marks. */
+    public function testThePlainTextDropsTheMarks(): void
+    {
+        self::assertSame('Bring your ticket and a smile.', EmailBody::plainHeadings('Bring **your ticket** and *a smile*.'));
+    }
+
+    /** A greeting as the first paragraph is its own line, in italics. */
+    public function testTheGreetingIsItsOwnItalicLine(): void
+    {
+        $html = EmailBody::toHtml("Hi <Sam>,\n\nYou're on the door.");
+
+        self::assertStringStartsWith(
+            '<p style="margin:0 0 18px;font-family:' . EmailBody::HEAD_FONT . ';font-size:18px;font-style:italic;',
+            $html
+        );
+        self::assertStringContainsString('>Hi &lt;Sam&gt;,</p>', $html);
+        self::assertSame(1, substr_count($html, 'font-style:italic'));
+
+        // A first paragraph that is a sentence is not a greeting.
+        self::assertStringNotContainsString('font-style:italic', EmailBody::toHtml('You are on the door, Sam.'));
+    }
+
+    public function testWithGreetingPutsTheFirstNameOnTheFirstLine(): void
+    {
+        self::assertSame("Hi Sam,\n\nThe body.", EmailBody::withGreeting('Sam Smith', 'The body.'));
+        self::assertSame("Hi,\n\nThe body.", EmailBody::withGreeting('  ', 'The body.'));
+    }
+
+    /**
+     * The sign-off is a centred closing: the first line in italics, the rest
+     * in gold, and one line is split after its first comma.
+     */
+    public function testTheSignOffIsACentredClosingSplitAtTheComma(): void
+    {
+        $this->options[Signature::OPTION] = 'With love, the <Ecstatic Dance Helsinki> crew';
+
+        $html = Signature::html();
+
+        self::assertMatchesRegularExpression(
+            '~^<div [^>]*><p [^>]*font-style:italic;[^>]*text-align:center">With love,</p>'
+                . '<p [^>]*color:#a8641f;text-align:center">the &lt;Ecstatic Dance Helsinki&gt; crew</p></div>$~',
+            $html
+        );
+
+        $this->options[Signature::OPTION] = '';
+
+        self::assertSame('', Signature::html());
+    }
+
+    /**
+     * A two-language email pairs the Finnish and English lines; the plain
+     * text has both sign-offs. A blank Finnish sign-off uses the main one.
+     */
+    public function testTheSignOffInBothLanguages(): void
+    {
+        $this->options[Signature::OPTION] = "With love,\nthe crew";
+        $this->options[Signature::FINNISH_OPTION] = "Rakkaudella,\nkrew";
+
+        self::assertStringContainsString('>Rakkaudella, · With love,</p>', Signature::html(true));
+        self::assertStringContainsString('>krew · the crew</p>', Signature::html(true));
+        self::assertSame("Rakkaudella,\nkrew\n\nWith love,\nthe crew", Signature::bothText());
+        self::assertSame("Rakkaudella,\nkrew", Signature::text(\EventCrew\Support\Language::FINNISH));
+
+        $this->options[Signature::FINNISH_OPTION] = '';
+
+        self::assertSame("With love,\nthe crew", Signature::bothText());
+        self::assertStringNotContainsString(' · ', Signature::html(true));
+    }
+
+    /** The default template draws the closing and the site name under the card. */
+    public function testTheDefaultTemplateHasTheClosingAndTheSiteNameAtTheBottom(): void
+    {
+        $this->options[Signature::OPTION] = 'With love, the crew';
+
+        $html = (new EmailTemplate(new Logger()))->render('Hi', '<p>Body</p>', '<p>Footer</p>');
+
+        self::assertLessThan(strpos($html, 'Footer'), strpos($html, 'With love,'));
+        self::assertStringContainsString('&#10022;&nbsp;&nbsp;Test Site&nbsp;&nbsp;&#10022;', $html);
+        self::assertStringContainsString('@supports', $html);
+        self::assertStringContainsString('prefers-reduced-motion:no-preference', $html);
     }
 }

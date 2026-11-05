@@ -199,9 +199,11 @@ final class SettingsPage
                     get_option(PwaController::ACCENT_OPTION, '')
                     ?: get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR)
                 ),
-                'signature' => Signature::text(),
+                'signature' => trim((string) get_option(Signature::OPTION, '')),
+                'signature_fi' => trim((string) get_option(Signature::FINNISH_OPTION, '')),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
+                'email_background' => (string) get_option(EmailTemplate::BACKGROUND_OPTION, ''),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_note' => (string) get_option(TicketController::NOTE_OPTION, ''),
                 'infrastructure_note' => HelpPage::infrastructure(),
@@ -766,11 +768,19 @@ final class SettingsPage
             Signature::OPTION,
             isset($_POST['signature']) ? sanitize_textarea_field(wp_unslash($_POST['signature'])) : ''
         );
+        update_option(
+            Signature::FINNISH_OPTION,
+            isset($_POST['signature_fi']) ? sanitize_textarea_field(wp_unslash($_POST['signature_fi'])) : ''
+        );
 
         update_option(EmailTemplate::HTML_OPTION, isset($_POST['email_html']) ? '1' : '0');
         update_option(
             EmailTemplate::LOGO_OPTION,
             isset($_POST['email_logo']) ? esc_url_raw(wp_unslash($_POST['email_logo'])) : ''
+        );
+        update_option(
+            EmailTemplate::BACKGROUND_OPTION,
+            isset($_POST['email_background']) ? esc_url_raw(wp_unslash($_POST['email_background'])) : ''
         );
         update_option(
             TicketController::BACKGROUND_OPTION,

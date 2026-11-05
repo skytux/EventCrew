@@ -4052,9 +4052,6 @@ msgstr "Avaa pohjan tavalliseen editoriin, jossa on versiohistoria ja kumoaminen
 msgid "Available tags:"
 msgstr "Käytettävissä olevat tagit:"
 
-msgid "The header band, the buttons and the fallback wordmark all use one accent colour: the one set under “Web page”, or — if you have not set one — your theme’s own brand colour from its style settings. The band is coloured so a white logo, the kind most sites keep for a dark header, is visible rather than white on white. Button and wordmark text turns dark by itself on a light accent."
-msgstr "Yläpalkki, painikkeet ja varalla käytettävä tekstilogo käyttävät kaikki samaa korostusväriä: kohdassa ”Verkkosivu” asetettua väriä tai — jos sitä ei ole asetettu — teemasi omaa tunnusväriä sen tyyliasetuksista. Palkki on värillinen, jotta valkoinen logo, jollainen useimmilla sivustoilla on tummaa yläpalkkia varten, näkyy eikä ole valkoista valkoisella. Painikkeiden ja tekstilogon teksti muuttuu itsestään tummaksi, jos korostusväri on vaalea."
-
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "Pohjasi säilyttää sen ulkoasun, jolla se luotiin. Ota nykyinen sisäänrakennettu ulkoasu käyttöön alla olevalla ”Palauta pohja” -painikkeella."
 
@@ -6491,3 +6488,21 @@ msgstr "Telegram saa saman vastauksen, joten botti ei saa viestejä."
 #, php-format
 msgid "The webhook answered HTTP %1$d. %2$s"
 msgstr "Webhook vastasi HTTP %1$d. %2$s"
+
+msgid "In Finnish"
+msgstr "Suomeksi"
+
+msgid "Used in Finnish messages, and next to the first one in emails written in Finnish and English. Leave it blank to use the first one everywhere."
+msgstr "Käytetään suomenkielisissä viesteissä ja ensimmäisen rinnalla sähköposteissa, jotka on kirjoitettu suomeksi ja englanniksi. Jätä tyhjäksi, niin ensimmäistä käytetään kaikkialla."
+
+msgid "In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines."
+msgstr "Sähköposteissa lopputervehdys on keskitetty viestin alle: ensimmäinen rivi kursiivilla, seuraavat rivit kullalla. Yksi rivi jaetaan ensimmäisen pilkun jälkeen, joten ”With love, the crew” tulee kahdelle riville."
+
+msgid "Background picture"
+msgstr "Taustakuva"
+
+msgid "The picture behind the whole email, around the card. Use a JPEG that is already darkened, so the light logo and writing on it stay readable. Leave this blank for the purple fade alone; the fade is also what shows when a mail client does not load the picture."
+msgstr "Kuva koko sähköpostin takana, kortin ympärillä. Käytä valmiiksi tummennettua JPEG-kuvaa, jotta vaalea logo ja teksti sen päällä pysyvät luettavina. Jätä tyhjäksi, niin taustalla on pelkkä violetti liukuväri; liukuväri näkyy myös silloin, kun sähköpostiohjelma ei lataa kuvaa."
+
+msgid "The built-in template draws the background picture (or the purple fade), the logo and the site’s tagline (Settings > General) above a cream card, the sign-off centred at the foot of the card, and the site name at the bottom. Buttons are white with a gold glow, and headings are gold. {{accent}} gives the colour set under “Web page”, for a template of your own that wants it."
+msgstr "Sisäänrakennettu pohja piirtää taustakuvan (tai violetin liukuvärin), logon ja sivuston iskulauseen (Asetukset > Yleiset) kermanvärisen kortin yläpuolelle, lopputervehdyksen keskitettynä kortin alaosaan ja sivuston nimen alimmaiseksi. Painikkeet ovat valkoisia kultaisella hehkulla, ja otsikot ovat kultaisia. {{accent}} antaa kohdassa ”Verkkosivu” asetetun värin omaa pohjaa varten, jos se tarvitsee sitä."

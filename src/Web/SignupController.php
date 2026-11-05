@@ -555,13 +555,21 @@ final class SignupController
 
         // The link mail is in the language the person chose; a new one is
         // English until they choose.
-        Language::forPerson($person, fn () => $this->sendLoginLink($personId, $email, $isNew, $hasAccount));
+        Language::forPerson(
+            $person,
+            fn () => $this->sendLoginLink($personId, $email, $isNew, $hasAccount, $person?->displayName ?? '')
+        );
 
         return 'check_email';
     }
 
-    private function sendLoginLink(int $personId, string $email, bool $isNew, bool $hasAccount = true): void
-    {
+    private function sendLoginLink(
+        int $personId,
+        string $email,
+        bool $isNew,
+        bool $hasAccount = true,
+        string $name = ''
+    ): void {
         // A comment inside __() hides the string from make-pot, so the
         // long-line sniff is switched off around the whole statement instead.
         // phpcs:disable Generic.Files.LineLength.TooLong
@@ -575,6 +583,7 @@ final class SignupController
                 'eventcrew'
             );
         // phpcs:enable Generic.Files.LineLength.TooLong
+        $body = EmailBody::withGreeting($name, $body);
 
         $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
         $label = $hasAccount ? __('Sign in', 'eventcrew') : __('Create my account', 'eventcrew');
@@ -652,10 +661,10 @@ final class SignupController
         $this->mailer->toUnconfirmedAddress(
             $email,
             __('Confirm your new email address', 'eventcrew'),
-            __(
+            EmailBody::withGreeting($person->displayName, __(
                 "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email.",
                 'eventcrew'
-            ),
+            )),
             [['label' => __('Confirm new email', 'eventcrew'), 'url' => $url]]
         );
         // phpcs:enable Generic.Files.LineLength.TooLong
@@ -698,11 +707,11 @@ final class SignupController
                 $person->id,
                 $person->email,
                 __('Your crew account email was changed', 'eventcrew'),
-                sprintf(
+                EmailBody::withGreeting($person->displayName, sprintf(
                     /* translators: %s: the new email address */
                     __("The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer.", 'eventcrew'),
                     $email
-                )
+                ))
             );
         });
 

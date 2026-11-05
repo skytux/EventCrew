@@ -22,7 +22,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 final class Mailer
 {
     /** The red of the newsletter preview's "Do Not Send This" button. */
-    public const STOP_COLOR = '#c62828';
+    public const STOP_COLOR = EmailBody::DANGER_COLOR;
 
     public function __construct(
         private readonly Logger $logger,
@@ -110,8 +110,19 @@ final class Mailer
         bool $lightOnly = true
     ): bool {
         $board = $this->boardUrl();
-        $text .= $this->signatureText() . "\n\n—\n" . $footer . ('' === $board ? '' : ': ' . $board);
-        $html = $this->template->render($subject, $content, EmailBody::footerHtml($footer, $board), $lightOnly);
+        // These emails are Finnish, then English: the closing shows both sign-offs.
+        $signature = Signature::bothText();
+        $text .= ('' === $signature ? '' : "\n\n" . $signature) . "\n\n—\n" . $footer
+            . ('' === $board ? '' : ': ' . $board);
+        $html = $this->template->render(
+            $subject,
+            $content,
+            EmailBody::footerHtml($footer, $board),
+            $lightOnly,
+            null,
+            '',
+            true
+        );
 
         $parts = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
@@ -249,12 +260,13 @@ final class Mailer
 
         $after = sprintf(
             '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
-                . ' style="background:#f4f5f7;margin:0;padding:0 12px 32px"><tr><td align="center">%s'
+                . ' bgcolor="' . EmailTemplate::NIGHT . '" style="background:' . EmailTemplate::NIGHT
+                . ';margin:0;padding:0 12px 32px"><tr><td align="center">%s'
                 . '<p style="margin:0;font-family:%s;font-size:14px;line-height:1.5;color:%s">%s</p>'
                 . '</td></tr></table>',
             EmailBody::centred(EmailBody::toHtml('', [$stop], self::STOP_COLOR)),
             EmailBody::FONT,
-            '#1f2328',
+            '#ffe2b8',
             esc_html($line)
         );
         $html = $this->subscriberHtml($subject, $content, $footer, $footerUrl, $footerNote, $now, $after);

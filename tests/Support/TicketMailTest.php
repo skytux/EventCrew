@@ -806,28 +806,28 @@ final class TicketMailTest extends TestCase
     }
 
     /**
-     * The cancel email is drawn like the ticket email: the two texts, then
-     * the same card with the dark header, and a red band saying the ticket
-     * is cancelled in both languages. No QR code: the old one no longer works.
+     * The cancel email is in the v4 look without a QR code: the event and
+     * date as the gold title, the two texts, then a box with the holder's
+     * name and a red band saying the ticket is cancelled in both languages.
+     * No QR code: the old one no longer works.
      */
     public function testTheCancelEmailLooksLikeTheTicketWithARedBand(): void
     {
         $mail = $this->ticketMail()->composeCancelled('Cy Cole', '2026-11-14');
         $html = $mail['html'];
 
-        self::assertStringContainsString('bgcolor="#e8e6e3"', $html);
-        self::assertStringContainsString('bgcolor="#2b2b30"', $html);
-        self::assertStringContainsString('max-width:416px', $html);
+        self::assertStringContainsString('<h1 class="ec-shimmer"', $html);
+        self::assertStringContainsString('bgcolor="#f3eadb"', $html);
         self::assertStringContainsString('bgcolor="#b32d2e"', $html);
+        self::assertStringNotContainsString('<img', $html);
 
         $order = [
+            'Test Site — 14.11.2026</h1>',
             '>FI<',
             '>EN<',
             'Lippusi / Your ticket',
-            'Test Site</p>',
-            '14.11.2026</p>',
-            'LIPPU PERUTTU / TICKET CANCELLED',
             'Cy Cole</p>',
+            'LIPPU PERUTTU / TICKET CANCELLED',
         ];
         $last = -1;
 

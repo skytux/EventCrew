@@ -153,9 +153,9 @@ final class NewsletterControllerTest extends TestCase
         self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, 'Teksti'), 'Finnish text above the button');
         self::assertLessThan(strpos($html, 'Confirm</a>'), strpos($html, '&nbsp; Text<'), 'English text above it too');
         self::assertLessThan(strpos($html, '&nbsp; Text<'), strpos($html, 'Teksti'), 'Finnish first');
-        // Each text starts with its language tag, gold on the dark card.
-        self::assertMatchesRegularExpression('~<span [^>]*color:#e9c58f[^>]*>FI</span>&nbsp; Teksti</p>~', $html);
-        self::assertMatchesRegularExpression('~<span [^>]*color:#e9c58f[^>]*>EN</span>&nbsp; Text</p>~', $html);
+        // Each text starts with its language tag, in the tag gold of the cream card.
+        self::assertMatchesRegularExpression('~<span [^>]*color:#9a7440[^>]*>FI</span>&nbsp; Teksti</p>~', $html);
+        self::assertMatchesRegularExpression('~<span [^>]*color:#9a7440[^>]*>EN</span>&nbsp; Text</p>~', $html);
 
         // One text, the same in both languages, has no tag.
         $html = NewsletterConfirmMail::html($fi, ['body' => 'Teksti'] + $en, 'https://site.test/c');
