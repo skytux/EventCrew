@@ -110,11 +110,7 @@ final class TakeoverDeadline
      */
     public static function label(string $mysql): string
     {
-        $timestamp = self::toTimestamp($mysql);
-
-        return function_exists('wp_date')
-            ? (string) wp_date('D j M H:i', $timestamp, new \DateTimeZone('UTC'))
-            : gmdate('D j M H:i', $timestamp);
+        return Dates::dayTimeLabel(self::toTimestamp($mysql));
     }
 
     public static function nearHours(): int

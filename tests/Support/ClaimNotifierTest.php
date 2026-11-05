@@ -474,7 +474,7 @@ final class ClaimNotifierTest extends TestCase
         $about = '📝 Tehtävästä: Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät,'
             . ' somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.';
         self::assertSame(
-            "✅ Ilmoittauduttu: Somistus, Party, Sat 1 Aug 18:00–20:00.\n\nNäytä lippusi ovella - se on alla"
+            "✅ Ilmoittauduttu: Somistus, Party, la 1.8. 18:00–20:00.\n\nNäytä lippusi ovella - se on alla"
                 . " ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla"
                 . ' /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai etsi joku ottamaan se: hän'
                 . ' lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt.'
@@ -484,7 +484,7 @@ final class ClaimNotifierTest extends TestCase
         );
         self::assertSame('Olet ilmoittautunut: Somistus, Party', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, Sat 1 Aug 18:00–20:00. Näytä lippusi ovella."
+            "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, la 1.8. 18:00–20:00. Näytä lippusi ovella."
                 . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.\n\nEtkö pääsekään? Avaa botti ja peru"
                 . ' napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa'
                 . ' 🔁 Ota tehtävä, ja sinä hyväksyt.' . "\n\n" . $about . "\n\nNäytä lippusi: ",

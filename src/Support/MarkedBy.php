@@ -115,10 +115,12 @@ final class MarkedBy
             return $mysqlDatetime;
         }
 
-        $format = substr($mysqlDatetime, 0, 10) === current_time('Y-m-d') ? 'H:i' : 'D j M H:i';
+        if (substr($mysqlDatetime, 0, 10) === current_time('Y-m-d')) {
+            return function_exists('wp_date')
+                ? (string) wp_date('H:i', $when->getTimestamp())
+                : $when->format('H:i');
+        }
 
-        return function_exists('wp_date')
-            ? (string) wp_date($format, $when->getTimestamp())
-            : $when->format($format);
+        return Dates::dayTimeLabel($when->getTimestamp(), $when->getTimezone());
     }
 }

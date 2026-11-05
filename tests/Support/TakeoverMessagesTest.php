@@ -133,8 +133,8 @@ final class TakeoverMessagesTest extends TelegramTestCase
     public function testTheBuiltInTextKeepsItsFinnishTranslation(): void
     {
         self::assertSame(
-            '🔁 Person 7 pyytää saada ottaa tehtäväsi: Somistus, Ecstatic Dance, Sat 1 Aug 20:00.'
-                . "\n\nSinä päätät: annat tehtävän hänelle tai pidät sen. Vastaa viimeistään Thu 23 Jul 12:00."
+            '🔁 Person 7 pyytää saada ottaa tehtäväsi: Somistus, Ecstatic Dance, la 1.8. 20:00.'
+                . "\n\nSinä päätät: annat tehtävän hänelle tai pidät sen. Vastaa viimeistään to 23.7. 12:00."
                 . ' Jos et vastaa siihen mennessä, pidät tehtävän.',
             Language::run(
                 Language::FINNISH,

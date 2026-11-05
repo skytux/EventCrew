@@ -50,7 +50,9 @@ abstract class TestCase extends PHPUnitTestCase
         // Language::run(); then the shipped .mo answers (see FinnishCatalog).
         $translate = static fn (string $text): string => FinnishCatalog::translate($text);
         Functions\when('__')->alias($translate);
-        Functions\when('_x')->alias($translate);
+        Functions\when('_x')->alias(
+            static fn (string $text, string $context): string => FinnishCatalog::translateInContext($text, $context)
+        );
         // Returns the singular or plural template by count, the way WordPress
         // does; sprintf in the caller still fills in the number.
         Functions\when('_n')->alias(

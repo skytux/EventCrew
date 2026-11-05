@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BoardVisibility;
+use EventCrew\Support\Dates;
 use EventCrew\Support\EventName;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignedLink;
@@ -196,9 +197,7 @@ final class SignupBoardView
      */
     public static function humanDate(string $date): string
     {
-        $stamp = strtotime($date);
-
-        return false === $stamp ? $date : (string) date_i18n('D j M', $stamp);
+        return false === strtotime($date) ? $date : Dates::dayLabel($date);
     }
 
     /**
