@@ -726,10 +726,41 @@ final class TicketMail
     }
 
     /**
+     * Tells a guest's old address that the ticket moved to another address,
+     * after an organizer changed the guest's email. Only when the ticket was
+     * sent to the old address, and the night is today or later. $guest is the
+     * row as it was before the change. The new address is not in the email.
+     */
+    public function guestMoved(Guest $guest): bool
+    {
+        if (self::STATUS_SENT !== $guest->mailStatus) {
+            return false;
+        }
+
+        return $this->sendNotice(
+            $guest->email,
+            $guest->eventDate,
+            fn (): array => $this->composeMoved($guest->name, $guest->eventDate)
+        );
+    }
+
+    /**
      * The short "Your ticket is cancelled" email, in Finnish and English. Not
      * sent to an empty or placeholder address, or for a night already past.
      */
     public function sendCancelled(string $name, string $email, string $date): bool
+    {
+        return $this->sendNotice($email, $date, fn (): array => $this->composeCancelled($name, $date));
+    }
+
+    /**
+     * Sends the email $compose returns (a cancel or a moved email) to $email.
+     * Not sent to an empty or placeholder address, or for a night already
+     * past.
+     *
+     * @param callable(): array{subject: string, html: string, text: string} $compose
+     */
+    private function sendNotice(string $email, string $date, callable $compose): bool
     {
         if ('' === $email || Person::isPlaceholderEmail($email) || ! is_email($email)) {
             return false;
@@ -739,7 +770,7 @@ final class TicketMail
             return false;
         }
 
-        $mail = $this->composeCancelled($name, $date);
+        $mail = $compose();
         $footer = static fn (): string => __(
             'You get this email because you had a ticket to this event.',
             'eventcrew'
@@ -767,10 +798,58 @@ final class TicketMail
      */
     public function composeCancelled(string $name, string $date): array
     {
+        return $this->composeNotice($name, $date, static fn (string $event, string $short): array => [
+            'sentence' => sprintf(
+                /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door.', 'eventcrew'),
+                $event,
+                $short
+            ),
+            'subject' => __('Your ticket is cancelled', 'eventcrew'),
+            'band' => __('TICKET CANCELLED', 'eventcrew'),
+        ]);
+    }
+
+    /**
+     * The email to a guest's old address after an organizer changed the
+     * guest's email: the ticket moved to another address and the old code no
+     * longer works. Drawn like the cancel email, with its own red band. The
+     * new address is not in it.
+     *
+     * @return array{subject: string, html: string, text: string}
+     */
+    public function composeMoved(string $name, string $date): array
+    {
+        return $this->composeNotice($name, $date, static fn (string $event, string $short): array => [
+            'sentence' => sprintf(
+                /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door.', 'eventcrew'),
+                $event,
+                $short
+            ),
+            'subject' => __('Your ticket moved to another address', 'eventcrew'),
+            'band' => __('TICKET MOVED', 'eventcrew'),
+        ]);
+    }
+
+    /**
+     * A cancel or moved email: the greeting and $texts' sentence, then the
+     * card with the red band. $texts gets the event's name and the short
+     * date and returns, in the current language, the sentence, the subject
+     * and the band's text.
+     *
+     * @param callable(string, string): array{sentence: string, subject: string, band: string} $texts
+     * @return array{subject: string, html: string, text: string}
+     */
+    private function composeNotice(string $name, string $date, callable $texts): array
+    {
         $short = self::shortDate($date);
         [$event, $image] = $this->event($date);
-        $words = static function () use ($name, $event, $short): array {
+        $words = static function () use ($name, $event, $short, $texts): array {
             $first = DoorDesk::firstName($name);
+            $own = $texts($event, $short);
 
             return [
                 'body' => ('' === $first
@@ -778,16 +857,10 @@ final class TicketMail
                         /* translators: %s: the ticket holder's first name */
                         : sprintf(__('Hi %s,', 'eventcrew'), $first))
                     . "\n\n"
-                    . sprintf(
-                        /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
-                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                        __('Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door.', 'eventcrew'),
-                        $event,
-                        $short
-                    ),
-                'subject' => __('Your ticket is cancelled', 'eventcrew'),
+                    . $own['sentence'],
+                'subject' => $own['subject'],
                 'kicker' => __('Your ticket', 'eventcrew'),
-                'band' => __('TICKET CANCELLED', 'eventcrew'),
+                'band' => $own['band'],
             ];
         };
         $fi = Language::run(Language::FINNISH, $words);
