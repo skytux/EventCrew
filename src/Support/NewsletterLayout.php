@@ -343,7 +343,7 @@ final class NewsletterLayout
             );
             $link = '' !== $ticket && ! $soldOut ? $ticket : $page;
             $html .= '<tr><td style="padding:0;line-height:0">'
-                . ('' === $link ? $picture : sprintf('<a href="%s">%s</a>', esc_url($link), $picture))
+                . ('' === $link ? $picture : self::pictureLink($link, $picture))
                 . '</td></tr>';
         } else {
             $body .= sprintf(
@@ -554,7 +554,7 @@ final class NewsletterLayout
             self::BORDER_COLOR,
             self::THUMB_WIDTH,
             self::THUMB_WIDTH,
-            '' === $link ? $picture : sprintf('<a href="%s">%s</a>', esc_url($link), $picture),
+            '' === $link ? $picture : self::pictureLink($link, $picture),
             $cell,
             $text
         );
@@ -839,5 +839,19 @@ final class NewsletterLayout
             'en' => ['fi' => $en, 'en' => $en],
             default => ['fi' => $fi, 'en' => $en],
         };
+    }
+
+    /**
+     * A card picture wrapped in its link, with no underline under it: mail
+     * apps underline every link by default, and under a picture that shows
+     * as a line (Owner, Q208).
+     */
+    private static function pictureLink(string $link, string $picture): string
+    {
+        return sprintf(
+            '<a href="%s" style="display:block;text-decoration:none;border:0">%s</a>',
+            esc_url($link),
+            $picture
+        );
     }
 }

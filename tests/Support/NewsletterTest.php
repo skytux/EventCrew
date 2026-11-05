@@ -564,7 +564,7 @@ final class NewsletterTest extends TestCase
 
         self::assertStringNotContainsString('https://site.test/event-1/', $html);
         self::assertSame(1, substr_count($html, 'href="https://site.test/event-2/"'));
-        self::assertStringContainsString('<a href="https://site.test/event-2/"><img', $html);
+        self::assertStringContainsString('<a href="https://site.test/event-2/" style="display:block;text-decoration:none;border:0"><img', $html);
         self::assertStringNotContainsString('site.test/event-', $text);
     }
 

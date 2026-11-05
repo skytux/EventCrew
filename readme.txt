@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.1
+Stable tag: 1.140.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.2 =
+The picture on each newsletter event card no longer shows an underline under it (Q208).
 
 = 1.140.1 =
 Telegram: after someone presses Cancel on the ticket send message, the Cancel button is removed from that message.
@@ -1217,6 +1220,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.2 =
+No settings change.
 
 = 1.140.1 =
 No settings change.

@@ -840,7 +840,7 @@ final class NewsletterWriterTest extends TestCase
         $text = NewsletterLayout::text($cards, [$pictured, $plain], null);
 
         self::assertMatchesRegularExpression(
-            '~<td width="80" valign="middle" style="width:80px;[^"]*"><a href="https://site\.test/event-4/">'
+            '~<td width="80" valign="middle" style="width:80px;[^"]*"><a href="https://site\.test/event-4/" style="display:block;text-decoration:none;border:0">'
             . '<img src="https://cdn\.test/later\.jpg" width="80" alt="Pictured" '
             . 'style="display:block;width:80px;height:auto;border:0;border-radius:6px"></a></td>~',
             $html
