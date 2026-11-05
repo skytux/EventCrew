@@ -237,11 +237,11 @@ final class BotLogTest extends TelegramTestCase
         self::assertSame('[showed menu:ticket]', BotLog::marker('menu:ticket', false, '2026-07-20'));
     }
 
-    public function testTheCutoffIsSixtyDaysAgo(): void
+    public function testTheCutoffIsNinetyDaysAgo(): void
     {
         $now = (int) strtotime('2026-11-03 12:00:00 UTC');
 
-        self::assertSame('2026-09-04 12:00:00', BotLog::cutoff($now));
+        self::assertSame('2026-08-05 12:00:00', BotLog::cutoff($now));
     }
 }
 
