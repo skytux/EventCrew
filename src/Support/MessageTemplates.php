@@ -1792,7 +1792,13 @@ final class MessageTemplates
     /** "Door at Dance Night, Sat 14 Nov 18:00–20:00", the day as in when(). */
     private static function standingTask(Task $task): string
     {
-        return sprintf('%s at %s, %s', $task->roleLabel(), $task->eventName(), self::when($task));
+        return sprintf(
+            /* translators: 1: role, 2: event, 3: day and time */
+            __('%1$s at %2$s, %3$s', 'eventcrew'),
+            $task->roleLabel(),
+            $task->eventName(),
+            self::when($task)
+        );
     }
 
     /**

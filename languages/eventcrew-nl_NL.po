@@ -7785,3 +7785,15 @@ msgstr "🛠️ Het tabblad Beheer openen"
 #: templates/public/signup.php:604
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Gids voor organisatoren ↓"
+
+#. translators: 1: role, 2: event, 3: day and time
+#: src/Support/MessageTemplates.php:1795
+#, php-format
+msgid "%1$s at %2$s, %3$s"
+msgstr "%1$s bij %2$s, %3$s"
+
+#. translators: 1: role, 2: event, 3: places taken, 4: places in all
+#: src/Support/OpenTaskCall.php:389
+#, php-format
+msgid "%1$s at %2$s (%3$d/%4$d)"
+msgstr "%1$s bij %2$s (%3$d/%4$d)"
