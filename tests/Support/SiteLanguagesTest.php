@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
 use EventCrew\Support\Language;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
@@ -143,6 +144,54 @@ final class SiteLanguagesTest extends TestCase
 
         $locale = Language::run('de', static fn (): mixed => Language::filterLocale('fi'));
         self::assertSame('en_US', $locale, 'not a site language: English');
+    }
+
+    /**
+     * The WordPress locale each language switches gettext to, so its
+     * languages/eventcrew-<locale>.mo is the one loaded.
+     */
+    public function testEachLanguageHasItsWordPressLocale(): void
+    {
+        $expected = [
+            'fi' => 'fi', 'en' => 'en_US', 'sv' => 'sv_SE', 'es' => 'es_ES', 'de' => 'de_DE', 'fr' => 'fr_FR',
+            'ja' => 'ja', 'pt' => 'pt_BR', 'it' => 'it_IT', 'ru' => 'ru_RU', 'nl' => 'nl_NL', 'zh' => 'zh_CN',
+            'pl' => 'pl_PL',
+        ];
+        $this->options[SiteLanguages::OPTION] = array_keys($expected);
+
+        foreach ($expected as $code => $locale) {
+            self::assertSame($locale, SiteLanguages::locale($code), $code);
+            self::assertSame($code, Language::run($code, static fn (): ?string => Language::current()), $code);
+            self::assertSame(
+                $locale,
+                Language::run($code, static fn (): mixed => Language::filterLocale('en_US')),
+                $code
+            );
+        }
+
+        self::assertNull(Language::current());
+        self::assertSame('en_US', Language::filterLocale('en_US'), 'outside run(): the site locale');
+    }
+
+    /** A person whose language is not a site language reads English; fi and en are as before. */
+    public function testForPersonFallsBackToEnglish(): void
+    {
+        $person = static fn (?string $language): Person => new Person(
+            8,
+            'mia@example.test',
+            'Mia Crew',
+            '2026-01-01 00:00:00',
+            language: $language
+        );
+        $current = static fn (): ?string => Language::current();
+
+        self::assertSame('fi', Language::forPerson($person('fi'), $current));
+        self::assertSame('en', Language::forPerson($person('en'), $current));
+        self::assertSame('en', Language::forPerson($person('es'), $current), 'es is not a site language yet');
+        self::assertSame('en', Language::forPerson(null, $current));
+
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'es'];
+        self::assertSame('es', Language::forPerson($person('es'), $current));
     }
 
     /** The browser's first site language wins; English first, or none, is null (English). */
