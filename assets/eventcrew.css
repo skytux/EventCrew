@@ -1024,3 +1024,30 @@
         grid-column: 2; justify-self: end; margin: 0;
     }
 }
+
+/* Sign in with Telegram, while the code is made: a small spinner after the label. */
+.tg-auth-button.is-busy {
+    cursor: progress;
+    opacity: .85;
+}
+
+.tg-auth-button.is-busy::after {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-left: .5em;
+    vertical-align: -.15em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: eventcrew-tg-spin .7s linear infinite;
+}
+
+@keyframes eventcrew-tg-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tg-auth-button.is-busy::after { animation-duration: 2s; }
+}
