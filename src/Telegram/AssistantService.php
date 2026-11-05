@@ -409,13 +409,20 @@ final class AssistantService
         $fromId = (int) $message['from']['id'];
         ConversationLog::add($fromId, ConversationLog::PERSON, trim((string) $message['text']), null, $chatId);
 
-        if (! $parsed['known'] || '' === $parsed['reply']) {
+        // Links to other sites are removed, so a member cannot make the bot
+        // post one under its own name.
+        $reply = GroupLinkFilter::strip(
+            $parsed['reply'],
+            (string) wp_parse_url((string) home_url('/'), PHP_URL_HOST)
+        );
+
+        if (! $parsed['known'] || '' === $reply) {
             return;
         }
 
         $params = [
             'chat_id' => $chatId,
-            'text' => $this->clip($parsed['reply']),
+            'text' => $this->clip($reply),
         ];
 
         if (isset($message['message_id'])) {
