@@ -17,9 +17,11 @@ use EventCrew\Models\Person;
  * - isOn($kind): the "Hybrid" tick of that message kind (on by default for
  *   every kind that was hybrid before the tick existed), and isAllowed().
  * - languagesFor($kind, $recipient): every site language when the kind is
- *   hybrid; otherwise the one language: the person's stored language, or the
- *   main language (the first site language) for ticket buyers, guests,
- *   subscribers and anyone else whose language is not known (Q290).
+ *   hybrid; otherwise the one language: a person's stored language, or
+ *   English for a person who has not chosen one (personLanguage(), as
+ *   Language::forPerson() does); the main language (the first site
+ *   language) for ticket buyers, guests, subscribers and anyone else who is
+ *   not a person, whose language is not known (Q290).
  *
  * Every sender that used to write Finnish then English asks this class which
  * languages to write in, so the rule is in one place.
@@ -108,8 +110,10 @@ final class HybridPolicy
     /**
      * The languages a $kind message to $recipient is written in, main
      * language first: every site language when it is hybrid, else one.
-     * $recipient is a Person, a stored language code, or null when the
-     * language is not known (a ticket buyer, a guest, a Telegram group).
+     * $recipient is a Person (personLanguage()), a language code, or null
+     * when the language is not known (a ticket buyer, a guest, a subscriber,
+     * a Telegram group): then the main language. A language that is not a
+     * site language also gets the main language.
      *
      * @return list<string>
      */
@@ -121,10 +125,19 @@ final class HybridPolicy
             return $site;
         }
 
-        $language = $recipient instanceof Person ? $recipient->language : $recipient;
+        $language = $recipient instanceof Person ? self::personLanguage($recipient) : $recipient;
         $language = is_string($language) ? strtolower(trim($language)) : '';
 
         return [in_array($language, $site, true) ? $language : $site[0]];
+    }
+
+    /**
+     * The language a person reads: their stored language, or English when
+     * they have not chosen one (the same rule as Language::forPerson()).
+     */
+    public static function personLanguage(Person $person): string
+    {
+        return $person->language ?? Language::ENGLISH;
     }
 
     /**

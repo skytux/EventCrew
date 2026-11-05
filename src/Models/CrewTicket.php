@@ -15,8 +15,10 @@ namespace EventCrew\Models;
  * email. A person with several tasks on one night has one ticket: $id is the
  * sign-up whose ticket was emailed first, so its code stays the same.
  *
- * $language is the person's stored language (null when not chosen): the
- * email is in that language alone when the ticket email's Hybrid tick is off.
+ * $language is the language the person reads: their stored language, or
+ * English when they have not chosen one (HybridPolicy::personLanguage()).
+ * The email is in that language alone when the ticket email's Hybrid tick is
+ * off. Null means not known, and then the main language is used.
  */
 final class CrewTicket
 {

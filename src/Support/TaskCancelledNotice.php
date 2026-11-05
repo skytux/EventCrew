@@ -11,7 +11,8 @@ use EventCrew\Repositories\TaskRepository;
 
 /**
  * When an organizer deletes a whole task, every person who was signed up for
- * it gets exactly one email about it (Q263), in Finnish and English.
+ * it gets exactly one email about it (Q263), in the languages HybridPolicy
+ * picks: every site language when the email is hybrid, else the person's.
  *
  * Listens on the eventcrew/task_deleted action that TaskRepository::delete
  * fires with the people whose sign-up it cancelled. When the person's ticket

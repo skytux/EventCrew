@@ -797,7 +797,7 @@ final class TicketMail
             $person->name(),
             $person->email,
             $this->tasksOn($person->id, $date),
-            $person->language
+            HybridPolicy::personLanguage($person)
         ));
 
         if ($sent && null !== $this->assignments) {
@@ -831,7 +831,13 @@ final class TicketMail
         $tasks = $this->tasksOn($person->id, $date);
 
         if ([] === $tasks) {
-            return $this->sendCancelled($person->name(), $person->email, $date, $deleted, $person->language);
+            return $this->sendCancelled(
+                $person->name(),
+                $person->email,
+                $date,
+                $deleted,
+                HybridPolicy::personLanguage($person)
+            );
         }
 
         if ($date < (string) current_time('Y-m-d')) {
@@ -845,7 +851,7 @@ final class TicketMail
             $person->name(),
             $person->email,
             $tasks,
-            $person->language
+            HybridPolicy::personLanguage($person)
         ), $deleted);
     }
 
@@ -930,7 +936,7 @@ final class TicketMail
                 $date,
                 $person->name(),
                 $person->email,
-                language: $person->language
+                language: HybridPolicy::personLanguage($person)
             )
         );
 
@@ -973,7 +979,13 @@ final class TicketMail
             return false;
         }
 
-        return $this->sendCancelled($person->name(), $person->email, $date, null, $person->language);
+        return $this->sendCancelled(
+            $person->name(),
+            $person->email,
+            $date,
+            null,
+            HybridPolicy::personLanguage($person)
+        );
     }
 
     /**

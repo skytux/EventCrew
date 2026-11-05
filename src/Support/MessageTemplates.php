@@ -522,7 +522,7 @@ final class MessageTemplates
                 'task_cancelled',
                 __('Task cancelled by the organizers (email)', 'eventcrew'),
                 $email,
-                __('Sent to each person signed up for a task when an organizer deletes the task. Sent in Finnish and English.', 'eventcrew'),
+                __('Sent to each person signed up for a task when an organizer deletes the task. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: 1: role, 2: event */
                     __('Task cancelled: %1$s for %2$s', 'eventcrew'),
@@ -647,7 +647,7 @@ final class MessageTemplates
                 'ticket',
                 __('Ticket (email)', 'eventcrew'),
                 $email,
-                __('The ticket with its QR code, to ticket buyers, guests and crew. Sent in Finnish and English.', 'eventcrew'),
+                __('The ticket with its QR code, to ticket buyers, guests and crew. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('Your ticket', 'eventcrew'),
                 /* translators: %s: the ticket holder's first name */
                 static fn (): string => self::tag(__('Hi %s,', 'eventcrew'), ['%s' => '{first_name}']) . "\n\n{thanks}\n\n"
@@ -673,7 +673,7 @@ final class MessageTemplates
                 'ticket_cancelled',
                 __('Ticket cancelled (email)', 'eventcrew'),
                 $email,
-                __('Sent when a ticket that was emailed is cancelled. Sent in Finnish and English.', 'eventcrew'),
+                __('Sent when a ticket that was emailed is cancelled. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('Your ticket is cancelled', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
@@ -689,7 +689,7 @@ final class MessageTemplates
                 'followup_came',
                 __('After the event: thank you (email)', 'eventcrew'),
                 $email,
-                __('Sent the day after an event to the people who came. Sent in Finnish and English.', 'eventcrew'),
+                __('Sent the day after an event to the people who came. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('Thank you for dancing with us', 'eventcrew'),
                 static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::CAME)),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
@@ -698,7 +698,7 @@ final class MessageTemplates
                 'followup_missed',
                 __('After the event: we missed you (email)', 'eventcrew'),
                 $email,
-                __('Sent the day after an event to the people who had a ticket but did not come. Sent in Finnish and English.', 'eventcrew'),
+                __('Sent the day after an event to the people who had a ticket but did not come. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('We missed you this time', 'eventcrew'),
                 static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::MISSED)),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
