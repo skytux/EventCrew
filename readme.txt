@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.103
+Stable tag: 1.140.104
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.104 =
+The crew privacy notice now says that other crew can see your name and tasks, that names appear in the crew Telegram group (task board and covers), and that standing is seen only by the organizers and the sales desk crew (Q321).
 
 = 1.140.103 =
 New setting Second thoughts minutes (default 5). Taking a task and cancelling it again within that time counts as if it never happened for the standing and the delayed messages and tickets, while lists and counts update at once. Live it is 5 minutes.
@@ -1523,6 +1526,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.104 =
+No settings change.
 
 = 1.140.103 =
 No settings change.
