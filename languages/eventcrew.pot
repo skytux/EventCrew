@@ -5738,7 +5738,7 @@ msgstr ""
 msgid "Sign-in links are stored only as a one-way hash, never as something that could be read back out of the database and used to sign in as you."
 msgstr ""
 
-#: src/Support/SignupService.php:312
+#: src/Support/SignupService.php:313
 #. translators: %d: number of minutes
 msgid "Sign-out closes %d minutes before the task starts. Tell an organizer if you cannot come."
 msgstr ""
@@ -7937,7 +7937,7 @@ msgstr ""
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
 msgstr ""
 
-#: src/Support/SignupService.php:304
+#: src/Support/SignupService.php:305
 msgid "To take tasks, talk to the team at an event."
 msgstr ""
 
@@ -8200,7 +8200,7 @@ msgstr ""
 msgid "Waiting for the team’s OK"
 msgstr ""
 
-#: src/Support/SignupService.php:298
+#: src/Support/SignupService.php:299
 msgid "Waiting for the team’s OK. We will message you when it comes."
 msgstr ""
 
