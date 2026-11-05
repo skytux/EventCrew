@@ -140,25 +140,16 @@ final class PrivacyPolicy
      * if the organizer made one, otherwise WordPress's own privacy policy page,
      * otherwise nowhere - and "nowhere" is a real answer the callers check,
      * because a link to an empty page is worse than a sentence with no link.
+     *
+     * Inside Language::run(), the page's translation into that language when
+     * the site has one (Polylang).
      */
     public static function noticeUrl(): string
     {
-        $pageId = self::pageId();
+        foreach ([self::pageId(), (int) get_option('wp_page_for_privacy_policy', 0)] as $pageId) {
+            $url = self::publishedUrl($pageId);
 
-        if ($pageId > 0 && 'publish' === get_post_status($pageId)) {
-            $url = get_permalink($pageId);
-
-            if (is_string($url) && '' !== $url) {
-                return $url;
-            }
-        }
-
-        $corePolicy = (int) get_option('wp_page_for_privacy_policy', 0);
-
-        if ($corePolicy > 0 && 'publish' === get_post_status($corePolicy)) {
-            $url = get_permalink($corePolicy);
-
-            if (is_string($url) && '' !== $url) {
+            if ('' !== $url) {
                 return $url;
             }
         }
@@ -243,21 +234,50 @@ final class PrivacyPolicy
     /**
      * Where the ticket buyer notice is: its own page if one is chosen and
      * published, otherwise WordPress's own privacy policy page (which carries
-     * the same text as a suggestion), otherwise ''.
+     * the same text as a suggestion), otherwise ''. Translated like
+     * noticeUrl().
      */
     public static function buyerNoticeUrl(): string
     {
         foreach ([self::buyerPageId(), (int) get_option('wp_page_for_privacy_policy', 0)] as $pageId) {
-            if ($pageId > 0 && 'publish' === get_post_status($pageId)) {
-                $url = get_permalink($pageId);
+            $url = self::publishedUrl($pageId);
 
-                if (is_string($url) && '' !== $url) {
-                    return $url;
-                }
+            if ('' !== $url) {
+                return $url;
             }
         }
 
         return '';
+    }
+
+    /**
+     * The address of page $pageId when it is published - of its translation
+     * into Language::current() when there is one - or ''.
+     */
+    private static function publishedUrl(int $pageId): string
+    {
+        if ($pageId <= 0 || 'publish' !== get_post_status($pageId)) {
+            return '';
+        }
+
+        $url = get_permalink(PageLanguage::translatedPage($pageId, Language::current()));
+
+        return is_string($url) ? $url : '';
+    }
+
+    /**
+     * The line a translated notice starts with: where the translation and
+     * the English original differ, the original applies. '' in English.
+     */
+    public static function translationNote(): string
+    {
+        $language = Language::current();
+
+        if (null === $language || Language::ENGLISH === $language) {
+            return '';
+        }
+
+        return __('If the translation and the English original differ, the English original applies.', 'eventcrew');
     }
 
     /**

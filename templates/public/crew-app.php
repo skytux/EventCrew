@@ -60,7 +60,7 @@ $eventcrew_language = $eventcrew_page->language();
 <body <?php body_class('eventcrew-crew-app'); ?>>
 <?php wp_body_open(); ?>
 <nav class="eventcrew-app-bar">
-    <a href="<?php echo esc_url(home_url('/')); ?>">← <?php echo esc_html(\EventCrew\Support\Language::run($eventcrew_language, static fn (): string => __('Website', 'eventcrew'))); ?></a>
+    <a href="<?php echo esc_url($eventcrew_page->websiteUrl()); ?>">← <?php echo esc_html(\EventCrew\Support\Language::run($eventcrew_language, static fn (): string => __('Website', 'eventcrew'))); ?></a>
 </nav>
 <main class="eventcrew-app-main">
     <?php

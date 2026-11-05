@@ -7,6 +7,7 @@
  * @var bool $eventcrew_configured Whether a controller and contact have been set.
  * @var bool $eventcrew_can_edit Whether the current viewer can fix that.
  * @var array<int, array{heading: string, paragraphs: array<int, string>}> $eventcrew_sections
+ * @var string $eventcrew_translation_note '' in English; in a translation, that the English original applies.
  */
 
 declare(strict_types=1);
@@ -40,6 +41,9 @@ if (! defined('ABSPATH')) {
             </p>
         <?php endif; ?>
     <?php else : ?>
+        <?php if ('' !== ($eventcrew_translation_note ?? '')) : ?>
+            <p class="eventcrew-muted eventcrew-hint"><?php echo esc_html($eventcrew_translation_note); ?></p>
+        <?php endif; ?>
         <?php foreach ($eventcrew_sections as $eventcrew_section) : ?>
             <h2><?php echo esc_html($eventcrew_section['heading']); ?></h2>
             <?php foreach ($eventcrew_section['paragraphs'] as $eventcrew_paragraph) : ?>

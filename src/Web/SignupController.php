@@ -17,6 +17,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PageLanguage;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
@@ -335,7 +336,7 @@ final class SignupController
         $this->registerStyle();
         wp_enqueue_style(self::STYLE_HANDLE);
 
-        // In the signed-in person's language; for a visitor, the browser's.
+        // In the signed-in person's language, else the website's or the browser's.
         return Language::run($this->pageLanguage(), function (): string {
             $view = $this->viewModel();
             $view['admin'] = $this->adminView($view['person'] ?? null);
@@ -1252,16 +1253,28 @@ final class SignupController
     }
 
     /**
-     * The language the crew page is shown in: the signed-in person's choice
-     * (English until they choose), or for a signed-out visitor Finnish when
-     * the browser prefers Finnish over English, else English.
+     * The language the crew page is shown in, the first that is known of:
+     * the signed-in person's choice; the language of the website page the
+     * visitor came from (the link's marker, kept for the browser session, see
+     * PageLanguage); for a signed-out visitor, the site language the browser
+     * prefers. Otherwise English (null).
      */
     public function pageLanguage(): ?string
     {
         $person = $this->currentPerson();
 
-        if (null !== $person) {
+        if (null !== $person?->language) {
             return $person->language;
+        }
+
+        $marked = PageLanguage::marked();
+
+        if (null !== $marked) {
+            return $marked;
+        }
+
+        if (null !== $person) {
+            return null;
         }
 
         // The answer now depends on this header; tell caches so.

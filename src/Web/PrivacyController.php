@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Support\Language;
+use EventCrew\Support\PageLanguage;
 use EventCrew\Support\PrivacyPolicy;
 use WP_Post;
 
@@ -83,19 +85,42 @@ final class PrivacyController
         }
     }
 
+    /**
+     * The [eventcrew_privacy] shortcode, in the language of the page it is on
+     * (Polylang): a /fi/ translation of the notice page shows the notice in
+     * Finnish, from the plugin's own translations, with a line saying the
+     * English original applies where they differ.
+     */
     public function renderShortcode(): string
     {
-        return $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::sections() : []);
+        return $this->inPageLanguage(
+            fn (): string => $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::sections() : [])
+        );
     }
 
     /**
      * The [eventcrew_ticket_privacy] shortcode: the public notice for people
      * who bought a ticket in the web shop. Same template and the same
-     * not-configured rule as the crew notice.
+     * not-configured rule and the same language rule as the crew notice.
      */
     public function renderBuyerShortcode(): string
     {
-        return $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::buyerSections() : []);
+        return $this->inPageLanguage(
+            fn (): string => $this->render(PrivacyPolicy::isConfigured() ? PrivacyPolicy::buyerSections() : [])
+        );
+    }
+
+    /**
+     * Runs $render in the language already in force, else in the page's
+     * language (Polylang); without either, as WordPress has it.
+     *
+     * @param callable(): string $render
+     */
+    private function inPageLanguage(callable $render): string
+    {
+        $language = Language::current() ?? PageLanguage::ofSite();
+
+        return null === $language ? $render() : Language::run($language, $render);
     }
 
     /**
@@ -113,6 +138,7 @@ final class PrivacyController
         $eventcrew_configured = PrivacyPolicy::isConfigured();
         $eventcrew_can_edit = current_user_can('manage_options');
         $eventcrew_sections = $sections;
+        $eventcrew_translation_note = PrivacyPolicy::translationNote();
 
         ob_start();
         include EVENTCREW_PLUGIN_DIR . 'templates/public/privacy.php';

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Support\PageLanguage;
+
 /**
  * The Crew app page (the page set as the signup page) shown as a page of its
  * own: the full browser width, without the theme's header, menu and footer,
@@ -13,6 +15,10 @@ namespace EventCrew\Web;
  * Also sends the old address of a page whose address was changed to its new
  * one. WordPress does this for posts but not for pages, and the Crew app's
  * address is in emails already sent.
+ *
+ * And on a site translated with Polylang, links from a website page to the
+ * Crew app carry that page's language (Support\PageLanguage), so the Crew app
+ * opens in the language the visitor was reading.
  */
 final class CrewAppPage
 {
@@ -25,6 +31,9 @@ final class CrewAppPage
     /** Set when templateFor() picks the page file, which reads it. */
     private static ?self $current = null;
 
+    /** @var list<string>|null See crewPaths(). */
+    private ?array $crewPaths = null;
+
     public function __construct(
         private readonly SignupController $signup,
         private readonly PwaController $pwa
@@ -36,6 +45,8 @@ final class CrewAppPage
         add_filter('template_include', [$this, 'templateFor'], 99);
         add_action('post_updated', [$this, 'rememberOldSlug'], 10, 3);
         add_action('template_redirect', [$this, 'redirectOldSlug'], 1);
+        add_action('template_redirect', [$this, 'rememberLanguage'], 2);
+        add_filter('render_block', [$this, 'markCrewLinks'], 10, 1);
     }
 
     public static function isStandalone(): bool
@@ -71,6 +82,108 @@ final class CrewAppPage
     public function language(): ?string
     {
         return $this->signup->pageLanguage();
+    }
+
+    /** The "← Website" link: the home page in the language the page is shown in. */
+    public function websiteUrl(): string
+    {
+        return PageLanguage::homeUrl($this->language());
+    }
+
+    /**
+     * The template_redirect listener: a language marker in the address is
+     * kept for the browser session. The Crew app page in a marked language
+     * is not stored by page caches, since its address alone does not say
+     * which language it is in.
+     */
+    public function rememberLanguage(): void
+    {
+        PageLanguage::remember();
+
+        if (! $this->pwa->shouldInject() || null === PageLanguage::marked()) {
+            return;
+        }
+
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+
+        nocache_headers();
+    }
+
+    /**
+     * The render_block filter: on a website page with a language (Polylang),
+     * every link to the Crew app page - its address now or an old one - gets
+     * that language as its marker. Not on the Crew app page itself, whose own
+     * links keep the language it is shown in.
+     */
+    public function markCrewLinks(mixed $content): mixed
+    {
+        if (! is_string($content) || ! str_contains($content, 'href')) {
+            return $content;
+        }
+
+        $language = PageLanguage::ofSite();
+
+        if (null === $language || $this->pwa->shouldInject()) {
+            return $content;
+        }
+
+        $paths = $this->crewPaths();
+
+        if ([] === $paths) {
+            return $content;
+        }
+
+        $host = (string) wp_parse_url((string) home_url('/'), PHP_URL_HOST);
+
+        return (string) preg_replace_callback(
+            '~(<a\b[^>]*?\shref=)(["\'])([^"\']*)\2~i',
+            static function (array $match) use ($paths, $host, $language): string {
+                $url = html_entity_decode($match[3], ENT_QUOTES);
+                $linkHost = (string) wp_parse_url($url, PHP_URL_HOST);
+                $path = trim((string) wp_parse_url($url, PHP_URL_PATH), '/');
+
+                if (('' !== $linkHost && 0 !== strcasecmp($linkHost, $host)) || ! in_array($path, $paths, true)) {
+                    return $match[0];
+                }
+
+                return $match[1] . $match[2] . PageLanguage::markHref($match[3], $language) . $match[2];
+            },
+            $content
+        );
+    }
+
+    /**
+     * The Crew app page's address paths without the slashes ("crew-app"),
+     * now and before (OLD_SLUG_META), read once per request.
+     *
+     * @return list<string>
+     */
+    private function crewPaths(): array
+    {
+        if (null !== $this->crewPaths) {
+            return $this->crewPaths;
+        }
+
+        $pageId = (int) get_option(PwaController::PAGE_OPTION, 0);
+        $paths = [];
+
+        if ($pageId > 0) {
+            $url = get_permalink($pageId);
+
+            if (is_string($url) && '' !== $url) {
+                $paths[] = trim((string) wp_parse_url($url, PHP_URL_PATH), '/');
+            }
+
+            foreach ((array) get_post_meta($pageId, self::OLD_SLUG_META) as $slug) {
+                $paths[] = is_string($slug) ? $slug : '';
+            }
+        }
+
+        $this->crewPaths = array_values(array_unique(array_filter($paths, static fn (string $p): bool => '' !== $p)));
+
+        return $this->crewPaths;
     }
 
     /**
