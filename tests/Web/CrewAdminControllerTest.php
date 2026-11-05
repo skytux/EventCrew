@@ -2738,6 +2738,83 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Settings saved.', CrewAdminController::noticeText($result['notice']));
     }
 
+    public function testSavingARoleWithItsTextsUnchangedKeepsTheirOtherLanguages(): void
+    {
+        $this->storeTranslatedWelcome();
+        $shown = Roles::find('welcome');
+        self::assertNotNull($shown);
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::ROLE_ACTION, [
+            'role' => 'welcome',
+            'role_label' => $shown['label'],
+            'role_capacity' => '3',
+            'role_description' => $shown['description'],
+        ]);
+
+        self::assertSame('admin_role_saved', $result['notice']);
+        $role = Roles::find('welcome');
+        self::assertNotNull($role);
+        self::assertSame(3, $role['capacity']);
+        self::assertSame('Welcome', $role['label_text']['source']);
+        self::assertSame('Tervetuloa', $role['label_text']['texts']['fi'] ?? null);
+        self::assertSame('Greet people at the door.', $role['description_text']['source']);
+        self::assertSame('Toivota ihmiset tervetulleiksi ovella.', $role['description_text']['texts']['fi'] ?? null);
+    }
+
+    public function testSavingARoleWithAChangedTextStoresItAsTheSource(): void
+    {
+        $this->storeTranslatedWelcome();
+        $shown = Roles::find('welcome');
+        self::assertNotNull($shown);
+        $this->signIn($this->organizerRow(1));
+
+        $this->post(CrewAdminController::ROLE_ACTION, [
+            'role' => 'welcome',
+            'role_label' => 'Door',
+            'role_capacity' => '3',
+            'role_description' => $shown['description'],
+        ]);
+
+        $role = Roles::find('welcome');
+        self::assertNotNull($role);
+        self::assertSame('Door', $role['label_text']['source']);
+        self::assertNotSame('Tervetuloa', $role['label_text']['texts']['fi'] ?? null);
+        $stored = array_column($this->options[Roles::OPTION_NAME], null, 'slug');
+        self::assertSame('Door', $stored['welcome']['label']);
+        // The unchanged description keeps its Finnish text.
+        self::assertSame('Toivota ihmiset tervetulleiksi ovella.', $role['description_text']['texts']['fi'] ?? null);
+    }
+
+    /** Stores the default roles, with the welcome role's texts in English and Finnish. */
+    private function storeTranslatedWelcome(): void
+    {
+        $roles = Roles::defaults();
+
+        foreach ($roles as $i => $role) {
+            if ('welcome' !== $role['slug']) {
+                continue;
+            }
+
+            $roles[$i]['label_text'] = [
+                'source' => 'Welcome',
+                'lang' => 'en',
+                'detected' => true,
+                'texts' => ['en' => 'Welcome', 'fi' => 'Tervetuloa'],
+                'manual' => ['en' => false, 'fi' => false],
+            ];
+            $roles[$i]['description_text'] = [
+                'source' => 'Greet people at the door.',
+                'lang' => 'en',
+                'detected' => true,
+                'texts' => ['en' => 'Greet people at the door.', 'fi' => 'Toivota ihmiset tervetulleiksi ovella.'],
+                'manual' => ['en' => false, 'fi' => false],
+            ];
+        }
+
+        Roles::save($roles);
+    }
+
     public function testTheOrganizeRoleOrAnUnknownRoleIsNotSaved(): void
     {
         foreach ([Roles::ORGANIZE_SLUG, 'juggle', ''] as $slug) {
