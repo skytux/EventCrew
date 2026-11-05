@@ -1430,8 +1430,8 @@ msgid "Crew members are not WordPress users, so this plugin registers its own ha
 msgstr "团队成员不是 WordPress 用户，因此本插件为 %1$s 和 %2$s 注册了自己的处理程序：在那里输入团队成员的邮箱地址，其记录及所有相关内容就会被导出或删除。大多数人从不需要你这样做 — 他们自己的团队应用有“删除”按钮，每封邮件都有链接指向它。"
 
 #: src/Support/Newsletter.php:454
-msgid "Crew members get this announcement too and can stop it with the link below. Other crew messages are not affected."
-msgstr "团队成员也会收到这条公告，并可以用下方链接停止接收。其他团队消息不受影响。"
+msgid "Leaving the announcement does not stop your other crew messages."
+msgstr "退出公告不会停止你的其他团队消息。"
 
 #: src/Support/PrivacyPolicy.php:466
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
@@ -6912,6 +6912,9 @@ msgstr "你收到这封邮件，是因为你有这个活动的票。"
 #: src/Support/Newsletter.php:437
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr "你收到这封邮件，是因为你加入了下一次活动公告。更改你的信息或退出公告"
+
+msgid "You get this email because you are in the crew. Change your details or leave the announcement"
+msgstr "你收到这封邮件，是因为你是团队成员。更改你的信息或退出公告"
 
 #. translators: %d: number of free-entry credits the person holds
 #: src/Telegram/ProfileService.php:78
