@@ -229,7 +229,7 @@ organizer text of the next events announcement. Each stores the text as written,
 one text per language, and a per-language "edited by hand" mark.
 
 - With **Translate texts automatically with the language model** on (the
-  default, under the language model settings), a save sends the text to the
+  default, on the Translations page), a save sends the text to the
   model, which fills every language field not edited by hand. A field in the
   language the text was written in gets the text itself.
 - A field changed by hand is marked and not overwritten. **Translate again**

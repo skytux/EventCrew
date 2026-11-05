@@ -499,6 +499,25 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertFalse($this->options[TelegramLogin::ENABLED_OPTION]);
     }
 
+    /**
+     * Q301: the AI translation switch lives only on the Translations page.
+     * The Settings form has no field for it, and saving Settings, even with
+     * the old form's fields posted, leaves the switch as it was.
+     */
+    public function testSavingSettingsNeverTouchesTheTranslationSwitch(): void
+    {
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringNotContainsString('translate_auto', $template);
+
+        $this->options[\EventCrew\Support\TranslatedText::AUTO_OPTION] = '1';
+        $this->saveTelegramSection(['translate_auto_present' => '1']);
+        self::assertSame('1', $this->options[\EventCrew\Support\TranslatedText::AUTO_OPTION]);
+
+        $this->options[\EventCrew\Support\TranslatedText::AUTO_OPTION] = '0';
+        $this->saveTelegramSection(['translate_auto_present' => '1', 'translate_auto' => '1']);
+        self::assertSame('0', $this->options[\EventCrew\Support\TranslatedText::AUTO_OPTION]);
+    }
+
     public function testTheBoardCardsSwitchSavesAndIsOffByDefault(): void
     {
         self::assertFalse(\EventCrew\Telegram\BoardService::cardsOn());
