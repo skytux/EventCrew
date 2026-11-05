@@ -238,6 +238,7 @@ final class CrewAdminTasks
         }
 
         $counts = is_array($post['role_count'] ?? null) ? $post['role_count'] : [];
+        $previous = $roles[$index];
 
         $roles[$index] = [
             'slug' => $slug,
@@ -261,6 +262,20 @@ final class CrewAdminTasks
             'end_offset' => self::offset(sanitize_text_field((string) ($post['role_end_offset'] ?? ''))),
             'description' => sanitize_textarea_field((string) ($post['role_description'] ?? '')),
         ];
+
+        // The name and description are plain fields here. A text the
+        // organizer left as the form showed it keeps its stored translated
+        // value, so its other languages stay. A changed text is stored as the
+        // new source.
+        foreach (['label' => 'label_text', 'description' => 'description_text'] as $plain => $translated) {
+            $posted = trim($roles[$index][$plain]);
+            $stored = $previous[$translated];
+
+            if ($posted === trim($previous[$plain]) || $posted === trim((string) $stored['source'])) {
+                $roles[$index][$plain] = (string) $stored['source'];
+                $roles[$index][$translated] = $stored;
+            }
+        }
 
         Roles::save($roles);
 
