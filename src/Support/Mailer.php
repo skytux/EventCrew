@@ -100,6 +100,10 @@ final class Mailer
      * on white. The post-event email (FollowupMail) has no QR code and
      * passes false, so it follows the mail app's own colours, dark mode
      * too, like the announcement (Lou, 2026-11-03).
+     *
+     * $corner is HTML put under the template's sign-off, above the footer
+     * line: the ticket email's corner with the holder's name and the small
+     * QR code (TicketMail::compose()).
      */
     public function toTicketHolder(
         string $to,
@@ -107,17 +111,20 @@ final class Mailer
         string $content,
         string $text,
         string $footer,
-        bool $lightOnly = true
+        bool $lightOnly = true,
+        string $corner = ''
     ): bool {
         $board = $this->boardUrl();
         // These emails are Finnish, then English: the closing shows both sign-offs.
         $signature = Signature::bothText();
         $text .= ('' === $signature ? '' : "\n\n" . $signature) . "\n\n—\n" . $footer
             . ('' === $board ? '' : ': ' . $board);
+        // $corner (HTML, the ticket email's QR corner) goes under the sign-off,
+        // above the footer line.
         $html = $this->template->render(
             $subject,
             $content,
-            EmailBody::footerHtml($footer, $board),
+            $corner . EmailBody::footerHtml($footer, $board),
             $lightOnly,
             null,
             '',

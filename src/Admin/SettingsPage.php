@@ -42,6 +42,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketFormats;
+use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
@@ -172,6 +173,7 @@ final class SettingsPage
                     FollowupText::CAME => FollowupText::settings(FollowupText::CAME),
                     FollowupText::MISSED => FollowupText::settings(FollowupText::MISSED),
                 ],
+                'ticket_text' => TicketText::settings(),
                 'newsletter_days' => Newsletter::days(),
                 'newsletter_crew' => NewsletterCrew::enabled(),
                 'newsletter_preview_mode' => NewsletterSchedule::previewMode(),
@@ -825,7 +827,9 @@ final class SettingsPage
         // Before the bot texts, so they are translated (or not) by the new switch.
         $this->saveTranslateSwitch();
         $profile = $this->saveBotProfile();
-        $followupNotice = TranslatedText::errorNotice($this->saveFollowupTexts());
+        $followupError = $this->saveFollowupTexts();
+        $ticketError = $this->saveTicketText();
+        $followupNotice = TranslatedText::errorNotice('' !== $followupError ? $followupError : $ticketError);
 
         // Both use the same notice; it is said once.
         if ('' !== $followupNotice && ! str_contains($profile['message'], $followupNotice)) {
@@ -893,6 +897,18 @@ final class SettingsPage
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $texts->saveSettings($_POST[FollowupText::POST_NAME] ?? null);
+    }
+
+    /**
+     * Saves the ticket email's text (TicketText). Returns the translation
+     * error kind, '' when none.
+     */
+    private function saveTicketText(): string
+    {
+        $text = new TicketText($this->llm ?? new LlmClient(new Logger()), new Logger());
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
+        return $text->saveSettings($_POST[TicketText::POST_NAME] ?? null);
     }
 
     /**

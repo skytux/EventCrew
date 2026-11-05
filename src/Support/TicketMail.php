@@ -123,12 +123,22 @@ final class TicketMail
     private const PAGE_FONT = "font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
 
     /**
-     * The widest the QR code is drawn, quiet zone included, in pixels. On a
-     * 360 pixel wide phone the default email template leaves about 270
-     * pixels for the message; the ticket's grey surround and the card's
-     * padding take 46 of them.
+     * The widest the ticket email's QR code is drawn, quiet zone included,
+     * in pixels: small, in the bottom-right corner. The email links to the
+     * ticket page, which shows the big QR code; this one is for a phone with
+     * no internet at the door.
      */
-    private const QR_WIDTH = 224;
+    private const QR_WIDTH = 150;
+
+    /** The ticket email's heading font, with fallbacks. */
+    private const HEAD_FONT = "'Platypi',Georgia,serif";
+
+    /** The ticket email's colours: text, muted text, gold, rule and note box. */
+    private const TEXT_COLOR = '#2a2233';
+    private const MUTED_COLOR = '#6b5f73';
+    private const GOLD_COLOR = '#a8641f';
+    private const RULE_COLOR = '#ead9bf';
+    private const NOTE_COLOR = '#f3eadb';
 
     public function __construct(
         private readonly TicketBuyerRepository $buyers,
@@ -1152,20 +1162,36 @@ final class TicketMail
     }
 
     /**
-     * The email for one ticket: subject, the HTML content that goes into the
-     * email template (the QR code drawn in it as tables), and the plain-text
+     * The email for one ticket, the same layout for every kind of ticket:
+     * subject, the HTML content that goes into the email template, the
+     * corner that goes under the template's sign-off, and the plain-text
      * alternative. $deleted, when an organizer deleted one of a crew
      * member's tasks, is named in the text instead of the thank-you line.
      *
-     * @return array{subject: string, html: string, text: string}
+     * The content: the "Your ticket" line, the event and the date as the
+     * heading, the ticket text (TicketText) in Finnish and then in English,
+     * each with its greeting on its own line in italics, the ticket note,
+     * the "Open my ticket" button and the "See you on the dancefloor" line.
+     * The corner (ticketCorner()): the holder's name, a buyer's code, the
+     * offline hint and the small QR code in the bottom-right corner.
+     *
+     * @return array{subject: string, html: string, corner: string, text: string}
      */
     public function compose(TicketBuyer|Guest|CrewTicket $row, ?Task $deleted = null): array
     {
         $date = self::shortDate($row->eventDate);
-        [$event, $image] = $this->event($row->eventDate);
-        $fi = Language::run(Language::FINNISH, fn (): array => $this->words($row, $event, $date, $deleted));
-        $en = Language::run(Language::ENGLISH, fn (): array => $this->words($row, $event, $date, $deleted));
-        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
+        [$event] = $this->event($row->eventDate);
+        $fi = Language::run(
+            Language::FINNISH,
+            fn (): array => $this->words($row, $event, $date, Language::FINNISH, $deleted)
+        );
+        $en = Language::run(
+            Language::ENGLISH,
+            fn (): array => $this->words($row, $event, $date, Language::ENGLISH, $deleted)
+        );
+        $both = static fn (string $key, string $glue = ' / '): string => $fi[$key] === $en[$key]
+            ? $en[$key]
+            : $fi[$key] . $glue . $en[$key];
 
         if ($row instanceof CrewTicket) {
             $url = self::crewUrl($row);
@@ -1182,60 +1208,53 @@ final class TicketMail
             $holder = trim($holder . ' +' . $row->plusOnes);
         }
 
-        // The site's icon (or logo) in the middle, as on the web ticket.
-        $logo = EmailTemplate::qrMarkUrl();
-        $qrHtml = $this->qr->table(
-            self::qrData($row),
-            $this->qr->fitCell(self::qrData($row), self::QR_WIDTH, $logo),
-            $logo
-        );
         // The same ticket note as the web ticket (door code, address), as typed.
         $note = trim((string) get_option(TicketController::NOTE_OPTION, ''));
 
-        $ticket = $this->ticketCard(
-            $this->ticketHead($both('subject'), $event, $date, $image),
-            ('' === $holder ? '' : sprintf(
-                '<p style="margin:0 0 4px;%1$sfont-size:30px;font-weight:700;line-height:1.15;color:#1d1d1f">%2$s</p>',
-                self::PAGE_FONT,
-                esc_html($holder)
-            ))
-            . $qrHtml
-            . ('' === $code ? '' : sprintf(
-                '<p style="margin:0 0 16px;font-family:Menlo,Consolas,\'Courier New\',monospace;font-size:22px;'
-                    . 'font-weight:700;line-height:1.3;letter-spacing:.08em;color:#1d1d1f">%s</p>',
-                esc_html($code)
-            ))
+        // Each language's part starts with its FI / EN tag, when the two differ.
+        $same = $fi['text'] === $en['text'];
+        $html = $this->ticketTop($both('subject', ' · '), $event, $date)
+            . $this->ticketPart($fi, $same ? '' : 'FI')
+            . '<hr style="border:0;border-top:1px solid ' . self::RULE_COLOR . ';margin:20px 0">'
+            . $this->ticketPart($en, $same ? '' : 'EN')
             . ('' === $note ? '' : sprintf(
-                '<p style="margin:16px 0 0;%1$sfont-size:16px;line-height:1.5;color:#1d1d1f;white-space:pre-line">'
-                    . '%2$s</p>',
-                self::PAGE_FONT,
+                '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
+                    . ' style="margin:6px 0 24px"><tr><td bgcolor="%1$s" style="padding:14px 16px;border-radius:14px;'
+                    . 'background-color:%1$s;font-family:%2$s;font-size:15px;line-height:1.6;color:%3$s;'
+                    . 'white-space:pre-line">%4$s</td></tr></table>',
+                self::NOTE_COLOR,
+                EmailBody::FONT,
+                self::TEXT_COLOR,
                 esc_html($note)
             ))
+            . EmailBody::centred(EmailBody::toHtml(
+                '',
+                [['label' => $both('open', ' · '), 'url' => $url]],
+                EmailTemplate::accent()
+            ))
             . sprintf(
-                '<p style="margin:16px 0 0;%1$sfont-size:13px;line-height:1.5;color:#616165">'
-                    . '<a href="%2$s" style="color:#616165;text-decoration:underline">%3$s</a></p>',
-                self::PAGE_FONT,
-                esc_url($url),
-                esc_html($both('open'))
-            )
-        );
+                '<p style="margin:26px 0 0;font-family:%1$s;font-size:20px;font-style:italic;line-height:1.4;'
+                    . 'color:%2$s;text-align:center">%3$s</p>',
+                self::HEAD_FONT,
+                self::GOLD_COLOR,
+                esc_html($both('closing', ' ✦ '))
+            );
 
-        // Each language's text starts with its FI / EN tag, when the two differ.
-        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
-        $html = EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
-            . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-            . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1])
-            . $ticket;
+        $offline = $fi['offline'] === $en['offline']
+            ? esc_html($en['offline'])
+            : esc_html($fi['offline']) . '<br>' . esc_html($en['offline']);
 
-        $text = $fi['body'] . "\n\n" . $en['body'] . "\n\n"
-            . ('' === $code ? '' : $both('code') . ': ' . $code . "\n")
+        $text = $fi['text'] . "\n\n" . $en['text'] . "\n\n"
+            . ('' === $note ? '' : $note . "\n\n")
+            . $both('open') . ': ' . $url . "\n\n"
             . ('' === $holder ? '' : $holder . "\n")
-            . ('' === $note ? '' : "\n" . $note . "\n\n")
-            . $both('open') . ': ' . $url;
+            . ('' === $code ? '' : $both('code') . ': ' . $code . "\n")
+            . "\n" . $both('closing', ' ✦ ');
 
         return [
             'subject' => $both('subject') . ' – ' . $date,
             'html' => $html,
+            'corner' => $this->ticketCorner(self::qrData($row), $holder, $code, $offline),
             'text' => $text,
         ];
     }
@@ -1285,49 +1304,45 @@ final class TicketMail
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            $this->footer()
+            $this->footer(),
+            true,
+            $mail['corner']
         );
     }
 
     /**
-     * One language's words for one ticket, composed in the current language.
+     * One language's part of the ticket email, in the current language: the
+     * ticket text (TicketText) for $lang with its placeholders filled, split
+     * into the greeting (a first paragraph written in *stars*, '' when there
+     * is none) and the rest; the same as plain text; and the short words.
      *
-     * @return array{body: string, subject: string, open: string, code: string}
+     * @return array{greeting: string, body: string, text: string, subject: string, open: string,
+     *               code: string, closing: string, offline: string}
      */
-    private function words(TicketBuyer|Guest|CrewTicket $row, string $event, string $date, ?Task $deleted = null): array
-    {
-        $first = DoorDesk::firstName($row->name);
-
+    private function words(
+        TicketBuyer|Guest|CrewTicket $row,
+        string $event,
+        string $date,
+        string $lang,
+        ?Task $deleted = null
+    ): array {
         if (null !== $deleted) {
-            $thanks = self::deletedSentence($deleted);
+            $reason = self::deletedSentence($deleted);
         } elseif ($row instanceof CrewTicket) {
-            $thanks = $row->isCredit()
+            $reason = $row->isCredit()
                 ? __('You spent a free-entry credit on this night.', 'eventcrew')
                 : __('Thank you for taking a task!', 'eventcrew');
         } else {
-            $thanks = $row instanceof Guest
+            $reason = $row instanceof Guest
                 ? __('Thank you for coming! You are on the guest list.', 'eventcrew')
                 : __('Thank you for buying a ticket!', 'eventcrew');
         }
 
-        $lines = [
-            '' === $first
-                ? __('Hi,', 'eventcrew')
-                /* translators: %s: the ticket holder's first name */
-                : sprintf(__('Hi %s,', 'eventcrew'), $first),
-            $thanks,
-            sprintf(
-                /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
-                __('Here is your ticket to %1$s on %2$s. Show the QR code below at the door.', 'eventcrew'),
-                $event,
-                $date
-            ),
-        ];
-
         // A crew ticket lists the person's tasks on the night.
-        if ($row instanceof CrewTicket && ! $row->isCredit() && [] !== $row->tasks) {
-            $lines[] = __('Your tasks on this night:', 'eventcrew');
-            $lines[] = implode("\n", array_map(
+        $tasks = '';
+
+        if ($row instanceof CrewTicket && ! $row->isCredit()) {
+            $tasks = implode("\n", array_map(
                 static function (Task $task): string {
                     $time = $task->timeRange();
 
@@ -1337,25 +1352,136 @@ final class TicketMail
             ));
         }
 
+        $plusOnes = '';
+
         if ($row instanceof Guest && $row->plusOnes > 0) {
-            $lines[] = sprintf(
-                /* translators: %d: how many people the guest may bring */
-                _n(
-                    'You can bring %d person with you.',
-                    'You can bring %d people with you.',
-                    $row->plusOnes,
-                    'eventcrew'
-                ),
-                $row->plusOnes
-            );
+            /* translators: %d: how many people, e.g. "2 people" */
+            $plusOnes = sprintf(_n('%d person', '%d people', $row->plusOnes, 'eventcrew'), $row->plusOnes);
+        }
+
+        $filled = TicketText::fill(TicketText::text($lang), [
+            TicketText::FIRST_NAME_TAG => DoorDesk::firstName($row->name),
+            TicketText::EVENT_TAG => $event,
+            TicketText::DATE_TAG => $date,
+            TicketText::REASON_TAG => $reason,
+            TicketText::TASKS_TAG => $tasks,
+            TicketText::PLUS_ONES_TAG => $plusOnes,
+        ]);
+
+        // A first paragraph that is one line in *stars* is the greeting.
+        $greeting = '';
+        $body = $filled;
+        $paragraphs = explode("\n\n", $filled, 2);
+
+        if (1 === preg_match('/^\*([^*\n]+)\*$/', $paragraphs[0], $match)) {
+            $greeting = trim($match[1]);
+            $body = $paragraphs[1] ?? '';
         }
 
         return [
-            'body' => implode("\n\n", $lines),
+            'greeting' => $greeting,
+            'body' => $body,
+            'text' => trim($greeting . "\n\n" . $body),
             'subject' => __('Your ticket', 'eventcrew'),
-            'open' => __('Open the ticket in your browser', 'eventcrew'),
+            'open' => __('Open my ticket', 'eventcrew'),
             'code' => __('Ticket code', 'eventcrew'),
+            'closing' => __('See you on the dancefloor', 'eventcrew'),
+            'offline' => __('No internet? Show this QR code at the door.', 'eventcrew'),
         ];
+    }
+
+    /**
+     * The top of the ticket email: a small gold star, $kicker ("Your
+     * ticket") small and in capitals, then "event — date" as the heading, in
+     * gold, with a short gold line under it.
+     */
+    private function ticketTop(string $kicker, string $event, string $date): string
+    {
+        return sprintf(
+            '<p style="margin:0 0 10px;font-size:16px;line-height:1;color:#c9802f;text-align:center">✦</p>'
+                . '<p style="margin:0 0 6px;font-family:%1$s;font-size:12px;line-height:1.4;letter-spacing:.14em;'
+                . 'text-transform:uppercase;color:%2$s;text-align:center">%3$s</p>'
+                . '<h1 class="ec-shimmer-light" style="margin:0;font-family:%4$s;font-size:27px;font-weight:700;'
+                . 'line-height:1.25;color:%5$s;text-align:center">%6$s — %7$s</h1>'
+                . '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:18px auto 24px"><tr><td width="48" height="2" bgcolor="#d9b27a"'
+                . ' style="width:48px;height:2px;line-height:2px;font-size:0;background-color:#d9b27a">&nbsp;</td>'
+                . '</tr></table>',
+            EmailBody::FONT,
+            self::MUTED_COLOR,
+            esc_html($kicker),
+            self::HEAD_FONT,
+            self::GOLD_COLOR,
+            esc_html($event),
+            esc_html($date)
+        );
+    }
+
+    /**
+     * One language's part: its FI / EN tag ('' for none), the greeting on its
+     * own line in italics, then the text.
+     *
+     * @param array{greeting: string, body: string} $words
+     */
+    private function ticketPart(array $words, string $tag): string
+    {
+        $html = '';
+
+        if ('' !== $tag) {
+            $html .= '<p style="margin:0 0 8px">' . EmailBody::langTag($tag) . '</p>';
+        }
+
+        if ('' !== $words['greeting']) {
+            $html .= sprintf(
+                '<p style="margin:0 0 12px;font-family:%1$s;font-size:18px;font-style:italic;line-height:1.4;'
+                    . 'color:%2$s">%3$s</p>',
+                self::HEAD_FONT,
+                self::TEXT_COLOR,
+                esc_html($words['greeting'])
+            );
+        }
+
+        return $html . ('' === $words['body'] ? '' : EmailBody::toHtml($words['body'], [], EmailTemplate::accent()));
+    }
+
+    /**
+     * The corner under the email's sign-off: on the left the holder's name,
+     * a buyer's code and the "No internet?" line ($offline, already escaped
+     * HTML); on the right the small QR code in a white box, no logo.
+     */
+    private function ticketCorner(string $data, string $holder, string $code, string $offline): string
+    {
+        $qr = $this->qr->table($data, $this->qr->fitCell($data, self::QR_WIDTH, '', 4));
+
+        return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
+            . ' style="margin:0 0 16px;border-top:1px solid ' . self::RULE_COLOR . '"><tr>'
+            . '<td valign="bottom" style="padding:16px 12px 0 0;vertical-align:bottom">'
+            . ('' === $holder ? '' : sprintf(
+                '<p style="margin:0 0 4px;font-family:%1$s;font-size:18px;font-weight:700;line-height:1.3;'
+                    . 'color:%2$s">%3$s</p>',
+                self::HEAD_FONT,
+                self::TEXT_COLOR,
+                esc_html($holder)
+            ))
+            . ('' === $code ? '' : sprintf(
+                '<p style="margin:0 0 8px;font-family:Menlo,Consolas,\'Courier New\',monospace;font-size:15px;'
+                    . 'font-weight:700;line-height:1.4;letter-spacing:.06em;color:%1$s">%2$s</p>',
+                self::TEXT_COLOR,
+                esc_html($code)
+            ))
+            . sprintf(
+                '<p style="margin:0;font-family:%1$s;font-size:13px;line-height:1.5;color:%2$s">%3$s</p>',
+                EmailBody::FONT,
+                self::MUTED_COLOR,
+                $offline
+            )
+            . '</td>'
+            . '<td width="156" align="right" valign="bottom" style="width:156px;padding:16px 0 0;'
+            . 'vertical-align:bottom">'
+            . '<table role="presentation" align="right" cellpadding="0" cellspacing="0" border="0"><tr>'
+            . '<td bgcolor="#ffffff" style="padding:4px;background-color:#ffffff;border-radius:10px;'
+            . 'box-shadow:0 0 0 1px ' . self::RULE_COLOR . '">' . $qr . '</td></tr></table>'
+            . '</td></tr></table>';
     }
 
     /**
