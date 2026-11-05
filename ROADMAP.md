@@ -40,10 +40,10 @@ Do not re-open these without new information.
 
 ## Where it stands
 
-### Now (1.128.2, 2026-11-04)
+### Now (1.140.10, 2026-11-05)
 
 The plugin runs in production. Everything listed in `README.md` is shipped; the
-changelog is in `readme.txt`. The database schema is version 29. The releases
+changelog is in `readme.txt`. The database schema is version 32. The releases
 since the last update of this file (1.95.2):
 
 - 1.96.0: the bot's About and Description texts (English and Finnish) are set
@@ -89,7 +89,8 @@ since the last update of this file (1.95.2):
   never later than 1 hour before it starts). Organizers can still reassign
   directly. Schema 27 (`takeovers` table).
 - 1.105.0: the Bot log (wp-admin → EventCrew → Bot log): every bot command and
-  button use, without message text, kept 60 days. Schema 28.
+  button use, without message text, kept 60 days (90 days since 1.140.6).
+  Schema 28.
 - 1.106.0–1.111.0, 1.115.0, 1.119.0–1.120.0: the language model writes short
   texts for each event in the announcement and the post-event email, in Finnish
   first and then translated to English; it reads the venue, the address and the
@@ -116,6 +117,36 @@ since the last update of this file (1.95.2):
   key from the site salts).
 - 1.128.1: Holvi buyer rows whose name was blanked 60 days after the event show
   "No name" on the door desk, the Crew app Admin tab and the wp-admin Roster.
+- 1.129.0, 1.137.0–1.137.1: the ticket email is drawn like the ticket page;
+  the cancellation email has the same look with a red TICKET CANCELLED band and
+  no QR code; a spent free-entry credit gets only the one ticket email.
+- 1.130.0, 1.136.4: the bot knows each coming event's ticket price; a sold-out
+  event says "tickets sold out" and gives no price.
+- 1.131.0, 1.140.0–1.140.1: every real ticket send waits 10 minutes and can be
+  cancelled from the wp-admin Roster, the Crew app Admin tab, the door desk or
+  the bot's /door reply.
+- 1.132.0–1.135.0, 1.140.7: wp-admin → EventCrew → Newsletter: subscriber
+  counts, a graph of joins and leaves with each sent newsletter marked (one
+  marker per bar), a time range with a totals line, and the newsletters sent in
+  that range, each with a copy to open. Schemas 30 and 31.
+- 1.133.0: the newsletter preview email is exactly the email subscribers get,
+  with "[Preview]" in the subject and a "Do Not Send This" button.
+- 1.136.0: deleting a task emails everyone signed up for it that the task and
+  its ticket are cancelled (not for a task that has started or is over).
+- 1.136.1–1.136.6: clean-ups: unused Finnish strings removed (a test now
+  checks this), the "Cover arranged" switch removed, the takeover group message
+  in Finnish then English, the Settings hint about the bot username, and the
+  README/readme.txt feature lists brought up to date.
+- 1.138.0–1.139.0: organizers can change a guest's email in the roster (new
+  ticket code and link; the old ones stop working; schema 32), and the door
+  desk Guest step has an optional email field for the ticket email.
+- 1.140.2–1.140.6: newsletter card pictures without an underline, the
+  "already subscribed" email button reads "Viesti / Message", the Finnish
+  "Lopeta tämä ilmoitus", and Bot log rows are kept 90 days (deleted once a
+  day).
+- 1.140.8–1.140.10: tasks and events. The event edit screen has a "Move the
+  tasks too" checkbox; a new role starts at the event start and a new task form
+  is filled with the event's start; a task needs a start time.
 
 **In progress:** nothing recorded here.
 
