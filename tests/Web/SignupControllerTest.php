@@ -16,6 +16,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PageLanguage;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SiteLanguages;
@@ -401,6 +402,58 @@ final class SignupControllerTest extends TestCase
 
         unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
         self::assertNull($this->controller()->pageLanguage());
+    }
+
+    /**
+     * Q306: the language of the website page the visitor came from (the
+     * link's marker, or the session cookie that keeps it) wins over the
+     * browser's.
+     */
+    public function testTheWebsitePagesLanguageWinsOverTheBrowsers(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en-US,en';
+
+        try {
+            $_GET = [PageLanguage::MARKER => 'fi'];
+            self::assertSame('fi', $this->controller()->pageLanguage());
+
+            $_GET = [];
+            $_COOKIE[PageLanguage::COOKIE] = 'fi';
+            self::assertSame('fi', $this->controller()->pageLanguage());
+
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'fi';
+            $_COOKIE[PageLanguage::COOKIE] = 'en';
+            self::assertSame('en', $this->controller()->pageLanguage());
+        } finally {
+            unset($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            $_GET = [];
+        }
+    }
+
+    /**
+     * A signed-in person's own choice stays first; without one, the website
+     * page's language applies.
+     */
+    public function testASignedInPersonsChoiceComesBeforeTheWebsitePagesLanguage(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $_GET = [PageLanguage::MARKER => 'fi'];
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        try {
+            $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'language' => 'en'];
+            self::assertSame('en', $this->controller()->pageLanguage());
+
+            $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+            self::assertSame('fi', $this->controller()->pageLanguage());
+
+            $_GET = [];
+            $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+            self::assertNull($this->controller()->pageLanguage());
+        } finally {
+            $_GET = [];
+        }
     }
 
     public function testASignedOutVisitorWithAFinnishBrowserSeesTheCrewPageInFinnish(): void

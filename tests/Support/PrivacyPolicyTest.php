@@ -215,6 +215,29 @@ final class PrivacyPolicyTest extends TestCase
     }
 
     /**
+     * Q306: in Finnish the link goes to the notice page's Finnish translation
+     * when the site has one, and a translated notice says the English
+     * original applies.
+     */
+    public function testInFinnishTheNoticeLinkGoesToTheFinnishPage(): void
+    {
+        Functions\when('get_post_status')->justReturn('publish');
+        Functions\when('get_permalink')->alias(static fn (int $id): string => 'https://site.test/?p=' . $id);
+        Functions\when('pll_get_post')->alias(static fn (int $id, string $l): int => 'fi' === $l && 12 === $id ? 40 : 0);
+        $this->withOptions([PrivacyPolicy::PAGE_OPTION => 12]);
+
+        self::assertSame('https://site.test/?p=12', PrivacyPolicy::noticeUrl());
+        self::assertSame('', PrivacyPolicy::translationNote());
+        self::assertSame('https://site.test/?p=40', Language::run('fi', static fn () => PrivacyPolicy::noticeUrl()));
+        self::assertSame('https://site.test/?p=12', Language::run('en', static fn () => PrivacyPolicy::noticeUrl()));
+        self::assertSame('', Language::run('en', static fn () => PrivacyPolicy::translationNote()));
+        self::assertSame(
+            'Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan englanninkielistä alkuperäistä.',
+            Language::run('fi', static fn () => PrivacyPolicy::translationNote())
+        );
+    }
+
+    /**
      * A page in the trash is not a published notice, and linking to it would
      * send people to a 404.
      */

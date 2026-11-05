@@ -7976,3 +7976,6 @@ msgstr "Paina painiketta, niin et saa näitä viestejä enää tapahtumien jälk
 
 msgid "Done. You will not get these emails after our events any more."
 msgstr "Valmis. Et saa näitä viestejä enää tapahtumien jälkeen."
+
+msgid "If the translation and the English original differ, the English original applies."
+msgstr "Jos käännös ja englanninkielinen alkuperäinen eroavat, noudatetaan englanninkielistä alkuperäistä."
