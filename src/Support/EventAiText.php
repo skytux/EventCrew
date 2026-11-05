@@ -40,7 +40,7 @@ use EventCrew\Telegram\BoardDjText;
  * MAX_TRIES times.
  *
  * Languages. The model writes each text in every site language
- * (TranslatedText::LANGUAGES) in one request.
+ * (TranslatedText::languages()) in one request.
  */
 final class EventAiText
 {
@@ -103,12 +103,6 @@ final class EventAiText
 
     /** Tokens for one answer. */
     private const MAX_TOKENS = 1500;
-
-    /** The language names the model is told. */
-    private const NAMES = [
-        Language::FINNISH => 'Finnish',
-        Language::ENGLISH => 'English',
-    ];
 
     public function __construct(
         private readonly LlmClient $llm,
@@ -292,7 +286,7 @@ final class EventAiText
     {
         $event = EventSource::describe($eventId);
 
-        if (null === $event || ! in_array($lang, TranslatedText::LANGUAGES, true) || ! self::knownKey($key)) {
+        if (null === $event || ! in_array($lang, TranslatedText::languages(), true) || ! self::knownKey($key)) {
             return false;
         }
 
@@ -324,7 +318,7 @@ final class EventAiText
     {
         $saved = false;
 
-        foreach (TranslatedText::LANGUAGES as $lang) {
+        foreach (TranslatedText::languages() as $lang) {
             if (! $backToAi && ! isset($texts[$lang])) {
                 continue;
             }
@@ -458,7 +452,7 @@ final class EventAiText
                 $texts = [];
                 $edited = [];
 
-                foreach (TranslatedText::LANGUAGES as $lang) {
+                foreach (TranslatedText::languages() as $lang) {
                     $edited[$lang] = isset($entry['edited'][$lang]);
                     $texts[$lang] = $entry['edited'][$lang] ?? $entry['ai'][$lang] ?? '';
                 }
@@ -533,7 +527,7 @@ final class EventAiText
 
         $texts = [];
 
-        foreach (TranslatedText::LANGUAGES as $lang) {
+        foreach (TranslatedText::languages() as $lang) {
             $text = is_string($decoded[$lang] ?? null) ? trim(str_replace(["\r\n", "\r"], "\n", $decoded[$lang])) : '';
             $length = function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
 
@@ -607,8 +601,8 @@ final class EventAiText
         $names = [];
         $shape = [];
 
-        foreach (TranslatedText::LANGUAGES as $lang) {
-            $name = self::NAMES[$lang] ?? $lang;
+        foreach (TranslatedText::languages() as $lang) {
+            $name = SiteLanguages::name($lang);
             $names[] = $name . ' (' . $lang . ')';
             $shape[$lang] = 'the ' . $name . ' text';
         }
