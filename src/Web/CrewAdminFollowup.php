@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
-use EventCrew\Models\Person;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\SiteLanguages;
@@ -59,11 +58,12 @@ final class CrewAdminFollowup
     }
 
     /**
-     * Saves or clears the one-time text of $variant. $op is 'clear' to clear;
+     * Saves or clears the one-time text of $variant ($byPersonId: who, 0 from
+     * wp-admin). $op is 'clear' to clear;
      * anything else saves $text (an empty text clears too). Returns the
      * notice code.
      */
-    public function saveText(Person $organizer, string $variant, string $op, string $text): string
+    public function saveText(int $byPersonId, string $variant, string $op, string $text): string
     {
         if (! FollowupText::isVariant($variant)) {
             return 'admin_followup_unknown';
@@ -75,7 +75,7 @@ final class CrewAdminFollowup
             return 'admin_followup_cleared';
         }
 
-        $result = $this->text->setNext($variant, $text, $organizer->id);
+        $result = $this->text->setNext($variant, $text, $byPersonId);
 
         return $result['translated'] ? 'admin_followup_saved' : 'admin_followup_saved_untranslated';
     }

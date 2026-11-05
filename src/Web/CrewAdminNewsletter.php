@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
-use EventCrew\Models\Person;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\TicketMail;
@@ -91,7 +90,7 @@ final class CrewAdminNewsletter
      * Saves or clears the text. $op is 'clear' to clear; anything else saves
      * $text (an empty text clears too). Returns the notice code.
      */
-    public function saveText(Person $organizer, string $op, string $text): string
+    public function saveText(int $byPersonId, string $op, string $text): string
     {
         if ('clear' === $op || '' === trim($text)) {
             $this->text->clear();
@@ -99,7 +98,7 @@ final class CrewAdminNewsletter
             return 'admin_newsletter_cleared';
         }
 
-        $result = $this->text->set($text, $organizer->id);
+        $result = $this->text->set($text, $byPersonId);
 
         return $result['translated'] ? 'admin_newsletter_saved' : 'admin_newsletter_saved_untranslated';
     }

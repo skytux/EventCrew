@@ -6,7 +6,6 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Admin\AiPromptsPage;
-use EventCrew\Admin\View;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Tests\TestCase;
@@ -83,7 +82,7 @@ final class MessageAiTextTest extends TestCase
     public function testAPlaceholderWithABuiltInNameIsNotSaved(): void
     {
         $type = 'success';
-        $notice = (new AiPromptsPage(new View()))->applyPlaceholders(
+        $notice = (new AiPromptsPage())->applyPlaceholders(
             [
                 'placeholders' => [
                     ['name' => '{Name}', 'prompt' => 'P.'],
@@ -100,7 +99,7 @@ final class MessageAiTextTest extends TestCase
 
         // A name no message uses is saved as before.
         $type = 'success';
-        (new AiPromptsPage(new View()))->applyPlaceholders(
+        (new AiPromptsPage())->applyPlaceholders(
             ['placeholders' => [['name' => 'dj_intro', 'prompt' => 'Introduce the DJ.']]],
             $type
         );

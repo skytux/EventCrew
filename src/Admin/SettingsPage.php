@@ -1391,23 +1391,32 @@ final class SettingsPage
 
     /**
      * The Settings "Reset the template" button. The edit being discarded stays
-     * in the post's revisions, so this is recoverable.
+     * in the post's revisions, so this is recoverable. The same button is on
+     * the Messages page's Email look tab (back=messages): it returns there.
      */
     public function resetEmailTemplate(): void
     {
         Admin::assertCanSave(self::EMAIL_NONCE_ACTION);
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $toMessages = 'messages' === sanitize_key(wp_unslash((string) ($_POST['back'] ?? '')));
+        $page = $toMessages ? MessagesPage::PAGE_SLUG : self::PAGE_SLUG;
+        $args = $toMessages ? ['tab' => MessagesPage::TAB_EMAIL] : [];
+
         if ($this->emailTemplate->reset()) {
             Admin::redirectTo(
-                self::PAGE_SLUG,
-                __('The email template was reset to the built-in design.', 'eventcrew')
+                $page,
+                __('The email template was reset to the built-in design.', 'eventcrew'),
+                'success',
+                $args
             );
         }
 
         Admin::redirectTo(
-            self::PAGE_SLUG,
+            $page,
             __('The email template could not be reset.', 'eventcrew'),
-            'error'
+            'error',
+            $args
         );
     }
 

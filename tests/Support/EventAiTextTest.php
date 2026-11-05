@@ -7,7 +7,6 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Admin\AiPromptsPage;
-use EventCrew\Admin\View;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\LlmClient;
@@ -239,7 +238,7 @@ final class EventAiTextTest extends TestCase
         $this->events();
         $this->answers[] = self::answer('Huomenna.', 'Tomorrow.');
         $this->service()->run();
-        $page = new AiPromptsPage(new View());
+        $page = new AiPromptsPage();
 
         $code = $page->applyEventText(
             ['event_id' => '100', 'key' => 'reminder', 'op' => 'save', 'texts' => ['fi' => 'Muutettu.', 'en' => 'Changed.']]
@@ -255,6 +254,89 @@ final class EventAiTextTest extends TestCase
             EventAiText::NOT_FOUND,
             $page->applyEventText(['event_id' => '555', 'key' => 'reminder', 'texts' => ['fi' => 'X']])
         );
+    }
+
+    /** Messages > Coming events: "Write the AI texts now" asks at once, from a web request. */
+    public function testWriteNowWritesTheTextsAndTheDayBeforeRunLeavesThem(): void
+    {
+        $this->events();
+        $this->cron = false;
+        $this->answers[] = self::answer('Myöhemmin tanssitaan.', 'Later we dance.');
+        $type = '';
+
+        // Event 101 is in three days: the day-before run has not reached it.
+        $notice = (new AiPromptsPage($this->service()))->applyRewrite(['event_id' => '101'], $type);
+
+        self::assertSame('success', $type);
+        self::assertSame('The AI wrote 1 new text.', $notice);
+        self::assertSame('Later we dance.', EventAiText::text('reminder', 101, 'en'));
+        self::assertSame(1, $this->stored(101, 'reminder')['tries']);
+
+        // The day before, the run finds it written and asks nothing.
+        $this->cron = true;
+        self::assertSame(0, $this->service()->writeFor(101));
+        self::assertCount(1, $this->requests);
+        self::assertSame('Later we dance.', EventAiText::text('reminder', 101, 'en'));
+    }
+
+    public function testWriteAgainWhenTheAiFailsKeepsTheOldText(): void
+    {
+        $this->events();
+        $this->answers = [self::answer('Huomenna.', 'Tomorrow.'), 500];
+        $this->service()->run();
+        $type = '';
+
+        $notice = (new AiPromptsPage($this->service()))->applyRewrite(
+            ['event_id' => '100', 'key' => 'reminder'],
+            $type
+        );
+
+        self::assertSame('error', $type);
+        self::assertSame('The AI could not write 1 text; it keeps its old text.', $notice);
+        self::assertCount(2, $this->requests);
+        self::assertSame('Huomenna.', EventAiText::text('reminder', 100, 'fi'));
+        self::assertSame(['fi' => 'Huomenna.', 'en' => 'Tomorrow.'], $this->stored(100, 'reminder')['ai']);
+    }
+
+    /** The page asks "This replaces your edit." first; after that, the edit is gone. */
+    public function testWriteAgainReplacesAnEdit(): void
+    {
+        $this->events();
+        $this->answers = [self::answer('Huomenna.', 'Tomorrow.'), self::answer('Taas huomenna.', 'Tomorrow again.')];
+        $this->service()->run();
+        EventAiText::saveForm(100, 'reminder', false, ['fi' => 'Oma teksti.', 'en' => 'Tomorrow.'], 7);
+        $type = '';
+
+        (new AiPromptsPage($this->service()))->applyRewrite(['event_id' => '100', 'key' => 'reminder'], $type);
+
+        self::assertSame('success', $type);
+        self::assertSame('Taas huomenna.', EventAiText::text('reminder', 100, 'fi'));
+        self::assertSame([], $this->stored(100, 'reminder')['edited']);
+        self::assertSame(0, $this->stored(100, 'reminder')['edited_by']);
+        self::assertSame(['fi' => false, 'en' => false], EventAiText::overview()[0]['items'][0]['edited']);
+    }
+
+    public function testWriteNowAsksNothingWithoutAModelOrForAnUnknownEvent(): void
+    {
+        $this->events();
+        $page = new AiPromptsPage($this->service());
+        $type = '';
+
+        $page->applyRewrite(['event_id' => '555'], $type);
+        self::assertSame('error', $type);
+
+        $type = '';
+        $page->applyRewrite(['event_id' => '100', 'key' => 'welcome'], $type);
+        self::assertSame('error', $type, 'A template with the tick off is not written.');
+
+        unset($this->options[AssistantSettings::URL_OPTION]);
+        $type = '';
+        $notice = $page->applyRewrite(['event_id' => '100'], $type);
+
+        self::assertSame('error', $type);
+        self::assertStringContainsString('the AI is not set up', $notice);
+        self::assertSame([], $this->requests);
+        self::assertArrayNotHasKey(EventAiText::TEXTS_OPTION, $this->options);
     }
 
     /**
@@ -359,7 +441,7 @@ final class EventAiTextTest extends TestCase
         self::assertSame([['name' => 'dj_intro', 'prompt' => 'Introduce the DJ.', 'fallback' => 'Great music.']], $kept);
         self::assertSame($kept, EventAiText::placeholders());
 
-        $page = new AiPromptsPage(new View());
+        $page = new AiPromptsPage();
         self::assertStringContainsString(
             'left out',
             $page->applyPlaceholders(['placeholders' => [['name' => 'ok'], ['name' => 'good', 'prompt' => 'P.']]])

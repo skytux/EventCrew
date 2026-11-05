@@ -4,16 +4,24 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TranslatedText;
 
 /**
- * The Messages page: every email and Telegram message kind
- * (MessageTemplates), each with its subject, its text, the placeholders it
- * can use and what each one becomes, the formatting that works, and "Reset
- * to built-in text". Each kind is its own form, so saving one translates
- * only that one.
+ * The Messages page, in tabs (&tab= in the address):
+ * - Messages: every email and Telegram message kind (MessageTemplates), each
+ *   with its subject, its text, the placeholders it can use and what each
+ *   one becomes, the formatting that works, and "Reset to built-in text".
+ *   Each kind is its own form, so saving one translates only that one;
+ *   &kind= opens one.
+ * - AI: the AI prompts and the organizers' own placeholders (AiPromptsPage).
+ * - Coming events: the texts the AI wrote for each coming event and the
+ *   one-time texts of the next post-event email and announcement
+ *   (AiPromptsPage).
+ * - Email look: the link to the Email template's block editor (EmailTemplate),
+ *   while HTML email is on, and its reset.
  */
 final class MessagesPage
 {
@@ -23,18 +31,93 @@ final class MessagesPage
 
     public const RESET_ACTION = 'eventcrew_reset_message';
 
+    public const TAB_MESSAGES = 'messages';
+
+    public const TAB_AI = 'ai';
+
+    public const TAB_EVENTS = 'events';
+
+    public const TAB_EMAIL = 'email';
+
     public function __construct(
         private readonly View $view,
-        private readonly MessageTemplates $templates
+        private readonly MessageTemplates $templates,
+        private readonly ?AiPromptsPage $ai = null,
+        private readonly ?EmailTemplate $emailTemplate = null
     ) {
+    }
+
+    /**
+     * The tabs, in order: slug => label.
+     *
+     * @return array<string, string>
+     */
+    public static function tabs(): array
+    {
+        return [
+            self::TAB_MESSAGES => __('Messages', 'eventcrew'),
+            self::TAB_AI => __('AI', 'eventcrew'),
+            self::TAB_EVENTS => __('Coming events', 'eventcrew'),
+            self::TAB_EMAIL => __('Email look', 'eventcrew'),
+        ];
+    }
+
+    /**
+     * The address of $tab, with $args and a part of the page to land on.
+     *
+     * @param array<string, string> $args
+     */
+    public static function url(string $tab = self::TAB_MESSAGES, array $args = [], string $anchor = ''): string
+    {
+        return add_query_arg(['page' => self::PAGE_SLUG, 'tab' => $tab] + $args, admin_url('admin.php'))
+            . ('' === $anchor ? '' : '#' . $anchor);
+    }
+
+    /** The tab asked for in the address; Messages when none or unknown. */
+    public static function currentTab(): string
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only: which tab shows.
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash((string) $_GET['tab'])) : '';
+
+        return isset(self::tabs()[$tab]) ? $tab : self::TAB_MESSAGES;
     }
 
     public function render(): void
     {
+        $this->view->render('messages', $this->data(self::currentTab()));
+    }
+
+    /**
+     * What the page shows on $tab: the tabs, the tab, and that tab's data.
+     *
+     * @return array<string, mixed>
+     */
+    public function data(string $tab): array
+    {
+        $data = ['tabs' => self::tabs(), 'tab' => $tab];
+
+        if (self::TAB_AI === $tab) {
+            return $data + (null === $this->ai ? ['prompts' => [], 'placeholders' => []] : $this->ai->promptsData());
+        }
+
+        if (self::TAB_EVENTS === $tab) {
+            return $data + (null === $this->ai
+                ? ['events' => [], 'can_write' => false, 'followup' => null, 'newsletter' => null]
+                : $this->ai->eventsData());
+        }
+
+        if (self::TAB_EMAIL === $tab) {
+            return $data + [
+                'html_on' => EmailTemplate::enabled(),
+                'edit_url' => null === $this->emailTemplate ? '' : $this->emailTemplate->editUrl(),
+                'nonce_action' => SettingsPage::EMAIL_NONCE_ACTION,
+            ];
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only: which entry is open.
         $open = isset($_GET['kind']) ? sanitize_key(wp_unslash((string) $_GET['kind'])) : '';
 
-        $this->view->render('messages', ['entries' => self::entries(), 'open' => $open]);
+        return $data + ['entries' => self::entries(), 'open' => $open];
     }
 
     /**
@@ -104,7 +187,7 @@ final class MessagesPage
                     implode(', ', MessageTemplates::find($id)?->requiredPlaceholders() ?? [])
                 ),
                 'error',
-                ['kind' => $id]
+                ['tab' => self::TAB_MESSAGES, 'kind' => $id]
             );
         }
 
@@ -114,7 +197,7 @@ final class MessagesPage
             self::PAGE_SLUG,
             '' === $notice ? __('Message saved.', 'eventcrew') : __('Message saved.', 'eventcrew') . ' ' . $notice,
             '' === $notice ? 'success' : 'error',
-            ['kind' => $id]
+            ['tab' => self::TAB_MESSAGES, 'kind' => $id]
         );
     }
 
@@ -135,7 +218,7 @@ final class MessagesPage
             self::PAGE_SLUG,
             __('The message uses its built-in text again.', 'eventcrew'),
             'success',
-            ['kind' => $id]
+            ['tab' => self::TAB_MESSAGES, 'kind' => $id]
         );
     }
 

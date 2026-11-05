@@ -6,7 +6,6 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Admin\AiPromptsPage;
-use EventCrew\Admin\View;
 use EventCrew\Support\AiPrompts;
 use EventCrew\Tests\TestCase;
 
@@ -102,7 +101,7 @@ final class AiPromptsTest extends TestCase
 
     public function testThePageSavesThePromptsAndResetsOne(): void
     {
-        $page = new AiPromptsPage(new View());
+        $page = new AiPromptsPage();
 
         $page->applyPrompts(['prompts' => [
             AiPrompts::BOARD_DJ => 'Board text.',
@@ -116,7 +115,7 @@ final class AiPromptsTest extends TestCase
 
         self::assertFalse(AiPrompts::isChanged(AiPrompts::BOARD_DJ));
 
-        $data = $page->data();
+        $data = $page->promptsData();
         self::assertCount(count(AiPrompts::DEFAULTS), $data['prompts']);
         self::assertSame(AiPrompts::RULES, $data['prompts'][0]['key']);
         self::assertStringContainsString('{rules}', $data['prompts'][2]['text']);
