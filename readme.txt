@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.83
+Stable tag: 1.140.84
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.84 =
+The credit email, the role email, the welcome credits line and the web Help tab tickets line point web-only crew to the crew page instead of the bot.
 
 = 1.140.83 =
 The task line in late-cancel and no-show messages and in the open-task call digest no longer has a hard-coded English at; each reader gets it in their own language.
@@ -1463,6 +1466,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.84 =
+No settings change.
 
 = 1.140.83 =
 No settings change.
