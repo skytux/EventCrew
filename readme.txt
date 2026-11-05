@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.110
+Stable tag: 1.140.111
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.111 =
+A cancel within 5 minutes of taking a task now always works, even inside the sign-out lock before an event (Q331).
 
 = 1.140.110 =
 New setting Doors close N minutes after the start (off by default, 30), a per-event doors time on the Coming events tab, and the placeholder {doors_close}. With no ticket note stored the ticket shows Doors close at the time; a line whose placeholder is empty is left out.
@@ -1544,6 +1547,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.111 =
+No settings change.
 
 = 1.140.110 =
 No settings change.
