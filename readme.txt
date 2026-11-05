@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.65
+Stable tag: 1.140.66
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.66 =
+The welcome message, the door new-member email, the sales desk link and the organizer-on-the-night notice can now be edited on the Messages page. The privacy line in the door new-member email is added by code in the member language, so an edited text cannot lose it.
 
 = 1.140.65 =
 The sign-up confirmation, cancel confirmation, open-task call and email-confirm texts can now be edited on the Messages page, in every site language.
@@ -1409,6 +1412,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.66 =
+No settings change.
 
 = 1.140.65 =
 No settings change.
