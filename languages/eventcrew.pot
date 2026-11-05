@@ -157,7 +157,7 @@ msgstr ""
 msgid "%1$s: %2$d unsubscribed"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:194
+#: src/Support/ClaimNotifier.php:195
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 msgid "%1$s: %2$s at %3$s. %4$s"
 msgstr ""
@@ -543,11 +543,11 @@ msgstr ""
 msgid "A send is already waiting. It goes out at %s."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:90
+#: src/Support/SlotFreedNotice.php:203
 msgid "A spot just opened up"
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:73
+#: src/Support/SlotFreedNotice.php:184
 #. translators: 1: role, 2: event, 3: date/time
 msgid "A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board."
 msgstr ""
@@ -1131,7 +1131,7 @@ msgstr ""
 msgid "Cancelled. Nothing was sent to the group."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:209
+#: src/Support/ClaimNotifier.php:210
 #. translators: 1: role, 2: event
 msgid "Cancelled: %1$s for %2$s"
 msgstr ""
@@ -2283,7 +2283,7 @@ msgstr ""
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:93 src/Support/TakeoverService.php:364 src/Support/TakeoverService.php:391 src/Support/TakeoverService.php:419
+#: src/Support/SlotFreedNotice.php:206 src/Support/TakeoverService.php:364 src/Support/TakeoverService.php:391 src/Support/TakeoverService.php:419
 #: src/Telegram/PermissionService.php:328
 #. translators: 1: name, 2: the opening line
 #. translators: 1: name, 2: the cover line
@@ -2322,7 +2322,7 @@ msgstr ""
 msgid "Hi %1$s,\n\nYou're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n\n%5$s\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:216
+#: src/Support/ClaimNotifier.php:217
 msgid "Hi %1$s,\n\nYou've cancelled %2$s at %3$s, and your ticket is now disabled.\n\n%4$s\n\n%5$s"
 msgstr ""
 
@@ -4350,7 +4350,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:109
+#: src/Support/ClaimNotifier.php:226 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:210 src/Support/TaskCancelledNotice.php:109
 msgid "See open tasks"
 msgstr ""
 
@@ -5112,7 +5112,7 @@ msgstr ""
 msgid "Thank-you text (came)"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:186
+#: src/Support/ClaimNotifier.php:187
 msgid "Thanks for the notice."
 msgstr ""
 
@@ -6129,7 +6129,7 @@ msgstr ""
 msgid "This ticket link is not valid."
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:185
+#: src/Support/ClaimNotifier.php:186
 msgid "This was a late cancellation, which counts against your standing. More notice, or finding a replacement with 🔁 Take over a task under /me, keeps it clear next time."
 msgstr ""
 
@@ -7242,7 +7242,7 @@ msgstr ""
 msgid "Your standing comes from how your past tasks went:"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:273
+#: src/Support/ClaimNotifier.php:274
 #. translators: 1: standing level and score, 2: number of free-entry credits
 msgid "Your standing: %1$s · %2$d free-entry credits."
 msgstr ""
@@ -7656,7 +7656,7 @@ msgstr ""
 msgid "⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:196
+#: src/Support/ClaimNotifier.php:197
 msgid "⚠️ Late cancellation"
 msgstr ""
 
@@ -7708,7 +7708,7 @@ msgstr ""
 msgid "✗ %s"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:197
+#: src/Support/ClaimNotifier.php:198
 msgid "❌ Cancelled"
 msgstr ""
 
