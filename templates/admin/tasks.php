@@ -251,12 +251,13 @@ $eventcrew_start_value = $eventcrew_is_edit
                         <p><?php esc_html_e('How many guests each person on this task may bring in for free. The sales desk adds this up over all of a person\'s tasks that night. Leave empty on a new task to use the role\'s default from Settings.', 'eventcrew'); ?></p>
                     </div>
 
-                    <div class="form-field">
+                    <div class="form-field form-required">
                         <label for="eventcrew-starts-at"><?php esc_html_e('Starts', 'eventcrew'); ?></label>
                         <input
                             name="starts_at"
                             id="eventcrew-starts-at"
                             type="datetime-local"
+                            required
                             value="<?php echo esc_attr($eventcrew_start_value); ?>">
                     </div>
 
@@ -267,7 +268,7 @@ $eventcrew_start_value = $eventcrew_is_edit
                             id="eventcrew-ends-at"
                             type="datetime-local"
                             value="<?php echo esc_attr($eventcrew_local($editing->endsAt ?? null)); ?>">
-                        <p><?php esc_html_e('Leave both blank if times are not decided. Overlapping tasks can only be detected when times are set. An end earlier than the start is read as the next morning.', 'eventcrew'); ?></p>
+                        <p><?php esc_html_e('The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning.', 'eventcrew'); ?></p>
                     </div>
 
                     <div class="form-field">

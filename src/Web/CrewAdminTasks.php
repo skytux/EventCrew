@@ -133,6 +133,11 @@ final class CrewAdminTasks
         $start = self::normalizeDateTime($startsAt, $taskDate);
         $end = self::normalizeDateTime($endsAt, $taskDate);
 
+        // A task must have a start time (Q229), as on wp-admin.
+        if (null === $start) {
+            return 'admin_task_no_start';
+        }
+
         // An end before the start is a crossing of midnight, as on wp-admin.
         if (null !== $start && null !== $end && $end < $start) {
             $end = self::nextDay($end);
@@ -273,6 +278,7 @@ final class CrewAdminTasks
         $map = [
             'admin_task_bad_date' => __('That date could not be read. Use the date picker and try again.', 'eventcrew'),
             'admin_task_bad_role' => __('Pick a role that still exists in Settings.', 'eventcrew'),
+            'admin_task_no_start' => __('Set a start time. A task cannot be saved without one.', 'eventcrew'),
             'admin_task_added' => __('Task added.', 'eventcrew'),
             'admin_task_updated' => __('Task updated.', 'eventcrew'),
             'admin_task_deleted' => __('Task deleted.', 'eventcrew'),
