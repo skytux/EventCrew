@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.45
+Stable tag: 1.140.46
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.46 =
+The plugin in French (fr_FR), Lou's Q294: every text of the plugin (bot, web pages, emails, wp-admin), machine-drafted; a French speaker should proofread it. Shown to anyone whose language is French once that language is switched on.
 
 = 1.140.45 =
 The plugin in Spanish (es_ES), Lou's Q294: every text of the plugin (bot, web pages, emails, wp-admin), machine-drafted; a Spanish speaker should proofread it. Shown to anyone whose language is Spanish once that language is switched on.
@@ -1349,6 +1352,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.46 =
+No settings change.
 
 = 1.140.45 =
 No settings change.
