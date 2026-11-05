@@ -851,7 +851,7 @@ msgstr ""
 msgid "After that it is anonymised automatically, without anyone having to remember to do it: your email address, name, notes and any Telegram link are erased for good. What remains is an attendance record with nobody attached to it, which is no longer information about you."
 msgstr ""
 
-#: src/Support/FollowupMail.php:967
+#: src/Support/FollowupMail.php:1074
 #. translators: 1: event date, 14.11.2026, 2: send date, 3: time, 12:00, 4: number of addresses
 msgid "After the event on %1$s, the post-event email goes out on %2$s at %3$s to %4$d addresses: a thank-you to those who came, and a sorry-we-missed-you to those who did not. Both versions are below, with a sample name and the coming events as they are now. If it should not go out, stop it with the button at the end, or on the Roster page."
 msgstr ""
@@ -864,7 +864,7 @@ msgstr ""
 msgid "After the event: we missed you (email)"
 msgstr ""
 
-#: src/Support/FollowupMail.php:780
+#: src/Support/FollowupMail.php:876
 msgid "Alex"
 msgstr ""
 
@@ -1866,12 +1866,20 @@ msgstr ""
 msgid "Do Not Send This"
 msgstr ""
 
-#: src/Support/FollowupMail.php:976 src/Web/FollowupController.php:240 templates/admin/roster.php:335 templates/public/signup.php:1376
+#: src/Support/FollowupMail.php:1083 src/Web/FollowupController.php:334 templates/admin/roster.php:335 templates/public/signup.php:1376
 msgid "Do not send the post-event email"
 msgstr ""
 
 #: src/Web/CrewAdminController.php:190 src/Web/NewsletterController.php:1359
 msgid "Do not send this announcement"
+msgstr ""
+
+#: src/Support/FollowupMail.php:1297 src/Web/FollowupController.php:364
+msgid "Don't send me these"
+msgstr ""
+
+#: src/Web/FollowupController.php:234
+msgid "Done. You will not get these emails after our events any more."
 msgstr ""
 
 #: src/Support/DoorDesk.php:1261 templates/public/signup.php:685
@@ -2636,7 +2644,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1175 src/Support/MessageTemplates.php:859
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:263 src/Support/FollowupMail.php:1282 src/Support/MessageTemplates.php:859
 #: src/Support/MessageTemplates.php:1485 src/Support/MessageTemplates.php:1928 src/Support/TicketMail.php:1139 src/Support/TicketText.php:76
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2650,7 +2658,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1173 src/Support/TicketMail.php:1137
+#: src/Support/EmailBody.php:261 src/Support/FollowupMail.php:1280 src/Support/TicketMail.php:1137
 msgid "Hi,"
 msgstr ""
 
@@ -3001,7 +3009,7 @@ msgctxt "month name after a day number"
 msgid "January"
 msgstr ""
 
-#: src/Web/FollowupController.php:253
+#: src/Web/FollowupController.php:347
 msgid "Join"
 msgstr ""
 
@@ -3009,7 +3017,7 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1189
+#: src/Support/FollowupMail.php:1296
 msgid "Join the announcement"
 msgstr ""
 
@@ -3520,7 +3528,7 @@ msgstr ""
 msgid "Next date"
 msgstr ""
 
-#: src/Web/FollowupController.php:151 src/Web/NewsletterController.php:1330 src/Web/NewsletterController.php:1334 templates/admin/messages-tab-events.php:106
+#: src/Web/FollowupController.php:161 src/Web/NewsletterController.php:1330 src/Web/NewsletterController.php:1334 templates/admin/messages-tab-events.php:106
 #: templates/admin/settings.php:1586 templates/public/signup.php:691 templates/public/signup.php:1849
 msgid "Next events announcement"
 msgstr ""
@@ -4448,35 +4456,35 @@ msgstr ""
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
-#: src/Support/HybridPolicy.php:248 src/Web/FollowupController.php:215 templates/admin/messages-tab-events.php:43 templates/admin/settings.php:1563
+#: src/Support/HybridPolicy.php:248 src/Web/FollowupController.php:307 templates/admin/messages-tab-events.php:43 templates/admin/settings.php:1563
 #: templates/public/signup.php:695 templates/public/signup.php:1965
 msgid "Post-event email"
 msgstr ""
 
-#: src/Support/FollowupMail.php:962
+#: src/Support/FollowupMail.php:1069
 #. translators: %s: the date the post-event email goes out, like 15.11.2026
 msgid "Post-event email preview: it goes out on %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:405
+#: src/Support/FollowupMail.php:422
 #. translators: 1: emails sent, 2: emails that failed, 3: emails with a link opened
 msgid "Post-event email: %1$d sent · %2$d failed · %3$d clicked"
 msgstr ""
 
-#: src/Support/FollowupMail.php:418
+#: src/Support/FollowupMail.php:435
 #. translators: 1: the date it goes out, like 15.11.2026, 2: the time, like 12:00
 msgid "Post-event email: goes out on %1$s at %2$s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:415
+#: src/Support/FollowupMail.php:432
 msgid "Post-event email: not sent for this event (switched on after it)"
 msgstr ""
 
-#: src/Support/FollowupMail.php:413
+#: src/Support/FollowupMail.php:430
 msgid "Post-event email: stopped"
 msgstr ""
 
-#: src/Support/FollowupMail.php:414
+#: src/Support/FollowupMail.php:431
 msgid "Post-event email: switched off"
 msgstr ""
 
@@ -4492,7 +4500,7 @@ msgstr ""
 msgid "Press the button to finish signing in."
 msgstr ""
 
-#: src/Web/FollowupController.php:149
+#: src/Web/FollowupController.php:159
 msgid "Press the button to join the next events announcement."
 msgstr ""
 
@@ -4500,7 +4508,11 @@ msgstr ""
 msgid "Press the button to leave the announcement."
 msgstr ""
 
-#: src/Web/FollowupController.php:191
+#: src/Web/FollowupController.php:220
+msgid "Press the button to stop getting these emails after our events."
+msgstr ""
+
+#: src/Web/FollowupController.php:275
 msgid "Press the button to stop the post-event email of this event. It will not be sent."
 msgstr ""
 
@@ -5776,7 +5788,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:975 templates/admin/messages-tab-messages.php:58 templates/admin/newsletter.php:193
+#: src/Support/FollowupMail.php:1082 templates/admin/messages-tab-messages.php:58 templates/admin/newsletter.php:193
 msgid "Subject"
 msgstr ""
 
@@ -6122,11 +6134,11 @@ msgstr ""
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing."
 msgstr ""
 
-#: src/Support/FollowupMail.php:978
+#: src/Support/FollowupMail.php:1085
 msgid "Text: a one-time text an organizer set for this email. After this send, the text on the Messages page is used again."
 msgstr ""
 
-#: src/Support/FollowupMail.php:979
+#: src/Support/FollowupMail.php:1086
 msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
 msgstr ""
 
@@ -6854,7 +6866,7 @@ msgstr ""
 msgid "The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
 msgstr ""
 
-#: src/Support/FollowupMail.php:1200
+#: src/Support/FollowupMail.php:1308
 msgid "The next ones are below."
 msgstr ""
 
@@ -6939,7 +6951,7 @@ msgstr ""
 msgid "The plugin’s own texts (buttons, menus, built-in messages) are not translated into %s. People who choose it read them in English. The texts in the table below are translated."
 msgstr ""
 
-#: src/Admin/RosterPage.php:732 src/Web/FollowupController.php:202
+#: src/Admin/RosterPage.php:732 src/Web/FollowupController.php:286
 msgid "The post-event email is stopped. It will not be sent."
 msgstr ""
 
@@ -6947,7 +6959,7 @@ msgstr ""
 msgid "The post-event email is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
 msgstr ""
 
-#: src/Admin/RosterPage.php:733 src/Web/FollowupController.php:203
+#: src/Admin/RosterPage.php:733 src/Web/FollowupController.php:287
 msgid "The post-event email was already stopped."
 msgstr ""
 
@@ -7377,8 +7389,8 @@ msgstr ""
 msgid "This link is invalid or has expired"
 msgstr ""
 
-#: src/Support/TakeoverService.php:132 src/Telegram/ManageController.php:168 src/Telegram/ReplacementService.php:227 src/Web/FollowupController.php:185
-#: src/Web/NewsletterController.php:1318 src/Web/TakeoverController.php:75
+#: src/Support/TakeoverService.php:132 src/Telegram/ManageController.php:168 src/Telegram/ReplacementService.php:227 src/Web/FollowupController.php:210
+#: src/Web/FollowupController.php:269 src/Web/NewsletterController.php:1318 src/Web/TakeoverController.php:75
 msgid "This link is no longer valid."
 msgstr ""
 
@@ -7691,11 +7703,11 @@ msgstr ""
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
 msgstr ""
 
-#: src/Support/FollowupMail.php:973
+#: src/Support/FollowupMail.php:1080
 msgid "To those who came"
 msgstr ""
 
-#: src/Support/FollowupMail.php:974
+#: src/Support/FollowupMail.php:1081
 msgid "To those who did not come"
 msgstr ""
 
@@ -7711,7 +7723,7 @@ msgstr ""
 msgid "Too late: the announcement is already being sent."
 msgstr ""
 
-#: src/Admin/RosterPage.php:734 src/Web/FollowupController.php:204
+#: src/Admin/RosterPage.php:734 src/Web/FollowupController.php:288
 msgid "Too late: the post-event email has already gone out."
 msgstr ""
 
@@ -7934,7 +7946,7 @@ msgstr ""
 msgid "Waiting for confirmation"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1178 src/Support/MessageTemplates.php:1930
+#: src/Support/FollowupMail.php:1285 src/Support/MessageTemplates.php:1930
 msgid "Warmly,"
 msgstr ""
 
@@ -8355,7 +8367,7 @@ msgstr ""
 msgid "Working: %s"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1190
+#: src/Support/FollowupMail.php:1298
 msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
 msgstr ""
 
@@ -8544,7 +8556,7 @@ msgstr ""
 msgid "You get this email because you are in the crew. Change your details or leave the announcement"
 msgstr ""
 
-#: src/Support/FollowupMail.php:772 src/Support/TicketMail.php:1049
+#: src/Support/FollowupMail.php:868 src/Support/TicketMail.php:1049
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
