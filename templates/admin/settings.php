@@ -61,6 +61,7 @@
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $email_background The picture behind every email; blank draws the purple fade alone.
+ * @var array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>} $hybrid The Hybrid tick of each message kind (HybridPolicy).
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows nothing.
  * @var array<string, mixed> $infrastructure_note How the site is run, a TranslatedText value, shown to organizers in the crew page's Help tab; blank shows nothing.
@@ -1503,6 +1504,41 @@ if (! defined('ABSPATH')) {
                     </p>
                 </td>
             </tr>
+        </table>
+
+        <h2><?php esc_html_e('Hybrid messages', 'eventcrew'); ?></h2>
+        <?php if (! $hybrid['allowed']) : ?>
+            <p class="description" style="color:#b32d2e"><?php echo esc_html($hybrid['warning']); ?></p>
+        <?php endif; ?>
+        <table class="widefat striped" style="max-width:40em;margin-bottom:1.5em">
+            <thead>
+                <tr>
+                    <th scope="col"><?php esc_html_e('Message', 'eventcrew'); ?></th>
+                    <th scope="col">
+                        <?php esc_html_e('Hybrid', 'eventcrew'); ?>
+                        <details style="display:inline-block;vertical-align:top">
+                            <summary style="cursor:pointer;list-style:none" aria-label="<?php esc_attr_e('What is hybrid?', 'eventcrew'); ?>">
+                                <span class="dashicons dashicons-info-outline" aria-hidden="true"></span>
+                            </summary>
+                            <p style="max-width:24em;font-weight:400"><?php esc_html_e('One message in all site languages, one part per language, each part starting with its short language code (FI, EN). For people whose language is not known.', 'eventcrew'); ?></p>
+                            <p style="max-width:24em;font-weight:400"><?php esc_html_e('With the tick off, each person gets the message in their own language only, and people whose language is not known get it in the main language.', 'eventcrew'); ?></p>
+                        </details>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($hybrid['kinds'] as $ec_kind => $ec_hybrid) : ?>
+                    <tr<?php echo $hybrid['allowed'] ? '' : ' style="opacity:.55"'; ?>>
+                        <td><label for="eventcrew-hybrid-<?php echo esc_attr($ec_kind); ?>"><?php echo esc_html($ec_hybrid['label']); ?></label></td>
+                        <td>
+                            <input type="checkbox" id="eventcrew-hybrid-<?php echo esc_attr($ec_kind); ?>"
+                                name="hybrid[<?php echo esc_attr($ec_kind); ?>]" value="1"
+                                <?php checked($ec_hybrid['ticked']); ?>
+                                <?php disabled(! $hybrid['allowed']); ?>>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
         </table>
 
         <h2><?php esc_html_e('Post-event email', 'eventcrew'); ?></h2>

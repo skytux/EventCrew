@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Repositories\NewsletterSubscriberRepository;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Newsletter;
@@ -976,7 +977,7 @@ final class NewsletterController
         if (null !== $existing) {
             if (NewsletterSubscriberRepository::STATUS_CONFIRMED === $existing['status']) {
                 // The page answers as for a new address; the note goes only to the address itself.
-                $this->sendAlreadySubscribed($email);
+                $this->sendAlreadySubscribed($email, (string) ($existing['language'] ?? ''));
 
                 return self::RESULT_SENT;
             }
@@ -993,7 +994,7 @@ final class NewsletterController
 
         if ($id > 0) {
             $this->nameToken = self::signNameToken($id);
-            $this->sendConfirmation($email, $id);
+            $this->sendConfirmation($email, $id, $language);
         }
 
         return self::RESULT_SENT;
@@ -1245,7 +1246,7 @@ final class NewsletterController
      * the announcements do not arrive: the contact of the privacy settings, or
      * the site's admin email. At most once an hour per address.
      */
-    private function sendAlreadySubscribed(string $email): void
+    private function sendAlreadySubscribed(string $email, string $language = ''): void
     {
         $key = self::ALREADY_KEY_PREFIX . substr(hash('sha256', $email), 0, 32);
 
@@ -1260,26 +1261,30 @@ final class NewsletterController
         $this->sendCard(
             $email,
             static fn (): array => NewsletterConfirmMail::alreadyWords($site, $contact),
-            'mailto:' . $contact
+            'mailto:' . $contact,
+            $language
         );
     }
 
-    private function sendConfirmation(string $email, int $id): void
+    private function sendConfirmation(string $email, int $id, string $language = ''): void
     {
         $site = (string) get_bloginfo('name');
         $this->sendCard(
             $email,
             static fn (): array => NewsletterConfirmMail::words($site),
-            Newsletter::confirmUrl($id)
+            Newsletter::confirmUrl($id),
+            $language
         );
     }
 
     /**
-     * One card email in Finnish and English.
+     * One card email in Finnish and English, or in $language alone (the
+     * language the browser asked for; the main language when it is not
+     * known) when its Hybrid tick is off (HybridPolicy).
      *
      * @param callable(): array{subject: string, heading: string, promise: string, body: string, button: string} $words
      */
-    private function sendCard(string $email, callable $words, string $url): void
+    private function sendCard(string $email, callable $words, string $url, string $language = ''): void
     {
         $site = (string) get_bloginfo('name');
         $why = static fn (): string => sprintf(
@@ -1287,21 +1292,18 @@ final class NewsletterController
             __('You get this email because this address was entered in the announcement form on %s.', 'eventcrew'),
             $site
         );
-        $fi = Language::run(Language::FINNISH, $words);
-        $en = Language::run(Language::ENGLISH, $words);
+        $languages = HybridPolicy::languagesFor(HybridPolicy::NEWSLETTER_CONFIRM, $language);
+        $parts = HybridPolicy::inEach($languages, $words);
         $imageUrl = Newsletter::barImageId() > 0
             ? (string) wp_get_attachment_image_url(Newsletter::barImageId(), 'large')
             : '';
 
         $this->mailer->toSubscriber(
             $email,
-            NewsletterConfirmMail::both($fi['subject'], $en['subject']),
-            NewsletterConfirmMail::html($fi, $en, $url, $imageUrl),
-            NewsletterConfirmMail::text($fi, $en, $url),
-            NewsletterConfirmMail::both(
-                (string) Language::run(Language::FINNISH, $why),
-                (string) Language::run(Language::ENGLISH, $why)
-            ),
+            HybridPolicy::join(HybridPolicy::field($parts, 'subject')),
+            NewsletterConfirmMail::html($parts, $url, $imageUrl),
+            NewsletterConfirmMail::text($parts, $url),
+            HybridPolicy::join(HybridPolicy::inEach($languages, $why)),
             home_url('/')
         );
     }

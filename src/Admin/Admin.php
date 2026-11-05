@@ -7,6 +7,7 @@ namespace EventCrew\Admin;
 use EventCrew\Core\Container;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Scheduler;
 
 /**
@@ -31,6 +32,7 @@ final class Admin
     {
         add_action('admin_menu', [$this, 'registerMenus']);
         add_action('admin_notices', [$this, 'renderNotice']);
+        add_action('admin_notices', [self::class, 'hybridOffNotice']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueStyles']);
 
         // Re-publish the webhook and command menu once after a plugin update, so
@@ -439,6 +441,26 @@ final class Admin
     public static function noticeKey(): string
     {
         return self::NOTICE_TRANSIENT . '_' . (int) get_current_user_id();
+    }
+
+    /**
+     * The warning on the plugin's wp-admin pages while hybrid messages are
+     * off because the site has more languages than they work with.
+     */
+    public static function hybridOffNotice(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only: picks where the notice shows.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash((string) $_GET['page'])) : '';
+
+        if (
+            ! str_starts_with($page, self::MENU_SLUG)
+            || ! current_user_can(self::CAPABILITY)
+            || HybridPolicy::isAllowed()
+        ) {
+            return;
+        }
+
+        printf('<div class="notice notice-warning"><p>%s</p></div>', esc_html(HybridPolicy::offWarning()));
     }
 
     public function renderNotice(): void

@@ -22,9 +22,9 @@ use EventCrew\Web\SignupBoardView;
  * email address, is sent one email. It thanks them and carries the ticket: the
  * QR code the door scans, the code written out, and a link to the ticket page.
  *
- * The email is in Finnish and in English, Finnish first, in one message. Both
- * texts are the plugin's own English strings: the Finnish block is composed
- * inside Language::run('fi'), so it comes from languages/eventcrew-fi.mo.
+ * The email is in the languages HybridPolicy picks, main language first, in
+ * one message. Each language's block is composed inside Language::run(), so
+ * the plugin's own strings come from that language's catalogue.
  *
  * The QR code is drawn on the server (TicketQr) as HTML tables of black and
  * white cells. It is not an image: Gmail does not show images written into
@@ -796,7 +796,8 @@ final class TicketMail
             $date,
             $person->name(),
             $person->email,
-            $this->tasksOn($person->id, $date)
+            $this->tasksOn($person->id, $date),
+            $person->language
         ));
 
         if ($sent && null !== $this->assignments) {
@@ -830,7 +831,7 @@ final class TicketMail
         $tasks = $this->tasksOn($person->id, $date);
 
         if ([] === $tasks) {
-            return $this->sendCancelled($person->name(), $person->email, $date, $deleted);
+            return $this->sendCancelled($person->name(), $person->email, $date, $deleted, $person->language);
         }
 
         if ($date < (string) current_time('Y-m-d')) {
@@ -843,7 +844,8 @@ final class TicketMail
             $date,
             $person->name(),
             $person->email,
-            $tasks
+            $tasks,
+            $person->language
         ), $deleted);
     }
 
@@ -922,7 +924,14 @@ final class TicketMail
         }
 
         $sent = $this->sendPersonTicket(
-            new CrewTicket(CrewTicket::KIND_CREDIT, $redemptionId, $date, $person->name(), $person->email)
+            new CrewTicket(
+                CrewTicket::KIND_CREDIT,
+                $redemptionId,
+                $date,
+                $person->name(),
+                $person->email,
+                language: $person->language
+            )
         );
 
         if ($sent && null !== $this->redemptions) {
@@ -964,7 +973,7 @@ final class TicketMail
             return false;
         }
 
-        return $this->sendCancelled($person->name(), $person->email, $date);
+        return $this->sendCancelled($person->name(), $person->email, $date, null, $person->language);
     }
 
     /**
@@ -987,12 +996,24 @@ final class TicketMail
     }
 
     /**
-     * The short "Your ticket is cancelled" email, in Finnish and English. Not
-     * sent to an empty or placeholder address, or for a night already past.
+     * The short "Your ticket is cancelled" email, in the languages HybridPolicy
+     * picks ($language is the holder's stored language, null when not known).
+     * $deleted, when an organizer deleted the task, is named first. Not sent
+     * to an empty or placeholder address, or for a night already past.
      */
-    public function sendCancelled(string $name, string $email, string $date, ?Task $deleted = null): bool
-    {
-        return $this->sendNotice($email, $date, fn (): array => $this->composeCancelled($name, $date, $deleted));
+    public function sendCancelled(
+        string $name,
+        string $email,
+        string $date,
+        ?Task $deleted = null,
+        ?string $language = null
+    ): bool {
+        return $this->sendNotice(
+            $email,
+            $date,
+            fn (): array => $this->composeCancelled($name, $date, $deleted, $language),
+            $language
+        );
     }
 
     /**
@@ -1002,7 +1023,7 @@ final class TicketMail
      *
      * @param callable(): array{subject: string, html: string, text: string} $compose
      */
-    private function sendNotice(string $email, string $date, callable $compose): bool
+    private function sendNotice(string $email, string $date, callable $compose, ?string $language = null): bool
     {
         if ('' === $email || Person::isPlaceholderEmail($email) || ! is_email($email)) {
             return false;
@@ -1017,15 +1038,14 @@ final class TicketMail
             'You get this email because you had a ticket to this event.',
             'eventcrew'
         );
-        $fi = Language::run(Language::FINNISH, $footer);
-        $en = Language::run(Language::ENGLISH, $footer);
+        $languages = HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language);
 
         return $this->mailer->toTicketHolder(
             $email,
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            $fi === $en ? $en : $fi . ' / ' . $en
+            HybridPolicy::join(HybridPolicy::inEach($languages, $footer))
         );
     }
 
@@ -1039,9 +1059,13 @@ final class TicketMail
      *
      * @return array{subject: string, html: string, text: string}
      */
-    public function composeCancelled(string $name, string $date, ?Task $deleted = null): array
-    {
-        return $this->composeNotice($name, $date, static fn (string $event, string $short): array => [
+    public function composeCancelled(
+        string $name,
+        string $date,
+        ?Task $deleted = null,
+        ?string $language = null
+    ): array {
+        return $this->composeNotice($name, $date, $language, static fn (string $event, string $short): array => [
             'sentence' => (null === $deleted ? '' : self::deletedSentence($deleted) . "\n\n") . sprintf(
                 /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -1064,7 +1088,7 @@ final class TicketMail
      */
     public function composeMoved(string $name, string $date): array
     {
-        return $this->composeNotice($name, $date, static fn (string $event, string $short): array => [
+        return $this->composeNotice($name, $date, null, static fn (string $event, string $short): array => [
             'sentence' => sprintf(
                 /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
@@ -1079,16 +1103,16 @@ final class TicketMail
 
     /**
      * A cancel or moved email in the v4 look, without a QR code: the event
-     * and date as the gold title, the greeting and $texts' sentence in
-     * Finnish, a thin rule, the same in English, then the box with the
-     * holder's name and the red status line. $texts gets the event's name and
+     * and date as the gold title, the greeting and $texts' sentence in each
+     * language HybridPolicy picks with a thin rule between them, then the
+     * box with the holder's name and the red status line. $texts gets the event's name and
      * the short date and returns, in the current language, the sentence, the
      * subject and the status line's text.
      *
      * @param callable(string, string): array{sentence: string, subject: string, band: string} $texts
      * @return array{subject: string, html: string, text: string}
      */
-    private function composeNotice(string $name, string $date, callable $texts): array
+    private function composeNotice(string $name, string $date, ?string $language, callable $texts): array
     {
         $short = self::shortDate($date);
         [$event] = $this->event($date);
@@ -1108,21 +1132,25 @@ final class TicketMail
                 'band' => $own['band'],
             ];
         };
-        $fi = Language::run(Language::FINNISH, $words);
-        $en = Language::run(Language::ENGLISH, $words);
-        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
-        // Each language's text starts with its FI / EN tag, when the two differ.
-        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
+        $parts = HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language), $words);
+        $both = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key));
+        $bodies = HybridPolicy::field($parts, 'body');
+        // Each language's text starts with its language tag (FI, EN), when they differ.
+        $tags = HybridPolicy::tags($bodies);
+        $html = [];
+
+        foreach ($bodies as $lang => $body) {
+            $html[] = EmailBody::toHtml($body, [], EmailTemplate::accent(), $tags[$lang]);
+        }
+
         $title = '' === $event ? $short : $event . ' — ' . $short;
 
         return [
             'subject' => $both('subject') . ' – ' . $short,
             'html' => EmailBody::title($title)
-                . EmailBody::toHtml($fi['body'], [], EmailTemplate::accent(), $tags[0])
-                . '<hr style="border:0;border-top:1px solid #ead9bf;margin:22px 0">'
-                . EmailBody::toHtml($en['body'], [], EmailTemplate::accent(), $tags[1])
+                . implode('<hr style="border:0;border-top:1px solid #ead9bf;margin:22px 0">', $html)
                 . $this->cancelledBand($both('band'), $both('kicker'), trim($name)),
-            'text' => $fi['body'] . "\n\n" . $en['body'] . "\n\n" . $both('band'),
+            'text' => implode("\n\n", $bodies) . "\n\n" . $both('band'),
         ];
     }
 
@@ -1168,8 +1196,8 @@ final class TicketMail
      * member's tasks, is named in the text instead of the thank-you line.
      *
      * The content: the "Your ticket" line, the event and the date as the
-     * heading, the ticket text (TicketText) in Finnish and then in English,
-     * each with its greeting on its own line in italics, the ticket note,
+     * heading, the ticket text (TicketText) in each language HybridPolicy
+     * picks, each with its greeting on its own line in italics, the ticket note,
      * the "Open my ticket" button and the "See you on the dancefloor" line.
      * The corner (ticketCorner()): the holder's name, a buyer's code, the
      * offline hint and the small QR code in the bottom-right corner.
@@ -1180,17 +1208,23 @@ final class TicketMail
     {
         $date = self::shortDate($row->eventDate);
         [$event] = $this->event($row->eventDate);
-        $fi = Language::run(
-            Language::FINNISH,
-            fn (): array => $this->words($row, $event, $date, Language::FINNISH, $deleted)
+        // A crew member's ticket follows their stored language when the
+        // ticket email is not hybrid; everyone else's is not known.
+        $parts = [];
+
+        foreach (
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, $row instanceof CrewTicket ? $row->language : null) as $lang
+        ) {
+            $parts[$lang] = Language::run(
+                $lang,
+                fn (): array => $this->words($row, $event, $date, $lang, $deleted)
+            );
+        }
+
+        $both = static fn (string $key, string $glue = ' / '): string => HybridPolicy::join(
+            HybridPolicy::field($parts, $key),
+            $glue
         );
-        $en = Language::run(
-            Language::ENGLISH,
-            fn (): array => $this->words($row, $event, $date, Language::ENGLISH, $deleted)
-        );
-        $both = static fn (string $key, string $glue = ' / '): string => $fi[$key] === $en[$key]
-            ? $en[$key]
-            : $fi[$key] . $glue . $en[$key];
 
         if ($row instanceof CrewTicket) {
             $url = self::crewUrl($row);
@@ -1208,15 +1242,23 @@ final class TicketMail
         }
 
         // The same ticket note as the web ticket (door code, address), in
-        // every language, as the rest of this email is.
-        $note = implode("\n\n", SiteTexts::allLanguages('ticket_note'));
+        // the languages of the rest of this email.
+        $noteValue = SiteTexts::value('ticket_note');
+        $note = implode("\n\n", array_unique(array_filter(array_map(
+            static fn (string $lang): string => TranslatedText::forReader($noteValue, $lang),
+            array_keys($parts)
+        ))));
 
-        // Each language's part starts with its FI / EN tag, when the two differ.
-        $same = $fi['text'] === $en['text'];
+        // Each language's part starts with its language tag (FI, EN), when they differ.
+        $tags = HybridPolicy::tags(HybridPolicy::field($parts, 'text'));
+        $partsHtml = [];
+
+        foreach ($parts as $lang => $words) {
+            $partsHtml[] = $this->ticketPart($words, $tags[$lang]);
+        }
+
         $html = $this->ticketTop($both('subject', ' · '), $event, $date)
-            . $this->ticketPart($fi, $same ? '' : 'FI')
-            . '<hr style="border:0;border-top:1px solid ' . self::RULE_COLOR . ';margin:20px 0">'
-            . $this->ticketPart($en, $same ? '' : 'EN')
+            . implode('<hr style="border:0;border-top:1px solid ' . self::RULE_COLOR . ';margin:20px 0">', $partsHtml)
             . ('' === $note ? '' : sprintf(
                 '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
                     . ' style="margin:6px 0 24px"><tr><td bgcolor="%1$s" style="padding:14px 16px;border-radius:14px;'
@@ -1240,11 +1282,9 @@ final class TicketMail
                 esc_html($both('closing', ' ✦ '))
             );
 
-        $offline = $fi['offline'] === $en['offline']
-            ? esc_html($en['offline'])
-            : esc_html($fi['offline']) . '<br>' . esc_html($en['offline']);
+        $offline = implode('<br>', array_map('esc_html', array_unique(array_values(HybridPolicy::field($parts, 'offline')))));
 
-        $text = $fi['text'] . "\n\n" . $en['text'] . "\n\n"
+        $text = implode("\n\n", HybridPolicy::field($parts, 'text')) . "\n\n"
             . ('' === $note ? '' : $note . "\n\n")
             . $both('open') . ': ' . $url . "\n\n"
             . ('' === $holder ? '' : $holder . "\n")
@@ -1259,19 +1299,16 @@ final class TicketMail
         ];
     }
 
-    /** The footer line, in both languages. */
-    public function footer(): string
+    /**
+     * The footer line, in the ticket email's languages (HybridPolicy):
+     * $language is the holder's stored language, null when not known.
+     */
+    public function footer(?string $language = null): string
     {
-        $fi = Language::run(
-            Language::FINNISH,
+        return HybridPolicy::join(HybridPolicy::inEach(
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, $language),
             static fn (): string => __('You get this email because you have a ticket to this event.', 'eventcrew')
-        );
-        $en = Language::run(
-            Language::ENGLISH,
-            static fn (): string => __('You get this email because you have a ticket to this event.', 'eventcrew')
-        );
-
-        return $fi === $en ? $en : $fi . ' / ' . $en;
+        ));
     }
 
     /**
@@ -1304,7 +1341,7 @@ final class TicketMail
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            $this->footer(),
+            $this->footer($row instanceof CrewTicket ? $row->language : null),
             true,
             $mail['corner']
         );

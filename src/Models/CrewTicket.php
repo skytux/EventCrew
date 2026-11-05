@@ -14,6 +14,9 @@ namespace EventCrew\Models;
  * $tasks are the tasks the person holds on the night, listed in a KIND_CREW
  * email. A person with several tasks on one night has one ticket: $id is the
  * sign-up whose ticket was emailed first, so its code stays the same.
+ *
+ * $language is the person's stored language (null when not chosen): the
+ * email is in that language alone when the ticket email's Hybrid tick is off.
  */
 final class CrewTicket
 {
@@ -29,7 +32,8 @@ final class CrewTicket
         public readonly string $eventDate,
         public readonly string $name,
         public readonly string $email,
-        public readonly array $tasks = []
+        public readonly array $tasks = [],
+        public readonly ?string $language = null
     ) {
     }
 
