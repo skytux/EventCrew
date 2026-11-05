@@ -1717,7 +1717,7 @@ msgstr "⚠️ Myöhäinen peruutuksesi on kirjattu: %s. Se heikentää luotetta
 #: src/Telegram/GuestListService.php:149
 #, php-format
 msgid "✅ Added %1$s to %2$s."
-msgstr "✅ %1$s lisätty päivälle %2$s."
+msgstr "✅ %1$s lisätty päivälle %2$s"
 
 #: src/Telegram/GuestListService.php:176
 #, php-format
@@ -3184,7 +3184,7 @@ msgid "Say what to change, e.g. /door edit 2 +3 or /door edit 2 ; new note"
 msgstr "Kerro, mitä muutetaan, esim. /door edit 2 +3 tai /door edit 2 ; uusi huomautus"
 
 msgid "There is no guest number %1$d on %2$s. Send /door and tap 👥 Guest list to see the list."
-msgstr "Vierasta numero %1$d ei ole päivälle %2$s. Lähetä /door ja napauta 👥 Vieraslista, niin näet listan."
+msgstr "Vierasta numero %1$d ei ole päivälle %2$s Lähetä /door ja napauta 👥 Vieraslista, niin näet listan."
 
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "Näet listan lähettämällä /door ja napauttamalla 👥 Vieraslista, tai /door 1.8. toiselle illalle."
@@ -3757,7 +3757,7 @@ msgid "This calendar link is not valid."
 msgstr "Tämä kalenterilinkki ei ole kelvollinen."
 
 msgid "%1$d guests were added to the guest list for %2$s."
-msgstr "%1$d vierasta lisättiin vieraslistalle päivälle %2$s."
+msgstr "%1$d vierasta lisättiin vieraslistalle päivälle %2$s"
 
 msgid "They bring %d plus-ones in total."
 msgstr "Heillä on yhteensä %d aveceja."
@@ -4663,7 +4663,7 @@ msgid "The columns of the attached file do not match any ticket file format in S
 msgstr "Liitetiedoston sarakkeet eivät vastaa yhtään lipputiedoston muotoa kohdassa Asetukset → Sähköposti. Tiedoston sarakkeet ovat: %s"
 
 msgid "%1$d tickets were imported for %2$s."
-msgstr "%1$d lippua tuotiin päivälle %2$s."
+msgstr "%1$d lippua tuotiin päivälle %2$s"
 
 msgid "%d tickets were skipped because they were already on the list."
 msgstr "%d lippua ohitettiin, koska ne olivat jo listalla."
