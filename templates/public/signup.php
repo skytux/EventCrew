@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -762,6 +762,43 @@ if ($eventcrew_link_expired) {
             parse_str((string) wp_parse_url($eventcrew_here, PHP_URL_QUERY), $eventcrew_people_query);
             unset($eventcrew_people_query['people_q'], $eventcrew_people_query['people_page'], $eventcrew_people_query['person_id']);
             ?>
+            <?php
+            // Newcomers who signed themselves up and wait for the team's OK
+            // (NewcomerApproval). Shown only while someone is waiting.
+            $eventcrew_newcomers = $eventcrew_admin['newcomers'] ?? [];
+            ?>
+            <?php if ([] !== $eventcrew_newcomers) : ?>
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-newcomers">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Waiting for an OK', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <p class="eventcrew-muted eventcrew-admin-hint"><?php esc_html_e('They signed in for the first time. They can take tasks after an OK.', 'eventcrew'); ?></p>
+                    <ul class="eventcrew-plain-list eventcrew-admin-people-list">
+                        <?php foreach ($eventcrew_newcomers as $eventcrew_newcomer) : ?>
+                            <li>
+                                <strong><?php echo esc_html($eventcrew_newcomer['name']); ?></strong>
+                                <span class="eventcrew-muted eventcrew-admin-hint">
+                                    <?php echo esc_html($eventcrew_newcomer['email']); ?>
+                                    <?php if ('' !== $eventcrew_newcomer['since']) : ?>
+                                        · <?php echo esc_html($eventcrew_newcomer['since']); ?>
+                                    <?php endif; ?>
+                                </span>
+                                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-admin-actions">
+                                    <input type="hidden" name="action" value="<?php echo esc_attr((string) ($eventcrew_admin['newcomer_action'] ?? '')); ?>">
+                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_people_list); ?>">
+                                    <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_newcomer['id']); ?>">
+                                    <button type="submit" name="decision" value="ok" class="eventcrew-textlink"><?php esc_html_e('OK', 'eventcrew'); ?></button>
+                                    ·
+                                    <button type="submit" name="decision" value="no" class="eventcrew-textlink"><?php esc_html_e('No', 'eventcrew'); ?></button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </section>
+            <?php endif; ?>
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('People', 'eventcrew'); ?></h3>

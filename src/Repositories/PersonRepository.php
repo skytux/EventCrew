@@ -79,9 +79,15 @@ final class PersonRepository
 
         $now = current_time('mysql');
 
+        // Only a newcomer who signed themselves up is created waiting for the
+        // team's OK; every other create path leaves it '' (OK).
+        $approval = Person::APPROVAL_WAITING === ($data['approval'] ?? '')
+            ? ['approval' => Person::APPROVAL_WAITING]
+            : [];
+
         $wpdb->insert(
             $this->table(),
-            [
+            $approval + [
                 'email' => $this->normalizeEmail((string) ($data['email'] ?? '')),
                 'email_verified_at' => $data['email_verified_at'] ?? null,
                 'display_name' => (string) ($data['display_name'] ?? ''),
@@ -316,6 +322,77 @@ final class PersonRepository
         $notices[$key] = (string) current_time('mysql');
 
         $this->update($id, ['role_notices' => (string) wp_json_encode($notices)]);
+    }
+
+    /**
+     * Records an organizer's OK or No for a newcomer, only while they are
+     * still waiting. True when this call made the decision, false when
+     * someone else had already decided: the first organizer to press wins.
+     */
+    public function decideNewcomer(int $id, bool $ok, string $by): bool
+    {
+        global $wpdb;
+
+        $affected = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET approval = %s, approval_by = %s, updated_at = %s
+                WHERE id = %d AND approval = %s",
+                $ok ? Person::APPROVAL_OK : Person::APPROVAL_NO,
+                $by,
+                current_time('mysql'),
+                $id,
+                Person::APPROVAL_WAITING
+            )
+        );
+
+        return is_int($affected) && $affected > 0;
+    }
+
+    /**
+     * Makes a waiting or turned-down person OK: they got a role or a pass,
+     * which only an organizer gives. Nothing changes for anyone already OK.
+     */
+    public function approve(int $id): void
+    {
+        global $wpdb;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET approval = %s, updated_at = %s
+                WHERE id = %d AND approval IN (%s, %s)",
+                Person::APPROVAL_OK,
+                current_time('mysql'),
+                $id,
+                Person::APPROVAL_WAITING,
+                Person::APPROVAL_NO
+            )
+        );
+    }
+
+    /**
+     * Newcomers with a confirmed email who wait for the team's OK, oldest
+     * first.
+     *
+     * @return array<int, Person>
+     */
+    public function waitingNewcomers(): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()}
+                WHERE approval = %s AND email_verified_at IS NOT NULL AND anonymized_at IS NULL
+                ORDER BY created_at ASC, id ASC",
+                Person::APPROVAL_WAITING
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Person => Person::fromRow($row),
+            is_array($rows) ? $rows : []
+        );
     }
 
     /**

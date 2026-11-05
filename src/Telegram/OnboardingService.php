@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Language;
@@ -235,6 +236,8 @@ final class OnboardingService
             return $this->people->create([
                 'email' => $email,
                 'display_name' => $displayName,
+                // Waits for the team's OK before taking a task (NewcomerApproval).
+                'approval' => Person::APPROVAL_WAITING,
             ]);
         }
 

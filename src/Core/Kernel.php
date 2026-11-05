@@ -61,6 +61,7 @@ use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
@@ -298,6 +299,10 @@ final class Kernel
         // The welcome message: sent the moment a member confirms their email,
         // which happens on the front path (web sign-in, the bot's webhook).
         $this->container->get(WelcomeSender::class)->boot();
+
+        // The team's OK for a newcomer: asks the organizers when one confirms
+        // their email, and makes a person OK when they get a role or a pass.
+        $this->container->get(NewcomerApproval::class)->boot();
 
         // A member who confirms their email joins the newsletter, with no
         // email sent, unless they already have a subscriber row.
@@ -882,7 +887,8 @@ final class Kernel
                 $container->get(CrewAdminTasks::class),
                 $container->get(CrewAdminNewsletter::class),
                 $container->get(CrewAdminFollowup::class),
-                $container->get(CrewAdminAiText::class)
+                $container->get(CrewAdminAiText::class),
+                $container->get(NewcomerApproval::class)
             )
         );
 
@@ -1329,7 +1335,17 @@ final class Kernel
                 $container->get(FollowupCommand::class),
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(BuyerListReset::class)
+                $container->get(BuyerListReset::class),
+                $container->get(NewcomerApproval::class)
+            )
+        );
+
+        $this->container->singleton(
+            NewcomerApproval::class,
+            fn (Container $container) => new NewcomerApproval(
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
             )
         );
 

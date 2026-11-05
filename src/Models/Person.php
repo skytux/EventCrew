@@ -13,6 +13,15 @@ use EventCrew\Support\Roles;
  */
 final class Person
 {
+    /** approval: a newcomer who signed in by themselves, waiting for the team's OK. */
+    public const APPROVAL_WAITING = 'waiting';
+
+    /** approval: an organizer gave the OK. */
+    public const APPROVAL_OK = 'ok';
+
+    /** approval: an organizer said No. */
+    public const APPROVAL_NO = 'no';
+
     public function __construct(
         public readonly int $id,
         public readonly string $email,
@@ -40,7 +49,14 @@ final class Person
          * @var array<string, string> the role notices already sent to the
          * organizers about this person: "met:<slug>" or "given:<slug>" => when
          */
-        public readonly array $roleNotices = []
+        public readonly array $roleNotices = [],
+        /**
+         * The team's OK: '' (OK: added by an organizer, or from before the
+         * OK existed), or one of the APPROVAL_* values.
+         */
+        public readonly string $approval = '',
+        /** The name of the organizer who gave the OK or said No; '' when not known. */
+        public readonly string $approvalBy = ''
     ) {
     }
 
@@ -69,7 +85,9 @@ final class Person
             (string) ($row['ban_reason'] ?? ''),
             Language::normalize($row['language'] ?? null),
             self::decodeRoles($row['role_slugs'] ?? null),
-            self::decodeNotices($row['role_notices'] ?? null)
+            self::decodeNotices($row['role_notices'] ?? null),
+            (string) ($row['approval'] ?? ''),
+            (string) ($row['approval_by'] ?? '')
         );
     }
 
@@ -125,6 +143,18 @@ final class Person
     public function isBanned(): bool
     {
         return null !== $this->bannedAt;
+    }
+
+    /** A newcomer still waiting for the team's OK: they see the board but cannot take a task. */
+    public function isWaitingForOk(): bool
+    {
+        return self::APPROVAL_WAITING === $this->approval;
+    }
+
+    /** A newcomer the team said No to: they cannot take a task. */
+    public function isTurnedDown(): bool
+    {
+        return self::APPROVAL_NO === $this->approval;
     }
 
     /**

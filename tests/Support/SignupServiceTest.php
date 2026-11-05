@@ -395,4 +395,43 @@ final class SignupServiceTest extends TestCase
     {
         self::assertStringContainsString('5 minutes', SignupService::signoutLockedText());
     }
+
+    /**
+     * A newcomer who signed themselves up cannot take a task until the team
+     * says OK, and not at all after a No. The board asks personRefusal().
+     */
+    public function testANewcomerWaitingForTheTeamsOkIsRefused(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');               // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'approval' => 'waiting'];     // people->find
+
+        self::assertSame(SignupService::WAITING, $this->service()->claim(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+
+        $this->wpdb->nextRows[] = ['id' => 9, 'approval' => 'waiting'];
+        self::assertSame(SignupService::WAITING, $this->service()->personRefusal(9));
+    }
+
+    public function testANewcomerTheTeamSaidNoToIsRefused(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'approval' => 'no'];
+
+        self::assertSame(SignupService::TURNED_DOWN, $this->service()->claim(9, 5));
+
+        $this->wpdb->nextRows[] = ['id' => 9, 'approval' => 'no'];
+        self::assertSame(SignupService::TURNED_DOWN, $this->service()->personRefusal(9));
+    }
+
+    /** Everyone already in the list has approval '' after schema 33, which is OK. */
+    public function testAnEmptyApprovalIsOk(): void
+    {
+        $this->options[SignupService::GATE_OPTION] = '0';
+        $this->wpdb->nextRows[] = ['id' => 9, 'approval' => ''];
+
+        self::assertSame('', $this->service()->personRefusal(9));
+        self::assertSame('', SignupService::approvalRefusal(Person::fromRow(['id' => 9, 'approval' => 'ok'])));
+    }
 }

@@ -1091,6 +1091,22 @@ final class MessageTemplates
                 static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew')
             ),
             new MessageTemplate(
+                'newcomer_ok',
+                __('The team said OK to a newcomer (email)', 'eventcrew'),
+                $email,
+                __('Sent to a new person without Telegram when an organizer presses OK for them. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
+                static fn (): string => __('The team said OK', 'eventcrew'),
+                static fn (): string => __('The team said OK. You can now take tasks on the crew page.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'newcomer_ok_dm',
+                __('The team said OK to a newcomer (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to a new person who uses the bot when an organizer presses OK for them.', 'eventcrew'),
+                null,
+                static fn (): string => __('✅ The team said OK. You can now take tasks: send /board.', 'eventcrew')
+            ),
+            new MessageTemplate(
                 'access_organizer',
                 __('You were made an organizer (email)', 'eventcrew'),
                 $email,
@@ -1469,6 +1485,36 @@ final class MessageTemplates
                     ['%s' => '{name}']
                 ),
                 $chatName
+            ),
+            new MessageTemplate(
+                'newcomer_waiting',
+                __('A newcomer waits for an OK (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the person's name */
+                    __('New: %s wants to join', 'eventcrew'),
+                    ['%s' => '{name}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: the person's name, 2: their email */
+                    __('%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page.', 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{email}']
+                ),
+                ['name' => $member, 'email' => $memberEmail]
+            ),
+            new MessageTemplate(
+                'newcomer_waiting_dm',
+                __('A newcomer waits for an OK (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to the organizers who use the bot when a new person confirms their email for the first time. The OK and No buttons are added under the text; the first organizer to press decides.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: 1: the person's name, 2: their email */
+                    __('🆕 New: %1$s (%2$s) wants to join.', 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{email}']
+                ),
+                ['name' => $member, 'email' => $memberEmail]
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong

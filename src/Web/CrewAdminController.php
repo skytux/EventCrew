@@ -18,6 +18,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
@@ -75,6 +76,7 @@ final class CrewAdminController
     public const NEWSLETTER_STOP_ACTION = 'eventcrew_web_admin_newsletter_stop';
     public const FOLLOWUP_TEXT_ACTION = 'eventcrew_web_admin_followup_text';
     public const AI_TEXT_ACTION = 'eventcrew_web_admin_ai_text';
+    public const NEWCOMER_ACTION = 'eventcrew_web_admin_newcomer';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -105,6 +107,7 @@ final class CrewAdminController
         self::NEWSLETTER_STOP_ACTION,
         self::FOLLOWUP_TEXT_ACTION,
         self::AI_TEXT_ACTION,
+        self::NEWCOMER_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -145,7 +148,8 @@ final class CrewAdminController
         private readonly CrewAdminTasks $tasksScreen,
         private readonly ?CrewAdminNewsletter $newsletterScreen = null,
         private readonly ?CrewAdminFollowup $followupScreen = null,
-        private readonly ?CrewAdminAiText $aiTextScreen = null
+        private readonly ?CrewAdminAiText $aiTextScreen = null,
+        private readonly ?NewcomerApproval $newcomers = null
     ) {
     }
 
@@ -190,6 +194,7 @@ final class CrewAdminController
             self::NEWSLETTER_STOP_ACTION => __('Do not send this announcement', 'eventcrew'),
             self::FOLLOWUP_TEXT_ACTION => __('Text for the next post-event email', 'eventcrew'),
             self::AI_TEXT_ACTION => __('Change an AI text for an event', 'eventcrew'),
+            self::NEWCOMER_ACTION => __('Say OK or No to a newcomer', 'eventcrew'),
         ];
     }
 
@@ -292,6 +297,11 @@ final class CrewAdminController
                 sanitize_textarea_field((string) ($post['followup_text'] ?? ''))
             ),
             self::AI_TEXT_ACTION => null === $this->aiTextScreen ? '' : $this->aiTextScreen->save($organizer, $post),
+            self::NEWCOMER_ACTION => $this->decideNewcomer(
+                $organizer,
+                (int) ($post['person_id'] ?? 0),
+                sanitize_key((string) ($post['decision'] ?? ''))
+            ),
             self::ROLES_ACTION => $this->saveRoles(
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
@@ -370,6 +380,41 @@ final class CrewAdminController
     }
 
     /** "Post a new board in the Telegram group": the /board repost. */
+    /**
+     * "OK" or "No" for a newcomer in the Admin tab's waiting list. The first
+     * organizer to answer decides (NewcomerApproval::decide()).
+     */
+    public function decideNewcomer(Person $organizer, int $personId, string $decision): string
+    {
+        if (null === $this->newcomers || ! in_array($decision, ['ok', 'no'], true)) {
+            return 'admin_no_person';
+        }
+
+        return match ($this->newcomers->decide($personId, 'ok' === $decision, $organizer)) {
+            NewcomerApproval::DECIDED => 'ok' === $decision ? 'admin_newcomer_ok' : 'admin_newcomer_no',
+            NewcomerApproval::ALREADY => 'admin_newcomer_already',
+            default => 'admin_no_person',
+        };
+    }
+
+    /**
+     * The newcomers waiting for an OK, for the Admin tab.
+     *
+     * @return list<array{id: int, name: string, email: string, since: string}>
+     */
+    private function newcomerRows(): array
+    {
+        return array_map(
+            static fn (Person $person): array => [
+                'id' => $person->id,
+                'name' => $person->name(),
+                'email' => $person->email,
+                'since' => '' === $person->createdAt ? '' : Dates::dayLabel(substr($person->createdAt, 0, 10)),
+            ],
+            $this->people->waitingNewcomers()
+        );
+    }
+
     public function postBoard(): string
     {
         if (! $this->telegram->isConfigured() || ! $this->board->hasHome()) {
@@ -697,6 +742,9 @@ final class CrewAdminController
         ]) + (null === $this->aiTextScreen ? [] : [
             'ai_text_action' => self::AI_TEXT_ACTION,
             'ai_texts' => $this->aiTextScreen->view(),
+        ]) + (null === $this->newcomers ? [] : [
+            'newcomer_action' => self::NEWCOMER_ACTION,
+            'newcomers' => $this->newcomerRows(),
         ]);
     }
 
@@ -794,6 +842,9 @@ final class CrewAdminController
             'admin_no_entry' => __('That roster entry was not found.', 'eventcrew'),
             'admin_roles_saved' => __('Roles saved.', 'eventcrew'),
             'admin_add_no_task' => __('Tick at least one task.', 'eventcrew'),
+            'admin_newcomer_ok' => __('OK given. They can take tasks now, and they are told.', 'eventcrew'),
+            'admin_newcomer_no' => __('No given. They are not told.', 'eventcrew'),
+            'admin_newcomer_already' => __('Another organizer already answered for this person.', 'eventcrew'),
         ];
 
         if (! isset($map[$code]) && '' !== CrewAdminRoster::noticeText($code)) {

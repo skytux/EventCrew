@@ -555,7 +555,11 @@ final class SignupController
         // certain to see, since the form that sent them here may have been on
         // someone else's screen.
         $isNew = null === $person;
-        $personId = $isNew ? $this->people->create(['email' => $email]) : $person->id;
+        // Someone who signs themselves up waits for the team's OK
+        // (NewcomerApproval) before they can take a task.
+        $personId = $isNew
+            ? $this->people->create(['email' => $email, 'approval' => Person::APPROVAL_WAITING])
+            : $person->id;
 
         // No account yet: nobody has ever confirmed this address, by a link or
         // through the bot. The mail then says the link creates the account.
@@ -771,6 +775,8 @@ final class SignupController
     {
         return match ($this->signup->claim($personId, $taskId, $countsCredit)) {
             SignupService::GATED => 'gated',
+            SignupService::WAITING => 'waiting_ok',
+            SignupService::TURNED_DOWN => 'not_ok',
             SignupService::CREDIT_QUESTION => 'credit_question',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
@@ -1191,6 +1197,8 @@ final class SignupController
             'already' => __('You were already signed up for that.', 'eventcrew'),
             'full' => __('That slot just filled up.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),
+            'waiting_ok' => SignupService::waitingText(),
+            'not_ok' => SignupService::turnedDownText(),
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
             'language_saved' => __('Your language is saved.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.

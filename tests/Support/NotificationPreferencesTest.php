@@ -96,7 +96,7 @@ final class NotificationPreferencesTest extends TestCase
         $member = $this->person(['telegram_chat_id' => 1]);
 
         self::assertSame(
-            ['standing', 'credit', 'ticket', 'permission', 'open_task', 'role_news', 'role_met', 'chat_forward', 'list_import'],
+            ['standing', 'credit', 'ticket', 'permission', 'open_task', 'role_news', 'role_met', 'chat_forward', 'list_import', 'newcomer'],
             array_keys($this->prefs()->matrix($organizer))
         );
         self::assertSame(array_keys(NotificationPreferences::labels()), array_keys($this->prefs()->matrix($member)));
@@ -107,6 +107,7 @@ final class NotificationPreferencesTest extends TestCase
             NotificationPreferences::ROLE_MET,
             NotificationPreferences::CHAT_FORWARD,
             NotificationPreferences::LIST_IMPORT,
+            NotificationPreferences::NEWCOMER,
         ];
 
         foreach ($types as $type) {

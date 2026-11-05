@@ -8044,3 +8044,103 @@ msgstr "Yritä uudelleen"
 
 msgid "Writing…"
 msgstr "Kirjoitetaan…"
+
+msgid "Newcomers waiting for an OK"
+msgstr "Uudet odottavat hyväksyntää"
+
+msgid "Waiting for the team’s OK"
+msgstr "Odottaa tiimin hyväksyntää"
+
+msgid "Waiting for the team’s OK. We will message you when it comes."
+msgstr "Odottaa tiimin hyväksyntää. Saat viestin, kun se tulee."
+
+msgid "To take tasks, talk to the team at an event."
+msgstr "Tehtäviä varten juttele tiimin kanssa tapahtumassa."
+
+msgid "Talk to the team at an event"
+msgstr "Juttele tiimin kanssa tapahtumassa"
+
+msgid "Only organizers can answer this."
+msgstr "Vain järjestäjät voivat vastata tähän."
+
+msgid "That person was not found."
+msgstr "Henkilöä ei löytynyt."
+
+msgid "an organizer"
+msgstr "järjestäjä"
+
+#. translators: %s: the name of the organizer who said No
+#, php-format
+msgid "No, by %s."
+msgstr "Ei, päätti %s."
+
+#. translators: %s: the name of the organizer who said OK
+#, php-format
+msgid "OK, by %s."
+msgstr "OK, päätti %s."
+
+msgid "Say OK or No to a newcomer"
+msgstr "Hyväksy tai hylkää uusi"
+
+msgid "OK given. They can take tasks now, and they are told."
+msgstr "Hyväksytty. Hän voi nyt ottaa tehtäviä, ja hänelle kerrotaan."
+
+msgid "No given. They are not told."
+msgstr "Hylätty. Hänelle ei kerrota."
+
+msgid "Another organizer already answered for this person."
+msgstr "Toinen järjestäjä vastasi jo tästä henkilöstä."
+
+msgid "Waiting for an OK"
+msgstr "Odottaa hyväksyntää"
+
+msgid "They signed in for the first time. They can take tasks after an OK."
+msgstr "He kirjautuivat ensimmäistä kertaa. He voivat ottaa tehtäviä hyväksynnän jälkeen."
+
+msgid "A newcomer waits for an OK (email)"
+msgstr "Uusi odottaa hyväksyntää (sähköposti)"
+
+msgid "A newcomer waits for an OK (Telegram)"
+msgstr "Uusi odottaa hyväksyntää (Telegram)"
+
+msgid "The team said OK to a newcomer (email)"
+msgstr "Tiimi hyväksyi uuden (sähköposti)"
+
+msgid "The team said OK to a newcomer (Telegram)"
+msgstr "Tiimi hyväksyi uuden (Telegram)"
+
+#. translators: %s: the person's name
+#, php-format
+msgid "New: %s wants to join"
+msgstr "Uusi: %s haluaa mukaan"
+
+#. translators: 1: the person's name, 2: their email
+#, php-format
+msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page."
+msgstr "%1$s (%2$s) kirjautui ensimmäistä kertaa ja haluaa mukaan crew'hun. Paina OK tai Ei crew-sivun Admin-välilehdellä."
+
+#. translators: 1: the person's name, 2: their email
+#, php-format
+msgid "🆕 New: %1$s (%2$s) wants to join."
+msgstr "🆕 Uusi: %1$s (%2$s) haluaa mukaan."
+
+msgid "The team said OK"
+msgstr "Tiimi hyväksyi sinut"
+
+msgid "The team said OK. You can now take tasks on the crew page."
+msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä crew-sivulla."
+
+msgid "✅ The team said OK. You can now take tasks: send /board."
+msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä: lähetä /board."
+
+msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
+msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Admin-välilehdelle, jossa OK- ja Ei-painikkeet ovat."
+
+msgid "Sent to the organizers who use the bot when a new person confirms their email for the first time. The OK and No buttons are added under the text; the first organizer to press decides."
+msgstr "Lähetetään bottia käyttäville järjestäjille, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. OK- ja Ei-painikkeet lisätään tekstin alle; ensimmäinen painaja päättää."
+
+msgid "Sent to a new person without Telegram when an organizer presses OK for them. The greeting is added above the text, and a See open tasks button to the crew page under it."
+msgstr "Lähetetään uudelle henkilölle ilman Telegramia, kun järjestäjä hyväksyy hänet. Tervehdys lisätään tekstin yläpuolelle ja Avoimet tehtävät -painike crew-sivulle sen alle."
+
+msgid "Sent to a new person who uses the bot when an organizer presses OK for them."
+msgstr "Lähetetään bottia käyttävälle uudelle henkilölle, kun järjestäjä hyväksyy hänet."
