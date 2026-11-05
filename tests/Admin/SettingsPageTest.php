@@ -656,6 +656,15 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertStringNotContainsString(self::WEBHOOK_SECRET, $result['notice']['message']);
     }
 
+    public function testTheByHandExampleSendsTheSameEmptyUpdateAsTheButton(): void
+    {
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+
+        // A /start body made the bot answer; the example now shows the button's empty update.
+        self::assertStringContainsString('esc_html(\EventCrew\Telegram\WebhookController::TEST_BODY)', $template);
+        self::assertStringNotContainsString('"text":"/start"', $template);
+    }
+
     public function testAFailedWebhookTestShowsTheStatusButNeverTheBody(): void
     {
         $this->options[\EventCrew\Telegram\WebhookController::SECRET_OPTION] = self::WEBHOOK_SECRET;

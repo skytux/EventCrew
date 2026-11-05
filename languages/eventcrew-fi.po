@@ -5591,8 +5591,8 @@ msgid "Open Telegram again"
 msgstr "Avaa Telegram uudelleen"
 
 #: src/Web/SignupController.php:1077 templates/public/signup.php:160
-msgid "Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself."
-msgstr "Avaa Telegram, paina Start ja paina sitten botin lähettämää painiketta. Tämä sivu kirjaa sinut sisään itsestään."
+msgid "Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself."
+msgstr "Avaa Telegram, paina Start ja paina sitten tällä sivulla näkyvää koodia. Tämä sivu kirjaa sinut sisään itsestään."
 
 #: templates/admin/settings-telegram-login.php:13 templates/public/signup.php:144
 msgid "Sign in with Telegram"

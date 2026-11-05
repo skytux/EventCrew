@@ -1920,7 +1920,7 @@ if (! defined('ABSPATH')) {
                 <?php endif; ?>
                 <p>
                     <strong><?php esc_html_e('And this JSON body (Content-Type: application/json):', 'eventcrew'); ?></strong><br>
-                    <code style="word-break:break-all">{"update_id":1,"message":{"message_id":1,"date":0,"chat":{"id":1,"type":"private"},"from":{"id":1},"text":"/start"}}</code>
+                    <code style="word-break:break-all"><?php echo esc_html(\EventCrew\Telegram\WebhookController::TEST_BODY); ?></code>
                 </p>
 
                 <?php if ('' !== $telegram['header_only_url']) : ?>
