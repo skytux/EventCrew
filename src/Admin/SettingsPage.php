@@ -17,6 +17,7 @@ use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -202,6 +203,7 @@ final class SettingsPage
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'email_background' => (string) get_option(EmailTemplate::BACKGROUND_OPTION, ''),
+                'hybrid' => self::hybridView(),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_note' => SiteTexts::value('ticket_note'),
                 'infrastructure_note' => SiteTexts::value('infrastructure_note'),
@@ -222,6 +224,26 @@ final class SettingsPage
                 'privacy' => $this->privacyView(),
             ]
         );
+    }
+
+    /**
+     * The Hybrid tick of each message kind, for Settings > Email.
+     *
+     * @return array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>}
+     */
+    public static function hybridView(): array
+    {
+        $kinds = [];
+
+        foreach (HybridPolicy::labels() as $kind => $label) {
+            $kinds[$kind] = ['label' => $label, 'ticked' => HybridPolicy::ticked($kind)];
+        }
+
+        return [
+            'allowed' => HybridPolicy::isAllowed(),
+            'warning' => HybridPolicy::isAllowed() ? '' : HybridPolicy::offWarning(),
+            'kinds' => $kinds,
+        ];
     }
 
     /**
@@ -764,6 +786,13 @@ final class SettingsPage
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
         update_option(EmailTemplate::HTML_OPTION, isset($_POST['email_html']) ? '1' : '0');
+
+        // A greyed-out tick posts nothing, so the ticks are kept as they are
+        // while hybrid is off for the number of languages.
+        if (HybridPolicy::isAllowed()) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only the keys are read, against HybridPolicy::KINDS.
+            update_option(HybridPolicy::OPTION, HybridPolicy::fromPost(wp_unslash($_POST['hybrid'] ?? [])));
+        }
         update_option(
             EmailTemplate::LOGO_OPTION,
             isset($_POST['email_logo']) ? esc_url_raw(wp_unslash($_POST['email_logo'])) : ''

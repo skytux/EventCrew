@@ -7081,3 +7081,37 @@ msgstr "Kun ruksi on päällä, tekoäly kirjoittaa tämän viestin tekstin täs
 #, php-format
 msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
 msgstr "Ei tallennettu: %s. Jokin viesti käyttää jo tätä nimeä omana paikkamerkkinään. Valitse toinen nimi. Muut paikkamerkit tallennettiin."
+
+msgid "Ticket cancelled or moved email"
+msgstr "Lippu peruttu tai siirretty -viesti"
+
+msgid "Task cancelled email"
+msgstr "Tehtävä peruttu -viesti"
+
+msgid "Announcement confirmation email"
+msgstr "Tiedotteen vahvistusviesti"
+
+msgid "Next events announcement (subscribers with no language)"
+msgstr "Tulevien tapahtumien tiedote (tilaajat ilman kieltä)"
+
+msgid "Telegram group message about a takeover"
+msgstr "Telegram-ryhmän viesti tehtävän siirrosta"
+
+#, php-format
+msgid "EventCrew: the site has %1$d languages. Hybrid messages work with %2$d languages or fewer, so they are switched off: every message goes out in the reader’s own language, or in the main language when it is not known."
+msgstr "EventCrew: sivustolla on %1$d kieltä. Monikieliset viestit toimivat enintään %2$d kielellä, joten ne ovat pois päältä: jokainen viesti lähtee lukijan omalla kielellä, tai pääkielellä, kun kieltä ei tiedetä."
+
+msgid "Hybrid messages"
+msgstr "Monikieliset viestit"
+
+msgid "Hybrid"
+msgstr "Monikielinen"
+
+msgid "What is hybrid?"
+msgstr "Mikä on monikielinen?"
+
+msgid "One message in all site languages, one part per language, each part starting with its short language code (FI, EN). For people whose language is not known."
+msgstr "Yksi viesti kaikilla sivuston kielillä, yksi osa kullekin kielelle, ja jokainen osa alkaa kielen lyhyellä koodilla (FI, EN). Niille, joiden kieltä ei tiedetä."
+
+msgid "With the tick off, each person gets the message in their own language only, and people whose language is not known get it in the main language."
+msgstr "Kun ruutu ei ole valittu, jokainen saa viestin vain omalla kielellään, ja ne, joiden kieltä ei tiedetä, saavat sen pääkielellä."

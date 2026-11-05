@@ -439,7 +439,9 @@ final class TakeoverService
 
     /**
      * The group's message about a takeover: everyone in the group reads the
-     * same message, so it is in Finnish, then in English on the next line.
+     * same message, so it is in Finnish, then in English on the next line
+     * (one line per site language), or in the main language alone when its
+     * Hybrid tick is off (HybridPolicy).
      */
     private static function groupText(Person $cover, Person $holder, Task $task): string
     {
@@ -451,10 +453,9 @@ final class TakeoverService
             $task->roleLabel(),
             $task->eventName()
         );
-        $fi = (string) Language::run(Language::FINNISH, $words);
-        $en = (string) Language::run(Language::ENGLISH, $words);
+        $languages = HybridPolicy::languagesFor(HybridPolicy::TAKEOVER_GROUP);
 
-        return $fi === $en ? $en : $fi . "\n" . $en;
+        return HybridPolicy::join(HybridPolicy::inEach($languages, $words), "\n");
     }
 
     private static function doneText(Person $cover, Task $task): string

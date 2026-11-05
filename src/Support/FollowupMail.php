@@ -628,19 +628,22 @@ final class FollowupMail
     {
         $shortDate = TicketMail::shortDate($date);
         $variant = $came ? FollowupText::CAME : FollowupText::MISSED;
-        $words = function (string $lang) use ($variant, $date, $shortDate, $name): array {
+        // Ticket holders have no stored language: every site language when
+        // the Hybrid tick is on, else the main language (HybridPolicy).
+        $languages = HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP);
+        $parts = [];
+
+        foreach ($languages as $lang) {
             $text = $this->text->text($variant, $lang);
             $event = $this->eventName($date, $lang);
-
-            return Language::run(
+            $parts[$lang] = Language::run(
                 $lang,
                 static fn (): array => self::words($variant, $name, $text, $event, $shortDate)
             );
-        };
-        $fi = $words(Language::FINNISH);
-        $en = $words(Language::ENGLISH);
-        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
-        $pair = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' · ' . $en[$key];
+        }
+
+        $both = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key));
+        $pair = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key), ' · ');
 
         $campaign = self::campaign($date, $came);
         $link = static fn (string $url): string => '' === $url
@@ -648,12 +651,10 @@ final class FollowupMail
             : self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId);
         $accent = EmailTemplate::accent();
 
-        // Each language's text starts with its FI / EN tag, when the two differ.
-        $tags = $fi['body'] === $en['body'] ? ['', ''] : ['FI', 'EN'];
-        $html = EmailBody::toHtml($fi['body'], [], $accent, $tags[0])
-            . '<hr style="border:0;border-top:1px solid #e3e3e8;margin:20px 0">'
-            . EmailBody::toHtml($en['body'], [], $accent, $tags[1]);
-        $text = $fi['body'] . "\n\n" . $en['body'];
+        // Each language's text starts with its FI / EN tag, when they differ.
+        $bodies = HybridPolicy::field($parts, 'body');
+        $html = HybridPolicy::bodiesHtml($bodies, $accent);
+        $text = implode("\n\n", $bodies);
 
         $events = array_map(
             static fn (array $card): array => array_merge($card, [
@@ -670,7 +671,7 @@ final class FollowupMail
                 $this->withWritten($date, array_slice($events, 0, self::EVENTS)),
                 array_slice($events, self::EVENTS),
                 null,
-                '',
+                1 === count($languages) ? $languages[0] : '',
                 true
             );
             $html .= '<div style="margin:28px 0 0">' . $coming['html'] . '</div>';
@@ -678,6 +679,7 @@ final class FollowupMail
         }
 
         if (Newsletter::enabled()) {
+            $invites = HybridPolicy::field($parts, 'invite');
             $join = [[
                 'label' => $pair('join'),
                 // Not a counted link: the join link counts the click itself,
@@ -685,12 +687,16 @@ final class FollowupMail
                 'url' => self::joinUrl($kind, $rowId, $campaign),
             ]];
             $html .= '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
-                . ($fi['invite'] === $en['invite']
-                    ? EmailBody::toHtml($fi['invite'] . "\n\n" . $en['invite'])
-                    : EmailBody::toHtml($fi['invite'], [], $accent, 'FI')
-                        . EmailBody::toHtml($en['invite'], [], $accent, 'EN'))
+                . (HybridPolicy::differ($invites)
+                    ? implode('', array_map(
+                        static fn (string $invite, string $tag): string
+                            => EmailBody::toHtml($invite, [], $accent, $tag),
+                        $invites,
+                        HybridPolicy::tags($invites)
+                    ))
+                    : EmailBody::toHtml(implode("\n\n", $invites)))
                 . EmailBody::centred(EmailBody::toHtml('', $join, $accent));
-            $text .= "\n\n————————\n\n" . $fi['invite'] . "\n\n" . $en['invite']
+            $text .= "\n\n————————\n\n" . implode("\n\n", $invites)
                 . "\n\n" . EmailBody::toText('', $join);
         }
 
@@ -701,14 +707,12 @@ final class FollowupMail
         ];
     }
 
-    /** The footer line, in both languages. */
+    /** The footer line, in the post-event email's languages (HybridPolicy). */
     public static function footer(): string
     {
         $words = static fn (): string => __('You get this email because you had a ticket to this event.', 'eventcrew');
-        $fi = (string) Language::run(Language::FINNISH, $words);
-        $en = (string) Language::run(Language::ENGLISH, $words);
 
-        return $fi === $en ? $en : $fi . ' / ' . $en;
+        return HybridPolicy::join(HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP), $words));
     }
 
     /** The name the preview and the test greet. */

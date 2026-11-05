@@ -97,10 +97,9 @@ final class TaskCancelledNotice
             ];
         };
 
-        $fi = Language::run(Language::FINNISH, $words);
-        $en = Language::run(Language::ENGLISH, $words);
-        $both = static fn (string $key): string => $fi[$key] === $en[$key] ? $en[$key] : $fi[$key] . ' / ' . $en[$key];
-        $body = $fi['body'] === $en['body'] ? $en['body'] : $fi['body'] . "\n\n————————\n\n" . $en['body'];
+        $parts = HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::TASK_CANCELLED, $person), $words);
+        $both = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key));
+        $body = HybridPolicy::join(HybridPolicy::field($parts, 'body'), "\n\n————————\n\n");
 
         $this->mailer->toPerson(
             $person->id,

@@ -78,15 +78,18 @@ final class NewsletterConfirmMail
     }
 
     /**
-     * The HTML for the email template's content slot.
+     * The HTML for the email template's content slot. $parts holds the words
+     * in each language the email is in (HybridPolicy), main language first.
      *
-     * @param array{subject: string, heading: string, promise: string, body: string, button: string} $fi
-     * @param array{subject: string, heading: string, promise: string, body: string, button: string} $en
+     * @param array<string, array{
+     *     subject: string, heading: string, promise: string, body: string, button: string
+     * }> $parts
      */
-    public static function html(array $fi, array $en, string $confirmUrl, string $imageUrl = ''): string
+    public static function html(array $parts, string $confirmUrl, string $imageUrl = ''): string
     {
         $font = EmailBody::FONT;
         $head = EmailBody::HEAD_FONT;
+        $first = reset($parts);
         $image = '' === $imageUrl ? '' : sprintf(
             '<tr><td style="padding:0 0 24px"><img src="%s" width="%d" alt="" style="display:block;width:100%%;'
                 . 'max-width:%dpx;height:auto;border:0;border-radius:18px"></td></tr>',
@@ -101,27 +104,27 @@ final class NewsletterConfirmMail
             $font,
             $head,
             self::HEADING_COLOR,
-            esc_html($fi['heading'])
+            esc_html($first['heading'])
         );
 
-        if ($fi['heading'] !== $en['heading']) {
+        foreach (array_slice(array_unique(HybridPolicy::field($parts, 'heading')), 1) as $other) {
             $heading .= sprintf(
                 '<p style="margin:6px 0 0;font-family:%s;font-size:17px;font-style:italic;line-height:1.3;color:%s">'
                     . '%s</p>',
                 $head,
                 self::MUTED_COLOR,
-                esc_html($en['heading'])
+                esc_html($other)
             );
         }
 
-        $promise = '' === $fi['promise'] ? '' : sprintf(
+        $promise = '' === $first['promise'] ? '' : sprintf(
             '<p style="margin:16px 0 0;font-family:%s;font-size:17px;line-height:1.5;font-style:italic;color:%s">'
                 . '%s</p>',
             $head,
             self::TEXT_COLOR,
-            esc_html(self::both($fi['promise'], $en['promise']))
+            esc_html(HybridPolicy::join(HybridPolicy::field($parts, 'promise')))
         );
-        $label = self::both($fi['button'], $en['button']);
+        $label = HybridPolicy::join(HybridPolicy::field($parts, 'button'));
         $button = sprintf(
             '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="margin:0 auto">'
@@ -145,11 +148,15 @@ final class NewsletterConfirmMail
             '' === $tag ? '' : EmailBody::langTag($tag, self::TAG_COLOR),
             esc_html($text)
         );
-        // Both texts say "press the button below", so both stand above the button.
-        // Two different texts each start with their FI / EN tag; one text needs none.
-        $two = $fi['body'] !== $en['body'];
-        $texts = $paragraph($fi['body'], self::TEXT_COLOR, '0', $two ? 'FI' : '')
-            . ($two ? $paragraph($en['body'], self::TEXT_COLOR, '16px 0 0', 'EN') : '');
+        // Every text says "press the button below", so all stand above the button.
+        // Different texts each start with their language tag; one text needs none.
+        $bodies = HybridPolicy::field($parts, 'body');
+        $tags = HybridPolicy::tags($bodies);
+        $texts = '';
+
+        foreach (HybridPolicy::differ($bodies) ? $bodies : array_slice($bodies, 0, 1, true) as $lang => $body) {
+            $texts .= $paragraph($body, self::TEXT_COLOR, '' === $texts ? '0' : '16px 0 0', $tags[$lang]);
+        }
 
         return sprintf(
             '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
@@ -206,28 +213,31 @@ final class NewsletterConfirmMail
     }
 
     /**
-     * The plain-text part.
+     * The plain-text part, in the languages of $parts (see html()).
      *
-     * @param array{subject: string, heading: string, promise: string, body: string, button: string} $fi
-     * @param array{subject: string, heading: string, promise: string, body: string, button: string} $en
+     * @param array<string, array{
+     *     subject: string, heading: string, promise: string, body: string, button: string
+     * }> $parts
      */
-    public static function text(array $fi, array $en, string $confirmUrl): string
+    public static function text(array $parts, string $confirmUrl): string
     {
+        $first = reset($parts);
+        $bodies = array_values(array_unique(HybridPolicy::field($parts, 'body')));
         $lines = [
-            '✦ ' . $fi['heading'] . ($fi['heading'] === $en['heading'] ? '' : ' / ' . $en['heading']),
-            self::both($fi['promise'], $en['promise']),
+            '✦ ' . HybridPolicy::join(HybridPolicy::field($parts, 'heading')),
+            HybridPolicy::join(HybridPolicy::field($parts, 'promise')),
             '',
-            $fi['body'],
+            $bodies[0],
             '',
-            self::both($fi['button'], $en['button']) . ': ' . $confirmUrl,
+            HybridPolicy::join(HybridPolicy::field($parts, 'button')) . ': ' . $confirmUrl,
         ];
 
-        if ($fi['body'] !== $en['body']) {
+        foreach (array_slice($bodies, 1) as $body) {
             $lines[] = '';
-            $lines[] = $en['body'];
+            $lines[] = $body;
         }
 
-        if ('' === $fi['promise']) {
+        if ('' === $first['promise']) {
             unset($lines[1]);
         }
 

@@ -143,8 +143,8 @@ final class NewsletterControllerTest extends TestCase
             'button' => 'Vahvista'];
         $en = ['subject' => 's', 'heading' => 'Left', 'promise' => 'Promise', 'body' => 'Text', 'button' => 'Confirm'];
 
-        $text = NewsletterConfirmMail::text($fi, $en, 'https://site.test/c');
-        $html = NewsletterConfirmMail::html($fi, $en, 'https://site.test/c', 'https://site.test/bar.jpg');
+        $text = NewsletterConfirmMail::text(['fi' => $fi, 'en' => $en], 'https://site.test/c');
+        $html = NewsletterConfirmMail::html(['fi' => $fi, 'en' => $en], 'https://site.test/c', 'https://site.test/bar.jpg');
 
         self::assertStringContainsString("Vahvista / Confirm: https://site.test/c", $text);
         self::assertStringContainsString("Teksti", $text);
@@ -158,7 +158,7 @@ final class NewsletterControllerTest extends TestCase
         self::assertMatchesRegularExpression('~<span [^>]*color:#9a7440[^>]*>EN</span>&nbsp; Text</p>~', $html);
 
         // One text, the same in both languages, has no tag.
-        $html = NewsletterConfirmMail::html($fi, ['body' => 'Teksti'] + $en, 'https://site.test/c');
+        $html = NewsletterConfirmMail::html(['fi' => $fi, 'en' => ['body' => 'Teksti'] + $en], 'https://site.test/c');
 
         self::assertStringNotContainsString('>FI</span>', $html);
         self::assertSame(1, substr_count($html, 'Teksti'));

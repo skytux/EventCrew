@@ -711,8 +711,9 @@ final class Newsletter
 
         foreach ($rows as $row) {
             // The subscriber's language: 'fi' or 'en' gets that language
-            // only, anything else both (Owner, 2026-11-03).
-            $lang = in_array($row['language'] ?? '', ['fi', 'en'], true) ? $row['language'] : '';
+            // only, anything else both (Owner, 2026-11-03), or the main
+            // language alone when the Hybrid tick is off (HybridPolicy).
+            $lang = in_array($row['language'] ?? '', ['fi', 'en'], true) ? $row['language'] : self::unknownLanguage();
             // Composed once per batch and language; only the greeting is the recipient's own.
             $mails[$lang] ??= $this->compose(
                 $plan['events'],
@@ -863,8 +864,15 @@ final class Newsletter
         $now = false === $now ? null : $now;
         $organizers = $this->people->organizers();
         $byLanguage = $this->subscribers->countConfirmedByLanguage();
+
+        // With the Hybrid tick off, subscribers with no language get the main language.
+        if ('' !== self::unknownLanguage() && isset($byLanguage[''])) {
+            $byLanguage[self::unknownLanguage()] = ($byLanguage[self::unknownLanguage()] ?? 0) + $byLanguage[''];
+            unset($byLanguage['']);
+        }
+
         $variants = array_keys(array_filter($byLanguage, static fn (int $n): bool => $n > 0));
-        $variants = [] === $variants ? [''] : array_map('strval', $variants);
+        $variants = [] === $variants ? [self::unknownLanguage()] : array_map('strval', $variants);
         $stopUrl = self::stopUrl($plan['id']);
         $mails = [];
         $sentTo = 0;
@@ -1234,6 +1242,16 @@ final class Newsletter
         } finally {
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::LOCK));
         }
+    }
+
+    /**
+     * The version for subscribers whose language is not known: '' (every
+     * language) while the newsletter's Hybrid tick is on, else the main
+     * language (HybridPolicy).
+     */
+    private static function unknownLanguage(): string
+    {
+        return HybridPolicy::isOn(HybridPolicy::NEWSLETTER) ? '' : HybridPolicy::mainLanguage();
     }
 
     /** "fi / en" from a callback run in each language; one when both agree. */
