@@ -912,9 +912,6 @@ final class Kernel
             DoorHandoff::class,
             fn (Container $container) => new DoorHandoff(
                 $container->get(DoorDesk::class),
-                $container->get(TaskRepository::class),
-                $container->get(AssignmentRepository::class),
-                $container->get(PersonRepository::class),
                 $container->get(AuthTokenRepository::class),
                 $container->get(SalesDeskGate::class)
             )

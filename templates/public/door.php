@@ -34,8 +34,8 @@
  * (assets/vendor/qr-decode, MIT), which is loaded only when Scan is tapped.
  *
  * The "Switch" button (two opposite arrows) opens the "Other device" popup,
- * which shows a one-time login link as a QR code: for this person on a second phone, or ("Login as") for another
- * organizer or sales-desk crew member (Support\DoorHandoff). The QR code
+ * which shows a one-time login link as a QR code for this person on a second
+ * phone (Support\DoorHandoff). It never makes a link for anyone else. The QR code
  * is drawn here as SVG by the bundled qrcode-generator library
  * (assets/vendor/qrcode-generator), the one file this page loads besides
  * itself.
@@ -78,18 +78,12 @@ $eventcrew_text = [
     'fewer' => __('One guest fewer', 'eventcrew'),
     'more' => __('One guest more', 'eventcrew'),
     'ownTitle' => __('Open on other device', 'eventcrew'),
-    /* translators: %s: the name of the person the link logs in */
-    'asTitle' => __('Login as %s', 'eventcrew'),
     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     'scan' => __('Scan this QR code with the camera of the other phone. The link works once and stops working after 15 minutes.', 'eventcrew'),
-    /* translators: %s: the name of the person the link logs in */
-    'asWho' => __('The other phone opens the sales desk as %s.', 'eventcrew'),
     'qrLabel' => __('QR code of the login link', 'eventcrew'),
     'noQr' => __('The QR code could not be drawn. Use Copy link instead.', 'eventcrew'),
     'copied' => __('Link copied.', 'eventcrew'),
     'selected' => __('The link is selected. Copy it with the copy command of your phone.', 'eventcrew'),
-    'noPeople' => __('Nobody else can run the sales desk tonight yet.', 'eventcrew'),
-    'showQr' => __('Show QR code', 'eventcrew'),
     'loading' => __('Loading…', 'eventcrew'),
     // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     'noCamera' => __('The camera could not be opened. Allow the camera for this page, or find the name on the list instead.', 'eventcrew'),
@@ -169,7 +163,6 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-members,#ec-tasks{max-height:45vh;overflow-y:auto}
 .ec-muted{color:var(--muted)}
 .ec-buttons{display:flex;gap:8px}
-#ec-people{max-height:45vh;overflow-y:auto}
 #ec-qr{margin:12px auto;max-width:280px}
 #ec-qr svg{display:block;width:100%;height:auto}
 #ec-qr-link{width:100%;font:13px/1.4 ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg)}
@@ -320,22 +313,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 </dialog>
 <dialog id="ec-other" aria-labelledby="ec-other-title">
     <div class="ec-dialog-head">
-        <button type="button" id="ec-other-back"><?php esc_html_e('‹ Back', 'eventcrew'); ?></button>
         <h2 id="ec-other-title"><?php esc_html_e('Other device', 'eventcrew'); ?></h2>
         <button type="button" id="ec-other-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
     </div>
     <p class="ec-msg" id="ec-other-msg" role="status"></p>
-
-    <div id="ec-other-choose" class="ec-stack">
-        <button type="button" id="ec-pick-as"><?php esc_html_e('Login as', 'eventcrew'); ?></button>
-        <button type="button" id="ec-pick-own"><?php esc_html_e('Open on other device', 'eventcrew'); ?></button>
-    </div>
-
-    <div id="ec-other-people" hidden>
-        <h3><?php esc_html_e('Login as', 'eventcrew'); ?></h3>
-        <p class="ec-muted"><?php esc_html_e('Organizers, and tonight’s welcome crew once marked arrived.', 'eventcrew'); ?></p>
-        <ul id="ec-people"></ul>
-    </div>
 
     <div id="ec-other-qr" hidden>
         <h3 id="ec-qr-title"></h3>
@@ -896,26 +877,17 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         }, listFailed(list, failed));
     }
 
-    // The Other device popup: which step shows, and where Back goes from the
-    // QR code (the people list after "Login as", else the first step).
-    var otherStep = 'choose';
-    var qrFrom = 'choose';
-
     function sayOther(message) {
         el('ec-other-msg').textContent = message || '';
     }
 
-    function otherShow(name) {
-        otherStep = name;
-        ['choose', 'people', 'qr'].forEach(function (s) { el('ec-other-' + s).hidden = s !== name; });
-        el('ec-other-back').hidden = 'choose' === name;
+    // The Other device popup shows only this person's own login link. The
+    // link is on screen only while the popup is open.
+    function clearLink() {
+        el('ec-other-qr').hidden = true;
+        el('ec-qr').textContent = '';
+        el('ec-qr-link').value = '';
         sayOther('');
-
-        // A login link stays on screen only while its step shows.
-        if ('qr' !== name) {
-            el('ec-qr').textContent = '';
-            el('ec-qr-link').value = '';
-        }
     }
 
     function otherFailed(error) {
@@ -969,55 +941,21 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         holder.appendChild(svg);
     }
 
-    // Asks the server for a one-time login link - for this person when
-    // person is 0 - and shows it as a QR code and as text.
-    function showLink(person, from) {
-        post('handoff', { person: person }).then(function (data) {
+    // Asks the server for a one-time login link for this person and shows
+    // it as a QR code and as text.
+    function showLink() {
+        post('handoff', {}).then(function (data) {
             if (!data || !data.ok) {
                 sayOther(data && data.message ? data.message : text.failed);
                 return;
             }
 
-            qrFrom = from;
-            otherShow('qr');
-            el('ec-qr-title').textContent = 0 === person ? text.ownTitle : text.asTitle.replace('%s', data.name);
-            el('ec-qr-text').textContent = 0 === person ? text.scan : text.scan + ' ' + text.asWho.replace('%s', data.name);
+            el('ec-other-qr').hidden = false;
+            el('ec-qr-title').textContent = text.ownTitle;
+            el('ec-qr-text').textContent = text.scan;
             el('ec-qr-link').value = data.url;
             drawQr(data.url);
         }, otherFailed);
-    }
-
-    function showPeople() {
-        var list = el('ec-people');
-
-        otherShow('people');
-        listLoading(list);
-
-        post('people', {}).then(function (data) {
-            list.textContent = '';
-
-            if (!data || !Array.isArray(data.people)) {
-                listError(list, data);
-                return;
-            }
-
-            if (0 === data.people.length) {
-                list.appendChild(node('li', 'ec-muted', text.noPeople));
-                return;
-            }
-
-            data.people.forEach(function (person) {
-                var li = node('li');
-                var who = node('div', 'ec-who');
-                var pick = node('button', '', text.showQr);
-
-                who.appendChild(node('div', 'ec-name', person.name));
-                pick.addEventListener('click', function () { showLink(person.id, 'people'); });
-                li.appendChild(who);
-                li.appendChild(pick);
-                list.appendChild(li);
-            });
-        }, listFailed(list, otherFailed));
     }
 
     // The clipboard API needs a secure page and a permission; when it is not
@@ -1043,22 +981,18 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     var searchTimer = null;
 
     el('ec-other-open').addEventListener('click', function () {
-        otherShow('choose');
+        clearLink();
         el('ec-other').showModal();
+        showLink();
     });
     el('ec-other-close').addEventListener('click', function () { el('ec-other').close(); });
-    el('ec-other-back').addEventListener('click', function () {
-        otherShow('qr' === otherStep ? qrFrom : 'choose');
-    });
     el('ec-other').addEventListener('click', function (event) {
         if (event.target === el('ec-other')) {
             el('ec-other').close();
         }
     });
     // Closing the popup in any way removes the link from the page.
-    el('ec-other').addEventListener('close', function () { otherShow('choose'); });
-    el('ec-pick-own').addEventListener('click', function () { showLink(0, 'choose'); });
-    el('ec-pick-as').addEventListener('click', showPeople);
+    el('ec-other').addEventListener('close', clearLink);
     el('ec-qr-copy').addEventListener('click', copyLink);
 
     el('ec-filter').addEventListener('input', draw);
