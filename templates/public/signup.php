@@ -3078,13 +3078,23 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         });
     }
 
+    // While the site makes the code: a spinner on the button, and no second press.
+    function busy(on) {
+        if (!tgButton) { return; }
+        tgButton.disabled = on;
+        tgButton.classList.toggle('is-busy', on);
+        if (on) { tgButton.setAttribute('aria-busy', 'true'); } else { tgButton.removeAttribute('aria-busy'); }
+    }
+
     function start() {
         if (starting) { return; }
         starting = true;
+        busy(true);
         if (note) { note.hidden = true; }
 
         post({ action: choice.getAttribute('data-start-action') }).then(function (data) {
             starting = false;
+            busy(false);
             var code = data && data.code ? data.code : 'tg_failed';
 
             if (code !== 'tg_started' || !data.login || !data.url || !data.match) {
@@ -3098,6 +3108,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             schedule();
         }).catch(function () {
             starting = false;
+            busy(false);
             toast(failedText);
         });
     }
