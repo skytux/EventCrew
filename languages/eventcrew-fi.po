@@ -3138,12 +3138,6 @@ msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rool
 msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /people. ✅ = already has the role."
 msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua; se on vain merkki. Anna rooli muokkaamalla henkilöä, Crew-sovelluksessa tai botin komennolla /people. ✅ = rooli on jo."
 
-msgid "You earn 1 free-entry credit for every %d tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
-msgstr "Saat 1 vapaalipun jokaisesta %d tekemästäsi tehtävästä. Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
-
-msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
-msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
-
 msgid "Your tasks, credits, ticket, settings"
 msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
 
@@ -3194,11 +3188,6 @@ msgstr "Vierasta numero %1$d ei ole päivälle %2$s. Lähetä /door ja napauta �
 
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "Näet listan lähettämällä /door ja napauttamalla 👥 Vieraslista, tai /door 1.8. toiselle illalle."
-
-msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
-msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
-msgstr[0] "Hei %1$s,\n\njärjestäjä antoi sinulle vapaalipun. Voit käyttää sen mihin tahansa tulevaan tapahtumaan — avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
-msgstr[1] "Hei %1$s,\n\njärjestäjä antoi sinulle %2$d vapaalippua. Voit käyttää ne tuleviin tapahtumiin — avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
 
 msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
 msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
@@ -7594,3 +7583,44 @@ msgstr "%1$s, %2$s, %3$s"
 #, php-format
 msgid "%1$s at %2$s (%3$d/%4$d)"
 msgstr "%1$s, %2$s (%3$d/%4$d)"
+
+msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — %3$s"
+msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — %3$s"
+msgstr[0] "Hei %1$s,\n\njärjestäjä antoi sinulle vapaalipun. Voit käyttää sen mihin tahansa tulevaan tapahtumaan — %3$s"
+msgstr[1] "Hei %1$s,\n\njärjestäjä antoi sinulle %2$d vapaalippua. Voit käyttää ne tuleviin tapahtumiin — %3$s"
+
+msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Miten ilmainen lippu saadaan: botissa tai Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
+
+msgid "open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
+msgstr "avaa EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
+
+msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
+msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
+
+msgid "You now have the role %1$s. %2$s"
+msgstr "Sinulla on nyt rooli %1$s. %2$s"
+
+msgid "Where the role’s tasks are shown: in the bot and the Crew app, or, for a person with no Telegram chat (in the email), on the crew page, with its link."
+msgstr "Missä roolin tehtävät näkyvät: botissa ja Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua (sähköpostissa) crew-sivulla, linkin kanssa."
+
+msgid "Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
+msgstr "Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
+
+msgid "Its tasks are shown to you in the Board tab of the crew page (%s), and you can sign up for them."
+msgstr "Näet sen tehtävät crew-sivun Taulu-välilehdellä (%s), ja voit ilmoittautua niihin."
+
+msgid "You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
+msgstr "Saat 1 vapaalipun jokaisesta %1$d tekemästäsi tehtävästä. %2$s Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
+
+msgid "To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page."
+msgstr "Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla."
+
+msgid "How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link."
+msgstr "Miten vapaalippu käytetään: botissa tai verkkosivulla, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
+
+msgid "To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s)."
+msgstr "Käytä vapaalippu valitsemalla ilta kohdasta Liput crew-sivun Minä-välilehdellä (%s)."
+
+msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
+msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Minä-välilehti listaa kaikki lippusi."

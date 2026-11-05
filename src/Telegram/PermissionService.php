@@ -310,7 +310,7 @@ final class PermissionService
 
     private function tellPerson(Person $person, string $dmKind): void
     {
-        $dm = $this->dmText($dmKind);
+        $dm = $this->dmText($dmKind, $person);
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
@@ -371,12 +371,14 @@ final class PermissionService
      * The message to the affected person for a permission they were given, in
      * whatever language is current; '' for none.
      */
-    private function dmText(string $dmKind): string
+    private function dmText(string $dmKind, Person $person): string
     {
         if (str_starts_with($dmKind, 'role:')) {
+            // The person picks the bot or the crew page text (CrewPageHelp);
+            // the email repeats this text.
             return MessageTemplates::body(
                 'access_role_dm',
-                ['role' => Roles::label(substr($dmKind, strlen('role:')))]
+                ['role' => Roles::label(substr($dmKind, strlen('role:'))), 'person' => $person]
             );
         }
 

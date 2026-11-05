@@ -118,7 +118,7 @@ final class MessageTemplatesTest extends TestCase
     {
         $list = MessageTemplates::find('credit_granted')->placeholderList();
 
-        self::assertSame(['{name}', '{credits}'], array_keys($list));
+        self::assertSame(['{name}', '{credits}', '{credit_help}'], array_keys($list));
         self::assertSame('How many free-entry credits were given.', $list['{credits}']);
     }
 
@@ -126,9 +126,14 @@ final class MessageTemplatesTest extends TestCase
     {
         self::assertSame(
             "Hi {name},\n\nAn organizer has given you {credits} free-entry credits. You can spend them on upcoming"
+                . ' events — {credit_help}',
+            MessageTemplates::find('credit_granted')->defaultBody()
+        );
+        self::assertSame(
+            "Hi Anna,\n\nAn organizer has given you 2 free-entry credits. You can spend them on upcoming"
                 . ' events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app,'
                 . ' to get your free ticket.',
-            MessageTemplates::find('credit_granted')->defaultBody()
+            MessageTemplates::body('credit_granted', ['person' => $this->person(), 'credits' => 2])
         );
         self::assertStringContainsString(
             'a free-entry credit.',
@@ -137,6 +142,50 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame('Hi %1$s, 100% sure', MessageTemplates::tag('Hi %1$s, 100%% sure', []));
         self::assertSame('Hi {name}', MessageTemplates::tag('Hi %1$s', ['%1$s' => '{name}']));
+    }
+
+    /**
+     * The free-entry email gives a person with no Telegram chat the Me tab of
+     * the crew page; a person with one keeps the bot text, in English and in
+     * Finnish.
+     */
+    public function testTheCreditEmailGivesAWebOnlyPersonTheCrewPage(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 7;
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string|false => 7 === $id ? 'https://site.test/crew/' : false
+        );
+        $web = ['person' => $this->person(), 'credits' => 1];
+        $bot = ['person' => Person::fromRow(['id' => 8, 'display_name' => 'Anna', 'telegram_chat_id' => 4242]), 'credits' => 1];
+
+        self::assertSame(
+            "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
+                . ' open the Me tab of the crew page (https://site.test/crew/) and pick a night under Tickets to get'
+                . ' your free ticket.',
+            MessageTemplates::body('credit_granted', $web)
+        );
+        self::assertSame(
+            "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
+                . ' open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your'
+                . ' free ticket.',
+            MessageTemplates::body('credit_granted', $bot)
+        );
+        self::assertSame(
+            "Hei Anna,\n\njärjestäjä antoi sinulle 3 vapaalippua. Voit käyttää ne tuleviin tapahtumiin — avaa"
+                . ' EventCrew-botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat'
+                . ' ilmaisen lippusi.',
+            Language::run(
+                Language::FINNISH,
+                static fn (): string => MessageTemplates::body('credit_granted', ['credits' => 3] + $bot)
+            ),
+            'the split Finnish recombines to the old text'
+        );
+        self::assertSame(
+            "Hei Anna,\n\njärjestäjä antoi sinulle vapaalipun. Voit käyttää sen mihin tahansa tulevaan tapahtumaan —"
+                . ' avaa crew-sivun Minä-välilehti (https://site.test/crew/) ja valitse ilta kohdasta Liput, niin saat'
+                . ' ilmaisen lippusi.',
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body('credit_granted', $web))
+        );
     }
 
     // ---- Filling the placeholders -----------------------------------------
