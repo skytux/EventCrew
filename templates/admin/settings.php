@@ -2162,7 +2162,7 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('Translate texts automatically with the language model', 'eventcrew'); ?>
                     </label>
                     <p class="description">
-                        <?php esc_html_e('For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each Finnish and English field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                        <?php esc_html_e('For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each language field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                 </td>
             </tr>

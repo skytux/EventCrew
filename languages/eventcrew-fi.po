@@ -4894,8 +4894,8 @@ msgstr "Testilippu lähetettiin sähköpostilla osoitteeseen %s."
 msgid "A test ticket email was sent to your own address."
 msgstr "Testilippu lähetettiin sähköpostilla omaan osoitteeseesi."
 
-msgid "After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket's QR code, in Finnish and English. Roster and the Admin tab show how many were sent, failed or not sent yet. \"Send a test to me\" sends one to your own address; \"Send the rest now\" sends every ticket not sent yet, failed ones too."
-msgstr "Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi suomeksi ja englanniksi. Roster ja Admin-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. \"Lähetä testi minulle\" lähettää yhden omaan osoitteeseesi; \"Lähetä loput nyt\" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet."
+msgid "After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket's QR code, in every site language, or in one language when its Hybrid tick in Settings > Email is off. Roster and the Admin tab show how many were sent, failed or not sent yet. \"Send a test to me\" sends one to your own address; \"Send the rest now\" sends every ticket not sent yet, failed ones too."
+msgstr "Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti. Roster ja Admin-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. \"Lähetä testi minulle\" lähettää yhden omaan osoitteeseesi; \"Lähetä loput nyt\" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet."
 
 msgid "Email their tickets now to the buyers who have not got one?"
 msgstr "Lähetetäänkö liput nyt niille ostajille, jotka eivät ole vielä saaneet lippua?"
@@ -5529,8 +5529,8 @@ msgstr "Käännös"
 msgid "Translate texts automatically with the language model"
 msgstr "Käännä tekstit automaattisesti kielimallilla"
 
-msgid "For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each Finnish and English field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it."
-msgstr "Teksteille, jotka kirjoitat kerran millä kielellä tahansa: botin Tietoja ja Kuvaus sekä järjestäjien teksti tulevien tapahtumien tiedotteessa. Kielimalli täyttää jokaisen suomen- ja englanninkielisen kentän, jota et ole muokannut käsin. Kun tämä on pois päältä, kielimallille ei lähetetä mitään, ja tyhjä kielikenttä saa tekstin sellaisena kuin kirjoitit sen."
+msgid "For texts you write once in any language: the bot’s About and Description, and the organizers’ text in the next events announcement. The language model fills each language field you have not edited by hand. When this is off, nothing is sent to the language model, and an empty language field gets the text as you wrote it."
+msgstr "Teksteille, jotka kirjoitat kerran millä kielellä tahansa: botin Tietoja ja Kuvaus sekä järjestäjien teksti tulevien tapahtumien tiedotteessa. Kielimalli täyttää jokaisen kielikentän, jota et ole muokannut käsin. Kun tämä on pois päältä, kielimallille ei lähetetä mitään, ja tyhjä kielikenttä saa tekstin sellaisena kuin kirjoitit sen."
 
 msgid "Send the preview"
 msgstr "Lähetä esikatselu"
