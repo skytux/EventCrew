@@ -10,6 +10,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SignedLink;
@@ -256,11 +257,8 @@ final class TicketRedemptionService
         if ($prefs->dmAllowed($person, NotificationPreferences::TICKET)) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                sprintf(
-                    /* translators: %s: event date */
-                    __('🎟 Your free-entry ticket for %s — show it at the door.', 'eventcrew'),
-                    $when
-                ),
+                // The Messages page template (MessageTemplates).
+                MessageTemplates::body('free_ticket_dm', ['person' => $person, 'date' => $when]),
                 ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
             );
         }

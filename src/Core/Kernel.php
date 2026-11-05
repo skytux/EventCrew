@@ -8,6 +8,7 @@ use EventCrew\Admin\Admin;
 use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
+use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\RosterPage;
 use EventCrew\Admin\SettingsPage;
@@ -53,6 +54,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
@@ -1548,6 +1550,14 @@ final class Kernel
             fn (Container $container) => new TranslationsPage(
                 $container->get(View::class),
                 $container->get(TranslationRegistry::class)
+            )
+        );
+
+        $this->container->singleton(
+            MessagesPage::class,
+            fn (Container $container) => new MessagesPage(
+                $container->get(View::class),
+                new MessageTemplates($container->get(TranslatedText::class))
             )
         );
 

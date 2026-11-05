@@ -34,23 +34,14 @@ final class CreditGrantNotifier
     {
         $credits = max(1, $credits);
         $prefs = new NotificationPreferences();
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['person' => $person, 'credits' => $credits];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
-            // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, sprintf(
-                    /* translators: %d: number of free-entry credits granted */
-                    _n(
-                        '🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event.',
-                        '🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events.',
-                        $credits,
-                        'eventcrew'
-                    ),
-                    $credits
-                ))
+                DmBody::frame($person, MessageTemplates::body('credit_granted_dm', $context))
             );
-            // phpcs:enable Generic.Files.LineLength.TooLong
         }
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::CREDIT)) {
@@ -60,19 +51,8 @@ final class CreditGrantNotifier
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            __('You’ve been given free entry', 'eventcrew'),
-            sprintf(
-                /* translators: 1: the person's name, 2: number of credits */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                _n(
-                    "Hi %1\$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.",
-                    "Hi %1\$s,\n\nAn organizer has given you %2\$d free-entry credits. You can spend them on upcoming events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.",
-                    $credits,
-                    'eventcrew'
-                ),
-                $person->name(),
-                $credits
-            ),
+            MessageTemplates::subject('credit_granted', $context),
+            MessageTemplates::body('credit_granted', $context),
             [['label' => __('Get your free ticket', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
         );
     }

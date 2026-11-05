@@ -257,6 +257,16 @@ final class Admin
             'admin_post_' . NewsletterPage::COPY_ACTION,
             [$this->container->get(NewsletterPage::class), 'viewCopy']
         );
+
+        add_action(
+            'admin_post_' . MessagesPage::SAVE_ACTION,
+            [$this->container->get(MessagesPage::class), 'save']
+        );
+
+        add_action(
+            'admin_post_' . MessagesPage::RESET_ACTION,
+            [$this->container->get(MessagesPage::class), 'reset']
+        );
     }
 
     /**
@@ -339,6 +349,15 @@ final class Admin
             __('Email template', 'eventcrew'),
             self::CAPABILITY,
             'post.php?post=' . $this->container->get(EmailTemplate::class)->postId() . '&action=edit'
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Messages', 'eventcrew'),
+            __('Messages', 'eventcrew'),
+            self::CAPABILITY,
+            MessagesPage::PAGE_SLUG,
+            [$this->container->get(MessagesPage::class), 'render']
         );
 
         add_submenu_page(

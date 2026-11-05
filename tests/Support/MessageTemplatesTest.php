@@ -1,0 +1,346 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Tests\Support;
+
+use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
+use EventCrew\Support\Language;
+use EventCrew\Support\LlmClient;
+use EventCrew\Support\Logger;
+use EventCrew\Support\MessageTemplate;
+use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TranslatedText;
+use EventCrew\Tests\TestCase;
+
+/**
+ * The message templates: the model, filling the placeholders, the fallback
+ * to the built-in text, and saving and resetting what the Messages page
+ * posts. Options live in an array; no language model is set up, so a save
+ * never translates.
+ */
+final class MessageTemplatesTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private array $options = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->options = [];
+
+        Functions\when('get_option')->alias(
+            fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
+        );
+        Functions\when('update_option')->alias(function (string $name, mixed $value): bool {
+            $this->options[$name] = $value;
+
+            return true;
+        });
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('sanitize_textarea_field')->alias(static fn (string $value): string => trim($value));
+        Functions\when('sanitize_text_field')->alias(static fn (string $value): string => trim($value));
+        Functions\when('wp_json_encode')->alias(static fn (mixed $value): string => (string) json_encode($value));
+    }
+
+    private function templates(): MessageTemplates
+    {
+        return new MessageTemplates(new TranslatedText(new LlmClient(new Logger()), new Logger()));
+    }
+
+    private function person(string $name = 'Anna'): Person
+    {
+        return Person::fromRow(['id' => 8, 'display_name' => $name]);
+    }
+
+    private function option(string $id): string
+    {
+        return MessageTemplates::OPTION_PREFIX . $id;
+    }
+
+    // ---- The model --------------------------------------------------------
+
+    public function testEveryKindHasAnIdALabelAChannelAndABuiltInText(): void
+    {
+        $all = MessageTemplates::all();
+
+        self::assertArrayHasKey('reminder', $all);
+        self::assertArrayHasKey('free_ticket_dm', $all);
+        self::assertArrayHasKey('ticket', $all);
+        self::assertArrayHasKey('newsletter', $all);
+
+        foreach ($all as $id => $template) {
+            self::assertSame($id, $template->id);
+            self::assertNotSame('', $template->label, $id);
+            self::assertContains(
+                $template->channel,
+                [MessageTemplate::CHANNEL_EMAIL, MessageTemplate::CHANNEL_TELEGRAM],
+                $id
+            );
+            self::assertNotSame('', $template->defaultBody(), $id);
+            self::assertSame(
+                MessageTemplate::CHANNEL_EMAIL === $template->channel,
+                $template->hasSubject(),
+                $id . ': an email has a subject, a Telegram message does not'
+            );
+
+            foreach ($template->placeholders as $placeholder) {
+                self::assertNotSame('', $placeholder['description'], $id);
+                self::assertInstanceOf(\Closure::class, $placeholder['resolve'], $id);
+            }
+
+            foreach (['volunteer', 'shift', 'vuoro', 'vapaaehtoinen'] as $banned) {
+                self::assertStringNotContainsStringIgnoringCase(
+                    $banned,
+                    $template->label . $template->description,
+                    $id
+                );
+            }
+        }
+
+        self::assertNull(MessageTemplates::find('nope'));
+        self::assertFalse(MessageTemplates::find('ticket')->wired, 'TicketMail does not read its template yet');
+        self::assertTrue(MessageTemplates::find('reminder')->wired);
+    }
+
+    public function testThePlaceholderListNamesEachTagInCurlyBrackets(): void
+    {
+        $list = MessageTemplates::find('credit_granted')->placeholderList();
+
+        self::assertSame(['{name}', '{credits}'], array_keys($list));
+        self::assertSame('How many free-entry credits were given.', $list['{credits}']);
+    }
+
+    public function testTheBuiltInTextKeepsTheOldWording(): void
+    {
+        self::assertSame(
+            "Hi {name},\n\nAn organizer has given you {credits} free-entry credits. You can spend them on upcoming"
+                . ' events — open the EventCrew bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app,'
+                . ' to get your free ticket.',
+            MessageTemplates::find('credit_granted')->defaultBody()
+        );
+        self::assertStringContainsString(
+            'a free-entry credit.',
+            MessageTemplates::find('credit_granted')->defaultBody(['credits' => 1]),
+            'one credit picks the singular sentence'
+        );
+        self::assertSame('Hi %1$s, 100% sure', MessageTemplates::tag('Hi %1$s, 100%% sure', []));
+        self::assertSame('Hi {name}', MessageTemplates::tag('Hi %1$s', ['%1$s' => '{name}']));
+    }
+
+    // ---- Filling the placeholders -----------------------------------------
+
+    public function testFillReplacesKnownPlaceholdersAndLeavesOthers(): void
+    {
+        $template = MessageTemplates::find('credit_granted');
+
+        self::assertSame(
+            'Anna got 3 {unknown} {name',
+            $template->fill('{name} got {credits} {unknown} {name', ['person' => $this->person(), 'credits' => 3])
+        );
+        self::assertSame(
+            'Hi , here is 1',
+            $template->fill('Hi {name}, here is {credits}', []),
+            'a missing context value becomes empty, a missing count becomes 1'
+        );
+    }
+
+    public function testFillDoesNotReplaceInsideAFilledValue(): void
+    {
+        $template = MessageTemplates::find('credit_granted');
+
+        self::assertSame(
+            'Hi {credits}!',
+            $template->fill('Hi {name}!', ['person' => $this->person('{credits}'), 'credits' => 4])
+        );
+    }
+
+    // ---- The fallback -----------------------------------------------------
+
+    public function testWithNothingStoredTheBuiltInTextIsSent(): void
+    {
+        $context = ['person' => $this->person(), 'credits' => 2];
+
+        self::assertSame('You’ve been given free entry', MessageTemplates::subject('credit_granted', $context));
+        self::assertStringStartsWith(
+            "Hi Anna,\n\nAn organizer has given you 2 free-entry credits.",
+            MessageTemplates::body('credit_granted', $context)
+        );
+
+        $finnish = Language::run(
+            Language::FINNISH,
+            static fn (): string => MessageTemplates::subject('credit_granted')
+        );
+        self::assertSame(
+            Language::run(Language::FINNISH, static fn (): string => __('You’ve been given free entry', 'eventcrew')),
+            $finnish
+        );
+        self::assertNotSame('You’ve been given free entry', $finnish, 'the built-in text keeps its translation');
+
+        self::assertSame('', MessageTemplates::subject('credit_granted_dm'), 'a Telegram message has no subject');
+        self::assertSame('', MessageTemplates::body('nope'));
+    }
+
+    public function testTheStoredTextIsSentInTheReadersLanguage(): void
+    {
+        $this->options[$this->option('credit_granted')] = [
+            MessageTemplates::BODY => [
+                'source' => 'Gift for {name}: {credits}',
+                'texts' => ['fi' => 'Lahja: {credits}, {name}', 'en' => 'Gift for {name}: {credits}'],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+        ];
+        $context = ['person' => $this->person(), 'credits' => 5];
+
+        self::assertSame(
+            'Lahja: 5, Anna',
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body('credit_granted', $context))
+        );
+        self::assertSame(
+            'Gift for Anna: 5',
+            Language::run(Language::ENGLISH, static fn (): string => MessageTemplates::body('credit_granted', $context))
+        );
+        self::assertTrue(MessageTemplates::isChanged('credit_granted'));
+        self::assertFalse(MessageTemplates::isChanged('credit_granted_dm'));
+        self::assertSame(
+            'You’ve been given free entry',
+            Language::run(Language::ENGLISH, static fn (): string => MessageTemplates::subject('credit_granted')),
+            'the subject was not changed and stays the built-in one'
+        );
+    }
+
+    public function testAnEmptyStoredTextFallsBackToTheBuiltInText(): void
+    {
+        $this->options[$this->option('credit_granted')] = [
+            MessageTemplates::SUBJECT => [
+                'source' => 'Free entry!',
+                'texts' => ['fi' => '', 'en' => 'Free entry!'],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+        ];
+
+        self::assertSame(
+            'Free entry!',
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('credit_granted')),
+            'an empty language uses the stored source, as TranslatedText::text() does'
+        );
+
+        $this->options[$this->option('credit_granted')][MessageTemplates::SUBJECT]['source'] = '';
+        $this->options[$this->option('credit_granted')][MessageTemplates::SUBJECT]['texts']['fi'] = ' ';
+        self::assertSame(
+            Language::run(Language::FINNISH, static fn (): string => __('You’ve been given free entry', 'eventcrew')),
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('credit_granted'))
+        );
+    }
+
+    public function testTheBuiltInValueHasEachLanguage(): void
+    {
+        $value = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
+
+        self::assertSame('You’ve been given free entry', $value['source']);
+        self::assertSame('You’ve been given free entry', $value['texts'][Language::ENGLISH]);
+        self::assertSame(
+            Language::run(Language::FINNISH, static fn (): string => __('You’ve been given free entry', 'eventcrew')),
+            $value['texts'][Language::FINNISH]
+        );
+        self::assertNotContains(true, $value['manual']);
+        self::assertSame($value, MessageTemplates::value('credit_granted', MessageTemplates::SUBJECT));
+    }
+
+    // ---- Saving and resetting ---------------------------------------------
+
+    public function testSavingTheBuiltInTextStoresNothing(): void
+    {
+        $subject = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
+        $body = MessageTemplates::defaultValue('credit_granted', MessageTemplates::BODY);
+
+        $error = $this->templates()->save('credit_granted', [
+            MessageTemplates::SUBJECT => ['source' => $subject['source'], 'texts' => $subject['texts']],
+            MessageTemplates::BODY => ['source' => $body['source'], 'texts' => $body['texts']],
+        ]);
+
+        self::assertSame('', $error);
+        self::assertArrayNotHasKey($this->option('credit_granted'), $this->options);
+        self::assertFalse(MessageTemplates::isChanged('credit_granted'));
+    }
+
+    public function testSavingAChangedTextStoresItAndSendsIt(): void
+    {
+        $subject = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
+
+        $this->templates()->save('credit_granted', [
+            MessageTemplates::SUBJECT => [
+                'source' => 'Free entry for {name}',
+                'texts' => ['en' => 'Free entry for {name}', 'fi' => 'Vapaa sisäänpääsy: {name}'],
+            ],
+        ]);
+
+        $stored = MessageTemplates::stored('credit_granted');
+        self::assertSame('Free entry for {name}', $stored[MessageTemplates::SUBJECT]['source']);
+        self::assertTrue($stored[MessageTemplates::SUBJECT]['manual'][Language::FINNISH]);
+        self::assertNull($stored[MessageTemplates::BODY], 'a part that was not posted stays the built-in text');
+        self::assertNotSame($subject, $stored[MessageTemplates::SUBJECT]);
+
+        self::assertSame(
+            'Vapaa sisäänpääsy: Anna',
+            Language::run(
+                Language::FINNISH,
+                fn (): string => MessageTemplates::subject('credit_granted', ['person' => $this->person()])
+            )
+        );
+    }
+
+    public function testSettingsPassThroughTheFilterAndSurviveAReset(): void
+    {
+        Functions\when('apply_filters')->alias(
+            static function (string $hook, mixed $value, string $id = '', mixed $posted = null): mixed {
+                if (MessageTemplates::SETTINGS_FILTER !== $hook) {
+                    return $value;
+                }
+
+                return ['ai' => '1' === ($posted['ai'] ?? ''), 'id' => $id];
+            }
+        );
+
+        $this->templates()->save('reminder_dm', [
+            MessageTemplates::BODY => ['source' => 'See you, {role}!', 'texts' => ['en' => 'See you, {role}!']],
+            'ai' => '1',
+        ]);
+
+        self::assertSame(['ai' => true, 'id' => 'reminder_dm'], MessageTemplates::settings('reminder_dm'));
+        self::assertTrue(MessageTemplates::isChanged('reminder_dm'));
+
+        MessageTemplates::reset('reminder_dm');
+
+        self::assertFalse(MessageTemplates::isChanged('reminder_dm'));
+        self::assertSame(['ai' => true, 'id' => 'reminder_dm'], MessageTemplates::settings('reminder_dm'));
+        self::assertSame(
+            ['settings' => ['ai' => true, 'id' => 'reminder_dm']],
+            $this->options[$this->option('reminder_dm')]
+        );
+    }
+
+    public function testResetWithNoSettingsDeletesTheOption(): void
+    {
+        $this->options[$this->option('slot_freed')] = [
+            MessageTemplates::SUBJECT => ['source' => 'Open!', 'texts' => ['en' => 'Open!'], 'manual' => []],
+        ];
+
+        MessageTemplates::reset('slot_freed');
+
+        self::assertArrayNotHasKey($this->option('slot_freed'), $this->options);
+    }
+
+    public function testSavingAnUnknownKindDoesNothing(): void
+    {
+        self::assertSame('', $this->templates()->save('nope', [MessageTemplates::BODY => ['source' => 'x']]));
+        self::assertSame([], $this->options);
+    }
+}
