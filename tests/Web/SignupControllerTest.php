@@ -525,6 +525,61 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('--eventcrew-accent:#2a1f4f;', $this->accentStyle());
     }
 
+    public function testOneAddressGetsFiveSignInLinksAnHourAndThenNoMore(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+            self::assertSame('check_email', $this->controller()->loginByEmail('sam@example.com', '203.0.113.' . $i));
+        }
+
+        $queries = count($this->wpdb->queries);
+        $inserts = count($this->wpdb->inserts);
+
+        // The same address from yet another IP, in another letter case.
+        self::assertSame('login_busy', $this->controller()->loginByEmail('Sam@Example.com', '203.0.113.99'));
+        self::assertCount(5, $this->mails);
+        // Nothing is looked up or made for a refused request.
+        self::assertCount($queries, $this->wpdb->queries);
+        self::assertCount($inserts, $this->wpdb->inserts);
+        self::assertSame(
+            'Too many sign-in links were asked for. Wait an hour and try again.',
+            SignupController::noticeText('login_busy')
+        );
+    }
+
+    public function testOneIpAddressGetsThirtySignInLinksAnHour(): void
+    {
+        for ($i = 1; $i <= 30; $i++) {
+            $this->wpdb->nextRows[] = null;
+            $code = $this->controller()->loginByEmail('p' . $i . '@example.com', '203.0.113.7');
+            self::assertSame('check_email', $code);
+        }
+
+        self::assertSame('login_busy', $this->controller()->loginByEmail('p31@example.com', '203.0.113.7'));
+        // Another IP address is not affected.
+        $this->wpdb->nextRows[] = null;
+        self::assertSame('check_email', $this->controller()->loginByEmail('p31@example.com', '198.51.100.1'));
+        self::assertCount(31, $this->mails);
+    }
+
+    public function testTheSignInLimitStartsAgainAfterAnHour(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->wpdb->nextRows[] = null;
+            $this->controller()->loginByEmail('sam@example.com', '203.0.113.1');
+        }
+
+        // The counter began over an hour ago.
+        foreach ($this->transients as $key => $value) {
+            if (str_starts_with($key, 'eventcrew_login_rate_')) {
+                $this->transients[$key]['since'] = time() - HOUR_IN_SECONDS - 1;
+            }
+        }
+
+        $this->wpdb->nextRows[] = null;
+        self::assertSame('check_email', $this->controller()->loginByEmail('sam@example.com', '203.0.113.1'));
+    }
+
     public function testLoginByEmailRejectsABadAddress(): void
     {
         $code = $this->controller()->loginByEmail('not-an-email');

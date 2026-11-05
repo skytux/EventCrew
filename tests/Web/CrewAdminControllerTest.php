@@ -1884,6 +1884,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
     public function testABlockedPersonGetsNoSignInLink(): void
     {
+        // The sign-in form's rate limit counts in transients.
+        Functions\when('get_transient')->justReturn(false);
+        Functions\when('set_transient')->justReturn(true);
         $this->wpdb->nextRows[] = $this->bannedRow(8);   // findByEmail
 
         self::assertSame('blocked', $this->signupController()->loginByEmail('p8@example.com'));

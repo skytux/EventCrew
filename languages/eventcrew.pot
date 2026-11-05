@@ -1130,7 +1130,7 @@ msgstr ""
 msgid "Check your email and tap the link to confirm it. Then pick a task on the board."
 msgstr ""
 
-#: src/Web/SignupController.php:1069
+#: src/Web/SignupController.php:1088
 msgid "Check your email for a sign-in link."
 msgstr ""
 
@@ -1154,7 +1154,7 @@ msgstr ""
 msgid "Choose pages"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1122 src/Web/SignupController.php:1085
+#: src/Support/DoorDesk.php:1122 src/Web/SignupController.php:1104
 msgid "Choose whether this task counts toward free-entry credit."
 msgstr ""
 
@@ -1231,7 +1231,7 @@ msgstr ""
 msgid "Confirm my email"
 msgstr ""
 
-#: src/Web/SignupController.php:638
+#: src/Web/SignupController.php:657
 msgid "Confirm new email"
 msgstr ""
 
@@ -1243,7 +1243,7 @@ msgstr ""
 msgid "Confirm your email for EventCrew"
 msgstr ""
 
-#: src/Web/SignupController.php:633
+#: src/Web/SignupController.php:652
 msgid "Confirm your new email address"
 msgstr ""
 
@@ -1287,7 +1287,7 @@ msgstr ""
 msgid "Could not read the webhook status from Telegram. Check the token."
 msgstr ""
 
-#: src/Web/SignupController.php:1073
+#: src/Web/SignupController.php:1092
 msgid "Couldn’t verify you’re human — please try again."
 msgstr ""
 
@@ -1312,7 +1312,7 @@ msgstr ""
 msgid "Create an event's tasks"
 msgstr ""
 
-#: src/Web/SignupController.php:557
+#: src/Web/SignupController.php:576
 msgid "Create my account"
 msgstr ""
 
@@ -1328,7 +1328,7 @@ msgstr ""
 msgid "Create the ticket buyer privacy page"
 msgstr ""
 
-#: src/Web/SignupController.php:572
+#: src/Web/SignupController.php:591
 msgid "Create your crew account"
 msgstr ""
 
@@ -1966,7 +1966,7 @@ msgstr ""
 msgid "Free entry closed for this date."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:371 src/Web/SignupController.php:1091
+#: src/Telegram/TicketRedemptionService.php:371 src/Web/SignupController.php:1110
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -3147,7 +3147,7 @@ msgstr ""
 msgid "Nothing was added. Start again with /board."
 msgstr ""
 
-#: src/Web/SignupController.php:1096
+#: src/Web/SignupController.php:1115
 msgid "Nothing was changed."
 msgstr ""
 
@@ -3379,7 +3379,7 @@ msgstr ""
 msgid "Open Telegram again"
 msgstr ""
 
-#: src/Web/SignupController.php:1107
+#: src/Web/SignupController.php:1126
 msgid "Open Telegram, press Start, then press the button the bot sends. This page signs you in by itself."
 msgstr ""
 
@@ -3664,7 +3664,7 @@ msgstr ""
 msgid "Plain messages (language model)"
 msgstr ""
 
-#: src/Web/SignupController.php:1088
+#: src/Web/SignupController.php:1107
 msgid "Please sign in first."
 msgstr ""
 
@@ -4389,7 +4389,7 @@ msgstr ""
 msgid "Shown under the home-screen icon. Blank uses the site name."
 msgstr ""
 
-#: src/Web/SignupController.php:557
+#: src/Web/SignupController.php:576
 msgid "Sign in"
 msgstr ""
 
@@ -4463,7 +4463,7 @@ msgstr ""
 msgid "Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group."
 msgstr ""
 
-#: src/Web/SignupController.php:1079
+#: src/Web/SignupController.php:1098
 msgid "Sign-ups are paused on your account — please contact the organizer."
 msgstr ""
 
@@ -4480,7 +4480,7 @@ msgstr ""
 msgid "Signed in. You can go back to the crew app."
 msgstr ""
 
-#: src/Web/SignupController.php:1083
+#: src/Web/SignupController.php:1102
 msgid "Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
 msgstr ""
 
@@ -4795,7 +4795,7 @@ msgstr ""
 msgid "Telegram refused the webhook: %s"
 msgstr ""
 
-#: src/Web/SignupController.php:1105
+#: src/Web/SignupController.php:1124
 msgid "Telegram sign-in did not work. Please try again, or sign in with email."
 msgstr ""
 
@@ -4934,11 +4934,11 @@ msgstr ""
 msgid "That doesn't look like an email address. Try again?"
 msgstr ""
 
-#: src/Web/SignupController.php:1070
+#: src/Web/SignupController.php:1089
 msgid "That doesn’t look like a valid email address."
 msgstr ""
 
-#: src/Web/SignupController.php:1102
+#: src/Web/SignupController.php:1121
 msgid "That email address belongs to another crew account."
 msgstr ""
 
@@ -4951,7 +4951,7 @@ msgstr ""
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
 
-#: src/Web/SignupController.php:1104
+#: src/Web/SignupController.php:1123
 msgid "That email change link is invalid or has expired."
 msgstr ""
 
@@ -4959,7 +4959,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:373 src/Web/SignupController.php:1093
+#: src/Telegram/TicketRedemptionService.php:373 src/Web/SignupController.php:1112
 msgid "That event is no longer available."
 msgstr ""
 
@@ -5003,7 +5003,7 @@ msgstr ""
 msgid "That roster entry was not found."
 msgstr ""
 
-#: src/Web/SignupController.php:1072
+#: src/Web/SignupController.php:1091
 msgid "That sign-in link is invalid or has expired."
 msgstr ""
 
@@ -5011,7 +5011,7 @@ msgstr ""
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
-#: src/Telegram/BoardService.php:984 src/Web/SignupController.php:1078
+#: src/Telegram/BoardService.php:984 src/Web/SignupController.php:1097
 msgid "That slot just filled up."
 msgstr ""
 
@@ -5024,7 +5024,7 @@ msgid "That task is full."
 msgstr ""
 
 #: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:80 src/Telegram/BoardService.php:985 src/Telegram/ReplacementService.php:167
-#: src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:1084
+#: src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:360 src/Telegram/RoleTaskBot.php:394 src/Web/SignupController.php:1103
 msgid "That task is no longer available."
 msgstr ""
 
@@ -5220,7 +5220,7 @@ msgstr ""
 msgid "The door list, guest list and sales desk"
 msgstr ""
 
-#: src/Web/SignupController.php:680
+#: src/Web/SignupController.php:699
 #. translators: %s: the new email address
 msgid "The email address of your crew account is now %s. Mail from the crew goes there from now on.\n\nIf you did not do this, tell an organizer."
 msgstr ""
@@ -5315,7 +5315,7 @@ msgstr ""
 msgid "The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below."
 msgstr ""
 
-#: src/Web/SignupController.php:1109
+#: src/Web/SignupController.php:1128
 msgid "The link expired. Press Telegram again."
 msgstr ""
 
@@ -5661,7 +5661,7 @@ msgstr ""
 msgid "There is no board yet. Add the bot to your group and send /board there once — after that it has a home, and this button can redraw it."
 msgstr ""
 
-#: src/Web/SignupController.php:550
+#: src/Web/SignupController.php:569
 msgid "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email."
 msgstr ""
 
@@ -6035,8 +6035,12 @@ msgstr ""
 msgid "Too late: the post-event email has already gone out."
 msgstr ""
 
-#: src/Web/SignupController.php:1113
+#: src/Web/SignupController.php:1132
 msgid "Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email."
+msgstr ""
+
+#: src/Web/SignupController.php:1133
+msgid "Too many sign-in links were asked for. Wait an hour and try again."
 msgstr ""
 
 #: templates/admin/settings.php:2368
@@ -6143,11 +6147,11 @@ msgstr ""
 msgid "Use a credit (%d left)"
 msgstr ""
 
-#: src/Web/SignupController.php:634
+#: src/Web/SignupController.php:653
 msgid "Use the button below to make this the email address of your crew account.\n\nThe link is good for 24 hours, and works once. Until you use it, your account keeps its old address. If you did not ask for this, ignore this email."
 msgstr ""
 
-#: src/Web/SignupController.php:546
+#: src/Web/SignupController.php:565
 msgid "Use the button below to sign in and manage your tasks.\n\nThe link is good for 30 minutes, and works once."
 msgstr ""
 
@@ -6244,7 +6248,7 @@ msgstr ""
 msgid "We send you an email to confirm. You can leave the announcement at any time with the link in every announcement."
 msgstr ""
 
-#: src/Web/SignupController.php:1099
+#: src/Web/SignupController.php:1118
 msgid "We sent a link to the new address. Your email changes when you open it."
 msgstr ""
 
@@ -6570,7 +6574,7 @@ msgstr ""
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:372 src/Web/SignupController.php:1092
+#: src/Telegram/TicketRedemptionService.php:372 src/Web/SignupController.php:1111
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -6611,7 +6615,7 @@ msgstr ""
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: src/Web/SignupController.php:1111
+#: src/Web/SignupController.php:1130
 msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
 msgstr ""
 
@@ -6717,7 +6721,7 @@ msgstr[1] ""
 msgid "You have left the announcement. You will not get it any more."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:370 src/Web/SignupController.php:1090
+#: src/Telegram/TicketRedemptionService.php:370 src/Web/SignupController.php:1109
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
@@ -6746,7 +6750,7 @@ msgstr ""
 msgid "You were added to the crew at the door. Welcome!\n\nThe first button confirms your email address and signs you in. It works once, for 24 hours."
 msgstr ""
 
-#: src/Web/SignupController.php:1077
+#: src/Web/SignupController.php:1096
 msgid "You were already signed up for that."
 msgstr ""
 
@@ -6758,7 +6762,7 @@ msgstr ""
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1008 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1086
+#: src/Telegram/BoardService.php:1008 src/Telegram/RoleTaskBot.php:414 src/Web/SignupController.php:1105
 msgid "You weren’t signed up for that one."
 msgstr ""
 
@@ -6774,7 +6778,7 @@ msgstr ""
 msgid "Your EventCrew account is now linked to another Telegram account. Contact an organizer if that wasn't you."
 msgstr ""
 
-#: src/Web/SignupController.php:572
+#: src/Web/SignupController.php:591
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
@@ -6782,11 +6786,11 @@ msgstr ""
 msgid "Your EventCrew ticket"
 msgstr ""
 
-#: src/Telegram/WebLoginBot.php:158 src/Web/SignupController.php:1094
+#: src/Telegram/WebLoginBot.php:158 src/Web/SignupController.php:1113
 msgid "Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: src/Web/SignupController.php:677
+#: src/Web/SignupController.php:696
 msgid "Your crew account email was changed"
 msgstr ""
 
@@ -6802,7 +6806,7 @@ msgstr ""
 msgid "Your email address"
 msgstr ""
 
-#: src/Web/SignupController.php:1103
+#: src/Web/SignupController.php:1122
 msgid "Your email address is changed."
 msgstr ""
 
@@ -6830,11 +6834,11 @@ msgstr ""
 msgid "Your free-entry ticket"
 msgstr ""
 
-#: src/Web/SignupController.php:1089 src/Web/SignupController.php:1136
+#: src/Web/SignupController.php:1108 src/Web/SignupController.php:1156
 msgid "Your free-entry ticket is ready."
 msgstr ""
 
-#: src/Web/SignupController.php:1081
+#: src/Web/SignupController.php:1100
 msgid "Your language is saved."
 msgstr ""
 
@@ -6850,19 +6854,19 @@ msgstr ""
 msgid "Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for."
 msgstr ""
 
-#: src/Web/SignupController.php:1097
+#: src/Web/SignupController.php:1116
 msgid "Your name cannot be empty."
 msgstr ""
 
-#: src/Web/SignupController.php:1095
+#: src/Web/SignupController.php:1114
 msgid "Your name is saved."
 msgstr ""
 
-#: src/Web/SignupController.php:1101
+#: src/Web/SignupController.php:1120
 msgid "Your name is saved. We sent a link to the new address. Your email changes when you open it."
 msgstr ""
 
-#: src/Web/SignupController.php:1080
+#: src/Web/SignupController.php:1099
 msgid "Your notification preferences are saved."
 msgstr ""
 
@@ -6979,15 +6983,15 @@ msgstr ""
 msgid "You’re rated after %1$d finished tasks — completions, replacements, late cancels and no-shows all count; %2$d%% or higher is good standing."
 msgstr ""
 
-#: src/Web/SignupController.php:1071
+#: src/Web/SignupController.php:1090
 msgid "You’re signed in."
 msgstr ""
 
-#: src/Web/SignupController.php:1074
+#: src/Web/SignupController.php:1093
 msgid "You’re signed out."
 msgstr ""
 
-#: src/Web/SignupController.php:1075
+#: src/Web/SignupController.php:1094
 msgid "You’re signed up — thanks!"
 msgstr ""
 
@@ -7000,7 +7004,7 @@ msgstr ""
 msgid "You’ve been given free entry"
 msgstr ""
 
-#: src/Web/SignupController.php:1076
+#: src/Web/SignupController.php:1095
 msgid "You’ve cancelled that task."
 msgstr ""
 

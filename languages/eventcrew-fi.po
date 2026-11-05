@@ -6426,3 +6426,6 @@ msgstr "Laita tämä postinhakijan asetuksiin nimellä IMPORT_SECRET. Se näkyy 
 
 msgid "Only the last 4 characters are shown. To see a secret in full, generate a new one: it is shown once."
 msgstr "Vain 4 viimeistä merkkiä näytetään. Nähdäksesi salaisuuden kokonaan luo uusi: se näytetään kerran."
+
+msgid "Too many sign-in links were asked for. Wait an hour and try again."
+msgstr "Kirjautumislinkkejä pyydettiin liian monta. Odota tunti ja yritä uudelleen."
