@@ -10,18 +10,26 @@ namespace EventCrew\Models;
  * or a free-entry credit spent on the night (KIND_CREDIT, $id is the
  * redemption id). It is not stored: it is built from the person and the row
  * when the email is sent.
+ *
+ * $tasks are the tasks the person holds on the night, listed in a KIND_CREW
+ * email. A person with several tasks on one night has one ticket: $id is the
+ * sign-up whose ticket was emailed first, so its code stays the same.
  */
 final class CrewTicket
 {
     public const KIND_CREW = 'crew';
     public const KIND_CREDIT = 'credit';
 
+    /**
+     * @param list<Task> $tasks
+     */
     public function __construct(
         public readonly string $kind,
         public readonly int $id,
         public readonly string $eventDate,
         public readonly string $name,
-        public readonly string $email
+        public readonly string $email,
+        public readonly array $tasks = []
     ) {
     }
 

@@ -1232,6 +1232,28 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('Person 8: this ticket is cancelled.', $desk->scanText($scan['code'], $scan['name'], $scan['date']));
     }
 
+    /**
+     * Q228: a crew ticket is one per person per night. The code of a task
+     * they cancelled still gets them in while they hold another task that
+     * night, because the resent ticket email kept the same code.
+     */
+    public function testACancelledTasksCodeScansWhileAnotherTaskThatNightIsHeld(): void
+    {
+        $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'cancelled');
+        $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate');
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [                                           // forPersonOn
+            $this->assignmentRow(30, 5, 8, 'cancelled'),
+            $this->assignmentRow(31, 6, 8, 'signed_up'),
+        ];
+        $this->queueCrewEntrants();
+
+        $scan = $this->desk()->scan(self::NIGHT, SignedLink::sign('ticket', 30));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('crew:8', $scan['key']);
+    }
+
     public function testTonightsCreditTicketFindsTheCreditRow(): void
     {
         $credit = ['id' => 44, 'person_id' => 9, 'redeemed_for' => self::NIGHT];

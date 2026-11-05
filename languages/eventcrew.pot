@@ -74,22 +74,22 @@ msgstr ""
 msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
 msgstr ""
 
-#: src/Support/TakeoverService.php:486
+#: src/Support/TakeoverService.php:489
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr ""
 
-#: src/Support/TakeoverService.php:481
+#: src/Support/TakeoverService.php:484
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s did not answer in time, so they keep their task: %2$s at %3$s, %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:445
+#: src/Support/TakeoverService.php:448
 #. translators: 1: cover's name, 2: person being covered, 3: role, 4: event
 msgid "%1$s is covering for %2$s: %3$s at %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:476
+#: src/Support/TakeoverService.php:479
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "%1$s keeps their task: %2$s at %3$s, %4$s. Your request to take it over was declined."
 msgstr ""
@@ -180,7 +180,7 @@ msgstr ""
 msgid "%d active account(s) would receive the open-task email."
 msgstr ""
 
-#: src/Support/TicketMail.php:436
+#: src/Support/TicketMail.php:437
 msgid "%d buyer"
 msgid_plural "%d buyers"
 msgstr[0] ""
@@ -193,7 +193,7 @@ msgid_plural "%d credits"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TicketMail.php:440 src/Telegram/GuestListService.php:316
+#: src/Support/TicketMail.php:441 src/Telegram/GuestListService.php:316
 #. translators: %d: number of guests
 msgid "%d guest"
 msgid_plural "%d guests"
@@ -276,7 +276,7 @@ msgstr ""
 msgid "%s ago"
 msgstr ""
 
-#: src/Support/TakeoverService.php:356
+#: src/Support/TakeoverService.php:359
 #. translators: %s: cover's name
 msgid "%s asks to take over your task"
 msgstr ""
@@ -327,7 +327,7 @@ msgstr ""
 msgid "(%s ago)"
 msgstr ""
 
-#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:408 src/Support/DoorDesk.php:1402
+#: src/Admin/PeoplePage.php:104 src/Admin/PeoplePage.php:125 src/Admin/TasksPage.php:408 src/Support/DoorDesk.php:1405
 #: src/Support/DoorList.php:77 src/Support/DoorList.php:114 src/Support/RosterAssembler.php:50 src/Web/CrewAdminPeople.php:273
 #: src/Web/CrewAdminTasks.php:391
 msgid "(deleted person)"
@@ -578,7 +578,7 @@ msgstr ""
 msgid "About this task"
 msgstr ""
 
-#: src/Support/TakeoverService.php:413
+#: src/Support/TakeoverService.php:416
 msgid "About your takeover request"
 msgstr ""
 
@@ -808,7 +808,7 @@ msgstr ""
 msgid "Answer plain messages with the language model"
 msgstr ""
 
-#: src/Support/TakeoverService.php:365
+#: src/Support/TakeoverService.php:368
 msgid "Answer the request"
 msgstr ""
 
@@ -1154,7 +1154,7 @@ msgstr ""
 msgid "Choose pages"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1119 src/Web/SignupController.php:1090
+#: src/Support/DoorDesk.php:1122 src/Web/SignupController.php:1090
 msgid "Choose whether this task counts toward free-entry credit."
 msgstr ""
 
@@ -1344,7 +1344,7 @@ msgstr ""
 msgid "Creates one task per active role, with times worked out from each role's offsets in Settings. Roles that already have a task for the event are left alone, so this is safe to run again after adding a role."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1207
+#: src/Support/DoorDesk.php:1210
 msgid "Credit"
 msgstr ""
 
@@ -1426,7 +1426,7 @@ msgstr ""
 msgid "Crew privacy notice"
 msgstr ""
 
-#: src/Support/DoorDesk.php:215 src/Support/DoorDesk.php:885
+#: src/Support/DoorDesk.php:215 src/Support/DoorDesk.php:888
 msgid "Crew working"
 msgstr ""
 
@@ -1434,7 +1434,7 @@ msgstr ""
 msgid "Custom dates"
 msgstr ""
 
-#: src/Telegram/TicketController.php:334
+#: src/Telegram/TicketController.php:337
 msgid "DISABLED"
 msgstr ""
 
@@ -1579,7 +1579,7 @@ msgstr ""
 msgid "Do you want to sign in to the crew app? Press the button only if you just pressed Telegram on the crew app yourself."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1253 templates/public/signup.php:649
+#: src/Support/DoorDesk.php:1256 templates/public/signup.php:649
 msgid "Door"
 msgstr ""
 
@@ -1958,7 +1958,7 @@ msgstr ""
 msgid "Found a replacement"
 msgstr ""
 
-#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:289 templates/admin/roster.php:131
+#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:292 templates/admin/roster.php:131
 msgid "Free entry"
 msgstr ""
 
@@ -1982,7 +1982,7 @@ msgstr ""
 msgid "Free entry reopened for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:216 src/Support/DoorDesk.php:889 src/Support/DoorList.php:78
+#: src/Support/DoorDesk.php:216 src/Support/DoorDesk.php:892 src/Support/DoorList.php:78
 msgid "Free-entry credit"
 msgstr ""
 
@@ -2069,7 +2069,7 @@ msgstr ""
 msgid "Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)"
 msgstr ""
 
-#: src/Support/DoorDesk.php:857 templates/public/door.php:73
+#: src/Support/DoorDesk.php:860 templates/public/door.php:73
 msgid "Give the guest’s name."
 msgstr ""
 
@@ -2120,7 +2120,7 @@ msgstr ""
 msgid "Guest"
 msgstr ""
 
-#: src/Support/DoorDesk.php:856
+#: src/Support/DoorDesk.php:859
 msgid "Guest added and checked in."
 msgstr ""
 
@@ -2182,7 +2182,7 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-#: src/Support/TicketMail.php:1139
+#: src/Support/TicketMail.php:1228
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Here is your ticket to %1$s on %2$s. Show the QR code below at the door."
 msgstr ""
@@ -2195,7 +2195,7 @@ msgstr ""
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:93 src/Support/TakeoverService.php:361 src/Support/TakeoverService.php:388 src/Support/TakeoverService.php:416
+#: src/Support/SlotFreedNotice.php:93 src/Support/TakeoverService.php:364 src/Support/TakeoverService.php:391 src/Support/TakeoverService.php:419
 #: src/Telegram/PermissionService.php:328
 #. translators: 1: name, 2: the opening line
 #. translators: 1: name, 2: the cover line
@@ -2226,7 +2226,7 @@ msgstr ""
 msgid "Hi %1$s,\n\nSome tasks still need people:\n\n%2$s\n\nSign up on the board.\n\n%3$s"
 msgstr ""
 
-#: src/Support/TaskCancelledNotice.php:91
+#: src/Support/TaskCancelledNotice.php:98
 msgid "Hi %1$s,\n\nThe organizers have cancelled the task %2$s at %3$s, %4$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing."
 msgstr ""
 
@@ -2242,7 +2242,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:924 src/Support/TicketMail.php:1135
+#: src/Support/DmBody.php:40 src/Support/FollowupMail.php:1072 src/Support/TicketMail.php:1013 src/Support/TicketMail.php:1224
 #: src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -2256,11 +2256,11 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:922 src/Support/TicketMail.php:1133
+#: src/Support/FollowupMail.php:1070 src/Support/TicketMail.php:1011 src/Support/TicketMail.php:1222
 msgid "Hi,"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1259
+#: src/Support/DoorDesk.php:1262
 msgid "Holvi"
 msgstr ""
 
@@ -2508,7 +2508,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:456
+#: src/Telegram/TicketController.php:459
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -2517,14 +2517,14 @@ msgstr ""
 msgid "It edits the board where it already sits, so nobody in the group is notified. To push a fresh copy to the bottom of the group instead, send /board there."
 msgstr ""
 
-#: src/Support/TakeoverService.php:526
+#: src/Support/TakeoverService.php:529
 #. translators: %d: hours before the task starts
 msgid "It is too late to ask: a takeover must be answered at least %d hour before the task starts."
 msgid_plural "It is too late to ask: a takeover must be answered at least %d hours before the task starts."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TakeoverService.php:521
+#: src/Support/TakeoverService.php:524
 msgid "It is too late to ask: the task has already started."
 msgstr ""
 
@@ -2985,7 +2985,7 @@ msgstr ""
 msgid "No member matches. Add them below as a new member."
 msgstr ""
 
-#: src/Support/DoorDesk.php:576 src/Support/DoorDesk.php:1252 src/Support/DoorDesk.php:1263 src/Web/CrewAdminRoster.php:175
+#: src/Support/DoorDesk.php:576 src/Support/DoorDesk.php:1255 src/Support/DoorDesk.php:1266 src/Web/CrewAdminRoster.php:175
 #: templates/admin/roster.php:274
 msgid "No name"
 msgstr ""
@@ -3038,7 +3038,7 @@ msgstr ""
 msgid "No role has conditions set. Organizers set them in wp-admin, under Settings, Roles."
 msgstr ""
 
-#: src/Admin/RosterPage.php:732 src/Support/DoorDesk.php:849 src/Telegram/GuestListService.php:191
+#: src/Admin/RosterPage.php:732 src/Support/DoorDesk.php:852 src/Telegram/GuestListService.php:191
 msgid "No send was waiting. It may have gone out already."
 msgstr ""
 
@@ -3435,7 +3435,7 @@ msgstr ""
 msgid "Open the signup page"
 msgstr ""
 
-#: src/Support/TicketMail.php:1161
+#: src/Support/TicketMail.php:1263
 msgid "Open the ticket in your browser"
 msgstr ""
 
@@ -4157,7 +4157,7 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:97
+#: src/Support/ClaimNotifier.php:225 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:97 src/Support/TaskCancelledNotice.php:104
 msgid "See open tasks"
 msgstr ""
 
@@ -4246,7 +4246,7 @@ msgstr ""
 msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
 msgstr ""
 
-#: src/Admin/RosterPage.php:731 src/Support/DoorDesk.php:848 src/Telegram/GuestListService.php:190
+#: src/Admin/RosterPage.php:731 src/Support/DoorDesk.php:851 src/Telegram/GuestListService.php:190
 msgid "Sending cancelled. No ticket email was sent."
 msgstr ""
 
@@ -4484,11 +4484,11 @@ msgstr ""
 msgid "Signed up"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1117
+#: src/Support/DoorDesk.php:1120
 msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1115
+#: src/Support/DoorDesk.php:1118
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr ""
 
@@ -4528,7 +4528,7 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
-#: src/Support/TakeoverService.php:513
+#: src/Support/TakeoverService.php:516
 msgid "Someone else has already asked to take over this task. Wait until that request is answered."
 msgstr ""
 
@@ -4637,11 +4637,11 @@ msgstr ""
 msgid "Switched off"
 msgstr ""
 
-#: src/Support/TicketMail.php:876
+#: src/Support/TicketMail.php:965
 msgid "TICKET CANCELLED"
 msgstr ""
 
-#: src/Support/TicketMail.php:899
+#: src/Support/TicketMail.php:988
 msgid "TICKET MOVED"
 msgstr ""
 
@@ -4677,7 +4677,7 @@ msgstr ""
 msgid "Task added."
 msgstr ""
 
-#: src/Support/TaskCancelledNotice.php:84
+#: src/Support/TaskCancelledNotice.php:91
 #. translators: 1: role, 2: event
 msgid "Task cancelled: %1$s for %2$s"
 msgstr ""
@@ -4852,7 +4852,7 @@ msgstr ""
 msgid "Texts by the language model"
 msgstr ""
 
-#: src/Support/TicketMail.php:1128
+#: src/Support/TicketMail.php:1217
 msgid "Thank you for buying a ticket!"
 msgstr ""
 
@@ -4861,7 +4861,7 @@ msgstr ""
 msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
 msgstr ""
 
-#: src/Support/TicketMail.php:1127
+#: src/Support/TicketMail.php:1216
 msgid "Thank you for coming! You are on the guest list."
 msgstr ""
 
@@ -4869,7 +4869,7 @@ msgstr ""
 msgid "Thank you for dancing with us"
 msgstr ""
 
-#: src/Support/TicketMail.php:1124
+#: src/Support/TicketMail.php:1213
 msgid "Thank you for taking a task!"
 msgstr ""
 
@@ -4941,7 +4941,7 @@ msgstr ""
 msgid "That email address does not look right."
 msgstr ""
 
-#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:378 src/Support/DoorDesk.php:858 src/Telegram/GuestListService.php:372
+#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:378 src/Support/DoorDesk.php:861 src/Telegram/GuestListService.php:372
 #: src/Web/CrewAdminRoster.php:577
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
@@ -5010,7 +5010,7 @@ msgstr ""
 msgid "That slot just filled up."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1118
+#: src/Support/DoorDesk.php:1121
 msgid "That task has just filled up. Pick another one."
 msgstr ""
 
@@ -5027,7 +5027,7 @@ msgstr ""
 msgid "That task was not found."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1146
+#: src/Support/DoorDesk.php:1149
 msgid "That ticket could not be given."
 msgstr ""
 
@@ -5162,7 +5162,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:466
+#: src/Telegram/TicketController.php:469
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -5248,7 +5248,7 @@ msgstr ""
 msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
 msgstr ""
 
-#: src/Support/DoorDesk.php:859
+#: src/Support/DoorDesk.php:862
 msgid "The guest could not be added. Try again."
 msgstr ""
 
@@ -5677,7 +5677,7 @@ msgstr ""
 msgid "They already have free entry for this date."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1145
+#: src/Support/DoorDesk.php:1148
 msgid "They already have free entry tonight."
 msgstr ""
 
@@ -5686,7 +5686,7 @@ msgstr ""
 msgid "They bring %d plus-ones in total."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1120
+#: src/Support/DoorDesk.php:1123
 msgid "They could not be signed up for that task."
 msgstr ""
 
@@ -5702,7 +5702,7 @@ msgstr ""
 msgid "They have no credit left to redeem."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1144
+#: src/Support/DoorDesk.php:1147
 msgid "They have no credit left."
 msgstr ""
 
@@ -5826,7 +5826,7 @@ msgstr ""
 msgid "This ticket"
 msgstr ""
 
-#: src/Telegram/TicketController.php:326
+#: src/Telegram/TicketController.php:329
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -5879,7 +5879,7 @@ msgstr ""
 msgid "Ticket buyers imported for %s"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:1162
+#: src/Support/PrivacyExporter.php:221 src/Support/TicketMail.php:1264
 msgid "Ticket code"
 msgstr ""
 
@@ -5887,7 +5887,7 @@ msgstr ""
 msgid "Ticket code column header"
 msgstr ""
 
-#: src/Support/TicketMail.php:445
+#: src/Support/TicketMail.php:446
 #. translators: 1: time of day, e.g. 21:40, 2: who gets them, e.g. "12 buyers, 2 guests"
 msgid "Ticket emails go out at %1$s to %2$s."
 msgstr ""
@@ -5897,12 +5897,12 @@ msgstr ""
 msgid "Ticket emails go out at %s. Until then you can cancel them."
 msgstr ""
 
-#: src/Support/TicketMail.php:520
+#: src/Support/TicketMail.php:521
 #. translators: 1: tickets emailed, 2: tickets whose email failed, 3: tickets not emailed yet
 msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1101
+#: src/Support/DoorDesk.php:1104
 msgid "Ticket exchanged against taking a task"
 msgstr ""
 
@@ -5910,11 +5910,11 @@ msgstr ""
 msgid "Ticket file formats"
 msgstr ""
 
-#: src/Support/DoorDesk.php:1143
+#: src/Support/DoorDesk.php:1146
 msgid "Ticket given. They are on the list now."
 msgstr ""
 
-#: src/Telegram/TicketController.php:321
+#: src/Telegram/TicketController.php:324
 msgid "Ticket not found"
 msgstr ""
 
@@ -6154,7 +6154,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:362
+#: src/Telegram/TicketController.php:365
 msgid "VALID"
 msgstr ""
 
@@ -6556,7 +6556,7 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: src/Support/TakeoverService.php:505
+#: src/Support/TakeoverService.php:508
 #. translators: 1: holder's name, 2: answer deadline
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
@@ -6637,7 +6637,7 @@ msgstr ""
 msgid "You can ask for a copy of what we hold about you, ask us to correct it, ask us to delete it, and object to our use of it."
 msgstr ""
 
-#: src/Support/TicketMail.php:1148
+#: src/Support/TicketMail.php:1250
 #. translators: %d: how many people the guest may bring
 msgid "You can bring %d person with you."
 msgid_plural "You can bring %d people with you."
@@ -6678,11 +6678,11 @@ msgstr ""
 msgid "You get this email because this address was entered in the announcement form on %s."
 msgstr ""
 
-#: src/Support/FollowupMail.php:700 src/Support/TicketMail.php:840
+#: src/Support/FollowupMail.php:700 src/Support/TicketMail.php:929
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
-#: src/Support/TicketMail.php:1068 src/Support/TicketMail.php:1072
+#: src/Support/TicketMail.php:1157 src/Support/TicketMail.php:1161
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
@@ -6729,7 +6729,7 @@ msgstr ""
 msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
 msgstr ""
 
-#: src/Support/TicketMail.php:1123
+#: src/Support/TicketMail.php:1212
 msgid "You spent a free-entry credit on this night."
 msgstr ""
 
@@ -6769,7 +6769,7 @@ msgstr ""
 msgid "Your EventCrew sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:330
+#: src/Telegram/TicketController.php:333
 msgid "Your EventCrew ticket"
 msgstr ""
 
@@ -6869,7 +6869,7 @@ msgstr ""
 msgid "Your recent tasks:"
 msgstr ""
 
-#: src/Support/TakeoverService.php:491
+#: src/Support/TakeoverService.php:494
 #. translators: 1: holder's name, 2: role, 3: event, 4: date/time
 msgid "Your request to take over the task of %1$s is closed, because the task changed or was cancelled: %2$s at %3$s, %4$s."
 msgstr ""
@@ -6891,14 +6891,18 @@ msgstr ""
 msgid "Your standing comes from how your past tasks went:"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:266
+#: src/Support/ClaimNotifier.php:273
 #. translators: 1: standing level and score, 2: number of free-entry credits
 msgid "Your standing: %1$s · %2$d free-entry credits."
 msgstr ""
 
-#: src/Support/TakeoverService.php:383
+#: src/Support/TakeoverService.php:386
 #. translators: %s: cover's name
 msgid "Your task moved to %s"
+msgstr ""
+
+#: src/Support/TicketMail.php:1236
+msgid "Your tasks on this night:"
 msgstr ""
 
 #: src/Telegram/CommandMenu.php:283
@@ -6909,23 +6913,23 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/TicketMail.php:928 src/Support/TicketMail.php:1160
+#: src/Support/TicketMail.php:1017 src/Support/TicketMail.php:1262
 msgid "Your ticket"
 msgstr ""
 
-#: src/Support/TicketMail.php:875
+#: src/Support/TicketMail.php:964
 msgid "Your ticket is cancelled"
 msgstr ""
 
-#: src/Support/TicketMail.php:898
+#: src/Support/TicketMail.php:987
 msgid "Your ticket moved to another address"
 msgstr ""
 
-#: src/Support/TicketMail.php:871
+#: src/Support/TicketMail.php:960
 msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
 msgstr ""
 
-#: src/Support/TicketMail.php:894
+#: src/Support/TicketMail.php:983
 msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
 msgstr ""
 
@@ -7003,7 +7007,7 @@ msgstr ""
 msgid "add the bot to your Telegram group (the board appears on its own), or share your signup page link."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1184 src/Support/DoorDesk.php:1225
+#: src/Support/DoorDesk.php:1187 src/Support/DoorDesk.php:1228
 msgid "allowed +%d"
 msgstr ""
 
@@ -7288,12 +7292,12 @@ msgstr ""
 msgid "✅ Added %1$s to %2$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:461
+#: src/Support/TakeoverService.php:464
 #. translators: 1: cover's name, 2: role, 3: event, 4: date/time
 msgid "✅ Done: %1$s now has your task: %2$s at %3$s, %4$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:346 src/Web/TakeoverController.php:129
+#: src/Support/TakeoverService.php:349 src/Web/TakeoverController.php:129
 msgid "✅ Let them take it"
 msgstr ""
 
@@ -7329,7 +7333,7 @@ msgstr ""
 msgid "❌ Cancelled"
 msgstr ""
 
-#: src/Support/TakeoverService.php:347 src/Web/TakeoverController.php:130
+#: src/Support/TakeoverService.php:350 src/Web/TakeoverController.php:130
 msgid "❌ Keep my task"
 msgstr ""
 
@@ -7411,7 +7415,7 @@ msgstr ""
 msgid "📸 /events, in a private chat with the bot, shows you the next %d coming events as cards: the picture, the date, the price, a short description, and buttons to buy a ticket and to listen to the DJ. Tap Confirm and the bot posts the same cards in the group; tap Cancel and nothing is sent. You can also ask the bot in your own words which events come next."
 msgstr ""
 
-#: src/Support/TakeoverService.php:428
+#: src/Support/TakeoverService.php:431
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr ""
 

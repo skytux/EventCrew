@@ -241,7 +241,10 @@ final class TicketController
         }
 
         return [
-            'valid' => $assignment->isOccupying(),
+            // One ticket per person per night: valid while they hold any
+            // task that night, as at the door (DoorDesk::scanAssignment()).
+            'valid' => $assignment->isOccupying()
+                || $this->assignments->holdsTaskOn($assignment->personId, $task->taskDate),
             'name' => $person->name(),
             'event' => $task->eventName(),
             'date' => $task->taskDate,

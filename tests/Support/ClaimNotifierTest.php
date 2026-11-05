@@ -18,6 +18,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
+use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
@@ -152,11 +153,15 @@ final class ClaimNotifierTest extends TestCase
     /** Decision 4: cancelling a sign-up whose ticket was emailed sends "Your ticket is cancelled". */
     public function testCancellingASignupWithAnEmailedTicketSendsTheCancelEmail(): void
     {
-        $this->wpdb->nextRows[] = $this->taskRow();
-        $this->wpdb->nextRows[] = [
+        Functions\when('current_time')->justReturn('2026-07-20');
+        $cancelled = [
             'id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
             'ticket_mailed_at' => '2026-07-19 10:00:00',
         ];
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextResults[] = [];           // the standing line
+        $this->wpdb->nextResults[] = [$cancelled]; // forPersonOn: the emailed ticket
+        $this->wpdb->nextResults[] = [$cancelled]; // forPersonOn: no task left
 
         $this->notifierWithTicketMail()->confirmCancellation($this->person(), 5, 'cancelled');
 
@@ -165,10 +170,35 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('Your ticket is cancelled', $subjects[1]);
     }
 
+    /** Q228: with another task left that night, the ticket email again, same code, new task list. */
+    public function testCancellingOneOfTwoTasksResendsTheTicketWithTheTaskLeft(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-20');
+        $cancelled = [
+            'id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
+            'ticket_mailed_at' => '2026-07-19 10:00:00',
+        ];
+        $kept = ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextResults[] = [];  // the standing line
+        $this->wpdb->nextResults[] = [$cancelled, $kept];
+        $this->wpdb->nextResults[] = [$cancelled, $kept];
+        $this->wpdb->nextRows[] = ['role_slug' => 'bar', 'id' => 6] + $this->taskRow(); // tasks->find(6)
+
+        $this->notifierWithTicketMail()->confirmCancellation($this->person(), 5, 'cancelled');
+
+        self::assertCount(2, $this->mails);
+        self::assertStringContainsString('Your ticket', $this->mails[1]['subject']);
+        self::assertStringNotContainsString('cancelled', $this->mails[1]['subject']);
+        self::assertStringContainsString('Your tasks on this night:', $this->mails[1]['body']);
+        // The code is the first ticket's (assignment 9), so the QR they have keeps working.
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 9), $this->mails[1]['body']);
+    }
+
     public function testCancellingASignupWhoseTicketWasNotEmailedSendsNoCancelEmail(): void
     {
         $this->wpdb->nextRows[] = $this->taskRow();
-        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'];
+        $this->wpdb->nextResults[] = [['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled']];
 
         $this->notifierWithTicketMail()->confirmCancellation($this->person(), 5, 'cancelled');
 

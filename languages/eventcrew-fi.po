@@ -6427,3 +6427,6 @@ msgstr "Lippusi siirrettiin toiseen osoitteeseen"
 
 msgid "TICKET MOVED"
 msgstr "LIPPU SIIRRETTY"
+
+msgid "Your tasks on this night:"
+msgstr "Tehtäväsi tänä iltana:"

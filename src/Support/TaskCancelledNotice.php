@@ -16,8 +16,11 @@ use EventCrew\Repositories\TaskRepository;
  * cancelled" email (TicketMail::composeCancelled).
  *
  * Listens on the eventcrew/task_deleted action that TaskRepository::delete
- * fires with the people whose sign-up it cancelled. A task whose date is over,
- * or whose end time has passed, sends nothing: there is nobody left to tell.
+ * fires with the people whose sign-up it cancelled. When the person's ticket
+ * for the night was emailed, TicketMail::crewTasksChanged() sends it again
+ * with the tasks left, or the "Your ticket is cancelled" email when none is
+ * left. A task whose date is over, or whose end time has passed, sends
+ * nothing: there is nobody left to tell.
  *
  * It is about a commitment the person made, so like the sign-up and cancel
  * confirmations it is not behind a notification switch.
@@ -27,7 +30,8 @@ final class TaskCancelledNotice
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly ?TicketMail $ticketMail = null
     ) {
     }
 
@@ -59,6 +63,9 @@ final class TaskCancelledNotice
             }
 
             $this->send($person, $task);
+            // Their emailed ticket for the night: sent again with the tasks
+            // left, or the red-band cancel email when no task is left.
+            $this->ticketMail?->crewTasksChanged($person, $task->taskDate);
         }
     }
 

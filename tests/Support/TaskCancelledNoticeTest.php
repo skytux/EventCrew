@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\TaskCancelledNotice;
+use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketQr;
 use EventCrew\Tests\TestCase;
 
 /** The test clock is 2026-07-20 12:00. */
@@ -74,6 +80,42 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertStringContainsString('Järjestäjät ovat peruneet tehtävän', $mail['body']);
         self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
         self::assertStringContainsString('Party', $mail['body']);
+    }
+
+    /**
+     * Q228: the person's emailed ticket for the night follows the change.
+     * With no task left that night it is cancelled (the red-band email).
+     */
+    public function testTheEmailedTicketIsCancelledWhenNoTaskIsLeft(): void
+    {
+        Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $notice = new TaskCancelledNotice(
+            new TaskRepository(),
+            new PersonRepository(),
+            $mailer,
+            new TicketMail(
+                new TicketBuyerRepository(),
+                new GuestRepository(),
+                new TaskRepository(),
+                $mailer,
+                new TicketQr(),
+                new AssignmentRepository(),
+                new RedemptionRepository()
+            )
+        );
+        $gone = ['id' => 30, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $this->wpdb->nextRows[] = $this->task('2026-08-01');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $this->wpdb->nextResults[] = [$gone]; // the emailed ticket
+        $this->wpdb->nextResults[] = [$gone]; // no task left
+
+        $notice->notify(5, [7]);
+
+        self::assertSame(['anna@example.com', 'anna@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('Task cancelled', $this->mails[0]['subject']);
+        self::assertStringContainsString('Your ticket is cancelled', $this->mails[1]['subject']);
     }
 
     public function testNothingIsSentForATaskOnAPastDate(): void

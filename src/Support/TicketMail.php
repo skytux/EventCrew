@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\Models\CrewTicket;
 use EventCrew\Models\Guest;
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Models\TicketBuyer;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
@@ -720,18 +721,106 @@ final class TicketMail
      * Emails a crew member their ticket for a task they signed up for, at
      * once, and records that it was sent. A sign-up's ticket is locked on, as
      * the sign-up confirmation is. Nothing is sent to a placeholder address.
+     *
+     * The email lists the person's tasks on that night. When their ticket for
+     * the night was already emailed for an earlier task, the same ticket (the
+     * same code, so the QR code they have keeps working) is sent again with
+     * the new task list.
      */
     public function sendCrewTicket(Person $person, int $assignmentId, string $date): bool
     {
-        $sent = $this->sendPersonTicket(
-            new CrewTicket(CrewTicket::KIND_CREW, $assignmentId, $date, $person->name(), $person->email)
-        );
+        $sent = $this->sendPersonTicket(new CrewTicket(
+            CrewTicket::KIND_CREW,
+            $this->emailedTicketId($person->id, $date) ?? $assignmentId,
+            $date,
+            $person->name(),
+            $person->email,
+            $this->tasksOn($person->id, $date)
+        ));
 
         if ($sent && null !== $this->assignments) {
             $this->assignments->markTicketMailed($assignmentId);
         }
 
         return $sent;
+    }
+
+    /**
+     * After one of the person's tasks on $date was taken away (they cancelled
+     * it, an organizer deleted the task, or someone took it over). Only when
+     * their ticket for that night was emailed: while they still hold a task
+     * that night, the ticket email is sent again with the new task list and
+     * the same code; when none is left, the "Your ticket is cancelled" email
+     * is sent. Nothing
+     * for a night already past. One email per change: there is no waiting.
+     */
+    public function crewTasksChanged(Person $person, string $date): bool
+    {
+        $ticketId = $this->emailedTicketId($person->id, $date);
+
+        if (null === $ticketId) {
+            return false;
+        }
+
+        $tasks = $this->tasksOn($person->id, $date);
+
+        if ([] === $tasks) {
+            return $this->sendCancelled($person->name(), $person->email, $date);
+        }
+
+        if ($date < (string) current_time('Y-m-d')) {
+            return false;
+        }
+
+        return $this->sendPersonTicket(new CrewTicket(
+            CrewTicket::KIND_CREW,
+            $ticketId,
+            $date,
+            $person->name(),
+            $person->email,
+            $tasks
+        ));
+    }
+
+    /**
+     * The sign-up whose ticket the person was emailed first for the night,
+     * whatever its status now: its code is the person's ticket for that
+     * night. Null when no ticket for the night was emailed.
+     */
+    private function emailedTicketId(int $personId, string $date): ?int
+    {
+        foreach (null === $this->assignments ? [] : $this->assignments->forPersonOn($personId, $date) as $assignment) {
+            if (null !== $assignment->ticketMailedAt) {
+                return $assignment->id;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The tasks the person holds on the night, earliest first.
+     *
+     * @return list<Task>
+     */
+    private function tasksOn(int $personId, string $date): array
+    {
+        $tasks = [];
+
+        foreach (null === $this->assignments ? [] : $this->assignments->forPersonOn($personId, $date) as $assignment) {
+            $task = $assignment->isOccupying() ? $this->tasks->find($assignment->taskId) : null;
+
+            if (null !== $task) {
+                $tasks[] = $task;
+            }
+        }
+
+        usort(
+            $tasks,
+            static fn (Task $a, Task $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
+        );
+
+        return $tasks;
     }
 
     /**
@@ -1141,6 +1230,19 @@ final class TicketMail
                 $date
             ),
         ];
+
+        // A crew ticket lists the person's tasks on the night.
+        if ($row instanceof CrewTicket && ! $row->isCredit() && [] !== $row->tasks) {
+            $lines[] = __('Your tasks on this night:', 'eventcrew');
+            $lines[] = implode("\n", array_map(
+                static function (Task $task): string {
+                    $time = $task->timeRange();
+
+                    return '- ' . $task->roleDisplay() . ('' === $time ? '' : ', ' . $time);
+                },
+                $row->tasks
+            ));
+        }
 
         if ($row instanceof Guest && $row->plusOnes > 0) {
             $lines[] = sprintf(

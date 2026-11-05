@@ -531,6 +531,48 @@ final class AssignmentRepository
     }
 
     /**
+     * Every sign-up of one person for tasks on $date, whatever its status,
+     * oldest first. The crew ticket email (TicketMail) reads from it which of
+     * the night's tickets was emailed and which tasks the person still holds.
+     *
+     * @return array<int, Assignment>
+     */
+    public function forPersonOn(int $personId, string $date): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT a.*
+                FROM {$this->table()} a
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE a.person_id = %d AND s.task_date = %s
+                ORDER BY a.id ASC",
+                $personId,
+                $date
+            ),
+            ARRAY_A
+        );
+
+        return $this->hydrate(is_array($rows) ? $rows : []);
+    }
+
+    /**
+     * Whether the person still holds a task on $date. A crew ticket is one per
+     * person per night, so its code stays valid while this is true.
+     */
+    public function holdsTaskOn(int $personId, string $date): bool
+    {
+        foreach ($this->forPersonOn($personId, $date) as $assignment) {
+            if ($assignment->isOccupying()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Assignments an admin marked no-show or late-cancel at least as long ago
      * as $cutoff, that have not yet had a standing notice recorded in the
      * ledger under $kind. The NOT EXISTS guard is what lets the caller take a

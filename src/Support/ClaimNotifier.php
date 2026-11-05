@@ -225,13 +225,20 @@ final class ClaimNotifier
             [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
         );
 
-        // When this sign-up's ticket was emailed, a short "Your ticket is
-        // cancelled" email too, in the same two languages as the ticket.
-        $assignment = null === $this->ticketMail ? null : $this->assignments->findFor($taskId, $person->id);
+        // When the night's ticket was emailed: the ticket email again with
+        // the tasks left, or the short "Your ticket is cancelled" email when
+        // no task is left, in the same two languages as the ticket.
+        $this->ticketTasksChanged($person, $task->taskDate);
+    }
 
-        if (null !== $assignment) {
-            $this->ticketMail?->crewCancelled($person, $assignment->ticketMailedAt, $task->taskDate);
-        }
+    /**
+     * The person's tasks on $date changed: a task was taken away from them.
+     * Their emailed ticket for the night is sent again with the tasks left,
+     * or cancelled when none is left (TicketMail::crewTasksChanged()).
+     */
+    public function ticketTasksChanged(Person $person, string $date): void
+    {
+        $this->ticketMail?->crewTasksChanged($person, $date);
     }
 
     /**

@@ -311,6 +311,9 @@ final class TakeoverService
 
         $done = self::doneText($cover, $task);
         $this->tellHolderDone($holder, $cover, $task, $viaBot);
+        // The holder no longer has this task: their emailed ticket for the
+        // night is sent again with the tasks left, or cancelled.
+        $this->claims->ticketTasksChanged($holder, $task->taskDate);
 
         $this->board->announce(self::groupText($cover, $holder, $task));
         $this->board->refresh();

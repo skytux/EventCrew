@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.14
+Stable tag: 1.140.15
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.15 =
+Crew tickets: one ticket per person per night. The ticket email lists the night's tasks; when a task is added or taken away, the email is sent again with the same code and the new list; when the last task is taken away, the ticket is cancelled (Q228).
 
 = 1.140.14 =
 A ticket send whose cron job is more than 5 minutes late is run by the next page load (Q232).
@@ -1256,6 +1259,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.15 =
+No settings change.
 
 = 1.140.14 =
 No settings change.

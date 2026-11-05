@@ -480,6 +480,7 @@ final class TicketControllerTest extends TestCase
     public function testACancelledTicketStaysDisabledEvenWhenCheckedIn(): void
     {
         $this->queueCrewTicket('cancelled');
+        $this->wpdb->nextResults[] = [['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled']];
         $this->wpdb->nextResults[] = [['ref_id' => 7, 'checked_in_at' => '2026-08-01 21:05:00']];
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
@@ -488,6 +489,21 @@ final class TicketControllerTest extends TestCase
         self::assertNotNull($ticket['used']);
         self::assertStringContainsString('<p class="t-band is-disabled">DISABLED</p>', $html);
         self::assertStringNotContainsString('is-used">', $html);
+    }
+
+    /** Q228: one ticket per person per night, so its code stays valid while they hold another task. */
+    public function testACancelledTasksTicketStaysValidWhileAnotherTaskThatNightIsHeld(): void
+    {
+        $this->queueCrewTicket('cancelled');
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'],
+            ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'],
+        ];
+
+        $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
+
+        self::assertTrue($ticket['valid']);
+        self::assertStringContainsString("s.task_date = '2026-08-01'", implode("\n", $this->wpdb->queries));
     }
 
     public function testRenderPageShowsNotFoundForANullTicket(): void
