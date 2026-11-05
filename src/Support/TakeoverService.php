@@ -302,14 +302,18 @@ final class TakeoverService
         if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
             $this->assignments->setStatus($original->id, AssignmentStatus::SIGNED_UP, $cover->id, MarkedBy::PERSON);
             $this->takeovers->setStatus($takeover->id, Takeover::CANCELLED);
-            Language::forPerson($cover, fn () => $this->sendToCover($cover, self::coverText('failed', $holder, $task)));
+            Language::forPerson($cover, fn () => $this->sendToCover($cover, $holder, $task, 'failed'));
 
             return __('The task could not be moved, so you keep it.', 'eventcrew');
         }
 
         $this->claims->confirmSignup($cover, $task->id);
 
-        $done = self::doneText($cover, $task);
+        // In the bot this line is the holder's "done" message (no DM is sent),
+        // so it is the takeover_done_dm template there.
+        $done = $viaBot
+            ? MessageTemplates::body('takeover_done_dm', ['person' => $holder, 'cover' => $cover, 'task' => $task])
+            : self::doneText($cover, $task);
         $this->tellHolderDone($holder, $cover, $task, $viaBot);
         // The holder no longer has this task: their emailed ticket for the
         // night is sent again with the tasks left, or cancelled.
@@ -340,11 +344,12 @@ final class TakeoverService
 
     private function askHolder(int $id, Person $holder, Person $cover, Task $task, string $deadlineAt): void
     {
-        $text = self::askText($cover, $task, $deadlineAt);
+        $context = ['person' => $holder, 'cover' => $cover, 'task' => $task, 'deadline' => $deadlineAt];
 
         // Transactional: the holder must be able to answer, so the person's
         // notification settings do not apply.
         if (null !== $holder->telegramChatId) {
+            $text = MessageTemplates::body('takeover_ask_dm', $context);
             $this->telegram->sendMessage($holder->telegramChatId, $text, ['inline_keyboard' => [[
                 ['text' => __('✅ Let them take it', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'y:' . $id],
                 ['text' => __('❌ Keep my task', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'n:' . $id],
@@ -354,17 +359,8 @@ final class TakeoverService
         $this->mailer->toPerson(
             $holder->id,
             $holder->email,
-            sprintf(
-                /* translators: %s: cover's name */
-                __('%s asks to take over your task', 'eventcrew'),
-                $cover->name()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: the cover line */
-                __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                $holder->name(),
-                $text
-            ),
+            MessageTemplates::subject('takeover_ask', $context),
+            MessageTemplates::body('takeover_ask', $context),
             [['label' => __('Answer the request', 'eventcrew'), 'url' => self::answerUrl($id)]]
         );
     }
@@ -372,26 +368,20 @@ final class TakeoverService
     private function tellHolderDone(Person $holder, Person $cover, Task $task, bool $viaBot): void
     {
         Language::forPerson($holder, function () use ($holder, $cover, $task, $viaBot): void {
-            $text = self::doneText($cover, $task);
+            $context = ['person' => $holder, 'cover' => $cover, 'task' => $task];
 
             if (! $viaBot && null !== $holder->telegramChatId) {
-                $this->telegram->sendMessage($holder->telegramChatId, $text);
+                $this->telegram->sendMessage(
+                    $holder->telegramChatId,
+                    MessageTemplates::body('takeover_done_dm', $context)
+                );
             }
 
             $this->mailer->toPerson(
                 $holder->id,
                 $holder->email,
-                sprintf(
-                    /* translators: %s: cover's name */
-                    __('Your task moved to %s', 'eventcrew'),
-                    $cover->name()
-                ),
-                sprintf(
-                    /* translators: 1: name, 2: the cover line */
-                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                    $holder->name(),
-                    $text
-                )
+                MessageTemplates::subject('takeover_done', $context),
+                MessageTemplates::body('takeover_done', $context)
             );
         });
     }
@@ -399,27 +389,33 @@ final class TakeoverService
     private function tellCover(Person $cover, Person $holder, Task $task, string $status): void
     {
         Language::forPerson($cover, function () use ($cover, $holder, $task, $status): void {
-            $this->sendToCover($cover, self::coverText($status, $holder, $task));
+            $this->sendToCover($cover, $holder, $task, $status);
         });
     }
 
-    /** A DM when the cover has Telegram linked, and always an email. */
-    private function sendToCover(Person $cover, string $text): void
+    /**
+     * The outcome of the request, $status (a Takeover status or 'failed'): a
+     * DM when the cover has Telegram linked, and always an email.
+     */
+    private function sendToCover(Person $cover, Person $holder, Task $task, string $status): void
     {
+        $kind = match ($status) {
+            Takeover::REFUSED => 'takeover_refused',
+            Takeover::EXPIRED => 'takeover_expired',
+            'failed' => 'takeover_failed',
+            default => 'takeover_closed',
+        };
+        $context = ['person' => $cover, 'holder' => $holder, 'task' => $task];
+
         if (null !== $cover->telegramChatId) {
-            $this->telegram->sendMessage($cover->telegramChatId, $text);
+            $this->telegram->sendMessage($cover->telegramChatId, MessageTemplates::body($kind . '_dm', $context));
         }
 
         $this->mailer->toPerson(
             $cover->id,
             $cover->email,
-            __('About your takeover request', 'eventcrew'),
-            sprintf(
-                /* translators: 1: name, 2: the cover line */
-                __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                $cover->name(),
-                $text
-            )
+            MessageTemplates::subject($kind, $context),
+            MessageTemplates::body($kind, $context)
         );
     }
 
@@ -468,34 +464,6 @@ final class TakeoverService
             $task->eventName(),
             self::whenText($task)
         );
-    }
-
-    private static function coverText(string $status, Person $holder, Task $task): string
-    {
-        $args = [$holder->name(), $task->roleLabel(), $task->eventName(), self::whenText($task)];
-
-        return match ($status) {
-            Takeover::REFUSED => sprintf(
-                /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
-                __('%1$s keeps their task: %2$s at %3$s, %4$s. Your request to take it over was declined.', 'eventcrew'),
-                ...$args
-            ),
-            Takeover::EXPIRED => sprintf(
-                /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
-                __('%1$s did not answer in time, so they keep their task: %2$s at %3$s, %4$s.', 'eventcrew'),
-                ...$args
-            ),
-            'failed' => sprintf(
-                /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
-                __('%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed.', 'eventcrew'),
-                ...$args
-            ),
-            default => sprintf(
-                /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
-                __('Your request to take over the task of %1$s is closed, because the task changed or was cancelled: %2$s at %3$s, %4$s.', 'eventcrew'),
-                ...$args
-            ),
-        };
     }
 
     private function alreadyPendingText(Takeover $existing, Person $cover, Person $holder): string

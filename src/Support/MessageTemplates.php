@@ -812,6 +812,7 @@ final class MessageTemplates
             ),
             // End of Q297 group A.
             ...self::welcomeAndDoorKinds($name),
+            ...self::takeoverTemplates($name, $role, $event, $when),
             // TODO(messages): TicketMail does not read this template yet. It is
             // being rewritten (2026-11-05); its compose()/words() should call
             // MessageTemplates::subject('ticket', $context) and body() with
@@ -1206,6 +1207,171 @@ final class MessageTemplates
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
+    }
+
+    /**
+     * The takeover messages TakeoverService sends: the request to the person
+     * whose task it is (the holder), the "done" note to them, and each outcome
+     * to the person who asked (the cover). The context has 'person' (the
+     * reader), 'cover', 'holder', 'task' and, for the request, 'deadline' (a
+     * MySQL date). The answer link of the request email is its button, not
+     * part of the text. The group message stays in TakeoverService.
+     *
+     * @param array{description: string, resolve: Closure(array<string, mixed>): string} $name
+     * @param array{description: string, resolve: Closure(array<string, mixed>): string} $role
+     * @param array{description: string, resolve: Closure(array<string, mixed>): string} $event
+     * @param array{description: string, resolve: Closure(array<string, mixed>): string} $when
+     * @return list<MessageTemplate>
+     */
+    private static function takeoverTemplates(array $name, array $role, array $event, array $when): array
+    {
+        $email = MessageTemplate::CHANNEL_EMAIL;
+        $telegram = MessageTemplate::CHANNEL_TELEGRAM;
+
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $cover = self::placeholder(
+            __('The first name of the person who asks to take over the task.', 'eventcrew'),
+            static fn (array $c): string => ($c['cover'] ?? null) instanceof Person ? $c['cover']->name() : ''
+        );
+        $holder = self::placeholder(
+            __('The first name of the person whose task it is.', 'eventcrew'),
+            static fn (array $c): string => ($c['holder'] ?? null) instanceof Person ? $c['holder']->name() : ''
+        );
+        $deadline = self::placeholder(
+            __('The last time to answer, like Thu 23 Jul 12:00.', 'eventcrew'),
+            static fn (array $c): string => isset($c['deadline']) ? TakeoverDeadline::label((string) $c['deadline']) : ''
+        );
+        $task = ['%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}'];
+        $hi = static fn (string $line): string => self::tag(
+            /* translators: 1: name, 2: the cover line */
+            __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
+            ['%1$s' => '{name}', '%2$s' => $line]
+        );
+
+        $ask = static fn (): string => self::tag(
+            /* translators: 1: cover's name, 2: role, 3: event, 4: date/time, 5: answer deadline */
+            __("🔁 %1\$s asks to take over your task: %2\$s at %3\$s, %4\$s.\n\nYou decide: let them take it, or keep it. Please answer by %5\$s. If you do not answer by then, you keep the task.", 'eventcrew'),
+            ['%1$s' => '{cover}', '%5$s' => '{deadline}'] + $task
+        );
+        $done = static fn (): string => self::tag(
+            /* translators: 1: cover's name, 2: role, 3: event, 4: date/time */
+            __('✅ Done: %1$s now has your task: %2$s at %3$s, %4$s.', 'eventcrew'),
+            ['%1$s' => '{cover}'] + $task
+        );
+        $outcomes = [
+            'takeover_refused' => [
+                __('Takeover declined (email)', 'eventcrew'),
+                __('Takeover declined (Telegram)', 'eventcrew'),
+                __('Sent to the person who asked to take over a task when its holder keeps the task.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
+                    __('%1$s keeps their task: %2$s at %3$s, %4$s. Your request to take it over was declined.', 'eventcrew'),
+                    ['%1$s' => '{holder}'] + $task
+                ),
+            ],
+            'takeover_expired' => [
+                __('Takeover not answered in time (email)', 'eventcrew'),
+                __('Takeover not answered in time (Telegram)', 'eventcrew'),
+                __('Sent to the person who asked to take over a task when its holder did not answer in time.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
+                    __('%1$s did not answer in time, so they keep their task: %2$s at %3$s, %4$s.', 'eventcrew'),
+                    ['%1$s' => '{holder}'] + $task
+                ),
+            ],
+            'takeover_failed' => [
+                __('Takeover could not be done (email)', 'eventcrew'),
+                __('Takeover could not be done (Telegram)', 'eventcrew'),
+                __('Sent to the person who asked to take over a task when its holder agreed but the task could not be moved.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
+                    __('%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed.', 'eventcrew'),
+                    ['%1$s' => '{holder}'] + $task
+                ),
+            ],
+            'takeover_closed' => [
+                __('Takeover request closed (email)', 'eventcrew'),
+                __('Takeover request closed (Telegram)', 'eventcrew'),
+                __('Sent to the person who asked to take over a task when the task changed or was cancelled before an answer.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: 1: holder's name, 2: role, 3: event, 4: date/time */
+                    __('Your request to take over the task of %1$s is closed, because the task changed or was cancelled: %2$s at %3$s, %4$s.', 'eventcrew'),
+                    ['%1$s' => '{holder}'] + $task
+                ),
+            ],
+        ];
+
+        $outcomePlaceholders = ['name' => $name, 'holder' => $holder, 'role' => $role, 'event' => $event, 'when' => $when];
+        $list = [
+            new MessageTemplate(
+                'takeover_ask',
+                __('Takeover request (email)', 'eventcrew'),
+                $email,
+                __('Sent to a person when someone asks to take over their task. The email has a button to answer.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: cover's name */
+                    __('%s asks to take over your task', 'eventcrew'),
+                    ['%s' => '{cover}']
+                ),
+                static fn (): string => $hi($ask()),
+                ['name' => $name, 'cover' => $cover, 'role' => $role, 'event' => $event, 'when' => $when, 'deadline' => $deadline]
+            ),
+            new MessageTemplate(
+                'takeover_ask_dm',
+                __('Takeover request (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to a person who uses the bot when someone asks to take over their task. The message has two buttons to answer.', 'eventcrew'),
+                null,
+                $ask,
+                ['cover' => $cover, 'role' => $role, 'event' => $event, 'when' => $when, 'deadline' => $deadline]
+            ),
+            new MessageTemplate(
+                'takeover_done',
+                __('Takeover done (email)', 'eventcrew'),
+                $email,
+                __('Sent to a person who let someone take over their task, when the task has moved.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: cover's name */
+                    __('Your task moved to %s', 'eventcrew'),
+                    ['%s' => '{cover}']
+                ),
+                static fn (): string => $hi($done()),
+                ['name' => $name, 'cover' => $cover, 'role' => $role, 'event' => $event, 'when' => $when]
+            ),
+            new MessageTemplate(
+                'takeover_done_dm',
+                __('Takeover done (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to a person who let someone take over their task, when the task has moved. Not sent when they answered in the bot.', 'eventcrew'),
+                null,
+                $done,
+                ['cover' => $cover, 'role' => $role, 'event' => $event, 'when' => $when]
+            ),
+        ];
+
+        foreach ($outcomes as $id => [$emailLabel, $dmLabel, $description, $line]) {
+            $list[] = new MessageTemplate(
+                $id,
+                $emailLabel,
+                $email,
+                $description,
+                static fn (): string => __('About your takeover request', 'eventcrew'),
+                static fn (): string => $hi($line()),
+                $outcomePlaceholders
+            );
+            $list[] = new MessageTemplate(
+                $id . '_dm',
+                $dmLabel,
+                $telegram,
+                $description,
+                null,
+                $line,
+                ['holder' => $holder, 'role' => $role, 'event' => $event, 'when' => $when]
+            );
+        }
+        // phpcs:enable Generic.Files.LineLength.TooLong
+
+        return $list;
     }
 
     /**

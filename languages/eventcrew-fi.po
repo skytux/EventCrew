@@ -7323,3 +7323,72 @@ msgstr "Ei tallennettu: tekstissä on oltava %s, jokaisella kielellä. Viesti pi
 
 msgid "Required: a text without it is not saved."
 msgstr "Pakollinen: tekstiä ilman sitä ei tallenneta."
+
+msgid "The first name of the person who asks to take over the task."
+msgstr "Tehtävää pyytävän henkilön etunimi."
+
+msgid "The first name of the person whose task it is."
+msgstr "Sen henkilön etunimi, jonka tehtävä on."
+
+msgid "The last time to answer, like Thu 23 Jul 12:00."
+msgstr "Vastauksen takaraja, esimerkiksi to 23.7. 12:00."
+
+msgid "Takeover declined (email)"
+msgstr "Siirtopyyntö hylätty (sähköposti)"
+
+msgid "Takeover declined (Telegram)"
+msgstr "Siirtopyyntö hylätty (Telegram)"
+
+msgid "Sent to the person who asked to take over a task when its holder keeps the task."
+msgstr "Lähetetään tehtävää pyytäneelle, kun tehtävän haltija pitää tehtävän."
+
+msgid "Takeover not answered in time (email)"
+msgstr "Siirtopyyntöön ei vastattu ajoissa (sähköposti)"
+
+msgid "Takeover not answered in time (Telegram)"
+msgstr "Siirtopyyntöön ei vastattu ajoissa (Telegram)"
+
+msgid "Sent to the person who asked to take over a task when its holder did not answer in time."
+msgstr "Lähetetään tehtävää pyytäneelle, kun tehtävän haltija ei vastannut ajoissa."
+
+msgid "Takeover could not be done (email)"
+msgstr "Siirto ei onnistunut (sähköposti)"
+
+msgid "Takeover could not be done (Telegram)"
+msgstr "Siirto ei onnistunut (Telegram)"
+
+msgid "Sent to the person who asked to take over a task when its holder agreed but the task could not be moved."
+msgstr "Lähetetään tehtävää pyytäneelle, kun haltija suostui, mutta tehtävää ei voitu siirtää."
+
+msgid "Takeover request closed (email)"
+msgstr "Siirtopyyntö suljettu (sähköposti)"
+
+msgid "Takeover request closed (Telegram)"
+msgstr "Siirtopyyntö suljettu (Telegram)"
+
+msgid "Sent to the person who asked to take over a task when the task changed or was cancelled before an answer."
+msgstr "Lähetetään tehtävää pyytäneelle, kun tehtävä muuttui tai peruttiin ennen vastausta."
+
+msgid "Takeover request (email)"
+msgstr "Siirtopyyntö (sähköposti)"
+
+msgid "Takeover request (Telegram)"
+msgstr "Siirtopyyntö (Telegram)"
+
+msgid "Sent to a person when someone asks to take over their task. The email has a button to answer."
+msgstr "Lähetetään henkilölle, kun joku pyytää saada ottaa hänen tehtävänsä. Sähköpostissa on vastauspainike."
+
+msgid "Sent to a person who uses the bot when someone asks to take over their task. The message has two buttons to answer."
+msgstr "Lähetetään bottia käyttävälle, kun joku pyytää saada ottaa hänen tehtävänsä. Viestissä on kaksi vastauspainiketta."
+
+msgid "Takeover done (email)"
+msgstr "Tehtävä siirretty (sähköposti)"
+
+msgid "Takeover done (Telegram)"
+msgstr "Tehtävä siirretty (Telegram)"
+
+msgid "Sent to a person who let someone take over their task, when the task has moved."
+msgstr "Lähetetään henkilölle, joka antoi tehtävänsä toiselle, kun tehtävä on siirtynyt."
+
+msgid "Sent to a person who let someone take over their task, when the task has moved. Not sent when they answered in the bot."
+msgstr "Lähetetään henkilölle, joka antoi tehtävänsä toiselle, kun tehtävä on siirtynyt. Ei lähetetä, jos hän vastasi botissa."
