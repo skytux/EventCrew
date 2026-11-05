@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\UpdateRouter;
@@ -582,6 +583,45 @@ final class UpdateRouterTest extends TelegramTestCase
         $question = $this->lastCallTo('sendMessage');
         self::assertSame('Valitse kieli · Choose your language', $question['text']);
         self::assertSame(555, $question['chat_id']);
+    }
+
+    /**
+     * Q298: the language question offers every site language, main language
+     * first, each in its own name, and a tap on one that is not Finnish or
+     * English is stored like those two.
+     */
+    public function testTheLanguageQuestionOffersEverySiteLanguage(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+
+        $router = $this->languageRouter();
+        $router->dispatch($this->tap('mn:lang'));
+
+        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        self::assertSame(['Suomi', 'English', 'Svenska'], array_column($buttons, 'text'));
+        self::assertSame(['lang:fi', 'lang:en', 'lang:sv'], array_column($buttons, 'callback_data'));
+
+        $router->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'message' => ['chat' => ['id' => 555]],
+                'data' => 'lang:sv',
+            ],
+        ]);
+
+        self::assertSame('sv', $this->transients['eventcrew_tg_language_555']);
+    }
+
+    /** The main language's button comes first, whichever language that is. */
+    public function testTheLanguageQuestionPutsTheMainLanguageFirst(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['es', 'fi', 'en'];
+
+        $this->languageRouter()->dispatch($this->tap('mn:lang'));
+
+        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        self::assertSame(['Español', 'Suomi', 'English'], array_column($buttons, 'text'));
     }
 
     private function languageRouter(): UpdateRouter

@@ -285,9 +285,9 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                 <?php
                 /*
                  * The language this page, the bot's DMs and the emails reach
-                 * this person in. The two names stay untranslated: each is
-                 * written in its own language so a reader can find theirs
-                 * whichever is on.
+                 * this person in: one button per site language, main language
+                 * first. The names stay untranslated: each is written in its
+                 * own language so a reader can find theirs whichever is on.
                  */
                 ?>
                 <?php if ('' !== (string) ($view['language_action'] ?? '')) : ?>
@@ -295,9 +295,17 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                         <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                         <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                        <button type="submit" name="language" value="fi" lang="fi" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'true' : 'false'; ?>">Suomi</button>
-                        <span aria-hidden="true">|</span>
-                        <button type="submit" name="language" value="en" lang="en" aria-pressed="<?php echo 'fi' === ($view['language'] ?? '') ? 'false' : 'true'; ?>">English</button>
+                        <?php $eventcrew_lang_first = true; ?>
+                        <?php foreach ((array) ($view['language_choices'] ?? []) as $eventcrew_lang_code => $eventcrew_lang_name) : ?>
+                            <?php if (! $eventcrew_lang_first) : ?>
+                                <span aria-hidden="true">|</span>
+                            <?php endif; ?>
+                            <?php $eventcrew_lang_first = false; ?>
+                            <button type="submit" name="language"
+                                value="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
+                                lang="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
+                                aria-pressed="<?php echo $eventcrew_lang_code === ($view['language'] ?? '') ? 'true' : 'false'; ?>"><?php echo esc_html((string) $eventcrew_lang_name); ?></button>
+                        <?php endforeach; ?>
                     </form>
                 <?php endif; ?>
                 <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">

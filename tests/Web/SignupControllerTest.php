@@ -17,6 +17,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\FreeEntryGate;
@@ -295,6 +296,47 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('Sam', $html);
         // The template's last line came out: nothing stopped it half-way.
         self::assertStringEndsWith('</script>', rtrim($html));
+    }
+
+    /**
+     * Q298: the language switch on the crew page has one button per site
+     * language, main language first, each in its own name, and the person's
+     * chosen language is the pressed one.
+     */
+    public function testTheLanguageSwitchOffersEverySiteLanguage(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => match ($name) {
+                SiteLanguages::OPTION => ['fi', 'en', 'sv'],
+                'eventcrew_telegram_group_link' => 'https://t.me/+secretcrew',
+                default => false,
+            }
+        );
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'language' => 'sv',
+        ];
+        $this->wpdb->nextRows[] = $person;               // pageLanguage: currentPerson
+        $this->wpdb->nextRows[] = $person;               // viewModel: currentPerson
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<form class="eventcrew-language".*?</form>~s', $html, $form));
+        $button = '~<button type="submit" name="language"\s+value="(\w+)".*?aria-pressed="(\w+)">([^<]+)</button>~s';
+        preg_match_all($button, $form[0], $buttons);
+        self::assertSame(['fi', 'en', 'sv'], $buttons[1]);
+        self::assertSame(['Suomi', 'English', 'Svenska'], $buttons[3]);
+        self::assertSame(['false', 'false', 'true'], $buttons[2]);
     }
 
     /** The WordPress functions a full page render touches. */
@@ -1211,6 +1253,24 @@ final class SignupControllerTest extends TestCase
         self::assertCount(1, $this->wpdb->updates);
         self::assertSame('fi', $this->wpdb->updates[0]['data']['language']);
         self::assertSame(['id' => 7], $this->wpdb->updates[0]['where']);
+    }
+
+    /**
+     * Q298: a site language other than Finnish and English can be chosen on
+     * the page and is stored on the person.
+     */
+    public function testTheLanguageSwitchSavesAnyOtherSiteLanguage(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => SiteLanguages::OPTION === $name
+                ? ['fi', 'en', 'sv']
+                : $default
+        );
+
+        self::assertSame('language_saved', $this->controller()->chooseLanguage(7, 'sv'));
+
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame('sv', $this->wpdb->updates[0]['data']['language']);
     }
 
     public function testAnUnknownLanguageIsIgnored(): void
