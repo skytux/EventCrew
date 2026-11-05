@@ -70,7 +70,9 @@ final class VerificationController
      */
     public function verify(string $token): bool
     {
-        $personId = $this->tokens->consume($token, OnboardingService::VERIFY_PURPOSE);
+        // Spent by one conditional UPDATE, so the link opened twice at the same
+        // moment (two tabs, or a mail scanner and the person) confirms only once.
+        $personId = $this->tokens->consumeOnce($token, OnboardingService::VERIFY_PURPOSE);
 
         if (null === $personId) {
             return false;

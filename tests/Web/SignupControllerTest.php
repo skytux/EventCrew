@@ -515,6 +515,7 @@ final class SignupControllerTest extends TestCase
     {
         $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'kim@example.com';
         $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
         $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'kim@example.com', 'display_name' => 'Kim'];
 
@@ -527,6 +528,7 @@ final class SignupControllerTest extends TestCase
     {
         $this->transients['eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32)] = 'sam2@example.com';
         $this->wpdb->nextRows[] = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1; // the conditional UPDATE that spends the link
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
         $this->wpdb->nextRows[] = null; // findByEmail(new) -> still free
 
@@ -536,6 +538,31 @@ final class SignupControllerTest extends TestCase
         self::assertSame([], $this->transients);
         self::assertSame('sam@example.com', $this->sent[0]['to']);
         self::assertStringContainsString('sam2@example.com', $this->mails[0]);
+    }
+
+    public function testAnEmailChangeLinkOpenedTwiceAtOnceChangesTheAddressOnlyOnce(): void
+    {
+        $pendingKey = 'eventcrew_email_change_' . substr(hash('sha256', 'raw1'), 0, 32);
+        $token = ['id' => 1, 'person_id' => 7, 'expires_at' => '2099-01-01 00:00:00', 'used_at' => null];
+
+        $this->transients[$pendingKey] = 'sam2@example.com';
+        $this->wpdb->nextRows[] = $token;
+        $this->wpdb->nextQueryResults[] = 1; // the first one's UPDATE changes the row
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;      // findByEmail(new) -> still free
+        $first = $this->controller()->confirmEmailChange('raw1');
+        $updatesAfterFirst = count($this->wpdb->updates);
+
+        // The second request read the pending address and the unused token
+        // before the first one finished.
+        $this->transients[$pendingKey] = 'sam2@example.com';
+        $this->wpdb->nextRows[] = $token;
+        $this->wpdb->nextQueryResults[] = 0; // the second one's UPDATE changes nothing
+        $second = $this->controller()->confirmEmailChange('raw1');
+
+        self::assertSame('email_changed', $first);
+        self::assertSame('bad_email_link', $second);
+        self::assertCount($updatesAfterFirst, $this->wpdb->updates);
     }
 
     public function testAConfirmLinkWithNothingPendingChangesNothing(): void
