@@ -86,26 +86,13 @@ final class TaskCancelledNotice
 
     private function send(Person $person, Task $task): void
     {
+        // The subject and text are the Messages page template (MessageTemplates).
         $words = function () use ($person, $task): array {
-            $day = Dates::dayLabel($task->taskDate);
-            $when = '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
+            $context = ['person' => $person, 'task' => $task];
 
             return [
-                'subject' => sprintf(
-                    /* translators: 1: role, 2: event */
-                    __('Task cancelled: %1$s for %2$s', 'eventcrew'),
-                    $task->roleLabel(),
-                    $task->eventName()
-                ),
-                'body' => sprintf(
-                    /* translators: 1: name, 2: role, 3: event, 4: date/time */
-                    // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                    __("Hi %1\$s,\n\nThe organizers have cancelled the task %2\$s at %3\$s, %4\$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing.", 'eventcrew'),
-                    $person->name(),
-                    $task->roleLabel(),
-                    $task->eventName(),
-                    $when
-                ),
+                'subject' => MessageTemplates::subject('task_cancelled', $context),
+                'body' => MessageTemplates::body('task_cancelled', $context),
                 'button' => __('See open tasks', 'eventcrew'),
             ];
         };

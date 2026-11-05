@@ -94,58 +94,20 @@ final class StandingNotice
             return;
         }
 
+        $kind = $isNoShow ? 'no_show' : 'late_cancel';
+
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            $isNoShow
-                ? __('You were marked as a no-show', 'eventcrew')
-                : __('Your late cancellation was recorded', 'eventcrew'),
-            $this->emailBody($person, $task, $isNoShow)
+            MessageTemplates::subject($kind, ['person' => $person, 'task' => $task]),
+            MessageTemplates::body($kind, ['person' => $person, 'task' => $task])
         );
     }
 
+    /** The DM text: the Messages page template (MessageTemplates). */
     private function dmText(Task $task, bool $isNoShow): string
     {
-        $where = sprintf('%s at %s, %s', $task->roleLabel(), $task->eventName(), $this->whenText($task));
-
-        return $isNoShow
-            ? sprintf(
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                /* translators: %s: role at event, date */
-                __('⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer.', 'eventcrew'),
-                $where
-            )
-            : sprintf(
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                /* translators: %s: role at event, date */
-                __('⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time.', 'eventcrew'),
-                $where
-            );
-    }
-
-    private function emailBody(Person $person, Task $task, bool $isNoShow): string
-    {
-        $where = sprintf('%s at %s, %s', $task->roleLabel(), $task->eventName(), $this->whenText($task));
-
-        $detail = $isNoShow
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __("You were marked as a no-show for %2\$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it.", 'eventcrew')
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            : __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. More notice next time, or finding a replacement with 🔁 Take over a task under /me, keeps it clear.", 'eventcrew');
-
-        return sprintf(
-            /* translators: 1: name, 2: role at event, date */
-            "Hi %1\$s,\n\n" . $detail,
-            $person->name(),
-            $where
-        );
-    }
-
-    private function whenText(Task $task): string
-    {
-        $time = $task->timeRange();
-
-        return '' === $time ? $task->taskDate : $task->taskDate . ' ' . $time;
+        return MessageTemplates::body($isNoShow ? 'no_show_dm' : 'late_cancel_dm', ['task' => $task]);
     }
 
     /**

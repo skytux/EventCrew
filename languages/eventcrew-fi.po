@@ -6760,3 +6760,174 @@ msgstr "Sähköpostisi on jo vahvistettu."
 
 msgid "Press the button to finish signing in."
 msgstr "Viimeistele kirjautuminen painamalla painiketta."
+
+msgid "The emails and Telegram messages EventCrew sends. Write a text in any language; it is translated into the other site languages, and each translation can be edited. A word in curly brackets, like {name}, is a placeholder: it is replaced when the message is sent. Buttons and the footer are added to every email and are not part of the text."
+msgstr "EventCrewin lähettämät sähköpostit ja Telegram-viestit. Kirjoita teksti millä kielellä tahansa; se käännetään sivuston muille kielille, ja jokaista käännöstä voi muokata. Aaltosulkeissa oleva sana, kuten {name}, on paikkamerkki: se korvataan, kun viesti lähetetään. Painikkeet ja alatunniste lisätään jokaiseen sähköpostiin, eivätkä ne kuulu tekstiin."
+
+msgid "changed"
+msgstr "muutettu"
+
+msgid "This message does not use the text below yet: it still sends its built-in text. A text saved here is kept for when it does."
+msgstr "Tämä viesti ei vielä käytä alla olevaa tekstiä: se lähettää yhä sisäänrakennetun tekstinsä. Tähän tallennettu teksti säilyy siihen asti, kun se käyttää sitä."
+
+msgid "Telegram message"
+msgstr "Telegram-viesti"
+
+msgid "Email text"
+msgstr "Sähköpostin teksti"
+
+msgid "Placeholders"
+msgstr "Paikkamerkit"
+
+msgid "Placeholder"
+msgstr "Paikkamerkki"
+
+msgid "Becomes"
+msgstr "Korvataan tällä"
+
+msgid "Save this message"
+msgstr "Tallenna tämä viesti"
+
+msgid "Forget the changed text of this message and use the built-in text again?"
+msgstr "Unohdetaanko tämän viestin muutettu teksti ja käytetään taas sisäänrakennettua tekstiä?"
+
+msgid "Reset to built-in text"
+msgstr "Palauta sisäänrakennettu teksti"
+
+msgid "Formatting: none. The Telegram message is sent as plain text with its line breaks; ** and other marks are shown as they are."
+msgstr "Muotoilu: ei mitään. Telegram-viesti lähetetään pelkkänä tekstinä rivinvaihtoineen; ** ja muut merkit näkyvät sellaisinaan."
+
+msgid "Formatting: **bold**, *italic*, a line starting with \"- \" is a list item, a line starting with \"## \" is a heading, and an empty line starts a new paragraph."
+msgstr "Muotoilu: **lihavointi**, *kursiivi*, merkeillä \"- \" alkava rivi on luettelon kohta, merkeillä \"## \" alkava rivi on otsikko, ja tyhjä rivi aloittaa uuden kappaleen."
+
+msgid "That message kind does not exist."
+msgstr "Tällaista viestiä ei ole."
+
+msgid "Message saved."
+msgstr "Viesti tallennettu."
+
+msgid "The message uses its built-in text again."
+msgstr "Viesti käyttää taas sisäänrakennettua tekstiään."
+
+msgid "The first name of the person the message is for."
+msgstr "Viestin vastaanottajan etunimi."
+
+msgid "The name of the task, like Door."
+msgstr "Tehtävän nimi, esimerkiksi Ovi."
+
+msgid "The name of the event."
+msgstr "Tapahtuman nimi."
+
+msgid "The day of the task and its time, like Fri 14 Nov 18:00–20:00."
+msgstr "Tehtävän päivä ja kellonaika, esimerkiksi pe 14.11. 18:00–20:00."
+
+msgid "The task, the event and the date, like Door at Dance Night, 2026-11-14 18:00–20:00."
+msgstr "Tehtävä, tapahtuma ja päivä, esimerkiksi Ovi, Dance Night, 2026-11-14 18:00–20:00."
+
+msgid "How many free-entry credits were given."
+msgstr "Kuinka monta vapaalippua annettiin."
+
+msgid "The date of the event, like 14.11.2026."
+msgstr "Tapahtuman päivämäärä, esimerkiksi 14.11.2026."
+
+msgid "The first name of the ticket holder. Empty when it is not known."
+msgstr "Lipun haltijan etunimi. Tyhjä, jos sitä ei tiedetä."
+
+msgid "Task reminder (email)"
+msgstr "Tehtävämuistutus (sähköposti)"
+
+msgid "Sent the day before a task to each person signed up for it."
+msgstr "Lähetetään tehtävää edeltävänä päivänä jokaiselle siihen ilmoittautuneelle."
+
+msgid "Task reminder (Telegram)"
+msgstr "Tehtävämuistutus (Telegram)"
+
+msgid "Sent the day before a task to each person signed up for it who uses the bot."
+msgstr "Lähetetään tehtävää edeltävänä päivänä jokaiselle siihen ilmoittautuneelle, joka käyttää bottia."
+
+msgid "A spot opened (email)"
+msgstr "Paikka vapautui (sähköposti)"
+
+msgid "Sent to the crew when someone cancels a task late and its place is free again."
+msgstr "Lähetetään crew’lle, kun joku peruu tehtävän myöhään ja sen paikka on taas vapaa."
+
+msgid "A spot opened (Telegram)"
+msgstr "Paikka vapautui (Telegram)"
+
+msgid "Task cancelled by the organizers (email)"
+msgstr "Järjestäjät peruivat tehtävän (sähköposti)"
+
+msgid "Sent to each person signed up for a task when an organizer deletes the task. Sent in Finnish and English."
+msgstr "Lähetetään jokaiselle tehtävään ilmoittautuneelle, kun järjestäjä poistaa tehtävän. Lähetetään suomeksi ja englanniksi."
+
+msgid "Marked as a no-show (email)"
+msgstr "Merkitty saapumatta jääneeksi (sähköposti)"
+
+msgid "Sent a day after an organizer marks a person as a no-show."
+msgstr "Lähetetään päivä sen jälkeen, kun järjestäjä merkitsee henkilön saapumatta jääneeksi."
+
+msgid "Marked as a no-show (Telegram)"
+msgstr "Merkitty saapumatta jääneeksi (Telegram)"
+
+msgid "Late cancellation recorded (email)"
+msgstr "Myöhäinen peruutus kirjattu (sähköposti)"
+
+msgid "Sent a day after a late cancellation is recorded."
+msgstr "Lähetetään päivä sen jälkeen, kun myöhäinen peruutus on kirjattu."
+
+msgid "Late cancellation recorded (Telegram)"
+msgstr "Myöhäinen peruutus kirjattu (Telegram)"
+
+msgid "Free entry given (email)"
+msgstr "Vapaalippu annettu (sähköposti)"
+
+msgid "Sent when an organizer gives a person free-entry credits."
+msgstr "Lähetetään, kun järjestäjä antaa henkilölle vapaalippuja."
+
+msgid "Free entry given (Telegram)"
+msgstr "Vapaalippu annettu (Telegram)"
+
+msgid "Free-entry ticket (Telegram)"
+msgstr "Vapaalippu (Telegram)"
+
+msgid "Sent when a person spends a free-entry credit on a night. The ticket itself comes in the ticket email."
+msgstr "Lähetetään, kun henkilö käyttää vapaalipun johonkin iltaan. Itse lippu tulee lippusähköpostissa."
+
+msgid "The day of the event, like Fri 14 Nov."
+msgstr "Tapahtuman päivä, esimerkiksi pe 14.11."
+
+msgid "Ticket (email)"
+msgstr "Lippu (sähköposti)"
+
+msgid "The ticket with its QR code, to ticket buyers, guests and crew. Sent in Finnish and English."
+msgstr "Lippu QR-koodeineen lipun ostajille, vieraille ja crew’lle. Lähetetään suomeksi ja englanniksi."
+
+msgid "The thank-you line: for buying a ticket, for coming as a guest, for taking a task, or for spending a credit."
+msgstr "Kiitosrivi: lipun ostamisesta, vieraaksi tulemisesta, tehtävän ottamisesta tai vapaalipun käyttämisestä."
+
+msgid "Ticket cancelled (email)"
+msgstr "Lippu peruttu (sähköposti)"
+
+msgid "Sent when a ticket that was emailed is cancelled. Sent in Finnish and English."
+msgstr "Lähetetään, kun sähköpostilla lähetetty lippu perutaan. Lähetetään suomeksi ja englanniksi."
+
+msgid "After the event: thank you (email)"
+msgstr "Tapahtuman jälkeen: kiitos (sähköposti)"
+
+msgid "Sent the day after an event to the people who came. Sent in Finnish and English."
+msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, jotka tulivat. Lähetetään suomeksi ja englanniksi."
+
+msgid "After the event: we missed you (email)"
+msgstr "Tapahtuman jälkeen: kaipasimme sinua (sähköposti)"
+
+msgid "Sent the day after an event to the people who had a ticket but did not come. Sent in Finnish and English."
+msgstr "Lähetetään tapahtumaa seuraavana päivänä niille, joilla oli lippu mutta jotka eivät tulleet. Lähetetään suomeksi ja englanniksi."
+
+msgid "Next events announcement (email)"
+msgstr "Tulevien tapahtumien ilmoitus (sähköposti)"
+
+msgid "The announcement of the coming events, to the subscribers."
+msgstr "Ilmoitus tulevista tapahtumista tilaajille."
+
+msgid "The coming events, as the newsletter writes them."
+msgstr "Tulevat tapahtumat siinä muodossa kuin uutiskirje ne kirjoittaa."

@@ -177,21 +177,14 @@ final class SlotFreedNotice
     /** One person, in the language they chose. Returns whether anything was sent. */
     private function tell(Person $person, Task $task, NotificationPreferences $prefs): bool
     {
-        $day = Dates::dayLabel($task->taskDate);
-        $when = '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
-        $line = sprintf(
-            /* translators: 1: role, 2: event, 3: date/time */
-            __('A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board.', 'eventcrew'),
-            $task->roleLabel(),
-            $task->eventName(),
-            $when
-        );
+        // The texts are the Messages page templates (MessageTemplates).
+        $context = ['person' => $person, 'task' => $task];
         $sent = false;
 
         if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, '⚡ ' . $line, true)
+                DmBody::frame($person, MessageTemplates::body('slot_freed_dm', $context), true)
             );
             $sent = true;
         }
@@ -200,13 +193,8 @@ final class SlotFreedNotice
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                __('A spot just opened up', 'eventcrew'),
-                sprintf(
-                    /* translators: 1: name, 2: the opening line */
-                    __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
-                    $person->name(),
-                    $line
-                ),
+                MessageTemplates::subject('slot_freed', $context),
+                MessageTemplates::body('slot_freed', $context),
                 [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
             );
             $sent = true;

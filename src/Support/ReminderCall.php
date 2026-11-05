@@ -103,22 +103,18 @@ final class ReminderCall
 
     private function remindInLanguage(Person $person, Task $task, int $assignmentId): void
     {
-        $when = $this->whenText($task);
         $about = RoleGuide::aboutLine($task);
         $aboutBlock = '' === $about ? '' : "\n\n" . $about;
+        // The texts are the Messages page templates (MessageTemplates); the
+        // task's "about" line is added under them.
+        $context = ['person' => $person, 'task' => $task];
 
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame(
                     $person,
-                    sprintf(
-                        /* translators: 1: role, 2: event, 3: date/time */
-                        __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
-                        $task->roleLabel(),
-                        $task->eventName(),
-                        $when
-                    ) . $aboutBlock,
+                    MessageTemplates::body('reminder_dm', $context) . $aboutBlock,
                     true
                 ),
                 // A one-tap out, so a "can't make it" turns into an early cancel
@@ -134,21 +130,8 @@ final class ReminderCall
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            sprintf(
-                /* translators: 1: role, 2: event */
-                __('Reminder: %1$s for %2$s', 'eventcrew'),
-                $task->roleLabel(),
-                $task->eventName()
-            ),
-            sprintf(
-                /* translators: 1: name, 2: role, 3: event, 4: date/time */
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\nCan't make it? Open the bot and tap the task to cancel, or ask someone to take it over with 🔁 Take over a task under /me in the bot.", 'eventcrew'),
-                $person->name(),
-                $task->roleLabel(),
-                $task->eventName(),
-                $when
-            ) . $aboutBlock,
+            MessageTemplates::subject('reminder', $context),
+            MessageTemplates::body('reminder', $context) . $aboutBlock,
             // The ticket again, a day out: the reminder is the message people
             // still have open when they arrive at the door.
             array_values(array_filter([
@@ -176,14 +159,6 @@ final class ReminderCall
         ]];
 
         return $rows;
-    }
-
-    private function whenText(Task $task): string
-    {
-        $time = $task->timeRange();
-        $day = Dates::dayLabel($task->taskDate);
-
-        return '' === $time ? $day : $day . ' ' . $time;
     }
 
     /**
