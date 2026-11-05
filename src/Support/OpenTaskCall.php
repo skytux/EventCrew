@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -66,9 +67,11 @@ final class OpenTaskCall
     }
 
     /**
-     * Open-task lines per date, memoised for the life of one run.
+     * Open-task lines per date, memoised for the life of one run: the task and
+     * its places taken. Turned into text per reader, in their language, by
+     * openTasksText().
      *
-     * @var array<string, array<int, string>>
+     * @var array<string, array<int, array{0: Task, 1: int}>>
      */
     private array $openLines = [];
 
@@ -341,7 +344,7 @@ final class OpenTaskCall
      * dates that triggered the send are the soonest open ones, so they head the
      * list naturally; the rest is what is behind them.
      *
-     * @return array<string, array<int, string>> date => open-task lines
+     * @return array<string, array<int, array{0: Task, 1: int}>> date => open-task lines
      */
     private function digest(int $limit): array
     {
@@ -373,14 +376,25 @@ final class OpenTaskCall
      * for a single date: the list now reaches past whatever made the send due,
      * so "when" is no longer implied by the message around it.
      *
-     * @param array<string, array<int, string>> $blocks
+     * @param array<string, array<int, array{0: Task, 1: int}>> $blocks
      */
     private function openTasksText(array $blocks): string
     {
         $rendered = [];
 
         foreach ($blocks as $date => $lines) {
-            $rendered[] = Dates::dayLabel((string) $date) . "\n" . implode("\n", $lines);
+            $text = array_map(
+                static fn (array $line): string => '- ' . sprintf(
+                    /* translators: 1: role, 2: event, 3: places taken, 4: places in all */
+                    __('%1$s at %2$s (%3$d/%4$d)', 'eventcrew'),
+                    $line[0]->roleLabel(),
+                    $line[0]->eventName(),
+                    $line[1],
+                    $line[0]->capacity
+                ),
+                $lines
+            );
+            $rendered[] = Dates::dayLabel((string) $date) . "\n" . implode("\n", $text);
         }
 
         return implode("\n\n", $rendered);
@@ -435,7 +449,7 @@ final class OpenTaskCall
      * same two queries would run once per person per date - the difference
      * between a couple of queries and a couple of hundred on a decent crew.
      *
-     * @return array<int, string>
+     * @return array<int, array{0: Task, 1: int}>
      */
     private function openTaskLines(string $date): array
     {
@@ -457,13 +471,7 @@ final class OpenTaskCall
             }
 
             if ($taken < $task->capacity) {
-                $lines[] = sprintf(
-                    '- %s at %s (%d/%d)',
-                    $task->roleLabel(),
-                    $task->eventName(),
-                    $taken,
-                    $task->capacity
-                );
+                $lines[] = [$task, $taken];
             }
         }
 

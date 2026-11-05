@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -430,5 +431,31 @@ final class MessageTemplatesTest extends TestCase
     {
         self::assertSame('', $this->templates()->save('nope', [MessageTemplates::BODY => ['source' => 'x']]));
         self::assertSame([], $this->options);
+    }
+
+    /**
+     * The task in the late-cancel and no-show texts ("Door at Party, Sat 1
+     * Aug 18:00–20:00") is translated too: the Finnish texts have no English
+     * " at " in them.
+     */
+    public function testTheFinnishLateCancelAndNoShowTextsHaveNoEnglishAt(): void
+    {
+        $task = new Task(5, '2026-08-01', 'decorate', 2, null, 'Party', '18:00:00', '20:00:00');
+        $context = ['person' => $this->person(), 'task' => $task];
+
+        self::assertStringContainsString(
+            ' at Party, ',
+            Language::run(Language::ENGLISH, static fn (): string => MessageTemplates::body('late_cancel', $context))
+        );
+
+        foreach (['late_cancel', 'late_cancel_dm', 'no_show', 'no_show_dm'] as $kind) {
+            $text = Language::run(
+                Language::FINNISH,
+                static fn (): string => MessageTemplates::body($kind, $context)
+            );
+
+            self::assertStringContainsString('Party, ', $text, $kind);
+            self::assertStringNotContainsString(' at ', $text, $kind);
+        }
     }
 }
