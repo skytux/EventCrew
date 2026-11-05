@@ -289,7 +289,7 @@ final class ReminderCallTest extends TelegramTestCase
 
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertStringContainsString(
-            "Can't make it? Cancel the task under My tasks in the Me tab of the crew page"
+            "Can't make it? Tap Cancel on your task in the Board tab of the crew page"
                 . ' (https://example.test/crew/).',
             $bodies[0]
         );

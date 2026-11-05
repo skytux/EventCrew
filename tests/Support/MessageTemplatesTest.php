@@ -188,6 +188,79 @@ final class MessageTemplatesTest extends TestCase
         );
     }
 
+    /**
+     * The Cancel button is on the person's own task row in the Board tab; My
+     * tasks in the Me tab has none. The web cancel texts name the Board tab.
+     */
+    public function testTheWebCancelTextsNameTheBoardTab(): void
+    {
+        $this->crewPage();
+        $task = new Task(5, '2026-08-01', 'decorate', 2, null, 'Party', '18:00:00', '20:00:00');
+        $context = ['person' => $this->person(), 'task' => $task];
+
+        foreach (['reminder', 'late_cancel'] as $kind) {
+            $text = MessageTemplates::body($kind, $context);
+
+            self::assertMatchesRegularExpression(
+                '~[Tt]ap Cancel on your task in the Board tab of the crew page \(https://site\.test/crew/\)~',
+                $text,
+                $kind
+            );
+            self::assertStringNotContainsString('Me tab', $text, $kind);
+
+            $finnish = Language::run(
+                Language::FINNISH,
+                static fn (): string => MessageTemplates::body($kind, $context)
+            );
+
+            self::assertStringContainsString('Peru tehtävässäsi crew-sivun Taulu-välilehdellä', $finnish, $kind);
+            self::assertStringNotContainsString('Minä-välilehdellä', $finnish, $kind);
+        }
+    }
+
+    /**
+     * An organizer has no Sales desk card in the Me tab: theirs is under Door
+     * in the Admin tab. A web-only organizer's door help names that; anyone
+     * else on the sales desk keeps the Me tab.
+     */
+    public function testTheWebDoorHelpNamesTheAdminTabOnlyForAnOrganizer(): void
+    {
+        $this->crewPage();
+        $organizer = [
+            'person' => Person::fromRow(['id' => 1, 'display_name' => 'Olli', 'is_organizer' => 1]),
+            'day' => 'Sat 1 Aug',
+        ];
+        $crew = ['person' => $this->person(), 'day' => 'Sat 1 Aug'];
+        $admin = 'The Sales desk card is under Door in the Admin tab of the crew page (https://site.test/crew/).';
+        $me = 'Tap Sales desk in the Me tab of the crew page (https://site.test/crew/).';
+
+        foreach (['organizer_notice', 'sales_desk_link'] as $kind) {
+            self::assertStringContainsString($admin, MessageTemplates::body($kind, $organizer), $kind);
+            self::assertStringNotContainsString('Me tab', MessageTemplates::body($kind, $organizer), $kind);
+            self::assertStringContainsString($me, MessageTemplates::body($kind, $crew), $kind);
+        }
+
+        self::assertStringContainsString(
+            'Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä kohdassa Ovi (https://site.test/crew/).',
+            Language::run(
+                Language::FINNISH,
+                static fn (): string => MessageTemplates::body('organizer_notice', $organizer)
+            )
+        );
+        self::assertStringContainsString(
+            'Napauta Myyntipiste crew-sivun Minä-välilehdellä (https://site.test/crew/).',
+            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body('sales_desk_link', $crew))
+        );
+    }
+
+    private function crewPage(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 7;
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string|false => 7 === $id ? 'https://site.test/crew/' : false
+        );
+    }
+
     // ---- Filling the placeholders -----------------------------------------
 
     public function testFillReplacesKnownPlaceholdersAndLeavesOthers(): void

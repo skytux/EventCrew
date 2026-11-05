@@ -497,10 +497,11 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(1, $sent);
         self::assertStringContainsString(
-            'Tarvitsetko uuden myyntipisteen linkin? Napauta Myyntipiste crew-sivun Minä-välilehdellä'
-                . ' (https://site.test/crew/).',
+            'Tarvitsetko uuden myyntipisteen linkin? Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä'
+                . ' kohdassa Ovi (https://site.test/crew/).',
             $sent[0]
         );
+        self::assertStringNotContainsString('Minä-välilehdellä', $sent[0], 'an organizer has no Sales desk card in Me');
         self::assertStringNotContainsString('/door', $sent[0]);
     }
 }

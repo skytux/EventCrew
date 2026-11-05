@@ -614,7 +614,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame([], $sends->items);
         $body = $this->mails[0]['body'];
         self::assertStringContainsString(
-            "Can't make it? Cancel the task under My tasks in the Me tab of the crew page (https://site.test/crew/).",
+            "Can't make it? Tap Cancel on your task in the Board tab of the crew page (https://site.test/crew/).",
             $body
         );
         self::assertStringContainsString("\nManage my tasks: https://site.test/crew/?eventcrew_login=", $body);
@@ -641,7 +641,7 @@ final class ClaimNotifierTest extends TestCase
 
         $body = $this->mails[0]['body'];
         self::assertStringContainsString(
-            'Etkö pääsekään? Peru tehtävä kohdassa Tehtäväni crew-sivun Minä-välilehdellä (https://site.test/crew/).',
+            'Etkö pääsekään? Napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (https://site.test/crew/).',
             $body
         );
         self::assertStringContainsString("\nHallitse tehtäviäni: https://site.test/crew/?eventcrew_login=", $body);
