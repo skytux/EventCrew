@@ -659,6 +659,10 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
             if (isset($eventcrew_admin['followup'])) {
                 $eventcrew_subtabs['followup'] = __('Post-event email', 'eventcrew');
             }
+
+            if (isset($eventcrew_admin['ai_texts'])) {
+                $eventcrew_subtabs['aitexts'] = __('AI texts', 'eventcrew');
+            }
             ?>
             <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
                 <?php foreach ($eventcrew_subtabs as $eventcrew_sub_key => $eventcrew_sub_label) : ?>
@@ -1979,6 +1983,60 @@ $eventcrew_notice_text = \EventCrew\Web\SignupController::noticeText($eventcrew_
                                 </button>
                             <?php endif; ?>
                         </form>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            </div>
+            <?php endif; ?>
+
+            <?php if (isset($eventcrew_admin['ai_texts'])) : ?>
+            <div class="eventcrew-subpanel" id="eventcrew-admin-aitexts" data-eventcrew-subpanel="aitexts">
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('AI texts', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <p class="eventcrew-muted"><?php esc_html_e('The AI writes these the day before each event. A text nobody changes is sent as the AI wrote it. A text you change is sent as you wrote it. When the AI failed, the normal message text is used.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                    <?php if ([] === $eventcrew_admin['ai_texts']) : ?>
+                        <p class="eventcrew-muted"><?php esc_html_e('No texts are written yet for the coming events.', 'eventcrew'); ?></p>
+                    <?php endif; ?>
+                    <?php foreach ($eventcrew_admin['ai_texts'] as $eventcrew_ai_event) : ?>
+                        <h4><?php echo esc_html($eventcrew_ai_event['date'] . ' · ' . $eventcrew_ai_event['title']); ?></h4>
+                        <?php foreach ($eventcrew_ai_event['items'] as $eventcrew_ai_item) : ?>
+                            <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                <input type="hidden" name="action"
+                                    value="<?php echo esc_attr($eventcrew_admin['ai_text_action']); ?>">
+                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                <input type="hidden" name="event_id" value="<?php echo esc_attr((string) $eventcrew_ai_event['event_id']); ?>">
+                                <input type="hidden" name="key" value="<?php echo esc_attr($eventcrew_ai_item['key']); ?>">
+                                <p><strong><?php echo esc_html($eventcrew_ai_item['label']); ?></strong></p>
+                                <?php if ($eventcrew_ai_item['failed']) : ?>
+                                    <p class="eventcrew-muted"><?php esc_html_e('The AI could not write this text. The normal message text is used, unless you write one here.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+                                <?php endif; ?>
+                                <?php foreach (\EventCrew\Support\TranslatedText::LANGUAGES as $eventcrew_ai_lang) : ?>
+                                    <?php $eventcrew_ai_id = 'eventcrew-admin-aitext-' . $eventcrew_ai_event['event_id'] . '-' . sanitize_key($eventcrew_ai_item['key']) . '-' . $eventcrew_ai_lang; ?>
+                                    <p>
+                                        <label for="<?php echo esc_attr($eventcrew_ai_id); ?>">
+                                            <?php echo esc_html(\EventCrew\Support\TranslatedText::label($eventcrew_ai_lang)); ?>
+                                            <?php if ($eventcrew_ai_item['edited'][$eventcrew_ai_lang]) : ?>
+                                                <em><?php esc_html_e('(changed by hand)', 'eventcrew'); ?></em>
+                                            <?php endif; ?>
+                                        </label>
+                                        <textarea name="texts[<?php echo esc_attr($eventcrew_ai_lang); ?>]" id="<?php echo esc_attr($eventcrew_ai_id); ?>" rows="4"
+                                            maxlength="<?php echo (int) \EventCrew\Support\EventAiText::MAX_TEXT; ?>"><?php echo esc_textarea($eventcrew_ai_item['texts'][$eventcrew_ai_lang]); ?></textarea>
+                                    </p>
+                                <?php endforeach; ?>
+                                <button type="submit" name="op" value="save" class="wp-element-button">
+                                    <?php esc_html_e('Save', 'eventcrew'); ?>
+                                </button>
+                                <?php if (in_array(true, $eventcrew_ai_item['edited'], true) && ! $eventcrew_ai_item['failed']) : ?>
+                                    <button type="submit" name="op" value="ai" class="wp-element-button">
+                                        <?php esc_html_e('Use the AI text again', 'eventcrew'); ?>
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        <?php endforeach; ?>
                     <?php endforeach; ?>
                 </div>
             </section>

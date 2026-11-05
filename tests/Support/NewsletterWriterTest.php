@@ -8,6 +8,7 @@ use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AiPrompts;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\LlmClient;
@@ -356,6 +357,25 @@ final class NewsletterWriterTest extends TestCase
         self::assertStringNotContainsString('DJ names', self::user($this->requests[2]));
         self::assertStringNotContainsString('Texts written for earlier newsletters', self::system($this->requests[0]));
         self::assertStringNotContainsString("The site's words", self::system($this->requests[0]));
+    }
+
+    /** Prompts changed in wp-admin (AiPrompts) are the ones sent, with the changed rules in them. */
+    public function testPromptsChangedInWpAdminAreTheOnesSent(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'rev' => 1];
+        $this->options[AiPrompts::OPTION] = [
+            AiPrompts::NEWSLETTER_EVENT => 'Write about the event. {rules}',
+            AiPrompts::RULES => 'Only facts.',
+            AiPrompts::TRANSLATE_EN => 'Translate it.',
+        ];
+        $this->answers = [self::answer('text', 'Tule tanssimaan.'), self::answer('en', 'Come and dance.')];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertStringStartsWith('Write about the event. Only facts.', self::system($this->requests[0]));
+        self::assertStringStartsWith('Translate it.', self::system($this->requests[1]));
     }
 
     /**

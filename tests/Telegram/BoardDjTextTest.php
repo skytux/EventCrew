@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
+use EventCrew\Support\AiPrompts;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -157,6 +158,20 @@ final class BoardDjTextTest extends TelegramTestCase
         self::assertStringContainsString('A night of social dancing with DJ Anna.', $user);
 
         self::assertSame('DJ Anna plays swing and blues. She is based in Helsinki.', BoardDjText::stored(100));
+    }
+
+    public function testAPromptChangedInWpAdminIsTheOneSent(): void
+    {
+        $this->party();
+        $this->options[AiPrompts::OPTION] = [AiPrompts::BOARD_DJ => 'Write one sentence about the DJ.'];
+        $this->answers[] = self::answer('DJ Anna plays swing.');
+
+        self::assertTrue($this->writer()->write(100));
+
+        self::assertStringStartsWith(
+            "Write one sentence about the DJ.\n\nAnswer with JSON only",
+            $this->requests[0]['messages'][0]['content']
+        );
     }
 
     public function testAStoredTextIsNotShownOnceItsSourceChanged(): void

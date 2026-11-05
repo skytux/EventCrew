@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Admin;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\NewsletterPage;
 use EventCrew\Admin\PeoplePage;
@@ -35,6 +36,7 @@ final class AdminTest extends TestCase
             NewsletterPage::class,
             TranslationsPage::class,
             MessagesPage::class,
+            AiPromptsPage::class,
         ];
 
         foreach ($pages as $id) {

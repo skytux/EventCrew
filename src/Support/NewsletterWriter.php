@@ -82,72 +82,8 @@ final class NewsletterWriter
     /** Tokens for one answer. */
     private const MAX_TOKENS = 600;
 
-    /** The rules every written text follows. */
-    private const RULES = 'Use only facts that are in the input. '
-        . 'Do not invent times, prices, places, names or anything else. '
-        . 'A DJ name is a person, never a place. Name a place only when the input says it is the place. '
-        . 'Do not write hashtags or links. '
-        . 'Do not use emoji, unless the site\'s words and style below use them. '
-        // Spelled in two parts: the word itself is kept out of the source.
-        . 'Do not use the word "vol' . 'unteer". '
-        . 'Keep the text under 450 characters.';
-
-    /** The banned Finnish word, for the texts written in Finnish; spelled in two parts like the English one. */
-    private const RULE_FI = ' Do not use the word "vapaa' . 'ehtoinen".';
-
-    /** The instruction for one event's text. */
-    private const EVENT_PROMPT = 'You write the text for one event in the email newsletter of a dance event. '
-        . 'Write 2 to 3 sentences in Finnish that invite people to come and dance at this event. '
-        . 'Be warm and concrete. '
-        . 'Use the descriptive words of the DJ descriptions and the facts about the event. '
-        . self::RULES
-        . self::RULE_FI;
-
-    /** The instruction for the opening text of the whole email. */
-    private const OPENING_PROMPT = 'You write the opening text of the email newsletter of a dance event. '
-        . 'The newsletter lists the coming events below the opening, each with its own text. '
-        . 'Write 2 to 3 sentences in Finnish that welcome the readers '
-        . 'and invite them to come and dance at these events. '
-        . 'Be warm and concrete. Do not repeat the details of every event. '
-        . self::RULES
-        . self::RULE_FI;
-
-    /** The instruction for the post-event email's text about the next event. */
-    private const FOLLOWUP_PROMPT = 'You write a short text about one coming event of a dance event. '
-        . 'It goes on the card of that event in the thank-you email sent the day after a night. '
-        . 'Write 2 short sentences in English that make people want to come and dance at this event. '
-        . 'Write in the style of the DJ descriptions: use their descriptive words and their mood. '
-        . 'Add what is useful from the event description, such as what the night is like '
-        . 'or what to bring. Be warm. '
-        . self::RULES
-        . ' For this email, keep the text under 300 characters.';
-
-    /** The instruction for an event's practical information. */
-    private const PRACTICAL_PROMPT = 'You read the description of one event of a dance event '
-        . 'and pick out its practical information for the email newsletter: '
-        . 'the name of the venue (the place where the event is held), its street address, '
-        . 'the time the doors open and the time the doors close. '
-        . 'Copy the venue and the address exactly as they are written in the description. '
-        . 'Write each time as HH:MM, as it is written in the description. '
-        . 'When the doors open during a time range, such as "18:30-19:00 Doors open", '
-        . 'the doors open at the start of the range. '
-        . 'Use "" for anything the description does not say. Do not guess. '
-        . 'A DJ name is a person, never a place: the venue is never one of the DJ names. '
-        . 'The event title is not the venue unless the description says so. '
-        . 'Never include door codes, entry codes or any other codes.';
-
-    /** The instruction for the Finnish translation (the post-event email's text). */
-    private const TRANSLATE_PROMPT = 'You translate a short newsletter text from English into Finnish. '
-        . 'Write natural, warm Finnish, about as long as the English text and under 500 characters. '
-        . 'Keep names, dates, times and emoji exactly as they are. '
-        . 'Do not add anything and do not leave anything out.';
-
-    /** The instruction for the English translation (the announcement's texts). */
-    private const TRANSLATE_TO_ENGLISH_PROMPT = 'You translate a short newsletter text from Finnish into English. '
-        . 'Write natural, warm English, about as long as the Finnish text and under 500 characters. '
-        . 'Keep names, dates, times and emoji exactly as they are. '
-        . 'Do not add anything and do not leave anything out. '
-        . 'Do not use the word "vol' . 'unteer".';
+    // The instructions (the rules, each text's prompt and the translations)
+    // are AiPrompts: editable in wp-admin, with the former texts built in.
 
     public function __construct(
         private readonly LlmClient $llm,
@@ -279,7 +215,7 @@ final class NewsletterWriter
 
         $text = $this->safely(function () use ($event): ?array {
             $en = $this->ask(
-                self::system(self::FOLLOWUP_PROMPT, false, '{"text": "the English text"}'),
+                self::system(AiPrompts::get(AiPrompts::FOLLOWUP), false, '{"text": "the English text"}'),
                 self::eventInput($event),
                 'text'
             );
@@ -521,7 +457,7 @@ final class NewsletterWriter
     private function writeEvent(array $event): ?array
     {
         $fi = $this->ask(
-            self::system(self::EVENT_PROMPT, true, '{"text": "the Finnish text"}'),
+            self::system(AiPrompts::get(AiPrompts::NEWSLETTER_EVENT), true, '{"text": "the Finnish text"}'),
             self::eventInput($event),
             'text'
         );
@@ -556,7 +492,7 @@ final class NewsletterWriter
         }
 
         $fi = $this->ask(
-            self::system(self::OPENING_PROMPT, true, '{"text": "the Finnish text"}'),
+            self::system(AiPrompts::get(AiPrompts::NEWSLETTER_OPENING), true, '{"text": "the Finnish text"}'),
             implode("\n", $lines),
             'text'
         );
@@ -579,7 +515,7 @@ final class NewsletterWriter
         $input = self::eventInput($event)
             . ([] === $names ? '' : "\n\nDJ names (people, never the venue): " . implode(', ', $names));
         $content = $this->answer(
-            self::PRACTICAL_PROMPT . "\n\nAnswer with JSON only, with no other text: "
+            AiPrompts::get(AiPrompts::PRACTICAL) . "\n\nAnswer with JSON only, with no other text: "
                 . '{"venue": "", "address": "", "doors_open": "HH:MM", "doors_close": "HH:MM"}',
             $input
         );
@@ -604,7 +540,7 @@ final class NewsletterWriter
      */
     private function withFinnish(string $en): ?array
     {
-        $fi = $this->ask(self::system(self::TRANSLATE_PROMPT, false, '{"fi": "the Finnish text"}'), $en, 'fi');
+        $fi = $this->ask(self::system(AiPrompts::get(AiPrompts::TRANSLATE_FI), false, '{"fi": "the Finnish text"}'), $en, 'fi');
 
         return null === $fi ? null : ['fi' => $fi, 'en' => $en];
     }
@@ -617,7 +553,7 @@ final class NewsletterWriter
     private function withEnglish(string $fi): ?array
     {
         $en = $this->ask(
-            self::system(self::TRANSLATE_TO_ENGLISH_PROMPT, false, '{"en": "the English text"}'),
+            self::system(AiPrompts::get(AiPrompts::TRANSLATE_EN), false, '{"en": "the English text"}'),
             $fi,
             'en'
         );
