@@ -15,6 +15,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Language;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SiteTexts;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\TicketMail;
 use EventCrew\Web\SignupBoardView;
@@ -429,12 +430,13 @@ final class TicketController
     }
 
     /**
-     * The free text set in Settings > Web page > Ticket note, as plain text
-     * with its line breaks kept, or '' when none is set.
+     * The free text set in Settings > Web page > Ticket note, in the
+     * ticket's language (SiteTexts), as plain text with its line breaks
+     * kept, or '' when none is set.
      */
     private function noteBlock(): string
     {
-        $note = trim((string) get_option(self::NOTE_OPTION, ''));
+        $note = SiteTexts::text('ticket_note');
 
         if ('' === $note) {
             return '';

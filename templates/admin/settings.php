@@ -29,7 +29,7 @@
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
  * @var array<string, array{source: string, texts: array<string, string>, manual: array<string, bool>}> $followup_texts The post-event email's two texts (FollowupText::settings()), by variant.
- * @var array{source: string, texts: array<string, string>, manual: array<string, bool>} $ticket_text The ticket email's text (TicketText::settings()).
+ * @var array<string, mixed> $ticket_text The ticket email's text (TicketText::settings()).
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
  * @var int $newsletter_preview_hours Hours after the previous event ends that the preview goes.
@@ -55,17 +55,16 @@
  * @var int $cron_last_run Timestamp of the last completed run, or 0.
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $orphan_signup_page Title of a published shortcode page when none is selected, else ''.
- * @var string $app_name The installed app's name (blank falls back to the site name).
+ * @var array<string, mixed> $app_name The installed app's name, a TranslatedText value (blank falls back to the site name).
  * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var string $app_accent_color The Crew app's accent colour, as a hex string.
- * @var string $signature The crew's sign-off, shared by the emails and the broadcast DMs.
+ * @var array<string, mixed> $signature The crew's sign-off, a TranslatedText value, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
- * @var string $signature_fi The Finnish sign-off; blank uses $signature.
  * @var string $email_background The picture behind every email; blank draws the purple fade alone.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
- * @var string $ticket_note Free text shown on every ticket; blank shows nothing.
- * @var string $infrastructure_note How the site is run, shown to organizers in the crew page's Help tab; blank shows nothing.
+ * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows nothing.
+ * @var array<string, mixed> $infrastructure_note How the site is run, a TranslatedText value, shown to organizers in the crew page's Help tab; blank shows nothing.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
  * @var string $email_test_to The address a test email would go to (the current user's).
@@ -189,12 +188,15 @@ if (! defined('ABSPATH')) {
                     <tr>
                         <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-label"><?php esc_html_e('Label', 'eventcrew'); ?></label></th>
                         <td>
-                            <input
-                                type="text"
-                                id="<?php echo esc_attr($eventcrew_id); ?>-label"
-                                name="role_label[<?php echo esc_attr($eventcrew_i); ?>]"
-                                value="<?php echo esc_attr($eventcrew_role['label']); ?>"
-                                class="regular-text">
+                            <?php
+                            \EventCrew\Support\TranslatedText::field(
+                                'role_label[' . $eventcrew_i . ']',
+                                $eventcrew_id . '-label',
+                                $eventcrew_role['label_text'] ?? $eventcrew_role['label'],
+                                0,
+                                false
+                            );
+                            ?>
                         </td>
                     </tr>
                     <tr>
@@ -377,11 +379,15 @@ if (! defined('ABSPATH')) {
                     <tr>
                         <th scope="row"><label for="<?php echo esc_attr($eventcrew_id); ?>-description"><?php esc_html_e('Description', 'eventcrew'); ?></label></th>
                         <td>
-                            <textarea
-                                id="<?php echo esc_attr($eventcrew_id); ?>-description"
-                                name="role_description[<?php echo esc_attr($eventcrew_i); ?>]"
-                                rows="3"
-                                class="large-text"><?php echo esc_textarea($eventcrew_role['description']); ?></textarea>
+                            <?php
+                            \EventCrew\Support\TranslatedText::field(
+                                'role_description[' . $eventcrew_i . ']',
+                                $eventcrew_id . '-description',
+                                $eventcrew_role['description_text'] ?? $eventcrew_role['description'],
+                                0,
+                                true
+                            );
+                            ?>
                         </td>
                     </tr>
                 </table>
@@ -1045,13 +1051,9 @@ if (! defined('ABSPATH')) {
                     <label for="eventcrew-app-name"><?php esc_html_e('App name', 'eventcrew'); ?></label>
                 </th>
                 <td>
-                    <input
-                        type="text"
-                        id="eventcrew-app-name"
-                        name="app_name"
-                        value="<?php echo esc_attr($app_name); ?>"
-                        class="regular-text"
-                        placeholder="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                    <?php
+                    \EventCrew\Support\TranslatedText::field('app_name', 'eventcrew-app-name', $app_name, 0, false);
+                    ?>
                     <p class="description"><?php esc_html_e('Shown under the home-screen icon. Blank uses the site name.', 'eventcrew'); ?></p>
                 </td>
             </tr>
@@ -1107,11 +1109,15 @@ if (! defined('ABSPATH')) {
                     <label for="eventcrew-ticket-note"><?php esc_html_e('Ticket note', 'eventcrew'); ?></label>
                 </th>
                 <td>
-                    <textarea
-                        id="eventcrew-ticket-note"
-                        name="ticket_note"
-                        rows="3"
-                        class="large-text"><?php echo esc_textarea($ticket_note); ?></textarea>
+                    <?php
+                    \EventCrew\Support\TranslatedText::field(
+                        'ticket_note',
+                        'eventcrew-ticket-note',
+                        $ticket_note,
+                        0,
+                        true
+                    );
+                    ?>
                     <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
@@ -1120,11 +1126,15 @@ if (! defined('ABSPATH')) {
                     <label for="eventcrew-infrastructure-note"><?php esc_html_e('Infrastructure', 'eventcrew'); ?></label>
                 </th>
                 <td>
-                    <textarea
-                        id="eventcrew-infrastructure-note"
-                        name="infrastructure_note"
-                        rows="12"
-                        class="large-text"><?php echo esc_textarea($infrastructure_note); ?></textarea>
+                    <?php
+                    \EventCrew\Support\TranslatedText::field(
+                        'infrastructure_note',
+                        'eventcrew-infrastructure-note',
+                        $infrastructure_note,
+                        0,
+                        true
+                    );
+                    ?>
                     <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
@@ -1352,23 +1362,15 @@ if (! defined('ABSPATH')) {
                     <label for="eventcrew-signature"><?php esc_html_e('Signature', 'eventcrew'); ?></label>
                 </th>
                 <td>
-                    <textarea
-                        id="eventcrew-signature"
-                        name="signature"
-                        rows="2"
-                        class="large-text"
-                        placeholder="<?php esc_attr_e('Barefoot and with ♥ — the Example crew', 'eventcrew'); ?>"><?php echo esc_textarea($signature); ?></textarea>
-                    <p>
-                        <label for="eventcrew-signature-fi"><?php esc_html_e('In Finnish', 'eventcrew'); ?></label>
-                    </p>
-                    <textarea
-                        id="eventcrew-signature-fi"
-                        name="signature_fi"
-                        rows="2"
-                        class="large-text"><?php echo esc_textarea($signature_fi); ?></textarea>
-                    <p class="description">
-                        <?php esc_html_e('Used in Finnish messages, and next to the first one in emails written in Finnish and English. Leave it blank to use the first one everywhere.', 'eventcrew'); ?>
-                    </p>
+                    <?php
+                    \EventCrew\Support\TranslatedText::field(
+                        'signature',
+                        'eventcrew-signature',
+                        $signature,
+                        0,
+                        true
+                    );
+                    ?>
                     <p class="description">
                         <?php esc_html_e('In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines.', 'eventcrew'); ?>
                     </p>

@@ -190,6 +190,14 @@ final class TranslationRegistryTest extends TestCase
     public function testANewSourceKeepsTheTextsEditedByHand(): void
     {
         $this->withModel('{"lang": "en", "fi": "MODEL"}');
+        // The language was detected, so a new source is detected again.
+        $this->options['row.a'] = [
+            'source' => 'Hello',
+            'lang' => 'en',
+            'detected' => true,
+            'texts' => ['fi' => 'Hei', 'en' => 'Hello'],
+            'manual' => ['fi' => true, 'en' => false],
+        ];
 
         $this->sample()->saveRow('a', 'Good morning', []);
 

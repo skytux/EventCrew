@@ -29,10 +29,10 @@ final class HelpPage
      */
     public const INFRASTRUCTURE_OPTION = 'eventcrew_infrastructure_note';
 
-    /** The infrastructure text, or '' when none is set. */
+    /** The infrastructure text in the reader's language (SiteTexts), or '' when none is set. */
     public static function infrastructure(): string
     {
-        return trim((string) get_option(self::INFRASTRUCTURE_OPTION, ''));
+        return SiteTexts::text('infrastructure_note');
     }
 
     /** The crew page's address with $anchor, or '' when no crew page is set. */

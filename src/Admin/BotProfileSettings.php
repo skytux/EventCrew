@@ -109,9 +109,9 @@ final class BotProfileSettings
     }
 
     /**
-     * The stored value of $field.
+     * The stored value of $field (TranslatedText::normalize()).
      *
-     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array<string, mixed>
      */
     public static function value(string $field): array
     {
@@ -141,20 +141,12 @@ final class BotProfileSettings
         $translateError = '';
 
         foreach (self::FIELDS as $field => [$option, , $max, $multiline]) {
-            $input = TranslatedText::fromPost($posted[$field] ?? null, $multiline);
+            $result = $this->translator->save(self::value($field), $posted[$field] ?? null, $max, $multiline);
 
-            if (null === $input) {
+            if (null === $result) {
                 continue;
             }
 
-            $result = $this->translator->update(
-                self::value($field),
-                $input['source'],
-                $input['texts'],
-                $input['again'],
-                $max,
-                $multiline
-            );
             update_option($option, $result['value']);
 
             if ('' === $translateError && '' !== $result['error']) {

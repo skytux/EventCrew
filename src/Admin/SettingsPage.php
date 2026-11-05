@@ -18,7 +18,6 @@ use EventCrew\Support\DoorQuota;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
-use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -36,8 +35,8 @@ use EventCrew\Support\SecureUrl;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
-use EventCrew\Support\Signature;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SiteTexts;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Support\TelegramLogin;
@@ -97,6 +96,9 @@ final class SettingsPage
     private const WEBHOOK_TRIES = 3;
 
     private const WEBHOOK_MAX_WAIT = 5;
+
+    /** The translation error kind from saving the role names and descriptions, '' when none. */
+    private string $rolesError = '';
 
     public function __construct(
         private readonly View $view,
@@ -195,20 +197,19 @@ final class SettingsPage
                 'cron_last_run' => (int) get_option(Scheduler::LAST_RUN_OPTION, 0),
                 'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
                 'orphan_signup_page' => $this->unselectedSignupPage(),
-                'app_name' => (string) get_option(PwaController::NAME_OPTION, ''),
+                'app_name' => SiteTexts::value('app_name'),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
                 'app_accent_color' => (string) (
                     get_option(PwaController::ACCENT_OPTION, '')
                     ?: get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR)
                 ),
-                'signature' => trim((string) get_option(Signature::OPTION, '')),
-                'signature_fi' => trim((string) get_option(Signature::FINNISH_OPTION, '')),
+                'signature' => SiteTexts::value('signature'),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
                 'email_background' => (string) get_option(EmailTemplate::BACKGROUND_OPTION, ''),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
-                'ticket_note' => (string) get_option(TicketController::NOTE_OPTION, ''),
-                'infrastructure_note' => HelpPage::infrastructure(),
+                'ticket_note' => SiteTexts::value('ticket_note'),
+                'infrastructure_note' => SiteTexts::value('infrastructure_note'),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
                 'welcome_nonce_action' => self::WELCOME_NONCE_ACTION,
@@ -764,17 +765,6 @@ final class SettingsPage
 
         update_option(CronFallbackTrigger::OPTION, isset($_POST['cron_fallback']) ? '1' : '0');
 
-        // sanitize_textarea_field, not sanitize_text_field: a sign-off may run
-        // to two lines, and the newline is the whole difference.
-        update_option(
-            Signature::OPTION,
-            isset($_POST['signature']) ? sanitize_textarea_field(wp_unslash($_POST['signature'])) : ''
-        );
-        update_option(
-            Signature::FINNISH_OPTION,
-            isset($_POST['signature_fi']) ? sanitize_textarea_field(wp_unslash($_POST['signature_fi'])) : ''
-        );
-
         update_option(EmailTemplate::HTML_OPTION, isset($_POST['email_html']) ? '1' : '0');
         update_option(
             EmailTemplate::LOGO_OPTION,
@@ -788,23 +778,9 @@ final class SettingsPage
             TicketController::BACKGROUND_OPTION,
             isset($_POST['ticket_background']) ? esc_url_raw(wp_unslash($_POST['ticket_background'])) : ''
         );
-        update_option(
-            TicketController::NOTE_OPTION,
-            isset($_POST['ticket_note']) ? sanitize_textarea_field(wp_unslash($_POST['ticket_note'])) : ''
-        );
-        update_option(
-            HelpPage::INFRASTRUCTURE_OPTION,
-            isset($_POST['infrastructure_note'])
-                ? sanitize_textarea_field(wp_unslash($_POST['infrastructure_note']))
-                : ''
-        );
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
         update_option(PwaController::PAGE_OPTION, $appPageId);
-        update_option(
-            PwaController::NAME_OPTION,
-            isset($_POST['app_name']) ? sanitize_text_field(wp_unslash($_POST['app_name'])) : ''
-        );
 
         $appColor = isset($_POST['app_theme_color'])
             ? sanitize_hex_color(wp_unslash($_POST['app_theme_color']))
@@ -829,7 +805,10 @@ final class SettingsPage
         $profile = $this->saveBotProfile();
         $followupError = $this->saveFollowupTexts();
         $ticketError = $this->saveTicketText();
-        $followupNotice = TranslatedText::errorNotice('' !== $followupError ? $followupError : $ticketError);
+        $siteError = $this->saveSiteTexts();
+        $followupNotice = TranslatedText::errorNotice(
+            current(array_filter([$followupError, $ticketError, $siteError, $this->rolesError])) ?: ''
+        );
 
         // Both use the same notice; it is said once.
         if ('' !== $followupNotice && ! str_contains($profile['message'], $followupNotice)) {
@@ -909,6 +888,22 @@ final class SettingsPage
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
         return $text->saveSettings($_POST[TicketText::POST_NAME] ?? null);
+    }
+
+    /**
+     * Saves the signature, ticket note, infrastructure note and app name
+     * (SiteTexts). Returns the translation error kind, '' when none.
+     */
+    private function saveSiteTexts(): string
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
+        return SiteTexts::save($this->translator(), $_POST);
+    }
+
+    /** The translator for the written-once texts on this page. */
+    private function translator(): TranslatedText
+    {
+        return new TranslatedText($this->llm ?? new LlmClient(new Logger()), new Logger());
     }
 
     /**
@@ -1984,9 +1979,10 @@ final class SettingsPage
             ? array_map('sanitize_key', wp_unslash($_POST['role_slug']))
             : [];
 
-        $labels = isset($_POST['role_label']) && is_array($_POST['role_label'])
-            ? array_map('sanitize_text_field', wp_unslash($_POST['role_label']))
-            : [];
+        // Each name and description is a written-once text (TranslatedText),
+        // sanitized per field in roleText().
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- see above.
+        $labels = isset($_POST['role_label']) && is_array($_POST['role_label']) ? $_POST['role_label'] : [];
 
         $emojis = isset($_POST['role_emoji']) && is_array($_POST['role_emoji'])
             ? array_map('sanitize_text_field', wp_unslash($_POST['role_emoji']))
@@ -1996,8 +1992,9 @@ final class SettingsPage
             ? array_map('sanitize_text_field', wp_unslash($_POST['role_title_contains']))
             : [];
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized in roleText().
         $descriptions = isset($_POST['role_description']) && is_array($_POST['role_description'])
-            ? array_map('sanitize_textarea_field', wp_unslash($_POST['role_description']))
+            ? $_POST['role_description']
             : [];
 
         $plusOnes = isset($_POST['role_plus_ones']) && is_array($_POST['role_plus_ones'])
@@ -2060,11 +2057,22 @@ final class SettingsPage
         $onBoardIndexes = array_flip($onBoard);
 
         $types = [];
+        $translator = $this->translator();
+        $this->rolesError = '';
 
         foreach (array_keys($labels) as $index) {
+            $previous = '' === ($slugs[$index] ?? '') ? null : Roles::find($slugs[$index]);
+            $label = $this->roleText($translator, $previous['label_text'] ?? '', $labels[$index] ?? null, false);
+            $description = $this->roleText(
+                $translator,
+                $previous['description_text'] ?? '',
+                $descriptions[$index] ?? null,
+                true
+            );
             $types[] = [
                 'slug' => $slugs[$index] ?? '',
-                'label' => $labels[$index] ?? '',
+                'label' => $label['source'],
+                'label_text' => $label,
                 'emoji' => $emojis[$index] ?? '',
                 'capacity' => $capacities[$index] ?? 1,
                 'archived' => isset($archivedIndexes[$index]),
@@ -2087,11 +2095,41 @@ final class SettingsPage
                 // being cast to an integer here.
                 'start_offset' => $this->offset($startOffsets[$index] ?? ''),
                 'end_offset' => $this->offset($endOffsets[$index] ?? ''),
-                'description' => $descriptions[$index] ?? '',
+                'description' => $description['source'],
+                'description_text' => $description,
             ];
         }
 
         return $types;
+    }
+
+    /**
+     * One posted role name or description applied to its stored value,
+     * translating where needed. The field posts as TranslatedText::field()
+     * draws it; a plain string (an older form) is taken as the new source.
+     * A translation error is kept in $rolesError for the save notice.
+     *
+     * @param array<string, mixed>|string $previous
+     * @return array<string, mixed> A TranslatedText value.
+     */
+    private function roleText(TranslatedText $translator, array|string $previous, mixed $raw, bool $multiline): array
+    {
+        if (is_scalar($raw)) {
+            // fromPost() unslashes and sanitizes it.
+            $raw = ['source' => (string) $raw];
+        }
+
+        $result = $translator->save($previous, $raw, 0, $multiline);
+
+        if (null === $result) {
+            return TranslatedText::normalize($previous);
+        }
+
+        if ('' === $this->rolesError && '' !== $result['error']) {
+            $this->rolesError = $result['error'];
+        }
+
+        return $result['value'];
     }
 
     /**

@@ -25,6 +25,13 @@ use EventCrew\Models\Task;
  * wherever someone decides whether to take it or is reminded of it, next to
  * one shared link to the crew's full guide.
  *
+ * The name and the description are translated texts (TranslatedText), kept in
+ * label_text and description_text. label and description are those texts in
+ * the reader's language (Language::current(), else the main language), so
+ * every reader gets its own language without asking. In the stored option,
+ * label and description hold the source text, which is also what a role
+ * stored before label_text existed is read from.
+ *
  * The shape is declared once here and imported by everything that handles a
  * role, so adding a key is a one-line change rather than a hunt through
  * eight identical docblocks.
@@ -39,6 +46,8 @@ use EventCrew\Models\Task;
  *     start_offset: int|null,
  *     end_offset: int|null,
  *     description: string,
+ *     label_text: array<string, mixed>,
+ *     description_text: array<string, mixed>,
  *     restricted: bool,
  *     every_night: bool,
  *     sales_desk: bool,
@@ -175,7 +184,7 @@ final class Roles
         $stored = get_option(self::OPTION_NAME, null);
 
         if (! is_array($stored) || [] === $stored) {
-            return self::defaults();
+            $stored = self::defaults();
         }
 
         $roles = [];
@@ -194,7 +203,13 @@ final class Roles
             $roles[] = self::normalize($role, $slug);
         }
 
-        return [] === $roles ? self::defaults() : $roles;
+        if ([] === $roles) {
+            foreach (self::defaults() as $role) {
+                $roles[] = self::normalize($role, $role['slug']);
+            }
+        }
+
+        return $roles;
     }
 
     /**
@@ -253,12 +268,28 @@ final class Roles
 
             $seen[$slug] = true;
 
-            $clean[] = self::normalize($role, $slug);
+            $clean[] = self::forStorage(self::normalize($role, $slug));
         }
 
         $before = self::everyNightSlugs();
         update_option(self::OPTION_NAME, [] === $clean ? self::defaults() : $clean);
         self::queueNewEveryNight($before);
+    }
+
+    /**
+     * A role as it is stored: label and description hold the source texts,
+     * not the reader's language.
+     *
+     * @param Role $role
+     * @return Role
+     */
+    private static function forStorage(array $role): array
+    {
+        $label = trim((string) ($role['label_text']['source'] ?? ''));
+        $role['label'] = '' === $label ? $role['slug'] : $label;
+        $role['description'] = trim((string) ($role['description_text']['source'] ?? ''));
+
+        return $role;
     }
 
     /**
@@ -311,8 +342,72 @@ final class Roles
             }
         }
 
-        update_option(self::OPTION_NAME, $roles);
+        update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), $roles));
         self::queueNewEveryNight($before);
+    }
+
+    /**
+     * Every role's name and description as rows of the wp-admin Translations
+     * page (TranslationRegistry).
+     *
+     * @return list<TranslationRow>
+     */
+    public static function translationRows(): array
+    {
+        $rows = [];
+
+        foreach (self::all() as $role) {
+            if (self::ORGANIZE_SLUG === $role['slug']) {
+                continue;
+            }
+
+            $slug = $role['slug'];
+            $rows[] = new TranslationRow(
+                'role.' . $slug . '.label',
+                /* translators: %s: the role's name, e.g. Decorate */
+                sprintf(__('Role name: %s', 'eventcrew'), $role['label']),
+                TranslationRow::GROUP_TEXTS,
+                $role['label_text'],
+                static function (array $value) use ($slug): void {
+                    self::storeText($slug, 'label_text', $value);
+                },
+                0,
+                false
+            );
+            $rows[] = new TranslationRow(
+                'role.' . $slug . '.description',
+                /* translators: %s: the role's name, e.g. Decorate */
+                sprintf(__('Role description: %s', 'eventcrew'), $role['label']),
+                TranslationRow::GROUP_TEXTS,
+                $role['description_text'],
+                static function (array $value) use ($slug): void {
+                    self::storeText($slug, 'description_text', $value);
+                },
+                0,
+                true
+            );
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Stores one role's name or description (label_text or
+     * description_text), as edited on the Translations page.
+     *
+     * @param array<string, mixed> $value A TranslatedText value.
+     */
+    private static function storeText(string $slug, string $key, array $value): void
+    {
+        $roles = self::all();
+
+        foreach ($roles as $index => $role) {
+            if ($role['slug'] === $slug) {
+                $roles[$index][$key] = TranslatedText::normalize($value);
+            }
+        }
+
+        update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), $roles));
     }
 
     /**
@@ -543,12 +638,24 @@ final class Roles
      */
     private static function normalize(array $role, string $slug): array
     {
-        $label = trim((string) ($role['label'] ?? ''));
+        // The translated name and description. A role stored before these
+        // existed has plain strings, which become the source texts.
+        $labelText = TranslatedText::normalize(
+            is_array($role['label_text'] ?? null) ? $role['label_text'] : trim((string) ($role['label'] ?? ''))
+        );
+        $descriptionText = TranslatedText::normalize(match (true) {
+            is_array($role['description_text'] ?? null) => $role['description_text'],
+            array_key_exists('description', $role) => trim((string) $role['description']),
+            default => self::defaultDescription($slug),
+        });
+        $label = TranslatedText::forReader($labelText);
         $anchor = (string) ($role['anchor'] ?? self::ANCHOR_START);
 
         return [
             'slug' => $slug,
             'label' => '' === $label ? $slug : $label,
+            'label_text' => $labelText,
+            'description_text' => $descriptionText,
             'emoji' => trim((string) ($role['emoji'] ?? '')),
             // Zero is allowed and meaningful: a role can be defined but generate
             // no active slots, so its tasks stay on the books yet drop off the
@@ -559,9 +666,7 @@ final class Roles
             'anchor' => self::ANCHOR_END === $anchor ? self::ANCHOR_END : self::ANCHOR_START,
             'start_offset' => self::nullableOffset($role['start_offset'] ?? null),
             'end_offset' => self::nullableOffset($role['end_offset'] ?? null),
-            'description' => array_key_exists('description', $role)
-                ? trim((string) $role['description'])
-                : self::defaultDescription($slug),
+            'description' => TranslatedText::forReader($descriptionText),
             'restricted' => ! empty($role['restricted']),
             // On unless switched off: a role stored before this key existed
             // was never restricted, so the default only matters once it is.

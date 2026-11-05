@@ -113,7 +113,7 @@ final class FollowupText
      * the language model fills it ("Translate missing"); until then the
      * English text is used.
      *
-     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array<string, mixed> A TranslatedText value.
      */
     public static function defaultValue(string $variant): array
     {
@@ -137,7 +137,7 @@ final class FollowupText
      * The wp-admin text of $variant: the stored value, or the built-in one
      * when nothing (or only empty fields) is stored.
      *
-     * @return array{source: string, lang: string, texts: array<string, string>, manual: array<string, bool>}
+     * @return array<string, mixed> A TranslatedText value.
      */
     public static function settings(string $variant): array
     {
@@ -269,20 +269,17 @@ final class FollowupText
         $error = '';
 
         foreach (array_keys(self::SETTINGS_OPTIONS) as $variant) {
-            $input = TranslatedText::fromPost($posted[$variant] ?? null, true);
-
-            if (null === $input) {
-                continue;
-            }
-
-            $result = $this->translator->update(
+            $result = $this->translator->save(
                 self::settings($variant),
-                $input['source'],
-                $input['texts'],
-                $input['again'],
+                $posted[$variant] ?? null,
                 self::MAX_LENGTH,
                 true
             );
+
+            if (null === $result) {
+                continue;
+            }
+
             self::store($variant, $result['value']);
 
             if ('' === $error && '' !== $result['error']) {

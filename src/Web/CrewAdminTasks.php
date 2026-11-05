@@ -10,10 +10,13 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\LlmClient;
+use EventCrew\Support\Logger;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
+use EventCrew\Support\TranslatedText;
 
 /**
  * The Tasks screen of the crew page's Admin tab, made to match the wp-admin
@@ -239,9 +242,24 @@ final class CrewAdminTasks
 
         $counts = is_array($post['role_count'] ?? null) ? $post['role_count'] : [];
 
+        $previous = $roles[$index];
+        $labelText = $this->roleText(
+            $previous['label_text'],
+            $previous['label'],
+            sanitize_text_field((string) ($post['role_label'] ?? '')),
+            false
+        );
+        $descriptionText = $this->roleText(
+            $previous['description_text'],
+            $previous['description'],
+            sanitize_textarea_field((string) ($post['role_description'] ?? '')),
+            true
+        );
+
         $roles[$index] = [
             'slug' => $slug,
-            'label' => sanitize_text_field((string) ($post['role_label'] ?? '')),
+            'label' => $labelText['source'],
+            'label_text' => $labelText,
             'emoji' => sanitize_text_field((string) ($post['role_emoji'] ?? '')),
             'capacity' => (int) ($post['role_capacity'] ?? 1),
             'archived' => isset($post['role_archived']),
@@ -259,12 +277,34 @@ final class CrewAdminTasks
             'anchor' => sanitize_key((string) ($post['role_anchor'] ?? Roles::ANCHOR_START)),
             'start_offset' => self::offset(sanitize_text_field((string) ($post['role_start_offset'] ?? ''))),
             'end_offset' => self::offset(sanitize_text_field((string) ($post['role_end_offset'] ?? ''))),
-            'description' => sanitize_textarea_field((string) ($post['role_description'] ?? '')),
+            'description' => $descriptionText['source'],
+            'description_text' => $descriptionText,
         ];
 
         Roles::save($roles);
 
         return 'admin_role_saved';
+    }
+
+    /**
+     * A role's name or description after the crew app's form: the stored
+     * value when the posted text is the one the form showed ($shown, in the
+     * organizer's language), else the posted text as the new source,
+     * translated into every site language (TranslatedText).
+     *
+     * @param array<string, mixed> $stored A TranslatedText value.
+     * @return array<string, mixed> A TranslatedText value.
+     */
+    private function roleText(array $stored, string $shown, string $posted, bool $multiline): array
+    {
+        if (trim($posted) === trim($shown)) {
+            return $stored;
+        }
+
+        $logger = new Logger();
+        $translator = new TranslatedText(new LlmClient($logger), $logger);
+
+        return $translator->update($stored, $posted, [], false, 0, $multiline)['value'];
     }
 
     /**
