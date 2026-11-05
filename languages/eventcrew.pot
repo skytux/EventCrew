@@ -1563,7 +1563,7 @@ msgstr ""
 msgid "Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail."
 msgstr ""
 
-#: src/Support/Newsletter.php:881
+#: src/Support/Newsletter.php:878
 msgid "Do Not Send This"
 msgstr ""
 
@@ -2081,7 +2081,7 @@ msgstr ""
 msgid "Give their name."
 msgstr ""
 
-#: src/Support/Newsletter.php:884
+#: src/Support/Newsletter.php:881
 #. translators: 1: date, like 14.11.2026, 2: time, like 10:00, 3: number of subscribers
 msgid "Goes out on %1$s at %2$s to %3$d subscriber."
 msgid_plural "Goes out on %1$s at %2$s to %3$d subscribers."
