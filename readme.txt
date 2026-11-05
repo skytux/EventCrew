@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.91
+Stable tag: 1.140.92
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.92 =
+When someone confirms a new email address, their linked Telegram chat also gets: Your crew account email is now ... If you did not do this, tell an organizer. It is a security notice, so it is always sent, even when other messages are turned off.
 
 = 1.140.91 =
 Crew page: Sign in with Telegram now shows the code first, as two large boxed pairs, with a hint to press Start and then this code. Telegram opens only when Open Telegram is pressed; the page then waits and keeps the code visible. The bot shows its three code buttons in the same pairs.
@@ -1487,6 +1490,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.92 =
+No settings change.
 
 = 1.140.91 =
 No settings change.
