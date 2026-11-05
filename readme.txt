@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.59
+Stable tag: 1.140.60
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.60 =
+A new Messages page holds every message the plugin sends (email and Telegram) in one list, each editable in every site language, with the placeholders it may use. The AI can write the post-event and other texts per event, in every site language; the AI prompts have their own page. The post-event email text moved from Settings to the Messages page; texts you saved there are moved over once, by themselves.
 
 = 1.140.59 =
 Opening an email link a second time no longer says "invalid". A confirmation link opened again (or first opened by a mail security scanner) now says "Your email is already confirmed." A sign-in link now shows a Sign in button and signs in only when you press it, so a scanner opening the link first no longer uses it up. Used sign-in links are kept until they expire, so this works until the link expires.
@@ -1391,6 +1394,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.60 =
+No settings change.
 
 = 1.140.59 =
 No settings change.
