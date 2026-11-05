@@ -151,16 +151,11 @@ or credit whose ticket was emailed is cancelled (by the person, an organizer, or
 the swap at the sales desk), the person gets a short "Your ticket is cancelled"
 email in Finnish and English. Nothing is sent for a night that is already past.
 
-For the email route, something has to read the import mailbox. Either:
-
-- the site reads it itself, every five minutes: Settings > Email > "Read the
-  mailbox from this site". It speaks IMAP, or JMAP over HTTPS for hosts that
-  block the IMAP ports (InfinityFree does). No PHP imap extension is needed.
-  "Check the mailbox now" runs one check at once and shows the result; or
-- a small mail poller runs next to the mail server; see
-  `tools/mail-import/README.md`.
-
-Use one of the two, not both.
+For the email route, the site reads the import mailbox itself, every five
+minutes: Settings > Email > "Read the mailbox from this site". It speaks IMAP,
+or JMAP over HTTPS for hosts that block the IMAP ports (InfinityFree does). No
+PHP imap extension is needed. "Check the mailbox now" runs one check at once
+and shows the result.
 
 ## Telegram commands
 

@@ -6,8 +6,7 @@ namespace EventCrew\MailImport;
 
 /**
  * The two checks the mail import makes on a message before it goes to the
- * site, ported from tools/mail-import/eventcrew-mail-import.py so both paths
- * accept and refuse the same mail:
+ * site (first written for the separate mail poller, since removed):
  *
  * - the sender: the receiving mail server's Authentication-Results header
  *   must show dmarc=pass for the From domain, or spf=pass for it when no

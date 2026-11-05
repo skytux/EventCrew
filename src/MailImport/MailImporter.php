@@ -16,7 +16,7 @@ use EventCrew\Web\BuyerImportController;
  * feeds each list to the same code the signed endpoint uses. Does nothing
  * while the mail fetch is switched off in Settings.
  *
- * One run, the same as the separate poller's:
+ * One run:
  *  - an unread message whose sender does not pass DMARC (or SPF without
  *    DMARC), or that holds no list, goes to Rejected;
  *  - a list the site took goes to Imported; one the site refused for good
