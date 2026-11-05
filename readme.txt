@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.96
+Stable tag: 1.140.97
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.97 =
+Organizers with a linked Telegram chat get the ticket and guest list import results as a bot message; the ticket message has a Reset the list button that asks first. New notification row Ticket and guest list imports.
 
 = 1.140.96 =
 wp-admin, EventCrew > Messages now has four tabs: Messages, AI (built-in prompts and your own placeholders), Coming events (the AI texts per event, with Write the AI texts now and Write again, and the one-time texts for the next post-event email and announcement) and Email look. The AI prompts and Email template menu entries are gone; their old addresses lead to the new tabs.
@@ -1502,6 +1505,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.97 =
+No settings change.
 
 = 1.140.96 =
 No settings change.
