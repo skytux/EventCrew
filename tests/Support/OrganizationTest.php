@@ -67,14 +67,14 @@ final class OrganizationTest extends TestCase
 
     public function testTheTicketNoteFillsItsPlaceholdersAndDropsLinesWithAnEmptyOne(): void
     {
-        $note = "Welcome to {organization}!\nDoor code 1234\nDoors close at {doors_close}.";
+        $note = "Welcome to {organization}!\nDoor code 1234\nAt {venue}.";
 
         self::assertSame(
             "Welcome to Ecstatic Dance Helsinki!\nDoor code 1234",
-            TicketNote::fill($note, ['{organization}' => 'Ecstatic Dance Helsinki', '{doors_close}' => ''])
+            TicketNote::fill($note, ['{organization}' => 'Ecstatic Dance Helsinki', '{venue}' => ''])
         );
         self::assertSame(
-            "Welcome to Test Site!\nDoor code 1234\nDoors close at {doors_close}.",
+            "Welcome to Test Site!\nDoor code 1234\nAt {venue}.",
             TicketNote::fill($note, TicketNote::values()),
             'a placeholder the note does not know is left as written'
         );

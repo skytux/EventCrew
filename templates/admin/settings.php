@@ -66,7 +66,9 @@
  * @var array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>} $hybrid The Hybrid tick of each message kind (HybridPolicy).
  * @var string $organization_name The organization's name as typed in Settings; blank uses the site name.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
- * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows nothing.
+ * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows the built-in doors line.
+ * @var bool $doors_close_on Whether the doors close $doors_close_minutes minutes after the start.
+ * @var int $doors_close_minutes How many minutes after the start the doors close.
  * @var array<string, mixed> $infrastructure_note How the site is run, a TranslatedText value, shown to organizers in the crew page's Help tab; blank shows nothing.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
@@ -1169,7 +1171,7 @@ if (! defined('ABSPATH')) {
                         'text.ticket_note'
                     );
                     ?>
-                    <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Leave it blank to show nothing.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Left blank, the ticket shows only when the doors close, if it knows.', 'eventcrew'); ?></p>
                     <p class="description">
                         <?php
                         printf(
@@ -1179,6 +1181,22 @@ if (! defined('ABSPATH')) {
                         );
                         ?>
                     </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Doors close', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="doors_close_on" value="1" <?php checked($doors_close_on); ?>>
+                        <?php
+                        printf(
+                            /* translators: %s: a number box for the minutes, like 30 */
+                            esc_html__('Doors close %s minutes after the start', 'eventcrew'),
+                            '<input type="number" name="doors_close_minutes" min="0" max="' . (int) \EventCrew\Support\EventTimes::MAX_DOORS_MINUTES . '" step="5" class="small-text" value="' . (int) $doors_close_minutes . '">' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped,Generic.Files.LineLength.TooLong -- integers only.
+                        );
+                        ?>
+                    </label>
+                    <p class="description"><?php esc_html_e('In the ticket note and the message texts it is {doors_close}, like 19:30. A time set for one event on the Messages page, Coming events tab, wins.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
                 </td>
             </tr>
             <tr>
@@ -1554,6 +1572,7 @@ if (! defined('ABSPATH')) {
                         <li><code>{event}</code> <?php esc_html_e('the event’s name.', 'eventcrew'); ?></li>
                         <li><code>{date}</code> <?php esc_html_e('the event’s date, like 14.11.2026.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{start_time}</code> <?php esc_html_e('the event’s start time, like 19:00. Empty when the event has none.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
+                        <li><code>{doors_close}</code> <?php esc_html_e('when the doors close, like 19:30. Empty when doors close is off.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{reason}</code> <?php esc_html_e('why the person has a ticket: one of the four lines below, chosen by the kind of ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{tasks}</code> <?php esc_html_e('a crew member’s tasks on the night, as a list. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
                         <li><code>{plus_ones}</code> <?php esc_html_e('how many people a guest may bring, like “2 people”. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>

@@ -129,6 +129,10 @@ final class MessageTemplates
                 __('The event’s start time, like 19:00. Empty when the event has none.', 'eventcrew'),
                 static fn (array $c): string => EventTimes::start($eventId($c))
             ),
+            'doors_close' => self::placeholder(
+                __('When the doors close, like 19:30. Empty when doors close is off (Settings > Web page) and the event has no time of its own.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                static fn (array $c): string => EventTimes::doorsClose($eventId($c))
+            ),
         ];
     }
 

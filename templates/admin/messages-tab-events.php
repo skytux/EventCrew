@@ -7,7 +7,8 @@
  * edit box and "Write again", and "Write the AI texts now" for the event.
  *
  * @var list<array{event_id: int, date: string, title: string, items: list<array{key: string, label: string,
- *     ai: array<string, string>, texts: array<string, string>, edited: array<string, bool>, failed: bool}>}> $events
+ *     ai: array<string, string>, texts: array<string, string>, edited: array<string, bool>, failed: bool}>,
+ *     doors_own: string, doors_close: string}> $events The doors times: the event's own, and the one in use.
  * @var bool $can_write Whether a template has the AI tick on or a placeholder exists.
  * @var array<string, mixed>|null $followup CrewAdminFollowup::view() and night (the night it is for, or '').
  * @var array<string, mixed>|null $newsletter CrewAdminNewsletter::view().
@@ -189,6 +190,33 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
         ?>
         <div id="<?php echo esc_attr(AiPromptsPage::eventAnchor($eventcrew_event_id)); ?>" style="<?php echo esc_attr($eventcrew_card_style); ?>">
             <h3><?php echo esc_html(TicketMail::shortDate((string) $eventcrew_event['date']) . ' · ' . $eventcrew_event['title']); ?></h3>
+
+            <form method="post" action="<?php echo esc_url($eventcrew_post_url); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr(AiPromptsPage::DOORS_ACTION); ?>">
+                <input type="hidden" name="event_id" value="<?php echo esc_attr((string) $eventcrew_event_id); ?>">
+                <?php wp_nonce_field(AiPromptsPage::NONCE_ACTION); ?>
+                <p>
+                    <label for="eventcrew-doors-<?php echo esc_attr((string) $eventcrew_event_id); ?>"><?php esc_html_e('Doors close at', 'eventcrew'); ?></label>
+                    <input type="time" name="doors_close" id="eventcrew-doors-<?php echo esc_attr((string) $eventcrew_event_id); ?>"
+                        value="<?php echo esc_attr((string) ($eventcrew_event['doors_own'] ?? '')); ?>">
+                    <button type="submit" class="button"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                    <span class="description">
+                        <?php
+                        if ('' !== (string) ($eventcrew_event['doors_own'] ?? '')) {
+                            esc_html_e('This event’s own time. Clear it to follow the setting.', 'eventcrew');
+                        } elseif ('' !== (string) ($eventcrew_event['doors_close'] ?? '')) {
+                            echo esc_html(sprintf(
+                                /* translators: %s: a time like 19:30 */
+                                __('Blank: %s, from the setting.', 'eventcrew'),
+                                (string) $eventcrew_event['doors_close']
+                            ));
+                        } else {
+                            esc_html_e('Blank: no doors time.', 'eventcrew');
+                        }
+                        ?>
+                    </span>
+                </p>
+            </form>
 
             <?php if ($can_write) : ?>
                 <form method="post" action="<?php echo esc_url($eventcrew_post_url); ?>"

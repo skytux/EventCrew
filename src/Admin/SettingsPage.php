@@ -26,6 +26,7 @@ use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Support\EventTimes;
 use EventCrew\Support\Organization;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Reputation;
@@ -209,6 +210,8 @@ final class SettingsPage
                 'organization_name' => Organization::stored(),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_note' => SiteTexts::value('ticket_note'),
+                'doors_close_on' => EventTimes::doorsOn(),
+                'doors_close_minutes' => EventTimes::doorsMinutes(),
                 'infrastructure_note' => SiteTexts::value('infrastructure_note'),
                 'email_edit_url' => $this->emailTemplate->editUrl(),
                 'email_nonce_action' => self::EMAIL_NONCE_ACTION,
@@ -805,6 +808,11 @@ final class SettingsPage
         if (isset($_POST['organization_name'])) {
             Organization::save(wp_unslash((string) $_POST['organization_name']));
         }
+
+        EventTimes::saveDoorsSetting(
+            isset($_POST['doors_close_on']),
+            isset($_POST['doors_close_minutes']) ? sanitize_text_field(wp_unslash($_POST['doors_close_minutes'])) : ''
+        );
 
         update_option(
             TicketController::BACKGROUND_OPTION,

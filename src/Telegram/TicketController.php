@@ -455,11 +455,15 @@ final class TicketController
     /**
      * The free text set in Settings > Web page > Ticket note, in the
      * ticket's language (SiteTexts), as plain text with its line breaks
-     * kept, or '' when none is set.
+     * kept. When none is set, the built-in note (the doors line); '' when
+     * that is empty too.
      */
     private function noteBlock(?int $eventId): string
     {
-        $note = TicketNote::fill(SiteTexts::text('ticket_note'), TicketNote::values($eventId));
+        $note = TicketNote::fill(
+            TicketNote::orBuiltIn(SiteTexts::text('ticket_note')),
+            TicketNote::values($eventId)
+        );
 
         if ('' === $note) {
             return '';

@@ -14,7 +14,7 @@ namespace EventCrew\Support;
 final class TicketNote
 {
     /** Every placeholder, in the order the Settings help lists them. */
-    public const TAGS = [Organization::TAG, EventTimes::START_TAG];
+    public const TAGS = [Organization::TAG, EventTimes::START_TAG, EventTimes::DOORS_TAG];
 
     /**
      * $note with its placeholders replaced by $values (placeholder => text).
@@ -52,6 +52,22 @@ final class TicketNote
         return [
             Organization::TAG => Organization::name(),
             EventTimes::START_TAG => EventTimes::start($eventId),
+            EventTimes::DOORS_TAG => EventTimes::doorsClose($eventId),
         ];
+    }
+
+    /**
+     * $note, or the built-in note when $note is blank: one line on when the
+     * doors close, left out when there is no doors time. In the current
+     * language.
+     */
+    public static function orBuiltIn(string $note): string
+    {
+        if ('' !== trim($note)) {
+            return $note;
+        }
+
+        /* translators: %s: the placeholder {doors_close}, which becomes a time like 19:30 */
+        return sprintf(__('Doors close at %s.', 'eventcrew'), EventTimes::DOORS_TAG);
     }
 }
