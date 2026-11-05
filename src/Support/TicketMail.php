@@ -90,8 +90,17 @@ final class TicketMail
      */
     public const RESCUE_MARGIN = 300;
 
-    /** MySQL lock name that keeps two page loads from running a stuck send twice. */
+    /**
+     * MySQL lock name that keeps two runs of a send apart: two page loads
+     * rescuing a stuck send, or a page load and the hosting's cron (Q264).
+     */
     private const RESCUE_LOCK = 'eventcrew_ticket_send_rescue';
+
+    /**
+     * When the cron finds the lock held, it schedules its event again this
+     * many seconds later, so the send is not lost: 1 minute.
+     */
+    public const CRON_RETRY = 60;
 
     public const KIND_BUYERS = 'buyers';
     public const KIND_GUESTS = 'guests';
@@ -134,10 +143,53 @@ final class TicketMail
 
     public function boot(): void
     {
-        add_action(self::HOOK, [$this, 'run']);
-        add_action(self::START_HOOK, [$this, 'start']);
+        add_action(self::HOOK, [$this, 'runFromCron']);
+        add_action(self::START_HOOK, [$this, 'startFromCron']);
         // Late on init, as the cron fallback (CronFallbackTrigger) runs.
         add_action('init', [$this, 'rescueStuckSend'], 99);
+    }
+
+    /**
+     * HOOK as the cron runs it: run() under the same lock as
+     * rescueStuckSend(), so a page load and the cron never send the same
+     * batch at the same time (Q264). Returns how many emails were tried.
+     */
+    public function runFromCron(): int
+    {
+        return $this->underCronLock(self::HOOK, fn (): int => $this->run());
+    }
+
+    /** START_HOOK as the cron runs it: start() under the same lock. */
+    public function startFromCron(): int
+    {
+        return $this->underCronLock(self::START_HOOK, fn (): int => $this->start());
+    }
+
+    /**
+     * Runs $work while holding RESCUE_LOCK. When the lock is held, a page
+     * load is running the send right now: nothing runs here, and $hook is
+     * scheduled again CRON_RETRY seconds later, so whatever that run leaves
+     * is still sent. The lock is released even when $work throws.
+     *
+     * @param callable(): int $work
+     */
+    private function underCronLock(string $hook, callable $work): int
+    {
+        global $wpdb;
+
+        if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', self::RESCUE_LOCK))) {
+            if (false === wp_next_scheduled($hook)) {
+                wp_schedule_single_event(time() + self::CRON_RETRY, $hook);
+            }
+
+            return 0;
+        }
+
+        try {
+            return $work();
+        } finally {
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', self::RESCUE_LOCK));
+        }
     }
 
     /**

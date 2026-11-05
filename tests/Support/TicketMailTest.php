@@ -1099,6 +1099,70 @@ final class TicketMailTest extends TestCase
         self::assertSame([], $this->events);
     }
 
+    /** Q264: while a page load rescues the send, the cron's batch runs nothing and comes back later. */
+    public function testTheCronBatchSkipsAndRetriesWhileARescueHoldsTheLock(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $this->wpdb->heldLocks['eventcrew_ticket_send_rescue'] = true;
+        $this->wpdb->nextResults[] = [$this->buyerRow(1)];
+
+        self::assertSame(0, $this->ticketMail()->runFromCron());
+        self::assertSame([], $this->mails);
+        self::assertSame([TicketMail::HOOK], $this->scheduled);
+        // The rescue's lock is left alone.
+        self::assertArrayHasKey('eventcrew_ticket_send_rescue', $this->wpdb->heldLocks);
+    }
+
+    /** Q264: the cron's start of a waiting send skips the same way, and the send keeps waiting. */
+    public function testTheCronStartSkipsAndRetriesWhileARescueHoldsTheLock(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $this->options[TicketMail::PENDING_OPTION] = ['at' => time() - 1, 'rest' => []];
+        $this->wpdb->heldLocks['eventcrew_ticket_send_rescue'] = true;
+
+        self::assertSame(0, $this->ticketMail()->startFromCron());
+        self::assertSame([], $this->mails);
+        self::assertNotNull(TicketMail::pending());
+        self::assertSame([TicketMail::START_HOOK], $this->scheduled);
+    }
+
+    /** Q264: with the lock free, the cron runs the batch under the lock and releases it. */
+    public function testTheCronBatchRunsUnderTheLockAndReleasesIt(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        $this->wpdb->nextResults[] = [$this->buyerRow(3)]; // buyers
+        $this->wpdb->nextResults[] = [];                    // guests
+
+        self::assertSame(1, $this->ticketMail()->runFromCron());
+        self::assertSame(['anna3@example.test'], array_column($this->mails, 'to'));
+        self::assertSame([], $this->wpdb->heldLocks);
+        self::assertSame([], $this->scheduled);
+        self::assertStringContainsString('GET_LOCK', $this->wpdb->queries[0]);
+        self::assertStringContainsString('RELEASE_LOCK', (string) end($this->wpdb->queries));
+    }
+
+    /** Q264: the cron releases the lock even when the batch throws. */
+    public function testTheCronReleasesTheLockWhenTheBatchThrows(): void
+    {
+        $this->useOptionStore();
+        $this->useCronList();
+        Functions\when('current_time')->alias(static function (): string {
+            throw new \RuntimeException('boom');
+        });
+
+        try {
+            $this->ticketMail()->runFromCron();
+            self::fail('The batch should have thrown.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('boom', $e->getMessage());
+        }
+
+        self::assertSame([], $this->wpdb->heldLocks);
+    }
+
     public function testCancelSendsNothingAndTheTicketsStayNotSent(): void
     {
         $this->useOptionStore();
