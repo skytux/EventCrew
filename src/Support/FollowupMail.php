@@ -20,8 +20,10 @@ use EventCrew\Web\NewsletterController;
  * - Someone who was not gets a kind "sorry we missed you" that hopes to see
  *   them soon.
  *
- * Both are in Finnish and in English, Finnish first, like the ticket email.
- * The main text of each comes from FollowupText: a one-time text an organizer
+ * Both are in every site language, the main language first, like the ticket
+ * email; with the Hybrid tick off, only in the recipient's language
+ * (HybridPolicy). The main text of each comes from FollowupText, in that
+ * language: a one-time text an organizer
  * set for the next post-event email, else the text on the Messages page
  * (followup_came, followup_missed), else the built-in text. The subject is
  * the Messages page subject. The one-time texts are removed once the next night's
@@ -1006,8 +1008,8 @@ final class FollowupMail
 
     /**
      * $cards (the first coming event) with what was written for $date's
-     * email (writeNight()) when it is for that event: its text, Finnish and
-     * English, and its practical information. Without a text or practical
+     * email (writeNight()) when it is for that event: its text in each
+     * language (text_fi, text_en, text_sv …), and its practical information. Without a text or practical
      * information of its own, a card takes what the next events announcement
      * wrote and found for the event (Newsletter::writtenTexts()). A card
      * never shows the description.
@@ -1032,9 +1034,8 @@ final class FollowupMail
             $text = $own ? NewsletterWriter::followupText($written['text'] ?? null) : null;
             $text ??= NewsletterWriter::followupText($announced['events'][(int) ($card['id'] ?? 0)] ?? null);
 
-            if (null !== $text) {
-                $cards[$index]['text_fi'] = $text['fi'];
-                $cards[$index]['text_en'] = $text['en'];
+            foreach ($text ?? [] as $lang => $words) {
+                $cards[$index]['text_' . $lang] = $words;
             }
 
             if (! $own) {

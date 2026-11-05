@@ -11,12 +11,12 @@ use EventCrew\Support\NewsletterText;
  * /newsletter: an organizer sets the text for the next newsletter, in a
  * private chat with the bot.
  *
- * - "/newsletter" alone shows the current text in both languages and how to
- *   change or remove it.
+ * - "/newsletter" alone shows the current text in every site language and
+ *   how to change or remove it.
  * - "/newsletter clear" removes the text.
  * - "/newsletter <text>" saves the text. It is translated (NewsletterText) and
- *   the answer shows both versions, with a note when the translation could
- *   not be made.
+ *   the answer shows every site language's version, with a note when the
+ *   translation could not be made.
  *
  * In a group the command is refused, so the text is not written where the
  * whole crew reads it. Anyone who is not an organizer is refused.
@@ -65,11 +65,11 @@ final class NewsletterCommand
 
         $result = $this->text->set($arguments, $person->id);
         $reply = __('Saved. The next announcement carries this text:', 'eventcrew')
-            . "\n\n" . self::both($result['fi'], $result['en']);
+            . "\n\n" . NewsletterText::listed($result['texts']);
 
         if (! $result['translated']) {
             $reply .= "\n\n"
-                . __('The text could not be translated, so both languages show it as you wrote it.', 'eventcrew');
+                . __('The text could not be translated, so every language shows it as you wrote it.', 'eventcrew');
         }
 
         $this->telegram->sendMessage($chatId, $reply);
@@ -87,21 +87,16 @@ final class NewsletterCommand
         }
 
         $reply = __('The text for the next announcement:', 'eventcrew') . "\n\n"
-            . self::both($stored['fi'], $stored['en']);
+            . NewsletterText::listed($stored['texts']);
 
         if (! $stored['translated']) {
             $reply .= "\n\n"
-                . __('This text is not translated: both languages show it as it was written.', 'eventcrew');
+                . __('This text is not translated: every language shows it as it was written.', 'eventcrew');
         }
 
         return $reply . "\n\n" . __(
             'To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear.',
             'eventcrew'
         );
-    }
-
-    private static function both(string $fi, string $en): string
-    {
-        return __('In Finnish:', 'eventcrew') . "\n" . $fi . "\n\n" . __('In English:', 'eventcrew') . "\n" . $en;
     }
 }

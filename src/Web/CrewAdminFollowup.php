@@ -7,7 +7,7 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
-use EventCrew\Support\Language;
+use EventCrew\Support\SiteLanguages;
 
 /**
  * The Post-event email screen of the crew app's Admin tab: whether the email
@@ -23,13 +23,14 @@ final class CrewAdminFollowup
     }
 
     /**
-     * What the screen shows. For each variant: the Finnish and English text
-     * the next email uses (with {event} and {date} still in it), whether it
-     * is a one-time text, and, for a one-time text, whether it was translated.
+     * What the screen shows. For each variant: the text the next email uses
+     * in every site language (language code => text, with {event} and {date}
+     * still in it), whether it is a one-time text, and, for a one-time text,
+     * whether it was translated.
      *
      * @return array{
      *     enabled: bool,
-     *     texts: array<string, array{fi: string, en: string, next: bool, translated: bool}>
+     *     texts: array<string, array{texts: array<string, string>, next: bool, translated: bool}>
      * }
      */
     public function view(): array
@@ -38,9 +39,14 @@ final class CrewAdminFollowup
 
         foreach (FollowupText::VARIANTS as $variant) {
             $next = $this->text->next($variant);
+            $byLanguage = [];
+
+            foreach (SiteLanguages::codes() as $lang) {
+                $byLanguage[$lang] = $this->text->text($variant, $lang)['text'];
+            }
+
             $texts[$variant] = [
-                'fi' => $this->text->text($variant, Language::FINNISH)['text'],
-                'en' => $this->text->text($variant, Language::ENGLISH)['text'],
+                'texts' => $byLanguage,
                 'next' => null !== $next,
                 'translated' => null === $next || $next['translated'],
             ];
@@ -78,8 +84,8 @@ final class CrewAdminFollowup
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
         $map = [
-            'admin_followup_saved' => __('Saved for the next post-event email only. The text is translated; both versions are shown below.', 'eventcrew'),
-            'admin_followup_saved_untranslated' => __('Saved for the next post-event email only, but the text could not be translated, so both languages show it as you wrote it.', 'eventcrew'),
+            'admin_followup_saved' => __('Saved for the next post-event email only. The text is translated; every language’s version is shown below.', 'eventcrew'),
+            'admin_followup_saved_untranslated' => __('Saved for the next post-event email only, but the text could not be translated, so every language shows it as you wrote it.', 'eventcrew'),
             'admin_followup_cleared' => __('The one-time text is removed. The next post-event email uses the text on the Messages page.', 'eventcrew'),
             'admin_followup_unknown' => __('Nothing was saved: choose the thank-you text or the sorry text.', 'eventcrew'),
         ];

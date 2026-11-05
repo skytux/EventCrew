@@ -185,7 +185,7 @@ final class FollowupText
     /**
      * The one-time text of $variant for the next post-event email, or null.
      *
-     * @return array{fi: string, en: string, source: string, translated: bool, by: int, at: string, rev: int}|null
+     * @return array<string, mixed>|null As NewsletterText::get(): texts (language code => text) and the rest.
      */
     public function next(string $variant): ?array
     {
@@ -205,7 +205,7 @@ final class FollowupText
         $next = $this->next($variant);
 
         if (null !== $next) {
-            $text = Language::FINNISH === $lang ? $next['fi'] : $next['en'];
+            $text = NewsletterText::inLanguage($next['texts'], $next['source'], $lang);
 
             return ['text' => $text, 'next' => true, 'template' => false];
         }
@@ -236,12 +236,12 @@ final class FollowupText
      * email, translated the same way as the newsletter's text. An empty text
      * removes it.
      *
-     * @return array{saved: bool, translated: bool, error: string, fi: string, en: string, source: string}
+     * @return array<string, mixed> As NewsletterText::set().
      */
     public function setNext(string $variant, string $text, int $byPersonId): array
     {
         if (! isset($this->next[$variant])) {
-            return ['saved' => false, 'translated' => false, 'error' => '', 'fi' => '', 'en' => '', 'source' => ''];
+            return ['saved' => false, 'translated' => false, 'error' => '', 'source' => '', 'texts' => []];
         }
 
         return $this->next[$variant]->set($text, $byPersonId);

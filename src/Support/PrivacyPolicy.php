@@ -511,7 +511,7 @@ final class PrivacyPolicy
 
         if (Newsletter::enabled() && AssistantSettings::isConfigured() && TranslatedText::autoEnabled()) {
             $processors[] = __(
-                'The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other language of the announcement.',
+                'The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other site languages.',
                 'eventcrew'
             );
         }

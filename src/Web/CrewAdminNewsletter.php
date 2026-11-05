@@ -39,7 +39,7 @@ final class CrewAdminNewsletter
      *         failed: int
      *     }|null,
      *     last: array{at: string, sent: int, failed: int}|null,
-     *     text: array{fi: string, en: string, translated: bool}|null
+     *     text: array{texts: array<string, string>, translated: bool}|null
      * }
      */
     public function view(): array
@@ -73,8 +73,7 @@ final class CrewAdminNewsletter
         ];
 
         $text = null === $status['text'] ? null : [
-            'fi' => $status['text']['fi'],
-            'en' => $status['text']['en'],
+            'texts' => $status['text']['texts'],
             'translated' => $status['text']['translated'],
         ];
 
@@ -119,8 +118,8 @@ final class CrewAdminNewsletter
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
         $map = [
-            'admin_newsletter_saved' => __('Saved. The text is translated; both versions are shown below.', 'eventcrew'),
-            'admin_newsletter_saved_untranslated' => __('Saved, but the text could not be translated, so both languages show it as you wrote it.', 'eventcrew'),
+            'admin_newsletter_saved' => __('Saved. The text is translated; every language’s version is shown below.', 'eventcrew'),
+            'admin_newsletter_saved_untranslated' => __('Saved, but the text could not be translated, so every language shows it as you wrote it.', 'eventcrew'),
             'admin_newsletter_cleared' => __('The text for the next announcement is removed.', 'eventcrew'),
             'admin_newsletter_stopped' => __('The announcement is stopped. It will not be sent.', 'eventcrew'),
             'admin_newsletter_too_late' => __('Too late: the announcement is already being sent.', 'eventcrew'),

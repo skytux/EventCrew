@@ -9,12 +9,18 @@ namespace EventCrew\Support;
  *
  * An organizer writes it once, in any language. When it is saved, it is
  * translated the same way as every other written-once text (TranslatedText:
- * the language model finds its language and translates it into Finnish and
- * English), and both versions are stored. The newsletter's Finnish part uses
- * the Finnish version and its English part the English version. When the
- * switch "Translate texts automatically with the language model" is off, the
- * model is not set up, or its answer cannot be used, the text is stored as
- * written for both languages, and set() says so, so the organizer can be told.
+ * the language model finds its language and translates it into every site
+ * language in one request), and one text per site language is stored, keyed
+ * by the language code. Each language's part of the newsletter uses its own
+ * text. When the switch "Translate texts automatically with the language
+ * model" is off, the model is not set up, or its answer cannot be used, the
+ * text is stored as written for every language, and set() says so, so the
+ * organizer can be told.
+ *
+ * A text stored before the site could have other languages holds only 'fi'
+ * and 'en'. It reads the same way: a site language with no text of its own
+ * gets one the way TranslatedText::text() finds it (the main language's
+ * text, else the text as written).
  *
  * The text is kept in one option until the newsletter that carries it has
  * been sent; Newsletter then clears it (clearIfRevision(), so a text saved
@@ -56,11 +62,14 @@ final class NewsletterText
      * Saves $text as the text for the next newsletter, translated. An empty
      * text clears it.
      *
-     * @return array{saved: bool, translated: bool, error: string, fi: string, en: string, source: string}
-     *     saved is false only for an empty text (which clears). translated is
-     *     false when both languages hold the text as written; error is then
-     *     the error kind (TranslatedText::ERROR_OFF when the switch is
-     *     off, LlmClient::ERROR_* or TranslatedText::ERROR_BAD_ANSWER).
+     * @return array<string, mixed> saved (bool), translated (bool), error
+     *     (string), source (string), texts (language code => text, every
+     *     site language) and the same texts under their language codes
+     *     ('fi', 'en', 'sv' …). saved is false only for an empty text (which
+     *     clears; texts is then []). translated is false when every language
+     *     holds the text as written; error is then the error kind
+     *     (TranslatedText::ERROR_OFF when the switch is off, LlmClient::ERROR_*
+     *     or TranslatedText::ERROR_BAD_ANSWER).
      */
     public function set(string $text, int $byPersonId): array
     {
@@ -69,15 +78,13 @@ final class NewsletterText
         if ('' === $text) {
             $this->clear();
 
-            return ['saved' => false, 'translated' => false, 'error' => '', 'fi' => '', 'en' => '', 'source' => ''];
+            return ['saved' => false, 'translated' => false, 'error' => '', 'source' => '', 'texts' => []];
         }
 
         $result = $this->translate($text);
         $previous = $this->get();
 
-        $stored = [
-            'fi' => $result['fi'],
-            'en' => $result['en'],
+        $stored = $result['texts'] + [
             'source' => $result['source'],
             'translated' => $result['translated'],
             'by' => max(0, $byPersonId),
@@ -88,22 +95,24 @@ final class NewsletterText
         update_option($this->option, $stored, false);
         $this->changed();
 
-        return [
+        return $result['texts'] + [
             'saved' => true,
             'translated' => $result['translated'],
             'error' => $result['error'],
-            'fi' => $result['fi'],
-            'en' => $result['en'],
             'source' => $result['source'],
+            'texts' => $result['texts'],
         ];
     }
 
     /**
      * The stored text, or null when there is none.
      *
-     * @return array{fi: string, en: string, source: string, translated: bool, by: int, at: string, rev: int}|null
-     *     source is the language code the model found ('fi', 'en', another
-     *     code, or '' when the text was not translated).
+     * @return array<string, mixed>|null texts (language code => text, one
+     *     for every site language, main language first), the same texts under
+     *     their language codes ('fi', 'en', 'sv' …, so the value is keyed by
+     *     language as Newsletter::compose() reads it), source (the language
+     *     code the model found, or '' when the text was not translated),
+     *     translated (bool), by (int), at (string) and rev (int).
      */
     public function get(): ?array
     {
@@ -113,22 +122,69 @@ final class NewsletterText
             return null;
         }
 
-        $fi = (string) ($stored['fi'] ?? '');
-        $en = (string) ($stored['en'] ?? '');
+        $own = [];
 
-        if ('' === $fi && '' === $en) {
+        foreach ($stored as $lang => $text) {
+            if (is_string($lang) && SiteLanguages::isKnown($lang) && is_string($text) && '' !== $text) {
+                $own[$lang] = $text;
+            }
+        }
+
+        if ([] === $own) {
             return null;
         }
 
-        return [
-            'fi' => '' !== $fi ? $fi : $en,
-            'en' => '' !== $en ? $en : $fi,
-            'source' => (string) ($stored['source'] ?? ''),
+        $source = (string) ($stored['source'] ?? '');
+        $texts = [];
+
+        foreach (SiteLanguages::codes() as $lang) {
+            $texts[$lang] = self::inLanguage($own, $source, $lang);
+        }
+
+        return $texts + [
+            'texts' => $texts,
+            'source' => $source,
             'translated' => (bool) ($stored['translated'] ?? false),
             'by' => (int) ($stored['by'] ?? 0),
             'at' => (string) ($stored['at'] ?? ''),
             'rev' => (int) ($stored['rev'] ?? 0),
         ];
+    }
+
+    /**
+     * The text of $texts (language code => text) for $lang, found the way
+     * TranslatedText::text() finds it: $lang's own text, else the text in
+     * the language it was written in ($source), else the main language's,
+     * else the first one.
+     *
+     * @param array<string, string> $texts
+     */
+    public static function inLanguage(array $texts, string $source, string $lang): string
+    {
+        $written = $texts[$source] ?? (string) reset($texts);
+
+        return TranslatedText::text(
+            ['source' => $written, 'lang' => $source, 'texts' => $texts],
+            $lang
+        );
+    }
+
+    /**
+     * $texts (language code => text) for a chat message or a screen: each
+     * language's name ("Finnish:", "Svenska:") on its own line, then its
+     * text, with an empty line between the languages.
+     *
+     * @param array<string, string> $texts
+     */
+    public static function listed(array $texts): string
+    {
+        $parts = [];
+
+        foreach ($texts as $lang => $text) {
+            $parts[] = SiteLanguages::label((string) $lang) . ":\n" . $text;
+        }
+
+        return implode("\n\n", $parts);
     }
 
     /** Removes the text. */
@@ -163,26 +219,26 @@ final class NewsletterText
     }
 
     /**
-     * Translates $text into Finnish and English (TranslatedText), or keeps
-     * it as written for both when the switch is off or the model fails.
+     * Translates $text into every site language (TranslatedText), or keeps
+     * it as written for every language when the switch is off or the model
+     * fails.
      *
-     * @return array{fi: string, en: string, source: string, translated: bool, error: string}
+     * @return array{texts: array<string, string>, source: string, translated: bool, error: string}
      */
     private function translate(string $text): array
     {
         $result = $this->translator->translate($text, self::MAX_LENGTH);
+        $texts = [];
 
-        if (! $result['ok']) {
-            return ['fi' => $text, 'en' => $text, 'source' => '', 'translated' => false, 'error' => $result['error']];
+        foreach (SiteLanguages::codes() as $lang) {
+            $texts[$lang] = $result['ok'] && '' !== ($result['texts'][$lang] ?? '') ? $result['texts'][$lang] : $text;
         }
 
-        return [
-            'fi' => $result['texts'][Language::FINNISH] ?? $text,
-            'en' => $result['texts'][Language::ENGLISH] ?? $text,
-            'source' => $result['lang'],
-            'translated' => true,
-            'error' => '',
-        ];
+        if (! $result['ok']) {
+            return ['texts' => $texts, 'source' => '', 'translated' => false, 'error' => $result['error']];
+        }
+
+        return ['texts' => $texts, 'source' => $result['lang'], 'translated' => true, 'error' => ''];
     }
 
     /** Trims the text, unifies line endings and cuts it to MAX_LENGTH. */

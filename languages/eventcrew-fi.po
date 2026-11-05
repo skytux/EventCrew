@@ -5167,12 +5167,6 @@ msgstr "Jos tilaat tulevien tapahtumien tiedotteen, säilytämme sähköpostioso
 msgid "If you sign up for the next events announcement but do not confirm your address, the sign-up is deleted after %d days."
 msgstr "Jos tilaat tulevien tapahtumien tiedotteen mutta et vahvista osoitettasi, tilaus poistetaan %d päivän kuluttua."
 
-msgid "In English:"
-msgstr "Englanniksi:"
-
-msgid "In Finnish:"
-msgstr "Suomeksi:"
-
 #, php-format
 msgid "Last announcement: %1$s, %2$d emails."
 msgstr "Edellinen tiedote: %1$s, %2$d sähköpostia."
@@ -5205,14 +5199,14 @@ msgstr "Peru tiedotteen tilaus painamalla painiketta."
 msgid "Remove the text"
 msgstr "Poista teksti"
 
-msgid "Saved, but the text could not be translated, so both languages show it as you wrote it."
-msgstr "Tallennettu, mutta tekstiä ei voitu kääntää, joten molemmissa kielissä näkyy teksti sellaisena kuin kirjoitit sen."
+msgid "Saved, but the text could not be translated, so every language shows it as you wrote it."
+msgstr "Tallennettu, mutta tekstiä ei voitu kääntää, joten jokaisessa kielessä näkyy teksti sellaisena kuin kirjoitit sen."
 
 msgid "Saved. The next announcement carries this text:"
 msgstr "Tallennettu. Seuraavassa tiedotteessa on tämä teksti:"
 
-msgid "Saved. The text is translated; both versions are shown below."
-msgstr "Tallennettu. Teksti on käännetty; molemmat versiot näkyvät alla."
+msgid "Saved. The text is translated; every language’s version is shown below."
+msgstr "Tallennettu. Teksti on käännetty; jokaisen kielen versio näkyy alla."
 
 msgid "Send the next events announcement"
 msgstr "Lähetä tulevien tapahtumien tiedote"
@@ -5255,8 +5249,8 @@ msgstr "Tiedote on pysäytetty. Sitä ei lähetetä."
 msgid "The next events announcement is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
 msgstr "Tulevien tapahtumien tiedote on pois päältä. Ylläpitäjä voi kytkeä sen päälle wp-adminissa kohdassa EventCrew > Settings > Email."
 
-msgid "The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other language of the announcement."
-msgstr "Kielimallin palvelin, kun järjestäjä kirjoittaa tekstin tulevien tapahtumien tiedotteeseen — teksti lähetetään sinne käännettäväksi tiedotteen toiselle kielelle."
+msgid "The server of the language model, for organizers who write a text for the next events announcement — the text is sent there to be translated into the other site languages."
+msgstr "Kielimallin palvelin, kun järjestäjä kirjoittaa tekstin tulevien tapahtumien tiedotteeseen — teksti lähetetään sinne käännettäväksi sivuston muille kielille."
 
 msgid "The server of the language model, which writes the texts of the next events announcement — the events’ descriptions and their DJs’ descriptions, both public information, are sent there."
 msgstr "Kielimallin palvelin, joka kirjoittaa tulevien tapahtumien tiedotteen tekstit — tapahtumien kuvaukset ja niiden DJ:iden kuvaukset, molemmat julkista tietoa, lähetetään sinne."
@@ -5267,8 +5261,8 @@ msgstr "Kielimallin tekstit"
 msgid "Let the language model write the event texts and, when you wrote none, the opening text"
 msgstr "Anna kielimallin kirjoittaa tapahtumien tekstit ja, jos et kirjoittanut omaa, avausteksti"
 
-msgid "On by default. When it is on, each event in the announcement gets 2–3 sentences in Finnish and English, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description."
-msgstr "Oletuksena päällä. Kun se on päällä, jokainen tiedotteen tapahtuma saa koko kuvauksen sijaan 2–3 virkettä suomeksi ja englanniksi, kirjoitettuina tapahtuman kuvauksesta ja sen DJ:iden kuvauksista. Tekstit kirjoitetaan esikatselun yhteydessä, joten esikatselu näyttää sen, minkä tilaajat saavat. Jos tekstiä ei voi kirjoittaa, tapahtuma näyttää koko kuvauksensa."
+msgid "On by default. When it is on, each event in the announcement gets 2–3 sentences in each site language, written from the event’s description and its DJs’ descriptions, in place of the full description. The texts are written when the preview is made, so the preview shows what the subscribers get. If a text cannot be written, the event shows its full description."
+msgstr "Oletuksena päällä. Kun se on päällä, jokainen tiedotteen tapahtuma saa koko kuvauksen sijaan 2–3 virkettä kullakin sivuston kielellä, kirjoitettuina tapahtuman kuvauksesta ja sen DJ:iden kuvauksista. Tekstit kirjoitetaan esikatselun yhteydessä, joten esikatselu näyttää sen, minkä tilaajat saavat. Jos tekstiä ei voi kirjoittaa, tapahtuma näyttää koko kuvauksensa."
 
 msgid "The language model is not set up. Enter its API URL and model under “Plain messages (language model)” below."
 msgstr "Kielimallia ei ole otettu käyttöön. Anna sen API-osoite ja malli alempana kohdassa ”Tavalliset viestit (kielimalli)”."
@@ -5279,8 +5273,8 @@ msgstr "Sanat ja tyyli kirjoitettuihin teksteihin"
 msgid "Words and phrases this site uses, in English and in Finnish, and how it speaks to its readers. The language model prefers them when it writes the texts. Leave it empty to let the model choose its own words."
 msgstr "Sanat ja ilmaukset, joita tämä sivusto käyttää englanniksi ja suomeksi, ja tapa, jolla se puhuu lukijoilleen. Kielimalli suosii niitä kirjoittaessaan tekstejä. Jätä tyhjäksi, jos malli saa valita sanansa itse."
 
-msgid "The text could not be translated, so both languages show it as you wrote it."
-msgstr "Tekstiä ei voitu kääntää, joten molemmissa kielissä näkyy teksti sellaisena kuin kirjoitit sen."
+msgid "The text could not be translated, so every language shows it as you wrote it."
+msgstr "Tekstiä ei voitu kääntää, joten jokaisessa kielessä näkyy teksti sellaisena kuin kirjoitit sen."
 
 msgid "The text for the next announcement is removed."
 msgstr "Seuraavan tiedotteen teksti on poistettu."
@@ -5294,8 +5288,8 @@ msgstr "Seuraavalle tiedotteelle ei ole tekstiä."
 msgid "This announcement was already stopped or sent."
 msgstr "Tämä tiedote on jo pysäytetty tai lähetetty."
 
-msgid "This text is not translated: both languages show it as it was written."
-msgstr "Tätä tekstiä ei ole käännetty: molemmissa kielissä näkyy teksti sellaisena kuin se kirjoitettiin."
+msgid "This text is not translated: every language shows it as it was written."
+msgstr "Tätä tekstiä ei ole käännetty: jokaisessa kielessä näkyy teksti sellaisena kuin se kirjoitettiin."
 
 msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr "Lisää teksti lähettämällä /newsletter ja sen perään teksti, esimerkiksi:"
@@ -5312,8 +5306,8 @@ msgstr "Käytä komentoa /newsletter yksityiskeskustelussa kanssani."
 msgid "We send you an email to confirm. You can leave the announcement at any time with the link in every announcement."
 msgstr "Lähetämme sinulle vahvistusviestin sähköpostilla. Voit perua tiedotteen tilauksen milloin tahansa jokaisessa tiedotteessa olevalla linkillä."
 
-msgid "Write it in Finnish or in English. It is translated into the other language when you save, and removed after the announcement is sent."
-msgstr "Kirjoita se suomeksi tai englanniksi. Se käännetään toiselle kielelle, kun tallennat, ja poistetaan, kun tiedote on lähetetty."
+msgid "Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent."
+msgstr "Kirjoita se millä kielellä tahansa. Se käännetään jokaiselle sivuston kielelle, kun tallennat, ja poistetaan, kun tiedote on lähetetty."
 
 msgid "You are now subscribed to the next events announcement. Thank you!"
 msgstr "Olet nyt tulevien tapahtumien tiedotteen tilaaja. Kiitos!"
@@ -5324,8 +5318,8 @@ msgstr "Olet perunut tiedotteen tilauksen. Et saa sitä enää."
 msgid "Your email address"
 msgstr "Sähköpostiosoitteesi"
 
-msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into Finnish and English."
-msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään suomeksi ja englanniksi."
+msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into every site language."
+msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle."
 
 msgid "Get the coming events by email"
 msgstr "Tulevat tapahtumat sähköpostiisi"
@@ -6034,11 +6028,11 @@ msgstr "Seuraava viesti käyttää kertatekstiä."
 msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
 msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettämällä /followup came ja sen perään kiitosteksti, tai /followup missed ja sen perään harmiteksti. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Poista kertateksti lähettämällä /followup came clear tai /followup missed clear; /followup clear poistaa molemmat."
 
-msgid "Saved for the next post-event email only. The text is translated; both versions are shown below."
-msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin. Teksti on käännetty; molemmat versiot näkyvät alla."
+msgid "Saved for the next post-event email only. The text is translated; every language’s version is shown below."
+msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin. Teksti on käännetty; jokaisen kielen versio näkyy alla."
 
-msgid "Saved for the next post-event email only, but the text could not be translated, so both languages show it as you wrote it."
-msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin, mutta tekstiä ei voitu kääntää, joten molemmat kielet näyttävät sen sellaisenaan."
+msgid "Saved for the next post-event email only, but the text could not be translated, so every language shows it as you wrote it."
+msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin, mutta tekstiä ei voitu kääntää, joten jokainen kieli näyttää sen sellaisenaan."
 
 msgid "Nothing was saved: choose the thank-you text or the sorry text."
 msgstr "Mitään ei tallennettu: valitse kiitosteksti tai harmiteksti."
@@ -6055,11 +6049,11 @@ msgstr "Tapahtuman jälkeinen viesti on pois päältä. Ylläpitäjä voi kytke�
 msgid "The text between the greeting and the sign-off. You can replace it for the next email only; after that email is sent, or when that night is stopped, the text on the Messages page is used again. {event} becomes the event’s name and {date} its date."
 msgstr "Teksti tervehdyksen ja lopputervehdyksen välissä. Voit vaihtaa sen vain seuraavaan viestiin; kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä."
 
-msgid "Write it in Finnish or in English. It is translated into the other language when you save."
-msgstr "Kirjoita se suomeksi tai englanniksi. Se käännetään toiselle kielelle, kun tallennat."
+msgid "Write it in any language. It is translated into every site language when you save."
+msgstr "Kirjoita se millä kielellä tahansa. Se käännetään jokaiselle sivuston kielelle, kun tallennat."
 
-msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into Finnish and English. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
-msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään suomeksi ja englanniksi. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."
+msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
+msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."
 
 msgid "Hi!"
 msgstr "Hei!"
@@ -6949,8 +6943,8 @@ msgstr "Lisätään alla oleviin kehotteisiin kohtaan {rules_fi}."
 msgid "Announcement: the text of one event"
 msgstr "Tiedote: yhden tapahtuman teksti"
 
-msgid "Written in Finnish, then translated into English."
-msgstr "Kirjoitetaan suomeksi ja käännetään sitten englanniksi."
+msgid "Written in Finnish, then translated into the other site languages."
+msgstr "Kirjoitetaan suomeksi ja käännetään sitten sivuston muille kielille."
 
 msgid "Announcement: the opening text"
 msgstr "Tiedote: aloitusteksti"
@@ -6961,8 +6955,8 @@ msgstr "Käytetään, kun järjestäjät eivät kirjoittaneet tiedotteelle tekst
 msgid "Post-event email: the text about the next event"
 msgstr "Tapahtuman jälkeinen sähköposti: teksti seuraavasta tapahtumasta"
 
-msgid "Written in English, then translated into Finnish."
-msgstr "Kirjoitetaan englanniksi ja käännetään sitten suomeksi."
+msgid "Written in English, then translated into the other site languages."
+msgstr "Kirjoitetaan englanniksi ja käännetään sitten sivuston muille kielille."
 
 msgid "Venue, address and door times"
 msgstr "Paikka, osoite ja ovien ajat"
@@ -6970,17 +6964,11 @@ msgstr "Paikka, osoite ja ovien ajat"
 msgid "Picks these out of the event description. A value is kept only when the description has it."
 msgstr "Poimii nämä tapahtuman kuvauksesta. Arvo säilytetään vain, kun kuvauksessa on se."
 
-msgid "Translation into Finnish"
-msgstr "Käännös suomeksi"
+msgid "Translation into the site languages"
+msgstr "Käännös sivuston kielille"
 
-msgid "Translates the post-event email text."
-msgstr "Kääntää tapahtuman jälkeisen sähköpostin tekstin."
-
-msgid "Translation into English"
-msgstr "Käännös englanniksi"
-
-msgid "Translates the announcement texts."
-msgstr "Kääntää tiedotteen tekstit."
+msgid "Translates the announcement texts and the post-event email text into every other site language at once. {from} becomes the language the text is written in, {to} the other languages."
+msgstr "Kääntää tiedotteen tekstit ja tapahtuman jälkeisen sähköpostin tekstin kerralla jokaiselle sivuston muulle kielelle. {from} korvautuu kielellä, jolla teksti on kirjoitettu, {to} muilla kielillä."
 
 msgid "Telegram board: the text about the DJ"
 msgstr "Telegram-taulu: teksti DJ:stä"

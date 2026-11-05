@@ -9,6 +9,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Tests\TestCase;
 
@@ -132,6 +133,44 @@ final class NewsletterTextTest extends TestCase
         self::assertSame('Tervetuloa!', $result['fi']);
         self::assertSame('Welcome!', $result['en']);
         self::assertSame('sv', $result['source']);
+    }
+
+    /**
+     * With a third site language (sv), the text is stored in all three, each
+     * under its code, and read back in all three.
+     */
+    public function testAThirdSiteLanguageGetsItsOwnText(): void
+    {
+        $this->withModel();
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->answer = '{"lang": "fi", "en": "Welcome!", "sv": "Välkommen!"}';
+
+        $result = $this->text()->set('Tervetuloa!', 7);
+
+        self::assertSame(['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'sv' => 'Välkommen!'], $result['texts']);
+        self::assertSame('Välkommen!', $this->options[NewsletterText::OPTION]['sv']);
+        self::assertSame(
+            ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'sv' => 'Välkommen!'],
+            $this->text()->get()['texts']
+        );
+    }
+
+    /**
+     * A text stored when the site had only Finnish and English reads the
+     * same way. A third language added since gets the main language's text.
+     */
+    public function testAnOldFinnishAndEnglishTextStillReads(): void
+    {
+        $this->options[NewsletterText::OPTION] = ['fi' => 'Moi', 'en' => 'Hi', 'translated' => true, 'rev' => 4];
+
+        $stored = $this->text()->get();
+        self::assertSame(['fi' => 'Moi', 'en' => 'Hi'], $stored['texts']);
+        self::assertSame('Moi', $stored['fi']);
+        self::assertSame('Hi', $stored['en']);
+        self::assertSame(4, $stored['rev']);
+
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        self::assertSame(['fi' => 'Moi', 'en' => 'Hi', 'sv' => 'Moi'], $this->text()->get()['texts']);
     }
 
     /**
