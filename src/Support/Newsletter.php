@@ -338,10 +338,11 @@ final class Newsletter
      * NewsletterWriter), the cards show each event's practical information,
      * and its opening text stands in for a missing organizers' text.
      *
-     * $lang is the subscriber's language: 'fi' or 'en' makes the email in
-     * that language only, '' in both (Owner, 2026-11-03). An English-only email
-     * whose text above the cards was translated by the language model ends
-     * with the "Automatically translated" note.
+     * $lang is the subscriber's language: a site language makes the email in
+     * that language only, '' in every language (Owner, 2026-11-03). A
+     * one-language email in another language than the main language whose
+     * text above the cards was translated by the language model ends with
+     * the "Automatically translated" note, in that language.
      *
      * @param array<int, array<string, mixed>> $events Plan events.
      * @param array{fi: string, en: string, source?: string, translated?: bool}|null $text
@@ -367,8 +368,12 @@ final class Newsletter
             $lang
         );
 
-        if ('en' === $lang && self::translatedIntoEnglish($text, $opening)) {
-            $note = NewsletterLayout::translatedNote();
+        if (
+            in_array($lang, HybridPolicy::siteLanguages(), true)
+            && HybridPolicy::mainLanguage() !== $lang
+            && self::translatedInto($lang, $text, $opening)
+        ) {
+            $note = NewsletterLayout::translatedNote($lang);
             $mail['html'] .= $note['html'];
             $mail['text'] .= "\n\n" . $note['text'];
         }
@@ -377,27 +382,31 @@ final class Newsletter
     }
 
     /**
-     * Whether the English text above the cards was translated by the language
+     * Whether the $lang text above the cards was translated by the language
      * model: the organizers' text when it was written in another language
-     * than English, or the language model's opening, which is written in
-     * Finnish and translated into English. An organizers' text kept from
-     * before the source was stored counts as translated when its two
-     * languages differ.
+     * than $lang and has a $lang text, or the language model's opening,
+     * which is written in Finnish and translated. An organizers' text kept
+     * from before the source was stored counts as translated when its $lang
+     * text differs from its Finnish one.
      *
      * @param array<string, mixed>|null $text
      * @param array{fi: string, en: string}|null $opening
      */
-    private static function translatedIntoEnglish(?array $text, ?array $opening): bool
+    private static function translatedInto(string $lang, ?array $text, ?array $opening): bool
     {
         if (null === $text) {
-            return null !== $opening;
+            return null !== $opening
+                && Language::FINNISH !== $lang
+                && '' !== trim((string) ($opening[$lang] ?? ''));
         }
 
         if (! array_key_exists('source', $text)) {
-            return (string) ($text['fi'] ?? '') !== (string) ($text['en'] ?? '');
+            return (string) ($text[Language::FINNISH] ?? '') !== (string) ($text[$lang] ?? '');
         }
 
-        return ! empty($text['translated']) && 'en' !== $text['source'];
+        return ! empty($text['translated'])
+            && $lang !== $text['source']
+            && '' !== trim((string) ($text[$lang] ?? ''));
     }
 
     /**
@@ -408,9 +417,12 @@ final class Newsletter
      *
      * @param array<int, array<string, mixed>> $cards Events through withCard().
      * @param array<int, array<string, mixed>> $later Events through withCard().
-     * @param array{fi?: string, en?: string}|null $text
-     * @param string $lang 'fi' or 'en' for one language; '' (the default, which FollowupMail uses) for both.
+     * @param array<string, string>|null $text Keyed by language.
+     * @param string $lang A site language for one language; '' (the default, which FollowupMail
+     *        uses) for every language.
      * @param bool $band True for the heading as a dark band (FollowupMail); see NewsletterLayout::html().
+     * @param string $kind The message kind whose Hybrid tick decides the every-language version
+     *        (HybridPolicy): NEWSLETTER, or FOLLOWUP from the post-event email.
      * @return array{html: string, text: string}
      */
     public static function content(
@@ -418,11 +430,12 @@ final class Newsletter
         array $later,
         ?array $text,
         string $lang = '',
-        bool $band = false
+        bool $band = false,
+        string $kind = HybridPolicy::NEWSLETTER
     ): array {
         return [
-            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang, $band),
-            'text' => NewsletterLayout::text($cards, $later, $text, $lang),
+            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang, $band, $kind),
+            'text' => NewsletterLayout::text($cards, $later, $text, $lang, $kind),
         ];
     }
 
@@ -1256,23 +1269,24 @@ final class Newsletter
         return HybridPolicy::isOn(HybridPolicy::NEWSLETTER) ? '' : HybridPolicy::mainLanguage();
     }
 
-    /** "fi / en" from a callback run in each language; one when both agree. */
+    /**
+     * "fi / en" from a callback run in each language of the newsletter's
+     * every-language version (HybridPolicy), each different text once.
+     */
     private static function both(callable $words): string
     {
-        $fi = (string) Language::run(Language::FINNISH, $words);
-        $en = (string) Language::run(Language::ENGLISH, $words);
-
-        return $fi === $en ? $en : $fi . ' / ' . $en;
+        return HybridPolicy::join(array_map(
+            'strval',
+            HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::NEWSLETTER), $words)
+        ));
     }
 
-    /** $words run in $lang ('fi' or 'en') alone, or both() for any other $lang. */
+    /** $words run in $lang alone when it is a site language, or both() for any other $lang. */
     private static function inLanguage(callable $words, string $lang): string
     {
-        return match ($lang) {
-            'fi' => (string) Language::run(Language::FINNISH, $words),
-            'en' => (string) Language::run(Language::ENGLISH, $words),
-            default => self::both($words),
-        };
+        return in_array($lang, HybridPolicy::siteLanguages(), true)
+            ? (string) Language::run($lang, $words)
+            : self::both($words);
     }
 
     private static function link(string $do, string $token): string
