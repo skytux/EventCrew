@@ -193,7 +193,7 @@ msgid_plural "%d credits"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TicketMail.php:374 src/Telegram/GuestListService.php:280
+#: src/Support/TicketMail.php:374 src/Telegram/GuestListService.php:316
 #. translators: %d: number of guests
 msgid "%d guest"
 msgid_plural "%d guests"
@@ -218,7 +218,7 @@ msgid_plural "%d people bought a ticket in Holvi for this date."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/GuestListService.php:284
+#: src/Telegram/GuestListService.php:320
 #. translators: %d: number of people including plus-ones
 msgid "%d person in all"
 msgid_plural "%d people in all"
@@ -680,11 +680,11 @@ msgstr ""
 msgid "Add to every night"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:297
+#: src/Telegram/GuestListService.php:333
 msgid "Add with extra people: /door add Name +2 ; note  (the guest and 2 more)"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:296
+#: src/Telegram/GuestListService.php:332
 msgid "Add: /door add Name ; note  (just the guest)"
 msgstr ""
 
@@ -796,7 +796,7 @@ msgstr ""
 msgid "Another date"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:302
+#: src/Telegram/GuestListService.php:338
 msgid "Another night: put the date first, e.g. /door add 1.8. Name"
 msgstr ""
 
@@ -1098,7 +1098,7 @@ msgstr ""
 msgid "Change a member’s roles"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:300
+#: src/Telegram/GuestListService.php:336
 msgid "Change: /door edit 2 +3  (number from the list; give only what changes)"
 msgstr ""
 
@@ -1684,7 +1684,7 @@ msgstr ""
 msgid "Email templates"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:299
+#: src/Telegram/GuestListService.php:335
 msgid "Email the ticket: /door add Name name@example.com"
 msgstr ""
 
@@ -2065,7 +2065,7 @@ msgstr ""
 msgid "Give credits"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:334
+#: src/Telegram/GuestListService.php:370
 msgid "Give the guest’s name, e.g. /door add Anna Virtanen ; DJ’s partner (no extra people), or /door add Anna Virtanen +2 ; DJ’s partner (Anna and 2 more)"
 msgstr ""
 
@@ -2073,7 +2073,7 @@ msgstr ""
 msgid "Give the guest’s name."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:332
+#: src/Telegram/GuestListService.php:368
 msgid "Give the guest’s number from the list, e.g. /door remove 2"
 msgstr ""
 
@@ -2133,7 +2133,7 @@ msgstr ""
 msgid "Guest list"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:270
+#: src/Telegram/GuestListService.php:306
 #. translators: %s: event day, e.g. "Sat 1 Aug"
 msgid "Guest list — %s"
 msgstr ""
@@ -2783,7 +2783,7 @@ msgstr ""
 msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
 msgstr ""
 
-#: templates/admin/diagnostics.php:125
+#: src/Support/NewsletterConfirmMail.php:72 templates/admin/diagnostics.php:125
 msgid "Message"
 msgstr ""
 
@@ -2910,7 +2910,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:298
+#: src/Telegram/GuestListService.php:334
 msgid "No +N, or +0, means no extra people."
 msgstr ""
 
@@ -2959,7 +2959,7 @@ msgstr ""
 msgid "No event is scheduled yet. Give a date: /door add 1.8. Name"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:275
+#: src/Telegram/GuestListService.php:311
 msgid "No guests yet."
 msgstr ""
 
@@ -3029,7 +3029,7 @@ msgstr ""
 msgid "No role has conditions set. Organizers set them in wp-admin, under Settings, Roles."
 msgstr ""
 
-#: src/Admin/RosterPage.php:730 src/Support/DoorDesk.php:849 src/Telegram/GuestListService.php:188
+#: src/Admin/RosterPage.php:730 src/Support/DoorDesk.php:849 src/Telegram/GuestListService.php:191
 msgid "No send was waiting. It may have gone out already."
 msgstr ""
 
@@ -3294,7 +3294,7 @@ msgstr ""
 msgid "Only organizers and that night’s welcome crew can mark attendance."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:354
+#: src/Telegram/GuestListService.php:390
 msgid "Only organizers and that night’s welcome crew can see the guest list."
 msgstr ""
 
@@ -3318,7 +3318,7 @@ msgstr ""
 msgid "Only organizers can change roles."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:76 src/Telegram/GuestListService.php:177
+#: src/Telegram/GuestListService.php:76 src/Telegram/GuestListService.php:180
 msgid "Only organizers can change the guest list."
 msgstr ""
 
@@ -3897,7 +3897,7 @@ msgstr ""
 msgid "Remove this format"
 msgstr ""
 
-#: src/Telegram/GuestListService.php:301
+#: src/Telegram/GuestListService.php:337
 msgid "Remove: /door remove 2"
 msgstr ""
 
@@ -4100,7 +4100,7 @@ msgstr ""
 msgid "Saves every status picker below at once."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:335
+#: src/Telegram/GuestListService.php:371
 msgid "Say what to change, e.g. /door edit 2 +3 or /door edit 2 ; new note"
 msgstr ""
 
@@ -4237,7 +4237,7 @@ msgstr ""
 msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
 msgstr ""
 
-#: src/Admin/RosterPage.php:729 src/Support/DoorDesk.php:848 src/Telegram/GuestListService.php:187
+#: src/Admin/RosterPage.php:729 src/Support/DoorDesk.php:848 src/Telegram/GuestListService.php:190
 msgid "Sending cancelled. No ticket email was sent."
 msgstr ""
 
@@ -4924,7 +4924,7 @@ msgstr ""
 msgid "That email address does not look right."
 msgstr ""
 
-#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:378 src/Support/DoorDesk.php:858 src/Telegram/GuestListService.php:336
+#: src/Admin/RosterPage.php:420 src/Support/DoorDesk.php:378 src/Support/DoorDesk.php:858 src/Telegram/GuestListService.php:372
 #: src/Web/CrewAdminRoster.php:568
 msgid "That email address is not valid. Correct it or leave it empty."
 msgstr ""
@@ -5639,7 +5639,7 @@ msgstr ""
 msgid "There is no crew account for this email address yet. The button below creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you did not ask for this, ignore this email."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:346
+#: src/Telegram/GuestListService.php:382
 #. translators: 1: a list number, 2: event day
 msgid "There is no guest number %1$d on %2$s. Send /door and tap 👥 Guest list to see the list."
 msgstr ""
@@ -5973,7 +5973,7 @@ msgstr ""
 msgid "To do any of these, write to %s and we will answer within one month."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:338
+#: src/Telegram/GuestListService.php:374
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr ""
 
@@ -6524,10 +6524,6 @@ msgstr ""
 
 #: templates/public/signup.php:1962
 msgid "Write it in Finnish or in English. It is translated into the other language when you save."
-msgstr ""
-
-#: src/Support/NewsletterConfirmMail.php:72
-msgid "Write to us"
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:141 src/Telegram/RoleTaskBot.php:335 templates/admin/people.php:145 templates/public/door.php:71
@@ -7254,7 +7250,7 @@ msgstr ""
 msgid "⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:210
+#: src/Telegram/GuestListService.php:246
 #. translators: 1: guest name, 2: event day
 msgid "✅ Added %1$s to %2$s."
 msgstr ""
@@ -7272,7 +7268,7 @@ msgstr ""
 msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or ask someone to take it over with 🔁 Take over a task under /me."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:237
+#: src/Telegram/GuestListService.php:273
 msgid "✏️ Changed %s."
 msgstr ""
 
@@ -7399,7 +7395,7 @@ msgstr ""
 msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."
 msgstr ""
 
-#: src/Telegram/GuestListService.php:256
+#: src/Telegram/GuestListService.php:292
 msgid "🗑 Removed %s."
 msgstr ""
 
