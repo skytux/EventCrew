@@ -8,6 +8,7 @@ use EventCrew\Support\AiPrompts;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventAiText;
+use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
@@ -123,7 +124,7 @@ final class AiPromptsPage
             $cards[(int) $event['id']] = [
                 'event_id' => (int) $event['id'],
                 'date' => $event['date'],
-                'title' => $event['title'],
+                'title' => EventName::name((int) $event['id'], EventName::lang(), $event['title']),
                 'items' => [],
             ];
         }

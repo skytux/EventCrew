@@ -626,7 +626,12 @@ final class EventAiText
             }
 
             if ([] !== $items) {
-                $list[] = ['event_id' => $eventId, 'date' => $row['date'], 'title' => $row['title'], 'items' => $items];
+                $list[] = [
+                    'event_id' => $eventId,
+                    'date' => $row['date'],
+                    'title' => EventName::name((int) $eventId, EventName::lang(), (string) $row['title']),
+                    'items' => $items,
+                ];
             }
         }
 

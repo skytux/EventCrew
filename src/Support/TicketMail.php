@@ -1127,10 +1127,10 @@ final class TicketMail
     private function composeNotice(string $name, string $date, ?string $language, callable $texts): array
     {
         $short = self::shortDate($date);
-        [$event] = $this->event($date);
-        $words = static function () use ($name, $event, $short, $texts): array {
+        [$event, , $eventId] = $this->event($date);
+        $words = static function () use ($name, $event, $eventId, $short, $texts): array {
             $first = DoorDesk::firstName($name);
-            $own = $texts($event, $short);
+            $own = $texts(self::eventIn($event, $eventId, EventName::lang()), $short);
 
             return [
                 'body' => ('' === $first
@@ -1219,7 +1219,7 @@ final class TicketMail
     public function compose(TicketBuyer|Guest|CrewTicket $row, ?Task $deleted = null): array
     {
         $date = self::shortDate($row->eventDate);
-        [$event] = $this->event($row->eventDate);
+        [$event, , $eventId] = $this->event($row->eventDate);
         // A crew member's ticket follows their stored language when the
         // ticket email is not hybrid; everyone else's is not known.
         $parts = [];
@@ -1229,7 +1229,7 @@ final class TicketMail
         ) {
             $parts[$lang] = Language::run(
                 $lang,
-                fn (): array => $this->words($row, $event, $date, $lang, $deleted)
+                fn (): array => $this->words($row, self::eventIn($event, $eventId, $lang), $date, $lang, $deleted)
             );
         }
 
@@ -1589,11 +1589,11 @@ final class TicketMail
     }
 
     /**
-     * The event on $date: [its name, the URL of its picture or ''], from its
-     * first task with an event name, or [the site's name, ''] when the night
-     * has no tasks.
+     * The event on $date: [its name, the URL of its picture or '', its
+     * event post or null], from its first task with an event name, or [the
+     * site's name, '', null] when the night has no tasks.
      *
-     * @return array{0: string, 1: string}
+     * @return array{0: string, 1: string, 2: ?int}
      */
     private function event(string $date): array
     {
@@ -1601,11 +1601,17 @@ final class TicketMail
             $name = trim($task->eventName());
 
             if ('' !== $name) {
-                return [$name, SignupBoardView::eventImage($task->eventPostId)];
+                return [$name, SignupBoardView::eventImage($task->eventPostId), $task->eventPostId];
             }
         }
 
-        return [(string) get_bloginfo('name'), ''];
+        return [(string) get_bloginfo('name'), '', null];
+    }
+
+    /** $event's clean name in $lang (EventName) when it is a linked event, else $event. */
+    private static function eventIn(string $event, ?int $eventId, string $lang): string
+    {
+        return null === $eventId ? $event : EventName::name($eventId, $lang, $event);
     }
 
     /** "14.11.2026": the date as written in Finnish and read in English. */

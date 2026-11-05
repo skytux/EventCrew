@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Models;
 
+use EventCrew\Support\EventName;
 use EventCrew\Support\Roles;
 
 /**
@@ -77,16 +78,18 @@ final class Task
     }
 
     /**
-     * Prefers the linked EventMesh post's title, falling back to the label
-     * typed by hand, then to the date - so this never renders as empty.
+     * Prefers the linked EventMesh event's clean name in the current language
+     * (EventName), then its title, falling back to the label typed by hand,
+     * then to the date - so this never renders as empty.
      */
     public function eventName(): string
     {
         if (null !== $this->eventPostId) {
             $title = get_the_title($this->eventPostId);
+            $name = EventName::name($this->eventPostId, EventName::lang(), is_string($title) ? $title : '');
 
-            if (is_string($title) && '' !== $title) {
-                return $title;
+            if ('' !== $name) {
+                return $name;
             }
         }
 
