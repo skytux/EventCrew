@@ -240,18 +240,22 @@ final class TicketMailTest extends TestCase
         $buyer = TicketBuyer::fromRow($this->buyerRow(1));
         $mail = $this->ticketMail()->compose($buyer);
 
-        self::assertSame(['subject', 'html', 'text'], array_keys($mail));
-        self::assertStringContainsString('<table', $mail['html']);
-        self::assertStringNotContainsString('<img', $mail['html']);
-        self::assertStringNotContainsString('data:image', $mail['html']);
-        self::assertStringNotContainsString('cid:', $mail['html']);
-        self::assertStringContainsString('AB12CD1', $mail['html']);
-        self::assertStringContainsString('Open the ticket in your browser', $mail['html']);
-        self::assertStringContainsString('Thank you for buying a ticket!', $mail['html']);
+        self::assertSame(['subject', 'html', 'corner', 'text'], array_keys($mail));
+        self::assertStringContainsString('<table', $mail['corner']);
 
-        foreach (['clock', 't-clock', 'ec-clock', 'setInterval', '<script', 'frozen'] as $antiFraud) {
-            self::assertStringNotContainsStringIgnoringCase($antiFraud, $mail['html']);
+        foreach (['html', 'corner'] as $part) {
+            self::assertStringNotContainsString('<img', $mail[$part]);
+            self::assertStringNotContainsString('data:image', $mail[$part]);
+            self::assertStringNotContainsString('cid:', $mail[$part]);
+
+            foreach (['clock', 't-clock', 'ec-clock', 'setInterval', '<script', 'frozen'] as $antiFraud) {
+                self::assertStringNotContainsStringIgnoringCase($antiFraud, $mail[$part]);
+            }
         }
+
+        self::assertStringContainsString('AB12CD1', $mail['corner']);
+        self::assertStringContainsString('Avaa lippu · Open my ticket', $mail['html']);
+        self::assertStringContainsString('Thank you for buying a ticket!', $mail['html']);
 
         self::assertSame('Lippusi / Your ticket – 14.11.2026', $mail['subject']);
 
@@ -264,10 +268,10 @@ final class TicketMailTest extends TestCase
     }
 
     /**
-     * With a logo set, the QR has it in the middle, as one linked image; the
-     * code's data is the same as without.
+     * The email's QR code is small and has no logo in the middle, even with
+     * a logo set: it sits in the corner next to the holder's name.
      */
-    public function testTheEmailQrHasTheSiteLogoInTheMiddle(): void
+    public function testTheEmailQrIsSmallWithNoLogo(): void
     {
         Functions\when('get_option')->alias(
             static fn (string $name, mixed $default = false): mixed => EmailTemplate::LOGO_OPTION === $name
@@ -276,47 +280,52 @@ final class TicketMailTest extends TestCase
         );
         $buyer = TicketBuyer::fromRow($this->buyerRow(1));
         $mail = $this->ticketMail()->compose($buyer);
-
-        self::assertSame(1, substr_count($mail['html'], '<img'));
-        self::assertStringContainsString('<img src="https://site.test/logo.png"', $mail['html']);
         $qr = new TicketQr();
         $data = TicketMail::qrData($buyer);
+        $cell = $qr->fitCell($data, 150, '', 4);
+
+        self::assertStringNotContainsString('<img', $mail['html'] . $mail['corner']);
+        self::assertSame(1, substr_count($mail['corner'], $qr->table($data, $cell)));
+        self::assertStringNotContainsString($qr->table($data, $cell), $mail['html']);
+        self::assertLessThanOrEqual(150, (count($qr->matrix($data)) + 8) * $cell);
+        // The old big QR (224 pixels) is gone.
+        self::assertStringNotContainsString(
+            $qr->table($data, $qr->fitCell($data, 224)),
+            $mail['html'] . $mail['corner']
+        );
+        // In a white box with rounded corners.
         self::assertStringContainsString(
-            $qr->table($data, $qr->fitCell($data, 224, 'https://site.test/logo.png'), 'https://site.test/logo.png'),
-            $mail['html']
+            '<td bgcolor="#ffffff" style="padding:4px;background-color:#ffffff;border-radius:10px;',
+            $mail['corner']
         );
     }
 
     /**
-     * The ticket is drawn like the ticket page: the dark header with the
-     * event and the date, then the holder's name, the QR code, the code and
-     * the link, in that order, on the page's grey. Inline styles and tables
-     * only: no style block, no linked stylesheet, no flex or grid layout.
+     * The ticket email in order: the "Your ticket" line, the event and the
+     * date as the heading, the Finnish part then the English part (each
+     * greeting on its own line in italics), the button and the closing line.
+     * The corner: the holder's name, the code, the offline line, the QR code.
+     * Inline styles and tables only: no style block, no linked stylesheet, no
+     * flex or grid layout.
      */
-    public function testTheTicketLooksLikeTheTicketPage(): void
+    public function testTheTicketEmailIsInTheV4Order(): void
     {
         $buyer = TicketBuyer::fromRow($this->buyerRow(1));
         $mail = $this->ticketMail()->compose($buyer);
         $html = $mail['html'];
-        $qr = new TicketQr();
-        $data = TicketMail::qrData($buyer);
-        $cell = $qr->fitCell($data, 224);
-
-        self::assertStringContainsString($qr->table($data, $cell), $html);
-        self::assertLessThanOrEqual(224, (count($qr->matrix($data)) + 8) * $cell);
-        self::assertStringContainsString('bgcolor="#e8e6e3"', $html);
-        self::assertStringContainsString('bgcolor="#2b2b30"', $html);
-        self::assertStringContainsString('max-width:416px', $html);
-        self::assertStringContainsString('font-family:system-ui,', $html);
 
         $order = [
-            'Lippusi / Your ticket',
-            'Test Site</p>',
-            '14.11.2026</p>',
-            'Anna Virtanen</p>',
-            '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width=',
-            'AB12CD1</p>',
-            'Avaa lippu selaimessa / Open the ticket in your browser',
+            'Lippusi · Your ticket</p>',
+            '<h1 class="ec-shimmer-light"',
+            'Test Site — 14.11.2026</h1>',
+            '>FI<',
+            'font-style:italic;line-height:1.4;color:#2a2233">Hei Anna,</p>',
+            'Kiitos, että ostit lipun!',
+            '>EN<',
+            'font-style:italic;line-height:1.4;color:#2a2233">Hi Anna,</p>',
+            'Thank you for buying a ticket!',
+            'Avaa lippu · Open my ticket',
+            'Nähdään tanssilattialla ✦ See you on the dancefloor</p>',
         ];
         $last = -1;
 
@@ -327,17 +336,39 @@ final class TicketMailTest extends TestCase
             $last = $at;
         }
 
-        foreach (['<style', '<link', '@import', 'display:flex', 'display:grid', '<div'] as $css) {
-            self::assertStringNotContainsStringIgnoringCase($css, $html);
+        // The closing line is gold and in italics.
+        self::assertStringContainsString(
+            'font-size:20px;font-style:italic;line-height:1.4;color:#a8641f;text-align:center">Nähdään',
+            $html
+        );
+
+        $last = -1;
+
+        $corner = ['Anna Virtanen</p>', 'AB12CD1</p>', 'Ei nettiä? Näytä tämä QR-koodi ovella.<br>', 'width="156"'];
+
+        foreach ($corner as $text) {
+            $at = strpos($mail['corner'], $text, $last + 1);
+            self::assertNotFalse($at, $text);
+            self::assertGreaterThan($last, $at, $text);
+            $last = $at;
         }
 
-        // The FI / EN tags of the two texts are still there.
-        self::assertStringContainsString('>FI<', $html);
-        self::assertStringContainsString('>EN<', $html);
+        foreach (['<style', '<link', '@import', 'display:flex', 'display:grid', '<div'] as $css) {
+            self::assertStringNotContainsStringIgnoringCase($css, $html . $mail['corner']);
+        }
+
+        // The old ticket card (grey surround, dark header) is gone.
+        self::assertStringNotContainsString('#e8e6e3', $html);
+        self::assertStringNotContainsString('#2b2b30', $html);
+        // The plain text has the greeting without the stars, and the closing.
+        self::assertStringContainsString("Hei Anna,\n\nKiitos, että ostit lipun!", $mail['text']);
+        self::assertStringNotContainsString('*', $mail['text']);
+        self::assertStringContainsString('See you on the dancefloor', $mail['text']);
+        self::assertStringContainsString('AB12CD1', $mail['text']);
     }
 
-    /** With an event picture, it is behind the header under the page's dark layer. */
-    public function testTheTicketHeaderHasTheEventPicture(): void
+    /** The heading has the event's name from the night's tasks. */
+    public function testTheTicketHeadingHasTheEventName(): void
     {
         Functions\when('get_the_title')->justReturn('Salsa Night');
         Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/poster.jpg');
@@ -348,15 +379,13 @@ final class TicketMailTest extends TestCase
         ]];
         $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
 
-        self::assertStringContainsString(
-            'background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.72)),'
-                . 'url(&quot;https://site.test/poster.jpg&quot;)',
-            $mail['html']
-        );
-        self::assertStringContainsString('Salsa Night</p>', $mail['html']);
+        self::assertStringContainsString('Salsa Night — 14.11.2026</h1>', $mail['html']);
+        self::assertStringContainsString('tapahtumaan Salsa Night 14.11.2026', $mail['html']);
+        // The event picture is no longer in the ticket email.
+        self::assertStringNotContainsString('poster.jpg', $mail['html']);
     }
 
-    public function testTheEmailShowsTheTicketNoteUnderTheTicket(): void
+    public function testTheEmailShowsTheTicketNoteAboveTheButton(): void
     {
         Functions\when('get_option')->alias(
             static fn (string $name, mixed $default = false): mixed => 'eventcrew_ticket_note' === $name
@@ -367,7 +396,15 @@ final class TicketMailTest extends TestCase
 
         self::assertStringContainsString("Door code 1234\nSome street 5 &lt;b&gt;", $mail['html']);
         self::assertStringContainsString('white-space:pre-line', $mail['html']);
-        self::assertLessThan(strpos($mail['html'], 'Door code'), (int) strpos($mail['html'], 'AB12CD1'));
+        self::assertStringContainsString('bgcolor="#f3eadb"', $mail['html']);
+        self::assertLessThan(
+            (int) strpos($mail['html'], 'Open my ticket'),
+            (int) strpos($mail['html'], 'Door code')
+        );
+        self::assertLessThan(
+            (int) strpos($mail['html'], 'Door code'),
+            (int) strpos($mail['html'], 'Thank you for buying a ticket!')
+        );
         self::assertStringContainsString("Door code 1234\nSome street 5 <b>", $mail['text']);
     }
 
@@ -564,8 +601,13 @@ final class TicketMailTest extends TestCase
         self::assertNull(TicketMail::guestIdFromCode('AB12CD1'));
 
         $mail = $this->ticketMail()->compose($guest);
-        self::assertStringContainsString('Cy Cole +2', $mail['html']);
+        self::assertStringContainsString('Cy Cole +2</p>', $mail['corner']);
         self::assertStringContainsString('Thank you for coming!', $mail['html']);
+        // {plus_ones} filled in both languages.
+        self::assertStringContainsString('You can bring 2 people with you.', $mail['html']);
+        self::assertStringContainsString('Mukaasi saa tulla 2 henkilöä.', $mail['html']);
+        // A guest's code is in the QR only, not written out.
+        self::assertStringNotContainsString($data, $mail['html'] . $mail['corner'] . $mail['text']);
 
         preg_match('/href="([^"]+)"/', $mail['html'], $link);
         $url = html_entity_decode($link[1]);
@@ -604,7 +646,13 @@ final class TicketMailTest extends TestCase
         self::assertSame('Lippusi / Your ticket – 14.11.2026', $this->mails[0]['subject']);
         self::assertStringContainsString('Kiitos, että otit tehtävän!', $this->mails[0]['body']);
         self::assertStringContainsString('Thank you for taking a task!', $this->mails[0]['body']);
-        self::assertStringContainsString('Open the ticket in your browser', $this->mails[0]['body']);
+        self::assertStringContainsString('Avaa lippu · Open my ticket', $this->mails[0]['body']);
+        // The corner, with the small QR code, is in the sent email under the sign-off.
+        self::assertStringContainsString('No internet? Show this QR code at the door.', $this->mails[0]['body']);
+        self::assertLessThan(
+            (int) strpos($this->mails[0]['body'], 'No internet?'),
+            (int) strpos($this->mails[0]['body'], 'See you on the dancefloor')
+        );
 
         $update = $this->updates()[0];
         self::assertSame('wp_eventcrew_assignments', $update['table']);
@@ -707,45 +755,87 @@ final class TicketMailTest extends TestCase
 
     /**
      * A bought ticket, a guest-list ticket, a crew sign-up and a spent credit
-     * get the one email: the same subject, the same card in the same order,
-     * a QR code and the link. Only the thank-you line, a buyer's written-out
-     * code and a guest's plus-ones line differ.
+     * get the one email: the same subject, the same layout in the same order,
+     * the closing line, and the small QR code in the corner. Per kind, the
+     * placeholders are filled: {reason} with its own line, {tasks} only for
+     * crew, {plus_ones} only for a guest; the code is written out only for a
+     * buyer. No placeholder is left in, and no empty paragraph.
      */
     public function testEveryKindOfTicketGetsTheSameEmail(): void
     {
+        $crew = new CrewTicket(
+            CrewTicket::KIND_CREW,
+            31,
+            '2026-11-14',
+            'Mia Crew',
+            'mia@example.test',
+            [\EventCrew\Models\Task::fromRow($this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00'))]
+        );
         $mail = $this->ticketMail();
-        $rows = [
-            TicketBuyer::fromRow($this->buyerRow(1)),
-            Guest::fromRow($this->guestRow(9)),
-            new CrewTicket(CrewTicket::KIND_CREW, 31, '2026-11-14', 'Mia Crew', 'mia@example.test'),
-            new CrewTicket(CrewTicket::KIND_CREDIT, 12, '2026-11-14', 'Mia Crew', 'mia@example.test'),
+        $kinds = [
+            'buyer' => [TicketBuyer::fromRow($this->buyerRow(1)), 'Thank you for buying a ticket!'],
+            'guest' => [Guest::fromRow($this->guestRow(9)), 'Thank you for coming! You are on the guest list.'],
+            'crew' => [$crew, 'Thank you for taking a task!'],
+            'credit' => [
+                new CrewTicket(CrewTicket::KIND_CREDIT, 12, '2026-11-14', 'Mia Crew', 'mia@example.test'),
+                'You spent a free-entry credit on this night.',
+            ],
         ];
+        $qr = new TicketQr();
 
-        foreach ($rows as $row) {
+        foreach ($kinds as $kind => [$row, $reason]) {
             $email = $mail->compose($row);
-            $qr = new TicketQr();
             $data = TicketMail::qrData($row);
+            $first = 'guest' === $kind ? 'Cy' : ('buyer' === $kind ? 'Anna' : 'Mia');
 
-            self::assertSame('Lippusi / Your ticket – 14.11.2026', $email['subject']);
+            self::assertSame('Lippusi / Your ticket – 14.11.2026', $email['subject'], $kind);
 
             $order = [
+                'Lippusi · Your ticket</p>',
+                'Test Site — 14.11.2026</h1>',
                 '>FI<',
+                'Hei ' . $first . ',</p>',
+                'tapahtumaan Test Site 14.11.2026',
                 '>EN<',
-                'bgcolor="#e8e6e3"',
-                'bgcolor="#2b2b30"',
-                'Lippusi / Your ticket',
-                'Test Site</p>',
-                '14.11.2026</p>',
-                $qr->table($data, $qr->fitCell($data, 224)),
-                'Avaa lippu selaimessa / Open the ticket in your browser',
+                'Hi ' . $first . ',</p>',
+                $reason,
+                'ticket to Test Site on 14.11.2026',
+                'Avaa lippu · Open my ticket',
+                'See you on the dancefloor</p>',
             ];
             $last = -1;
 
             foreach ($order as $text) {
                 $at = strpos($email['html'], $text, $last + 1);
-                self::assertNotFalse($at, get_class($row) . ': ' . substr($text, 0, 40));
+                self::assertNotFalse($at, $kind . ': ' . substr($text, 0, 40));
                 $last = $at;
             }
+
+            // The small QR, in the corner only.
+            $cell = $qr->fitCell($data, 150, '', 4);
+            self::assertStringContainsString($qr->table($data, $cell), $email['corner'], $kind);
+            self::assertLessThanOrEqual(150, (count($qr->matrix($data)) + 8) * $cell, $kind);
+            self::assertStringNotContainsString('<table cellpadding', $email['html'], $kind);
+
+            // The code written out for a buyer only.
+            self::assertSame(
+                'buyer' === $kind,
+                str_contains($email['corner'], 'AB12CD1</p>'),
+                $kind
+            );
+
+            // {tasks} for crew only, {plus_ones} for a guest only.
+            self::assertSame('crew' === $kind, str_contains($email['html'], 'Your tasks on this night:'), $kind);
+            self::assertSame('crew' === $kind, str_contains($email['html'], ', 22:00</li>'), $kind);
+            self::assertSame('guest' === $kind, str_contains($email['html'], 'You can bring'), $kind);
+
+            // No placeholder or stars left, no empty paragraph or line.
+            foreach (['{', '}', '*'] as $mark) {
+                self::assertStringNotContainsString($mark, $email['text'], $kind);
+            }
+
+            self::assertStringNotContainsString("\n\n\n", $email['text'], $kind);
+            self::assertDoesNotMatchRegularExpression('/<p[^>]*>\s*<\/p>/', $email['html'], $kind);
         }
     }
 
