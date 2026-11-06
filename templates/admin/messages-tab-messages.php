@@ -4,7 +4,8 @@
  * Messages page, Messages tab (included by messages.php): one entry per email
  * and Telegram message kind, each with its own form (subject, text,
  * placeholders, formatting help, settings added by other parts) and a "Reset
- * to built-in text" form.
+ * to built-in text" form. The Ticket entry has only the ticket email text
+ * form (TicketText and its {reason} lines).
  *
  * @var list<array<string, mixed>> $entries MessagesPage::entries()
  * @var string $open The kind to show opened, '' for none.
@@ -38,7 +39,7 @@ use EventCrew\Support\TranslatedText;
             <?php echo $open === $eventcrew_id ? 'open' : ''; ?>>
             <summary style="cursor:pointer;font-size:1.1em;padding:0.3em 0">
                 <strong><?php echo esc_html((string) $eventcrew_entry['label']); ?></strong>
-                <?php if ($eventcrew_entry['changed']) : ?>
+                <?php if ($eventcrew_entry['changed'] && MessagesPage::TICKET_KIND !== $eventcrew_id) : ?>
                     <em>(<?php esc_html_e('changed', 'eventcrew'); ?>)</em>
                 <?php endif; ?>
             </summary>
@@ -114,108 +115,108 @@ use EventCrew\Support\TranslatedText;
                     <?php submit_button(__('Save the ticket email text', 'eventcrew')); ?>
                     <div class="ec-ajax-notice" data-ec-ajax-notice aria-live="polite"></div>
                 </form>
-            <?php endif; ?>
+            <?php else : // The Ticket entry has only the form above; every other entry its message text below. ?>
+                <?php if (! $eventcrew_entry['wired']) : ?>
+                    <p class="notice notice-warning inline" style="padding:0.5em">
+                        <?php esc_html_e('This message does not use the text below yet: it still sends its built-in text. A text saved here is kept for when it does.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                <?php endif; ?>
 
-            <?php if (! $eventcrew_entry['wired']) : ?>
-                <p class="notice notice-warning inline" style="padding:0.5em">
-                    <?php esc_html_e('This message does not use the text below yet: it still sends its built-in text. A text saved here is kept for when it does.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
-                </p>
-            <?php endif; ?>
+                <?php // With JavaScript the page posts this form to admin-ajax and stays (eventcrew-jobs.js). ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ec-ajax-save>
+                    <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::SAVE_ACTION); ?>">
+                    <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
+                    <?php wp_nonce_field(MessagesPage::SAVE_ACTION); ?>
 
-            <?php // With JavaScript the page posts this form to admin-ajax and stays (eventcrew-jobs.js). ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ec-ajax-save>
-                <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::SAVE_ACTION); ?>">
-                <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
-                <?php wp_nonce_field(MessagesPage::SAVE_ACTION); ?>
+                    <?php if (null !== $eventcrew_entry['subject']) : ?>
+                        <h3><?php esc_html_e('Subject', 'eventcrew'); ?></h3>
+                        <?php
+                        TranslatedText::field(
+                            MessageTemplates::POST_NAME . '[' . MessageTemplates::SUBJECT . ']',
+                            $eventcrew_field . '-subject',
+                            $eventcrew_entry['subject'],
+                            MessageTemplates::SUBJECT_MAX_LENGTH,
+                            false,
+                            '',
+                            'message.' . $eventcrew_id . '.' . MessageTemplates::SUBJECT
+                        );
+                        ?>
+                    <?php endif; ?>
 
-                <?php if (null !== $eventcrew_entry['subject']) : ?>
-                    <h3><?php esc_html_e('Subject', 'eventcrew'); ?></h3>
+                    <h3>
+                        <?php
+                        echo MessageTemplate::CHANNEL_TELEGRAM === $eventcrew_entry['channel']
+                            ? esc_html__('Telegram message', 'eventcrew')
+                            : esc_html__('Email text', 'eventcrew');
+                        ?>
+                    </h3>
                     <?php
                     TranslatedText::field(
-                        MessageTemplates::POST_NAME . '[' . MessageTemplates::SUBJECT . ']',
-                        $eventcrew_field . '-subject',
-                        $eventcrew_entry['subject'],
-                        MessageTemplates::SUBJECT_MAX_LENGTH,
-                        false,
+                        MessageTemplates::POST_NAME . '[' . MessageTemplates::BODY . ']',
+                        $eventcrew_field . '-body',
+                        $eventcrew_entry['body'],
+                        MessageTemplates::BODY_MAX_LENGTH,
+                        true,
                         '',
-                        'message.' . $eventcrew_id . '.' . MessageTemplates::SUBJECT
+                        'message.' . $eventcrew_id . '.' . MessageTemplates::BODY
                     );
                     ?>
-                <?php endif; ?>
+                    <p class="description"><?php echo esc_html((string) $eventcrew_entry['formatting']); ?></p>
 
-                <h3>
-                    <?php
-                    echo MessageTemplate::CHANNEL_TELEGRAM === $eventcrew_entry['channel']
-                        ? esc_html__('Telegram message', 'eventcrew')
-                        : esc_html__('Email text', 'eventcrew');
-                    ?>
-                </h3>
-                <?php
-                TranslatedText::field(
-                    MessageTemplates::POST_NAME . '[' . MessageTemplates::BODY . ']',
-                    $eventcrew_field . '-body',
-                    $eventcrew_entry['body'],
-                    MessageTemplates::BODY_MAX_LENGTH,
-                    true,
-                    '',
-                    'message.' . $eventcrew_id . '.' . MessageTemplates::BODY
-                );
-                ?>
-                <p class="description"><?php echo esc_html((string) $eventcrew_entry['formatting']); ?></p>
-
-                <?php if ([] !== $eventcrew_entry['placeholders']) : ?>
-                    <h3><?php esc_html_e('Placeholders', 'eventcrew'); ?></h3>
-                    <table class="widefat striped" style="max-width:48em">
-                        <thead>
-                            <tr>
-                                <th scope="col"><?php esc_html_e('Placeholder', 'eventcrew'); ?></th>
-                                <th scope="col"><?php esc_html_e('Becomes', 'eventcrew'); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($eventcrew_entry['placeholders'] as $eventcrew_tag => $eventcrew_what) : ?>
+                    <?php if ([] !== $eventcrew_entry['placeholders']) : ?>
+                        <h3><?php esc_html_e('Placeholders', 'eventcrew'); ?></h3>
+                        <table class="widefat striped" style="max-width:48em">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <code><?php echo esc_html((string) $eventcrew_tag); ?></code>
-                                        <?php if (in_array($eventcrew_tag, $eventcrew_entry['required'], true)) : ?>
-                                            <br><strong>
-                                                <?php esc_html_e('Required: a text without it is not saved.', 'eventcrew'); ?>
-                                            </strong>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo esc_html((string) $eventcrew_what); ?></td>
+                                    <th scope="col"><?php esc_html_e('Placeholder', 'eventcrew'); ?></th>
+                                    <th scope="col"><?php esc_html_e('Becomes', 'eventcrew'); ?></th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($eventcrew_entry['placeholders'] as $eventcrew_tag => $eventcrew_what) : ?>
+                                    <tr>
+                                        <td>
+                                            <code><?php echo esc_html((string) $eventcrew_tag); ?></code>
+                                            <?php if (in_array($eventcrew_tag, $eventcrew_entry['required'], true)) : ?>
+                                                <br><strong>
+                                                    <?php esc_html_e('Required: a text without it is not saved.', 'eventcrew'); ?>
+                                                </strong>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo esc_html((string) $eventcrew_what); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
 
-                <?php
-                // Room for the per-template settings of other parts (the AI
-                // tick and prompt, the hybrid tick). They post inside this
-                // form and are read back through MessageTemplates::SETTINGS_FILTER.
-                do_action(MessageTemplates::FIELDS_ACTION, $eventcrew_entry['template'], $eventcrew_entry['settings']);
-                ?>
+                    <?php
+                    // Room for the per-template settings of other parts (the AI
+                    // tick and prompt, the hybrid tick). They post inside this
+                    // form and are read back through MessageTemplates::SETTINGS_FILTER.
+                    do_action(MessageTemplates::FIELDS_ACTION, $eventcrew_entry['template'], $eventcrew_entry['settings']);
+                    ?>
 
-                <?php submit_button(__('Save this message', 'eventcrew')); ?>
-                <div class="ec-ajax-notice" data-ec-ajax-notice aria-live="polite"></div>
-            </form>
-
-            <?php if ($eventcrew_entry['changed']) : ?>
-                <?php
-                $eventcrew_confirm = __(
-                    'Forget the changed text of this message and use the built-in text again?',
-                    'eventcrew'
-                );
-                ?>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
-                    onsubmit="return confirm(<?php echo esc_attr((string) wp_json_encode($eventcrew_confirm)); ?>);">
-                    <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::RESET_ACTION); ?>">
-                    <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
-                    <?php wp_nonce_field(MessagesPage::RESET_ACTION); ?>
-                    <?php submit_button(__('Reset to built-in text', 'eventcrew'), 'secondary', 'submit', false); ?>
+                    <?php submit_button(__('Save this message', 'eventcrew')); ?>
+                    <div class="ec-ajax-notice" data-ec-ajax-notice aria-live="polite"></div>
                 </form>
-            <?php endif; ?>
+
+                <?php if ($eventcrew_entry['changed']) : ?>
+                    <?php
+                    $eventcrew_confirm = __(
+                        'Forget the changed text of this message and use the built-in text again?',
+                        'eventcrew'
+                    );
+                    ?>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                        onsubmit="return confirm(<?php echo esc_attr((string) wp_json_encode($eventcrew_confirm)); ?>);">
+                        <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::RESET_ACTION); ?>">
+                        <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
+                        <?php wp_nonce_field(MessagesPage::RESET_ACTION); ?>
+                        <?php submit_button(__('Reset to built-in text', 'eventcrew'), 'secondary', 'submit', false); ?>
+                    </form>
+                <?php endif; ?>
+            <?php endif; // Not the Ticket entry. ?>
         </details>
     <?php endforeach; ?>
 
