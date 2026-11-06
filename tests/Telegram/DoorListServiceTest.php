@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Telegram\BoardRenderer;
+use EventCrew\Telegram\DayPicker;
 
 final class DoorListServiceTest extends TelegramTestCase
 {
@@ -226,6 +228,7 @@ final class DoorListServiceTest extends TelegramTestCase
         );
         self::assertSame(
             ['inline_keyboard' => [[
+                ['text' => DayPicker::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA],
                 ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'dl:2026-08-01'],
                 ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'dl:2026-08-08'],
             ]]],

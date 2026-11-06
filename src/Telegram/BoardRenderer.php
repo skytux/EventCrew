@@ -348,8 +348,8 @@ final class BoardRenderer
 
     /**
      * The links at the foot of the board (Owner 2026-11-06): sign-up across the
-     * whole row, then your own info and what each task involves side by side,
-     * then the crew guide. Only the links there are go in; [] when none.
+     * whole row, then your own info and what each task involves side by side.
+     * No crew guide. Only the links there are go in; [] when none.
      *
      * @return array<int, array<int, array<string, mixed>>>
      */
@@ -379,13 +379,7 @@ final class BoardRenderer
             $rows[] = $pair;
         }
 
-        // The crew guide needs no bot username, only the link itself.
-        $guide = RoleGuide::button();
-
-        if (null !== $guide) {
-            $rows[] = [$guide];
-        }
-
+        // No crew guide on the board (Owner 2026-11-06).
         return $rows;
     }
 
