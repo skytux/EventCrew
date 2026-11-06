@@ -463,7 +463,8 @@ final class FollowupMail
                 self::footer(),
                 false,
                 '',
-                $mail['headers']
+                $mail['headers'],
+                HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP)
             );
 
             if ($one) {
@@ -809,7 +810,8 @@ final class FollowupMail
         }
 
         $both = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key));
-        $pair = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($parts, $key), ' · ');
+        // The join button and the opt-out link: one language per row.
+        $pair = static fn (string $key): string => HybridPolicy::rows(HybridPolicy::field($parts, $key));
 
         $campaign = self::campaign($date, $came);
         $link = static fn (string $url): string => '' === $url
@@ -874,7 +876,7 @@ final class FollowupMail
                 . '<a href="%s" style="color:inherit;text-decoration:underline">%s</a></p>',
             EmailBody::FONT,
             esc_url($optOut),
-            esc_html($pair('optout'))
+            str_replace("\n", '<br>', esc_html($pair('optout')))
         );
         $text .= "\n\n" . $pair('optout') . ': ' . $optOut;
 
@@ -1039,7 +1041,8 @@ final class FollowupMail
                 self::footer(),
                 false,
                 '',
-                $mail['headers']
+                $mail['headers'],
+                HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP)
             );
             $tried++;
             $failed += $sent ? 0 : 1;

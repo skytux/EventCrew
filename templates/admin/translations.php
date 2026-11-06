@@ -6,6 +6,7 @@
  *
  * @var list<string> $languages The site's languages, main first.
  * @var string $main
+ * @var string $buttons_warning '' or the warning that Telegram buttons show only the first two languages.
  * @var list<string> $no_catalog Site languages the plugin's own strings are not translated into.
  * @var array<string, array{0: string, 1: string, 2: string}> $known
  * @var bool $translate_auto
@@ -65,6 +66,9 @@ $eventcrew_tr_list_fields = static function () use ($search, $show): void {
                         );
                         ?>
                     </p>
+                    <?php if ('' !== $buttons_warning) : ?>
+                        <p class="description" style="color:#996800"><?php echo esc_html($buttons_warning); ?></p>
+                    <?php endif; ?>
                     <?php foreach ($no_catalog as $eventcrew_tr_code) : ?>
                         <p class="description" style="color:#996800">
                             <?php

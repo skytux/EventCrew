@@ -136,7 +136,11 @@ final class Mailer
      * $headers are added to the mail's headers (the post-event email's
      * List-Unsubscribe).
      *
+     * $languages are the email's languages, for the sign-off; empty for
+     * every site language.
+     *
      * @param array<int, string> $headers
+     * @param list<string> $languages
      */
     public function toTicketHolder(
         string $to,
@@ -146,11 +150,12 @@ final class Mailer
         string $footer,
         bool $lightOnly = true,
         string $corner = '',
-        array $headers = []
+        array $headers = [],
+        array $languages = []
     ): bool {
         $board = $this->boardUrl();
-        // These emails are Finnish, then English: the closing shows both sign-offs.
-        $signature = Signature::bothText();
+        // The closing shows the sign-off in each of the email's languages.
+        $signature = Signature::bothText($languages);
         $text .= ('' === $signature ? '' : "\n\n" . $signature) . "\n\n—\n" . $footer
             . ('' === $board ? '' : ': ' . $board);
         // $corner (HTML, the ticket email's QR corner) goes under the sign-off,
@@ -162,7 +167,7 @@ final class Mailer
             $lightOnly,
             null,
             '',
-            true
+            [] === $languages ? true : $languages
         );
 
         $parts = static function ($phpmailer) use ($text): void {

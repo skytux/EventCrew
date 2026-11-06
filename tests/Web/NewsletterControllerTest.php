@@ -15,6 +15,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterConfirmMail;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\Turnstile;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\NewsletterController;
@@ -124,16 +125,16 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('Enää yksi askel', $body);
         self::assertStringContainsString('One step left', $body);
         self::assertStringContainsString('Ei muuta.', $body);
-        self::assertStringContainsString('Vahvista / Confirm</a>', $body);
+        self::assertStringContainsString('Vahvista<br>Confirm</a>', $body);
         self::assertStringContainsString('✦', $body);
         self::assertStringContainsString('announcement form on', $body);
         self::assertStringNotContainsString('border-radius:15px 15px 0 0', $body, 'no bar picture set, no picture');
         // The button has a centred row of its own and stays on one line.
         self::assertMatchesRegularExpression(
-            '~<tr><td align="center" style="[^"]*text-align:center"><table[^>]*>.*Vahvista / Confirm</a>~s',
+            '~<tr><td align="center" style="[^"]*text-align:center"><table[^>]*>.*Vahvista<br>Confirm</a>~s',
             $body
         );
-        self::assertStringContainsString('white-space:nowrap">Vahvista / Confirm</a>', $body);
+        self::assertStringContainsString('white-space:nowrap">Vahvista<br>Confirm</a>', $body);
     }
 
     /** The plain-text part writes the link out. */
@@ -146,7 +147,7 @@ final class NewsletterControllerTest extends TestCase
         $text = NewsletterConfirmMail::text(['fi' => $fi, 'en' => $en], 'https://site.test/c');
         $html = NewsletterConfirmMail::html(['fi' => $fi, 'en' => $en], 'https://site.test/c', 'https://site.test/bar.jpg');
 
-        self::assertStringContainsString("Vahvista / Confirm: https://site.test/c", $text);
+        self::assertStringContainsString("Vahvista\nConfirm: https://site.test/c", $text);
         self::assertStringContainsString("Teksti", $text);
         self::assertStringContainsString("\nText", $text);
         self::assertStringContainsString('<img src="https://site.test/bar.jpg"', $html);
@@ -633,6 +634,22 @@ final class NewsletterControllerTest extends TestCase
         self::assertStringContainsString('name="act" value="leave"', $page['html']);
         self::assertStringContainsString('value="' . $token . '"', $page['html']);
         self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** The language choices are the site languages, in the site's order, each in its own name. */
+    public function testTheManagePageOffersEverySiteLanguageInOrder(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'sv', 'en'];
+        $this->wpdb->nextRows[] = ['name' => 'Anna', 'language' => 'sv']
+            + self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        $html = $this->controller()->respond('manage', 'GET', SignedLink::sign(Newsletter::PURPOSE_MANAGE, 5))['html'];
+
+        self::assertMatchesRegularExpression(
+            '~value="fi"> Suomi</label>.*value="sv" checked> Svenska</label>.*value="en"> English</label>~s',
+            $html
+        );
+        self::assertSame(3, substr_count($html, 'name="language"'));
     }
 
     /** A GET with act=leave (a link scanner) changes nothing. */

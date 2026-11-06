@@ -138,9 +138,10 @@ final class NewsletterConfirmMail
                 . '%s</p>',
             $head,
             self::TEXT_COLOR,
-            esc_html(HybridPolicy::join(HybridPolicy::field($parts, 'promise')))
+            str_replace("\n", '<br>', esc_html(HybridPolicy::rows(HybridPolicy::field($parts, 'promise'))))
         );
-        $label = HybridPolicy::join(HybridPolicy::field($parts, 'button'));
+        // One language per row, the button too (Lou, 2026-11-06).
+        $label = HybridPolicy::rows(HybridPolicy::field($parts, 'button'));
         $button = '' === $confirmUrl ? '' : sprintf(
             '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="margin:0 auto">'
@@ -153,7 +154,7 @@ final class NewsletterConfirmMail
             esc_url($confirmUrl),
             $font,
             self::BUTTON_TEXT,
-            esc_html($label),
+            str_replace("\n", '<br>', esc_html($label)),
             mb_strlen($label) <= 22 ? ';white-space:nowrap' : ''
         );
         $paragraph = static fn (string $text, string $color, string $margin, string $tag): string => sprintf(
@@ -208,7 +209,7 @@ final class NewsletterConfirmMail
                 . 'text-align:center">%s</p>',
             $head,
             self::MUTED_COLOR,
-            esc_html($en)
+            str_replace("\n", '<br>', esc_html($en))
         );
 
         return sprintf(
@@ -247,7 +248,7 @@ final class NewsletterConfirmMail
             '',
             $bodies[0],
             '',
-            HybridPolicy::join(HybridPolicy::field($parts, 'button')) . ': ' . $confirmUrl,
+            HybridPolicy::rows(HybridPolicy::field($parts, 'button')) . ': ' . $confirmUrl,
         ];
 
         foreach (array_slice($bodies, 1) as $body) {

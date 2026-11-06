@@ -466,6 +466,23 @@ final class BoardService
 
         $result = $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
 
+        if (null === $result) {
+            // The new board did not go up: the old one stays. In the same chat
+            // it stays the board too, so the next refresh edits it, and a card
+            // just posted above the failed board is taken down again.
+            if ($previousChat === $chatId) {
+                $posted = $this->cardState($this->board());
+
+                if (null !== $posted) {
+                    $this->telegram->deleteMessage($chatId, $posted['message_id']);
+                }
+
+                update_option(self::BOARD_OPTION, $previous);
+            }
+
+            return false;
+        }
+
         if (0 !== $previousChat) {
             if ($previousId > 0) {
                 $this->telegram->deleteMessage($previousChat, $previousId);
@@ -483,7 +500,7 @@ final class BoardService
 
         $this->storeBoard($chatId, $result);
 
-        return null !== $result;
+        return true;
     }
 
     /** Whether the board is shown in card format (Settings → Telegram bot). */
@@ -610,7 +627,7 @@ final class BoardService
     {
         $result = $this->telegram->sendPhoto($chatId, $card['photo'], $card['caption'], $this->cardMarkup($card));
 
-        if (null === $result || ! isset($result['message_id'])) {
+        if (null === $result) {
             return null;
         }
 

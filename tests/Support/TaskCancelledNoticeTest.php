@@ -70,21 +70,25 @@ final class TaskCancelledNoticeTest extends TestCase
         ];
     }
 
-    public function testEveryoneSignedUpIsEmailedInFinnishAndEnglish(): void
+    /** Each person gets the email in their own language only, hybrid tick or not (Lou, 2026-11-06). */
+    public function testEveryoneSignedUpIsEmailedInTheirOwnLanguage(): void
     {
         $this->wpdb->nextRows[] = $this->task('2026-08-01'); // tasks->find
-        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna', 'language' => 'fi'];
         $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'bo@example.com', 'display_name' => 'Bo'];
 
         $this->notice()->notify(5, [7, 8]);
 
         self::assertSame(['anna@example.com', 'bo@example.com'], array_column($this->mails, 'to'));
-        $mail = $this->mails[0];
-        self::assertStringContainsString('Tehtävä peruttu', $mail['subject']);
-        self::assertStringContainsString('Task cancelled', $mail['subject']);
-        self::assertStringContainsString('Järjestäjät ovat peruneet tehtävän', $mail['body']);
-        self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
-        self::assertStringContainsString('Party', $mail['body']);
+        [$anna, $bo] = $this->mails;
+        self::assertStringContainsString('Tehtävä peruttu', $anna['subject']);
+        self::assertStringNotContainsString('Task cancelled', $anna['subject']);
+        self::assertStringContainsString('Järjestäjät ovat peruneet tehtävän', $anna['body']);
+        self::assertStringNotContainsString('The organizers have cancelled the task', $anna['body']);
+        self::assertStringContainsString('Party', $anna['body']);
+        // No language chosen: English, as everywhere else.
+        self::assertStringContainsString('Task cancelled', $bo['subject']);
+        self::assertStringNotContainsString('Tehtävä peruttu', $bo['subject']);
     }
 
     /**
@@ -136,7 +140,8 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertSame(['See open tasks'], array_column($buttons, 'text'));
         self::assertSame(['anna@example.com', 'bo@example.com'], array_column($this->mails, 'to'));
         self::assertStringContainsString('Other open tasks at Party:', $this->mails[1]['body']);
-        self::assertStringContainsString('Muut avoimet tehtävät', $this->mails[1]['body']);
+        // Bo has not chosen a language, so he reads English alone (Lou, 2026-11-06).
+        self::assertStringNotContainsString('Muut avoimet tehtävät', $this->mails[1]['body']);
     }
 
     /** MessageAiText: the event's AI text in each language when there is one, else the template's text. */
@@ -156,7 +161,8 @@ final class TaskCancelledNoticeTest extends TestCase
         }
 
         self::assertCount(2, $this->mails);
-        self::assertStringContainsString('AI FI for Anna.', $this->mails[0]['body']);
+        // Anna has no language chosen: the English AI text only.
+        self::assertStringNotContainsString('AI FI for Anna.', $this->mails[0]['body']);
         self::assertStringContainsString('AI EN for Anna.', $this->mails[0]['body']);
         // The tick is on but nothing was written for the event: the template's text.
         self::assertStringContainsString('The organizers have cancelled the task', $this->mails[1]['body']);

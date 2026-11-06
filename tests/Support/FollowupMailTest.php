@@ -904,7 +904,7 @@ final class FollowupMailTest extends TestCase
 
             self::assertCount(4, $events);
             self::assertStringContainsString('Tulevat tapahtumat', $expected['html'], 'the newsletter heading');
-            self::assertStringContainsString('Myöhemmin · Later', $expected['html'], 'the others under Later');
+            self::assertStringContainsString('Myöhemmin<br>Later', $expected['html'], 'the others under Later');
             self::assertStringContainsString($expected['html'], $mail['html']);
             self::assertStringContainsString($expected['text'], $mail['text']);
             self::assertStringNotContainsString('A warm evening of free movement.', $mail['html'] . $mail['text']);
@@ -939,9 +939,9 @@ final class FollowupMailTest extends TestCase
             self::assertStringContainsString('>Coming events</p>', $mail['html']);
             self::assertStringContainsString("TULEVAT TAPAHTUMAT\nCOMING EVENTS", $mail['text']);
 
-            foreach ([$mail['html'], $mail['text']] as $out) {
-                self::assertStringContainsString('Myöhemmin · Later', $out);
-                self::assertStringContainsString('Osta lippu · Buy a ticket', $out);
+            foreach (['<br>' => $mail['html'], "\n" => $mail['text']] as $row => $out) {
+                self::assertStringContainsString('Myöhemmin' . $row . 'Later', $out);
+                self::assertStringContainsString('Osta lippu' . $row . 'Buy a ticket', $out);
                 self::assertStringNotContainsString('Automatically translated', $out);
             }
 
@@ -1050,7 +1050,7 @@ final class FollowupMailTest extends TestCase
         );
         self::assertMatchesRegularExpression('~>FI</span>&nbsp; Haluatko kuulla~', $mail['html'], 'the invitation');
         self::assertMatchesRegularExpression('~>EN</span>&nbsp; Would you like~', $mail['html']);
-        self::assertStringContainsString('Tilaa tiedote · Join the announcement', $mail['html'], 'the button as is');
+        self::assertStringContainsString('Tilaa tiedote<br>Join the announcement', $mail['html'], 'the button, one language per row');
         self::assertSame(4, substr_count($mail['html'], '</span>&nbsp; '), 'two texts and two invitations');
         self::assertStringNotContainsString('<span', $mail['text']);
     }

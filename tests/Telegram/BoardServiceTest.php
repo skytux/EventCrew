@@ -391,6 +391,34 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(5, $this->lastCallTo('deleteMessage')['message_id']);
     }
 
+    public function testAFailedRepostKeepsTheOldBoard(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was kicked from the supergroup chat';
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')]; // render: upcoming
+        $this->wpdb->nextResults[] = []; // occupancyFor
+
+        self::assertFalse($this->board()->repost());
+
+        // Nothing is deleted, and the old board is still the one refresh edits.
+        self::assertNotContains('deleteMessage', $this->calledMethods());
+        self::assertSame(['chat_id' => 100, 'message_id' => 5], $this->options[BoardService::BOARD_OPTION]);
+    }
+
+    public function testAFailedRepostInAnotherGroupLeavesTheOldBoardInPlace(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->options[BoardService::LOCK_OPTION] = '0'; // unlocked to move it
+        $this->telegramErrors['sendMessage'] = 'Bad Request: chat not found';
+        $this->wpdb->nextResults[] = []; // no tasks
+
+        self::assertFalse($this->board()->repostInto(-200));
+
+        self::assertNotContains('deleteMessage', $this->calledMethods());
+        // The new home is still remembered for the next attempt.
+        self::assertSame(-200, $this->options[BoardService::BOARD_OPTION]['chat_id']);
+    }
+
     // --- onJoinLeave --------------------------------------------------------
 
     /**

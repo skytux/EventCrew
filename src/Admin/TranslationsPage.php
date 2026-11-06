@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
@@ -69,6 +70,7 @@ final class TranslationsPage
         return [
             'languages' => $languages,
             'main' => SiteLanguages::main(),
+            'buttons_warning' => HybridPolicy::buttonsWarning(),
             'no_catalog' => array_values(array_filter(
                 $languages,
                 static fn (string $code): bool => ! SiteLanguages::hasCatalog($code)

@@ -51,8 +51,8 @@ namespace EventCrew\Support;
  * and the door times: the Finnish lines, then the English lines, with "FI: "
  * and "EN: " in front of the first line of each.
  *
- * Every fixed word is written in both languages ("Osta lippu · Buy a
- * ticket"), so each picture appears once and a reader of either language
+ * Every fixed word is written in both languages, one language per row
+ * ("Osta lippu", then "Buy a ticket"), so each picture appears once and a reader of either language
  * finds their part in the same card. All styles are inline, because email
  * clients drop stylesheets.
  *
@@ -88,9 +88,6 @@ final class NewsletterLayout
     /** Between the cards and the "Later" list in the plain text. */
     private const TEXT_RULE = '————————';
 
-    /** The longest Finnish-and-English pair kept on one line; see joinPair(). */
-    private const PAIR_MAX = 32;
-
     /**
      * @param array<int, array<string, mixed>> $cards Newly announced events,
      *        each with date, time, title, title_fi, sold_out, url (the event
@@ -121,11 +118,11 @@ final class NewsletterLayout
         $font = EmailBody::FONT;
 
         if (count($langs) > 1 && $band) {
-            // The main language big, the others on one line under it.
+            // The main language big, the others under it, one per row.
             $others = array_values(array_unique(array_diff(array_slice($headings, 1), [$headings[0]])));
             $html = NewsletterConfirmMail::headingBand(
                 $headings[0],
-                [] === $others ? $headings[0] : implode(' · ', $others)
+                [] === $others ? $headings[0] : implode("\n", $others)
             );
         } elseif (count($langs) > 1) {
             $html = sprintf(
@@ -507,7 +504,7 @@ final class NewsletterLayout
                 '<a href="%s" style="color:%s;font-weight:600;text-decoration:none;white-space:nowrap">%s →</a>',
                 esc_url($link),
                 esc_attr($accent),
-                self::pairHtml(self::pair($words, 'tickets') . ('' === $price ? '' : ' · ' . $price))
+                self::pairHtml(self::withPrice(self::pair($words, 'tickets'), $price))
             );
         } else {
             $right = '';
@@ -732,7 +729,8 @@ final class NewsletterLayout
     }
 
     /**
-     * "Osta lippu · Buy a ticket · 22 €".
+     * "Osta lippu", "Buy a ticket", one per row, and the price on a row of
+     * its own; "Buy a ticket · 22 €" in a one-language email.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
@@ -741,7 +739,17 @@ final class NewsletterLayout
     {
         $price = self::price((string) ($card['price'] ?? ''));
 
-        return self::pair($words, 'buy') . ('' === $price ? '' : ' · ' . $price);
+        return self::withPrice(self::pair($words, 'buy'), $price);
+    }
+
+    /** $label with $price after it: on its own row when $label has several rows. */
+    private static function withPrice(string $label, string $price): string
+    {
+        if ('' === $price) {
+            return $label;
+        }
+
+        return $label . (str_contains($label, "\n") ? "\n" : ' · ') . $price;
     }
 
     /** @param array<string, array<string, string>> $words */
@@ -766,12 +774,9 @@ final class NewsletterLayout
 
     /**
      * The rule for putting a Finnish text and its English translation
-     * together. When both fit on one line of a narrow phone screen
-     * (PAIR_MAX characters with the " · " between them) they share one
-     * line: "Osta lippu · Buy a ticket". When they are longer, the English
-     * goes on a new line under the Finnish, as "\n" (pairHtml() makes it a
-     * line break in the email). The same text in both languages is written
-     * once.
+     * together: one language per row (Lou, 2026-11-06), the English on a
+     * new line under the Finnish, as "\n" (pairHtml() makes it a line break
+     * in the email). The same text in both languages is written once.
      */
     public static function joinPair(string $fi, string $en): string
     {
@@ -780,17 +785,15 @@ final class NewsletterLayout
 
     /**
      * joinPair() for any number of languages, main language first: one line
-     * with " · " between the texts when it fits in PAIR_MAX characters, else
-     * one line per text. A text the same as an earlier one is left out.
+     * per text (Lou, 2026-11-06: one language per row; before, texts that
+     * fit in PAIR_MAX characters shared one line). A text the same as an
+     * earlier one is left out.
      *
      * @param array<string> $texts
      */
     public static function joinAll(array $texts): string
     {
-        $texts = array_values(array_unique(array_map('strval', $texts)));
-        $line = implode(' · ', $texts);
-
-        return mb_strlen($line) <= self::PAIR_MAX ? $line : implode("\n", $texts);
+        return implode("\n", array_values(array_unique(array_map('strval', $texts))));
     }
 
     /** A text from joinPair() for the email's HTML: escaped, its new line a line break. */

@@ -251,6 +251,7 @@ final class SettingsPage
         return [
             'allowed' => HybridPolicy::isAllowed(),
             'warning' => HybridPolicy::isAllowed() ? '' : HybridPolicy::offWarning(),
+            'buttons_warning' => HybridPolicy::buttonsWarning(),
             'kinds' => $kinds,
         ];
     }

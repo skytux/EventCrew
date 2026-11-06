@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use Brain\Monkey\Functions;
+use EventCrew\Support\Language;
+use EventCrew\Support\SiteLanguages;
+use EventCrew\Tests\FinnishCatalog;
 use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Telegram\EntityHtml;
 use EventCrew\Telegram\EventCard;
@@ -136,9 +140,42 @@ final class EventCardTest extends TelegramTestCase
 
         $card = EventCard::forEvent(7);
 
-        self::assertStringContainsString('🚫 <b>Loppuunmyyty · Sold out</b>', $card['caption']);
+        self::assertStringContainsString("🚫 <b>Loppuunmyyty\nSold out</b>", $card['caption']);
         self::assertStringNotContainsString('22 €', $card['caption']);
         self::assertSame([[['text' => '▶ Kuuntele DJ:tä · Listen to the DJ', 'url' => self::MUSIC]]], $card['buttons']);
+    }
+
+    /**
+     * A group post with three site languages: the text has a row for each
+     * language, in the site order, and a button has the first two only, on
+     * one row (Lou, 2026-11-06).
+     */
+    public function testAGroupPostHasARowPerLanguageAndTwoLanguageButtons(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        Functions\when('__')->alias(
+            static fn (string $text): string => 'sv' === Language::current()
+                ? 'SV ' . $text
+                : FinnishCatalog::translate($text)
+        );
+        $this->event(7, '2026-07-25', 'Night', [
+            '_eventmesh_sold_out' => '1',
+            '_eventmesh_embed_source_url' => self::MUSIC,
+        ]);
+        $this->event(8, '2026-07-26', 'Day', ['_eventmesh_url' => self::SHOP]);
+
+        self::assertStringContainsString(
+            "🚫 <b>Loppuunmyyty\nSold out\nSV Sold out</b>",
+            EventCard::forEvent(7)['caption']
+        );
+        self::assertSame(
+            [[['text' => '▶ Kuuntele DJ:tä · Listen to the DJ', 'url' => self::MUSIC]]],
+            EventCard::forEvent(7)['buttons']
+        );
+        self::assertSame(
+            [[['text' => '🎟 Osta lippu · Buy a ticket', 'url' => self::SHOP]]],
+            EventCard::forEvent(8)['buttons']
+        );
     }
 
     public function testTheButtonsBuyListenAndCrewApp(): void

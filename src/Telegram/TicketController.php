@@ -351,10 +351,10 @@ final class TicketController
             : '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
 
         $body = sprintf(
-            '<p class="t-name">%s</p><p class="t-task">%s%s</p>',
+            '<p class="t-name">%s</p><p class="t-task">%s</p>',
             esc_html($ticket['name']),
-            esc_html($ticket['role']),
-            '' === $ticket['time'] ? '' : ' · ' . esc_html($ticket['time'])
+            // The role and the time, each on its own row (Lou, 2026-11-06).
+            implode('<br>', array_map('esc_html', array_filter([$ticket['role'], $ticket['time']], 'strlen')))
         );
 
         $watermark = ltrim($this->watermarkStyle(), ';');
@@ -415,7 +415,8 @@ final class TicketController
             $style,
             esc_html($title),
             esc_html($event),
-            esc_html(Dates::longDayLabel($date) . ('' === $start ? '' : ' · ' . $start))
+            // The date and the start time, each on its own row (Lou, 2026-11-06).
+            esc_html(Dates::longDayLabel($date)) . ('' === $start ? '' : '<br>' . esc_html($start))
         );
     }
 

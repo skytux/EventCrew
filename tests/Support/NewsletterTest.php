@@ -212,8 +212,8 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Summer Social', $body);
         self::assertStringContainsString('<h2', $body);
         self::assertStringContainsString('Content-Type: text/html', implode("\n", (array) $this->mails[0]['headers']));
-        self::assertGreaterThan(strpos($body, 'Myöhemmin · Later'), strpos($body, 'Too Far'));
-        self::assertGreaterThan(strpos($body, 'Late Night'), strpos($body, 'Myöhemmin · Later'));
+        self::assertGreaterThan(strpos($body, 'Myöhemmin<br>Later'), strpos($body, 'Too Far'));
+        self::assertGreaterThan(strpos($body, 'Late Night'), strpos($body, 'Myöhemmin<br>Later'));
     }
 
     public function testAnEventFurtherAwayIsNotPlannedYet(): void
@@ -345,7 +345,7 @@ final class NewsletterTest extends TestCase
      * Every announcement starts with a greeting of its own, in the
      * subscriber's language: "Hei Anna!" for Finnish, "Hi Bo!" for English,
      * both for a subscriber whose language is not known; the name escaped, a
-     * plain "Hei! · Hi!" without. The footer link opens that subscriber's
+     * plain "Hei!" and "Hi!" on rows of their own without. The footer link opens that subscriber's
      * manage page.
      */
     public function testEachSubscriberIsGreetedByName(): void
@@ -364,7 +364,7 @@ final class NewsletterTest extends TestCase
 
         self::assertStringContainsString('>Hei Anna!</p>', $this->mails[0]['body']);
         self::assertStringNotContainsString('Hi Anna!', $this->mails[0]['body']);
-        self::assertStringContainsString('Hei! · Hi!', $this->mails[1]['body']);
+        self::assertStringContainsString('Hei!<br>Hi!', $this->mails[1]['body']);
         self::assertStringNotContainsString('Anna', $this->mails[1]['body'], 'one greeting per subscriber');
         self::assertStringContainsString('>Hi &lt;i&gt;Bo&lt;/i&gt;!</p>', $this->mails[2]['body']);
         self::assertStringNotContainsString('Hei &lt;i&gt;Bo', $this->mails[2]['body']);
@@ -446,9 +446,9 @@ final class NewsletterTest extends TestCase
 
     public function testThePlainTextGreeting(): void
     {
-        self::assertSame('Hei Anna! · Hi Anna!', Newsletter::greeting('Anna')['text']);
-        self::assertSame('Hei! · Hi!', Newsletter::greeting(null)['text']);
-        self::assertSame('Hei! · Hi!', Newsletter::greeting('')['text']);
+        self::assertSame("Hei Anna!\nHi Anna!", Newsletter::greeting('Anna')['text']);
+        self::assertSame("Hei!\nHi!", Newsletter::greeting(null)['text']);
+        self::assertSame("Hei!\nHi!", Newsletter::greeting('')['text']);
         // A long name puts each language on its own line.
         self::assertSame(
             "Hei Maria-Kristiina Eleonoora!\nHi Maria-Kristiina Eleonoora!",
@@ -469,7 +469,7 @@ final class NewsletterTest extends TestCase
         $method->setAccessible(true);
 
         self::assertSame(1, $method->invoke($this->newsletter(), $this->state()['plan']));
-        self::assertStringContainsString('Hei Olli! · Hi Olli!', $this->mails[0]['body']);
+        self::assertStringContainsString('Hei Olli!<br>Hi Olli!', $this->mails[0]['body']);
     }
 
     public function testAFullBatchAsksForTheNextOne(): void
@@ -528,17 +528,17 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('Tanssimme koko yön.', $html);
         self::assertLessThan(strpos($html, 'Summer Dance'), strpos($html, 'Tervetuloa!'));
         self::assertStringContainsString('href="https://shop.test/p/1"', $html);
-        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
+        self::assertStringContainsString('Osta lippu<br>Buy a ticket<br>27,50 €', $html);
         self::assertSame(1, substr_count($html, 'Buy a ticket'));
         self::assertStringContainsString('href="https://music.test/dj"', $html);
         self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ</a>', $html);
-        self::assertStringContainsString('Loppuunmyyty · Sold out', $html);
-        self::assertGreaterThan(strpos($html, 'Myöhemmin · Later'), strpos($html, 'Autumn Night'));
+        self::assertStringContainsString('Loppuunmyyty<br>Sold out', $html);
+        self::assertGreaterThan(strpos($html, 'Myöhemmin<br>Later'), strpos($html, 'Autumn Night'));
 
         $text = $mail['text'];
         self::assertStringNotContainsString('We dance all night.', $text);
         self::assertStringNotContainsString('Tanssimme koko yön.', $text);
-        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
+        self::assertStringContainsString("Osta lippu\nBuy a ticket\n27,50 €: https://shop.test/p/1", $text);
         self::assertStringContainsString("Kuuntele DJ:tä\nListen to the DJ: https://music.test/dj", $text);
         self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
     }
@@ -794,8 +794,8 @@ final class NewsletterTest extends TestCase
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $both['subject']);
         self::assertStringContainsString('FI</span>&nbsp; Tervetuloa!', $both['html']);
         self::assertStringContainsString('EN</span>&nbsp; Welcome!', $both['html']);
-        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $both['html']);
-        self::assertStringContainsString('Myöhemmin · Later', $both['html']);
+        self::assertStringContainsString('Osta lippu<br>Buy a ticket<br>27,50 €', $both['html']);
+        self::assertStringContainsString('Myöhemmin<br>Later', $both['html']);
         self::assertStringContainsString("FI: Ovet aukeavat 18:30\nEN: Doors open 18:30", $both['text']);
         self::assertStringNotContainsString('Automatically translated', $both['html'] . $both['text']);
     }
@@ -886,7 +886,7 @@ final class NewsletterTest extends TestCase
             'the note is above the footer'
         );
 
-        self::assertStringContainsString('Hei Cy! · Hi Cy!', $both['body']);
+        self::assertStringContainsString('Hei Cy!<br>Hi Cy!', $both['body']);
         self::assertStringContainsString('FI</span>&nbsp; Moi', $both['body']);
         self::assertStringContainsString('EN</span>&nbsp; Hi there', $both['body']);
         self::assertStringContainsString('Muuta tietojasi tai peru tiedotteen tilaus / ', $both['body']);
@@ -1001,7 +1001,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Goes out on 21.7.2026 at 09:00 to 1 subscriber.', $en['body']);
         self::assertStringNotContainsString('Tulevat tapahtumat', $en['body']);
 
-        self::assertStringContainsString('Hei Olli! · Hi Olli!', $both['body']);
+        self::assertStringContainsString('Hei Olli!<br>Hi Olli!', $both['body']);
         self::assertStringContainsString('Goes out on 21.7.2026 at 09:00 to 3 subscribers.', $both['body']);
 
         foreach ($this->mails as $mail) {
@@ -1291,7 +1291,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Old Hall<br>Main Street 1, Helsinki</p>', $html);
         self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30<br>Ovet sulkeutuvat 19:00</p>', $html);
         self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30<br>Doors close 19:00</p>', $html);
-        self::assertStringContainsString('Osta lippu · Buy a ticket', $html);
+        self::assertStringContainsString('Osta lippu<br>Buy a ticket', $html);
         self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ', $html);
 
         // The plain text has no picture, so it keeps the date and the title.

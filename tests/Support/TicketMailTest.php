@@ -257,7 +257,7 @@ final class TicketMailTest extends TestCase
         }
 
         self::assertStringContainsString('AB12CD1', $mail['corner']);
-        self::assertStringContainsString('Avaa lippu · Open my ticket', $mail['html']);
+        self::assertStringContainsString('Avaa lippu<br>Open my ticket', $mail['html']);
         self::assertStringContainsString('Thank you for buying a ticket!', $mail['html']);
 
         self::assertSame('Lippusi / Your ticket – 14.11.2026', $mail['subject']);
@@ -318,17 +318,17 @@ final class TicketMailTest extends TestCase
         $html = $mail['html'];
 
         $order = [
-            'Lippusi · Your ticket</p>',
+            'Lippusi<br>Your ticket</p>',
             '<h1 class="ec-shimmer"',
-            'Test Site — 14.11.2026</h1>',
+            'Test Site<br>14.11.2026</h1>',
             '>FI<',
             'font-style:italic;line-height:1.4;color:#2a2233">Hei Anna,</p>',
             'Kiitos, että ostit lipun!',
             '>EN<',
             'font-style:italic;line-height:1.4;color:#2a2233">Hi Anna,</p>',
             'Thank you for buying a ticket!',
-            'Avaa lippu · Open my ticket',
-            'Nähdään tanssilattialla ✦ See you on the dancefloor</p>',
+            'Avaa lippu<br>Open my ticket',
+            'Nähdään tanssilattialla<br>See you on the dancefloor</p>',
         ];
         $last = -1;
 
@@ -382,7 +382,7 @@ final class TicketMailTest extends TestCase
         ]];
         $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
 
-        self::assertStringContainsString('Salsa Night — 14.11.2026</h1>', $mail['html']);
+        self::assertStringContainsString('Salsa Night<br>14.11.2026</h1>', $mail['html']);
         self::assertStringContainsString('tapahtumaan Salsa Night 14.11.2026', $mail['html']);
         // The event picture is no longer in the ticket email.
         self::assertStringNotContainsString('poster.jpg', $mail['html']);
@@ -401,7 +401,10 @@ final class TicketMailTest extends TestCase
         ]];
         $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
 
-        self::assertStringContainsString('14.11.2026 · 21:00</h1>', $mail['html']);
+        // The event, the date and the time, each on its own row (Lou, 2026-11-06).
+        self::assertStringContainsString('<br>14.11.2026<br>21:00</h1>', $mail['html']);
+        self::assertStringNotContainsString(' — 14.11.2026', $mail['html']);
+        self::assertStringNotContainsString('14.11.2026 · 21:00', $mail['html']);
         self::assertStringNotContainsString('Doors close', $mail['html'], 'doors close is off');
     }
 
@@ -685,10 +688,11 @@ final class TicketMailTest extends TestCase
 
         self::assertTrue($mail->sendCrewTicket($this->person(), 31, '2026-11-14'));
         self::assertSame(['mia@example.test'], array_column($this->mails, 'to'));
-        self::assertSame('Lippusi / Your ticket – 14.11.2026', $this->mails[0]['subject']);
-        self::assertStringContainsString('Kiitos, että otit tehtävän!', $this->mails[0]['body']);
+        // A crew member's ticket is in their own language only (English: none chosen).
+        self::assertSame('Your ticket – 14.11.2026', $this->mails[0]['subject']);
+        self::assertStringNotContainsString('Kiitos, että otit tehtävän!', $this->mails[0]['body']);
         self::assertStringContainsString('Thank you for taking a task!', $this->mails[0]['body']);
-        self::assertStringContainsString('Avaa lippu · Open my ticket', $this->mails[0]['body']);
+        self::assertStringContainsString('>Open my ticket<', $this->mails[0]['body']);
         // The corner, with the small QR code, is in the sent email under the sign-off.
         self::assertStringContainsString('No internet? Show this QR code at the door.', $this->mails[0]['body']);
         self::assertLessThan(
@@ -749,7 +753,7 @@ final class TicketMailTest extends TestCase
         self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $body);
         self::assertStringNotContainsString('token=' . SignedLink::sign('ticket', 32), $body);
         // Earliest first: the 18:00 task before the 22:00 one.
-        self::assertSame(4, substr_count($body, '<li '), 'one list item per task, in each language');
+        self::assertSame(2, substr_count($body, '<li '), 'one list item per task, in the person\'s language');
         self::assertLessThan((int) strpos($body, '22:00'), (int) strpos($body, '18:00'));
         // The new sign-up is marked as mailed.
         self::assertSame(['id' => 32], $this->updates()[0]['where']);
@@ -777,7 +781,7 @@ final class TicketMailTest extends TestCase
         $this->wpdb->nextResults[] = [$gone, $kept];
         $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
         self::assertTrue($mail->crewTasksChanged($this->person(), '2026-11-14'));
-        self::assertSame('Lippusi / Your ticket – 14.11.2026', $this->mails[0]['subject']);
+        self::assertSame('Your ticket – 14.11.2026', $this->mails[0]['subject']);
         self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $this->mails[0]['body']);
         self::assertStringContainsString('18:00', $this->mails[0]['body']);
 
@@ -785,7 +789,7 @@ final class TicketMailTest extends TestCase
         $this->wpdb->nextResults[] = [$gone];
         $this->wpdb->nextResults[] = [$gone];
         self::assertTrue($mail->crewTasksChanged($this->person(), '2026-11-14'));
-        self::assertSame('Lippusi on peruttu / Your ticket is cancelled – 14.11.2026', $this->mails[1]['subject']);
+        self::assertSame('Your ticket is cancelled – 14.11.2026', $this->mails[1]['subject']);
 
         // A night already past: nothing.
         $this->wpdb->nextResults[] = [$gone, $kept];
@@ -833,8 +837,8 @@ final class TicketMailTest extends TestCase
             self::assertSame('Lippusi / Your ticket – 14.11.2026', $email['subject'], $kind);
 
             $order = [
-                'Lippusi · Your ticket</p>',
-                'Test Site — 14.11.2026</h1>',
+                'Lippusi<br>Your ticket</p>',
+                'Test Site<br>14.11.2026</h1>',
                 '>FI<',
                 'Hei ' . $first . ',</p>',
                 'tapahtumaan Test Site 14.11.2026',
@@ -842,7 +846,7 @@ final class TicketMailTest extends TestCase
                 'Hi ' . $first . ',</p>',
                 $reason,
                 'ticket to Test Site on 14.11.2026',
-                'Avaa lippu · Open my ticket',
+                'Avaa lippu<br>Open my ticket',
                 'See you on the dancefloor</p>',
             ];
             $last = -1;
@@ -910,7 +914,7 @@ final class TicketMailTest extends TestCase
     public function testACreditGetsTheTicketEmailWithACreditCode(): void
     {
         self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
-        self::assertStringContainsString('Käytit vapaalipun tähän iltaan.', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Käytit vapaalipun tähän iltaan.', $this->mails[0]['body']);
         self::assertStringContainsString('You spent a free-entry credit on this night.', $this->mails[0]['body']);
 
         $update = $this->updates()[0];
@@ -979,7 +983,7 @@ final class TicketMailTest extends TestCase
         self::assertStringNotContainsString('<img', $html);
 
         $order = [
-            'Test Site — 14.11.2026</h1>',
+            'Test Site<br>14.11.2026</h1>',
             '>FI<',
             '>EN<',
             'Lippusi / Your ticket',

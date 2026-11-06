@@ -65,7 +65,38 @@ final class HybridPolicyTest extends TestCase
 
         self::assertTrue(HybridPolicy::isAllowed());
         self::assertTrue(HybridPolicy::isOn(HybridPolicy::TICKET));
-        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, $this->person('en')));
+        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET));
+    }
+
+    /** A message to one person is in their language only, even with the Hybrid tick on (Lou, 2026-11-06). */
+    public function testASwedishPersonGetsOnlySwedish(): void
+    {
+        $this->siteLanguages(['fi', 'en', 'sv']);
+
+        foreach (HybridPolicy::KINDS as $kind) {
+            self::assertTrue(HybridPolicy::isOn($kind), $kind);
+            self::assertSame(['sv'], HybridPolicy::languagesFor($kind, $this->person('sv')), $kind);
+            self::assertSame(['sv'], HybridPolicy::languagesFor($kind, 'sv'), $kind);
+        }
+
+        // Not known, or not a site language: every site language, as before.
+        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, null));
+        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, $this->person('de')));
+    }
+
+    /** More than two site languages: wp-admin warns that Telegram buttons show only the first two (Lou, 2026-11-06). */
+    public function testThreeLanguagesWarnAboutTheTelegramButtons(): void
+    {
+        self::assertSame('', HybridPolicy::buttonsWarning());
+        self::assertSame('Avaa · Open', HybridPolicy::buttonText(['fi' => 'Avaa', 'en' => 'Open']));
+
+        $this->siteLanguages(['fi', 'en', 'sv']);
+
+        self::assertSame('Telegram buttons show only the first two languages.', HybridPolicy::buttonsWarning());
+        self::assertSame('Avaa · Open', HybridPolicy::buttonText(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna']));
+        self::assertSame("Avaa\nOpen\nÖppna", HybridPolicy::rows(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna']));
+        self::assertArrayHasKey('buttons_warning', \EventCrew\Admin\SettingsPage::hybridView());
+        self::assertSame(HybridPolicy::buttonsWarning(), \EventCrew\Admin\SettingsPage::hybridView()['buttons_warning']);
     }
 
     public function testFourLanguagesSwitchHybridOffForEveryKind(): void
@@ -82,6 +113,7 @@ final class HybridPolicyTest extends TestCase
         self::assertSame(['sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, $this->person('sv')));
         self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TICKET));
         self::assertStringContainsString('4 languages', HybridPolicy::offWarning());
+        self::assertSame('', HybridPolicy::buttonsWarning(), 'the off warning says it all');
     }
 
     public function testWithTheTickOffUnknownLanguagesGetTheMainLanguage(): void

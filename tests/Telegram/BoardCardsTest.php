@@ -637,6 +637,28 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertArrayNotHasKey('days', $board);
     }
 
+    public function testAFailedRepostTakesTheNewCardDownAndKeepsTheOldBoard(): void
+    {
+        $old = [
+            'chat_id' => self::CHAT,
+            'message_id' => 5,
+            'card' => ['message_id' => 4, 'event' => 100, 'photo' => self::IMAGE, 'text' => 'x', 'keyboard' => 'y'],
+        ];
+        $this->options[BoardService::BOARD_OPTION] = $old;
+        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was kicked from the supergroup chat';
+        $this->partyEvent();
+        $this->wpdb->nextResults[] = $this->twoDays();
+        $this->wpdb->nextResults[] = $this->twoDays();
+        $this->wpdb->nextResults[] = [];
+
+        self::assertFalse($this->board()->repost());
+
+        // Only the card that was just posted comes down; the old ones stay.
+        self::assertSame(['sendPhoto', 'sendMessage', 'deleteMessage'], $this->calledMethods());
+        self::assertSame([61], $this->deleted());
+        self::assertSame($old, $this->options[BoardService::BOARD_OPTION]);
+    }
+
     public function testTheCaptionFitsTelegramsLimitWithoutCuttingAnEntity(): void
     {
         $title = str_repeat('Big & Loud ', 30);

@@ -226,8 +226,11 @@ final class EmailTemplate
      * $after is HTML put after the whole template, at the very bottom of the
      * email (the newsletter preview's "Do Not Send This" button).
      *
-     * $bothLanguages is for an email written in Finnish and then English: the
-     * closing ({{signature}}) shows the Finnish sign-off too.
+     * $bothLanguages is for an email in several languages: true for every
+     * site language, or the list of the email's languages; the closing
+     * ({{signature}}) shows the sign-off in each (Signature::html()).
+     *
+     * @param bool|list<string> $bothLanguages
      */
     public function render(
         string $subject,
@@ -236,7 +239,7 @@ final class EmailTemplate
         bool $lightOnly = false,
         ?\DateTimeInterface $now = null,
         string $after = '',
-        bool $bothLanguages = false
+        bool|array $bothLanguages = false
     ): string {
         $body = str_replace(
             [

@@ -61,7 +61,7 @@
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
  * @var string $email_background The picture behind every email; blank draws the purple fade alone.
- * @var array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>} $hybrid The Hybrid tick of each message kind (HybridPolicy).
+ * @var array{allowed: bool, warning: string, buttons_warning: string, kinds: array<string, array{label: string, ticked: bool}>} $hybrid The Hybrid tick of each message kind (HybridPolicy).
  * @var string $organization_name The organization's name as typed in Settings; blank uses the site name.
  * @var string $ticket_background The image URL drawn behind the ticket page; blank draws none.
  * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows the built-in doors line.
@@ -1552,6 +1552,9 @@ if (! defined('ABSPATH')) {
         <h2><?php esc_html_e('Hybrid messages', 'eventcrew'); ?></h2>
         <?php if (! $hybrid['allowed']) : ?>
             <p class="description" style="color:#b32d2e"><?php echo esc_html($hybrid['warning']); ?></p>
+        <?php endif; ?>
+        <?php if ('' !== $hybrid['buttons_warning']) : ?>
+            <p class="description" style="color:#996800"><?php echo esc_html($hybrid['buttons_warning']); ?></p>
         <?php endif; ?>
         <table class="widefat striped" style="max-width:40em;margin-bottom:1.5em">
             <thead>

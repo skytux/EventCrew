@@ -197,8 +197,14 @@ final class NewsletterLayoutLanguagesTest extends TestCase
         self::assertLessThan(strpos($html, 'Vi dansar'), strpos($html, 'Tanssimme'));
         self::assertLessThan(strpos($html, 'We dance'), strpos($html, 'Vi dansar'));
         self::assertStringContainsString('Osta lippu<br>Köp en biljett<br>Buy a ticket', $html);
-        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\nKOMMANDE EVENEMANG\nCOMING EVENTS\n\n", $text);
-        self::assertSame('Hei Anna! · Hej Anna! · Hi Anna!', NewsletterLayout::greeting('Anna')['text']);
+        self::assertStringStartsWith("TULEVAT TAPAHTUMAT
+KOMMANDE EVENEMANG
+COMING EVENTS
+
+", $text);
+        self::assertSame("Hei Anna!
+Hej Anna!
+Hi Anna!", NewsletterLayout::greeting('Anna')['text']);
 
         // A subscriber whose language is Swedish gets Swedish alone, with no label.
         $swedish = NewsletterLayout::text($content['cards'], [], $content['text'], 'sv');
@@ -238,10 +244,10 @@ final class NewsletterLayoutLanguagesTest extends TestCase
         self::assertStringContainsString('>EN</span>', $followupHtml);
     }
 
-    /** 3 different texts that fit share one line; longer ones go one per line. */
+    /** 3 different texts go one per line, however short (Lou, 2026-11-06: one language per row). */
     public function testThreeTextsAreJoinedOnOneLineWhenTheyFit(): void
     {
-        self::assertSame('Ovet · Dörrar · Doors', NewsletterLayout::joinAll(['Ovet', 'Dörrar', 'Doors']));
+        self::assertSame("Ovet\nDörrar\nDoors", NewsletterLayout::joinAll(['Ovet', 'Dörrar', 'Doors']));
         self::assertSame(
             "Osta lippu\nKöp en biljett\nBuy a ticket",
             NewsletterLayout::joinAll(['Osta lippu', 'Köp en biljett', 'Buy a ticket'])

@@ -12,6 +12,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterConfirmMail;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\Turnstile;
 use WP_REST_Request;
 
@@ -1229,7 +1230,12 @@ final class NewsletterController
             . esc_attr((string) ($row['name'] ?? '')) . '" style="' . $field . '"></p>'
             . '<fieldset style="border:0;margin:0 0 1em;padding:0"><legend style="padding:0;margin-bottom:.3em">'
             . esc_html($both(static fn (): string => __('Language', 'eventcrew')))
-            . '</legend>' . $radio(Language::FINNISH, 'Suomi') . $radio(Language::ENGLISH, 'English')
+            . '</legend>'
+            // A choice per site language, in the site's order, each in its own name.
+            . implode('', array_map(
+                static fn (string $code): string => $radio($code, SiteLanguages::ownName($code)),
+                SiteLanguages::codes()
+            ))
             . '<p style="margin:.4em 0 0;font-size:.85em;color:#5b6470">'
             . esc_html($both(static fn (): string => __('The announcement comes in the language you choose.', 'eventcrew'))) // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             . '</p></fieldset>'
