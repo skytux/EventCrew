@@ -160,6 +160,8 @@ final class MessageTemplates
                 self::taskSignupAction($c, $m),
                 self::boardAction($m),
             ]),
+            // A task the organizers deleted: another task at the event.
+            'task_cancelled task_cancelled_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             // A mark against the standing: the open tasks, to win it back; for
             // a no-show, a word to the organizers in the bot when it is wrong.
             'late_cancel late_cancel_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
@@ -850,7 +852,8 @@ final class MessageTemplates
             'reminder_dm' => $signed,
             'slot_freed' => $sampleOthers,
             'slot_freed_dm' => $signed + $sampleOthers,
-            'task_cancelled' => ['buttons' => $openTasks],
+            'task_cancelled' => ['buttons' => $openTasks] + $sampleOthers,
+            'task_cancelled_dm' => $none + $sampleOthers,
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
             'cancel_confirmed' => $sampleOthers,
@@ -1174,8 +1177,27 @@ final class MessageTemplates
                     /* translators: 1: name, 2: role, 3: event, 4: date/time */
                     __("Hi %1\$s,\n\nThe organizers have cancelled the task %2\$s at %3\$s, %4\$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing.", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}']
-                ),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when]
+                ) . '{other_tasks}',
+                [
+                    'name' => $name,
+                    'role' => $role,
+                    'event' => $event,
+                    'when' => $when,
+                    'other_tasks' => $spotPlaceholders['other_tasks'],
+                ]
+            ),
+            new MessageTemplate(
+                'task_cancelled_dm',
+                __('Task cancelled by the organizers (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to each person signed up for a task when an organizer deletes the task, in their language.', 'eventcrew'),
+                null,
+                static fn (): string => self::tag(
+                    /* translators: 1: role, 2: event, 3: date/time */
+                    __('🚫 The organizers have cancelled the task %1$s at %2$s, %3$s. You are no longer signed up for it, and its ticket no longer works at the door. This does not count against your standing.', 'eventcrew'),
+                    ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
+                ) . '{other_tasks}',
+                ['role' => $role, 'event' => $event, 'when' => $when, 'other_tasks' => $spotPlaceholders['other_tasks']]
             ),
             new MessageTemplate(
                 'no_show',

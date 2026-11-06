@@ -1517,7 +1517,9 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                $container->get(TelegramClient::class),
+                $container->get(SlotFreedNotice::class)
             )
         );
 

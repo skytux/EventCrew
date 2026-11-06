@@ -14,9 +14,12 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\TaskCancelledNotice;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 
 /** The test clock is 2026-07-20 12:00. */
@@ -82,6 +85,58 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertStringContainsString('Järjestäjät ovat peruneet tehtävän', $mail['body']);
         self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
         self::assertStringContainsString('Party', $mail['body']);
+    }
+
+    /**
+     * A person who uses the bot also gets a DM in their language; the DM and
+     * the email list the event's other open tasks and lead to the board.
+     */
+    public function testABotUserAlsoGetsADmAndBothListTheOtherOpenTasks(): void
+    {
+        $sends = [];
+        $options = [TelegramClient::TOKEN_OPTION => 'BOT:TOKEN', 'eventcrew_signup_page_id' => 3];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_json_encode')->alias(static fn (mixed $d): string => (string) json_encode($d));
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('wp_remote_post')->alias(static function (string $url, array $args) use (&$sends): string {
+            $sends[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => true]);
+        });
+        $other = ['id' => 6, 'role_slug' => 'bar'] + $this->task('2026-08-01');
+        $this->wpdb->nextRows[] = $this->task('2026-08-01');                      // tasks->find
+        $this->wpdb->nextResults[] = [$this->task('2026-08-01'), $other];         // otherOpen: the day's tasks
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 1]];            // otherOpen: occupancy
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'anna@example.com', 'display_name' => 'Anna',
+            'telegram_chat_id' => 700, 'language' => 'en',
+        ];
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'bo@example.com', 'display_name' => 'Bo'];
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $telegram = new TelegramClient(new Logger(), new DohResolver(new Logger()));
+
+        (new TaskCancelledNotice(
+            new TaskRepository(),
+            new PersonRepository(),
+            $mailer,
+            null,
+            $telegram,
+            new SlotFreedNotice(new TaskRepository(), new PersonRepository(), $mailer, $telegram)
+        ))->notify(5, [7, 8]);
+
+        self::assertCount(1, $sends, 'only the bot user gets a DM');
+        self::assertSame(700, $sends[0]['chat_id']);
+        self::assertStringStartsWith('🚫 The organizers have cancelled the task ', (string) $sends[0]['text']);
+        self::assertStringContainsString("standing.\n\nOther open tasks at Party:\n- ", (string) $sends[0]['text']);
+        $buttons = array_merge(...$sends[0]['reply_markup']['inline_keyboard']);
+        self::assertSame(['See open tasks'], array_column($buttons, 'text'));
+        self::assertSame(['anna@example.com', 'bo@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('Other open tasks at Party:', $this->mails[1]['body']);
+        self::assertStringContainsString('Muut avoimet tehtävät', $this->mails[1]['body']);
     }
 
     /** MessageAiText: the event's AI text in each language when there is one, else the template's text. */
