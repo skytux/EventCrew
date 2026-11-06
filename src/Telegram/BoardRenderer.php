@@ -123,7 +123,14 @@ final class BoardRenderer
 
         foreach ($this->groupByEvent($tasks) as $heading) {
             $lines[] = '';
-            $lines[] = '📅 ' . $heading['date'] . ' · ' . $heading['title'];
+            // Date, then title, then an empty line before the tasks (Owner 2026-11-07).
+            $lines[] = '📅 ' . $heading['date'];
+
+            if ('' !== $heading['title']) {
+                $lines[] = $heading['title'];
+            }
+
+            $lines[] = '';
 
             foreach ($heading['tasks'] as $task) {
                 $names = $occupants[$task->id] ?? [];
@@ -174,7 +181,18 @@ final class BoardRenderer
 
         $card = EventCard::forEvent($event, BoardDjText::stored($event));
 
-        return null === $card ? null : ['event' => $event] + $card;
+        if (null === $card) {
+            return null;
+        }
+
+        // No 📱 Crew app button on the board's card (Owner 2026-11-07); the
+        // /events cards keep it.
+        $card['buttons'] = array_values(array_filter(
+            $card['buttons'],
+            static fn (array $row): bool => ! str_starts_with((string) ($row[0]['text'] ?? ''), '📱 ')
+        ));
+
+        return ['event' => $event] + $card;
     }
 
     /** The post id of the event nextCard() shows, or null. */
@@ -331,7 +349,14 @@ final class BoardRenderer
         // the keyboard has only the task buttons (taskRows()).
         foreach ($groups as $heading) {
             $lines[] = '';
-            $lines[] = '📅 ' . $heading['date'] . ' · ' . $heading['title'];
+            // Date, then title, then an empty line before the tasks (Owner 2026-11-07).
+            $lines[] = '📅 ' . $heading['date'];
+
+            if ('' !== $heading['title']) {
+                $lines[] = $heading['title'];
+            }
+
+            $lines[] = '';
 
             foreach ($heading['tasks'] as $task) {
                 $lines[] = $this->countLine($task, $occupancy[$task->id] ?? 0);

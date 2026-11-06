@@ -198,7 +198,7 @@ final class BoardCardsTest extends TelegramTestCase
         $text = $this->lastCallTo('sendMessage');
         // Owner 2026-11-06: only the next event. Owner 2026-11-07: three task
         // buttons to a row, and no day buttons on the group's message.
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 0/2: –", $text['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 0/2: –", $text['text']);
         self::assertSame(['t:1'], self::taskTargets($text));
         self::assertSame(['🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
 
@@ -208,6 +208,19 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame(100, $board['card']['event']);
         self::assertSame(self::IMAGE, $board['card']['photo']);
         self::assertArrayNotHasKey('days', $board);
+    }
+
+    /** Owner 2026-11-07: no 📱 Crew app button on the board's card. */
+    public function testTheBoardCardHasNoCrewAppButton(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 7;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $this->partyEvent();
+        $this->queueRefresh($this->twoDays());
+
+        $this->board()->refresh();
+
+        self::assertSame([self::SHOP], self::targets($this->lastCallTo('sendPhoto')));
     }
 
     public function testTheCaptionShowsTheStoredDjTextEscaped(): void
@@ -281,7 +294,7 @@ final class BoardCardsTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = $this->lastCallTo('sendMessage');
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 2/2: Anna, someone", $text['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 2/2: Anna, someone", $text['text']);
         // A full task has no button.
         self::assertSame([], self::taskTargets($text));
 
@@ -327,7 +340,7 @@ final class BoardCardsTest extends TelegramTestCase
 
         $board = (new BoardRenderer(new TaskRepository()))->crewBoard('2026-08-02', false);
 
-        self::assertSame(self::INTRO . "\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate · 1/2: Ben", $board['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2: Ben", $board['text']);
         $data = array_column(array_merge(...$board['keyboard']), 'callback_data', 'text');
         self::assertSame('t:2:2026-08-02', $data['🎈 Decorate'] ?? null);
         self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
@@ -370,7 +383,7 @@ final class BoardCardsTest extends TelegramTestCase
 
         foreach (array_slice(explode("\n", $text), 2) as $line) {
             $full = str_starts_with($line, '🎈 Decorate · ') && str_ends_with($line, $names);
-            self::assertTrue('' === $line || str_starts_with($line, '📅 ') || $full, $line);
+            self::assertTrue('' === $line || str_starts_with($line, '📅 ') || 'Night' === $line || $full, $line);
         }
     }
 
@@ -425,7 +438,7 @@ final class BoardCardsTest extends TelegramTestCase
 
         self::assertSame(['sendMessage'], $this->calledMethods());
         $sent = $this->lastCallTo('sendMessage');
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 1/2", $sent['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 1/2", $sent['text']);
         self::assertSame(['t:1'], self::taskTargets($sent));
         self::assertNotContains('bd:2026-08-02', self::targets($sent));
         self::assertContains('🎈 Decorate', self::labels($sent));
@@ -759,7 +772,7 @@ final class BoardCardsTest extends TelegramTestCase
         $edit = $private[0]['body'];
         self::assertSame(43, $edit['message_id']);
         // The copy stays on the day it showed.
-        self::assertStringContainsString("📅 Sun 2 Aug · Cleanup\n🎈 Decorate · 1/2: Sam", $edit['text']);
+        self::assertStringContainsString("📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2: Sam", $edit['text']);
         self::assertStringNotContainsString('Party', $edit['text']);
         self::assertSame(['t:2:2026-08-02'], self::taskTargets($edit));
         self::assertContains('bd:2026-08-01', self::targets($edit));
