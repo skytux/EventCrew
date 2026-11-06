@@ -399,13 +399,13 @@ final class MessageTemplatesTest extends TestCase
 
     public function testTheBuiltInValueCoversEverySiteLanguage(): void
     {
-        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'da'];
 
         $value = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);
 
         self::assertSame(Language::ENGLISH, $value['lang']);
-        self::assertSame(['fi', 'en', 'sv'], array_keys($value['texts']));
-        self::assertSame('', $value['texts']['sv'], 'no Swedish translation file: left for the Translations page');
+        self::assertSame(['fi', 'en', 'da'], array_keys($value['texts']));
+        self::assertSame('', $value['texts']['da'], 'no Danish translation file: left for the Translations page');
         self::assertNotSame('', $value['texts'][Language::FINNISH]);
     }
 

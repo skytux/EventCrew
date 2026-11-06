@@ -168,9 +168,8 @@ final class NewsletterLayoutLanguagesTest extends TestCase
 
     /**
      * With 3 site languages hybrid is allowed: the every-language version
-     * has each text 3 times with FI, SV and EN labels, in the site order.
-     * (The tests have no Swedish catalogue, so the fixed words in Swedish
-     * read as English and are written once.)
+     * has each text 3 times with FI, SV and EN labels, in the site order,
+     * the fixed words included (from languages/eventcrew-sv_SE).
      */
     public function testThreeLanguagesGiveThreePartsInTheEveryLanguageVersion(): void
     {
@@ -190,16 +189,16 @@ final class NewsletterLayoutLanguagesTest extends TestCase
             $text
         );
         self::assertStringContainsString(
-            "FI: Ovet aukeavat 18:30\nOvet sulkeutuvat 19:00\n\nSV: Doors open 18:30\nDoors close 19:00\n\n"
+            "FI: Ovet aukeavat 18:30\nOvet sulkeutuvat 19:00\n\nSV: Dörrarna öppnar 18:30\nDörrarna stänger 19:00\n\n"
                 . "EN: Doors open 18:30\nDoors close 19:00",
             $text
         );
         self::assertStringContainsString('Vi dansar hela natten.', $html);
         self::assertLessThan(strpos($html, 'Vi dansar'), strpos($html, 'Tanssimme'));
         self::assertLessThan(strpos($html, 'We dance'), strpos($html, 'Vi dansar'));
-        self::assertStringContainsString('Osta lippu · Buy a ticket', $html);
-        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\nCOMING EVENTS\n\n", $text);
-        self::assertSame('Hei Anna! · Hi Anna!', NewsletterLayout::greeting('Anna')['text']);
+        self::assertStringContainsString('Osta lippu<br>Köp en biljett<br>Buy a ticket', $html);
+        self::assertStringStartsWith("TULEVAT TAPAHTUMAT\nKOMMANDE EVENEMANG\nCOMING EVENTS\n\n", $text);
+        self::assertSame('Hei Anna! · Hej Anna! · Hi Anna!', NewsletterLayout::greeting('Anna')['text']);
 
         // A subscriber whose language is Swedish gets Swedish alone, with no label.
         $swedish = NewsletterLayout::text($content['cards'], [], $content['text'], 'sv');

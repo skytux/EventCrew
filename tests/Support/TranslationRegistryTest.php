@@ -400,19 +400,19 @@ final class TranslationRegistryTest extends TestCase
     }
 
     /**
-     * A third language added to the site: every row has an empty column,
-     * and "Translate missing" fills it, also for a built-in email text. The
-     * texts edited by hand stay.
+     * A third language without a plugin catalog (Danish) added to the site:
+     * every row has an empty column, and "Translate missing" fills it, also
+     * for a built-in email text. The texts edited by hand stay.
      */
     public function testAThirdLanguageIsFilledForEveryRow(): void
     {
-        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'da'];
         $this->withModel((string) json_encode(array_map(
             static fn (int $id): array => [
                 'id' => (string) $id,
                 'lang' => 'en',
                 'fi' => 'MODEL-FI',
-                'sv' => 'MODEL-SV',
+                'da' => 'MODEL-DA',
             ],
             [1, 2, 3, 4]
         )));
@@ -434,16 +434,16 @@ final class TranslationRegistryTest extends TestCase
         self::assertSame(4, count($result['done']));
         self::assertSame([], $result['failed']);
         self::assertCount(1, $this->requests, 'the four texts went in one request');
-        self::assertSame(['fi' => 'Hei', 'en' => 'Hello', 'sv' => 'MODEL-SV'], $this->stored('a')['texts']);
-        self::assertSame(['fi' => 'MODEL-FI', 'en' => 'Thank you', 'sv' => 'MODEL-SV'], $this->stored('b')['texts']);
+        self::assertSame(['fi' => 'Hei', 'en' => 'Hello', 'da' => 'MODEL-DA'], $this->stored('a')['texts']);
+        self::assertSame(['fi' => 'MODEL-FI', 'en' => 'Thank you', 'da' => 'MODEL-DA'], $this->stored('b')['texts']);
 
         $came = MessageTemplates::value(FollowupText::TEMPLATES[FollowupText::CAME], MessageTemplates::BODY);
-        self::assertSame('MODEL-SV', $came['texts']['sv']);
+        self::assertSame('MODEL-DA', $came['texts']['da']);
         self::assertNotSame('MODEL-FI', $came['texts']['fi'], 'the shipped Finnish text was not empty');
         self::assertSame([], TranslationRegistry::filter($registry->rows(), '', TranslationRegistry::SHOW_MISSING));
 
         $prompt = (string) json_encode(json_decode($this->requests[0], true));
-        self::assertStringContainsString('sv', $prompt);
+        self::assertStringContainsString('da', $prompt);
     }
 
     /** The request fails: nothing of it is stored, and every text in it failed. */

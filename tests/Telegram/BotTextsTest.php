@@ -55,8 +55,8 @@ final class BotTextsTest extends TestCase
 
             // "Translate missing" sends a list of texts and gets a list back.
             return ['answer' => str_contains((string) $args['body'], 'JSON list')
-                ? '[{"id": "1", "lang": "en", "fi": "x", "sv": "SV-TEXT"}]'
-                : '{"lang": "en", "fi": "x", "sv": "SV-TEXT"}'];
+                ? '[{"id": "1", "lang": "en", "fi": "x", "da": "DA-TEXT"}]'
+                : '{"lang": "en", "fi": "x", "da": "DA-TEXT"}'];
         });
         Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
         Functions\when('wp_remote_retrieve_body')->alias(
@@ -98,13 +98,13 @@ final class BotTextsTest extends TestCase
     /** The English text is fixed; Finnish comes from the .mo; a language without one is empty. */
     public function testTheBuiltInTextsAreTheDefault(): void
     {
-        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'da'];
         $row = $this->rowFor($this->registry(), self::BUTTON);
 
         self::assertTrue($row->fixedSource);
         self::assertSame(TranslationRow::GROUP_BOT, $row->group);
         self::assertSame('Bot text (MenuButtons)', $row->label);
-        self::assertSame(['fi' => 'Ota tehtävä', 'en' => self::BUTTON, 'sv' => ''], $row->value['texts']);
+        self::assertSame(['fi' => 'Ota tehtävä', 'en' => self::BUTTON, 'da' => ''], $row->value['texts']);
         self::assertFalse($row->hasManual());
         self::assertTrue($row->isMissing());
     }
@@ -170,7 +170,7 @@ final class BotTextsTest extends TestCase
      */
     public function testAModelTextIsUsedForALanguageWithoutAFile(): void
     {
-        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'da'];
         $this->options[AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
         $this->options[AssistantSettings::MODEL_OPTION] = 'test-model';
         $registry = new TranslationRegistry(new TranslatedText(new LlmClient(new Logger()), new Logger()));
@@ -181,11 +181,11 @@ final class BotTextsTest extends TestCase
 
         self::assertSame(['done' => [$id], 'failed' => [], 'error' => ''], $result);
         self::assertSame(
-            [self::BUTTON => ['texts' => ['sv' => 'SV-TEXT'], 'manual' => ['sv' => false]]],
+            [self::BUTTON => ['texts' => ['da' => 'DA-TEXT'], 'manual' => ['da' => false]]],
             $this->options[BotTexts::OPTION],
             'the Finnish answer is not stored: Finnish has its .mo file'
         );
-        self::assertSame('SV-TEXT', Language::run('sv', static fn (): mixed => BotTexts::filter(self::BUTTON, self::BUTTON)));
+        self::assertSame('DA-TEXT', Language::run('da', static fn (): mixed => BotTexts::filter(self::BUTTON, self::BUTTON)));
         self::assertSame('Ota tehtävä', Language::run('fi', static fn (): mixed => BotTexts::filter('Ota tehtävä', self::BUTTON)));
     }
 }

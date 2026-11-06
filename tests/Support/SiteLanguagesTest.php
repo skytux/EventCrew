@@ -112,12 +112,12 @@ final class SiteLanguagesTest extends TestCase
         self::assertSame('suomi', Language::run('fi', static fn (): string => SiteLanguages::label('fi')));
     }
 
-    /** Finnish has the plugin's own .mo; Swedish has none, so its readers get English. */
+    /** Finnish has the plugin's own .mo; Danish has none, so its readers get English. */
     public function testOnlyLanguagesWithAFileHaveTheirOwnStrings(): void
     {
         self::assertTrue(SiteLanguages::hasCatalog('en'));
         self::assertTrue(SiteLanguages::hasCatalog('fi'));
-        self::assertFalse(SiteLanguages::hasCatalog('sv'));
+        self::assertFalse(SiteLanguages::hasCatalog('da'));
         self::assertFalse(SiteLanguages::hasCatalog('xx'));
     }
 
