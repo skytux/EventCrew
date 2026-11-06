@@ -157,7 +157,8 @@ final class RoleNotifier
         if ($prefs->dmAllowed($organizer, $type)) {
             $this->telegram->sendMessage(
                 $organizer->telegramChatId,
-                DmBody::frame($organizer, MessageTemplates::body($template . '_dm', $context))
+                DmBody::frame($organizer, MessageTemplates::body($template . '_dm', $context)),
+                MessageActions::replyMarkup(MessageActions::of($template . '_dm', $context, $this->mailer))
             );
         }
 
@@ -169,7 +170,8 @@ final class RoleNotifier
             $organizer->id,
             $organizer->email,
             MessageTemplates::subject($template, $context),
-            MessageTemplates::body($template, $context)
+            MessageTemplates::body($template, $context),
+            MessageActions::email(MessageActions::of($template, $context, $this->mailer))
         );
     }
 }

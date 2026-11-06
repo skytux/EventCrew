@@ -244,8 +244,7 @@ final class DoorLinkSender
         }
 
         // The texts are the Messages page templates (MessageTemplates).
-        $context = ['person' => $person, 'day' => Dates::dayLabel($date)];
-        $label = self::buttonLabel();
+        $context = ['person' => $person, 'day' => Dates::dayLabel($date), 'desk_url' => $url];
 
         // The DM goes to the chat the person opened with the bot, or - for an
         // answer to 💳 Sales desk - to the chat the command came from.
@@ -255,7 +254,7 @@ final class DoorLinkSender
             $this->telegram->sendMessage(
                 $chatId,
                 DmBody::frame($person, MessageTemplates::body('sales_desk_link_dm', $context)),
-                ['inline_keyboard' => [[['text' => $label, 'url' => $url]]]]
+                MessageActions::replyMarkup(MessageActions::of('sales_desk_link_dm', $context, $this->mailer))
             );
         }
 
@@ -267,7 +266,7 @@ final class DoorLinkSender
                 $person->email,
                 MessageTemplates::subject('sales_desk_link', $context),
                 EmailBody::withGreeting($person->displayName, MessageTemplates::body('sales_desk_link', $context)),
-                [['label' => $label, 'url' => $url]]
+                MessageActions::email(MessageActions::of('sales_desk_link', $context, $this->mailer))
             );
         }
 
@@ -380,23 +379,13 @@ final class DoorLinkSender
         }
 
         // The texts are the Messages page templates (MessageTemplates).
-        $context = ['person' => $person, 'day' => Dates::dayLabel($date)];
-        $buttons = [['label' => self::buttonLabel(), 'url' => $url]];
-        $adminUrl = HelpPage::url(self::ADMIN_ANCHOR);
-
-        if ('' !== $adminUrl) {
-            $buttons[] = ['label' => self::adminButtonLabel(), 'url' => $adminUrl];
-        }
+        $context = ['person' => $person, 'day' => Dates::dayLabel($date), 'desk_url' => $url];
 
         if ($byTelegram) {
-            $rows = array_map(
-                static fn (array $b): array => [['text' => $b['label'], 'url' => $b['url']]],
-                $buttons
-            );
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
                 DmBody::frame($person, MessageTemplates::body('organizer_notice_dm', $context)),
-                ['inline_keyboard' => $rows]
+                MessageActions::replyMarkup(MessageActions::of('organizer_notice_dm', $context, $this->mailer))
             );
         }
 
@@ -406,7 +395,7 @@ final class DoorLinkSender
                 $person->email,
                 MessageTemplates::subject('organizer_notice', $context),
                 EmailBody::withGreeting($person->displayName, MessageTemplates::body('organizer_notice', $context)),
-                $buttons
+                MessageActions::email(MessageActions::of('organizer_notice', $context, $this->mailer))
             );
         }
 

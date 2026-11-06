@@ -167,7 +167,47 @@ final class MessageTemplates
             'access_pass access_pass_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             'newcomer_ok newcomer_ok_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             'access_organizer access_organizer_dm' => static fn (): array => self::present([self::adminAction()]),
+            // Organizer notices: give the role from the bot's people list or
+            // the Admin tab; the night's sales desk link, and a new one from
+            // the bot's 💳 Sales desk button.
+            'role_met role_met_dm' => static fn (): array => [
+                new MessageAction(
+                    'people',
+                    __('Give them the role', 'eventcrew'),
+                    '👥 ' . __('Give them the role', 'eventcrew'),
+                    static fn (): string => HelpPage::url(DoorLinkSender::ADMIN_ANCHOR),
+                    '',
+                    'people'
+                ),
+            ],
+            'sales_desk_link sales_desk_link_dm' => static fn (array $c): array => [
+                self::deskAction($c),
+                self::newDeskLinkAction(),
+            ],
+            'organizer_notice organizer_notice_dm' => static fn (array $c): array => self::present([
+                self::deskAction($c),
+                self::adminAction(),
+                self::newDeskLinkAction(),
+            ]),
         ];
+    }
+
+    /**
+     * The night's one-time sales desk link, made by the sender ('desk_url').
+     *
+     * @param array<string, mixed> $c
+     */
+    private static function deskAction(array $c): MessageAction
+    {
+        $url = (string) ($c['desk_url'] ?? '');
+
+        return new MessageAction('desk', DoorLinkSender::buttonLabel(), '', static fn (): string => $url);
+    }
+
+    /** A new sales desk link: the bot's 💳 Sales desk button. */
+    private static function newDeskLinkAction(): MessageAction
+    {
+        return new MessageAction('new_desk_link', '💳 ' . __('Sales desk', 'eventcrew'), '', null, '', 'sales');
     }
 
     /** The Admin tab of the crew page, or null when no crew page is set. */
@@ -670,7 +710,8 @@ final class MessageTemplates
         $none = ['frame' => MessageTemplate::FRAME_NONE];
         $signed = ['frame' => MessageTemplate::FRAME_SIGNED];
         $privacy = static fn (): array => '' === PrivacyPolicy::noticeUrl() ? [] : [PrivacyPolicy::noticeLinkLabel()];
-        $desk = [DoorLinkSender::buttonLabel()];
+        // The sender makes the one-time link; the preview shows a stand-in.
+        $deskLink = ['context' => static fn (): array => ['desk_url' => Mailer::PREVIEW_LINK]];
         $admin = [DoorLinkSender::adminButtonLabel()];
 
         return [
@@ -760,10 +801,10 @@ final class MessageTemplates
                     'group_line' => "\n\n" . __('The second button opens the crew’s Telegram group, where tasks are posted.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
                 ],
             ],
-            'sales_desk_link' => $greet + ['buttons' => $desk],
-            'sales_desk_link_dm' => ['buttons' => $desk],
-            'organizer_notice' => $greet + ['buttons' => [...$desk, ...$admin]],
-            'organizer_notice_dm' => ['buttons' => [...$desk, ...$admin]],
+            'sales_desk_link' => $greet + $deskLink,
+            'sales_desk_link_dm' => $deskLink,
+            'organizer_notice' => $greet + $deskLink,
+            'organizer_notice_dm' => $deskLink,
             'takeover_ask' => ['buttons' => [__('Answer the request', 'eventcrew')]],
             'takeover_ask_dm' => $none + [
                 'buttons' => [__('✅ Let them take it', 'eventcrew'), __('❌ Keep my task', 'eventcrew')],
@@ -1541,7 +1582,7 @@ final class MessageTemplates
         $byKnown = static fn (array $c): bool => '' !== (string) ($c['giver'] ?? '-');
         $met = static fn (): string => self::tag(
             /* translators: 1: the person's name, 2: the role */
-            __('%1$s now meets the conditions for the role %2$s. You can give them the role with /people.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('%1$s now meets the conditions for the role %2$s. To give it to them, tap Give them the role below.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ['%1$s' => '{name}', '%2$s' => '{role}']
         );
         $given = static fn (array $c): string => $byKnown($c)
@@ -1975,7 +2016,7 @@ final class MessageTemplates
         );
         $doorHelp = self::botOrWeb(
             __('How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-            static fn (): string => __('Send /door to the bot and tap 💳 Sales desk.', 'eventcrew'),
+            static fn (): string => __('Tap 💳 Sales desk below.', 'eventcrew'),
             // An organizer has no Sales desk card in the Me tab; theirs is
             // under Door in the Admin tab (templates/public/signup.php).
             static fn (string $url, array $c): string => ($c['person'] ?? null) instanceof Person && $c['person']->isOrganizer

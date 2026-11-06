@@ -238,7 +238,7 @@ final class RoleNotifierTest extends TelegramTestCase
     public function testEachNoticeSendsItsBuiltInTextWhenNothingIsStored(): void
     {
         $cases = [
-            ['met', '', 'Someone meets the conditions for a role', 'Jo now meets the conditions for the role Crew leader. You can give them the role with /people.'],
+            ['met', '', 'Someone meets the conditions for a role', 'Jo now meets the conditions for the role Crew leader. To give it to them, tap Give them the role below.'],
             ['given', '', 'Someone was given a role', 'Jo was given the role Crew leader.'],
             ['given', 'Sam', 'Someone was given a role', 'Jo was given the role Crew leader by Sam.'],
             ['organizer', '', 'Someone was made an organizer', 'Jo was made an organizer.'],

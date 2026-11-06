@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\MenuButtons;
 
 /**
  * The automatic sales desk links. The clock reads 12:00 on the night.
@@ -106,7 +107,7 @@ final class DoorLinkSenderTest extends SalesDeskTestCase
         self::assertSame([], $this->wpdb->inserts);
     }
 
-    public function testTheNoticeHasTheSalesDeskAndTheAdminTabButtons(): void
+    public function testTheNoticeHasTheSalesDeskTheAdminTabAndTheNewLinkButtons(): void
     {
         $this->options['eventcrew_signup_page_id'] = 897;
         \Brain\Monkey\Functions\when('get_permalink')->justReturn('https://site.test/crew/');
@@ -115,9 +116,10 @@ final class DoorLinkSenderTest extends SalesDeskTestCase
         $this->doorLinkSender()->run();
 
         $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
-        self::assertCount(2, $keyboard);
+        self::assertCount(3, $keyboard);
         self::assertStringContainsString('action=eventcrew_door', $keyboard[0][0]['url']);
         self::assertSame('https://site.test/crew/#eventcrew-panel-admin', $keyboard[1][0]['url']);
+        self::assertSame(['text' => '💳 Sales desk', 'callback_data' => MenuButtons::SALES], $keyboard[2][0]);
     }
 
     public function testTelegramUntickedSendsNoDm(): void
