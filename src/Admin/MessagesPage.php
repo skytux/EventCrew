@@ -6,8 +6,12 @@ namespace EventCrew\Admin;
 
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\LlmClient;
+use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TicketReasons;
+use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 
 /**
@@ -16,7 +20,9 @@ use EventCrew\Support\TranslatedText;
  *   with its subject, its text, the placeholders it can use and what each
  *   one becomes, the formatting that works, and "Reset to built-in text".
  *   Each kind is its own form, so saving one translates only that one;
- *   &kind= opens one.
+ *   &kind= opens one. The Ticket entry also holds the text the ticket
+ *   email uses now (TicketText) and its four {reason} lines
+ *   (TicketReasons), saved with TICKET_ACTION.
  * - AI: the AI prompts and the organizers' own placeholders (AiPromptsPage).
  * - Coming events: the texts the AI wrote for each coming event and the
  *   one-time texts of the next post-event email and announcement
@@ -32,6 +38,12 @@ final class MessagesPage
 
     public const RESET_ACTION = 'eventcrew_reset_message';
 
+    /** Saves the ticket email's text and {reason} lines (the Ticket entry). */
+    public const TICKET_ACTION = 'eventcrew_save_ticket_text';
+
+    /** The Messages tab entry that holds the ticket email's text. */
+    public const TICKET_KIND = 'ticket';
+
     public const TAB_MESSAGES = 'messages';
 
     public const TAB_AI = 'ai';
@@ -44,7 +56,8 @@ final class MessagesPage
         private readonly View $view,
         private readonly MessageTemplates $templates,
         private readonly ?AiPromptsPage $ai = null,
-        private readonly ?EmailTemplate $emailTemplate = null
+        private readonly ?EmailTemplate $emailTemplate = null,
+        private readonly ?LlmClient $llm = null
     ) {
     }
 
@@ -118,7 +131,11 @@ final class MessagesPage
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only: which entry is open.
         $open = isset($_GET['kind']) ? sanitize_key(wp_unslash((string) $_GET['kind'])) : '';
 
-        return $data + ['entries' => self::entries(), 'open' => $open];
+        return $data + [
+            'entries' => self::entries(),
+            'open' => $open,
+            'ticket' => ['text' => TicketText::settings(), 'reasons' => TicketReasons::allSettings()],
+        ];
     }
 
     /**
@@ -219,6 +236,102 @@ final class MessagesPage
             'jobs' => $jobs,
             'texts' => $texts,
         ]);
+    }
+
+    /** admin-post: saves the ticket email's text and {reason} lines (the form without JavaScript). */
+    public function saveTicket(): void
+    {
+        Admin::assertCanSave(self::TICKET_ACTION);
+
+        $result = $this->applyTicketSave();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            $result['message'],
+            $result['type'],
+            ['tab' => self::TAB_MESSAGES, 'kind' => self::TICKET_KIND],
+            'ec-message-' . self::TICKET_KIND
+        );
+    }
+
+    /**
+     * admin-ajax: the same save as saveTicket(), answered as saveAjax()
+     * answers: the notice, the badge of each text whose translation waits
+     * (jobs), and each other text as now stored (texts).
+     */
+    public function saveTicketAjax(): never
+    {
+        if (! current_user_can(Admin::CAPABILITY)) {
+            wp_send_json_error(null, 403);
+        }
+
+        check_ajax_referer(self::TICKET_ACTION);
+
+        $result = $this->applyTicketSave();
+
+        if (BackgroundJobs::addedNow() > 0) {
+            $result['message'] .= ' ' . BackgroundJobs::queuedNotice();
+        }
+
+        $jobs = [];
+        $texts = [];
+
+        foreach (self::ticketValues() as $row => $value) {
+            $job = BackgroundJobs::latest(TranslatedText::jobTarget($row));
+
+            if (BackgroundJobs::isActive($job)) {
+                $jobs[$row] = BackgroundJobs::badge($job);
+            } else {
+                $texts[$row] = TranslatedText::fillValue($value);
+            }
+        }
+
+        wp_send_json_success([
+            'type' => $result['type'],
+            'message' => $result['message'],
+            'jobs' => $jobs,
+            'texts' => $texts,
+        ]);
+    }
+
+    /**
+     * Saves the posted ticket email text and {reason} lines; the
+     * translations are queued.
+     *
+     * @return array{type: string, message: string}
+     */
+    public function applyTicketSave(): array
+    {
+        $llm = $this->llm ?? new LlmClient(new Logger());
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified by the caller; sanitized per field in TranslatedText::fromPost().
+        $error = (new TicketText($llm, new Logger(), true))->saveSettings($_POST[TicketText::POST_NAME] ?? null);
+        $reasonError = (new TicketReasons($llm, new Logger(), true))
+            ->saveSettings($_POST[TicketReasons::POST_NAME] ?? null);
+        // phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput
+
+        $notice = TranslatedText::errorNotice('' !== $error ? $error : $reasonError);
+
+        return '' === $notice
+            ? ['type' => 'success', 'message' => __('The ticket email text is saved.', 'eventcrew')]
+            : ['type' => 'error', 'message' => $notice];
+    }
+
+    /**
+     * The ticket email's texts as stored, by their Translations page row
+     * id (the data-ec-row of their fields).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function ticketValues(): array
+    {
+        $values = ['email.ticket' => TicketText::settings()];
+
+        foreach (TicketReasons::KINDS as $kind) {
+            $values['email.ticket_reason.' . $kind] = TicketReasons::settings($kind);
+        }
+
+        return $values;
     }
 
     /**

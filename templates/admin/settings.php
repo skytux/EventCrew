@@ -29,8 +29,6 @@
  * @var bool $welcome_enabled Whether the welcome message goes out.
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
- * @var array<string, mixed> $ticket_text The ticket email's text (TicketText::settings()).
- * @var array<string, array<string, mixed>> $ticket_reasons The ticket email's {reason} lines by kind (TicketReasons::allSettings()).
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
  * @var int $newsletter_preview_hours Hours after the previous event ends that the preview goes.
@@ -1546,67 +1544,10 @@ if (! defined('ABSPATH')) {
         </table>
 
         <h2><?php esc_html_e('Ticket email', 'eventcrew'); ?></h2>
-        <table class="form-table" role="presentation">
-            <tr>
-                <th scope="row">
-                    <label for="eventcrew-ticket-text"><?php esc_html_e('Ticket email text', 'eventcrew'); ?></label>
-                </th>
-                <td>
-                    <?php
-                    \EventCrew\Support\TranslatedText::field(
-                        \EventCrew\Support\TicketText::POST_NAME,
-                        'eventcrew-ticket-text',
-                        $ticket_text,
-                        \EventCrew\Support\TicketText::MAX_LENGTH,
-                        true,
-                        '',
-                        'email.ticket'
-                    );
-                    ?>
-                    <p class="description">
-                        <?php esc_html_e('The text of every ticket email: a bought ticket, a guest-list ticket, a crew ticket and a free-entry ticket. The heading, the ticket note, the “Open my ticket” button, the sign-off and the QR code are added around it. A first line written in *stars* is the greeting, shown in italics on its own line. Empty, or the same as the built-in text, means the built-in text.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
-                    </p>
-                    <p class="description"><?php esc_html_e('Placeholders:', 'eventcrew'); ?></p>
-                    <ul class="description" style="list-style:disc;margin-left:2em">
-                        <li><code>{first_name}</code> <?php esc_html_e('the ticket holder’s first name. When there is no name, it is left out with the space in front of it: “Hi {first_name},” becomes “Hi,”.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></li>
-                        <li><code>{event}</code> <?php esc_html_e('the event’s name.', 'eventcrew'); ?></li>
-                        <li><code>{date}</code> <?php esc_html_e('the event’s date, like 14.11.2026.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{start_time}</code> <?php esc_html_e('the event’s start time, like 19:00. Empty when the event has none.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{doors_close}</code> <?php esc_html_e('when the doors close, like 19:30. Empty when doors close is off.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{reason}</code> <?php esc_html_e('why the person has a ticket: one of the four lines below, chosen by the kind of ticket.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{tasks}</code> <?php esc_html_e('a crew member’s tasks on the night, as a list. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{plus_ones}</code> <?php esc_html_e('how many people a guest may bring, like “2 people”. Empty for everyone else.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></li>
-                        <li><code>{organization}</code> <?php esc_html_e('the organization’s name (Web page tab, else the site name).', 'eventcrew'); ?></li>
-                    </ul>
-                    <p class="description">
-                        <?php esc_html_e('When a placeholder other than {first_name} is empty, its whole paragraph is left out, so no empty line or half sentence is left.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
-                    </p>
-                </td>
-            </tr>
-            <?php foreach (\EventCrew\Support\TicketReasons::KINDS as $reason_kind) : ?>
-                <tr>
-                    <th scope="row">
-                        <label for="<?php echo esc_attr('eventcrew-ticket-reason-' . $reason_kind); ?>"><?php echo esc_html(\EventCrew\Support\TicketReasons::label($reason_kind)); ?></label>
-                    </th>
-                    <td>
-                        <?php
-                        \EventCrew\Support\TranslatedText::field(
-                            \EventCrew\Support\TicketReasons::POST_NAME . '[' . $reason_kind . ']',
-                            'eventcrew-ticket-reason-' . $reason_kind,
-                            $ticket_reasons[$reason_kind],
-                            \EventCrew\Support\TicketReasons::MAX_LENGTH,
-                            false,
-                            '',
-                            'email.ticket_reason.' . $reason_kind
-                        );
-                        ?>
-                        <p class="description">
-                            <?php esc_html_e('The {reason} line of the ticket email for this kind of ticket. Empty, or the same as the built-in line, means the built-in line.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?>
-                        </p>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </table>
+        <p>
+            <?php esc_html_e('The ticket email text and its {reason} lines are edited on the Messages page:', 'eventcrew'); ?>
+            <a href="<?php echo esc_url(\EventCrew\Admin\MessagesPage::url(\EventCrew\Admin\MessagesPage::TAB_MESSAGES, ['kind' => \EventCrew\Admin\MessagesPage::TICKET_KIND], 'ec-message-' . \EventCrew\Admin\MessagesPage::TICKET_KIND)); // phpcs:ignore Generic.Files.LineLength.TooLong ?>"><?php esc_html_e('Messages > Ticket (email)', 'eventcrew'); ?></a>
+        </p>
 
         <h2><?php esc_html_e('Hybrid messages', 'eventcrew'); ?></h2>
         <?php if (! $hybrid['allowed']) : ?>

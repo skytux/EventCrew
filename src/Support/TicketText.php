@@ -9,7 +9,7 @@ namespace EventCrew\Support;
  * ticket - a ticket bought on Holvi, a guest-list ticket, a crew ticket and a
  * free-entry credit's ticket.
  *
- * It is set in wp-admin Settings > Email as a written-once text
+ * It is set in wp-admin Messages > Ticket (email) as a written-once text
  * (TranslatedText): written in any language and translated into every site
  * language by the language model, or edited by hand per language. Until
  * someone saves another text there, the built-in text (defaultText()) is
