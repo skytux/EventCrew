@@ -150,9 +150,11 @@ final class MessageTemplates
                 self::cancelAction($c, $m),
                 self::guideAction(),
             ]),
-            // A cancellation, or a spot that opened: the open tasks are one
-            // tap away.
-            'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // A cancellation: undo it in one tap, or pick another task.
+            'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::signUpAgainAction($c, $m),
+                self::boardAction($m),
+            ]),
             // A spot that opened: sign up for it at once, else the board.
             'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => self::present([
                 self::taskSignupAction($c, $m),
@@ -358,6 +360,28 @@ final class MessageTemplates
             'j:' . $task->id,
             '',
             SlotFreedNotice::startPayload($task->id)
+        );
+    }
+
+    /**
+     * Sign up again for the task just cancelled: taskSignupAction() under
+     * another label. Cheap, so one tap: the join-only callback runs the
+     * board's sign-up with all its checks.
+     *
+     * @param array<string, mixed> $c
+     */
+    private static function signUpAgainAction(array $c, Mailer $m): ?MessageAction
+    {
+        $signup = self::taskSignupAction($c, $m);
+
+        return null === $signup ? null : new MessageAction(
+            'signup_again',
+            __('Sign up again', 'eventcrew'),
+            '↩️ ' . __('Sign up again', 'eventcrew'),
+            $signup->url,
+            $signup->callback,
+            $signup->verb,
+            $signup->start
         );
     }
 
@@ -829,7 +853,8 @@ final class MessageTemplates
             'task_cancelled' => ['buttons' => $openTasks],
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
-            'cancel_confirmed_dm' => $none,
+            'cancel_confirmed' => $sampleOthers,
+            'cancel_confirmed_dm' => $none + $sampleOthers,
             'open_task_call_dm' => $signed,
             'email_confirm' => [
                 'buttons' => static fn (): array => [__('Confirm your email', 'eventcrew'), ...$privacy()],
@@ -1007,6 +1032,13 @@ final class MessageTemplates
         $cancelNote = self::placeholder(
             __('"Thanks for the notice.", or for a late cancellation the sentence saying it counts against the standing.', 'eventcrew'),
             static fn (array $c): string => (string) ($c['note'] ?? '')
+        );
+        // Only a late cancellation changes the standing; else the line goes.
+        $cancelStanding = self::placeholder(
+            __('After a late cancellation, the person\'s standing and free-entry credits, like: Your standing: Beginner · 0 free-entry credits. On a line of its own; the line goes when the cancellation was not late.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['standing'] ?? ''),
+            false,
+            true
         );
         $openTasks = self::placeholder(
             __('The next open tasks, under a line with each date.', 'eventcrew'),
@@ -1328,12 +1360,19 @@ final class MessageTemplates
                     __('Cancelled: %1$s for %2$s', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
-                static fn (): string => self::tag(
+                static fn (): string => FrictionB1Migration::withOtherTasks(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line */
                     __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s\n\n%5\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}', '%5$s' => '{standing}']
-                ),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'note' => $cancelNote, 'standing' => $claimPlaceholders['standing']]
+                )),
+                [
+                    'name' => $name,
+                    'role' => $role,
+                    'event' => $event,
+                    'note' => $cancelNote,
+                    'other_tasks' => $spotPlaceholders['other_tasks'],
+                    'standing' => $cancelStanding,
+                ]
             ),
             new MessageTemplate(
                 'cancel_confirmed_dm',
@@ -1341,11 +1380,11 @@ final class MessageTemplates
                 $telegram,
                 __('Sent when a person cancels their own task, in the bot or on the web page.', 'eventcrew'),
                 null,
-                static fn (): string => self::tag(
+                static fn (): string => FrictionB1Migration::withOtherTasks(self::tag(
                     /* translators: 1: cancellation kind, 2: role, 3: event, 4: standing note */
                     __('%1$s: %2$s at %3$s. %4$s', 'eventcrew'),
                     ['%1$s' => '{cancelled}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}']
-                ) . "\n\n{standing}",
+                ) . "\n\n{standing}"),
                 [
                     'cancelled' => self::placeholder(
                         __('"❌ Cancelled", or "⚠️ Late cancellation" when the cancellation was late.', 'eventcrew'),
@@ -1354,7 +1393,8 @@ final class MessageTemplates
                     'role' => $role,
                     'event' => $event,
                     'note' => $cancelNote,
-                    'standing' => $claimPlaceholders['standing'],
+                    'other_tasks' => $spotPlaceholders['other_tasks'],
+                    'standing' => $cancelStanding,
                 ]
             ),
             new MessageTemplate(

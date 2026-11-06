@@ -31,7 +31,8 @@ final class ClaimNotifier
         private readonly TelegramClient $telegram,
         private readonly StandingCalculator $standing,
         private readonly ?TicketMail $ticketMail = null,
-        private readonly ?PersonRepository $people = null
+        private readonly ?PersonRepository $people = null,
+        private readonly ?SlotFreedNotice $slots = null
     ) {
     }
 
@@ -211,7 +212,10 @@ final class ClaimNotifier
                 ? __('⚠️ Late cancellation', 'eventcrew')
                 : __('❌ Cancelled', 'eventcrew'),
             'note' => $note,
-            'standing' => $this->standingLine($person),
+            // The other open tasks of the event, to pick another one.
+            'other_rows' => null === $this->slots ? [] : $this->slots->otherOpen($task),
+            // Only a late cancellation changes the standing; else the line goes.
+            'standing' => AssignmentStatus::LATE_CANCEL === $status ? $this->standingLine($person) : '',
         ];
 
         $this->dm(

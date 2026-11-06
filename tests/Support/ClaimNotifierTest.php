@@ -9,6 +9,7 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -23,6 +24,7 @@ use EventCrew\Support\Roles;
 use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
@@ -163,7 +165,6 @@ final class ClaimNotifierTest extends TestCase
             'ticket_mailed_at' => '2026-07-19 10:00:00',
         ];
         $this->wpdb->nextRows[] = $this->taskRow();
-        $this->wpdb->nextResults[] = [];           // the standing line
         $this->wpdb->nextResults[] = [$cancelled]; // forPersonOn: the emailed ticket
         $this->wpdb->nextResults[] = [$cancelled]; // forPersonOn: no task left
 
@@ -184,7 +185,6 @@ final class ClaimNotifierTest extends TestCase
         ];
         $kept = ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'];
         $this->wpdb->nextRows[] = $this->taskRow();
-        $this->wpdb->nextResults[] = [];  // the standing line
         $this->wpdb->nextResults[] = [$cancelled, $kept];
         $this->wpdb->nextResults[] = [$cancelled, $kept];
         $this->wpdb->nextRows[] = ['role_slug' => 'bar', 'id' => 6] + $this->taskRow(); // tasks->find(6)
@@ -497,7 +497,11 @@ final class ClaimNotifierTest extends TestCase
         );
     }
 
-    /** With nothing stored, both cancellation DMs and emails are what they were before the templates. */
+    /**
+     * With nothing stored, both cancellation DMs and emails are what they
+     * were before the templates, but the standing line only after a late
+     * cancellation: nothing else changes the standing.
+     */
     public function testTheCancelMessagesAreTheSameAsBeforeTheTemplates(): void
     {
         $sends = $this->captureWithOptions();
@@ -516,19 +520,72 @@ final class ClaimNotifierTest extends TestCase
 
             $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, $status);
 
+            $line = 'late_cancel' === $status ? "\n\n" . $standing : '';
             self::assertSame(
-                $kind . ': Decorate at Party. ' . $note . "\n\n" . $standing,
+                $kind . ': Decorate at Party. ' . $note . $line,
                 (string) $sends->items[0]['text'],
                 $status
             );
             self::assertSame('Cancelled: Decorate for Party', $this->mails[0]['subject'], $status);
             self::assertSame(
                 "Hi Sam,\n\nYou've cancelled Decorate at Party, and your ticket is now disabled.\n\n" . $note
-                    . "\n\n" . $standing . self::MANAGE,
+                    . $line . self::MANAGE,
                 $this->mails[0]['body'],
                 $status
             );
         }
+    }
+
+    /**
+     * A cancellation offers to undo it in one tap ([Sign up again], the
+     * join-only j: callback, which runs the board's sign-up with its checks)
+     * and lists the event's other open tasks, with the board one tap away.
+     */
+    public function testACancellationOffersSignUpAgainAndTheOtherOpenTasks(): void
+    {
+        $sends = $this->captureWithOptions([
+            'eventcrew_signup_page_id' => 3,
+            'eventcrew_telegram_bot_username' => 'crewbot',
+        ]);
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $other = ['id' => 6, 'role_slug' => 'bar', 'task_date' => '2099-08-01'] + $this->taskRow();
+        $this->wpdb->nextRows[] = $this->timedTaskRow();              // tasks->find
+        $this->wpdb->nextResults[] = [$this->timedTaskRow(), $other]; // otherOpen: the tasks of the day
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 1]]; // otherOpen: occupancy
+
+        $notifier = new ClaimNotifier(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TelegramClient(new Logger(), new DohResolver(new Logger())),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository()),
+            null,
+            null,
+            new SlotFreedNotice(
+                new TaskRepository(),
+                new PersonRepository(),
+                new Mailer(new Logger(), new EmailTemplate(new Logger())),
+                new TelegramClient(new Logger(), new DohResolver(new Logger()))
+            )
+        );
+        $notifier->confirmCancellation($this->personInLanguage(null), 5, 'cancelled');
+
+        $dm = $sends->items[0];
+        self::assertStringStartsWith(
+            "❌ Cancelled: Decorate at Party. Thanks for the notice.\n\nOther open tasks at Party:\n- ",
+            (string) $dm['text']
+        );
+        self::assertStringNotContainsString('Your standing', (string) $dm['text']);
+        $buttons = array_merge(...$dm['reply_markup']['inline_keyboard']);
+        self::assertSame('↩️ Sign up again', $buttons[0]['text']);
+        self::assertSame('j:5', $buttons[0]['callback_data']);
+        self::assertStringContainsString('See open tasks', $buttons[1]['text']);
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString("Thanks for the notice.\n\nOther open tasks at Party:\n- ", $body);
+        self::assertStringContainsString('Sign up again: https://site.test/crew/#', $body);
+        self::assertStringContainsString('https://t.me/crewbot?start=task-5', $body);
+        self::assertStringContainsString('See open tasks: https://site.test/crew/', $body);
     }
 
     /**
