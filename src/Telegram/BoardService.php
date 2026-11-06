@@ -128,6 +128,7 @@ final class BoardService
     public function setBoardChat(int $chatId): void
     {
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
+        GroupChat::remember($chatId);
     }
 
     /**
@@ -435,6 +436,7 @@ final class BoardService
         // home survives even if the post below fails; storeBoard fills in the
         // new message id once Telegram confirms it.
         update_option(self::BOARD_OPTION, ['chat_id' => $chatId, 'message_id' => 0]);
+        GroupChat::remember($chatId);
 
         // The card first, so it sits above the text board.
         if (self::cardsOn()) {
@@ -1043,12 +1045,24 @@ final class BoardService
     }
 
     /**
+     * The board option. With no chat in it (the option was deleted), the
+     * stored group (GroupChat) is its chat, so the board is posted there again.
+     *
      * @return array<string, mixed>
      */
     private function board(): array
     {
         $board = get_option(self::BOARD_OPTION, []);
+        $board = is_array($board) ? $board : [];
 
-        return is_array($board) ? $board : [];
+        if (0 === (int) ($board['chat_id'] ?? 0)) {
+            $group = GroupChat::id();
+
+            if (0 !== $group) {
+                $board['chat_id'] = $group;
+            }
+        }
+
+        return $board;
     }
 }

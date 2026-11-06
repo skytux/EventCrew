@@ -51,6 +51,9 @@ final class TelegramClient
     /** Telegram's retry_after seconds from the most recent failed call; 0 when it gave none. */
     private int $lastRetryAfter = 0;
 
+    /** Set while a call is sent again to a migrated chat, so it is sent again only once. */
+    private bool $followingMigration = false;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly DohResolver $resolver
@@ -147,10 +150,51 @@ final class TelegramClient
             $message = sprintf('Telegram %s returned an error: %s', $method, $this->lastError);
             $quiet ? $this->logger->info($message) : $this->logger->warning($message);
 
+            $migrateTo = is_array($decoded) ? (int) ($decoded['parameters']['migrate_to_chat_id'] ?? 0) : 0;
+
+            if (0 !== $migrateTo) {
+                return $this->followMigration($method, $params, $quiet, $migrateTo);
+            }
+
             return null;
         }
 
         return is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+    }
+
+    /**
+     * Telegram said the chat of $params moved to $migrateTo: the group was
+     * upgraded to a supergroup, and its old id no longer works. The crew's
+     * group follows (GroupChat::migrated()), and a call that names no message
+     * is sent once more to the new chat. A call on a message (an edit, a
+     * delete) is not: the message ids of the old chat do not carry over.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>|null
+     */
+    private function followMigration(string $method, array $params, bool $quiet, int $migrateTo): ?array
+    {
+        $from = (int) ($params['chat_id'] ?? 0);
+
+        if (0 === $from || $from === $migrateTo || $this->followingMigration) {
+            return null;
+        }
+
+        GroupChat::migrated($from, $migrateTo);
+        $this->logger->info(sprintf('Telegram chat %d moved to %d.', $from, $migrateTo));
+
+        if (isset($params['message_id'])) {
+            return null;
+        }
+
+        $params['chat_id'] = $migrateTo;
+        $this->followingMigration = true;
+
+        try {
+            return $this->call($method, $params, $quiet);
+        } finally {
+            $this->followingMigration = false;
+        }
     }
 
     /**

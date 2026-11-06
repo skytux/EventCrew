@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -160,8 +161,7 @@ final class DoorNewMember
      */
     private function groupInvite(): string
     {
-        $board = get_option(BoardService::BOARD_OPTION, []);
-        $chatId = is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0;
+        $chatId = GroupChat::current();
 
         if (0 !== $chatId && $this->telegram->isConfigured()) {
             $created = $this->telegram->createChatInviteLink(

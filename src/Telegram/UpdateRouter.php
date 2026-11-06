@@ -122,6 +122,9 @@ final class UpdateRouter
      */
     private function routeUpdate(array $update, ?string $chosen): void
     {
+        // The crew's group, from any group update: a move to a supergroup.
+        GroupChat::learn($update);
+
         if ($this->refusedAsBlocked($update)) {
             return;
         }

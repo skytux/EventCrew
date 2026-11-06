@@ -13,7 +13,7 @@ use EventCrew\Support\MarkedBy;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\Roles;
 use EventCrew\Support\TaskTemplateApplier;
-use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Web\PwaController;
 
@@ -96,8 +96,7 @@ final class TasksPage
     {
         $hasBot = '' !== trim((string) get_option(TelegramClient::TOKEN_OPTION, ''));
         $hasPage = 0 < (int) get_option(PwaController::PAGE_OPTION, 0);
-        $board = get_option(BoardService::BOARD_OPTION, []);
-        $boardSet = is_array($board) && 0 !== (int) ($board['chat_id'] ?? 0);
+        $boardSet = 0 !== GroupChat::current();
 
         $state = [
             'connected' => $hasBot || $hasPage,

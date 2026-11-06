@@ -52,6 +52,7 @@ use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CommandMenu;
+use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
@@ -330,8 +331,6 @@ final class SettingsPage
     private function telegramView(): array
     {
         $configured = $this->telegram->isConfigured();
-        $board = get_option(BoardService::BOARD_OPTION, []);
-
         $useFallback = (bool) get_option(WebhookController::USE_FALLBACK_OPTION, false);
         $secret = trim((string) get_option(WebhookController::SECRET_OPTION, ''));
 
@@ -372,7 +371,7 @@ final class SettingsPage
             'secret' => SecretMask::mask($secret),
             'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
-            'board_chat_id' => is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0,
+            'board_chat_id' => GroupChat::current(),
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),

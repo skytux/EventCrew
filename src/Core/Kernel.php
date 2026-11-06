@@ -104,6 +104,7 @@ use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\BotTexts;
 use EventCrew\Telegram\BuyerListReset;
 use EventCrew\Telegram\ChatForwarder;
@@ -183,6 +184,10 @@ final class Kernel
         // Turns the bot's four old About/Description fields into the two
         // written-once texts. Runs once per site.
         BotProfileSettings::migrate();
+
+        // Copies the group's chat id out of the board option into its own
+        // option (GroupChat). Does nothing once it is set.
+        GroupChat::migrate();
 
         // The bot's answers and buttons as edited on the Translations page.
         // Registered on every request: the bot answers on the webhook path.
