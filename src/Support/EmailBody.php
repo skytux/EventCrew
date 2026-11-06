@@ -58,6 +58,13 @@ final class EmailBody
     /** "[text](#anchor)": a link to a heading in the same message. */
     private const ANCHOR_LINK = '/\[([^\]\n]+)\]\(#([a-z0-9-]+)\)/';
 
+    /**
+     * An action with this 'style' is an "Open in Telegram" deep link
+     * (MessageActions::email()): drawn as one line of small links under the
+     * buttons instead of a big button of its own.
+     */
+    public const STYLE_TELEGRAM = 'telegram';
+
     /** The colour of the FI / EN language tag on a light background: a muted gold. */
     public const TAG_COLOR = '#9a7440';
 
@@ -80,7 +87,53 @@ final class EmailBody
             $html .= $button;
         }
 
-        return $html;
+        return $html . self::telegramLinks($actions);
+    }
+
+    /**
+     * The "Open in Telegram" line: the STYLE_TELEGRAM actions as small links,
+     * centred under the buttons. '' when there are none.
+     *
+     * @param array<int, array{label: string, url: string, style?: string}> $actions
+     */
+    private static function telegramLinks(array $actions): string
+    {
+        $links = [];
+
+        foreach (self::telegramActions($actions) as $action) {
+            $links[] = sprintf(
+                '<a href="%s" style="color:%s;text-decoration:underline">%s</a>',
+                esc_url($action['url']),
+                self::MUTED_COLOR,
+                esc_html($action['label'])
+            );
+        }
+
+        if ([] === $links) {
+            return '';
+        }
+
+        return sprintf(
+            '<p style="margin:4px 0 16px;text-align:center;font-family:%s;font-size:14px;line-height:1.7;'
+                . 'color:%s">%s %s</p>',
+            self::FONT,
+            self::MUTED_COLOR,
+            esc_html__('Open in Telegram:', 'eventcrew'),
+            implode(' · ', $links)
+        );
+    }
+
+    /**
+     * @param array<int, array{label: string, url: string, style?: string}> $actions
+     * @return list<array{label: string, url: string, style?: string}>
+     */
+    private static function telegramActions(array $actions): array
+    {
+        return array_values(array_filter(
+            $actions,
+            static fn (array $action): bool => self::STYLE_TELEGRAM === ($action['style'] ?? '')
+                && '' !== trim($action['url'])
+        ));
     }
 
     /**
@@ -106,9 +159,14 @@ final class EmailBody
         $lines = [];
 
         foreach ($actions as $action) {
-            if ('' !== $action['url']) {
-                $lines[] = $action['label'] . ': ' . $action['url'];
+            if ('' === $action['url']) {
+                continue;
             }
+
+            $lines[] = self::STYLE_TELEGRAM === ($action['style'] ?? '')
+                /* translators: %s: an action, such as "Show your ticket". The line is followed by a t.me link. */
+                ? sprintf(__('%s in Telegram', 'eventcrew'), $action['label']) . ': ' . $action['url']
+                : $action['label'] . ': ' . $action['url'];
         }
 
         return [] === $lines ? $text : $text . "\n\n" . implode("\n", $lines);
@@ -481,7 +539,7 @@ final class EmailBody
         foreach ($actions as $action) {
             $url = trim($action['url']);
 
-            if ('' === $url) {
+            if ('' === $url || self::STYLE_TELEGRAM === ($action['style'] ?? '')) {
                 continue;
             }
 
