@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
 use EventCrew\Support\NewcomerApproval;
@@ -498,8 +499,39 @@ final class UpdateRouter
             MenuButtons::ME => $this->profile->onMe($fromId, $chatId, $isPrivate),
             MenuButtons::BOARD => $this->privateBoard($fromId, $chatId),
             MenuButtons::PEOPLE => $this->help?->onPeople($fromId, $chatId, $isPrivate),
+            MenuButtons::TELL => $this->askWhatIsWrong($fromId, $chatId, $isPrivate),
             default => null,
         };
+    }
+
+    /**
+     * "Not right? Tell us" (MenuButtons::TELL): asks the person to write what
+     * is wrong. The question goes into the chat's log (ConversationLog), so
+     * the bot's helper reads their answer as a reply to it and sends the chat
+     * to the organizers (ChatForwarder). With the helper off, it says to tell
+     * an organizer.
+     */
+    private function askWhatIsWrong(int $fromId, int $chatId, bool $isPrivate): void
+    {
+        if (! $isPrivate || 0 === $fromId || null === $this->telegram) {
+            return;
+        }
+
+        if (! AssistantSettings::isActive() || ! AssistantSettings::forwardEnabled()) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('Please tell an organizer what is not right: they can correct it.', 'eventcrew')
+            );
+
+            return;
+        }
+
+        $text = '✍️ ' . __(
+            'Write here in a few words what is not right. The organizers get it and can correct it.',
+            'eventcrew'
+        );
+        $this->telegram->sendMessage($chatId, $text);
+        ConversationLog::add($fromId, ConversationLog::BOT, $text);
     }
 
     /**

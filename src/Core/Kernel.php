@@ -51,6 +51,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\FrictionB1Migration;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventMeshSyncListener;
@@ -176,6 +177,10 @@ final class Kernel
         // Adds the organize task to nights created before it existed. Runs
         // once per site, on the first request of any kind after the update.
         $this->container->get(OrganizeTaskBackfill::class)->maybeRun();
+
+        // Adds the new placeholders to the message texts organizers saved
+        // before they existed (late cancel, no-show, ...). Each step runs once.
+        FrictionB1Migration::run();
 
         // Adds crew members with a verified email to the newsletter. Runs once
         // per site, on the first request after the update, while the setting
@@ -753,7 +758,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(NotificationsRepository::class),
                 $container->get(TelegramClient::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(StandingCalculator::class)
             )
         );
 

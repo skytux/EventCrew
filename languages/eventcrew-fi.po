@@ -7501,8 +7501,17 @@ msgstr "Etkö pääsekään? Napauta alta Peru. Tai etsi joku ottamaan se: hän 
 msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr "Etkö pääsekään? Napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s)."
 
-msgid "More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana, ja niin myös tuuraaja: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+msgid "Next time tap Cancel early or find someone to take it."
+msgstr "Ensi kerralla peru ajoissa tai etsi joku tilallesi."
+
+msgid "Not right? Tell us"
+msgstr "Väärin? Kerro meille"
+
+msgid "Please tell an organizer what is not right: they can correct it."
+msgstr "Kerro järjestäjälle, mikä on väärin: hän voi korjata sen."
+
+msgid "Write here in a few words what is not right. The organizers get it and can correct it."
+msgstr "Kirjoita tähän lyhyesti, mikä on väärin. Järjestäjät saavat sen ja voivat korjata sen."
 
 msgid "More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
 msgstr "Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana: napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s) heti kun tiedät."

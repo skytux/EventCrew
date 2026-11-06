@@ -158,6 +158,13 @@ final class MessageTemplates
                 self::taskSignupAction($c, $m),
                 self::boardAction($m),
             ]),
+            // A mark against the standing: the open tasks, to win it back; for
+            // a no-show, a word to the organizers in the bot when it is wrong.
+            'late_cancel late_cancel_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            'no_show no_show_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::boardAction($m),
+                self::tellAction($c),
+            ]),
             // The call for open tasks: the board, and the crew's group when
             // its link is known.
             'open_task_call open_task_call_dm' => static fn (array $c, Mailer $m): array => self::present([
@@ -364,6 +371,36 @@ final class MessageTemplates
             static fn (): string => $m->boardUrl(),
             '',
             'board'
+        );
+    }
+
+    /**
+     * "Not right? Tell us": the bot's 'tell' verb, which asks the person to
+     * write what is wrong; the bot's helper sends the chat to the organizers
+     * (ChatForwarder). Null when the helper or its forwarding is off, or for
+     * a person with no Telegram chat, whom the bot cannot place.
+     *
+     * @param array<string, mixed> $c
+     */
+    private static function tellAction(array $c): ?MessageAction
+    {
+        $person = $c['person'] ?? null;
+
+        if (
+            ! AssistantSettings::isActive()
+            || ! AssistantSettings::forwardEnabled()
+            || ($person instanceof Person && CrewPageHelp::webOnly($person))
+        ) {
+            return null;
+        }
+
+        return new MessageAction(
+            'tell',
+            __('Not right? Tell us', 'eventcrew'),
+            '💬 ' . __('Not right? Tell us', 'eventcrew'),
+            null,
+            '',
+            'tell'
         );
     }
 
@@ -1017,7 +1054,7 @@ final class MessageTemplates
         );
         $lateHelp = self::botOrWeb(
             __('What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page.', 'eventcrew'),
-            static fn (): string => __('More notice next time keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.', 'eventcrew'),
+            static fn (): string => __('Next time tap Cancel early or find someone to take it.', 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
                 __('More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know.', 'eventcrew'),
@@ -1111,8 +1148,8 @@ final class MessageTemplates
                 static fn (): string => "Hi {name},\n\n" . self::tag(
                     __("You were marked as a no-show for %2\$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it.", 'eventcrew'),
                     ['%2$s' => '{task}']
-                ),
-                ['name' => $name, 'task' => $standingTask]
+                ) . "\n\n{standing}",
+                ['name' => $name, 'task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
             ),
             new MessageTemplate(
                 'no_show_dm',
@@ -1124,8 +1161,8 @@ final class MessageTemplates
                     /* translators: %s: role at event, date */
                     __('⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer.', 'eventcrew'),
                     ['%s' => '{task}']
-                ),
-                ['task' => $standingTask]
+                ) . "\n\n{standing}",
+                ['task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
             ),
             new MessageTemplate(
                 'late_cancel',
@@ -1137,8 +1174,13 @@ final class MessageTemplates
                     /* translators: 2: role at event, date, 3: what keeps it clear next time */
                     __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. %3\$s", 'eventcrew'),
                     ['%2$s' => '{task}', '%3$s' => '{late_help}']
-                ),
-                ['name' => $name, 'task' => $standingTask, 'late_help' => $lateHelp]
+                ) . "\n\n{standing}",
+                [
+                    'name' => $name,
+                    'task' => $standingTask,
+                    'late_help' => $lateHelp,
+                    'standing' => $claimPlaceholders['standing'],
+                ]
             ),
             new MessageTemplate(
                 'late_cancel_dm',
@@ -1150,8 +1192,8 @@ final class MessageTemplates
                     /* translators: %s: role at event, date */
                     __('⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time.', 'eventcrew'),
                     ['%s' => '{task}']
-                ),
-                ['task' => $standingTask]
+                ) . "\n\n{standing}",
+                ['task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
             ),
             new MessageTemplate(
                 'credit_granted',

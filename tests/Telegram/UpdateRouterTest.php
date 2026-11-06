@@ -6,8 +6,10 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ConversationLog;
 use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\UpdateRouter;
 
@@ -253,6 +255,47 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
         self::assertSame([], $this->wpdb->inserts);
         self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    /**
+     * "Not right? Tell us" (a no-show notice's button or its email link):
+     * the bot asks what is wrong and keeps the question in the chat's log,
+     * so the helper reads the answer as a reply and forwards it. With the
+     * helper off it says to tell an organizer. It acts on nothing.
+     */
+    public function testTellUsAsksWhatIsWrongAndLogsTheQuestion(): void
+    {
+        $this->options[AssistantSettings::ENABLED_OPTION] = true;
+        $this->options[AssistantSettings::URL_OPTION] = 'https://llm.test/v1';
+        $this->options[AssistantSettings::MODEL_OPTION] = 'm';
+
+        foreach (['/start tell', null] as $text) {
+            $this->transients = [];
+            $update = null === $text ? $this->tap('mn:tell') : [
+                'message' => ['text' => $text, 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+            ];
+            $this->updateRouter(null, null, null, null, null, true)->dispatch($update);
+
+            self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
+            self::assertStringContainsString('what is not right', $this->lastCallTo('sendMessage')['text']);
+            $log = ConversationLog::entries(555);
+            self::assertCount(1, $log);
+            self::assertSame(ConversationLog::BOT, $log[0]['w']);
+            self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        }
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->inserts);
+
+        $this->options[AssistantSettings::FORWARD_OPTION] = false;
+        $this->transients = [];
+        $this->updateRouter(null, null, null, null, null, true)->dispatch($this->tap('mn:tell'));
+
+        self::assertSame(
+            'Please tell an organizer what is not right: they can correct it.',
+            $this->lastCallTo('sendMessage')['text']
+        );
+        self::assertSame([], ConversationLog::entries(555));
     }
 
     public function testAnUnknownStartPayloadStillBeginsOnboarding(): void
