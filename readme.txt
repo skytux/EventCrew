@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.153
+Stable tag: 1.140.154
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.154 =
+* The Telegram board no longer has the Crew guide button.
+* The date row keeps three places: where there is no earlier or later date, a blank button that does nothing.
 
 = 1.140.153 =
 * The Telegram board's keyboard has no heading rows: the event's name and date are in the text, with each task's time and count.
@@ -1698,6 +1702,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.154 =
+No settings change.
 
 = 1.140.153 =
 No settings change.

@@ -9743,7 +9743,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:436
+#: src/Telegram/BoardRenderer.php:430
 msgid "full"
 msgstr ""
 
