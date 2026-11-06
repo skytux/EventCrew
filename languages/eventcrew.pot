@@ -207,7 +207,7 @@ msgstr ""
 msgid "%d active account(s) would receive the open-task email."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:193
+#: src/Admin/JobsStatus.php:186
 #. translators: %d: how many background jobs are queued or running
 msgid "%d background job is running."
 msgid_plural "%d background jobs are running."
@@ -357,7 +357,7 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1119
+#: src/Support/TranslatedText.php:1167
 #. translators: %s: a language name, e.g. Finnish
 msgid "%s, detected"
 msgstr ""
@@ -888,7 +888,7 @@ msgstr ""
 msgid "Alex"
 msgstr ""
 
-#: src/Admin/JobsStatus.php:198
+#: src/Admin/JobsStatus.php:191
 msgid "All background jobs are done. Reload the page to see the new texts."
 msgstr ""
 
@@ -1892,7 +1892,7 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1122
+#: src/Support/TranslatedText.php:1170
 msgid "Detect automatically"
 msgstr ""
 
@@ -1920,7 +1920,7 @@ msgstr ""
 msgid "Don't send me these"
 msgstr ""
 
-#: src/Admin/JobsStatus.php:136 src/Support/BackgroundJobs.php:566
+#: src/Admin/JobsStatus.php:129 src/Support/BackgroundJobs.php:566
 msgid "Done ✓"
 msgstr ""
 
@@ -6426,7 +6426,7 @@ msgstr ""
 msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:156
+#: src/Admin/JobsStatus.php:149
 msgid "That job was not found."
 msgstr ""
 
@@ -6892,7 +6892,7 @@ msgstr ""
 msgid "The import settings were saved. There is no import mailbox."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:156
+#: src/Admin/JobsStatus.php:149
 msgid "The job is queued again."
 msgstr ""
 
@@ -7982,7 +7982,7 @@ msgstr ""
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1161
+#: src/Support/TranslatedText.php:1151
 msgid "Translate again"
 msgstr ""
 
@@ -8805,7 +8805,7 @@ msgstr ""
 msgid "You can see your own numbers any time: send /me to the bot in a private chat."
 msgstr ""
 
-#: src/Admin/Admin.php:566 src/Admin/JobsStatus.php:145 src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:271
+#: src/Admin/Admin.php:566 src/Admin/JobsStatus.php:138 src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:271
 msgid "You do not have permission to do this."
 msgstr ""
 
@@ -9264,7 +9264,7 @@ msgstr ""
 msgid "edited by hand"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1146
+#: src/Support/TranslatedText.php:1176
 msgid "edited by hand, not translated again"
 msgstr ""
 
