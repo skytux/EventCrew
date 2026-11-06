@@ -21,6 +21,7 @@ use EventCrew\Admin\MessagesPage;
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Messages', 'eventcrew'); ?></h1>
+    <p><a href="<?php echo esc_url(MessagesPage::previewUrl()); ?>" target="_blank" rel="noopener"><?php esc_html_e('Preview all', 'eventcrew'); ?></a></p>
 
     <nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e('Messages', 'eventcrew'); ?>">
         <?php foreach ($tabs as $eventcrew_tab => $eventcrew_tab_label) : ?>

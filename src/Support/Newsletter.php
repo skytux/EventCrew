@@ -984,6 +984,40 @@ final class Newsletter
     }
 
     /**
+     * The newsletter in version $lang for the message preview in wp-admin
+     * (MessagePreview), in sendBatchLocked()'s shape with the footer of a
+     * subscriber who is not crew: the plan's, as the preview email shows it,
+     * when there is a plan; else the coming events within the days the
+     * newsletter covers (at least the next one), with the organizers' text
+     * there is now. Reads only: nothing is planned, written or saved.
+     *
+     * @return array{subject: string, html: string, text: string, footer: string, crew_note: string}
+     */
+    public function previewMail(string $lang): array
+    {
+        $plan = $this->state()['plan'];
+
+        if (null !== $plan) {
+            return $this->previewContent($plan, self::sendAtOf($plan), $lang);
+        }
+
+        $today = (string) current_time('Y-m-d');
+        $until = self::addDays($today, self::days() + 1);
+        $events = [];
+        $later = [];
+
+        foreach (self::comingEvents($today) as $event) {
+            if ([] === $events || $event['date'] <= $until) {
+                $events[] = $event;
+            } else {
+                $later[] = $event;
+            }
+        }
+
+        return $this->compose($events, $this->text->get(), $later, null, $lang) + self::footerParts($lang, false);
+    }
+
+    /**
      * The newsletter of $plan in version $lang as it will be sent at
      * $sendAt ("Y-m-d H:i:s", site time), in sendBatchLocked()'s shape: the
      * send day is "today". As startSending() does on that day, the events

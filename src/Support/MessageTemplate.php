@@ -30,6 +30,25 @@ use Closure;
  * - wired: whether the code that sends the message reads this template.
  *   False for a kind that is listed but still sends its built-in text; the
  *   Messages page says so.
+ * - preview: how the kind's sender wraps the text, for the Preview link on
+ *   the Messages page (MessagePreview). Every key is optional; a kind with
+ *   none is an email sent by Mailer::toPerson() with no buttons, or a DM
+ *   framed by DmBody::frame() without the sign-off and with no buttons.
+ *   - send: PREVIEW_PERSON (default), PREVIEW_ADDRESS (an address nobody
+ *     has confirmed, Mailer::toUnconfirmedAddress()), or the composer of a
+ *     mail with its own layout: PREVIEW_TICKET, PREVIEW_TICKET_CANCELLED,
+ *     PREVIEW_FOLLOWUP_CAME, PREVIEW_FOLLOWUP_MISSED, PREVIEW_NEWSLETTER.
+ *   - greeting: true when the sender puts "Hi Name," in front of the email
+ *     text (EmailBody::withGreeting()).
+ *   - frame: for a DM, FRAME_PLAIN (default), FRAME_SIGNED (with the
+ *     sign-off) or FRAME_NONE (sent as the text alone).
+ *   - dm_format: true when the sender passes the DM text through
+ *     EmailBody::forDm().
+ *   - buttons: the labels of the email's buttons or the DM's buttons, in
+ *     order, or a closure that makes them from the sample context. In a
+ *     preview they lead nowhere.
+ *   - context: a closure giving the sample values this kind needs on top of
+ *     the shared sample context (MessagePreview::sampleContext()).
  *
  * The stored text and the per-template settings live in MessageTemplates.
  */
@@ -38,12 +57,29 @@ final class MessageTemplate
     public const CHANNEL_EMAIL = 'email';
     public const CHANNEL_TELEGRAM = 'telegram';
 
+    public const PREVIEW_PERSON = 'person';
+    public const PREVIEW_ADDRESS = 'address';
+    public const PREVIEW_TICKET = 'ticket';
+    public const PREVIEW_TICKET_CANCELLED = 'ticket_cancelled';
+    public const PREVIEW_FOLLOWUP_CAME = 'followup_came';
+    public const PREVIEW_FOLLOWUP_MISSED = 'followup_missed';
+    public const PREVIEW_NEWSLETTER = 'newsletter';
+
+    public const FRAME_PLAIN = 'plain';
+    public const FRAME_SIGNED = 'signed';
+    public const FRAME_NONE = 'none';
+
     /**
      * @param array<string, array{
      *     description: string, resolve: Closure(array<string, mixed>): string, required?: bool
      * }> $placeholders
      * @param (Closure(array<string, mixed>): string)|null $subject Null for a Telegram message.
      * @param Closure(array<string, mixed>): string $body
+     * @param array{
+     *     send?: string, greeting?: bool, frame?: string, dm_format?: bool,
+     *     buttons?: list<string>|Closure(array<string, mixed>): list<string>,
+     *     context?: Closure(): array<string, mixed>
+     * } $preview
      */
     public function __construct(
         public readonly string $id,
@@ -53,7 +89,8 @@ final class MessageTemplate
         public readonly ?Closure $subject,
         public readonly Closure $body,
         public readonly array $placeholders = [],
-        public readonly bool $wired = true
+        public readonly bool $wired = true,
+        public readonly array $preview = []
     ) {
     }
 

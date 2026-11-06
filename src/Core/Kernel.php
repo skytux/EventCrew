@@ -59,6 +59,7 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NewcomerApproval;
@@ -1732,7 +1733,14 @@ final class Kernel
                 new MessageTemplates($container->get(TranslatedText::class)->inBackground()),
                 $container->get(AiPromptsPage::class),
                 $container->get(EmailTemplate::class),
-                $container->get(LlmClient::class)
+                $container->get(LlmClient::class),
+                new MessagePreview(
+                    $container->get(Logger::class),
+                    $container->get(TaskRepository::class),
+                    $container->get(TicketMail::class),
+                    $container->get(FollowupMail::class),
+                    $container->get(Newsletter::class)
+                )
             )
         );
 

@@ -24,10 +24,38 @@ final class Mailer
     /** The red of the newsletter preview's "Do Not Send This" button. */
     public const STOP_COLOR = EmailBody::DANGER_COLOR;
 
+    /** The address of every link a preview shows in place of a sign-in or other one-time link. */
+    public const PREVIEW_LINK = '#preview';
+
+    /**
+     * What a preview Mailer would have sent, in order: to, subject, message,
+     * headers and the plain-text part.
+     *
+     * @var list<array{to: string, subject: string, message: string, headers: list<string>, text: string}>
+     */
+    private array $captured = [];
+
+    /**
+     * $preview (the message preview in wp-admin, MessagePreview) sends
+     * nothing: each mail is kept for captured() instead of going to wp_mail,
+     * the footer's sign-in link is PREVIEW_LINK (no token is made), and a
+     * ".invalid" sample address is not refused.
+     */
     public function __construct(
         private readonly Logger $logger,
-        private readonly EmailTemplate $template
+        private readonly EmailTemplate $template,
+        private readonly bool $preview = false
     ) {
+    }
+
+    /**
+     * The mails a preview Mailer kept, in order.
+     *
+     * @return list<array{to: string, subject: string, message: string, headers: list<string>, text: string}>
+     */
+    public function captured(): array
+    {
+        return $this->captured;
     }
 
     /**
@@ -41,7 +69,7 @@ final class Mailer
     {
         // A person added without an email (or erased) has a ".invalid"
         // placeholder address, which can never receive mail. Nothing is sent.
-        if (Person::isPlaceholderEmail($to)) {
+        if (! $this->preview && Person::isPlaceholderEmail($to)) {
             return false;
         }
 
@@ -50,7 +78,7 @@ final class Mailer
 
         $sent = EmailTemplate::enabled()
             ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text)
-            : (bool) wp_mail($to, $subject, $text);
+            : $this->mail($to, $subject, $text, [], $text);
 
         if (! $sent) {
             $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
@@ -74,7 +102,7 @@ final class Mailer
 
         $sent = EmailTemplate::enabled()
             ? $this->sendHtml($to, $subject, $body, $actions, $board, $text)
-            : (bool) wp_mail($to, $subject, $text);
+            : $this->mail($to, $subject, $text, [], $text);
 
         if (! $sent) {
             $this->logger->warning(sprintf('Email "%s" to %s could not be sent.', $subject, $to));
@@ -144,11 +172,12 @@ final class Mailer
         add_action('phpmailer_init', $parts);
 
         try {
-            $sent = (bool) wp_mail(
+            $sent = $this->mail(
                 $to,
                 $subject,
                 $html,
-                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers),
+                $text
             );
         } catch (\Throwable $error) {
             $this->logger->error(sprintf(
@@ -199,11 +228,12 @@ final class Mailer
         add_action('phpmailer_init', $parts);
 
         try {
-            $sent = (bool) wp_mail(
+            $sent = $this->mail(
                 $to,
                 $subject,
                 $html,
-                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers),
+                $text
             );
         } catch (\Throwable $error) {
             $this->logger->error(sprintf(
@@ -275,7 +305,7 @@ final class Mailer
         ?\DateTimeInterface $now = null,
         array $headers = []
     ): bool {
-        if (Person::isPlaceholderEmail($to)) {
+        if (! $this->preview && Person::isPlaceholderEmail($to)) {
             return false;
         }
 
@@ -301,11 +331,12 @@ final class Mailer
         add_action('phpmailer_init', $altBody);
 
         try {
-            $sent = (bool) wp_mail(
+            $sent = $this->mail(
                 $to,
                 $subject,
                 $html,
-                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers),
+                $text
             );
         } catch (\Throwable $error) {
             $this->logger->error(sprintf(
@@ -356,7 +387,7 @@ final class Mailer
         string $contentText,
         array $actions = []
     ): bool {
-        if (Person::isPlaceholderEmail($to)) {
+        if (! $this->preview && Person::isPlaceholderEmail($to)) {
             return false;
         }
 
@@ -382,7 +413,7 @@ final class Mailer
         add_action('phpmailer_init', $altBody);
 
         try {
-            $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+            $sent = $this->mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8'], $text);
         } finally {
             remove_action('phpmailer_init', $altBody);
         }
@@ -453,7 +484,7 @@ final class Mailer
 
         add_action('phpmailer_init', $altBody);
 
-        $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+        $sent = $this->mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8'], $text);
 
         remove_action('phpmailer_init', $altBody);
 
@@ -462,6 +493,10 @@ final class Mailer
 
     public function manageUrl(int $personId): string
     {
+        if ($this->preview) {
+            return self::PREVIEW_LINK;
+        }
+
         // The option name mirrors Web\PwaController::PAGE_OPTION, kept literal so
         // this low-level Support class does not reach up into the Web layer.
         $pageId = (int) get_option('eventcrew_signup_page_id', 0);
@@ -486,6 +521,31 @@ final class Mailer
             ['token' => SignedLink::sign('manage', $personId)],
             rest_url('eventcrew/v1/manage')
         );
+    }
+
+    /**
+     * wp_mail(), or for a preview Mailer the mail kept for captured().
+     * $text is the plain-text part, kept with a preview only.
+     *
+     * @param list<string> $headers
+     */
+    private function mail(string $to, string $subject, string $message, array $headers, string $text): bool
+    {
+        if ($this->preview) {
+            $this->captured[] = [
+                'to' => $to,
+                'subject' => $subject,
+                'message' => $message,
+                'headers' => $headers,
+                'text' => $text,
+            ];
+
+            return true;
+        }
+
+        return [] === $headers
+            ? (bool) wp_mail($to, $subject, $message)
+            : (bool) wp_mail($to, $subject, $message, $headers);
     }
 
     public function ticketUrl(int $assignmentId): string

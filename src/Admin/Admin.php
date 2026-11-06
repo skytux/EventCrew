@@ -297,6 +297,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_' . MessagesPage::PREVIEW_ACTION,
+            [$this->container->get(MessagesPage::class), 'preview']
+        );
+
+        add_action(
             'admin_post_' . AiPromptsPage::PROMPTS_ACTION,
             [$this->container->get(AiPromptsPage::class), 'savePrompts']
         );

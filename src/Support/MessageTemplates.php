@@ -79,6 +79,7 @@ final class MessageTemplates
 
         $shared = self::sharedPlaceholders();
         $eventTimes = self::eventTimePlaceholders();
+        $previews = self::previews();
 
         foreach (self::definitions() as $template) {
             $list[$template->id] = new MessageTemplate(
@@ -91,7 +92,8 @@ final class MessageTemplates
                 $template->placeholders
                     + (isset($template->placeholders['event']) ? $eventTimes : [])
                     + $shared,
-                $template->wired
+                $template->wired,
+                ($previews[$template->id] ?? []) + $template->preview
             );
         }
 
@@ -491,6 +493,152 @@ final class MessageTemplates
     public static function tag(string $text, array $map): string
     {
         return strtr($text, $map + ['%%' => '%']);
+    }
+
+    /**
+     * What the Preview link needs to know about each kind's sender, beyond its
+     * text (MessageTemplate::$preview): the buttons and how the text is
+     * wrapped. A kind not listed here is previewed with the defaults (an email
+     * through Mailer::toPerson() with no buttons, or a DM framed without the
+     * sign-off and with no buttons). Keep it in step with the sender when a
+     * sender changes its buttons.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function previews(): array
+    {
+        $guide = static fn (): array => null === RoleGuide::emailAction() ? [] : [RoleGuide::label()];
+        $openTasks = [__('See open tasks', 'eventcrew')];
+        $greet = ['greeting' => true];
+        $none = ['frame' => MessageTemplate::FRAME_NONE];
+        $signed = ['frame' => MessageTemplate::FRAME_SIGNED];
+        $privacy = static fn (): array => '' === PrivacyPolicy::noticeUrl() ? [] : [PrivacyPolicy::noticeLinkLabel()];
+        $desk = [DoorLinkSender::buttonLabel()];
+        $admin = [DoorLinkSender::adminButtonLabel()];
+
+        return [
+            'reminder' => ['buttons' => static fn (): array => [__('Show your ticket', 'eventcrew'), ...$guide()]],
+            'reminder_dm' => $signed + [
+                'buttons' => static fn (): array => [
+                    ...(null === RoleGuide::button() ? [] : [RoleGuide::label()]),
+                    __('Can’t make it? Cancel', 'eventcrew'),
+                ],
+            ],
+            'slot_freed' => ['buttons' => $openTasks],
+            'slot_freed_dm' => $signed,
+            'task_cancelled' => ['buttons' => $openTasks],
+            'credit_granted' => ['buttons' => [__('Get your free ticket', 'eventcrew')]],
+            'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
+            'signup_confirmed' => [
+                'buttons' => static fn (): array => [
+                    __('Show your ticket', 'eventcrew'),
+                    __('Add to calendar', 'eventcrew'),
+                    ...$guide(),
+                ],
+            ],
+            'signup_confirmed_dm' => $none + [
+                'buttons' => static fn (): array => [
+                    __('🎟 Show your ticket', 'eventcrew'),
+                    __('📅 Add to calendar', 'eventcrew'),
+                    ...(null === RoleGuide::button() ? [] : [RoleGuide::label()]),
+                ],
+            ],
+            'cancel_confirmed' => ['buttons' => $openTasks],
+            'cancel_confirmed_dm' => $none,
+            'open_task_call' => [
+                'buttons' => [__('See open tasks', 'eventcrew'), __('Open the group in Telegram', 'eventcrew')],
+            ],
+            'open_task_call_dm' => $signed + ['buttons' => [__('Open the group', 'eventcrew')]],
+            'email_confirm' => [
+                'buttons' => static fn (): array => [__('Confirm your email', 'eventcrew'), ...$privacy()],
+            ],
+            'ticket' => ['send' => MessageTemplate::PREVIEW_TICKET],
+            'ticket_cancelled' => ['send' => MessageTemplate::PREVIEW_TICKET_CANCELLED],
+            'followup_came' => ['send' => MessageTemplate::PREVIEW_FOLLOWUP_CAME],
+            'followup_missed' => ['send' => MessageTemplate::PREVIEW_FOLLOWUP_MISSED],
+            'newsletter' => ['send' => MessageTemplate::PREVIEW_NEWSLETTER],
+            'sign_in_link' => $greet + ['buttons' => [__('Sign in', 'eventcrew')]],
+            'account_create_link' => $greet + [
+                'buttons' => static fn (): array => [__('Create my account', 'eventcrew'), ...$privacy()],
+            ],
+            'email_change_confirm' => $greet + [
+                'send' => MessageTemplate::PREVIEW_ADDRESS,
+                'buttons' => [__('Confirm new email', 'eventcrew')],
+            ],
+            'email_changed' => $greet,
+            'delete_data_confirm' => $greet + ['buttons' => [__('Delete my data', 'eventcrew')]],
+            'access_role' => $greet + ['buttons' => $openTasks],
+            'access_pass' => $greet + ['buttons' => $openTasks],
+            'newcomer_ok' => $greet + ['buttons' => $openTasks],
+            'access_organizer' => $greet + ['buttons' => $admin],
+            'newcomer_waiting' => ['buttons' => $admin],
+            'newcomer_waiting_dm' => ['buttons' => ['✅ ' . __('OK', 'eventcrew'), '❌ ' . __('No', 'eventcrew')]],
+            'forged_request_dm' => $none,
+            'import_tickets' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
+            'import_guests' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
+            'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew')]],
+            'welcome_email' => [
+                'buttons' => [
+                    __('Sign up for a task', 'eventcrew'),
+                    RoleGuide::descriptionsLabel(),
+                    __('Open our group in Telegram', 'eventcrew'),
+                ],
+                'context' => static fn (): array => ['help_line' => WelcomeSender::webLine(HelpPage::PANEL_ANCHOR)],
+            ],
+            'welcome_dm' => $signed + [
+                'dm_format' => true,
+                'buttons' => static fn (array $c): array => [
+                    sprintf(
+                        /* translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov" */
+                        __('Sign up: %1$s · %2$s', 'eventcrew'),
+                        $c['task'] instanceof Task ? $c['task']->roleDisplay() : '',
+                        $c['task'] instanceof Task ? Dates::dayLabel($c['task']->taskDate) : ''
+                    ),
+                    RoleGuide::descriptionsLabel(),
+                ],
+                'context' => static fn (): array => ['help_line' => WelcomeSender::webLine(HelpPage::PANEL_ANCHOR)],
+            ],
+            'welcome_org_email' => [
+                'buttons' => [
+                    __('Open our group in Telegram', 'eventcrew'),
+                    __('Open EventCrew in wp-admin', 'eventcrew'),
+                ],
+                'context' => static fn (): array => [
+                    'help_line' => WelcomeSender::webLine(HelpPage::ORGANIZER_ANCHOR),
+                    'guide' => OrganizerGuide::full(),
+                ],
+            ],
+            'welcome_org_dm' => [
+                'dm_format' => true,
+                'context' => static fn (): array => [
+                    'help_line' => WelcomeSender::webLine(HelpPage::ORGANIZER_ANCHOR),
+                    'guide' => OrganizerGuide::short(),
+                ],
+            ],
+            'door_new_member' => $greet + [
+                'buttons' => static fn (): array => [
+                    __('Confirm my email', 'eventcrew'),
+                    __('Join the Telegram group', 'eventcrew'),
+                    ...$privacy(),
+                ],
+                'context' => static fn (): array => [
+                    'group_line' => "\n\n" . __('The second button opens the crew’s Telegram group, where tasks are posted.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                ],
+            ],
+            'sales_desk_link' => $greet + ['buttons' => $desk],
+            'sales_desk_link_dm' => ['buttons' => $desk],
+            'organizer_notice' => $greet + ['buttons' => [...$desk, ...$admin]],
+            'organizer_notice_dm' => ['buttons' => [...$desk, ...$admin]],
+            'takeover_ask' => ['buttons' => [__('Answer the request', 'eventcrew')]],
+            'takeover_ask_dm' => $none + [
+                'buttons' => [__('✅ Let them take it', 'eventcrew'), __('❌ Keep my task', 'eventcrew')],
+            ],
+            'takeover_done_dm' => $none,
+            'takeover_refused_dm' => $none,
+            'takeover_expired_dm' => $none,
+            'takeover_failed_dm' => $none,
+            'takeover_closed_dm' => $none,
+        ];
     }
 
     /**

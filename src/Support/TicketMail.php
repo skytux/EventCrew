@@ -1046,19 +1046,26 @@ final class TicketMail
         }
 
         $mail = $compose();
-        $footer = static fn (): string => __(
-            'You get this email because you had a ticket to this event.',
-            'eventcrew'
-        );
-        $languages = HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language);
 
         return $this->mailer->toTicketHolder(
             $email,
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            HybridPolicy::join(HybridPolicy::inEach($languages, $footer))
+            self::noticeFooter($language)
         );
+    }
+
+    /** The footer line of the cancel and moved emails, in their languages (HybridPolicy). */
+    public static function noticeFooter(?string $language = null): string
+    {
+        $footer = static fn (): string => __(
+            'You get this email because you had a ticket to this event.',
+            'eventcrew'
+        );
+        $languages = HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language);
+
+        return HybridPolicy::join(HybridPolicy::inEach($languages, $footer));
     }
 
     /**
