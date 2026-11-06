@@ -3176,8 +3176,21 @@ msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehto
 msgid "Your tasks, credits, ticket, settings"
 msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
 
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap Cancel below, or tap the task again on the board. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena.\n\nPeru napauttamalla alta Peru tai napauttamalla tehtävää uudelleen taululla. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below."
+msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena."
+
+msgid "When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known."
+msgstr "Milloin tapahtuma alkaa ja ovet sulkeutuvat, esim. Tapahtuma alkaa 19:00 · ovet sulkeutuvat 19:30. Omalla rivillään; rivi poistuu, kun kumpaakaan aikaa ei tiedetä."
+
+#. translators: %s: a time like 19:00
+#, php-format
+msgid "Event starts %s"
+msgstr "Tapahtuma alkaa %s"
+
+#. translators: 1: start time, 2: doors close time, like 19:00 and 19:30
+#, php-format
+msgid "Event starts %1$s · doors close %2$s"
+msgstr "Tapahtuma alkaa %1$s · ovet sulkeutuvat %2$s"
 
 msgid "👥 People: choose what to do."
 msgstr "👥 Ihmiset: valitse, mitä teet."

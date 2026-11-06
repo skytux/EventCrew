@@ -30,6 +30,15 @@ final class FrictionB1Migration
     private static function steps(): array
     {
         $standing = static fn (string $text): string => self::appended($text, '{standing}');
+        // {description} (the task's, else the role's) takes the place of
+        // {about} (the role's), so a text never shows both.
+        $signup = static function (string $text): string {
+            $text = MessageTemplates::withDescription($text);
+
+            return self::withEventTimes(
+                str_contains($text, '{description}') ? (string) preg_replace('/\n*\{about\}/', '', $text) : $text
+            );
+        };
 
         return [
             'standing' => [
@@ -37,6 +46,10 @@ final class FrictionB1Migration
                 'late_cancel_dm' => $standing,
                 'no_show' => $standing,
                 'no_show_dm' => $standing,
+            ],
+            'signup' => [
+                'signup_confirmed' => $signup,
+                'signup_confirmed_dm' => $signup,
             ],
         ];
     }
@@ -64,6 +77,26 @@ final class FrictionB1Migration
         if ($changed) {
             update_option(self::OPTION, $done, false);
         }
+    }
+
+    /**
+     * $text with "\n{event_times}" on the line after the first line that has
+     * {when} in it. A text that has {event_times} already, or no {when},
+     * comes back as it is.
+     */
+    public static function withEventTimes(string $text): string
+    {
+        $at = strpos($text, '{when}');
+
+        if (false === $at || str_contains($text, '{event_times}')) {
+            return $text;
+        }
+
+        $end = strpos($text, "\n", $at);
+
+        return false === $end
+            ? $text . "\n{event_times}"
+            : substr($text, 0, $end) . "\n{event_times}" . substr($text, $end);
     }
 
     /** $text with "\n\n" and $placeholder after it, unless it has it already or is empty. */

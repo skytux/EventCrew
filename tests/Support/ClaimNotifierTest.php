@@ -300,7 +300,7 @@ final class ClaimNotifierTest extends TestCase
         // Every link is a named button: ticket, calendar, cancel, then the
         // guide. None of them appears as a raw address in the text.
         $text = (string) $sends[0]['text'];
-        self::assertStringContainsString('About the task', $text);
+        self::assertStringContainsString('Set up before the dance', $text);
         self::assertStringNotContainsString('docs.example', $text);
         self::assertStringNotContainsString('token=', $text);
 
@@ -310,7 +310,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame('lc:5', $rows[2][0]['callback_data']);
         self::assertSame('https://docs.example/guide', $rows[3][0]['url']);
 
-        self::assertStringContainsString('About the task', $this->mails[0]['body']);
+        self::assertStringContainsString('Set up before the dance', $this->mails[0]['body']);
         self::assertStringContainsString('Crew guide', $this->mails[0]['body']);
         self::assertStringContainsString('https://docs.example/guide', $this->mails[0]['body']);
     }
@@ -432,31 +432,34 @@ final class ClaimNotifierTest extends TestCase
         $this->notifier()->confirmSignup($person, 5);
     }
 
-    /** With nothing stored, the sign-up DM and email are what they were before the templates. */
+    /**
+     * With nothing stored: the when line, the task's description under it,
+     * the ticket line; the DM leaves the cancelling to its Cancel button,
+     * which asks first and offers the hand-over.
+     */
     public function testTheSignupMessagesAreTheSameAsBeforeTheTemplates(): void
     {
         $sends = $this->captureWithOptions();
 
         $this->signUp($this->personInLanguage(null));
 
-        $about = '📝 About the task: Set up before the dance: close the curtains, check the bathrooms, place the LED'
+        $about = 'Set up before the dance: close the curtains, check the bathrooms, place the LED'
             . ' candles, decorate the DJ table, prepare the water and fruit, and open the movable walls.';
         self::assertSame(
-            "✅ Signed up: Decorate at Party, Sat 1 Aug 18:00–20:00.\n\nShow your ticket at the door - it is the first"
-                . " button below.\n\nTo cancel, tap Cancel below, or tap the task again on the board."
-                . ' Or find someone to take it over: they send /me to the bot and tap'
-                . ' 🔁 Take over a task, and you accept. You can cancel without it affecting your standing up to'
-                . ' 48 hours before the task.'
-                . "\n\n" . $about . "\n\nYour standing: Beginner · 0 free-entry credits.",
+            "✅ Signed up: Decorate at Party, Sat 1 Aug 18:00–20:00.\n\n" . $about
+                . "\n\nShow your ticket at the door - it is the first button below."
+                . ' You can cancel without it affecting your standing up to 48 hours before the task.'
+                . "\n\nYour standing: Beginner · 0 free-entry credits.",
             (string) $sends->items[0]['text']
         );
         self::assertSame('You’re signed up: Decorate for Party', $this->mails[0]['subject']);
         self::assertSame(
             "Hi Sam,\n\nYou're signed up for Decorate at Party, Sat 1 Aug 18:00–20:00. Show your ticket at the door."
+                . "\n\n" . $about
                 . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan't make it? Tap Cancel below."
                 . ' Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task,'
                 . ' and you accept. You can cancel without it affecting your standing up to 48 hours before the task.'
-                . "\n\n" . $about . "\n\n"
+                . "\n\n"
                 . 'Show your ticket: https://site.test/wp-json/eventcrew/v1/ticket?token='
                 . SignedLink::sign('ticket', 9) . "\n"
                 . 'Add to calendar: https://site.test/wp-json/eventcrew/v1/calendar?token='
@@ -474,23 +477,22 @@ final class ClaimNotifierTest extends TestCase
 
         $this->signUp($this->personInLanguage('fi'));
 
-        $about = '📝 Tehtävästä: Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät,'
+        $about = 'Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät,'
             . ' somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.';
         self::assertSame(
-            "✅ Ilmoittauduttu: Somistus, Party, la 1.8. 18:00–20:00.\n\nNäytä lippusi ovella - se on alla"
-                . " ensimmäisenä painikkeena.\n\nPeru napauttamalla alta Peru tai napauttamalla tehtävää uudelleen"
-                . ' taululla. Tai etsi joku ottamaan se: hän'
-                . ' lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt.'
-                . "\n\n" . $about . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.",
+            "✅ Ilmoittauduttu: Somistus, Party, la 1.8. 18:00–20:00.\n\n" . $about
+                . "\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena."
+                . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.",
             (string) $sends->items[0]['text'],
             'a notice of 0 hours leaves out the free-cancel sentence'
         );
         self::assertSame('Olet ilmoittautunut: Somistus, Party', $this->mails[0]['subject']);
         self::assertStringStartsWith(
             "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, la 1.8. 18:00–20:00. Näytä lippusi ovella."
+                . "\n\n" . $about
                 . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.\n\nEtkö pääsekään? Napauta alta Peru."
                 . ' Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa'
-                . ' 🔁 Ota tehtävä, ja sinä hyväksyt.' . "\n\n" . $about . "\n\nNäytä lippusi: ",
+                . ' 🔁 Ota tehtävä, ja sinä hyväksyt.' . "\n\nNäytä lippusi: ",
             $this->mails[0]['body']
         );
     }

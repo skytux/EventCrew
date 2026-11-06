@@ -177,4 +177,35 @@ final class EventTimesTest extends TestCase
             $reminder->fill('In by {doors_close}', ['task' => new Task(1, '2026-11-14', 'door', 2, 41)])
         );
     }
+
+    /**
+     * The sign-up confirmation says when the event starts and its doors
+     * close, on the line under the when line; the line goes when neither is
+     * known.
+     */
+    public function testTheSignupConfirmationShowsTheEventTimesUnderTheWhenLine(): void
+    {
+        $dm = MessageTemplates::find('signup_confirmed_dm');
+        self::assertNotNull($dm);
+        $text = "Signed up.\n{event_times}\n\nShow your ticket.";
+        $event = new Task(1, '2026-11-14', 'door', 2, 41);
+
+        self::assertSame("Signed up.\nEvent starts 21:00\n\nShow your ticket.", $dm->fill($text, ['task' => $event]));
+
+        EventTimes::saveDoorsSetting(true, '30');
+
+        self::assertSame(
+            "Signed up.\nEvent starts 21:00 · doors close 21:30\n\nShow your ticket.",
+            $dm->fill($text, ['task' => $event])
+        );
+        self::assertSame(
+            "Signed up.\n\nShow your ticket.",
+            $dm->fill($text, ['task' => new Task(1, '2026-11-21', 'door', 2, 42)]),
+            'no time: the line goes'
+        );
+        self::assertStringContainsString(
+            "{when}.\n{event_times}",
+            MessageTemplates::raw('signup_confirmed_dm', MessageTemplates::BODY)
+        );
+    }
 }
