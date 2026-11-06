@@ -207,7 +207,7 @@ msgstr ""
 msgid "%d active account(s) would receive the open-task email."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:133
+#: src/Admin/JobsStatus.php:193
 #. translators: %d: how many background jobs are queued or running
 msgid "%d background job is running."
 msgid_plural "%d background jobs are running."
@@ -357,7 +357,7 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1115
+#: src/Support/TranslatedText.php:1119
 #. translators: %s: a language name, e.g. Finnish
 msgid "%s, detected"
 msgstr ""
@@ -672,7 +672,7 @@ msgstr ""
 msgid "A welcome message to each new member when they confirm their email, and this guide to each organizer."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:59
+#: src/Admin/MessagesPage.php:60
 msgid "AI"
 msgstr ""
 
@@ -892,7 +892,7 @@ msgstr ""
 msgid "Alex"
 msgstr ""
 
-#: src/Admin/JobsStatus.php:138
+#: src/Admin/JobsStatus.php:198
 msgid "All background jobs are done. Reload the page to see the new texts."
 msgstr ""
 
@@ -1155,7 +1155,7 @@ msgstr ""
 msgid "Barefoot and with ♥ — the Example crew"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:98
+#: templates/admin/messages-tab-messages.php:99
 msgid "Becomes"
 msgstr ""
 
@@ -1246,7 +1246,7 @@ msgstr ""
 msgid "Bot chats sent to organizers"
 msgstr ""
 
-#: src/Admin/Admin.php:475 src/Admin/Admin.php:476 templates/admin/bot-log.php:32
+#: src/Admin/Admin.php:480 src/Admin/Admin.php:481 templates/admin/bot-log.php:32
 msgid "Bot log"
 msgstr ""
 
@@ -1468,7 +1468,7 @@ msgstr ""
 msgid "Cloudflare, whose Turnstile check guards the sign-in form against bots (https://www.cloudflare.com/privacypolicy/). It sees the request, not your crew record."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:60 src/Support/MessageTemplates.php:988 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:911
+#: src/Admin/MessagesPage.php:61 src/Support/MessageTemplates.php:988 src/Support/Newsletter.php:364 src/Support/NewsletterLayout.php:911
 msgid "Coming events"
 msgstr ""
 
@@ -1892,11 +1892,11 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1118
+#: src/Support/TranslatedText.php:1122
 msgid "Detect automatically"
 msgstr ""
 
-#: src/Admin/Admin.php:484 src/Admin/Admin.php:485
+#: src/Admin/Admin.php:489 src/Admin/Admin.php:490
 msgid "Diagnostics"
 msgstr ""
 
@@ -1920,7 +1920,7 @@ msgstr ""
 msgid "Don't send me these"
 msgstr ""
 
-#: src/Support/BackgroundJobs.php:566
+#: src/Admin/JobsStatus.php:136 src/Support/BackgroundJobs.php:566
 msgid "Done ✓"
 msgstr ""
 
@@ -2046,7 +2046,7 @@ msgstr ""
 msgid "Email confirmed"
 msgstr ""
 
-#: src/Admin/MessagesPage.php:61
+#: src/Admin/MessagesPage.php:62
 msgid "Email look"
 msgstr ""
 
@@ -2062,7 +2062,7 @@ msgstr ""
 msgid "Email templates"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:76
+#: templates/admin/messages-tab-messages.php:77
 msgid "Email text"
 msgstr ""
 
@@ -2151,7 +2151,7 @@ msgstr ""
 msgid "Event start"
 msgstr ""
 
-#: src/Admin/Admin.php:384 src/Admin/Admin.php:385 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
+#: src/Admin/Admin.php:389 src/Admin/Admin.php:390 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
 #: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:224
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
@@ -2367,7 +2367,7 @@ msgstr ""
 msgid "For anything else, write to %s and we will answer within one month."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:131
+#: templates/admin/messages-tab-messages.php:133
 msgid "Forget the changed text of this message and use the built-in text again?"
 msgstr ""
 
@@ -2375,11 +2375,11 @@ msgstr ""
 msgid "Format"
 msgstr ""
 
-#: src/Admin/MessagesPage.php:164
+#: src/Admin/MessagesPage.php:165
 msgid "Formatting: **bold**, *italic*, a line starting with \"- \" is a list item, a line starting with \"## \" is a heading, and an empty line starts a new paragraph."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:161
+#: src/Admin/MessagesPage.php:162
 msgid "Formatting: none. The Telegram message is sent as plain text with its line breaks; ** and other marks are shown as they are."
 msgstr ""
 
@@ -3158,7 +3158,7 @@ msgstr ""
 msgid "Language model"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1105
+#: src/Support/TranslatedText.php:1109
 msgid "Language of this text"
 msgstr ""
 
@@ -3447,11 +3447,11 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: src/Admin/MessagesPage.php:198
+#: src/Admin/MessagesPage.php:295
 msgid "Message saved."
 msgstr ""
 
-#: src/Admin/Admin.php:433 src/Admin/Admin.php:434 src/Admin/Admin.php:462 src/Admin/MessagesPage.php:58
+#: src/Admin/Admin.php:438 src/Admin/Admin.php:439 src/Admin/Admin.php:467 src/Admin/MessagesPage.php:59
 #: src/Support/TranslationRow.php:67 templates/admin/messages.php:23 templates/admin/messages.php:25
 msgid "Messages"
 msgstr ""
@@ -3581,7 +3581,7 @@ msgstr ""
 msgid "Newer"
 msgstr ""
 
-#: src/Admin/Admin.php:442 src/Admin/Admin.php:443 templates/admin/newsletter.php:51
+#: src/Admin/Admin.php:447 src/Admin/Admin.php:448 templates/admin/newsletter.php:51
 msgid "Newsletter"
 msgstr ""
 
@@ -3877,7 +3877,7 @@ msgstr ""
 msgid "Not saved: %s. A message already uses this name for its own placeholder. Choose another name. The other placeholders are saved."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:186 src/Admin/TranslationsPage.php:180 src/Support/TranslationRegistry.php:251
+#: src/Admin/MessagesPage.php:288 src/Admin/TranslationsPage.php:180 src/Support/TranslationRegistry.php:251
 #. translators: %s: the placeholders, like {email}
 msgid "Not saved: the text must contain %s, in every language. The message keeps the text it had."
 msgstr ""
@@ -4474,7 +4474,7 @@ msgstr ""
 msgid "Pending updates"
 msgstr ""
 
-#: src/Admin/Admin.php:413 src/Admin/Admin.php:414 templates/admin/people.php:24 templates/admin/people.php:27
+#: src/Admin/Admin.php:418 src/Admin/Admin.php:419 templates/admin/people.php:24 templates/admin/people.php:27
 #: templates/admin/settings.php:219 templates/public/signup.php:804 templates/public/signup.php:1820
 msgid "People"
 msgstr ""
@@ -4537,11 +4537,11 @@ msgstr ""
 msgid "Picks these out of the event description. A value is kept only when the description has it."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:97
+#: templates/admin/messages-tab-messages.php:98
 msgid "Placeholder"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:93
+#: templates/admin/messages-tab-messages.php:94
 msgid "Placeholders"
 msgstr ""
 
@@ -4791,7 +4791,7 @@ msgstr ""
 msgid "Rejected folder"
 msgstr ""
 
-#: src/Admin/Admin.php:377
+#: src/Admin/Admin.php:382
 msgid "Reload"
 msgstr ""
 
@@ -4869,7 +4869,7 @@ msgstr ""
 msgid "Requests from people"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:108
+#: templates/admin/messages-tab-messages.php:109
 msgid "Required: a text without it is not saved."
 msgstr ""
 
@@ -4898,7 +4898,7 @@ msgstr ""
 msgid "Reset to built-in"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:141
+#: templates/admin/messages-tab-messages.php:143
 msgid "Reset to built-in text"
 msgstr ""
 
@@ -4968,7 +4968,7 @@ msgstr ""
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr ""
 
-#: src/Admin/Admin.php:404 src/Admin/Admin.php:405 templates/admin/roster.php:59
+#: src/Admin/Admin.php:409 src/Admin/Admin.php:410 templates/admin/roster.php:59
 msgid "Roster"
 msgstr ""
 
@@ -5076,7 +5076,7 @@ msgstr ""
 msgid "Save the prompts"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:126
+#: templates/admin/messages-tab-messages.php:127
 msgid "Save this message"
 msgstr ""
 
@@ -5622,7 +5622,7 @@ msgstr ""
 msgid "Set yourself up first: send /start to the bot."
 msgstr ""
 
-#: src/Admin/Admin.php:422 src/Admin/Admin.php:423 templates/public/signup.php:99 templates/public/signup.php:535
+#: src/Admin/Admin.php:427 src/Admin/Admin.php:428 templates/public/signup.php:99 templates/public/signup.php:535
 msgid "Settings"
 msgstr ""
 
@@ -5938,7 +5938,7 @@ msgstr ""
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
 
-#: src/Support/FollowupMail.php:1108 templates/admin/messages-tab-messages.php:58 templates/admin/newsletter.php:193
+#: src/Support/FollowupMail.php:1108 templates/admin/messages-tab-messages.php:59 templates/admin/newsletter.php:193
 msgid "Subject"
 msgstr ""
 
@@ -6106,7 +6106,7 @@ msgstr ""
 msgid "Task updated."
 msgstr ""
 
-#: src/Admin/Admin.php:395 src/Admin/Admin.php:396 templates/admin/tasks.php:55 templates/public/signup.php:700
+#: src/Admin/Admin.php:400 src/Admin/Admin.php:401 templates/admin/tasks.php:55 templates/public/signup.php:700
 #: templates/public/signup.php:1644
 msgid "Tasks"
 msgstr ""
@@ -6225,7 +6225,7 @@ msgstr ""
 msgid "Telegram linked"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:75
+#: templates/admin/messages-tab-messages.php:76
 msgid "Telegram message"
 msgstr ""
 
@@ -6426,7 +6426,7 @@ msgstr ""
 msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:96
+#: src/Admin/JobsStatus.php:156
 msgid "That job was not found."
 msgstr ""
 
@@ -6438,7 +6438,7 @@ msgstr ""
 msgid "That member was not found."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:175 src/Admin/MessagesPage.php:212
+#: src/Admin/MessagesPage.php:274 src/Admin/MessagesPage.php:313
 msgid "That message kind does not exist."
 msgstr ""
 
@@ -6892,7 +6892,7 @@ msgstr ""
 msgid "The import settings were saved. There is no import mailbox."
 msgstr ""
 
-#: src/Admin/JobsStatus.php:96
+#: src/Admin/JobsStatus.php:156
 msgid "The job is queued again."
 msgstr ""
 
@@ -6972,7 +6972,7 @@ msgstr ""
 msgid "The message could not be posted in the group. Please send /say again."
 msgstr ""
 
-#: src/Admin/MessagesPage.php:219
+#: src/Admin/MessagesPage.php:320
 msgid "The message uses its built-in text again."
 msgstr ""
 
@@ -7986,7 +7986,7 @@ msgstr ""
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1157
+#: src/Support/TranslatedText.php:1161
 msgid "Translate again"
 msgstr ""
 
@@ -8023,7 +8023,7 @@ msgstr ""
 msgid "Translation started. It runs in the background, so you can close this page."
 msgstr ""
 
-#: src/Admin/Admin.php:451 src/Admin/Admin.php:452 templates/admin/translations.php:41
+#: src/Admin/Admin.php:456 src/Admin/Admin.php:457 templates/admin/translations.php:41
 msgid "Translations"
 msgstr ""
 
@@ -8650,7 +8650,7 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1096
+#: src/Support/TranslatedText.php:1100
 msgid "Write in any language"
 msgstr ""
 
@@ -8809,7 +8809,7 @@ msgstr ""
 msgid "You can see your own numbers any time: send /me to the bot in a private chat."
 msgstr ""
 
-#: src/Admin/Admin.php:561 src/Admin/JobsStatus.php:85 src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:272
+#: src/Admin/Admin.php:566 src/Admin/JobsStatus.php:145 src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:272
 msgid "You do not have permission to do this."
 msgstr ""
 
@@ -9268,7 +9268,7 @@ msgstr ""
 msgid "edited by hand"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1142
+#: src/Support/TranslatedText.php:1146
 msgid "edited by hand, not translated again"
 msgstr ""
 
