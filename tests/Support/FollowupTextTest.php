@@ -138,7 +138,8 @@ final class FollowupTextTest extends TestCase
 
     /**
      * The text saved in the old Settings fields moves to the Messages page
-     * once, with the greeting and the sign-off around it in each language.
+     * once, with the greeting and the sign-off around it in each language,
+     * and the event's description ({event_description}) after it.
      * The old option stays as a backup.
      */
     public function testTheOldSettingsTextMovesToTheMessagesPageOnce(): void
@@ -153,9 +154,9 @@ final class FollowupTextTest extends TestCase
         FollowupText::moveSettingsText();
 
         $body = $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came']['body'];
-        self::assertSame("Hei {first_name},\n\nKiitos, {event}!\n\nLämpimästi,\nTest Site", $body['texts']['fi']);
-        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site", $body['texts']['en']);
-        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site", $body['source']);
+        self::assertSame("Hei {first_name},\n\nKiitos, {event}!\n\n{event_description}\n\nLämpimästi,\nTest Site", $body['texts']['fi']);
+        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\n{event_description}\n\nWarmly,\nTest Site", $body['texts']['en']);
+        self::assertSame("Hi {first_name},\n\nThanks for {event}!\n\n{event_description}\n\nWarmly,\nTest Site", $body['source']);
         self::assertSame(['fi' => true, 'en' => false], $body['manual']);
         self::assertSame($old, $this->options[FollowupText::SETTINGS_OPTIONS[FollowupText::CAME]], 'kept as a backup');
         self::assertArrayNotHasKey(
@@ -167,7 +168,7 @@ final class FollowupTextTest extends TestCase
         // The email now reads the moved text.
         self::assertSame(
             [
-                'text' => "Hi {first_name},\n\nThanks for {event}!\n\nWarmly,\nTest Site",
+                'text' => "Hi {first_name},\n\nThanks for {event}!\n\n{event_description}\n\nWarmly,\nTest Site",
                 'next' => false,
                 'template' => true,
             ],

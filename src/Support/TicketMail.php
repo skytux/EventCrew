@@ -1441,6 +1441,7 @@ final class TicketMail
             TicketText::DATE_TAG => $date,
             TicketText::START_TIME_TAG => EventTimes::start($eventId),
             TicketText::DOORS_CLOSE_TAG => EventTimes::doorsClose($eventId),
+            TicketText::VENUE_TAG => EventVenue::line($eventId),
             TicketText::REASON_TAG => $reason,
             TicketText::TASKS_TAG => $tasks,
             TicketText::PLUS_ONES_TAG => $plusOnes,

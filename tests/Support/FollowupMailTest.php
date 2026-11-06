@@ -1326,6 +1326,64 @@ final class FollowupMailTest extends TestCase
         self::assertStringNotContainsString('Sivun teksti', $text);
     }
 
+    /**
+     * The event's short description ({event_description}) is in every text
+     * the email can use: the built-in text and the one-time text (as its own
+     * paragraph after the one with the event, else at the end) and the
+     * Messages page text (where it has the placeholder).
+     */
+    public function testEachTextShowsTheEventsShortDescription(): void
+    {
+        $this->describedNight('Free dance in the hall. Bring water. Doors at 19.');
+        $short = 'Free dance in the hall. Bring water.';
+
+        $builtIn = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString(
+            "went home with you.\n\n" . $short . "\n\nThe next evenings are already on their way.",
+            $builtIn
+        );
+        self::assertStringContainsString("\n\n" . $short . "\n\n", strstr($builtIn, 'Hei Anna') ?: '', 'Finnish too');
+
+        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 2);
+        $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString("Hi Anna,\n\nOnly this time.\n\n" . $short . "\n\nWarmly,", $oneTime);
+
+        $this->nextText(FollowupText::CAME, "At {event}.\n\nSee you.", 'Tervetuloa.', 3);
+        $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertMatchesRegularExpression('/At [^\n]+\.\n\n' . preg_quote($short, '/') . '\n\nSee you\./', $oneTime);
+
+        unset($this->options[FollowupText::NEXT_OPTIONS[FollowupText::CAME]]);
+        $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = [
+            'body' => [
+                'source' => "Hi {first_name},\n\nThanks.\n\n{event_description}\n\nWarmly",
+                'texts' => [
+                    'fi' => "Hei {first_name},\n\nKiitos.\n\n{event_description}",
+                    'en' => "Hi {first_name},\n\nThanks.\n\n{event_description}\n\nWarmly",
+                ],
+                'manual' => ['fi' => false, 'en' => false],
+            ],
+        ];
+        $page = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString("Hi Anna,\n\nThanks.\n\n" . $short . "\n\nWarmly", $page);
+    }
+
+    /** Without a description, no text gets an empty line or the placeholder. */
+    public function testWithoutADescriptionTheTextsAreAsBefore(): void
+    {
+        $this->describedNight('');
+
+        $builtIn = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString(
+            "went home with you.\n\nThe next evenings are already on their way.",
+            $builtIn
+        );
+
+        $this->nextText(FollowupText::CAME, "Only this time.\n\n{event_description}", 'Vain tällä kertaa.', 2);
+        $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString("Hi Anna,\n\nOnly this time.\n\nWarmly,", $oneTime);
+        self::assertStringNotContainsString('{event_description}', $oneTime);
+    }
+
     /** The one-time text goes out with the next night's emails, and is removed once they are all sent. */
     public function testTheOneTimeTextIsUsedForTheNextSendOnly(): void
     {
@@ -1617,6 +1675,24 @@ final class FollowupMailTest extends TestCase
         Functions\when('get_the_title')->alias(
             static fn (int $id): string => 50 === $id ? 'ECSTATIC DANCE 14.11.2026 / DJ Kai' : ''
         );
+    }
+
+    /** A task on the night for event post 50, whose description is $content. */
+    private function describedNight(string $content): void
+    {
+        $this->db->tasks = [['id' => 1, 'task_date' => self::NIGHT, 'role_slug' => 'door', 'event_post_id' => 50]];
+        $this->events[50] = [
+            'post' => (object) [
+                'ID' => 50,
+                'post_type' => 'eventmesh_event',
+                'post_title' => 'Ecstatic Dance',
+                'post_status' => 'publish',
+                'post_content' => $content,
+                'post_excerpt' => '',
+            ],
+            'meta' => ['_eventmesh_starts_at' => self::NIGHT . 'T19:00:00'],
+        ];
+        Functions\when('get_the_title')->justReturn('');
     }
 
     /** The sample events, the first with a description that names its venue and doors, and two ticket holders. */

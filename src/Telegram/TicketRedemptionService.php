@@ -259,7 +259,11 @@ final class TicketRedemptionService
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 // The Messages page template (MessageTemplates).
-                MessageAiText::body('free_ticket_dm', ['person' => $person, 'date' => $when], $eventPostId),
+                MessageAiText::body(
+                    'free_ticket_dm',
+                    ['person' => $person, 'date' => $when, 'event_id' => $eventPostId],
+                    $eventPostId
+                ),
                 ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
             );
         }

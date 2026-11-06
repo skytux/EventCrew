@@ -458,17 +458,43 @@ final class MessageTemplates
     }
 
     /**
-     * The placeholders of the event's times, for every kind that names the
-     * event ({event}). Empty when the message is not about a task of a
-     * linked event.
+     * {venue}: "📍 venue" of the event $eventId finds in the context
+     * (EventVenue), on a line of its own.
+     *
+     * @param Closure(array<string, mixed>): ?int $eventId
+     * @return array{description: string, resolve: Closure, required: bool}
+     */
+    private static function venuePlaceholder(Closure $eventId): array
+    {
+        return self::placeholder(
+            __('Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+            static fn (array $c): string => EventVenue::line($eventId($c)),
+            false,
+            true
+        );
+    }
+
+    /**
+     * The placeholders of the event's times and description, for every kind
+     * that names the event ({event}). Empty when the message is not about a
+     * linked event: the task's, else $context['event_id'].
      *
      * @return array<string, array{description: string, resolve: Closure, required: bool}>
      */
     private static function eventTimePlaceholders(): array
     {
-        $eventId = static fn (array $c): ?int => ($c['task'] ?? null) instanceof Task ? $c['task']->eventPostId : null;
+        $eventId = static fn (array $c): ?int => ($c['task'] ?? null) instanceof Task
+            ? $c['task']->eventPostId
+            : (is_int($c['event_id'] ?? null) ? $c['event_id'] : null);
 
         return [
+            'venue' => self::venuePlaceholder($eventId),
+            'event_description' => self::placeholder(
+                __('A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                static fn (array $c): string => EventDescription::short($eventId($c)),
+                false,
+                true
+            ),
             'start_time' => self::placeholder(
                 __('The event’s start time, like 19:00. Empty when the event has none.', 'eventcrew'),
                 static fn (array $c): string => EventTimes::start($eventId($c))
@@ -1126,11 +1152,11 @@ final class MessageTemplates
                     __('Reminder: %1$s for %2$s', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
-                static fn (): string => self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel */
                     __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{cancel_help}']
-                )),
+                )))),
                 [
                     'name' => $name,
                     'role' => $role,
@@ -1146,11 +1172,11 @@ final class MessageTemplates
                 $telegram,
                 __('Sent the day before a task to each person signed up for it who uses the bot.', 'eventcrew'),
                 null,
-                static fn (): string => self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
                     __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                )),
+                )))),
                 ['role' => $role, 'event' => $event, 'when' => $when, 'description' => $description]
             ),
             new MessageTemplate(
@@ -1159,11 +1185,11 @@ final class MessageTemplates
                 $email,
                 __('Sent to the crew when someone cancels a task late and its place is free again.', 'eventcrew'),
                 static fn (): string => __('A spot just opened up', 'eventcrew'),
-                static fn (): string => self::tag(
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::tag(
                     /* translators: 1: name, 2: the opening line */
                     __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => $spot()]
-                ) . SlotFreedNotice::NEW_PLACEHOLDERS,
+                ) . SlotFreedNotice::NEW_PLACEHOLDERS)),
                 ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders
             ),
             new MessageTemplate(
@@ -1172,7 +1198,7 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to the crew when someone cancels a task late and its place is free again.', 'eventcrew'),
                 null,
-                static fn (): string => '⚡ ' . $spot() . SlotFreedNotice::NEW_PLACEHOLDERS,
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription('⚡ ' . $spot() . SlotFreedNotice::NEW_PLACEHOLDERS)),
                 ['role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders
             ),
             new MessageTemplate(
@@ -1321,15 +1347,18 @@ final class MessageTemplates
                 $telegram,
                 __('Sent when a person spends a free-entry credit on a night. The ticket itself comes in the ticket email.', 'eventcrew'),
                 null,
-                static fn (): string => self::tag(
+                static fn (): string => EventDetailsText::withVenue(self::tag(
                     /* translators: %s: event date */
                     __('🎟 Your free-entry ticket for %s — show it at the door.', 'eventcrew'),
                     ['%s' => '{date}']
-                ),
+                )),
                 [
                     'date' => self::placeholder(
                         __('The day of the event, like Fri 14 Nov.', 'eventcrew'),
                         static fn (array $c): string => (string) ($c['date'] ?? '')
+                    ),
+                    'venue' => self::venuePlaceholder(
+                        static fn (array $c): ?int => is_int($c['event_id'] ?? null) ? $c['event_id'] : null
                     ),
                 ]
             ),
@@ -1348,11 +1377,11 @@ final class MessageTemplates
                 ),
                 // The when line, the event's times and the task's description
                 // first ({description} takes the place of {about}).
-                static fn (): string => FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel */
                     __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\n%6\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}', '%6$s' => '{cancel_help}']
-                ) . '{free_cancel}')),
+                ) . '{free_cancel}')))),
                 [
                     'name' => $name,
                     'role' => $role,
@@ -1371,11 +1400,11 @@ final class MessageTemplates
                 null,
                 // The Cancel button asks first and offers the hand-over, so the
                 // text no longer explains them.
-                static fn (): string => FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
                     __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ) . "{free_cancel}\n\n{standing}")),
+                ) . "{free_cancel}\n\n{standing}")))),
                 [
                     'role' => $role,
                     'event' => $event,
@@ -1537,7 +1566,7 @@ final class MessageTemplates
                 $email,
                 __('Sent the day after an event to the people who came. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('Thank you for dancing with us', 'eventcrew'),
-                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::CAME)),
+                static fn (): string => EventDetailsText::withEventDescription(self::followupBody(FollowupText::defaultText(FollowupText::CAME))),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             new MessageTemplate(
@@ -1546,7 +1575,7 @@ final class MessageTemplates
                 $email,
                 __('Sent the day after an event to the people who had a ticket but did not come. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('We missed you this time', 'eventcrew'),
-                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::MISSED)),
+                static fn (): string => EventDetailsText::withEventDescription(self::followupBody(FollowupText::defaultText(FollowupText::MISSED))),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             // TODO(messages): the newsletter (Newsletter::compose() and

@@ -8225,6 +8225,9 @@ msgstr "organisaation nimi (Verkkosivu-välilehti, muuten sivuston nimi)."
 msgid "the event’s start time, like 19:00. Empty when the event has none."
 msgstr "tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
 
+msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
+msgstr "Tapahtuman lyhyt kuvaus (enintään kaksi virkettä), lukijan kielellä, jos käännös on. Omalla rivillään; rivi jää pois, jos tapahtumalla ei ole kuvausta."
+
 msgid "The event’s start time, like 19:00. Empty when the event has none."
 msgstr "Tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
 
@@ -8424,3 +8427,53 @@ msgstr "Crew-sovelluksessa on sinulle Ylläpito-välilehti, jossa hoidat tehtäv
 #. translators: 1: role, 2: event, 3: free places, 4: places in all
 msgid "%1$s at %2$s (%3$d of %4$d free)"
 msgstr "%1$s, %2$s (%3$d / %4$d vapaana)"
+
+#, php-format
+msgid "Blank: %s."
+msgstr "Tyhjä: %s."
+
+msgid "Blank: no venue is shown."
+msgstr "Tyhjä: paikkaa ei näytetä."
+
+msgid "Default venue"
+msgstr "Oletuspaikka"
+
+msgid "Shown as “📍 venue” on the ticket and in the reminder, sign-up and “A spot opened” messages ({venue}). It replaces the venue from EventMesh. A venue set for one event on the Messages page, Coming events tab, wins. Blank: the venue from EventMesh, if any."
+msgstr "Näkyy muodossa ”📍 paikka” lipussa sekä muistutus-, ilmoittautumis- ja ”Paikka vapautui” -viesteissä ({venue}). Korvaa EventMeshin paikan. Viestit-sivun Tulevat tapahtumat -välilehdellä yhdelle tapahtumalle asetettu paikka voittaa. Tyhjä: EventMeshin paikka, jos on."
+
+#, php-format
+msgid "The venue of this event is now %s."
+msgstr "Tämän tapahtuman paikka on nyt %s."
+
+msgid "This event uses the default venue again, else the venue from EventMesh."
+msgstr "Tapahtuma käyttää taas oletuspaikkaa, muuten EventMeshin paikkaa."
+
+msgid "This event’s own venue. Clear it to use the default venue."
+msgstr "Tämän tapahtuman oma paikka. Tyhjennä, niin käytetään oletuspaikkaa."
+
+msgid "Venue"
+msgstr "Paikka"
+
+msgid "Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known."
+msgstr "Tapahtuman paikka, esim. ”📍 Tanssisali”: tapahtuman oma paikka, muuten oletuspaikka (Asetukset > Verkkosivu), muuten EventMeshin paikka. Omalla rivillään; rivi jää pois, jos paikkaa ei tiedetä."
+
+msgid "where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue, else EventMesh’s. Empty when none is known."
+msgstr "tapahtuman paikka, esim. ”📍 Tanssisali”: tapahtuman oma paikka, muuten oletuspaikka, muuten EventMeshin. Tyhjä, jos paikkaa ei tiedetä."
+
+msgid "For a coming event with no venue of its own, the language model reads the venue from the event’s description, once per event, in the background. What it finds is saved as the event’s own venue on the Messages page, Coming events tab, where you can change or clear it. It uses the language model set up on the Telegram bot tab, under “Plain messages (language model)”."
+msgstr "Kun tulevalla tapahtumalla ei ole omaa paikkaa, kielimalli lukee paikan tapahtuman kuvauksesta, kerran tapahtumaa kohden, taustalla. Löydetty paikka tallennetaan tapahtuman omaksi paikaksi Viestit-sivun Tulevat tapahtumat -välilehdelle, jossa voit muuttaa tai tyhjentää sen. Käyttää Telegram-botti-välilehden kohdassa ”Tavalliset viestit (kielimalli)” asetettua kielimallia."
+
+msgid "Read the venue from the event description with AI"
+msgstr "Lue paikka tapahtuman kuvauksesta tekoälyllä"
+
+msgid "Suggested by the AI from the description. Change it or clear it."
+msgstr "Tekoälyn ehdotus kuvauksen perusteella. Muuta tai tyhjennä se."
+
+msgid "Read again"
+msgstr "Lue uudelleen"
+
+msgid "Nothing was changed: this event has a venue set by hand, or the AI venue setting is off."
+msgstr "Mitään ei muutettu: tapahtuman paikka on asetettu käsin, tai tekoälyn paikka-asetus on pois."
+
+msgid "The AI reads the venue from the description again within the hour."
+msgstr "Tekoäly lukee paikan kuvauksesta uudelleen tunnin sisällä."

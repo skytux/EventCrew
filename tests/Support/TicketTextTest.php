@@ -80,6 +80,7 @@ final class TicketTextTest extends TestCase
         self::assertSame(
             "*Hi {first_name},*\n\n{reason}\n\n"
                 . "Here is your ticket to {event} on {date}. Show the QR code below at the door.\n\n"
+                . "{venue}\n\n"
                 . "Your tasks on this night:\n{tasks}\n\n"
                 . 'You can bring {plus_ones} with you.',
             TicketText::text(Language::ENGLISH)

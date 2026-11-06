@@ -248,6 +248,57 @@ final class EventSource
     }
 
     /**
+     * The event's whole description in $lang as plain text that keeps its
+     * lines: the event's own text when it is in $lang or its language is not
+     * known, else EventMesh's current translation into $lang, else the own
+     * text. The text is the post content (an organizer's edit on the event
+     * screen survives the sync), its excerpt when the content is empty. ''
+     * when the post is missing or is not an event.
+     */
+    public static function description(int $postId, string $lang): string
+    {
+        if ($postId <= 0 || ! self::isAvailable()) {
+            return '';
+        }
+
+        $post = get_post($postId);
+
+        if (null === $post || self::POST_TYPE !== $post->post_type) {
+            return '';
+        }
+
+        $own = self::lines((string) ($post->post_content ?? ''));
+
+        if ('' === $own) {
+            $own = self::lines((string) ($post->post_excerpt ?? ''));
+        }
+
+        $translation = self::lines(self::translated($postId, $lang, 'content'));
+
+        if ('' === $translation) {
+            $translation = self::lines(self::translated($postId, $lang, 'excerpt'));
+        }
+
+        return '' === $translation ? $own : $translation;
+    }
+
+    /** The event's venue as EventMesh resolves it (venue_name), or ''. */
+    public static function venue(int $postId): string
+    {
+        if ($postId <= 0 || ! self::isAvailable()) {
+            return '';
+        }
+
+        $post = get_post($postId);
+
+        if (null === $post || self::POST_TYPE !== $post->post_type) {
+            return '';
+        }
+
+        return self::resolve($postId, 'venue_name');
+    }
+
+    /**
      * $text as plain text that keeps its lines: a <br> and the end of a
      * paragraph, div, list item or heading become a line break, other tags
      * are removed and entities decoded. Runs of spaces and tabs inside a line

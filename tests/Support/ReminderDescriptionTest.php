@@ -57,11 +57,11 @@ final class ReminderDescriptionTest extends TestCase
     public function testTheBuiltInTextsHaveTheDescriptionAfterTheWhenLine(): void
     {
         self::assertSame(
-            "Hi {name},\n\nJust a reminder that you're on {role} at {event}, {when}.\n\n{description}\n\n{cancel_help}",
+            "Hi {name},\n\nJust a reminder that you're on {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{event_description}\n\n{cancel_help}",
             MessageTemplates::find('reminder')->defaultBody()
         );
         self::assertSame(
-            "⏰ Reminder: you’re on {role} at {event}, {when}. See you there!\n\n{description}",
+            "⏰ Reminder: you’re on {role} at {event}, {when}. See you there!\n{venue}\n\n{description}\n\n{event_description}",
             MessageTemplates::find('reminder_dm')->defaultBody()
         );
 
@@ -69,7 +69,7 @@ final class ReminderDescriptionTest extends TestCase
             Language::FINNISH,
             static fn (): string => MessageTemplates::find('reminder_dm')->defaultBody()
         );
-        self::assertStringEndsWith("\n\n{description}", $finnish, 'the Finnish text keeps its translation');
+        self::assertStringEndsWith("\n\n{description}\n\n{event_description}", $finnish, 'the Finnish text keeps its translation');
         self::assertArrayHasKey('{description}', MessageTemplates::find('reminder')->placeholderList());
     }
 
