@@ -428,6 +428,14 @@ final class OpenTaskCallTest extends TestCase
                 . "\n\nSign up on the board in the group.",
             (string) $dms[0]['text']
         );
+        // The DM has the email's two actions: the board, and the group.
+        self::assertSame(
+            [
+                [['text' => 'See open tasks', 'callback_data' => 'mn:board']],
+                [['text' => 'Open the group', 'url' => 'https://t.me/+abc']],
+            ],
+            $dms[0]['reply_markup']['inline_keyboard']
+        );
     }
 
     /** A text saved on the Messages page is what is sent, with its placeholders filled. */

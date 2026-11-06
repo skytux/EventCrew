@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use Closure;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CalendarController;
 
 /**
@@ -150,6 +151,12 @@ final class MessageTemplates
             // tap away.
             'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // The call for open tasks: the board, and the crew's group when
+            // its link is known.
+            'open_task_call open_task_call_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::boardAction($m),
+                self::groupAction(),
+            ]),
             // Free entry: the bot's free-entry ticket button, the crew page on
             // the web.
             'credit_granted credit_granted_dm' => static fn (array $c, Mailer $m): array => [
@@ -208,6 +215,21 @@ final class MessageTemplates
     private static function newDeskLinkAction(): MessageAction
     {
         return new MessageAction('new_desk_link', '💳 ' . __('Sales desk', 'eventcrew'), '', null, '', 'sales');
+    }
+
+    /** The crew's Telegram group, or null when its link is not known. */
+    private static function groupAction(): ?MessageAction
+    {
+        $url = BoardService::groupLink();
+
+        return '' === $url
+            ? null
+            : new MessageAction(
+                'group',
+                __('Open the group in Telegram', 'eventcrew'),
+                __('Open the group', 'eventcrew'),
+                static fn (): string => $url
+            );
     }
 
     /** The Admin tab of the crew page, or null when no crew page is set. */
@@ -721,10 +743,7 @@ final class MessageTemplates
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
             'cancel_confirmed_dm' => $none,
-            'open_task_call' => [
-                'buttons' => [__('See open tasks', 'eventcrew'), __('Open the group in Telegram', 'eventcrew')],
-            ],
-            'open_task_call_dm' => $signed + ['buttons' => [__('Open the group', 'eventcrew')]],
+            'open_task_call_dm' => $signed,
             'email_confirm' => [
                 'buttons' => static fn (): array => [__('Confirm your email', 'eventcrew'), ...$privacy()],
             ],
