@@ -8244,3 +8244,67 @@ msgstr "Viestit > Lippu (sähköposti)"
 
 msgid "Edit the text on the Messages page:"
 msgstr "Muokkaa tekstiä Viestit-sivulla:"
+
+msgid "Preview"
+msgstr "Esikatsele"
+
+msgid "Preview all"
+msgstr "Esikatsele kaikki"
+
+msgid "Message previews"
+msgstr "Viestien esikatselu"
+
+msgid "Sample data: a made-up person and the next event. Nothing is sent, and the links in the message lead nowhere."
+msgstr "Mallitiedot: keksitty henkilö ja seuraava tapahtuma. Mitään ei lähetetä, eivätkä viestin linkit vie mihinkään."
+
+msgid "Language:"
+msgstr "Kieli:"
+
+msgid "All previews"
+msgstr "Kaikki esikatselut"
+
+msgid "Buttons"
+msgstr "Painikkeet"
+
+msgid "Headers"
+msgstr "Otsakkeet"
+
+msgid "Plain-text part"
+msgstr "Pelkkä teksti -osa"
+
+#, php-format
+msgid "This message could not be previewed (%s)."
+msgstr "Tätä viestiä ei voitu esikatsella (%s)."
+
+msgid "This message could not be previewed: nothing was made."
+msgstr "Tätä viestiä ei voitu esikatsella: mitään ei syntynyt."
+
+msgid "Sample Person"
+msgstr "Malli Henkilö"
+
+msgid "Sample Newcomer"
+msgstr "Malli Tulokas"
+
+msgid "Sample Helper"
+msgstr "Malli Auttaja"
+
+msgid "Sample Holder"
+msgstr "Malli Lipunhaltija"
+
+msgid "Sample Organizer"
+msgstr "Malli Järjestäjä"
+
+msgid "Sample action"
+msgstr "Mallitoiminto"
+
+msgid "Sample reason: the file has no email column."
+msgstr "Mallisyy: tiedostossa ei ole sähköpostisaraketta."
+
+msgid "Sample message to the bot."
+msgstr "Malliviesti botille."
+
+msgid "Sample answer from the bot."
+msgstr "Botin mallivastaus."
+
+msgid "Sample event"
+msgstr "Mallitapahtuma"

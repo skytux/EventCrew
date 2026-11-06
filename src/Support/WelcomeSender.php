@@ -367,7 +367,7 @@ final class WelcomeSender
      * shows only after signing in. Starts with the paragraph break; empty when
      * no crew page is set.
      */
-    private static function webLine(string $anchor): string
+    public static function webLine(string $anchor): string
     {
         $url = HelpPage::url($anchor);
 

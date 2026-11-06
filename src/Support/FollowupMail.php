@@ -147,7 +147,7 @@ final class FollowupMail
     public const EVENTS = 1;
 
     /** The link kind of a preview's or a test's links: not counted. */
-    private const KIND_SAMPLE = 't';
+    public const KIND_SAMPLE = 't';
 
     /** How long a night stays in the state option. */
     private const KEEP_DAYS = 30;

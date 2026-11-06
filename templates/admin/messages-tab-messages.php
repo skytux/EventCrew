@@ -44,7 +44,10 @@ use EventCrew\Support\TranslatedText;
                 <?php endif; ?>
             </summary>
 
-            <p><?php echo esc_html((string) $eventcrew_entry['description']); ?></p>
+            <p>
+                <?php echo esc_html((string) $eventcrew_entry['description']); ?>
+                <a href="<?php echo esc_url(MessagesPage::previewUrl($eventcrew_id)); ?>" target="_blank" rel="noopener"><?php esc_html_e('Preview', 'eventcrew'); ?></a>
+            </p>
 
             <?php if (MessagesPage::TICKET_KIND === $eventcrew_id) : ?>
                 <?php // The text the ticket email uses now; with JavaScript it saves by admin-ajax (eventcrew-jobs.js). ?>

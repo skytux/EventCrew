@@ -68,8 +68,14 @@ final class EmailTemplate
      * plain-text AltBody set in Mailer::sendHtml().
      */
 
+    /**
+     * $readOnly (the message preview, MessagePreview) never creates the
+     * template post: a missing post renders with the built-in default, the
+     * same markup the post would be seeded with.
+     */
     public function __construct(
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly bool $readOnly = false
     ) {
     }
 
@@ -155,6 +161,10 @@ final class EmailTemplate
 
         if ($stored > 0 && self::POST_TYPE === get_post_type($stored)) {
             return $stored;
+        }
+
+        if ($this->readOnly) {
+            return 0;
         }
 
         $id = wp_insert_post([
@@ -361,7 +371,9 @@ final class EmailTemplate
      */
     public function wrapper(): string
     {
-        $post = get_post($this->postId());
+        $id = $this->postId();
+        // get_post(0) would read the global post: no template post means the default.
+        $post = $id > 0 ? get_post($id) : null;
 
         if (! $post instanceof \WP_Post || 'publish' !== $post->post_status) {
             return self::defaultWrapper();

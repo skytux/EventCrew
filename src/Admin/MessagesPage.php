@@ -8,9 +8,11 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TicketReasons;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 
@@ -29,6 +31,11 @@ use EventCrew\Support\TranslatedText;
  *   (AiPromptsPage).
  * - Email look: the link to the Email template's block editor (EmailTemplate),
  *   while HTML email is on, and its reset.
+ *
+ * Each kind also has a Preview link, and the page a "Preview all" link
+ * (previewUrl()): an admin-post page of its own that shows the message as
+ * it would be sent, with sample data, in each site language
+ * (MessagePreview). It sends nothing.
  */
 final class MessagesPage
 {
@@ -44,6 +51,9 @@ final class MessagesPage
     /** The Messages tab entry that holds the ticket email's text. */
     public const TICKET_KIND = 'ticket';
 
+    /** Opens the preview page of one kind, or of all of them (admin-post, GET). */
+    public const PREVIEW_ACTION = 'eventcrew_preview_message';
+
     public const TAB_MESSAGES = 'messages';
 
     public const TAB_AI = 'ai';
@@ -57,7 +67,8 @@ final class MessagesPage
         private readonly MessageTemplates $templates,
         private readonly ?AiPromptsPage $ai = null,
         private readonly ?EmailTemplate $emailTemplate = null,
-        private readonly ?LlmClient $llm = null
+        private readonly ?LlmClient $llm = null,
+        private readonly ?MessagePreview $preview = null
     ) {
     }
 
@@ -85,6 +96,86 @@ final class MessagesPage
     {
         return add_query_arg(['page' => self::PAGE_SLUG, 'tab' => $tab] + $args, admin_url('admin.php'))
             . ('' === $anchor ? '' : '#' . $anchor);
+    }
+
+    /**
+     * The admin-only address of the preview of kind $kind ('' for the list
+     * of every kind) in language $lang ('' for the admin's language).
+     */
+    public static function previewUrl(string $kind = '', string $lang = ''): string
+    {
+        $args = ['action' => self::PREVIEW_ACTION];
+
+        if ('' !== $kind) {
+            $args['kind'] = $kind;
+        }
+
+        if ('' !== $lang) {
+            $args['lang'] = $lang;
+        }
+
+        return wp_nonce_url(add_query_arg($args, admin_url('admin-post.php')), self::PREVIEW_ACTION);
+    }
+
+    /**
+     * admin-post (GET): the preview page, a page of its own outside the
+     * wp-admin frame. Organizers only, nonce-checked. Sends nothing.
+     */
+    public function preview(): never
+    {
+        Admin::assertCanSave(self::PREVIEW_ACTION);
+
+        nocache_headers();
+        header('Content-Type: text/html; charset=UTF-8');
+        header('X-Robots-Tag: noindex, nofollow');
+        // The page and the emails in it have no scripts and must run none.
+        header("Content-Security-Policy: script-src 'none'");
+
+        $this->view->render('message-preview', $this->previewData());
+        exit;
+    }
+
+    /**
+     * What the preview page shows for the kind and language in the address:
+     * the languages to switch to, and either the one kind's preview or the
+     * list of every kind.
+     *
+     * @return array{
+     *     lang: string, languages: array<string, string>, kind: string,
+     *     message: ?array<string, mixed>, entries: list<array{id: string, label: string, channel: string}>
+     * }
+     */
+    public function previewData(): array
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- preview() checks the nonce.
+        $kind = isset($_GET['kind']) ? sanitize_key(wp_unslash((string) $_GET['kind'])) : '';
+        $lang = isset($_GET['lang']) ? sanitize_key(wp_unslash((string) $_GET['lang'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        $codes = SiteLanguages::codes();
+        $lang = in_array($lang, $codes, true) ? $lang : '';
+        $languages = [];
+
+        foreach ($codes as $code) {
+            $languages[$code] = SiteLanguages::label($code);
+        }
+
+        $entries = [];
+
+        foreach (MessageTemplates::all() as $id => $template) {
+            $entries[] = ['id' => (string) $id, 'label' => $template->label, 'channel' => $template->channel];
+        }
+
+        $message = '' === $kind || null === $this->preview
+            ? null
+            : $this->preview->render($kind, '' === $lang ? null : $lang);
+
+        return [
+            'lang' => $lang,
+            'languages' => $languages,
+            'kind' => null === $message ? '' : $kind,
+            'message' => $message,
+            'entries' => $entries,
+        ];
     }
 
     /** The tab asked for in the address; Messages when none or unknown. */
