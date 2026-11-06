@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.145
+Stable tag: 1.140.146
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.146 =
+* A new role, a pass or the team's OK lists the open tasks you can take, each with a Sign up button.
+* The new-organizer message says what the Admin tab is for, with People and Sales desk buttons.
+* The open task call has a Sign up button for each listed task and shows the free places.
+* Welcome emails get a Sign up link per open task, the /me help in one line, and no empty gaps.
 
 = 1.140.145 =
 When organizers cancel a task, the message lists the other open tasks, and bot users get it as a DM too.
@@ -1649,6 +1655,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.146 =
+No settings change.
 
 = 1.140.145 =
 No settings change.
