@@ -874,6 +874,16 @@ final class SettingsPageTest extends TelegramTestCase
      * fails the test instead of reaching wp-admin. Without a bot token: the
      * token field is empty and the webhook part says to add a token first.
      */
+    /** Q342: next to the post-event email and announcement switches, a link to each of their Messages entries. */
+    public function testTheEmailSwitchesLinkToTheirMessages(): void
+    {
+        $html = $this->renderSettingsPage();
+
+        foreach (['followup_came', 'followup_missed', 'newsletter'] as $id) {
+            self::assertStringContainsString('kind=' . $id . '#ec-message-' . $id, $html);
+        }
+    }
+
     public function testTheTelegramPartRendersWithoutABotToken(): void
     {
         unset($this->options[TelegramClient::TOKEN_OPTION]);
