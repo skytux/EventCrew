@@ -55,6 +55,8 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\FrictionB1Migration;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventAiText;
+use EventCrew\Support\EventDetailsText;
+use EventCrew\Support\VenueReader;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventTaskMover;
 use EventCrew\Support\LlmClient;
@@ -199,6 +201,7 @@ final class Kernel
         // Adds {description} to the stored reminder texts (email and
         // Telegram). Runs once per site.
         MessageTemplates::migrateReminderDescription();
+        EventDetailsText::run();
 
         // Gives the stored texts of a role, a pass and the team's OK their
         // list of open tasks, and the organizer DM its Admin tab line
@@ -296,6 +299,10 @@ final class Kernel
         // and the organizers' own placeholders): written the day before, on
         // the hourly notifications run.
         $this->container->get(EventAiText::class)->boot();
+
+        // The venue read from each coming event's description, when that
+        // setting is on: once per event, on the hourly notifications run.
+        $this->container->get(VenueReader::class)->boot();
 
         // The Messages page's AI tick and prompt per kind, and the AI texts
         // they give to EventAiText.
@@ -573,6 +580,11 @@ final class Kernel
                 $container->get(LlmClient::class),
                 $container->get(Logger::class)
             )
+        );
+
+        $this->container->singleton(
+            VenueReader::class,
+            fn (Container $container) => new VenueReader($container->get(NewsletterWriter::class))
         );
 
         $this->container->singleton(

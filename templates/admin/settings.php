@@ -67,6 +67,8 @@
  * @var array<string, mixed> $ticket_note Free text shown on every ticket, a TranslatedText value; blank shows the built-in doors line.
  * @var bool $doors_close_on Whether the doors close $doors_close_minutes minutes after the start.
  * @var int $doors_close_minutes How many minutes after the start the doors close.
+ * @var string $default_venue The default venue of the events, or ''.
+ * @var bool $venue_ai Whether the language model reads each event's venue from its description.
  * @var array<string, mixed> $infrastructure_note How the site is run, a TranslatedText value, shown to organizers in the crew page's Help tab; blank shows nothing.
  * @var string $email_edit_url Admin URL that opens the email template in the editor.
  * @var string $email_nonce_action Nonce action for the test-send and reset buttons.
@@ -1195,6 +1197,22 @@ if (! defined('ABSPATH')) {
                         ?>
                     </label>
                     <p class="description"><?php esc_html_e('In the ticket note and the message texts it is {doors_close}, like 19:30. A time set for one event on the Messages page, Coming events tab, wins.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="eventcrew-default-venue"><?php esc_html_e('Default venue', 'eventcrew'); ?></label></th>
+                <td>
+                    <input type="text" name="default_venue" id="eventcrew-default-venue" class="regular-text"
+                        maxlength="<?php echo (int) \EventCrew\Support\EventVenue::MAX_LENGTH; ?>"
+                        value="<?php echo esc_attr((string) ($default_venue ?? '')); ?>">
+                    <p class="description"><?php esc_html_e('Shown as “📍 venue” on the ticket and in the reminder, sign-up and “A spot opened” messages ({venue}). It replaces the venue from EventMesh. A venue set for one event on the Messages page, Coming events tab, wins. Blank: the venue from EventMesh, if any.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
+                    <p>
+                        <label>
+                            <input type="checkbox" name="venue_ai" value="1" <?php checked(! empty($venue_ai)); ?>>
+                            <?php esc_html_e('Read the venue from the event description with AI', 'eventcrew'); ?>
+                        </label>
+                    </p>
+                    <p class="description"><?php esc_html_e('For a coming event with no venue of its own, the language model reads the venue from the event’s description, once per event, in the background. What it finds is saved as the event’s own venue on the Messages page, Coming events tab, where you can change or clear it. It uses the language model set up on the Telegram bot tab, under “Plain messages (language model)”.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
                 </td>
             </tr>
             <tr>

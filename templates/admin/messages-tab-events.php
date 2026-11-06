@@ -8,7 +8,9 @@
  *
  * @var list<array{event_id: int, date: string, title: string, items: list<array{key: string, label: string,
  *     ai: array<string, string>, texts: array<string, string>, edited: array<string, bool>, failed: bool}>,
- *     doors_own: string, doors_close: string}> $events The doors times: the event's own, and the one in use.
+ *     doors_own: string, doors_close: string, venue_own: string, venue: string, venue_ai: bool,
+ *     venue_again_url: string}> $events The doors times and the venues: the event's own, and the one in use;
+ *     venue_ai when the own venue is the AI's; venue_again_url the "Read again" link, or '' when it is not shown.
  * @var bool $can_write Whether a template has the AI tick on or a placeholder exists.
  * @var array<string, mixed>|null $followup CrewAdminFollowup::view() and night (the night it is for, or '').
  * @var array<string, mixed>|null $newsletter CrewAdminNewsletter::view().
@@ -215,6 +217,39 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                         }
                         ?>
                     </span>
+                </p>
+            </form>
+
+            <form method="post" action="<?php echo esc_url($eventcrew_post_url); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr(AiPromptsPage::VENUE_ACTION); ?>">
+                <input type="hidden" name="event_id" value="<?php echo esc_attr((string) $eventcrew_event_id); ?>">
+                <?php wp_nonce_field(AiPromptsPage::NONCE_ACTION); ?>
+                <p>
+                    <label for="eventcrew-venue-<?php echo esc_attr((string) $eventcrew_event_id); ?>"><?php esc_html_e('Venue', 'eventcrew'); ?></label>
+                    <input type="text" name="venue" class="regular-text" id="eventcrew-venue-<?php echo esc_attr((string) $eventcrew_event_id); ?>"
+                        maxlength="<?php echo (int) \EventCrew\Support\EventVenue::MAX_LENGTH; ?>"
+                        value="<?php echo esc_attr((string) ($eventcrew_event['venue_own'] ?? '')); ?>">
+                    <button type="submit" class="button"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+                    <span class="description">
+                        <?php
+                        if (! empty($eventcrew_event['venue_ai'])) {
+                            esc_html_e('Suggested by the AI from the description. Change it or clear it.', 'eventcrew');
+                        } elseif ('' !== (string) ($eventcrew_event['venue_own'] ?? '')) {
+                            esc_html_e('This event’s own venue. Clear it to use the default venue.', 'eventcrew');
+                        } elseif ('' !== (string) ($eventcrew_event['venue'] ?? '')) {
+                            echo esc_html(sprintf(
+                                /* translators: %s: the venue in use, like "Dance hall" */
+                                __('Blank: %s.', 'eventcrew'),
+                                (string) $eventcrew_event['venue']
+                            ));
+                        } else {
+                            esc_html_e('Blank: no venue is shown.', 'eventcrew');
+                        }
+                        ?>
+                    </span>
+                    <?php if ('' !== (string) ($eventcrew_event['venue_again_url'] ?? '')) : ?>
+                        <a href="<?php echo esc_url((string) $eventcrew_event['venue_again_url']); ?>"><?php esc_html_e('Read again', 'eventcrew'); ?></a>
+                    <?php endif; ?>
                 </p>
             </form>
 

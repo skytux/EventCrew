@@ -11555,3 +11555,56 @@ msgstr "🛠️ Öppna Admin-fliken"
 #: templates/public/signup.php:655
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Arrangörsguide ↓"
+
+msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
+msgstr "En kort beskrivning av evenemanget (högst två meningar), på läsarens språk när det finns en översättning. På en egen rad; raden tas bort när evenemanget saknar beskrivning."
+
+#, php-format
+msgid "Blank: %s."
+msgstr "Tomt: %s."
+
+msgid "Blank: no venue is shown."
+msgstr "Tomt: ingen plats visas."
+
+msgid "Default venue"
+msgstr "Standardplats"
+
+msgid "Shown as “📍 venue” on the ticket and in the reminder, sign-up and “A spot opened” messages ({venue}). It replaces the venue from EventMesh. A venue set for one event on the Messages page, Coming events tab, wins. Blank: the venue from EventMesh, if any."
+msgstr "Visas som ”📍 plats” på biljetten och i påminnelsen, anmälan och meddelandet ”En plats blev ledig” ({venue}). Ersätter platsen från EventMesh. En plats som angetts för ett evenemang på sidan Meddelanden, fliken Kommande evenemang, går före. Tomt: platsen från EventMesh, om den finns."
+
+#, php-format
+msgid "The venue of this event is now %s."
+msgstr "Platsen för detta evenemang är nu %s."
+
+msgid "This event uses the default venue again, else the venue from EventMesh."
+msgstr "Evenemanget använder standardplatsen igen, annars platsen från EventMesh."
+
+msgid "This event’s own venue. Clear it to use the default venue."
+msgstr "Evenemangets egen plats. Töm den för att använda standardplatsen."
+
+msgid "Venue"
+msgstr "Plats"
+
+msgid "Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known."
+msgstr "Var evenemanget är, t.ex. ”📍 Danssal”: evenemangets egen plats, annars standardplatsen (Inställningar > Webbsida), annars platsen från EventMesh. På en egen rad; raden tas bort när ingen plats är känd."
+
+msgid "where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue, else EventMesh’s. Empty when none is known."
+msgstr "var evenemanget är, t.ex. ”📍 Danssal”: evenemangets egen plats, annars standardplatsen, annars EventMeshs. Tomt när ingen är känd."
+
+msgid "For a coming event with no venue of its own, the language model reads the venue from the event’s description, once per event, in the background. What it finds is saved as the event’s own venue on the Messages page, Coming events tab, where you can change or clear it. It uses the language model set up on the Telegram bot tab, under “Plain messages (language model)”."
+msgstr "För ett kommande evenemang utan egen plats läser språkmodellen platsen ur evenemangets beskrivning, en gång per evenemang, i bakgrunden. Det den hittar sparas som evenemangets egen plats på sidan Meddelanden, fliken Kommande evenemang, där du kan ändra eller tömma den. Den använder språkmodellen som ställts in på fliken Telegram-bot, under ”Vanliga meddelanden (språkmodell)”."
+
+msgid "Read the venue from the event description with AI"
+msgstr "Läs platsen ur evenemangets beskrivning med AI"
+
+msgid "Suggested by the AI from the description. Change it or clear it."
+msgstr "Föreslagen av AI utifrån beskrivningen. Ändra eller töm den."
+
+msgid "Read again"
+msgstr "Läs igen"
+
+msgid "Nothing was changed: this event has a venue set by hand, or the AI venue setting is off."
+msgstr "Inget ändrades: evenemanget har en plats som angetts för hand, eller AI-platsinställningen är av."
+
+msgid "The AI reads the venue from the description again within the hour."
+msgstr "AI läser platsen ur beskrivningen igen inom en timme."

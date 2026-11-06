@@ -11,6 +11,8 @@ use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\EventTimes;
+use EventCrew\Support\EventVenue;
+use EventCrew\Support\VenueReader;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\MessageTemplates;
@@ -55,6 +57,12 @@ final class AiPromptsPage
 
     /** One event's own doors time (EventTimes), from its card on the Coming events tab. */
     public const DOORS_ACTION = 'eventcrew_event_doors_close';
+
+    /** One event's own venue (EventVenue), from its card on the Coming events tab. */
+    public const VENUE_ACTION = 'eventcrew_event_venue';
+
+    /** admin-post (GET): read one event's venue again with the AI (VenueReader), from its card. */
+    public const VENUE_AGAIN_ACTION = 'eventcrew_event_venue_again';
 
     public const NONCE_ACTION = 'eventcrew_ai_prompts';
 
@@ -142,6 +150,12 @@ final class AiPromptsPage
         foreach ($cards as $id => $card) {
             $cards[$id]['doors_own'] = EventTimes::ownDoorsClose((int) $card['event_id']);
             $cards[$id]['doors_close'] = EventTimes::doorsClose((int) $card['event_id']);
+            $cards[$id]['venue_own'] = EventVenue::own((int) $card['event_id']);
+            $cards[$id]['venue'] = EventVenue::forEvent((int) $card['event_id']);
+            $cards[$id]['venue_ai'] = VenueReader::isSuggested((int) $card['event_id']);
+            $cards[$id]['venue_again_url'] = VenueReader::canReadAgain((int) $card['event_id'])
+                ? self::venueAgainUrl((int) $card['event_id'])
+                : '';
         }
 
         $titles = array_column($cards, 'title', 'date');
@@ -502,6 +516,80 @@ final class AiPromptsPage
 
         /* translators: %s: a time like 19:30 */
         return sprintf(__('The doors of this event close at %s.', 'eventcrew'), $time);
+    }
+
+    /** admin-post: one event's own venue, from its card on the Coming events tab. */
+    public function saveVenue(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
+        $post = wp_unslash($_POST);
+        $eventId = (int) ($post['event_id'] ?? 0);
+        $notice = $this->applyVenue($post);
+
+        self::back(MessagesPage::TAB_EVENTS, $notice, 'success', self::eventAnchor($eventId));
+    }
+
+    /**
+     * The venue form of one event: event_id and venue (blank goes back to
+     * the default venue, else EventMesh's). Returns the notice.
+     *
+     * @param array<string, mixed> $post
+     */
+    public function applyVenue(array $post): string
+    {
+        $eventId = (int) ($post['event_id'] ?? 0);
+
+        if ($eventId <= 0 || null === EventSource::describe($eventId)) {
+            return __('Nothing was saved: that event was not found.', 'eventcrew');
+        }
+
+        $venue = EventVenue::saveOwn($eventId, sanitize_text_field((string) ($post['venue'] ?? '')));
+
+        if ('' === $venue) {
+            return __('This event uses the default venue again, else the venue from EventMesh.', 'eventcrew');
+        }
+
+        /* translators: %s: the venue, like "Dance hall" */
+        return sprintf(__('The venue of this event is now %s.', 'eventcrew'), $venue);
+    }
+
+    /** The "Read again" link of event $eventId's venue (VENUE_AGAIN_ACTION), nonce included. */
+    public static function venueAgainUrl(int $eventId): string
+    {
+        return wp_nonce_url(
+            add_query_arg(['action' => self::VENUE_AGAIN_ACTION, 'event_id' => $eventId], admin_url('admin-post.php')),
+            self::NONCE_ACTION
+        );
+    }
+
+    /** admin-post (GET): "Read again" on one event's venue, from its card on the Coming events tab. */
+    public function readVenueAgain(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- verified in assertCanSave().
+        $eventId = (int) ($_GET['event_id'] ?? 0);
+
+        self::back(MessagesPage::TAB_EVENTS, $this->applyVenueAgain($eventId), 'success', self::eventAnchor($eventId));
+    }
+
+    /** "Read again" on event $eventId's venue. Returns the notice. */
+    public function applyVenueAgain(int $eventId): string
+    {
+        if ($eventId <= 0 || null === EventSource::describe($eventId)) {
+            return __('Nothing was saved: that event was not found.', 'eventcrew');
+        }
+
+        if (! VenueReader::readAgain($eventId)) {
+            return __(
+                'Nothing was changed: this event has a venue set by hand, or the AI venue setting is off.',
+                'eventcrew'
+            );
+        }
+
+        return __('The AI reads the venue from the description again within the hour.', 'eventcrew');
     }
 
     /** admin-post: the one-time text of the next post-event email, from the Coming events tab. */

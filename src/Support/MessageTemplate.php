@@ -176,12 +176,14 @@ final class MessageTemplate
 
     /**
      * $text without each line that holds only $tag, together with the line
-     * breaks before it; at the very start, the line breaks after it.
+     * breaks before it; at the very start, the line breaks after it. A
+     * placeholder written right after $tag (one that brings its own empty
+     * line, like {task_details}) moves up to the line before.
      */
     private static function withoutLine(string $text, string $tag): string
     {
         $quoted = preg_quote($tag, '/');
-        $text = (string) preg_replace('/(?:\r?\n)+[ \t]*' . $quoted . '[ \t]*(?=\r?\n|\z)/', '', $text);
+        $text = (string) preg_replace('/(?:\r?\n)+[ \t]*' . $quoted . '[ \t]*(?=\r?\n|\z|\{)/', '', $text);
 
         return (string) preg_replace('/\A[ \t]*' . $quoted . '[ \t]*(?:\r?\n)*/', '', $text);
     }

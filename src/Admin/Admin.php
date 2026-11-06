@@ -336,6 +336,16 @@ final class Admin
             [$this->container->get(AiPromptsPage::class), 'saveDoorsClose']
         );
 
+        add_action(
+            'admin_post_' . AiPromptsPage::VENUE_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'saveVenue']
+        );
+
+        add_action(
+            'admin_post_' . AiPromptsPage::VENUE_AGAIN_ACTION,
+            [$this->container->get(AiPromptsPage::class), 'readVenueAgain']
+        );
+
         // The Email template's block editor opens from Messages > Email look,
         // so the menu shows Messages as the open page while it is edited.
         add_filter('parent_file', [self::class, 'emailTemplateParent']);

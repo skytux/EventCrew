@@ -544,6 +544,32 @@ final class NewsletterWriter
     }
 
     /**
+     * The venue the model reads from the description of event $postId, as
+     * practical() keeps it (written in the description, never a DJ name):
+     * '' when the description names none, null when the event is not found
+     * or the model failed. Asks the model once; the caller runs it in the
+     * background only (VenueReader).
+     */
+    public function venueOf(int $postId): ?string
+    {
+        $event = EventSource::describe($postId);
+
+        if (null === $event) {
+            return null;
+        }
+
+        $plan = [
+            'id' => $postId,
+            'title' => $event['title'],
+            'date' => $event['date'],
+            'time' => '' === $event['starts_at'] ? '' : substr($event['starts_at'], 11, 5),
+        ];
+        $info = $this->safely(fn (): ?array => $this->writePractical($plan));
+
+        return null === $info ? null : (string) ($info['venue'] ?? '');
+    }
+
+    /**
      * $text (written in $lang) with its translation into every other site
      * language, from one request whose JSON answer is keyed by the language
      * codes; null when that answer cannot be used. $text is kept under $lang

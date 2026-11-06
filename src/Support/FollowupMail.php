@@ -799,13 +799,14 @@ final class FollowupMail
         $coming = $this->comingEvents($date);
         $hasEvents = [] !== $coming;
         $parts = [];
+        $eventId = $this->eventId($date);
 
         foreach ($languages as $lang) {
             $text = $this->text->text($variant, $lang);
             $event = $this->eventName($date, $lang);
             $parts[$lang] = Language::run(
                 $lang,
-                static fn (): array => self::words($variant, $name, $text, $event, $shortDate, $hasEvents)
+                static fn (): array => self::words($variant, $name, $text, $event, $shortDate, $hasEvents, $eventId)
             );
         }
 
@@ -1280,7 +1281,7 @@ final class FollowupMail
      * email's text in that language (FollowupText::text()). The Messages page
      * text is the whole text; the one-time text and the built-in text get
      * the greeting and the sign-off around them. The subject is the Messages
-     * page subject.
+     * page subject. $eventId is the night's event ({event_description}).
      *
      * @param array{text: string, next: bool, template: bool} $text
      * @return array{body: string, subject: string, join: string, invite: string, optout: string}
@@ -1291,11 +1292,12 @@ final class FollowupMail
         array $text,
         string $event,
         string $date,
-        bool $hasEvents = true
+        bool $hasEvents = true,
+        ?int $eventId = null
     ): array {
         $id = FollowupText::TEMPLATES[$variant];
         $first = DoorDesk::firstName($name);
-        $context = ['first_name' => $first, 'event' => $event, 'date' => $date];
+        $context = ['first_name' => $first, 'event' => $event, 'date' => $date, 'event_id' => $eventId];
 
         if ($text['template']) {
             // No first name: the line with {first_name} (the greeting) is
@@ -1310,7 +1312,8 @@ final class FollowupMail
                 /* translators: %s: the ticket holder's first name */
                 : sprintf(__('Hi %s,', 'eventcrew'), $first);
 
-            $lines = [$hello, trim(FollowupText::fill($text['text'], $event, $date))];
+            $main = self::withEventDescription($text['text'], $eventId);
+            $lines = [$hello, trim(FollowupText::fill($main, $event, $date))];
             $lines[] = __('Warmly,', 'eventcrew') . "\n" . Organization::name();
             $body = implode("\n\n", $lines);
         }
@@ -1329,6 +1332,30 @@ final class FollowupMail
     }
 
     /**
+     * The one-time text or the built-in text ($text, not a Messages page
+     * text) with the event's short description (EventDescription) as its own
+     * paragraph: where the text has {event_description}, else after the
+     * paragraph with {event} (as on the Messages page), else at the end.
+     * Without a description, the text comes back without the placeholder.
+     */
+    private static function withEventDescription(string $text, ?int $eventId): string
+    {
+        $short = EventDescription::short($eventId);
+
+        if ('' === $short) {
+            return (string) preg_replace('/[ \t]*(?:\r?\n)*[ \t]*\{event_description\}/', '', $text);
+        }
+
+        $with = EventDetailsText::withEventDescription($text);
+
+        if (! str_contains($with, '{event_description}')) {
+            $with = rtrim($with) . "\n\n{event_description}";
+        }
+
+        return str_replace('{event_description}', $short, $with);
+    }
+
+    /**
      * $body without the sentence that points to the coming events below it,
      * for an email that has no coming events (in the current language).
      */
@@ -1337,6 +1364,21 @@ final class FollowupMail
         $below = __('The next ones are below.', 'eventcrew');
 
         return str_replace([' ' . $below, $below . ' ', $below], '', $body);
+    }
+
+    /**
+     * The EventMesh event of the night on $date: its first task's event, or
+     * null when the night has no task of a linked event.
+     */
+    private function eventId(string $date): ?int
+    {
+        foreach ($this->tasks->forDate($date) as $task) {
+            if (null !== $task->eventPostId && $task->eventPostId > 0) {
+                return $task->eventPostId;
+            }
+        }
+
+        return null;
     }
 
     /**
