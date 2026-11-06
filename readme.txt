@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.147
+Stable tag: 1.140.148
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.148 =
+* Messages to one person are in that person's language only; hybrid posts and emails put each language on its own row.
+* Telegram buttons show the first two site languages; the settings warn when more than two are chosen.
+* Ticket titles put the event, date and time on rows of their own.
+* The newsletter page offers every site language, Swedish included.
+* Reposting the board keeps the old board when the new post fails.
+* Finnish texts call the Admin tab by its Finnish name, Ylläpito.
 
 = 1.140.147 =
 * Swedish translation of every built-in text: Swedish readers no longer get English.
@@ -1659,6 +1667,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.148 =
+No settings change.
 
 = 1.140.147 =
 No settings change.
