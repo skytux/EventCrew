@@ -32,6 +32,9 @@ final class MessageTemplates
     /** The option of one kind is this followed by its id. */
     public const OPTION_PREFIX = 'eventcrew_message_template_';
 
+    /** Set to '1' once migrateReminderDescription() has run. */
+    public const REMINDER_DESCRIPTION_OPTION = 'eventcrew_reminder_description_migrated';
+
     public const SUBJECT = 'subject';
     public const BODY = 'body';
 
@@ -869,6 +872,14 @@ final class MessageTemplates
             __('The day of the task and its time, like Fri 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::when($c['task']) : ''
         );
+        $description = self::placeholder(
+            __('The description of the task, or of its role when the task has none. On a line of its own; the line goes when there is no description.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+            static fn (array $c): string => is_string($c['description'] ?? null)
+                ? $c['description']
+                : (($c['task'] ?? null) instanceof Task ? RoleGuide::taskDescription($c['task']) : ''),
+            false,
+            true
+        );
         $standingTask = self::placeholder(
             __('The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::standingTask($c['task']) : ''
@@ -950,12 +961,19 @@ final class MessageTemplates
                     __('Reminder: %1$s for %2$s', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
-                static fn (): string => self::tag(
+                static fn (): string => self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel */
                     __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{cancel_help}']
-                ),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when, 'cancel_help' => $cancelHelp]
+                )),
+                [
+                    'name' => $name,
+                    'role' => $role,
+                    'event' => $event,
+                    'when' => $when,
+                    'description' => $description,
+                    'cancel_help' => $cancelHelp,
+                ]
             ),
             new MessageTemplate(
                 'reminder_dm',
@@ -963,12 +981,12 @@ final class MessageTemplates
                 $telegram,
                 __('Sent the day before a task to each person signed up for it who uses the bot.', 'eventcrew'),
                 null,
-                static fn (): string => self::tag(
+                static fn (): string => self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
                     __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ),
-                ['role' => $role, 'event' => $event, 'when' => $when]
+                )),
+                ['role' => $role, 'event' => $event, 'when' => $when, 'description' => $description]
             ),
             new MessageTemplate(
                 'slot_freed',
@@ -2337,11 +2355,81 @@ final class MessageTemplates
     /**
      * @param Closure(array<string, mixed>): string $resolve
      * @param bool $required The text must keep it (MessageTemplate::missingRequired()).
-     * @return array{description: string, resolve: Closure(array<string, mixed>): string, required: bool}
+     * @param bool $ownLine It stands on a line of its own, which goes when it is empty
+     *                      (MessageTemplate::fill()).
+     * @return array{
+     *     description: string, resolve: Closure(array<string, mixed>): string, required: bool, own_line: bool
+     * }
      */
-    private static function placeholder(string $description, Closure $resolve, bool $required = false): array
+    private static function placeholder(
+        string $description,
+        Closure $resolve,
+        bool $required = false,
+        bool $ownLine = false
+    ): array {
+        return ['description' => $description, 'resolve' => $resolve, 'required' => $required, 'own_line' => $ownLine];
+    }
+
+    /**
+     * $text with "\n\n{description}" put right after the first line that has
+     * {when} in it. A text that has {description} already, or no {when},
+     * comes back as it is. Used for the reminder's built-in texts and, once,
+     * for the reminder texts stored before {description} existed
+     * (migrateReminderDescription()).
+     */
+    public static function withDescription(string $text): string
     {
-        return ['description' => $description, 'resolve' => $resolve, 'required' => $required];
+        if (str_contains($text, '{description}') || ! str_contains($text, '{when}')) {
+            return $text;
+        }
+
+        $at = strpos($text, '{when}');
+        $end = strpos($text, "\n", (int) $at);
+
+        return false === $end
+            ? $text . "\n\n{description}"
+            : substr($text, 0, $end) . "\n\n{description}" . substr($text, $end);
+    }
+
+    /**
+     * One-time migration: the reminder texts organizers saved
+     * before {description} existed get it after their {when} line, in the
+     * source and in every language text (withDescription()). Runs once per
+     * site (REMINDER_DESCRIPTION_OPTION); a text that has {description}
+     * already is left as it is.
+     */
+    public static function migrateReminderDescription(): void
+    {
+        if ('1' === (string) get_option(self::REMINDER_DESCRIPTION_OPTION, '')) {
+            return;
+        }
+
+        foreach (['reminder', 'reminder_dm'] as $id) {
+            $raw = get_option(self::OPTION_PREFIX . $id, null);
+
+            if (! is_array($raw) || ! is_array($raw[self::BODY] ?? null)) {
+                continue;
+            }
+
+            $body = $raw[self::BODY];
+
+            if (is_string($body['source'] ?? null)) {
+                $body['source'] = self::withDescription($body['source']);
+            }
+
+            foreach (is_array($body['texts'] ?? null) ? $body['texts'] : [] as $lang => $text) {
+                if (is_string($text)) {
+                    $body['texts'][$lang] = self::withDescription($text);
+                }
+            }
+
+            if ($body !== $raw[self::BODY]) {
+                $raw[self::BODY] = $body;
+                update_option(self::OPTION_PREFIX . $id, $raw, false);
+            }
+        }
+
+        update_option(self::REMINDER_DESCRIPTION_OPTION, '1');
     }
 
     /**

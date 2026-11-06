@@ -26,7 +26,9 @@ use Closure;
  *   says what the placeholder becomes; the resolver turns the context into
  *   that text. A required placeholder (optional key, false when missing)
  *   must stay in the text: the Messages page refuses to save a text without
- *   it (missingRequired()).
+ *   it (missingRequired()). A placeholder with own_line (optional key) is
+ *   written on a line of its own; when it is empty, fill() takes out that
+ *   line and the empty lines before it.
  * - wired: whether the code that sends the message reads this template.
  *   False for a kind that is listed but still sends its built-in text; the
  *   Messages page says so.
@@ -75,7 +77,7 @@ final class MessageTemplate
 
     /**
      * @param array<string, array{
-     *     description: string, resolve: Closure(array<string, mixed>): string, required?: bool
+     *     description: string, resolve: Closure(array<string, mixed>): string, required?: bool, own_line?: bool
      * }> $placeholders
      * @param (Closure(array<string, mixed>): string)|null $subject Null for a Telegram message.
      * @param Closure(array<string, mixed>): string $body
@@ -147,7 +149,9 @@ final class MessageTemplate
     /**
      * $text with every {placeholder} of this kind replaced by what its
      * resolver makes of $context. A placeholder the text does not use is not
-     * resolved. An unknown {name} stays as it is.
+     * resolved. An unknown {name} stays as it is. An empty own_line
+     * placeholder that stands on a line of its own takes that line with it,
+     * and the empty lines before it, so no gap is left.
      *
      * @param array<string, mixed> $context
      */
@@ -160,10 +164,26 @@ final class MessageTemplate
 
             if (str_contains($text, $tag)) {
                 $pairs[$tag] = (string) ($placeholder['resolve'])($context);
+
+                if ('' === $pairs[$tag] && true === ($placeholder['own_line'] ?? false)) {
+                    $text = self::withoutLine($text, $tag);
+                }
             }
         }
 
         return [] === $pairs ? $text : strtr($text, $pairs);
+    }
+
+    /**
+     * $text without each line that holds only $tag, together with the line
+     * breaks before it; at the very start, the line breaks after it.
+     */
+    private static function withoutLine(string $text, string $tag): string
+    {
+        $quoted = preg_quote($tag, '/');
+        $text = (string) preg_replace('/(?:\r?\n)+[ \t]*' . $quoted . '[ \t]*(?=\r?\n|\z)/', '', $text);
+
+        return (string) preg_replace('/\A[ \t]*' . $quoted . '[ \t]*(?:\r?\n)*/', '', $text);
     }
 
     /**

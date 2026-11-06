@@ -17,6 +17,19 @@ use EventCrew\Models\Task;
 final class RoleGuide
 {
     /**
+     * The description of the task: its own text (the task's notes, which the
+     * calendar file also uses as its description), else its role's
+     * description, both in the language being composed in; '' when neither
+     * has one.
+     */
+    public static function taskDescription(Task $task): string
+    {
+        $own = TranslatedText::forReader($task->notes);
+
+        return '' !== $own ? $own : $task->roleDescription();
+    }
+
+    /**
      * The "About the task" paragraph for a message, or '' when the role has no
      * description, so a caller can append it unconditionally.
      */
