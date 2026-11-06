@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.152
+Stable tag: 1.140.153
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.153 =
+* The Telegram board's keyboard has no heading rows: the event's name and date are in the text, with each task's time and count.
+* Task buttons show only the task's name, two to a row, and only for tasks with a free place.
+* Under them: New here? Sign up across the row, then My info and Task info side by side, then the Crew guide.
 
 = 1.140.152 =
 * The Telegram board shows only the next event, with a one-row date selector under the tasks.
@@ -1693,6 +1698,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.153 =
+No settings change.
 
 = 1.140.152 =
 No settings change.
