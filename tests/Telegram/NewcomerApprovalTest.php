@@ -11,6 +11,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Telegram\MenuButtons;
 
 /**
  * The team's OK for a newcomer: the organizers are asked once, the first
@@ -240,7 +241,14 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertNotNull($sent);
         self::assertSame(999, $sent['chat_id']);
-        self::assertStringContainsString('✅ The team said OK. You can now take tasks: send /board.', $sent['text']);
+        self::assertStringContainsString(
+            '✅ The team said OK. You can now take tasks: tap See open tasks below.',
+            $sent['text']
+        );
+        self::assertSame(
+            [[['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]]],
+            $sent['reply_markup']['inline_keyboard']
+        );
 
         $edit = $this->lastCallTo('editMessageText');
         self::assertNotNull($edit);

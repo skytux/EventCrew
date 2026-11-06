@@ -150,7 +150,34 @@ final class MessageTemplates
             // tap away.
             'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // Free entry: the bot's free-entry ticket button, the crew page on
+            // the web.
+            'credit_granted credit_granted_dm' => static fn (array $c, Mailer $m): array => [
+                new MessageAction(
+                    'free_ticket',
+                    __('Get your free ticket', 'eventcrew'),
+                    '🎟 ' . __('Free-entry ticket', 'eventcrew'),
+                    static fn (): string => $m->boardUrl(),
+                    '',
+                    'ticket'
+                ),
+            ],
+            // New access: the open tasks, or the Admin tab for a new organizer.
+            'access_role access_role_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            'access_pass access_pass_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            'newcomer_ok newcomer_ok_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            'access_organizer access_organizer_dm' => static fn (): array => self::present([self::adminAction()]),
         ];
+    }
+
+    /** The Admin tab of the crew page, or null when no crew page is set. */
+    private static function adminAction(): ?MessageAction
+    {
+        $url = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
+
+        return '' === $url
+            ? null
+            : new MessageAction('admin', DoorLinkSender::adminButtonLabel(), '', static fn (): string => $url);
     }
 
     /**
@@ -650,7 +677,6 @@ final class MessageTemplates
             'reminder_dm' => $signed,
             'slot_freed_dm' => $signed,
             'task_cancelled' => ['buttons' => $openTasks],
-            'credit_granted' => ['buttons' => [__('Get your free ticket', 'eventcrew')]],
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
             'cancel_confirmed_dm' => $none,
@@ -676,10 +702,10 @@ final class MessageTemplates
             ],
             'email_changed' => $greet,
             'delete_data_confirm' => $greet + ['buttons' => [__('Delete my data', 'eventcrew')]],
-            'access_role' => $greet + ['buttons' => $openTasks],
-            'access_pass' => $greet + ['buttons' => $openTasks],
-            'newcomer_ok' => $greet + ['buttons' => $openTasks],
-            'access_organizer' => $greet + ['buttons' => $admin],
+            'access_role' => $greet,
+            'access_pass' => $greet,
+            'newcomer_ok' => $greet,
+            'access_organizer' => $greet,
             'newcomer_waiting' => ['buttons' => $admin],
             'newcomer_waiting_dm' => ['buttons' => ['✅ ' . __('OK', 'eventcrew'), '❌ ' . __('No', 'eventcrew')]],
             'forged_request_dm' => $none,
@@ -995,11 +1021,7 @@ final class MessageTemplates
                     'credits' => $credits,
                     'credit_help' => self::botOrWeb(
                         __('How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-                        static fn (): string => sprintf(
-                            /* translators: %s: the organization's name */
-                            __('open the %s bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket.', 'eventcrew'),
-                            Organization::name()
-                        ),
+                        static fn (): string => __('tap Get your free ticket below.', 'eventcrew'),
                         static fn (string $url): string => sprintf(
                             /* translators: %s: link to the crew page */
                             __('open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket.', 'eventcrew'),
@@ -1017,8 +1039,8 @@ final class MessageTemplates
                 static fn (array $c): string => self::tag(
                     /* translators: %d: number of free-entry credits granted */
                     _n(
-                        '🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event.',
-                        '🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events.',
+                        '🎁 You’ve been given %d free-entry credit. Tap 🎟 Free-entry ticket below to spend it on an upcoming event.',
+                        '🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entry ticket below to spend them on upcoming events.',
                         $count($c),
                         'eventcrew'
                     ),
@@ -1390,7 +1412,7 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: %s: role name, such as DJ */
-                    __('You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them.', 'eventcrew'),
+                    __('You now have the role %s. Tap See open tasks below, or open the Crew app, to see its tasks and sign up for them.', 'eventcrew'),
                     ['%s' => '{role}']
                 ),
                 $givenRole
@@ -1425,7 +1447,7 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to a new person who uses the bot when an organizer presses OK for them.', 'eventcrew'),
                 null,
-                static fn (): string => __('✅ The team said OK. You can now take tasks: send /board.', 'eventcrew')
+                static fn (): string => __('✅ The team said OK. You can now take tasks: tap See open tasks below.', 'eventcrew')
             ),
             new MessageTemplate(
                 'access_organizer',

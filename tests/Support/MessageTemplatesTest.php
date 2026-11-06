@@ -151,8 +151,7 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you 2 free-entry credits. You can spend them on upcoming"
-                . ' events — open the Test Site bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app,'
-                . ' to get your free ticket.',
+                . ' events — tap Get your free ticket below.',
             MessageTemplates::body('credit_granted', ['person' => $this->person(), 'credits' => 2])
         );
         self::assertStringContainsString(
@@ -186,14 +185,12 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
-                . ' open the Test Site bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your'
-                . ' free ticket.',
+                . ' tap Get your free ticket below.',
             MessageTemplates::body('credit_granted', $bot)
         );
         self::assertSame(
-            "Hei Anna,\n\njärjestäjä antoi sinulle 3 vapaalippua. Voit käyttää ne tuleviin tapahtumiin — avaa"
-                . ' Test Site -botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat'
-                . ' ilmaisen lippusi.',
+            "Hei Anna,\n\njärjestäjä antoi sinulle 3 vapaalippua. Voit käyttää ne tuleviin tapahtumiin —"
+                . ' napauta alta Hae ilmainen lippusi.',
             Language::run(
                 Language::FINNISH,
                 static fn (): string => MessageTemplates::body('credit_granted', ['credits' => 3] + $bot)

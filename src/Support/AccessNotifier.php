@@ -86,7 +86,8 @@ final class AccessNotifier
             // pressed the button that caused this.
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, MessageTemplates::body($template . '_dm', $context))
+                DmBody::frame($person, MessageTemplates::body($template . '_dm', $context)),
+                MessageActions::replyMarkup(MessageActions::of($template . '_dm', $context, $this->mailer))
             );
         }
 
@@ -96,31 +97,8 @@ final class AccessNotifier
                 $person->email,
                 MessageTemplates::subject($template, $context),
                 EmailBody::withGreeting($person->displayName, MessageTemplates::body($template, $context)),
-                $this->actions($template)
+                MessageActions::email(MessageActions::of($template, $context, $this->mailer))
             );
         }
-    }
-
-    /**
-     * The email's button: the crew page's open tasks for a role or a pass,
-     * its Admin tab for a new organizer. None when no crew page is set.
-     *
-     * @return array<int, array{label: string, url: string}>
-     */
-    private function actions(string $template): array
-    {
-        $url = self::ORGANIZER === $template
-            ? HelpPage::url(DoorLinkSender::ADMIN_ANCHOR)
-            : $this->mailer->boardUrl();
-
-        if ('' === $url) {
-            return [];
-        }
-
-        $label = self::ORGANIZER === $template
-            ? DoorLinkSender::adminButtonLabel()
-            : __('See open tasks', 'eventcrew');
-
-        return [['label' => $label, 'url' => $url]];
     }
 }

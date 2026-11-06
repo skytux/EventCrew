@@ -40,7 +40,8 @@ final class CreditGrantNotifier
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, MessageTemplates::body('credit_granted_dm', $context))
+                DmBody::frame($person, MessageTemplates::body('credit_granted_dm', $context)),
+                MessageActions::replyMarkup(MessageActions::of('credit_granted_dm', $context, $this->mailer))
             );
         }
 
@@ -53,7 +54,7 @@ final class CreditGrantNotifier
             $person->email,
             MessageTemplates::subject('credit_granted', $context),
             MessageTemplates::body('credit_granted', $context),
-            [['label' => __('Get your free ticket', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+            MessageActions::email(MessageActions::of('credit_granted', $context, $this->mailer))
         );
     }
 }

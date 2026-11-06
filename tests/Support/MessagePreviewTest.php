@@ -108,10 +108,15 @@ final class MessagePreviewTest extends TestCase
      */
     public function testEveryKindWithActionsOffersTheSameActionsOnBothChannels(): void
     {
+        // A bot and a crew page, so every action has its links.
         Functions\when('get_option')->alias(
-            static fn (string $name, mixed $default = false): mixed
-                => BoardService::USERNAME_OPTION === $name ? 'crewbot' : $default
+            static fn (string $name, mixed $default = false): mixed => match ($name) {
+                BoardService::USERNAME_OPTION => 'crewbot',
+                'eventcrew_signup_page_id' => 7,
+                default => $default,
+            }
         );
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
 
         $all = MessageTemplates::all();
         $preview = $this->preview();
