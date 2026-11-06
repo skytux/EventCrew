@@ -2332,7 +2332,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
         self::assertStringContainsString('<nav class="eventcrew-subtabs"', $html);
-        foreach (['roster', 'tasks', 'door', 'people', 'telegram', 'followup'] as $screen) {
+        foreach (['roster', 'tasks', 'door', 'people', 'telegram', 'messages'] as $screen) {
             self::assertStringContainsString('data-eventcrew-subpanel="' . $screen . '"', $html, $screen);
         }
         foreach (

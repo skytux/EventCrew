@@ -17,6 +17,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\TicketReasons;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\CrewAdminFollowup;
@@ -222,6 +223,26 @@ final class MessagesTabsTest extends TestCase
         ]);
 
         self::assertStringNotContainsString('post.php?post=4', $html, 'Plain-text email: no editor link.');
+    }
+
+    /** The ticket email's text and {reason} lines are edited in the Ticket entry, with their own save. */
+    public function testTheTicketEntryHoldsTheTicketEmailText(): void
+    {
+        Functions\when('selected')->alias(
+            static fn (mixed $one, mixed $two = true): string => (string) $one === (string) $two ? ' selected' : ''
+        );
+        $page = new MessagesPage(
+            new View(),
+            new MessageTemplates(new TranslatedText(new LlmClient(new Logger()), new Logger()))
+        );
+        $html = $this->rendered($page->data(MessagesPage::TAB_MESSAGES));
+
+        self::assertStringContainsString('value="' . MessagesPage::TICKET_ACTION . '"', $html);
+        self::assertStringContainsString('data-ec-row="email.ticket"', $html);
+
+        foreach (TicketReasons::KINDS as $kind) {
+            self::assertStringContainsString('data-ec-row="email.ticket_reason.' . $kind . '"', $html);
+        }
     }
 
     public function testTheAiFormsReturnToTheAiTab(): void

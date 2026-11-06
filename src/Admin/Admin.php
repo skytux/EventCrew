@@ -282,6 +282,16 @@ final class Admin
         );
 
         add_action(
+            'admin_post_' . MessagesPage::TICKET_ACTION,
+            [$this->container->get(MessagesPage::class), 'saveTicket']
+        );
+
+        add_action(
+            'wp_ajax_' . MessagesPage::TICKET_ACTION,
+            [$this->container->get(MessagesPage::class), 'saveTicketAjax']
+        );
+
+        add_action(
             'admin_post_' . MessagesPage::RESET_ACTION,
             [$this->container->get(MessagesPage::class), 'reset']
         );

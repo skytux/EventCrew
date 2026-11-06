@@ -14,6 +14,8 @@ use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TicketReasons;
+use EventCrew\Support\TicketText;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Tests\Support\JsonAnswer;
@@ -468,6 +470,49 @@ final class MessagesPageTest extends TestCase
             self::assertTrue($fill['manual']['fi']);
             self::assertSame('', $fill['by_hand']);
         }
+    }
+
+    /**
+     * The ticket email's text and {reason} lines moved from Settings > Email
+     * to the Ticket entry here: its save queues the translation of what
+     * changed and answers the other lines as stored.
+     */
+    public function testTheTicketEntrySavesTheTicketEmailText(): void
+    {
+        $this->withModel('{}');
+        $_POST = [
+            'action' => MessagesPage::TICKET_ACTION,
+            TicketText::POST_NAME => [
+                'source' => 'Hi {first_name}, see you at {event}.',
+                'lang' => '',
+                'texts' => ['fi' => '', 'en' => ''],
+            ],
+        ];
+
+        try {
+            $this->backgroundPage()->saveTicketAjax();
+            self::fail('The save answers JSON.');
+        } catch (JsonAnswer $answer) {
+            self::assertSame('success', $answer->data['type']);
+            self::assertSame([], $this->requests, 'no model request inside the save');
+            self::assertSame(['email.ticket'], array_keys($answer->data['jobs']));
+            self::assertSame(
+                BackgroundJobs::QUEUED,
+                BackgroundJobs::latest(TranslatedText::jobTarget('email.ticket'))['status'] ?? null
+            );
+
+            foreach (TicketReasons::KINDS as $kind) {
+                self::assertSame(
+                    TranslatedText::fillValue(TicketReasons::settings($kind)),
+                    $answer->data['texts']['email.ticket_reason.' . $kind]
+                );
+            }
+        }
+
+        self::assertSame(
+            TicketText::settings(),
+            $this->backgroundPage()->data(MessagesPage::TAB_MESSAGES)['ticket']['text']
+        );
     }
 
     /** A refused text sends no stored text back, so the form keeps what was typed. */

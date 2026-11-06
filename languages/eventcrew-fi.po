@@ -8229,3 +8229,15 @@ msgstr "Tarkista, onko teksti käännetty"
 #, php-format
 msgid "The webhook could not be re-installed: %s"
 msgstr "Webhookia ei voitu asentaa uudelleen: %s"
+
+msgid "The ticket email text is saved."
+msgstr "Lippusähköpostin teksti on tallennettu."
+
+msgid "Save the ticket email text"
+msgstr "Tallenna lippusähköpostin teksti"
+
+msgid "The ticket email text and its {reason} lines are edited on the Messages page:"
+msgstr "Lippusähköpostin tekstiä ja sen {reason}-rivejä muokataan Viestit-sivulla:"
+
+msgid "Messages > Ticket (email)"
+msgstr "Viestit > Lippu (sähköposti)"

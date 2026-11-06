@@ -1731,7 +1731,8 @@ final class Kernel
                 $container->get(View::class),
                 new MessageTemplates($container->get(TranslatedText::class)->inBackground()),
                 $container->get(AiPromptsPage::class),
-                $container->get(EmailTemplate::class)
+                $container->get(EmailTemplate::class),
+                $container->get(LlmClient::class)
             )
         );
 

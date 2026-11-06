@@ -703,16 +703,15 @@ if ($eventcrew_link_expired) {
                 'telegram' => __('Telegram', 'eventcrew'),
             ];
 
-            if (isset($eventcrew_admin['newsletter'])) {
-                $eventcrew_subtabs['newsletter'] = __('Next events announcement', 'eventcrew');
-            }
+            // The texts sent to people (the announcement, the post-event
+            // email, the AI texts per event) are one screen, Messages, as on
+            // the wp-admin Messages page.
+            $eventcrew_has_messages = isset($eventcrew_admin['newsletter'])
+                || isset($eventcrew_admin['followup'])
+                || isset($eventcrew_admin['ai_texts']);
 
-            if (isset($eventcrew_admin['followup'])) {
-                $eventcrew_subtabs['followup'] = __('Post-event email', 'eventcrew');
-            }
-
-            if (isset($eventcrew_admin['ai_texts'])) {
-                $eventcrew_subtabs['aitexts'] = __('AI texts', 'eventcrew');
+            if ($eventcrew_has_messages) {
+                $eventcrew_subtabs['messages'] = __('Messages', 'eventcrew');
             }
             ?>
             <nav class="eventcrew-subtabs" aria-label="<?php esc_attr_e('Admin screens', 'eventcrew'); ?>">
@@ -1894,9 +1893,13 @@ if ($eventcrew_link_expired) {
             </section>
             </div>
 
+            <?php if ($eventcrew_has_messages) : ?>
+            <div class="eventcrew-subpanel" id="eventcrew-admin-messages" data-eventcrew-subpanel="messages">
+            <?php endif; ?>
+
             <?php if (isset($eventcrew_admin['newsletter'])) : ?>
                 <?php $eventcrew_news = $eventcrew_admin['newsletter']; ?>
-            <div class="eventcrew-subpanel" id="eventcrew-admin-newsletter" data-eventcrew-subpanel="newsletter">
+            <div id="eventcrew-admin-newsletter">
             <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-newsletter-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h3>
@@ -2022,7 +2025,7 @@ if ($eventcrew_link_expired) {
                     \EventCrew\Support\FollowupText::MISSED => __('Sorry text (missed)', 'eventcrew'),
                 ];
                 ?>
-            <div class="eventcrew-subpanel" id="eventcrew-admin-followup" data-eventcrew-subpanel="followup">
+            <div id="eventcrew-admin-followup">
             <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-followup-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Post-event email', 'eventcrew'); ?></h3>
@@ -2098,7 +2101,7 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
 
             <?php if (isset($eventcrew_admin['ai_texts'])) : ?>
-            <div class="eventcrew-subpanel" id="eventcrew-admin-aitexts" data-eventcrew-subpanel="aitexts">
+            <div id="eventcrew-admin-aitexts">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('AI texts', 'eventcrew'); ?></h3>
@@ -2148,6 +2151,10 @@ if ($eventcrew_link_expired) {
                     <?php endforeach; ?>
                 </div>
             </section>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($eventcrew_has_messages) : ?>
             </div>
             <?php endif; ?>
         </section>
@@ -2292,6 +2299,15 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         return subs.some(function (s) { return s.getAttribute('data-eventcrew-subpanel') === key; });
     }
 
+    // A key or link of a screen that is now part of another (newsletter,
+    // followup and aitexts are in Messages): the screen that holds it.
+    function holder(key) {
+        if (!key || has(key)) { return key; }
+        var node = document.getElementById('eventcrew-admin-' + key);
+        var sub = node && node.closest('[data-eventcrew-subpanel]');
+        return sub ? sub.getAttribute('data-eventcrew-subpanel') : key;
+    }
+
     function remember(key) {
         try { window.sessionStorage.setItem(store, key); } catch (e) {}
     }
@@ -2329,7 +2345,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     }
 
     admin.classList.add('has-subtabs');
-    show(key);
+    show(holder(key));
 })();
 
 /*

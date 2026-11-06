@@ -9,7 +9,7 @@ namespace EventCrew\Support;
  * the person has a ticket. One line per kind of ticket - bought, guest list,
  * crew task and free-entry credit.
  *
- * Each line is set in wp-admin Settings > Email, next to the ticket email
+ * Each line is set in wp-admin Messages > Ticket (email), next to the ticket email
  * text, the same way: a written-once text (TranslatedText), written in any
  * language and translated into every site language, or edited by hand per
  * language. Until someone saves another line, the built-in line
