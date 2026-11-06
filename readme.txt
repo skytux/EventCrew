@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.140
+Stable tag: 1.140.141
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.141 =
+Cancel no longer cancels in one tap: it asks first, says whether the cancel is late and offers to find someone to take the task.
 
 = 1.140.140 =
 The "A spot opened" message shows the task's details, a one-tap Sign up button and the other open tasks of the same event, with no names.
@@ -1634,6 +1637,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.141 =
+No settings change.
 
 = 1.140.140 =
 No settings change.
