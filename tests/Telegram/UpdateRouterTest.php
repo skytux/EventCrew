@@ -546,7 +546,8 @@ final class UpdateRouterTest extends TelegramTestCase
 
     public function testARemovedCommandGetsTheHelpAnswer(): void
     {
-        $old = ['/ticket', '/tickets', '/replace', '/gift', '/roles', '/tasks', '/cancel', '/language'];
+        // /tickets and /tasks are commands again (Owner 2026-11-07).
+        $old = ['/ticket', '/replace', '/gift', '/roles', '/cancel', '/language'];
 
         foreach ($old as $command) {
             $this->router()->dispatch([

@@ -11,12 +11,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/Telegram/HelpService.php:203
-msgid ""
-"   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
-msgstr ""
-"   knappar: 🎟 fribiljett, 🔁 ta över en uppgift, 🔑 webbinloggning, 🔔 aviseringar, 🌐 språk"
-
 #: templates/admin/people.php:182
 msgid " and "
 msgstr " och "
@@ -494,18 +488,6 @@ msgstr ""
 #: src/Telegram/HelpService.php:206
 msgid "/help – this list"
 msgstr "/help – den här listan"
-
-#: src/Telegram/HelpService.php:204
-msgid "/me history – your past tasks"
-msgstr "/me history – dina tidigare uppgifter"
-
-#: src/Telegram/HelpService.php:205
-msgid "/me tickets – your tickets for coming nights"
-msgstr "/me tickets – dina biljetter för kommande kvällar"
-
-#: src/Telegram/HelpService.php:201
-msgid "/me – your tasks, credits and standing"
-msgstr "/me – dina uppgifter, fribiljetter och pålitlighet"
 
 #: src/Telegram/NewsletterCommand.php:86
 msgid "/newsletter See you on the dance floor!"
@@ -4563,11 +4545,6 @@ msgid ""
 msgstr ""
 "Inget loggat nyligen. Fel från boten, e-posten och uppstarten visas här."
 
-#: src/Telegram/ProfileService.php:96
-msgid "Nothing on your calendar yet — tap a task on the board to sign up."
-msgstr ""
-"Inget i din kalender än — tryck på en uppgift på tavlan för att anmäla dig."
-
 #: src/Telegram/ManageController.php:245
 msgid "Nothing to do."
 msgstr "Inget att göra."
@@ -6030,10 +6007,6 @@ msgstr "Se lediga uppgifter"
 #: src/Support/TicketMail.php:1461
 msgid "See you on the dancefloor"
 msgstr "Vi ses på dansgolvet"
-
-#: src/Telegram/ProfileService.php:103
-msgid "Send /me history to see everything you’ve done."
-msgstr "Skicka /me history för att se allt du har gjort."
 
 #: src/Telegram/SayCommand.php:67
 msgid ""
@@ -10457,17 +10430,6 @@ msgid ""
 msgstr ""
 "Du får det här mejlet eftersom du gick med i utskicket om kommande evenemang. Ändra dina kontaktuppgifter eller lämna utskicket"
 
-#: src/Telegram/ProfileService.php:78
-#. translators: %d: number of free-entry credits the person holds
-msgid ""
-"You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
-msgid_plural ""
-"You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
-msgstr[0] ""
-"Du har %d fribiljett — tryck på 🎟 Fribiljett nedan för att använda den."
-msgstr[1] ""
-"Du har %d fribiljetter — tryck på 🎟 Fribiljett nedan för att använda en."
-
 #: src/Telegram/TicketRedemptionService.php:115
 #. translators: %d: number of free-entry credits
 msgid "You have %d free-entry credit. Pick an event to spend it on:"
@@ -11731,3 +11693,43 @@ msgstr "📅 Fler uppgifter"
 
 msgid "There are no task descriptions yet."
 msgstr "Det finns inga uppgiftsbeskrivningar än."
+
+#: src/Telegram/MenuButtons.php
+msgid "Past tasks"
+msgstr "Tidigare uppgifter"
+
+#: src/Telegram/ProfileService.php
+msgid "No coming tasks."
+msgstr "Inga kommande uppgifter."
+
+#: src/Telegram/HelpService.php
+msgid "Only organizers can open this."
+msgstr "Bara arrangörer kan öppna det här."
+
+#: src/Telegram/HelpService.php
+msgid "/me – your standing, credits and coming tasks"
+msgstr "/me – din pålitlighet, fribiljetter och kommande uppgifter"
+
+#: src/Telegram/HelpService.php
+msgid "/tasks – cancel, take over a task, past tasks"
+msgstr "/tasks – avboka, ta över en uppgift, tidigare uppgifter"
+
+#: src/Telegram/HelpService.php
+msgid "/tickets – your tickets, free-entry ticket"
+msgstr "/tickets – dina biljetter, fribiljett"
+
+#: src/Telegram/HelpService.php
+msgid "/settings – notifications, language, web sign-in"
+msgstr "/settings – aviseringar, språk, webbinloggning"
+
+#: src/Telegram/CommandMenu.php
+msgid "Your coming tasks; cancel or take over one"
+msgstr "Dina kommande uppgifter; avboka eller ta över"
+
+#: src/Telegram/CommandMenu.php
+msgid "Your tickets and free-entry ticket"
+msgstr "Dina biljetter och fribiljett"
+
+#: src/Telegram/CommandMenu.php
+msgid "Notifications, language, web sign-in"
+msgstr "Aviseringar, språk, webbinloggning"

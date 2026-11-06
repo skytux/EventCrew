@@ -6,7 +6,8 @@ namespace EventCrew\Telegram;
 
 /**
  * The buttons that replace the bot's old one-purpose commands: under /me
- * (ticket, take over, web sign-in, notifications, language), under /door
+ * (Tickets, Tasks, Settings, Help and, for organizers, Admin - each a screen
+ * of its own, Owner 2026-11-07), under /door
  * (door list, guest list, sales desk), under /people (credits, roles, who may
  * hold each role), and the Cancel button under every question the bot asks.
  *
@@ -40,6 +41,20 @@ final class MenuButtons
     public const TASK_INFO = 'mn:tasks';
 
     /**
+     * The screens under My info (Owner 2026-11-07): tickets, the person's own
+     * tasks, their past tasks, settings, /help, and for organizers the admin
+     * menu with the roster and /door.
+     */
+    public const TICKETS = 'mn:tix';
+    public const MY_TASKS = 'mn:mytasks';
+    public const HISTORY = 'mn:hist';
+    public const SETTINGS = 'mn:set';
+    public const HELP = 'mn:help';
+    public const ADMIN = 'mn:admin';
+    public const ROSTER = 'mn:roster';
+    public const DOOR = 'mn:door';
+
+    /**
      * The bot verbs a message can offer (MessageAction::$verb): the verb is
      * the deep link start payload an email's "Open in Telegram" link carries
      * (t.me/<bot>?start=<verb>), and this button's callback data in a DM.
@@ -54,6 +69,10 @@ final class MenuButtons
         'people' => self::PEOPLE,
         'tell' => self::TELL,
         'tasks' => self::TASK_INFO,
+        // "tasks" is the board's Task info, so the Tasks screen is "mytasks".
+        'mytasks' => self::MY_TASKS,
+        'tickets' => self::TICKETS,
+        'settings' => self::SETTINGS,
     ];
 
     /** Followed by the night ("" = the next one), as typed after /door. */
@@ -67,21 +86,94 @@ final class MenuButtons
     }
 
     /**
-     * The buttons under /me.
+     * The buttons under /me, one to a row (Owner 2026-11-07): Tickets, Tasks,
+     * Settings, Help, and for an organizer Admin at the bottom.
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    public static function me(): array
+    public static function me(bool $organizer = false): array
+    {
+        $rows = [
+            [self::button('🎟 ' . __('Tickets', 'eventcrew'), self::TICKETS)],
+            [self::button('📋 ' . __('Tasks', 'eventcrew'), self::MY_TASKS)],
+            [self::button('⚙️ ' . __('Settings', 'eventcrew'), self::SETTINGS)],
+            [self::button('❓ ' . __('Help', 'eventcrew'), self::HELP)],
+        ];
+
+        if ($organizer) {
+            $rows[] = [self::button('🛠 ' . __('Admin', 'eventcrew'), self::ADMIN)];
+        }
+
+        return ['inline_keyboard' => $rows];
+    }
+
+    /**
+     * The buttons under the Tickets screen, below the ticket buttons.
+     *
+     * @return array<int, array<int, array{text: string, callback_data: string}>>
+     */
+    public static function ticketsRows(): array
+    {
+        return [
+            [self::button('🎟 ' . __('Free-entry ticket', 'eventcrew'), self::TICKET)],
+            self::backRow(),
+        ];
+    }
+
+    /**
+     * The buttons under the Tasks screen, below the cancel buttons.
+     *
+     * @return array<int, array<int, array{text: string, callback_data: string}>>
+     */
+    public static function tasksRows(): array
+    {
+        return [
+            [self::button('🔁 ' . __('Take over a task', 'eventcrew'), self::REPLACE)],
+            [self::button('🕘 ' . __('Past tasks', 'eventcrew'), self::HISTORY)],
+            self::backRow(),
+        ];
+    }
+
+    /**
+     * The buttons under the Settings screen. Web sign-in lives here now
+     * (Owner 2026-11-07: rarely needed).
+     *
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
+     */
+    public static function settings(): array
     {
         return ['inline_keyboard' => [
-            [self::button('🎟 ' . __('Free-entry ticket', 'eventcrew'), self::TICKET)],
-            [self::button('🔁 ' . __('Take over a task', 'eventcrew'), self::REPLACE)],
-            [
-                self::button('🔑 ' . __('Web sign-in', 'eventcrew'), self::WEB),
-                self::button('🔔 ' . __('Notifications', 'eventcrew'), self::NOTIFICATIONS),
-            ],
+            [self::button('🔔 ' . __('Notifications', 'eventcrew'), self::NOTIFICATIONS)],
             [self::button('🌐 ' . __('Language', 'eventcrew'), self::LANGUAGE)],
+            [self::button('🔑 ' . __('Web sign-in', 'eventcrew'), self::WEB)],
+            self::backRow(),
         ]];
+    }
+
+    /**
+     * The organizers' admin menu under My info: the screens /roster, /door
+     * and /people open.
+     *
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
+     */
+    public static function admin(): array
+    {
+        return ['inline_keyboard' => [
+            [self::button('📅 ' . __('Roster', 'eventcrew'), self::ROSTER)],
+            [self::button('🚪 ' . __('Door', 'eventcrew'), self::DOOR)],
+            [self::button('👥 ' . __('People', 'eventcrew'), self::PEOPLE)],
+            self::backRow(),
+        ]];
+    }
+
+    /**
+     * The "👤 My info" row that takes a screen under /me back to it.
+     *
+     * @return array<int, array{text: string, callback_data: string}>
+     */
+    public static function backRow(): array
+    {
+        return [self::button(__('👤 My info', 'eventcrew'), self::ME)];
     }
 
     /**

@@ -17,8 +17,8 @@ use EventCrew\Support\TelegramLogin;
  * Reads one Telegram update and sends it to the right place.
  *
  * Button taps go to the service that owns their prefix. The commands are
- * /board, /me, /help, and /roster, /door and /people for the welcome crew and
- * organizers; everything else is a button under them (MenuButtons), including
+ * /board, /me, /tasks, /tickets, /settings, /help, and /roster, /door and
+ * /people for the welcome crew and organizers; everything else is a button under them (MenuButtons), including
  * the Cancel button under each question. A plain private message is first the
  * answer to such a question; any other plain message goes to the
  * language-model helper (AssistantService), which does nothing while it is
@@ -322,6 +322,26 @@ final class UpdateRouter
             return;
         }
 
+        // /tasks, /tickets and /settings: the screens under /me's buttons
+        // (Owner 2026-11-07). Like /me they answer in the asker's DM.
+        if ($this->isCommand($text, 'tasks')) {
+            $this->profile->onMyTasks($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        if ($this->isCommand($text, 'tickets')) {
+            $this->profile->onMyTickets($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        if ($this->isCommand($text, 'settings')) {
+            $this->profile->onSettings($fromId, $chatId, $isPrivate);
+
+            return;
+        }
+
         // /me, /me history and /me tickets work from either the group or a
         // private chat; the service always answers in the asker's DM so a
         // personal summary is never printed in front of the whole crew.
@@ -552,6 +572,14 @@ final class UpdateRouter
             MenuButtons::PEOPLE => $this->help?->onPeople($fromId, $chatId, $isPrivate),
             MenuButtons::TELL => $this->askWhatIsWrong($fromId, $chatId, $isPrivate),
             MenuButtons::TASK_INFO => $this->board->sendTaskInfo($fromId),
+            MenuButtons::TICKETS => $this->profile->onMyTickets($fromId, $chatId, $isPrivate),
+            MenuButtons::MY_TASKS => $this->profile->onMyTasks($fromId, $chatId, $isPrivate),
+            MenuButtons::HISTORY => $this->profile->onMyHistory($fromId, $chatId, $isPrivate),
+            MenuButtons::SETTINGS => $this->profile->onSettings($fromId, $chatId, $isPrivate),
+            MenuButtons::HELP => $this->help?->onHelp($fromId, $chatId, $isPrivate, true),
+            MenuButtons::ADMIN => $this->help?->onAdmin($fromId, $chatId, $isPrivate),
+            MenuButtons::ROSTER => $this->roster->onRosterCommand($fromId, $chatId, $isPrivate, ''),
+            MenuButtons::DOOR => $this->help?->onDoor($fromId, $chatId, $isPrivate, ''),
             default => null,
         };
     }

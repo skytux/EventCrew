@@ -71,6 +71,9 @@ final class AssistantActions
             self::entry('/me', "the person's own tasks, credits and standing"),
             self::entry('/me history', "the person's past tasks"),
             self::entry('/me tickets', "the person's tickets for coming nights"),
+            self::entry('/tasks', "the person's coming tasks, each with a cancel button; take over a task; past tasks"),
+            self::entry('/tickets', "the person's tickets and the free-entry ticket button"),
+            self::entry('/settings', 'the notifications, language and web sign-in buttons'),
             self::entry('/board', 'the open tasks as buttons to tap'),
             self::entry('/join <task>', 'sign the person up for a task; <task> is a task number from Open tasks', true),
             self::entry('/leave <task>', 'take the person off a task they signed up for; <task> as above', true),
@@ -219,6 +222,9 @@ final class AssistantActions
             case '/help':
             case '/start':
             case '/board':
+            case '/tasks':
+            case '/tickets':
+            case '/settings':
                 return '' === $rest
                     ? self::accept($head, false, self::RUN_MESSAGE, $head)
                     : self::refuse(self::ERROR_INVALID);
